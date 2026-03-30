@@ -1,0 +1,1690 @@
+{
+  "source": "Catálogo de Produtos - E-commerce.xlsx",
+  "sheet": "Produtos",
+  "generatedAt": "2026-03-30T03:36:27Z",
+  "total": 55,
+  "products": [
+    {
+      "id": "PP01010004",
+      "sku": "PP01010004",
+      "slug": "seda-tradicional-king-size",
+      "name": "Seda Tradicional King Size",
+      "category": "Papel",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A amarelinha mais queridinha do Brasil\n\nNosso Campeão de vendas, o papel branqueado\n\nInformações Técnicas: \n\nKing Size - 14 g/m2 gramatura\nTamanho Papel - 108x44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 121,00",
+        "amount": 121.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.117,
+        "net": 0.105,
+        "displayWithoutProduct": 0.01200000000000001
+      }
+    },
+    {
+      "id": "PP01010002",
+      "sku": "PP01010002",
+      "slug": "seda-tradicional-mini-size",
+      "name": "Seda Tradicional Mini Size",
+      "category": "Papel",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A amarelinha mais queridinha do Brasil\n\nNosso Campeão de vendas, o papel branqueado\n\nInformações Técnicas: \n\nMini Size - 14 g/m2 gramatura\nTamanho Papel - 76x44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 61,00",
+        "amount": 61.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01010003",
+      "sku": "PP01010003",
+      "slug": "seda-tradicional-com-piteira",
+      "name": "Seda Tradicional Com Piteira",
+      "category": "Papel",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A amarelinha mais queridinha do Brasil\n\nNosso Campeão de vendas, o papel branqueado\n\nInformações Técnicas: \n\nKing Size com Piteira - 14 g/m2 gramatura\n\nTamanho Papel - 108x44\n25 Livretos por Display\n36 Piteiras Slim - Tamanho 55x20mm",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 127,00",
+        "amount": 127.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.37,
+        "net": 0.35,
+        "displayWithoutProduct": 0.020000000000000018
+      }
+    },
+    {
+      "id": "PP01010001",
+      "sku": "PP01010001",
+      "slug": "seda-tradicional-longa",
+      "name": "Seda Tradicional Longa",
+      "category": "Papel",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A amarelinha mais queridinha do Brasil\n\nNosso Campeão de vendas, o papel branqueado\n\nInformações Técnicas: \n\nLonga - 14 g/m2 gramatura\nTamanho Papel - 130x44m\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 90,00",
+        "amount": 90.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 13.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.2,
+        "net": 0.19,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01030001",
+      "sku": "PP01030001",
+      "slug": "seda-brown-king-size",
+      "name": "Seda Brown King Size",
+      "category": "Papel",
+      "subcategory": "Brown",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "O papel mais natural!\n\nPapel naturalmente marrom, sem processo de branqueamento\n\nInformações Técnicas: \n\nKing Size - 12,5 g/m2 gramatura\nTamanho Papel - 108x44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 151,00",
+        "amount": 151.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.117,
+        "net": 0.105,
+        "displayWithoutProduct": 0.01200000000000001
+      }
+    },
+    {
+      "id": "PP01030004",
+      "sku": "PP01030004",
+      "slug": "seda-brown-mini-size",
+      "name": "Seda brown Mini Size",
+      "category": "Papel",
+      "subcategory": "Brown",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "O papel mais natural!\n\nPapel naturalmente marrom, sem processo de branqueamento\n\nInformações Técnicas: \n\nMini Size - 12,5 g/m2 gramatura\nTamanho Papel - 76x44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 76,00",
+        "amount": 76.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01030003",
+      "sku": "PP01030003",
+      "slug": "seda-brown-com-piteira",
+      "name": "Seda brown Com Piteira",
+      "category": "Papel",
+      "subcategory": "Brown",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "O papel mais natural!\n\nPapel naturalmente marrom, sem processo de branqueamento\n\nInformações Técnicas: \n\nKing Size com Piteira - 12,5 g/m2 gramatura\n\nTamanho Papel - 108x44\n25 Livretos por Display\n36 Piteiras Slim - Tamanho 55x20mm",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 144,00",
+        "amount": 144.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.37,
+        "net": 0.35,
+        "displayWithoutProduct": 0.020000000000000018
+      }
+    },
+    {
+      "id": "PP01030005",
+      "sku": "PP01030005",
+      "slug": "seda-brown-longa",
+      "name": "Seda brown Longa",
+      "category": "Papel",
+      "subcategory": "Brown",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "O papel mais natural!\n\nPapel naturalmente marrom, sem processo de branqueamento\n\nInformações Técnicas: \n\nLonga - 12,5 g/m2 gramatura\nTamanho Papel - 130x44m\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 111,00",
+        "amount": 111.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 13.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.2,
+        "net": 0.19,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01020002",
+      "sku": "PP01020002",
+      "slug": "seda-slim-king-size",
+      "name": "Seda Slim King Size",
+      "category": "Papel",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "18% menos papel em cada seda\n\nMenos papel, mais redução de danos\n\nInformações Técnicas: \n\nKing Size - 14 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 121,00",
+        "amount": 121.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01020001",
+      "sku": "PP01020001",
+      "slug": "seda-slim-mini-size",
+      "name": "Seda Slim Mini Size",
+      "category": "Papel",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "18% menos papel em cada seda\n\nMenos papel, mais redução de danos\n\nInformações Técnicas: \n\nMini Size - 14 g/m2 gramatura\nTamanho Papel - 76x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 61,00",
+        "amount": 61.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01020006",
+      "sku": "PP01020006",
+      "slug": "seda-slim-com-piteira",
+      "name": "Seda Slim Com Piteira",
+      "category": "Papel",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "18% menos papel em cada seda\n\nMenos papel, mais redução de danos\n\nInformações Técnicas: \n\nKing Size com Piteira - 14 g/m2 gramatura\n\nTamanho Papel - 108x36\n25 Livretos por Display\n36 Piteiras Slim - Tamanho 55x20mm",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 127,00",
+        "amount": 127.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.37,
+        "net": 0.35,
+        "displayWithoutProduct": 0.020000000000000018
+      }
+    },
+    {
+      "id": "PP03020002",
+      "sku": "PP03020002",
+      "slug": "seda-slim-longa",
+      "name": "Seda Slim Longa",
+      "category": "Papel",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "18% menos papel em cada seda\n\nMenos papel, mais redução de danos\n\nInformações Técnicas: \n\nLonga - 14 g/m2 gramatura\nTamanho Papel - 130x36m\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 90,00",
+        "amount": 90.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 13.5,
+        "length": 13.0
+      },
+      "weightKg": {
+        "gross": 0.2,
+        "net": 0.19,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01050002",
+      "sku": "PP01050002",
+      "slug": "seda-hemp-king-size",
+      "name": "Seda Hemp King Size",
+      "category": "Papel",
+      "subcategory": "Hemp",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "Papel com fibras de cânhamo\n\nFibras mais longas, menor gramatura e mais resistência\n\nInformações Técnicas: \n\nKing Size - 13 g/m2 gramatura\nTamanho Papel - 108x44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 90,00",
+        "amount": 90.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01050001",
+      "sku": "PP01050001",
+      "slug": "seda-hemp-mini-size",
+      "name": "Seda Hemp Mini Size",
+      "category": "Papel",
+      "subcategory": "Hemp",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "Papel com fibras de cânhamo\n\nFibras mais longas, menor gramatura e mais resistência\nInformações Técnicas: \n\nMini Size - 13 g/m2 gramatura\nTamanho Papel - 76 x 44mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 90,00",
+        "amount": 90.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01040002",
+      "sku": "PP01040002",
+      "slug": "seda-brown-slim-king-size",
+      "name": "Seda Brown Slim King Size",
+      "category": "Papel",
+      "subcategory": "Brown Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "Papel natural com 18% menos papel em cada seda.\nMenos papel, mais natural\ne mais redução de danos\n\nInformações Técnicas: \n\nKing Size - 12 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 151,00",
+        "amount": 151.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01040001",
+      "sku": "PP01040001",
+      "slug": "seda-brown-slim-mini-size",
+      "name": "Seda Brown Slim Mini Size",
+      "category": "Papel",
+      "subcategory": "Brown Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "Papel natural com 18% menos papel em cada seda.\nMenos papel, mais natural\ne mais redução de danos\n\nInformações Técnicas: \n\nMini Size - 12 g/m2 gramatura\nTamanho Papel - 76x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 76,00",
+        "amount": 76.0
+      },
+      "dimensionsCm": {
+        "height": 3.0,
+        "width": 8.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.12,
+        "net": 0.11,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP01010008",
+      "sku": "PP01010008",
+      "slug": "seda-insane-king-size",
+      "name": "Seda Insane King Size",
+      "category": "Papel",
+      "subcategory": "Premium",
+      "subcategory2": "Insane",
+      "variations": [],
+      "description": "INSAAAANAMENTE FINAS!\nUm dos papéis mais finos do mercado. Fibra premium de origem francesa\n\nInformações Técnicas: \n\nKing Size - 12 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 209,00",
+        "amount": 209.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01030007",
+      "sku": "PP01030007",
+      "slug": "seda-insane-brown-king-size",
+      "name": "Seda Insane Brown King Size",
+      "category": "Papel",
+      "subcategory": "Premium",
+      "subcategory2": "Insane",
+      "variations": [],
+      "description": "INSAAAANAMENTE FINAS!\nUm dos papéis mais finos do mercado. Fibra premium de origem francesa\n\nInformações Técnicas: \n\nKing Size - 12 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 223,00",
+        "amount": 223.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01070003",
+      "sku": "PP01070003",
+      "slug": "seda-pink-king-size",
+      "name": "Seda Pink King Size",
+      "category": "Papel",
+      "subcategory": "Premium",
+      "subcategory2": "Pink",
+      "variations": [],
+      "description": "CHOCANTEMENTE ROSA!\nPapel rosa, fibra premium de origem francesa\n\nInformações Técnicas: \n\nKing Size - 12,5 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 223,00",
+        "amount": 223.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP01070001",
+      "sku": "PP01070001",
+      "slug": "seda-alfafa-king-size",
+      "name": "Seda Alfafa King Size",
+      "category": "Papel",
+      "subcategory": "Premium",
+      "subcategory2": "Alfafa",
+      "variations": [],
+      "description": "PAPEL VERDE!\nPapel verde de origem francesa, queima lenta e sem sabor\n\nInformações Técnicas: \n\nKing Size - 12 g/m2 gramatura\nTamanho Papel - 108x36mm\n25 Livretos por Display",
+      "packaging": {
+        "displayType": "02 - DISPLAYS",
+        "unitType": "01 - KS"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 240,00",
+        "amount": 240.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 11.5,
+        "length": 14.5
+      },
+      "weightKg": {
+        "gross": 0.31,
+        "net": 0.3,
+        "displayWithoutProduct": 0.010000000000000009
+      }
+    },
+    {
+      "id": "PP02010002",
+      "sku": "PP02010002",
+      "slug": "piteira-tradicional",
+      "name": "Piteira Tradicional",
+      "category": "Piteiras",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "As piteiras mais maleáveis\n\nFeitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nTradicional - Papel Vergê\nTamanho Papel - 55x25mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 75,00",
+        "amount": 75.0
+      },
+      "dimensionsCm": {
+        "height": 3.7,
+        "width": 12.7,
+        "length": 6.2
+      },
+      "weightKg": {
+        "gross": 0.32,
+        "net": 0.27,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP02020001",
+      "sku": "PP02020001",
+      "slug": "piteira-slim",
+      "name": "Piteira Slim",
+      "category": "Piteiras",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "As piteiras mais maleáveis\n\nFeitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nSlim - Papel Vergê\nTamanho Papel - 55x20mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "R$ 75,00",
+        "amount": 75.0
+      },
+      "dimensionsCm": {
+        "height": 3.65,
+        "width": 10.5,
+        "length": 6.2
+      },
+      "weightKg": {
+        "gross": 0.3,
+        "net": 0.275,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP02030002",
+      "sku": "PP02030002",
+      "slug": "piteira-large",
+      "name": "Piteira Large",
+      "category": "Piteiras",
+      "subcategory": "Large",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "As piteiras mais maleáveis\n\nFeitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nLarge - Papel Vergê\nTamanho Papel - 55x40mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "88.0",
+        "amount": 88.0
+      },
+      "dimensionsCm": {
+        "height": 6.0,
+        "width": 12.4,
+        "length": 6.0
+      },
+      "weightKg": {
+        "gross": 0.525,
+        "net": 0.504,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP02030011",
+      "sku": "PP02030011",
+      "slug": "piteira-longa",
+      "name": "Piteira Longa",
+      "category": "Piteiras",
+      "subcategory": "Longas",
+      "subcategory2": "Longa",
+      "variations": [],
+      "description": "Maior redução de danos!\nDobro de piteiras, feitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nLonga - Papel Vergê\nTamanho Papel - 40x40mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "156.0",
+        "amount": 156.0
+      },
+      "dimensionsCm": {
+        "height": 7.0,
+        "width": 12.5,
+        "length": 9.0
+      },
+      "weightKg": {
+        "gross": 0.62,
+        "net": 0.6087600000000001,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP02030013",
+      "sku": "PP02030013",
+      "slug": "piteira-ultra-longa",
+      "name": "Piteira Ultra Longa",
+      "category": "Piteiras",
+      "subcategory": "Longas",
+      "subcategory2": "Ultra Longa",
+      "variations": [],
+      "description": "Maior redução de danos!\nDobro de piteiras, feitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nUltra Longa - Papel Vergê\nTamanho Papel - 40x45mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "156.0",
+        "amount": 156.0
+      },
+      "dimensionsCm": {
+        "height": 7.0,
+        "width": 14.0,
+        "length": 9.0
+      },
+      "weightKg": {
+        "gross": 0.7,
+        "net": 0.6479999999999999,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP02030012",
+      "sku": "PP02030012",
+      "slug": "piteira-mega-longa",
+      "name": "Piteira Mega Longa",
+      "category": "Piteiras",
+      "subcategory": "Longas",
+      "subcategory2": "Mega Longa",
+      "variations": [],
+      "description": "Maior redução de danos!\nDobro de piteiras, feitas de papel maleável, biodegradável e sem adição de tinta\n\nInformações Técnicas:\n\nMega Longa - Papel Vergê\nTamanho Papel - 40x55mm\n36 folhas por livreto\n25 livretos por display",
+      "packaging": {
+        "displayType": "02 - Displays",
+        "unitType": "01 - Livretos"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "171.0",
+        "amount": 171.0
+      },
+      "dimensionsCm": {
+        "height": 7.5,
+        "width": 9.0,
+        "length": 17.0
+      },
+      "weightKg": {
+        "gross": 0.84,
+        "net": 0.7919999999999999,
+        "displayWithoutProduct": 0.009999999999999995
+      }
+    },
+    {
+      "id": "PP03030002",
+      "sku": "PP03030002",
+      "slug": "filtro-tradicional",
+      "name": "Filtro Tradicional",
+      "category": "Filtro",
+      "subcategory": "Tradicional",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "Filtros em acetato de alta qualidade, vários tamanhos e embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 15mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "93.0",
+        "amount": 93.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.16,
+        "net": 0.11,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03020001",
+      "sku": "PP03020001",
+      "slug": "filtro-longo",
+      "name": "Filtro Longo",
+      "category": "Filtro",
+      "subcategory": "Longo",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros em acetato de alta qualidade, vários tamanhos e embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 22mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "113.0",
+        "amount": 113.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.2,
+        "net": 0.15,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03010004",
+      "sku": "PP03010004",
+      "slug": "filtro-ultra-longo",
+      "name": "Filtro Ultra Longo",
+      "category": "Filtro",
+      "subcategory": "Ultra Longo",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros em acetato de alta qualidade, vários tamanhos e embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 30mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "126.0",
+        "amount": 126.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.32,
+        "net": 0.27,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03010003",
+      "sku": "PP03010003",
+      "slug": "filtro-slim",
+      "name": "Filtro Slim",
+      "category": "Filtro",
+      "subcategory": "Slim",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros em acetato de alta qualidade, vários tamanhos e embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 5.3 x 15mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "93.0",
+        "amount": 93.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.16,
+        "net": 0.11,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03020002-2",
+      "sku": "PP03020002",
+      "slug": "filtro-slim-longo",
+      "name": "Filtro Slim Longo",
+      "category": "Filtro",
+      "subcategory": "Slim Longo",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros em acetato de alta qualidade, vários tamanhos e embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 5.3 x 22mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "113.0",
+        "amount": 113.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.16,
+        "net": 0.11,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03010002",
+      "sku": "PP03010002",
+      "slug": "filtro-mentol",
+      "name": "Filtro Mentol",
+      "category": "Filtro",
+      "subcategory": "Mentol",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nSabor Mentolado, feito em acetato de alta qualidade com embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 15mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "136.0",
+        "amount": 136.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.16,
+        "net": 0.11,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03010001",
+      "sku": "PP03010001",
+      "slug": "filtro-bio",
+      "name": "Filtro Bio",
+      "category": "Filtro",
+      "subcategory": "Bio",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros biodegradável, decompõe 3x mais rápido com embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 15mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "93.0",
+        "amount": 93.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.2,
+        "net": 0.15,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "PP03030001",
+      "sku": "PP03030001",
+      "slug": "filtro-bio-longo",
+      "name": "Filtro Bio Longo",
+      "category": "Filtro",
+      "subcategory": "Bio Longo",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros biodegradável, decompõe 3x mais rápido com embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 22mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "121.0",
+        "amount": 121.0
+      },
+      "dimensionsCm": {
+        "height": 13.0,
+        "width": 18.5,
+        "length": 11.0
+      },
+      "weightKg": {
+        "gross": 0.32,
+        "net": 0.27,
+        "displayWithoutProduct": 0.05
+      }
+    },
+    {
+      "id": "-",
+      "sku": "-",
+      "slug": "filtro-gomado",
+      "name": "Filtro Gomado",
+      "category": "Filtro",
+      "subcategory": "Gomado",
+      "subcategory2": "-",
+      "variations": [],
+      "description": "A linha de filtros mais completa do Brasil\n\nFiltros em acetato de alta qualidade com goma com embalagem reutilizável\n\nInformações Técnicas:\n\nTamanho: 6 x 22mm\n120 filtros por bag\n10 Bags por Display",
+      "packaging": {
+        "displayType": "01 - Displays",
+        "unitType": "02 - Bags"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "-",
+        "amount": null
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "212.0",
+      "sku": "212.0",
+      "slug": "dichavador-tradicional",
+      "name": "Dichavador Tradicional",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Tradicional",
+      "variations": [
+        "Preto"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "212.0-2",
+      "sku": "212.0",
+      "slug": "dichavador-tradicional",
+      "name": "Dichavador Tradicional",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Tradicional",
+      "variations": [
+        "Amarelo"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0",
+      "sku": "213.0",
+      "slug": "dichavador-brilho",
+      "name": "Dichavador Brilho",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Brilho",
+      "variations": [
+        "Roxo"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0-2",
+      "sku": "213.0",
+      "slug": "dichavador-brilho",
+      "name": "Dichavador Brilho",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Brilho",
+      "variations": [
+        "Verde"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0-3",
+      "sku": "213.0",
+      "slug": "dichavador-brilho",
+      "name": "Dichavador Brilho",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Brilho",
+      "variations": [
+        "Laranja"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "509.0",
+      "sku": "509.0",
+      "slug": "dichavador-cores",
+      "name": "Dichavador Cores",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Cores",
+      "variations": [
+        "Azul"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "509.0-2",
+      "sku": "509.0",
+      "slug": "dichavador-cores",
+      "name": "Dichavador Cores",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Cores",
+      "variations": [
+        "Rosa"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "509.0-3",
+      "sku": "509.0",
+      "slug": "dichavador-cores",
+      "name": "Dichavador Cores",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Cores",
+      "variations": [
+        "Verde"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0-4",
+      "sku": "213.0",
+      "slug": "dichavador-neon",
+      "name": "Dichavador Neon",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Neon",
+      "variations": [
+        "Vermelho"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0-5",
+      "sku": "213.0",
+      "slug": "dichavador-neon",
+      "name": "Dichavador Neon",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Neon",
+      "variations": [
+        "Verde"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "213.0-6",
+      "sku": "213.0",
+      "slug": "dichavador-neon",
+      "name": "Dichavador Neon",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Neon",
+      "variations": [
+        "Verde Claro"
+      ],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "510.0",
+      "sku": "510.0",
+      "slug": "dichavador-cristal",
+      "name": "Dichavador Cristal",
+      "category": "Acessórios",
+      "subcategory": "Dichavador",
+      "subcategory2": "Cristal",
+      "variations": [],
+      "description": "Mais conhecido como tritura tudo!\nFeito de policarbonato, ultra resistente, atóxico e com container no fundo\n\nInformações Técnicas:\n\nTradicional - 5cm de Tamanho\n6 Dichavadores/Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "94.0",
+        "amount": 94.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "24.0",
+      "sku": "24.0",
+      "slug": "tubelito-tradicional",
+      "name": "Tubelito Tradicional",
+      "category": "Acessórios",
+      "subcategory": "Tubelito",
+      "subcategory2": "Tradicional",
+      "variations": [
+        "Preto"
+      ],
+      "description": "Praticidade para guardar. Hermético com resistência a calor e aprova d'água\n\nInformações Técnicas:\n\nTradicional\nCor: Preto\nTamanho: 12cm\n12 Tubelitos por Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "140.0",
+        "amount": 140.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "24.0-2",
+      "sku": "24.0",
+      "slug": "tubelito-tradicional",
+      "name": "Tubelito Tradicional",
+      "category": "Acessórios",
+      "subcategory": "Tubelito",
+      "subcategory2": "Tradicional",
+      "variations": [
+        "Amarelo"
+      ],
+      "description": "Praticidade para guardar. Hermético com resistência a calor e aprova d'água\n\nInformações Técnicas:\n\nTradicional\nCor: Amarelo\nTamanho: 12cm\n12 Tubelitos por Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "140.0",
+        "amount": 140.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "250.0",
+      "sku": "250.0",
+      "slug": "tubelito-neon",
+      "name": "Tubelito Neon",
+      "category": "Acessórios",
+      "subcategory": "Tubelito",
+      "subcategory2": "Neon",
+      "variations": [
+        "Rosa"
+      ],
+      "description": "Praticidade para guardar. Hermético com resistência a calor e aprova d'água\n\nInformações Técnicas:\n\nTradicional\nCor: Rosa\nTamanho: 12cm\n12 Tubelitos por Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "140.0",
+        "amount": 140.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "250.0-2",
+      "sku": "250.0",
+      "slug": "tubelito-neon",
+      "name": "Tubelito Neon",
+      "category": "Acessórios",
+      "subcategory": "Tubelito",
+      "subcategory2": "Neon",
+      "variations": [
+        "Verde"
+      ],
+      "description": "Praticidade para guardar. Hermético com resistência a calor e aprova d'água\n\nInformações Técnicas:\n\nTradicional\nCor: Verde\nTamanho: 12cm\n12 Tubelitos por Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "140.0",
+        "amount": 140.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "250.0-3",
+      "sku": "250.0",
+      "slug": "tubelito-neon",
+      "name": "Tubelito Neon",
+      "category": "Acessórios",
+      "subcategory": "Tubelito",
+      "subcategory2": "Neon",
+      "variations": [
+        "Laranja"
+      ],
+      "description": "Praticidade para guardar. Hermético com resistência a calor e aprova d'água\n\nInformações Técnicas:\n\nTradicional\nCor: Laranja\nTamanho: 12cm\n12 Tubelitos por Display",
+      "packaging": {
+        "displayType": null,
+        "unitType": "01 - Finalizados"
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "140.0",
+        "amount": 140.0
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "bandeja-chaveiro-relax",
+      "sku": null,
+      "slug": "bandeja-chaveiro-relax",
+      "name": "Bandeja Chaveiro Relax",
+      "category": "Acessórios",
+      "subcategory": "Bandeja Chaveiro",
+      "subcategory2": "P Relax",
+      "variations": [],
+      "description": "Um chaveiro bandeja com multiutilidades\n\nInformações Técnicas:\n\nCor: Amarelo\nTamanho: 70x50cm\nMaterial: Timplate\nResistente ao calor",
+      "packaging": {
+        "displayType": null,
+        "unitType": null
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "-",
+        "amount": null
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "bandeja-chaveiro-amarelo",
+      "sku": null,
+      "slug": "bandeja-chaveiro-amarelo",
+      "name": "Bandeja Chaveiro Amarelo",
+      "category": "Acessórios",
+      "subcategory": "Bandeja Chaveiro",
+      "subcategory2": "P Amarelo",
+      "variations": [],
+      "description": "Um chaveiro bandeja com multiutilidades\n\nInformações Técnicas:\n\nCor: Amarelo\nTamanho: 70x50cm\nMaterial: Timplate\nResistente ao calor",
+      "packaging": {
+        "displayType": null,
+        "unitType": null
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "-",
+        "amount": null
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    },
+    {
+      "id": "bandeja-chaveiro-black",
+      "sku": null,
+      "slug": "bandeja-chaveiro-black",
+      "name": "Bandeja Chaveiro Black",
+      "category": "Acessórios",
+      "subcategory": "Bandeja Chaveiro",
+      "subcategory2": "Black",
+      "variations": [],
+      "description": "Um chaveiro bandeja com multiutilidades\n\nInformações Técnicas:\n\nCor: Preto\nTamanho: 70x50cm\nMaterial: Timplate\nResistente ao calor",
+      "packaging": {
+        "displayType": null,
+        "unitType": null
+      },
+      "price": {
+        "currency": "BRL",
+        "displayValue": "-",
+        "amount": null
+      },
+      "dimensionsCm": {
+        "height": null,
+        "width": null,
+        "length": null
+      },
+      "weightKg": {
+        "gross": null,
+        "net": null,
+        "displayWithoutProduct": null
+      }
+    }
+  ]
+}
