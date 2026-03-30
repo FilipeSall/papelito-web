@@ -1,1 +1,87 @@
 @import "tailwindcss";
+
+@theme {
+    /* ─── Colors ─────────────────────────────────────────────── */
+    --color-brand-dark: #231f20;
+    --color-brand-yellow: #ffe500;
+    --color-bg-light: #f9fafb;
+
+    --color-text-primary: #231f20;
+    --color-text-secondary: #4a5565;
+    --color-text-tertiary: #6a7282;
+    --color-text-muted: #99a1af;
+    --color-text-faint: #d1d5dc;
+
+    /* ─── Typography ─────────────────────────────────────────── */
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    --text-xs: 0.75rem;
+    /* 12px */
+    --text-sm: 0.875rem;
+    /* 14px */
+    --text-base: 1rem;
+    /* 16px */
+    --text-lg: 1.125rem;
+    /* 18px */
+    --text-2xl: 1.5rem;
+    /* 24px */
+    --text-4xl: 2.25rem;
+    /* 36px */
+    --text-5xl: 3rem;
+    /* 48px */
+    --text-6xl: 3.75rem;
+    /* 60px */
+
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+    --font-weight-black: 900;
+
+    /* ─── Letter Spacing ─────────────────────────────────────── */
+    --tracking-wide: 0.075em;
+    /* labels uppercase ~1.2px @ 16px */
+    --tracking-tight: -0.02em;
+    --tracking-normal: 0em;
+
+    /* ─── Border Radius ──────────────────────────────────────── */
+    --radius-sm: 0.25rem;
+    /* 4px  */
+    --radius-xl: 1rem;
+    /* 16px */
+    --radius-2xl: 1.5rem;
+    /* 24px */
+    --radius-full: 9999px;
+
+    /* ─── Spacing ────────────────────────────────────────────── */
+    --spacing-1: 0.25rem;
+    /* 4px  */
+    --spacing-2: 0.5rem;
+    /* 8px  */
+    --spacing-4: 1rem;
+    /* 16px */
+    --spacing-6: 1.5rem;
+    /* 24px */
+    --spacing-8: 2rem;
+    /* 32px */
+    --spacing-12: 3rem;
+    /* 48px */
+    --spacing-16: 4rem;
+    /* 64px */
+}
+
+@layer base {
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        color: var(--color-text-primary);
+        background-color: white;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
