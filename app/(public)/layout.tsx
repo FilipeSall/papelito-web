@@ -5,7 +5,7 @@ export default function PublicAreaLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <section className="h-screen flex flex-col bg-white">
+    <section className="flex flex-col bg-white">
       <PublicHeader />
       <PromoMarquee />
       {children}
