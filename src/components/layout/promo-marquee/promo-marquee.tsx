@@ -1,5 +1,14 @@
 import { PROMO_ITEMS } from "./constants";
 
+/**
+ * Faixa promocional com scroll infinito exibida abaixo do header.
+ *
+ * Renderiza os itens de `PROMO_ITEMS` duplicados em uma única faixa flex,
+ * animando de `translateX(0)` até `translateX(-50%)` para criar um loop
+ * contínuo e sem quebras visíveis.
+ *
+ * A animação é controlada pela classe `.animate-marquee` definida em `globals.css`.
+ */
 export function PromoMarquee() {
   const doubled = [...PROMO_ITEMS, ...PROMO_ITEMS];
 
