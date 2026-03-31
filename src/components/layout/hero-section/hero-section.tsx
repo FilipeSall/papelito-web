@@ -8,17 +8,15 @@ import Image from "next/image";
  */
 export function HeroSection() {
   return (
-    <section className="w-full overflow-hidden">
-      <div className="relative w-full" style={{ aspectRatio: "1564 / 540" }}>
-        <Image
-          src="/images/banner-default.png"
-          alt="15% de desconto na primeira compra — use o cupom P4P3LITO26"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-      </div>
+    <section className="relative flex-1 overflow-hidden">
+      <Image
+        src="/images/banner-default.png"
+        alt="15% de desconto na primeira compra — use o cupom P4P3LITO26"
+        fill
+        priority
+        className="object-fill"
+        sizes="100vw"
+      />
     </section>
   );
 }

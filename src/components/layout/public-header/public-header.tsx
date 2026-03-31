@@ -37,7 +37,7 @@ export function PublicHeader() {
       </div>
 
       {/* Desktop */}
-      <div className="mx-auto hidden w-full max-w-391 grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 py-3.75 md:grid md:px-8">
+      <div className="mx-auto hidden w-full max-w-391 grid-cols-[1fr_auto_1fr] items-center gap-6 md:grid md:h-23.25 md:px-8">
         <PublicHeaderLogo variant="desktop" />
 
         <PublicHeaderNav links={publicLinks} />
