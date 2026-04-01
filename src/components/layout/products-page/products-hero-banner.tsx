@@ -15,7 +15,7 @@ import Image from "next/image";
  */
 export function ProductsHeroBanner() {
   return (
-    <section className="relative w-full h-72 md:h-80 overflow-hidden">
+    <section className="products-hero-cut relative w-full h-72 md:h-80 overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
