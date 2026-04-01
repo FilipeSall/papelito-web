@@ -44,11 +44,11 @@ export function CountdownTimer() {
         Termina em:
       </span>
       <div className="flex items-start">
-        <CountdownUnit value={h} label="h" />
+        <CountdownUnit value={h} />
         <Separator />
-        <CountdownUnit value={m} label="m" />
+        <CountdownUnit value={m} />
         <Separator />
-        <CountdownUnit value={s} label="s" />
+        <CountdownUnit value={s} />
       </div>
     </div>
   );

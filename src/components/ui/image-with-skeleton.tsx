@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Skeleton from "react-loading-skeleton";
 
 interface ImageWithSkeletonProps {
@@ -31,6 +37,7 @@ export function ImageWithSkeleton({
   containerClassName,
   fallback,
 }: ImageWithSkeletonProps) {
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const [loadingState, setLoadingState] = useState<LoadingState>(
     src ? "loading" : "error",
   );
@@ -38,7 +45,60 @@ export function ImageWithSkeleton({
   const hasImage = typeof src === "string" && src.length > 0;
   const imageSrc = hasImage ? src : null;
   const showSkeleton = hasImage && loadingState === "loading";
-  const showFallback = loadingState === "error" && fallback;
+  const showFallback = (!hasImage || loadingState === "error") && fallback;
+
+  const syncLoadingStateFromImage = useCallback(() => {
+    const imageElement = imageRef.current;
+
+    if (!imageElement || !imageElement.complete) {
+      return;
+    }
+
+    setLoadingState(imageElement.naturalWidth > 0 ? "loaded" : "error");
+  }, []);
+
+  const handleImageRef = useCallback(
+    (imageElement: HTMLImageElement | null) => {
+      imageRef.current = imageElement;
+
+      if (!imageElement) {
+        return;
+      }
+
+      if (!imageElement.complete) {
+        setLoadingState("loading");
+        return;
+      }
+
+      syncLoadingStateFromImage();
+    },
+    [syncLoadingStateFromImage],
+  );
+
+  useEffect(() => {
+    if (!imageSrc) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncLoadingStateFromImage();
+    });
+    const handlePageShow = () => syncLoadingStateFromImage();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncLoadingStateFromImage();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [imageSrc, syncLoadingStateFromImage]);
 
   return (
     <div
@@ -63,6 +123,8 @@ export function ImageWithSkeleton({
 
       {imageSrc && loadingState !== "error" ? (
         <Image
+          key={imageSrc}
+          ref={handleImageRef}
           src={imageSrc}
           alt={alt}
           fill={fill}

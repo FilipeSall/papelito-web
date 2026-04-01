@@ -1,92 +1,5 @@
-/**
- * Ícone de grade (grid view).
- */
-function GridIcon({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <rect
-        x="2"
-        y="2"
-        width="7"
-        height="7"
-        rx="1.5"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-      <rect
-        x="11"
-        y="2"
-        width="7"
-        height="7"
-        rx="1.5"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-      <rect
-        x="2"
-        y="11"
-        width="7"
-        height="7"
-        rx="1.5"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-      <rect
-        x="11"
-        y="11"
-        width="7"
-        height="7"
-        rx="1.5"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-    </svg>
-  );
-}
-
-/**
- * Ícone de lista (list view).
- */
-function ListIcon({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <rect
-        x="2"
-        y="3"
-        width="16"
-        height="4"
-        rx="1"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-      <rect
-        x="2"
-        y="8"
-        width="16"
-        height="4"
-        rx="1"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-      <rect
-        x="2"
-        y="13"
-        width="16"
-        height="4"
-        rx="1"
-        fill={active ? "#231F20" : "#9CA3AF"}
-      />
-    </svg>
-  );
-}
+import { ViewToggleGridIcon } from "./view-toggle-grid-icon";
+import { ViewToggleListIcon } from "./view-toggle-list-icon";
 
 type ViewMode = "grid" | "list";
 
@@ -117,7 +30,7 @@ export function ViewToggle({ activeView = "grid" }: ViewToggleProps) {
           activeView === "grid" ? "bg-white shadow-sm" : "hover:bg-gray-200"
         }`}
       >
-        <GridIcon active={activeView === "grid"} />
+        <ViewToggleGridIcon active={activeView === "grid"} />
       </button>
       <button
         type="button"
@@ -126,7 +39,7 @@ export function ViewToggle({ activeView = "grid" }: ViewToggleProps) {
           activeView === "list" ? "bg-white shadow-sm" : "hover:bg-gray-200"
         }`}
       >
-        <ListIcon active={activeView === "list"} />
+        <ViewToggleListIcon active={activeView === "list"} />
       </button>
     </div>
   );
