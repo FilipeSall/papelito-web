@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { SectionHeader } from "@/components/ui";
 import { ProductCard } from "../flash-sale/product-card";
-import { BEST_SELLER_PRODUCTS } from "./constants";
+import type { HomeProductCard } from "@/features/catalog";
+
+interface BestSellersSectionProps {
+  products: HomeProductCard[];
+}
 
 /**
  * Ícone de seta para a direita usado no botão de ação principal.
@@ -40,7 +44,7 @@ function ArrowRightIcon({ className }: { className?: string }) {
  * <BestSellersSection />
  * ```
  */
-export function BestSellersSection() {
+export function BestSellersSection({ products }: BestSellersSectionProps) {
   return (
     <section className="w-full bg-white py-14">
       <div className="max-w-450 mx-auto px-43.5">
@@ -56,7 +60,7 @@ export function BestSellersSection() {
 
           {/* Product grid 4x2 */}
           <div className="grid grid-cols-4 gap-5">
-            {BEST_SELLER_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

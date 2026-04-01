@@ -4,7 +4,11 @@ import { useCallback, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { CompactSectionHeader } from "./compact-section-header";
 import { MiniProductCard } from "./mini-product-card";
-import { NEW_ARRIVAL_PRODUCTS } from "./constants";
+import type { HomeNewArrivalProduct } from "@/features/catalog";
+
+interface NewArrivalsSectionProps {
+  products: HomeNewArrivalProduct[];
+}
 
 /**
  * Ícone de seta para a esquerda (anterior).
@@ -62,7 +66,7 @@ function ChevronRightIcon({ className }: { className?: string }) {
  * <NewArrivalsSection />
  * ```
  */
-export function NewArrivalsSection() {
+export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -92,7 +96,7 @@ export function NewArrivalsSection() {
   }, [emblaApi]);
 
   return (
-    <section className="w-full bg-white py-12">
+    <section className="w-full bg-white py-12 select-none">
       <div className="max-w-450 mx-auto px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-6">
           {/* Header with navigation arrows */}
@@ -127,7 +131,7 @@ export function NewArrivalsSection() {
           {/* Embla Carousel */}
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex gap-4">
-              {NEW_ARRIVAL_PRODUCTS.map((product) => (
+              {products.map((product) => (
                 <MiniProductCard
                   key={product.id}
                   name={product.name}

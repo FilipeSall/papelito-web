@@ -1,12 +1,12 @@
 import { ProductCardImage, ProductCardInfo } from "./product-card-components";
-import type { FlashSaleProduct } from "./constants";
+import type { HomeProductCard } from "@/features/catalog";
 
 // ============================================
 // MOLECULAR COMPONENT
 // ============================================
 
 interface ProductCardProps {
-  product: FlashSaleProduct;
+  product: HomeProductCard;
 }
 
 /**

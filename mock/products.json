@@ -143,6 +143,17 @@
         "displayValue": "R$ 151,00",
         "amount": 151.0
       },
+      "homeData": {
+        "displayName": "Brown King Size",
+        "imageUrl": "/images/products/Image (Brown King Size).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Novo"],
+        "isNewArrival": true,
+        "isNew": true,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 20
+      },
       "dimensionsCm": {
         "height": 3.0,
         "width": 11.5,
@@ -263,6 +274,17 @@
         "displayValue": "R$ 121,00",
         "amount": 121.0
       },
+      "homeData": {
+        "displayName": "Tradicional Slim",
+        "imageUrl": "/images/products/Image (Tradicional Slim).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Clássico"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 25
+      },
       "dimensionsCm": {
         "height": 6.0,
         "width": 11.5,
@@ -382,6 +404,17 @@
         "currency": "BRL",
         "displayValue": "R$ 90,00",
         "amount": 90.0
+      },
+      "homeData": {
+        "displayName": "Hemp King Size",
+        "imageUrl": "/images/products/Image (Hemp King Size).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Orgânico"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 21
       },
       "dimensionsCm": {
         "height": 3.0,
@@ -533,6 +566,17 @@
         "displayValue": "R$ 223,00",
         "amount": 223.0
       },
+      "homeData": {
+        "displayName": "Insane Brown",
+        "imageUrl": "/images/products/Image (Insane Brown).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Premium"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 20
+      },
       "dimensionsCm": {
         "height": 6.0,
         "width": 11.5,
@@ -562,6 +606,17 @@
         "currency": "BRL",
         "displayValue": "R$ 223,00",
         "amount": 223.0
+      },
+      "homeData": {
+        "displayName": "Pink Queen Size",
+        "imageUrl": "/images/products/Image (Pink Queen Size).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Especial"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 22
       },
       "dimensionsCm": {
         "height": 6.0,
@@ -593,6 +648,17 @@
         "displayValue": "R$ 240,00",
         "amount": 240.0
       },
+      "homeData": {
+        "displayName": "Alfafa King Size",
+        "imageUrl": "/images/products/Image (Alfafa King Size).png",
+        "type": "Seda",
+        "tags": ["Recém Chegado", "Mais Vendido"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": true,
+        "discountPercent": 24
+      },
       "dimensionsCm": {
         "height": 6.0,
         "width": 11.5,
@@ -622,6 +688,17 @@
         "currency": "BRL",
         "displayValue": "R$ 75,00",
         "amount": 75.0
+      },
+      "homeData": {
+        "displayName": "Piteira Tradicional",
+        "imageUrl": "/images/products/Image (Piteira Tradicional).png",
+        "type": "Piteira",
+        "tags": ["Recém Chegado", "Essencial"],
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 30
       },
       "dimensionsCm": {
         "height": 3.7,
@@ -1074,6 +1151,19 @@
         "currency": "BRL",
         "displayValue": "94.0",
         "amount": 94.0
+      },
+      "homeData": {
+        "displayName": "Bag Tradicional",
+        "imageUrl": "/images/products/Image (Bag Tradicional).png",
+        "type": "Acessório",
+        "tags": ["Recém Chegado", "Kit"],
+        "originalPrice": 24.9,
+        "price": 19.9,
+        "isNewArrival": true,
+        "isNew": false,
+        "isBestSeller": true,
+        "isMostSold": false,
+        "discountPercent": 20
       },
       "dimensionsCm": {
         "height": null,

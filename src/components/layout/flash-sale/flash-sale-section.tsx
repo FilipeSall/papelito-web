@@ -1,7 +1,11 @@
 import { CountdownTimer } from "./countdown-timer";
 import { FlashSaleBadge } from "./flash-sale-badge";
 import { ProductCard } from "./product-card";
-import { FLASH_SALE_PRODUCTS } from "./constants";
+import type { HomeProductCard } from "@/features/catalog";
+
+interface FlashSaleSectionProps {
+  products: HomeProductCard[];
+}
 
 /**
  * Seção de oferta relâmpago exibida abaixo do CategoriesNav.
@@ -10,7 +14,7 @@ import { FLASH_SALE_PRODUCTS } from "./constants";
  * por quatro cards de produto com descontos em destaque. O fundo escuro
  * (#231F20) contrasta com os cards brancos dos produtos.
  */
-export function FlashSaleSection() {
+export function FlashSaleSection({ products }: FlashSaleSectionProps) {
   return (
     <section className="w-full bg-[#231F20] pt-12 pb-12">
       <div className="max-w-450 mx-auto px-43.5">
@@ -28,7 +32,7 @@ export function FlashSaleSection() {
 
           {/* Product grid */}
           <div className="flex flex-row justify-center gap-4">
-            {FLASH_SALE_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

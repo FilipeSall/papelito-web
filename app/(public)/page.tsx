@@ -1,3 +1,4 @@
+import { use } from "react";
 import { BestSellersSection } from "@/components/layout/best-sellers";
 import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
@@ -8,8 +9,15 @@ import { PartnerBanner } from "@/components/layout/partner-banner";
 import { PromoBanner } from "@/components/layout/promo-banner";
 import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
+import { useHomeProducts } from "@/features/catalog";
 
 export default function Home() {
+  // TODO: Quando a integração real estiver pronta, manter este consumo server-side
+  // apontando para a API de catálogo/home em vez do mock local.
+  const { flashSaleProducts, bestSellerProducts, newArrivalProducts } = use(
+    useHomeProducts(),
+  );
+
   return (
     <main className="flex flex-col bg-white">
       <div className="h-[calc(100vh-125px)] flex flex-col min-h-0">
@@ -18,11 +26,11 @@ export default function Home() {
         <FeaturesBar />
         <CategoriesNav />
       </div>
-      <FlashSaleSection />
+      <FlashSaleSection products={flashSaleProducts} />
       <PromoBanner />
-      <BestSellersSection />
+      <BestSellersSection products={bestSellerProducts} />
       <PromoCardsSection />
-      <NewArrivalsSection />
+      <NewArrivalsSection products={newArrivalProducts} />
       <PartnerBanner />
     </main>
   );
