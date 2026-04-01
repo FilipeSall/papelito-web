@@ -1,3 +1,4 @@
+import { BestSellersSection } from "@/components/layout/best-sellers";
 import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
@@ -14,6 +15,7 @@ export default function Home() {
       </div>
       <FlashSaleSection />
       <PromoBanner />
+      <BestSellersSection />
     </main>
   );
 }

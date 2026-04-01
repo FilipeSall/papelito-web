@@ -14,7 +14,7 @@ export function FlashSaleSection() {
   return (
     <section className="w-full bg-[#231F20] pt-12 pb-12">
       <div className="max-w-450 mx-auto px-43.5">
-        <div className="w-full max-w-[1216px] mx-auto flex flex-col gap-8">
+        <div className="w-full max-w-304 mx-auto flex flex-col gap-8">
           {/* Header: badge + countdown */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
