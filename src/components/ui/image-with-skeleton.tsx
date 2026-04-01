@@ -41,7 +41,12 @@ export function ImageWithSkeleton({
   const showFallback = loadingState === "error" && fallback;
 
   return (
-    <div className={joinClasses("relative overflow-hidden", containerClassName)}>
+    <div
+      className={joinClasses(
+        "relative h-full w-full overflow-hidden",
+        containerClassName,
+      )}
+    >
       {showSkeleton && (
         <div aria-hidden className="absolute inset-0 leading-none">
           <Skeleton
