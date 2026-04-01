@@ -4,6 +4,7 @@ import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
 import { HeroSection } from "@/components/layout/hero-section";
 import { PromoBanner } from "@/components/layout/promo-banner";
+import { PromoCardsSection } from "@/components/layout/promo-cards";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <FlashSaleSection />
       <PromoBanner />
       <BestSellersSection />
+      <PromoCardsSection />
     </main>
   );
 }
