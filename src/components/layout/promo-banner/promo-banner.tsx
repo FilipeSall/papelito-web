@@ -30,7 +30,7 @@ function PercentIcon({ className }: { className?: string }) {
  */
 export function PromoBanner() {
   return (
-    <section className="w-full bg-[#FDE047] py-4">
+    <section className="w-full bg-brand-yellow py-4">
       <div className="max-w-450 mx-auto px-43.5 flex justify-center">
         <Link
           href="/promocoes"

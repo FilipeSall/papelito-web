@@ -1,3 +1,4 @@
+import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { PromoMarquee } from "@/components/layout/promo-marquee";
 
@@ -9,6 +10,7 @@ export default function PublicAreaLayout({
       <PublicHeader />
       <PromoMarquee />
       {children}
+      <PublicFooter />
     </section>
   );
 }

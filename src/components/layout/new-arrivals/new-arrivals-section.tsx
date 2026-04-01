@@ -92,7 +92,7 @@ export function NewArrivalsSection() {
   }, [emblaApi]);
 
   return (
-    <section className="w-full bg-white pt-12">
+    <section className="w-full bg-white py-12">
       <div className="max-w-450 mx-auto px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-6">
           {/* Header with navigation arrows */}
