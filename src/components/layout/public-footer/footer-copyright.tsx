@@ -18,6 +18,7 @@ export function FooterCopyright() {
         &copy; {currentYear} Papelito Brasil. Todos os direitos reservados.
       </p>
       <p className="text-xs leading-4 text-white/40">
+        {/* TODO: Substituir CNPJ mockado por dado do backend — GET /api/site-config */}
         CNPJ: 00.000.000/0001-00 | Venda proibida para menores de 18 anos.
       </p>
     </div>

@@ -1,3 +1,5 @@
+// TODO: Substituir por requisição ao backend — GET /api/navigation/header
+// Links de navegação e ícones de ação devem ser configuráveis via CMS/backend.
 export const publicLinks = [
   { href: "/", label: "Home", widthClass: "w-[38.99px]" },
   { href: "/loja", label: "Loja", widthClass: "w-[27.09px]" },

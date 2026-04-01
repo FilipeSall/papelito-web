@@ -18,6 +18,8 @@ export interface NewArrivalProduct {
  *
  * Nove produtos em cards compactos com scroll horizontal.
  */
+// TODO: Substituir por requisição ao backend — GET /api/products?sort=newest&limit=9
+// Os dados mockados abaixo devem ser carregados dinamicamente via API/GraphQL.
 export const NEW_ARRIVAL_PRODUCTS: NewArrivalProduct[] = [
   {
     id: "new-1",

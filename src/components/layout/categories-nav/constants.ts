@@ -1,3 +1,5 @@
+// TODO: Substituir por requisição ao backend — GET /api/categories
+// Os dados mockados abaixo (emoji, título, subtítulo com contagem) devem vir do CMS/backend.
 export const CATEGORIES_NAV_ITEMS = [
   {
     emoji: "🎁",

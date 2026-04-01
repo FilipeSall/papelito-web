@@ -79,6 +79,8 @@ interface SocialLink {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+// TODO: Substituir por requisição ao backend — GET /api/site-config
+// URLs das redes sociais devem vir da configuração do site no CMS/backend.
 const socialLinks: SocialLink[] = [
   { name: "Instagram", href: "https://instagram.com/papelito", icon: InstagramIcon },
   { name: "YouTube", href: "https://youtube.com/papelito", icon: YoutubeIcon },

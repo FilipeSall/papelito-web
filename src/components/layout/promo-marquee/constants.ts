@@ -1,3 +1,5 @@
+// TODO: Substituir por requisição ao backend — GET /api/promotions/marquee
+// Mensagens promocionais do marquee devem ser configuráveis via CMS/backend.
 export const PROMO_ITEMS = [
   { emoji: "⚡", text: "COMPRE 3 LEVE 4 em Sedas" },
   { emoji: "🌿", text: "Hemp King Size com 20% OFF" },

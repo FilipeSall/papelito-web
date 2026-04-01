@@ -27,6 +27,8 @@ export function PartnerBanner() {
   return (
     <section className="w-full bg-brand-yellow relative overflow-hidden">
       <div className="max-w-391 mx-auto flex items-center min-h-113">
+        {/* TODO: Substituir por requisição ao backend — GET /api/banners/partner
+            Conteúdo do banner parceiro (tag, descrição, CTA, imagem) deve vir do CMS/backend. */}
         {/* Content - Left Side */}
         <div className="flex flex-col gap-6 pt-10 pb-16 px-12 lg:px-43.5 z-10">
           <PartnerBannerTag>🤝 Seja um Parceiro</PartnerBannerTag>

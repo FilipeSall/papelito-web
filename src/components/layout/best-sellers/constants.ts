@@ -11,6 +11,8 @@ export type BestSellerProduct = FlashSaleProduct;
  *
  * Grid 4x2 com 8 produtos variados incluindo sedas, piteiras e acessórios.
  */
+// TODO: Substituir por requisição ao backend — GET /api/products?sort=best-sellers&limit=8
+// Os dados mockados abaixo devem ser carregados dinamicamente via API/GraphQL.
 export const BEST_SELLER_PRODUCTS: BestSellerProduct[] = [
   {
     id: "best-1",

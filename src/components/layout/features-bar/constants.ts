@@ -1,3 +1,5 @@
+// TODO: Substituir por requisição ao backend — GET /api/site-config/features
+// Benefícios exibidos na barra de features devem ser configuráveis via CMS/backend.
 export const FEATURES_BAR_ITEMS = [
   {
     icon: "/images/icons/truck.svg",

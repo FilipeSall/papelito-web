@@ -2,6 +2,8 @@ import { FooterLogo } from "./footer-logo";
 import { FooterNavColumn } from "./footer-nav-column";
 import { FooterCopyright } from "./footer-copyright";
 
+// TODO: Substituir por requisição ao backend — GET /api/navigation/footer
+// Links de produto, empresa e suporte devem ser configuráveis via CMS/backend.
 const productLinks = [
   { label: "Sedas", href: "/produtos/sedas" },
   { label: "Piteiras", href: "/produtos/piteiras" },
