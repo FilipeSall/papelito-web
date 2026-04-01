@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { ProductImageFallback } from "@/components/ui";
+import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { ProductCategoryBadge } from "./product-category-badge";
 import { ProductDiscountBadge } from "./product-discount-badge";
 
@@ -27,12 +26,13 @@ export function ProductCardImage({
     <div className="relative w-73 h-48 bg-bg-light shrink-0">
       {image ? (
         <div className="absolute left-4 top-6 w-65 h-36">
-          <Image
+          <ImageWithSkeleton
             src={image}
             alt={name}
             fill
-            className="object-contain"
             sizes="260px"
+            imageClassName="object-contain"
+            fallback={<ProductImageFallback className="h-full w-full" />}
           />
         </div>
       ) : (

@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { ProductImageFallback } from "@/components/ui";
+import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 
 interface MiniProductCardProps {
   /**
@@ -85,12 +84,13 @@ export function MiniProductCard({
       <div className="relative h-36 bg-bg-light">
         {image ? (
           <div className="absolute inset-x-0 top-4 h-28">
-            <Image
+            <ImageWithSkeleton
               src={image}
               alt={name}
               fill
-              className="object-contain"
               sizes="174px"
+              imageClassName="object-contain"
+              fallback={<ProductImageFallback className="h-full w-full" />}
             />
           </div>
         ) : (
