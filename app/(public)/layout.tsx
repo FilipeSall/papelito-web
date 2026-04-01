@@ -1,6 +1,5 @@
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
-import { PromoMarquee } from "@/components/layout/promo-marquee";
 
 export default function PublicAreaLayout({
   children,
@@ -8,7 +7,6 @@ export default function PublicAreaLayout({
   return (
     <section className="flex flex-col bg-white">
       <PublicHeader />
-      <PromoMarquee />
       {children}
       <PublicFooter />
     </section>
