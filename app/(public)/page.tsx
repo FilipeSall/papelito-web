@@ -3,6 +3,7 @@ import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
 import { HeroSection } from "@/components/layout/hero-section";
+import { NewArrivalsSection } from "@/components/layout/new-arrivals";
 import { PromoBanner } from "@/components/layout/promo-banner";
 import { PromoCardsSection } from "@/components/layout/promo-cards";
 
@@ -18,6 +19,7 @@ export default function Home() {
       <PromoBanner />
       <BestSellersSection />
       <PromoCardsSection />
+      <NewArrivalsSection />
     </main>
   );
 }
