@@ -2,6 +2,7 @@ import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
 import { HeroSection } from "@/components/layout/hero-section";
+import { PromoBanner } from "@/components/layout/promo-banner";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
         <CategoriesNav />
       </div>
       <FlashSaleSection />
+      <PromoBanner />
     </main>
   );
 }
