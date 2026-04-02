@@ -52,6 +52,7 @@ export function AuthLoginForm() {
           label="Entrar com Google"
           iconSrc="/images/auth/google-icon.svg"
           iconAlt="Google"
+          provider="google"
         />
       </div>
     </div>
