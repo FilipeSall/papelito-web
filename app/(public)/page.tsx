@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-col bg-white">
-      <div className="h-[calc(100vh-125px)] flex flex-col min-h-0">
+      <div className="flex min-h-[calc(100vh-66px)] flex-col pb-8 md:min-h-[calc(100vh-93px)] md:pb-10">
         <PromoMarquee />
         <HeroSection />
         <FeaturesBar />

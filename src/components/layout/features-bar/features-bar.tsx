@@ -11,7 +11,7 @@ import { FEATURES_BAR_ITEMS } from "./constants";
 export function FeaturesBar() {
   return (
     <section className="w-full bg-white border-b border-[#F3F4F6]">
-      <div className="max-w-450 mx-auto px-43.5 flex flex-row h-17">
+      <div className="max-w-450 mx-auto px-43.5 flex flex-row h-18">
         {FEATURES_BAR_ITEMS.map((item, index) => (
           <FeatureItem
             key={item.title}

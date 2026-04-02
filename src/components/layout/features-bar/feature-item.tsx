@@ -21,7 +21,7 @@ export function FeatureItem({
 }: FeatureItemProps) {
   return (
     <div
-      className={`flex flex-1 flex-row items-center pl-6 gap-3 h-[68px]${
+      className={`flex flex-1 flex-row items-center pl-6 gap-3 h-[72px]${
         !isLast ? " border-r border-[#F3F4F6]" : ""
       }`}
     >

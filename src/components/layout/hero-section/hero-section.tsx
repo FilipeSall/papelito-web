@@ -8,17 +8,20 @@ import Image from "next/image";
  */
 export function HeroSection() {
   return (
-    <section className="relative flex-1 overflow-hidden">
-      {/* TODO: Substituir por requisição ao backend — GET /api/banners/hero
-          O banner deve ser dinâmico (imagem, alt text e link configuráveis via CMS/backend). */}
-      <Image
-        src="/images/banner-default.png"
-        alt="15% de desconto na primeira compra — use o cupom P4P3LITO26"
-        fill
-        priority
-        className="object-fill"
-        sizes="100vw"
-      />
-    </section>
+    <>
+      <section className="relative flex-1 overflow-hidden">
+        {/* TODO: Substituir por requisição ao backend — GET /api/banners/hero
+            O banner deve ser dinâmico (imagem, alt text e link configuráveis via CMS/backend). */}
+        <Image
+          src="/images/banner-default.png"
+          alt="15% de desconto na primeira compra — use o cupom P4P3LITO26"
+          fill
+          priority
+          className="object-fill scale-[1.02]"
+          sizes="100vw"
+        />
+      </section>
+      <div style={{ width: "100%", height: "0.25rem", background: "#FFE500" }} />
+    </>
   );
 }

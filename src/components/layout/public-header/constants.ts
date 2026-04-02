@@ -8,7 +8,6 @@ export const publicLinks = [
 ];
 
 export const actionIcons = [
-  { href: "/busca", label: "Buscar", src: "/images/icons/search.svg", iconClass: "h-5 w-5" },
   { href: "/carrinho", label: "Carrinho", src: "/images/icons/cart.svg", iconClass: "h-7 w-7" },
   { href: "/perfil", label: "Perfil", src: "/images/icons/profile.svg", iconClass: "h-7 w-7" },
 ];

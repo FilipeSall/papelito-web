@@ -16,7 +16,7 @@ export function MiniProductCard({
   image,
 }: MiniProductCardProps) {
   return (
-    <div className="w-44 h-65.5 bg-white border border-[#F3F4F6] rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col shrink-0">
+    <div className="h-65.5 w-44 shrink-0 snap-start select-none overflow-hidden rounded-2xl border border-[#F3F4F6] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex flex-col">
       <div className="relative h-36 bg-bg-light">
         {image ? (
           <div className="absolute inset-x-0 top-4 h-28">
@@ -25,7 +25,7 @@ export function MiniProductCard({
               alt={name}
               fill
               sizes="174px"
-              imageClassName="object-contain"
+              imageClassName="pointer-events-none select-none object-contain"
               fallback={<ProductImageFallback className="h-full w-full" />}
             />
           </div>
