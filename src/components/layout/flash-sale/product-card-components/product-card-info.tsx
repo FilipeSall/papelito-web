@@ -1,6 +1,4 @@
-import { AddToCartButton } from "../add-to-cart-button";
-import { StarRating } from "../star-rating";
-import { ProductPrice } from "./product-price";
+import { StarRating, ProductPrice, AddToCartButton } from "@/components/ui";
 
 interface ProductCardInfoProps {
   category: string;
@@ -11,13 +9,6 @@ interface ProductCardInfoProps {
   price: number;
 }
 
-/**
- * Container molecular de informações do produto.
- *
- * Compõe a seção inferior do card com categoria, nome, classificação
- * por estrelas e preços. Inclui o botão "Adicionar ao carrinho" alinhado
- * à direita.
- */
 export function ProductCardInfo({
   category,
   name,

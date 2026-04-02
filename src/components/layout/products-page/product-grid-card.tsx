@@ -59,7 +59,7 @@ export interface ProductGridItem {
   /** Número de avaliações */
   reviews: number;
   /** Caminho da imagem */
-  image: string;
+  image?: string;
 }
 
 interface ProductGridCardProps {

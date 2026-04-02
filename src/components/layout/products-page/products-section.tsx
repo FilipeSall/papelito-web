@@ -1,8 +1,25 @@
 import { ProductFilterTabs } from "./product-filter-tabs";
 import { ProductFilterSidebar } from "./product-filter-sidebar";
 import { ProductsGrid } from "./products-grid";
+import { ProductsPagination } from "./products-pagination";
 import { ViewToggle } from "./view-toggle";
-import { PRODUCTS_LIST } from "./constants";
+import type {
+  ProductTypeId,
+  ProductsCatalogItem,
+  ProductsCatalogTab,
+} from "@/features/catalog";
+
+interface ProductsSectionProps {
+  products: ProductsCatalogItem[];
+  tabs: ProductsCatalogTab[];
+  selectedTypes: Exclude<ProductTypeId, "todos">[];
+  minPrice: number | null;
+  maxPrice: number | null;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  activeType: ProductTypeId;
+}
 
 /**
  * Seção principal de listagem de produtos.
@@ -21,21 +38,34 @@ import { PRODUCTS_LIST } from "./constants";
  * <ProductsSection />
  * ```
  */
-export function ProductsSection() {
-  const productCount = PRODUCTS_LIST.length;
-
+export function ProductsSection({
+  products,
+  tabs,
+  selectedTypes,
+  minPrice,
+  maxPrice,
+  totalItems,
+  totalPages,
+  currentPage,
+  activeType,
+}: ProductsSectionProps) {
   return (
     <section className="bg-white py-8">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Filter Tabs */}
         <div className="mb-6">
-          <ProductFilterTabs activeTab="todos" />
+          <ProductFilterTabs
+            activeTab={activeType}
+            tabs={tabs}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+          />
         </div>
 
         {/* Products count and view toggle */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-text-secondary">
-            <span className="font-bold text-brand-dark">{productCount}</span>{" "}
+            <span className="font-bold text-brand-dark">{totalItems}</span>{" "}
             produtos encontrados
           </p>
           <ViewToggle activeView="grid" />
@@ -44,11 +74,23 @@ export function ProductsSection() {
         {/* Main content: Sidebar + Grid */}
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
-          <ProductFilterSidebar />
+          <ProductFilterSidebar
+            selectedTypes={selectedTypes}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+          />
 
           {/* Products Grid */}
           <div className="flex-1">
-            <ProductsGrid products={PRODUCTS_LIST} />
+            <ProductsGrid products={products} />
+            <ProductsPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              activeType={activeType}
+              selectedTypes={selectedTypes}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+            />
           </div>
         </div>
       </div>

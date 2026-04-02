@@ -1,25 +1,38 @@
+import Link from "next/link";
+import type { ProductTypeId } from "@/features/catalog";
+
+type SpecificType = Exclude<ProductTypeId, "todos">;
+
 /**
  * Categoria de filtro disponível.
  */
 interface FilterCategory {
-  id: string;
+  id: ProductTypeId;
   label: string;
-  checked: boolean;
 }
+
+const SPECIFIC_CATEGORIES: SpecificType[] = [
+  "sedas",
+  "piteiras",
+  "filtros",
+  "acessorios",
+];
 
 /**
  * Lista de categorias padrão para o filtro.
  */
 const DEFAULT_CATEGORIES: FilterCategory[] = [
-  { id: "todos", label: "Todos", checked: true },
-  { id: "sedas", label: "Sedas", checked: false },
-  { id: "piteiras", label: "Piteiras", checked: false },
-  { id: "acessorios", label: "Acessórios", checked: false },
+  { id: "todos", label: "Todos" },
+  { id: "sedas", label: "Sedas" },
+  { id: "piteiras", label: "Piteiras" },
+  { id: "filtros", label: "Filtros" },
+  { id: "acessorios", label: "Acessórios" },
 ];
 
 interface PriceRangeInputProps {
   label: string;
-  value: string;
+  value?: number | null;
+  name: "precoMin" | "precoMax";
   placeholder: string;
 }
 
@@ -29,13 +42,14 @@ interface PriceRangeInputProps {
  * Campo de input numérico estilizado para inserção de valores
  * mínimos ou máximos de preço.
  */
-function PriceRangeInput({ label, value, placeholder }: PriceRangeInputProps) {
+function PriceRangeInput({ label, value, name, placeholder }: PriceRangeInputProps) {
   return (
     <div className="flex-1">
       <label className="sr-only">{label}</label>
       <input
+        name={name}
         type="text"
-        defaultValue={value}
+        defaultValue={typeof value === "number" ? String(value) : ""}
         placeholder={placeholder}
         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent"
       />
@@ -45,58 +59,116 @@ function PriceRangeInput({ label, value, placeholder }: PriceRangeInputProps) {
 
 interface CategoryCheckboxProps {
   category: FilterCategory;
+  checked: boolean;
+  href: string;
+}
+
+function CheckboxIndicator({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={`inline-flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+        checked
+          ? "border-brand-dark bg-brand-dark"
+          : "border-gray-300 bg-white group-hover:border-brand-dark"
+      }`}
+      aria-hidden
+    >
+      {checked ? (
+        <svg viewBox="0 0 16 16" className="h-3 w-3 text-white" fill="none">
+          <path
+            d="M3.2 8.2L6.2 11.2L12.8 4.8"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : null}
+    </span>
+  );
 }
 
 /**
- * Checkbox atômico de categoria.
- *
- * Item de checkbox estilizado para seleção de categorias
- * no filtro lateral.
+ * Checkbox de categoria com navegação server-side.
  */
-function CategoryCheckbox({ category }: CategoryCheckboxProps) {
+function CategoryCheckbox({ category, checked, href }: CategoryCheckboxProps) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer group">
-      <input
-        type="checkbox"
-        defaultChecked={category.checked}
-        className="w-4 h-4 rounded border-gray-300 text-brand-dark focus:ring-brand-yellow cursor-pointer"
-      />
+    <Link href={href} className="group flex items-center gap-2 cursor-pointer">
+      <CheckboxIndicator checked={checked} />
       <span className="text-sm text-text-secondary group-hover:text-brand-dark transition-colors">
         {category.label}
       </span>
-    </label>
+    </Link>
   );
 }
 
 interface ProductFilterSidebarProps {
   /** Valor mínimo do filtro de preço */
-  minPrice?: string;
+  minPrice?: number | null;
   /** Valor máximo do filtro de preço */
-  maxPrice?: string;
+  maxPrice?: number | null;
   /** Lista de categorias para filtro */
   categories?: FilterCategory[];
+  /** Categorias selecionadas via query params */
+  selectedTypes: SpecificType[];
+}
+
+function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
+  if (target === "todos") {
+    return [] as SpecificType[];
+  }
+
+  const currentSet = new Set(current);
+
+  if (currentSet.has(target)) {
+    currentSet.delete(target);
+  } else {
+    currentSet.add(target);
+  }
+
+  const ordered = SPECIFIC_CATEGORIES.filter((item) => currentSet.has(item));
+  return ordered;
+}
+
+function buildHrefFromSelection(
+  selection: SpecificType[],
+  minPrice: number | null,
+  maxPrice: number | null,
+) {
+  const params = new URLSearchParams();
+  if (selection.length === 1) {
+    params.set("tipo", selection[0]);
+  } else {
+    if (selection.length > 1) {
+      params.set("tipos", selection.join(","));
+    }
+  }
+
+  if (typeof minPrice === "number") {
+    params.set("precoMin", String(minPrice));
+  }
+  if (typeof maxPrice === "number") {
+    params.set("precoMax", String(maxPrice));
+  }
+
+  const query = params.toString();
+  return query ? `/produtos?${query}` : "/produtos";
 }
 
 /**
  * Sidebar de filtros da página de produtos.
  *
- * Componente molecular que agrupa os filtros disponíveis:
- * - Faixa de preço com inputs min/max
- * - Lista de categorias com checkboxes
- * - Link para limpar todos os filtros
- *
- * Por enquanto, os filtros são apenas visuais (estáticos).
- *
- * @example
- * ```tsx
- * <ProductFilterSidebar minPrice="0" maxPrice="30" />
- * ```
+ * Implementa filtros por categoria com navegação por query params
+ * para manter o fluxo server-side.
  */
 export function ProductFilterSidebar({
-  minPrice = "0",
-  maxPrice = "30",
+  minPrice = null,
+  maxPrice = null,
   categories = DEFAULT_CATEGORIES,
+  selectedTypes,
 }: ProductFilterSidebarProps) {
+  const isTodosChecked = selectedTypes.length === 0;
+
   return (
     <aside className="w-full md:w-56 shrink-0">
       <div className="bg-white rounded-xl border border-gray-100 p-4">
@@ -110,10 +182,35 @@ export function ProductFilterSidebar({
           <h4 className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2">
             Faixa de Preço
           </h4>
-          <div className="flex items-center gap-2">
-            <PriceRangeInput label="Preço mínimo" value={minPrice} placeholder="Min" />
-            <PriceRangeInput label="Preço máximo" value={maxPrice} placeholder="Max" />
-          </div>
+          <form method="GET" action="/produtos" className="space-y-2">
+            {selectedTypes.length === 1 ? (
+              <input type="hidden" name="tipo" value={selectedTypes[0]} />
+            ) : null}
+            {selectedTypes.length > 1 ? (
+              <input type="hidden" name="tipos" value={selectedTypes.join(",")} />
+            ) : null}
+
+            <div className="flex items-center gap-2">
+              <PriceRangeInput
+                label="Preço mínimo"
+                name="precoMin"
+                value={minPrice}
+                placeholder="Min"
+              />
+              <PriceRangeInput
+                label="Preço máximo"
+                name="precoMax"
+                value={maxPrice}
+                placeholder="Max"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-brand-dark px-3 py-2 text-xs font-black text-white hover:opacity-90 transition-opacity"
+            >
+              Aplicar preço
+            </button>
+          </form>
         </div>
 
         {/* Divider */}
@@ -125,9 +222,23 @@ export function ProductFilterSidebar({
             Categorias
           </h4>
           <div className="flex flex-col gap-2.5">
-            {categories.map((category) => (
-              <CategoryCheckbox key={category.id} category={category} />
-            ))}
+            {categories.map((category) => {
+              const checked =
+                category.id === "todos"
+                  ? isTodosChecked
+                  : selectedTypes.includes(category.id as SpecificType);
+
+              const nextSelection = getToggledSelection(selectedTypes, category.id);
+
+              return (
+                <CategoryCheckbox
+                  key={category.id}
+                  category={category}
+                  checked={checked}
+                  href={buildHrefFromSelection(nextSelection, minPrice, maxPrice)}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -135,12 +246,12 @@ export function ProductFilterSidebar({
         <hr className="my-4 border-gray-100" />
 
         {/* Clear Filters */}
-        <button
-          type="button"
+        <Link
+          href="/produtos"
           className="text-sm text-text-muted hover:text-brand-dark transition-colors underline"
         >
           Limpar filtros
-        </button>
+        </Link>
       </div>
     </aside>
   );

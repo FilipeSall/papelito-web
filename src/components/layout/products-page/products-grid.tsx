@@ -13,7 +13,7 @@ interface ProductsGridProps {
  *
  * @example
  * ```tsx
- * <ProductsGrid products={PRODUCTS_LIST} />
+ * <ProductsGrid products={products} />
  * ```
  */
 export function ProductsGrid({ products }: ProductsGridProps) {

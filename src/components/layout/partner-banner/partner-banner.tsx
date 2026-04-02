@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { PartnerBannerTag } from "./partner-banner-tag";
+import { Tag } from "@/components/ui";
 import { PdvPerfeitoLogo } from "./pdv-perfeito-logo";
 import { PartnerBannerCta } from "./partner-banner-cta";
 
@@ -31,7 +31,7 @@ export function PartnerBanner() {
             Conteúdo do banner parceiro (tag, descrição, CTA, imagem) deve vir do CMS/backend. */}
         {/* Content - Left Side */}
         <div className="flex flex-col gap-6 pt-10 pb-16 px-12 lg:px-43.5 z-10">
-          <PartnerBannerTag>🤝 Seja um Parceiro</PartnerBannerTag>
+          <Tag>🤝 Seja um Parceiro</Tag>
 
           <PdvPerfeitoLogo className="w-full max-w-110.25" />
 

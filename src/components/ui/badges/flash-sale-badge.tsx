@@ -1,9 +1,3 @@
-/**
- * Badge atômico "Oferta Relâmpago".
- *
- * Pill amarelo com ícone de raio (SVG) e texto em caixa-alta.
- * Utilizado no cabeçalho da seção de ofertas em flash.
- */
 export function FlashSaleBadge() {
   return (
     <div className="flex items-center gap-2 px-4 h-9 bg-brand-yellow rounded-[14px]">

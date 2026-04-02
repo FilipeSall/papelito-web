@@ -1,33 +1,6 @@
 import Link from "next/link";
+import { PercentIcon } from "@/components/ui/icons";
 
-/**
- * Ícone de porcentagem para o banner promocional.
- */
-function PercentIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <line x1="19" x2="5" y1="5" y2="19" />
-      <circle cx="6.5" cy="6.5" r="2.5" />
-      <circle cx="17.5" cy="17.5" r="2.5" />
-    </svg>
-  );
-}
-
-/**
- * Banner promocional exibido abaixo do CategoriesNav.
- *
- * Apresenta uma barra amarela vibrante com um botão centralizado
- * que direciona o usuário para a página de promoções.
- */
 export function PromoBanner() {
   return (
     <section className="w-full bg-brand-yellow py-4">

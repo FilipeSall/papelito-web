@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SectionHeader } from "@/components/ui";
+import { SectionHeader, ArrowRightIcon } from "@/components/ui";
 import { ProductCard } from "../flash-sale/product-card";
 import type { HomeProductCard } from "@/features/catalog";
 
@@ -7,49 +7,11 @@ interface BestSellersSectionProps {
   products: HomeProductCard[];
 }
 
-/**
- * Ícone de seta para a direita usado no botão de ação principal.
- */
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M5 12h14M12 5l7 7-7 7" />
-    </svg>
-  );
-}
-
-/**
- * Seção "Nossos Produtos" / "Mais Vendidos".
- *
- * Organismo composto que exibe:
- * - Cabeçalho com emoji, rótulo "Mais Vendidos", título "NOSSOS PRODUTOS"
- *   e link "Ver todos" no canto superior direito
- * - Grid 4x2 de cards de produto reutilizando o `ProductCard` existente
- * - Botão centralizado "Ver todos os produtos" no rodapé da seção
- *
- * Utiliza composição reutilizando componentes atômicos (`StarRating`,
- * `AddToCartButton`) e moleculares (`ProductCard`) da seção flash-sale.
- *
- * @example
- * ```tsx
- * <BestSellersSection />
- * ```
- */
 export function BestSellersSection({ products }: BestSellersSectionProps) {
   return (
     <section className="w-full bg-white py-14">
       <div className="max-w-450 mx-auto px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-8">
-          {/* Header */}
           <SectionHeader
             emoji="🔥"
             label="Mais Vendidos"
@@ -58,14 +20,12 @@ export function BestSellersSection({ products }: BestSellersSectionProps) {
             linkText="Ver todos"
           />
 
-          {/* Product grid 4x2 */}
           <div className="grid grid-cols-4 gap-5">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
-          {/* Bottom CTA */}
           <div className="flex justify-center pt-4">
             <Link
               href="/produtos"

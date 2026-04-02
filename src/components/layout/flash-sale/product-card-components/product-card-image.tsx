@@ -1,6 +1,4 @@
-import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
-import { ProductCategoryBadge } from "./product-category-badge";
-import { ProductDiscountBadge } from "./product-discount-badge";
+import { ImageWithSkeleton, ProductImageFallback, CategoryBadge, DiscountBadge } from "@/components/ui";
 
 interface ProductCardImageProps {
   image?: string;
@@ -9,13 +7,6 @@ interface ProductCardImageProps {
   discount: number;
 }
 
-/**
- * Container atômico de imagem do produto.
- *
- * Área com fundo claro (`bg-bg-light`) que encapsula a imagem do produto,
- * o badge de categoria e o badge de desconto. Utiliza `ProductImageFallback`
- * quando nenhuma imagem é fornecida.
- */
 export function ProductCardImage({
   image,
   name,
@@ -39,8 +30,8 @@ export function ProductCardImage({
         <ProductImageFallback className="absolute inset-0" />
       )}
 
-      <ProductCategoryBadge label={badge} />
-      <ProductDiscountBadge discount={discount} />
+      <CategoryBadge label={badge} />
+      <DiscountBadge discount={discount} />
     </div>
   );
 }
