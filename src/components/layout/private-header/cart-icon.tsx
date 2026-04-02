@@ -16,10 +16,10 @@ export function PrivateHeaderCartIcon({ buttonClass, count = 0 }: PrivateHeaderC
       <Image
         alt=""
         aria-hidden
-        className="h-5 w-5 shrink-0 brightness-0 invert"
-        height={20}
+        className="h-7 w-7 shrink-0 brightness-0 invert"
+        height={28}
         src="/images/icons/cart.svg"
-        width={20}
+        width={28}
       />
       {count > 0 && (
         <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark">

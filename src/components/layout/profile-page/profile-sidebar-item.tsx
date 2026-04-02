@@ -22,12 +22,9 @@ export function ProfileSidebarItem({
   isActive = false,
   variant = "default",
 }: ProfileSidebarItemProps) {
-  const baseClasses =
-    "flex w-full items-center justify-between border-b border-gray-100 px-5 py-4 transition hover:bg-gray-50";
+  const baseClasses = "flex w-full items-center justify-between border-b border-gray-100 px-5 py-4";
 
-  const activeClasses = isActive
-    ? "bg-brand-dark text-white hover:bg-brand-dark"
-    : "";
+  const activeClasses = isActive ? "bg-brand-dark text-white" : "";
 
   const textColor =
     variant === "danger"

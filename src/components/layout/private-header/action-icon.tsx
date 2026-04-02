@@ -26,9 +26,9 @@ export function PrivateHeaderActionIcon({
         alt=""
         aria-hidden
         className={`shrink-0 brightness-0 invert ${iconClass}`}
-        height={20}
+        height={28}
         src={src}
-        width={20}
+        width={28}
       />
     </Link>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PrivateHeaderLinkLoadingIndicator } from "./link-loading-indicator";
 
 type MobilePrivateLink = {
   href: string;
@@ -44,11 +45,12 @@ export function PrivateHeaderMobileMenu({ iconButtonClass, links }: PrivateHeade
       >
         {links.map((item) => (
           <Link
-            className="text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-70"
+            className="relative inline-flex pr-4 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-70"
             href={item.href}
             key={item.label}
           >
             {item.label}
+            <PrivateHeaderLinkLoadingIndicator className="absolute right-0 top-1/2 -translate-y-1/2" />
           </Link>
         ))}
       </nav>
