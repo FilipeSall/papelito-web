@@ -16,8 +16,6 @@ export function BestSellersSection({ products }: BestSellersSectionProps) {
             emoji="🔥"
             label="Mais Vendidos"
             title={"NOSSOS\nPRODUTOS"}
-            href="/produtos"
-            linkText="Ver todos"
           />
 
           <div className="grid grid-cols-4 gap-5">
