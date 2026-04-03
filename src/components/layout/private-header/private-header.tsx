@@ -6,7 +6,7 @@ import { PrivateHeaderMobileMenu } from "./mobile-menu";
 import { PrivateHeaderNav } from "./nav";
 
 const iconButtonClass =
-  "flex h-7 w-7 shrink-0 items-center justify-center transition hover:opacity-70";
+  "order-0 flex h-7 w-7 flex-none grow-0 items-center justify-center transition hover:opacity-70";
 
 /**
  * Cabeçalho das páginas privadas da Papelito.
@@ -18,12 +18,12 @@ export function PrivateHeader() {
   const cartItemCount = 2;
 
   return (
-    <header className="w-full bg-brand-dark">
+    <header className="w-full border-b border-white/10 bg-brand-dark">
       {/* Mobile */}
       <div className="mx-auto flex w-full max-w-391 items-center justify-between px-4 py-3.75 md:hidden">
         <PrivateHeaderLogo />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2 pt-1">
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
 
           <PrivateHeaderMobileMenu
@@ -34,12 +34,12 @@ export function PrivateHeader() {
       </div>
 
       {/* Desktop */}
-      <div className="mx-auto hidden w-full max-w-391 items-center justify-between px-8 py-4 md:flex">
+      <div className="mx-auto hidden w-full max-w-391 grid-cols-[1fr_auto_1fr] items-center gap-6 md:grid md:h-23.25 md:px-8">
         <PrivateHeaderLogo />
 
         <PrivateHeaderNav links={privateLinks} />
 
-        <div className="flex h-9 items-center gap-4">
+        <div className="order-2 flex h-9 flex-none grow-0 items-center justify-self-end gap-4">
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
           <PrivateHeaderLogoutButton />
         </div>
