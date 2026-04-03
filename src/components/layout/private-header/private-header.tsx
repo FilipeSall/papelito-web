@@ -1,8 +1,7 @@
-import { PrivateHeaderActionIcon } from "./action-icon";
-import { PrivateHeaderAuthButtons } from "./auth-buttons";
 import { PrivateHeaderCartIcon } from "./cart-icon";
-import { actionIcons, privateLinks } from "./constants";
+import { privateLinks } from "./constants";
 import { PrivateHeaderLogo } from "./logo";
+import { PrivateHeaderLogoutButton } from "./logout-button";
 import { PrivateHeaderMobileMenu } from "./mobile-menu";
 import { PrivateHeaderNav } from "./nav";
 
@@ -25,14 +24,6 @@ export function PrivateHeader() {
         <PrivateHeaderLogo />
 
         <div className="flex items-center gap-2">
-          {actionIcons.map((item) => (
-            <PrivateHeaderActionIcon
-              buttonClass={iconButtonClass}
-              key={item.label}
-              {...item}
-            />
-          ))}
-
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
 
           <PrivateHeaderMobileMenu
@@ -49,19 +40,8 @@ export function PrivateHeader() {
         <PrivateHeaderNav links={privateLinks} />
 
         <div className="flex h-9 items-center gap-4">
-          <div className="flex items-center gap-4">
-            {actionIcons.map((item) => (
-              <PrivateHeaderActionIcon
-                buttonClass={iconButtonClass}
-                key={item.label}
-                {...item}
-              />
-            ))}
-
-            <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
-          </div>
-
-          <PrivateHeaderAuthButtons />
+          <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
+          <PrivateHeaderLogoutButton />
         </div>
       </div>
     </header>

@@ -1,50 +1,37 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+
+import { authOptions } from "@/lib/auth";
 import {
   ProfileContent,
   ProfileDataForm,
   ProfileHero,
 } from "@/components/layout/profile-page";
 
-// TODO: Obter dados do usuario via API/context de autenticacao
-const mockUser = {
-  name: "Joao Silva",
-  email: "joao.silva@email.com",
-  badge: "MEMBRO PREMIUM",
-  points: 1240,
-};
+export default async function ProfileDataPage() {
+  const session = await getServerSession(authOptions);
 
-// TODO: Obter dados cadastrais do usuario via API
-const mockUserData = {
-  name: "Joao Silva",
-  email: "joao.silva@email.com",
-  phone: "(11) 99999-9999",
-  cpf: "000.000.000-00",
-  birthDate: "",
-};
+  if (!session?.user) redirect("/entrar");
 
-/**
- * Pagina de dados pessoais do usuario.
- *
- * Exibe o formulario com os dados cadastrais do usuario
- * permitindo visualizacao e edicao dos mesmos.
- *
- * Rotas relacionadas:
- * - /perfil - Meus Pedidos
- * - /perfil/dados - Meus Dados (atual)
- * - /perfil/enderecos - Enderecos
- * - /perfil/pagamentos - Pagamentos
- * - /perfil/configuracoes - Configuracoes
- */
-export default function ProfileDataPage() {
+  const { name, email, image } = session.user;
+
   return (
     <>
       <ProfileHero
-        badge={mockUser.badge}
-        email={mockUser.email}
-        name={mockUser.name}
-        points={mockUser.points}
+        email={email ?? ""}
+        image={image}
+        name={name ?? ""}
       />
       <ProfileContent>
-        <ProfileDataForm userData={mockUserData} />
+        <ProfileDataForm
+          userData={{
+            name: name ?? "",
+            email: email ?? "",
+            phone: "",
+            cpf: "",
+            birthDate: "",
+          }}
+        />
       </ProfileContent>
     </>
   );

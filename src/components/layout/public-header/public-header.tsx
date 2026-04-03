@@ -1,6 +1,5 @@
-import { PublicHeaderActionIcon } from "./action-icon";
-import { PublicHeaderAuthButtons } from "./auth-buttons";
-import { actionIcons, publicLinks } from "./constants";
+import { publicLinks } from "./constants";
+import { PublicHeaderDesktopActions, PublicHeaderMobileActions } from "./header-actions";
 import { PublicHeaderLogo } from "./logo";
 import { PublicHeaderMobileMenu } from "./mobile-menu";
 import { PublicHeaderNav } from "./nav";
@@ -11,6 +10,8 @@ const iconButtonClass =
 /**
  * Cabeçalho das páginas públicas da Papelito.
  * Compõe as variantes mobile e desktop a partir dos sub-componentes atômicos do módulo.
+ * Quando logado: exibe ícones de carrinho e perfil.
+ * Quando deslogado: exibe botões de "Entrar" e "Cadastrar".
  */
 export function PublicHeader() {
   return (
@@ -20,14 +21,7 @@ export function PublicHeader() {
         <PublicHeaderLogo variant="mobile" />
 
         <div className="flex items-start gap-2 pt-1">
-          {actionIcons.map((item) => (
-            <PublicHeaderActionIcon
-              buttonClass={iconButtonClass}
-              invertColors
-              key={item.label}
-              {...item}
-            />
-          ))}
+          <PublicHeaderMobileActions invertColors />
 
           <PublicHeaderMobileMenu
             iconButtonClass={`${iconButtonClass} text-white`}
@@ -42,18 +36,8 @@ export function PublicHeader() {
 
         <PublicHeaderNav links={publicLinks} />
 
-        <div className="order-2 flex h-9 w-[284.36px] flex-none grow-0 items-center justify-self-end gap-4">
-          <div className="flex h-9 w-29 flex-none items-start gap-4 pt-1">
-            {actionIcons.map((item) => (
-              <PublicHeaderActionIcon
-                buttonClass={iconButtonClass}
-                key={item.label}
-                {...item}
-              />
-            ))}
-          </div>
-
-          <PublicHeaderAuthButtons />
+        <div className="order-2 flex h-9 flex-none grow-0 items-center justify-self-end gap-4">
+          <PublicHeaderDesktopActions />
         </div>
       </div>
     </header>

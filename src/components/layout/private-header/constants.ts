@@ -6,6 +6,4 @@ export const privateLinks = [
   { href: "/sobre", label: "Sobre", widthClass: "w-[39.05px]" },
 ];
 
-export const actionIcons = [
-  { href: "/perfil", label: "Perfil", src: "/images/icons/profile.svg", iconClass: "h-7 w-7" },
-];
+export const actionIcons: { href: string; label: string; src: string; iconClass: string }[] = [];

@@ -1,8 +1,27 @@
+import Image from "next/image";
+
+type ProfileAvatarProps = {
+  image?: string | null;
+  name?: string | null;
+};
+
 /**
  * Avatar circular do perfil do usuário.
- * Exibe o ícone de usuário em um círculo amarelo.
+ * Exibe a foto do Google se disponível, ou o ícone padrão em círculo amarelo.
  */
-export function ProfileAvatar() {
+export function ProfileAvatar({ image, name }: ProfileAvatarProps) {
+  if (image) {
+    return (
+      <Image
+        alt={name ?? "Avatar"}
+        className="h-20 w-20 shrink-0 rounded-full object-cover"
+        height={80}
+        src={image}
+        width={80}
+      />
+    );
+  }
+
   return (
     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand-yellow">
       <svg

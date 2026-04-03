@@ -1,17 +1,13 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+
+import { authOptions } from "@/lib/auth";
 import {
   Order,
   OrdersList,
   ProfileContent,
   ProfileHero,
 } from "@/components/layout/profile-page";
-
-// TODO: Obter dados do usuário via API/context
-const mockUser = {
-  name: "João Silva",
-  email: "joao.silva@email.com",
-  badge: "MEMBRO PREMIUM",
-  points: 1240,
-};
 
 // TODO: Obter pedidos do usuário via API
 const mockOrders: Order[] = [
@@ -41,14 +37,19 @@ const mockOrders: Order[] = [
   },
 ];
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) redirect("/entrar");
+
+  const { name, email, image } = session.user;
+
   return (
     <>
       <ProfileHero
-        badge={mockUser.badge}
-        email={mockUser.email}
-        name={mockUser.name}
-        points={mockUser.points}
+        email={email ?? ""}
+        image={image}
+        name={name ?? ""}
       />
       <ProfileContent>
         <OrdersList orders={mockOrders} />
