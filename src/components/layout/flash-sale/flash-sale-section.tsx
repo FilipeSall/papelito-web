@@ -1,7 +1,8 @@
-import { CountdownTimer } from "./countdown-timer";
 import { ProductCard } from "./product-card";
 import type { HomeProductCard } from "@/features/catalog";
 import { FlashSaleBadge } from "@/components/ui";
+
+import { CountdownTimerNoSSR } from "./countdown-timer-no-ssr";
 
 interface FlashSaleSectionProps {
   products: HomeProductCard[];
@@ -19,7 +20,7 @@ export function FlashSaleSection({ products }: FlashSaleSectionProps) {
                 Acabando hoje!
               </span>
             </div>
-            <CountdownTimer />
+            <CountdownTimerNoSSR />
           </div>
 
           <div className="flex flex-row justify-center gap-4">

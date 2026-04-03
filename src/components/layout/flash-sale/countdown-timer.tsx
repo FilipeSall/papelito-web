@@ -13,7 +13,7 @@ function parseTime(totalSeconds: number) {
 
 function Separator() {
   return (
-    <span className="font-black text-xl leading-7 tracking-[-0.449219px] text-brand-yellow self-start mt-[14px] mx-1">
+    <span className="font-black text-xl leading-7 tracking-[-0.449219px] text-brand-yellow self-start mt-3.5 mx-1">
       :
     </span>
   );
