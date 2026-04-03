@@ -16,7 +16,7 @@ export function AuthSocialButton({
   iconSrc,
   iconAlt,
   provider,
-  callbackUrl = "/dashboard",
+  callbackUrl = "/produtos",
 }: AuthSocialButtonProps) {
   return (
     <button
