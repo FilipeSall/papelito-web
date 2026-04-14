@@ -1,5 +1,3 @@
-"use client";
-
 import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 
 /**
@@ -66,7 +64,6 @@ export interface ProductGridItem {
 
 interface ProductGridCardProps {
   product: ProductGridItem;
-  onAddedToCart?: (productName: string) => void;
 }
 
 /**
@@ -93,7 +90,7 @@ interface ProductGridCardProps {
  * />
  * ```
  */
-export function ProductGridCard({ product, onAddedToCart }: ProductGridCardProps) {
+export function ProductGridCard({ product }: ProductGridCardProps) {
   const {
     category,
     name,
@@ -162,7 +159,6 @@ export function ProductGridCard({ product, onAddedToCart }: ProductGridCardProps
           <AddToCartButton
             label="Adicionar"
             className="min-w-[104px] w-auto px-3"
-            onClick={() => onAddedToCart?.(name)}
             product={{
               id: product.id,
               category,

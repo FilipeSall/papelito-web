@@ -4,6 +4,8 @@ import { CartIcon } from "./icons";
 import type { CartProductInput } from "@/features/cart";
 import { useCartStore } from "@/features/cart";
 
+export const ADD_TO_CART_EVENT_NAME = "papelito:add-to-cart";
+
 interface AddToCartButtonProps {
   label?: string;
   product?: CartProductInput;
@@ -24,6 +26,16 @@ export function AddToCartButton({
   function handleClick() {
     if (product) {
       addItem(product, quantity);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(ADD_TO_CART_EVENT_NAME, {
+            detail: {
+              productName: product.name,
+            },
+          }),
+        );
+      }
     }
 
     onClick?.();

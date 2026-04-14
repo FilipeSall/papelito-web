@@ -21,10 +21,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 121,00",
-        "amount": 121.0
+        "amount": 121
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 11.5,
         "length": 14.5
       },
@@ -32,7 +32,8 @@
         "gross": 0.117,
         "net": 0.105,
         "displayWithoutProduct": 0.01200000000000001
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY TRADICIONAL KS 25.png"
     },
     {
       "id": "PP01010002",
@@ -51,10 +52,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 61,00",
-        "amount": 61.0
+        "amount": 61
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -62,7 +63,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY TRADICIONAL MS.png"
     },
     {
       "id": "PP01010003",
@@ -81,18 +83,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 127,00",
-        "amount": 127.0
+        "amount": 127
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.37,
         "net": 0.35,
         "displayWithoutProduct": 0.020000000000000018
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY TRADICIONAL COM PITEIRA.png"
     },
     {
       "id": "PP01010001",
@@ -111,18 +114,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 90,00",
-        "amount": 90.0
+        "amount": 90
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 13.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.2,
         "net": 0.19,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY TRADICIONAL LONGA.png"
     },
     {
       "id": "PP01030001",
@@ -141,13 +145,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 151,00",
-        "amount": 151.0
+        "amount": 151
       },
       "homeData": {
         "displayName": "Brown King Size",
         "imageUrl": "/images/products/Image (Brown King Size).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Novo"],
+        "tags": [
+          "Recém Chegado",
+          "Novo"
+        ],
         "isNewArrival": true,
         "isNew": true,
         "isBestSeller": true,
@@ -155,7 +162,7 @@
         "discountPercent": 20
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 11.5,
         "length": 14.5
       },
@@ -163,7 +170,8 @@
         "gross": 0.117,
         "net": 0.105,
         "displayWithoutProduct": 0.01200000000000001
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN KS 25.png"
     },
     {
       "id": "PP01030004",
@@ -182,10 +190,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 76,00",
-        "amount": 76.0
+        "amount": 76
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -193,7 +201,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN MS.png"
     },
     {
       "id": "PP01030003",
@@ -212,18 +221,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 144,00",
-        "amount": 144.0
+        "amount": 144
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.37,
         "net": 0.35,
         "displayWithoutProduct": 0.020000000000000018
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN COM PITEIRA.png"
     },
     {
       "id": "PP01030005",
@@ -242,18 +252,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 111,00",
-        "amount": 111.0
+        "amount": 111
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 13.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.2,
         "net": 0.19,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN LONGA.png"
     },
     {
       "id": "PP01020002",
@@ -272,13 +283,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 121,00",
-        "amount": 121.0
+        "amount": 121
       },
       "homeData": {
         "displayName": "Tradicional Slim",
         "imageUrl": "/images/products/Image (Tradicional Slim).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Clássico"],
+        "tags": [
+          "Recém Chegado",
+          "Clássico"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -286,7 +300,7 @@
         "discountPercent": 25
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -294,7 +308,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY SLIM KS 50.png"
     },
     {
       "id": "PP01020001",
@@ -313,10 +328,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 61,00",
-        "amount": 61.0
+        "amount": 61
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -324,7 +339,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY SLIM MS.png"
     },
     {
       "id": "PP01020006",
@@ -343,18 +359,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 127,00",
-        "amount": 127.0
+        "amount": 127
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.37,
         "net": 0.35,
         "displayWithoutProduct": 0.020000000000000018
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY SLIM COM PITEIRA.png"
     },
     {
       "id": "PP03020002",
@@ -373,18 +390,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 90,00",
-        "amount": 90.0
+        "amount": 90
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 13.5,
-        "length": 13.0
+        "length": 13
       },
       "weightKg": {
         "gross": 0.2,
         "net": 0.19,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY SLIM LONGA.png"
     },
     {
       "id": "PP01050002",
@@ -403,13 +421,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 90,00",
-        "amount": 90.0
+        "amount": 90
       },
       "homeData": {
         "displayName": "Hemp King Size",
         "imageUrl": "/images/products/Image (Hemp King Size).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Orgânico"],
+        "tags": [
+          "Recém Chegado",
+          "Orgânico"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -417,7 +438,7 @@
         "discountPercent": 21
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -425,7 +446,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY HEMP KS 25.png"
     },
     {
       "id": "PP01050001",
@@ -444,10 +466,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 90,00",
-        "amount": 90.0
+        "amount": 90
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -455,7 +477,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY HEMP MS.png"
     },
     {
       "id": "PP01040002",
@@ -474,10 +497,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 151,00",
-        "amount": 151.0
+        "amount": 151
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -485,7 +508,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN SLIM KS 50.png"
     },
     {
       "id": "PP01040001",
@@ -504,10 +528,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 76,00",
-        "amount": 76.0
+        "amount": 76
       },
       "dimensionsCm": {
-        "height": 3.0,
+        "height": 3,
         "width": 8.5,
         "length": 14.5
       },
@@ -515,7 +539,8 @@
         "gross": 0.12,
         "net": 0.11,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY BROWN SLIM MS.png"
     },
     {
       "id": "PP01010008",
@@ -534,10 +559,10 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 209,00",
-        "amount": 209.0
+        "amount": 209
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -545,7 +570,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY INSANE WHITE.png"
     },
     {
       "id": "PP01030007",
@@ -564,13 +590,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 223,00",
-        "amount": 223.0
+        "amount": 223
       },
       "homeData": {
         "displayName": "Insane Brown",
         "imageUrl": "/images/products/Image (Insane Brown).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Premium"],
+        "tags": [
+          "Recém Chegado",
+          "Premium"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -578,7 +607,7 @@
         "discountPercent": 20
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -586,7 +615,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY INSANE BROWN.png"
     },
     {
       "id": "PP01070003",
@@ -605,13 +635,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 223,00",
-        "amount": 223.0
+        "amount": 223
       },
       "homeData": {
         "displayName": "Pink Queen Size",
         "imageUrl": "/images/products/Image (Pink Queen Size).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Especial"],
+        "tags": [
+          "Recém Chegado",
+          "Especial"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -619,7 +652,7 @@
         "discountPercent": 22
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -627,7 +660,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY PINK KS 50.png"
     },
     {
       "id": "PP01070001",
@@ -646,13 +680,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 240,00",
-        "amount": 240.0
+        "amount": 240
       },
       "homeData": {
         "displayName": "Alfafa King Size",
         "imageUrl": "/images/products/Image (Alfafa King Size).png",
         "type": "Seda",
-        "tags": ["Recém Chegado", "Mais Vendido"],
+        "tags": [
+          "Recém Chegado",
+          "Mais Vendido"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -660,7 +697,7 @@
         "discountPercent": 24
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 11.5,
         "length": 14.5
       },
@@ -668,7 +705,8 @@
         "gross": 0.31,
         "net": 0.3,
         "displayWithoutProduct": 0.010000000000000009
-      }
+      },
+      "imageUrl": "/images/products/sedas/SEDA DISPLAY ALFAFA KS 50.png"
     },
     {
       "id": "PP02010002",
@@ -687,13 +725,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 75,00",
-        "amount": 75.0
+        "amount": 75
       },
       "homeData": {
         "displayName": "Piteira Tradicional",
         "imageUrl": "/images/products/Image (Piteira Tradicional).png",
         "type": "Piteira",
-        "tags": ["Recém Chegado", "Essencial"],
+        "tags": [
+          "Recém Chegado",
+          "Essencial"
+        ],
         "isNewArrival": true,
         "isNew": false,
         "isBestSeller": true,
@@ -709,7 +750,8 @@
         "gross": 0.32,
         "net": 0.27,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA TRADICIONAL.png"
     },
     {
       "id": "PP02020001",
@@ -728,7 +770,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "R$ 75,00",
-        "amount": 75.0
+        "amount": 75
       },
       "dimensionsCm": {
         "height": 3.65,
@@ -739,7 +781,8 @@
         "gross": 0.3,
         "net": 0.275,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA SLIM.png"
     },
     {
       "id": "PP02030002",
@@ -758,18 +801,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "88.0",
-        "amount": 88.0
+        "amount": 88
       },
       "dimensionsCm": {
-        "height": 6.0,
+        "height": 6,
         "width": 12.4,
-        "length": 6.0
+        "length": 6
       },
       "weightKg": {
         "gross": 0.525,
         "net": 0.504,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA LARGE.png"
     },
     {
       "id": "PP02030011",
@@ -788,18 +832,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "156.0",
-        "amount": 156.0
+        "amount": 156
       },
       "dimensionsCm": {
-        "height": 7.0,
+        "height": 7,
         "width": 12.5,
-        "length": 9.0
+        "length": 9
       },
       "weightKg": {
         "gross": 0.62,
         "net": 0.6087600000000001,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA LONGA.png"
     },
     {
       "id": "PP02030013",
@@ -818,18 +863,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "156.0",
-        "amount": 156.0
+        "amount": 156
       },
       "dimensionsCm": {
-        "height": 7.0,
-        "width": 14.0,
-        "length": 9.0
+        "height": 7,
+        "width": 14,
+        "length": 9
       },
       "weightKg": {
         "gross": 0.7,
         "net": 0.6479999999999999,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA ULTRA LONGA.png"
     },
     {
       "id": "PP02030012",
@@ -848,18 +894,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "171.0",
-        "amount": 171.0
+        "amount": 171
       },
       "dimensionsCm": {
         "height": 7.5,
-        "width": 9.0,
-        "length": 17.0
+        "width": 9,
+        "length": 17
       },
       "weightKg": {
         "gross": 0.84,
         "net": 0.7919999999999999,
         "displayWithoutProduct": 0.009999999999999995
-      }
+      },
+      "imageUrl": "/images/products/piteiras/PITEIRA PITEIRA MEGA LONGA.png"
     },
     {
       "id": "PP03030002",
@@ -878,18 +925,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "93.0",
-        "amount": 93.0
+        "amount": 93
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.16,
         "net": 0.11,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY TRADICIONAL.png"
     },
     {
       "id": "PP03020001",
@@ -908,18 +956,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "113.0",
-        "amount": 113.0
+        "amount": 113
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.2,
         "net": 0.15,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY TRADICIONAL LONGO.png"
     },
     {
       "id": "PP03010004",
@@ -938,18 +987,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "126.0",
-        "amount": 126.0
+        "amount": 126
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.32,
         "net": 0.27,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY TRADICIONAL ULTRA LONGO.png"
     },
     {
       "id": "PP03010003",
@@ -968,18 +1018,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "93.0",
-        "amount": 93.0
+        "amount": 93
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.16,
         "net": 0.11,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY SLIM.png"
     },
     {
       "id": "PP03020002-2",
@@ -998,18 +1049,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "113.0",
-        "amount": 113.0
+        "amount": 113
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.16,
         "net": 0.11,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY SLIM LONGO.png"
     },
     {
       "id": "PP03010002",
@@ -1028,18 +1080,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "136.0",
-        "amount": 136.0
+        "amount": 136
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.16,
         "net": 0.11,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY MENTOLADO.png"
     },
     {
       "id": "PP03010001",
@@ -1058,18 +1111,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "93.0",
-        "amount": 93.0
+        "amount": 93
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.2,
         "net": 0.15,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY BIO.png"
     },
     {
       "id": "PP03030001",
@@ -1088,18 +1142,19 @@
       "price": {
         "currency": "BRL",
         "displayValue": "121.0",
-        "amount": 121.0
+        "amount": 121
       },
       "dimensionsCm": {
-        "height": 13.0,
+        "height": 13,
         "width": 18.5,
-        "length": 11.0
+        "length": 11
       },
       "weightKg": {
         "gross": 0.32,
         "net": 0.27,
         "displayWithoutProduct": 0.05
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY BIO LONGO.png"
     },
     {
       "id": "-",
@@ -1129,7 +1184,8 @@
         "gross": null,
         "net": null,
         "displayWithoutProduct": null
-      }
+      },
+      "imageUrl": "/images/products/filtros/FILTRO DISPLAY TRADICIONAL LONGO GOMADO.png"
     },
     {
       "id": "212.0",
@@ -1150,13 +1206,16 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "homeData": {
         "displayName": "Bag Tradicional",
         "imageUrl": "/images/products/Image (Bag Tradicional).png",
         "type": "Acessório",
-        "tags": ["Recém Chegado", "Kit"],
+        "tags": [
+          "Recém Chegado",
+          "Kit"
+        ],
         "originalPrice": 24.9,
         "price": 19.9,
         "isNewArrival": true,
@@ -1195,7 +1254,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1227,7 +1286,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1259,7 +1318,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1291,7 +1350,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1323,7 +1382,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1355,7 +1414,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1387,7 +1446,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1419,7 +1478,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1451,7 +1510,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1483,7 +1542,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1513,7 +1572,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "94.0",
-        "amount": 94.0
+        "amount": 94
       },
       "dimensionsCm": {
         "height": null,
@@ -1545,7 +1604,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "140.0",
-        "amount": 140.0
+        "amount": 140
       },
       "dimensionsCm": {
         "height": null,
@@ -1577,7 +1636,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "140.0",
-        "amount": 140.0
+        "amount": 140
       },
       "dimensionsCm": {
         "height": null,
@@ -1609,7 +1668,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "140.0",
-        "amount": 140.0
+        "amount": 140
       },
       "dimensionsCm": {
         "height": null,
@@ -1641,7 +1700,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "140.0",
-        "amount": 140.0
+        "amount": 140
       },
       "dimensionsCm": {
         "height": null,
@@ -1673,7 +1732,7 @@
       "price": {
         "currency": "BRL",
         "displayValue": "140.0",
-        "amount": 140.0
+        "amount": 140
       },
       "dimensionsCm": {
         "height": null,

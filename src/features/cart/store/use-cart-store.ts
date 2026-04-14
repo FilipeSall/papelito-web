@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { CartItem, CartProductInput } from "../types/cart";
 import { CART_COUPON_CODE } from "../utils/get-cart-summary";
+import { normalizeProductImage } from "../utils/normalize-product-image";
 
 interface CartState {
   items: CartItem[];
@@ -45,8 +46,13 @@ export const useCartStore = create<CartState>()(
       items: [],
       couponCode: null,
       addItem: (product, quantity = 1) => {
+        const normalizedProduct = {
+          ...product,
+          image: normalizeProductImage(product.image, product.name),
+        };
+
         set((state) => ({
-          items: upsertItem(state.items, product, quantity),
+          items: upsertItem(state.items, normalizedProduct, quantity),
         }));
       },
       decreaseItem: (productId) => {

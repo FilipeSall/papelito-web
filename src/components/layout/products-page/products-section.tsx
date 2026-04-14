@@ -3,6 +3,7 @@ import { ProductFilterSidebar } from "./product-filter-sidebar";
 import { ProductsGrid } from "./products-grid";
 import { ProductsPagination } from "./products-pagination";
 import { ViewToggle } from "./view-toggle";
+import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import type {
   ProductTypeId,
   ProductsCatalogItem,
@@ -51,6 +52,7 @@ export function ProductsSection({
 }: ProductsSectionProps) {
   return (
     <section className="bg-white py-8">
+      <AddToCartToastHost />
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Filter Tabs */}
         <div className="mb-6">

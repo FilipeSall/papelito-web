@@ -9,4 +9,5 @@ export {
   CART_SHIPPING_THRESHOLD,
   getCartSummary,
 } from "./utils/get-cart-summary";
+export { normalizeProductImage } from "./utils/normalize-product-image";
 export type { CartItem, CartProductInput, CartSummary } from "./types/cart";

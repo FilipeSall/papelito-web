@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
+  normalizeProductImage,
   useCartStore,
   useCartSummary,
 } from "@/features/cart";
@@ -172,12 +173,12 @@ export function CartPageContent() {
                 {items.map((item) => (
                   <li key={item.id} className="flex flex-wrap items-center gap-4 px-5 py-4 md:flex-nowrap">
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[14px] bg-bg-light p-2">
-                      {item.image ? (
+                      {normalizeProductImage(item.image, item.name) ? (
                         <Image
                           alt={item.name}
                           className="h-16 w-16 object-contain"
                           height={64}
-                          src={item.image}
+                          src={normalizeProductImage(item.image, item.name)!}
                           width={64}
                         />
                       ) : (
@@ -246,7 +247,7 @@ export function CartPageContent() {
                 />
                 <button
                   type="button"
-                  className="h-10.5 shrink-0 whitespace-nowrap rounded-[14px] bg-brand-dark px-4 text-xs font-black text-white transition hover:opacity-90 md:px-5"
+                  className="h-10.5 shrink-0 cursor-pointer whitespace-nowrap rounded-[14px] bg-brand-dark px-4 text-xs font-black text-white transition hover:opacity-90 md:px-5"
                   onClick={handleApplyCoupon}
                 >
                   Aplicar
@@ -276,13 +277,13 @@ export function CartPageContent() {
                   valueClassName="text-sm font-medium text-[#16A34A]"
                 />
               )}
-              {summary.hasFreeShipping ? (
+              {summary.couponCode ? (
                 <p className="text-xs text-[#16A34A]">Parabens! Voce ganhou frete gratis.</p>
-              ) : (
+              ) : !summary.hasFreeShipping ? (
                 <p className="text-xs text-text-muted">
                   Faltam {formatBRL(summary.amountToFreeShipping)} para frete gratis
                 </p>
-              )}
+              ) : null}
 
               <div className="border-t border-[#F3F4F6] pt-3">
                 <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
@@ -298,7 +299,7 @@ export function CartPageContent() {
 
             <button
               type="button"
-              className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:brightness-95"
+              className="mt-6 inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:brightness-95"
             >
               Finalizar Compra
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
