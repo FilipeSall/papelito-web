@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { AddToCartToast } from "./add-to-cart-toast";
 import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
 
 interface ProductsGridProps {
@@ -17,6 +21,53 @@ interface ProductsGridProps {
  * ```
  */
 export function ProductsGrid({ products }: ProductsGridProps) {
+  const [toastProductName, setToastProductName] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enterAnimationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+      if (removeTimeoutRef.current) {
+        clearTimeout(removeTimeoutRef.current);
+      }
+      if (enterAnimationFrameRef.current) {
+        cancelAnimationFrame(enterAnimationFrameRef.current);
+      }
+    };
+  }, []);
+
+  function handleAddedToCart(productName: string) {
+    setToastVisible(false);
+    setToastProductName(productName);
+
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    if (removeTimeoutRef.current) {
+      clearTimeout(removeTimeoutRef.current);
+    }
+    if (enterAnimationFrameRef.current) {
+      cancelAnimationFrame(enterAnimationFrameRef.current);
+    }
+
+    enterAnimationFrameRef.current = requestAnimationFrame(() => {
+      setToastVisible(true);
+    });
+
+    hideTimeoutRef.current = setTimeout(() => {
+      setToastVisible(false);
+    }, 1800);
+
+    removeTimeoutRef.current = setTimeout(() => {
+      setToastProductName(null);
+    }, 2050);
+  }
+
   if (products.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -28,10 +79,23 @@ export function ProductsGrid({ products }: ProductsGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {products.map((product) => (
-        <ProductGridCard key={product.id} product={product} />
-      ))}
-    </div>
+    <>
+      {toastProductName && (
+        <AddToCartToast
+          productName={toastProductName}
+          visible={toastVisible}
+        />
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {products.map((product) => (
+          <ProductGridCard
+            key={product.id}
+            product={product}
+            onAddedToCart={handleAddedToCart}
+          />
+        ))}
+      </div>
+    </>
   );
 }

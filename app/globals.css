@@ -79,12 +79,21 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes underline-slide-in {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
 @layer utilities {
     .animate-marquee {
         animation: marquee 50s linear infinite;
     }
     .animate-countdown {
         animation: countdown-flip 0.25s ease-out;
+    }
+    .animate-underline-slide {
+        animation: underline-slide-in 0.25s ease-out forwards;
+        transform-origin: left;
     }
 
     .products-hero-cut {

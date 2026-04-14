@@ -1,9 +1,12 @@
+"use client";
+
 import { PrivateHeaderCartIcon } from "./cart-icon";
 import { privateLinks } from "./constants";
 import { PrivateHeaderLogo } from "./logo";
 import { PrivateHeaderLogoutButton } from "./logout-button";
 import { PrivateHeaderMobileMenu } from "./mobile-menu";
 import { PrivateHeaderNav } from "./nav";
+import { useCartStore } from "@/features/cart";
 
 const iconButtonClass =
   "order-0 flex h-7 w-7 flex-none grow-0 items-center justify-center transition hover:opacity-70";
@@ -14,8 +17,9 @@ const iconButtonClass =
  * Utiliza fundo escuro (#231F20) e elementos claros para contraste.
  */
 export function PrivateHeader() {
-  // TODO: Obter quantidade do carrinho via context/store
-  const cartItemCount = 2;
+  const cartItemCount = useCartStore((state) =>
+    state.items.reduce((count, item) => count + item.quantity, 0),
+  );
 
   return (
     <header className="w-full border-b border-white/10 bg-brand-dark">

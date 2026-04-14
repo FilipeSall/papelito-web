@@ -42,6 +42,7 @@ interface ProductCardProps {
  */
 export function ProductCard({ product }: ProductCardProps) {
   const {
+    id,
     category,
     name,
     badge,
@@ -69,8 +70,10 @@ export function ProductCard({ product }: ProductCardProps) {
         discount={discount}
       />
       <ProductCardInfo
+        id={id}
         category={category}
         name={name}
+        image={image}
         rating={rating}
         reviews={reviews}
         originalPrice={originalPrice}

@@ -94,6 +94,7 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
               {products.map((product) => (
                 <MiniProductCard
                   key={product.id}
+                  id={product.id}
                   name={product.name}
                   originalPrice={product.originalPrice}
                   price={product.price}

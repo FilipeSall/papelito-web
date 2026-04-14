@@ -1,7 +1,9 @@
 import { ImageWithSkeleton, ProductImageFallback, DiscountBadge, ProductPrice, AddToCartButton } from "@/components/ui";
 
 interface MiniProductCardProps {
+  id: string;
   name: string;
+  category?: string;
   originalPrice: number;
   price: number;
   discount: number;
@@ -9,7 +11,9 @@ interface MiniProductCardProps {
 }
 
 export function MiniProductCard({
+  id,
   name,
+  category = "Novidades",
   originalPrice,
   price,
   discount,
@@ -45,7 +49,17 @@ export function MiniProductCard({
         </div>
 
         <div className="mt-auto pt-3">
-          <AddToCartButton label="Adicionar" />
+          <AddToCartButton
+            label="Adicionar"
+            product={{
+              id,
+              category,
+              name,
+              image,
+              price,
+              originalPrice,
+            }}
+          />
         </div>
       </div>
     </div>

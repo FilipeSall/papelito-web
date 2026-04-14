@@ -1,4 +1,6 @@
-import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
+"use client";
+
+import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 
 /**
  * Ícone de estrela para rating.
@@ -64,6 +66,7 @@ export interface ProductGridItem {
 
 interface ProductGridCardProps {
   product: ProductGridItem;
+  onAddedToCart?: (productName: string) => void;
 }
 
 /**
@@ -90,7 +93,7 @@ interface ProductGridCardProps {
  * />
  * ```
  */
-export function ProductGridCard({ product }: ProductGridCardProps) {
+export function ProductGridCard({ product, onAddedToCart }: ProductGridCardProps) {
   const {
     category,
     name,
@@ -156,13 +159,19 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
             </span>
           </div>
 
-          <button
-            type="button"
-            className="flex items-center gap-1 px-3 py-1.5 bg-brand-dark text-white text-xs font-bold rounded-full hover:bg-brand-dark/90 transition-colors"
-          >
-            <span className="text-brand-yellow">+</span>
-            Adicionar
-          </button>
+          <AddToCartButton
+            label="Adicionar"
+            className="min-w-[104px] w-auto px-3"
+            onClick={() => onAddedToCart?.(name)}
+            product={{
+              id: product.id,
+              category,
+              name,
+              image,
+              price,
+              originalPrice,
+            }}
+          />
         </div>
       </div>
     </div>

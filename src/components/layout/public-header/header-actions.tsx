@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { useCartSummary } from "@/features/cart";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 const iconButtonClass =
@@ -19,9 +20,11 @@ const profileButtonMobileClass =
 
 /** Logado: ícone carrinho + "Sair" link + pill "Perfil" com ícone */
 function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
+  const { totalItems } = useCartSummary();
+
   return (
     <div className="flex h-9 items-center gap-2">
-      <Link aria-label="Carrinho" className={`${iconButtonClass} pt-1`} href="/carrinho">
+      <Link aria-label="Carrinho" className={`${iconButtonClass} relative pt-1`} href="/carrinho">
         <Image
           alt=""
           aria-hidden
@@ -30,6 +33,11 @@ function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
           src="/images/icons/cart.svg"
           width={28}
         />
+        {totalItems > 0 && (
+          <span className="absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-brand-dark px-1 text-[10px] font-black leading-none text-brand-yellow">
+            {totalItems > 99 ? "99+" : totalItems}
+          </span>
+        )}
       </Link>
 
       <Link
