@@ -13,10 +13,10 @@ const profileButtonBaseClass =
   "group inline-flex h-9 items-center gap-2 rounded-full border px-2.5 pr-4 text-sm font-black leading-5 tracking-[-0.150391px] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/80 focus-visible:ring-offset-2";
 
 const profileButtonDesktopClass =
-  "border-brand-dark/20 bg-brand-dark text-brand-yellow shadow-[0_8px_18px_rgba(35,31,32,0.22)] hover:-translate-y-0.5 hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[0_12px_24px_rgba(35,31,32,0.28)] focus-visible:ring-offset-brand-yellow";
+  "border-brand-dark/20 bg-brand-dark text-brand-yellow shadow-[0_8px_18px_rgba(35,31,32,0.22)] focus-visible:ring-offset-brand-yellow cursor-pointer";
 
 const profileButtonMobileClass =
-  "border-white/35 bg-white/10 text-white backdrop-blur-sm shadow-[0_8px_18px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 hover:border-white hover:bg-white hover:text-brand-dark focus-visible:ring-offset-brand-dark";
+  "border-white/35 bg-white/10 text-white backdrop-blur-sm shadow-[0_8px_18px_rgba(0,0,0,0.25)] focus-visible:ring-offset-brand-dark cursor-pointer";
 
 /** Logado: ícone carrinho + "Sair" link + pill "Perfil" com ícone */
 function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
@@ -45,8 +45,8 @@ function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
         href="/perfil"
       >
         <span
-          className={`grid h-6 w-6 place-items-center rounded-full transition-colors ${
-            invertColors ? "bg-white/20 group-hover:bg-brand-dark/10" : "bg-brand-yellow/20 group-hover:bg-brand-dark/10"
+          className={`grid h-6 w-6 place-items-center rounded-full ${
+            invertColors ? "bg-white/20" : "bg-brand-yellow/20"
           }`}
         >
           <svg aria-hidden fill="none" height={18} viewBox="0 0 28 28" width={18} xmlns="http://www.w3.org/2000/svg">
