@@ -14,6 +14,7 @@ export { AddressList } from "./address-list";
 export { PaymentCard, type PaymentMethod } from "./payment-card";
 export { AddPaymentCard } from "./add-payment-card";
 export { PaymentList } from "./payment-list";
+export { ProfileSettings } from "./profile-settings";
 export { OrderStatusBadge, type OrderStatus } from "./order-status-badge";
 export { OrderCard, type Order } from "./order-card";
 export { OrdersList } from "./orders-list";
