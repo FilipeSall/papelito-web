@@ -297,13 +297,13 @@ export function CartPageContent() {
               </div>
             </div>
 
-            <button
-              type="button"
+            <Link
               className="mt-6 inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:brightness-95"
+              href="/checkout"
             >
               Finalizar Compra
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
-            </button>
+            </Link>
 
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <CartPaymentChip label="Visa" />

@@ -158,7 +158,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
 
           <AddToCartButton
             label="Adicionar"
-            className="min-w-[104px] w-auto px-3"
+            className="min-w-26 w-auto px-3"
             product={{
               id: product.id,
               category,
