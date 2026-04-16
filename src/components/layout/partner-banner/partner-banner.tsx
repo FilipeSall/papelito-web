@@ -30,7 +30,7 @@ export function PartnerBanner() {
         {/* TODO: Substituir por requisição ao backend — GET /api/banners/partner
             Conteúdo do banner parceiro (tag, descrição, CTA, imagem) deve vir do CMS/backend. */}
         {/* Content - Left Side */}
-        <div className="flex flex-col gap-6 pt-10 pb-16 px-12 lg:px-43.5 z-10">
+        <div className="z-10 flex flex-col gap-6 px-6 pt-10 pb-16 sm:px-8 lg:px-12 xl:px-43.5">
           <Tag>🤝 Seja um Parceiro</Tag>
 
           <PdvPerfeitoLogo className="w-full max-w-110.25" />
@@ -46,13 +46,13 @@ export function PartnerBanner() {
         </div>
 
         {/* Image - Right Side */}
-        <div className="absolute right-0 top-0 h-full w-190.5 hidden lg:block">
+        <div className="absolute right-0 top-0 hidden h-full w-190.5 xl:block">
           <Image
             src="/images/CT1A3510 1.png"
             alt="Parceiros PDV Perfeito sorrindo"
             fill
             className="object-cover object-[center_top]"
-            sizes="(max-width: 1024px) 0vw, 762px"
+            sizes="(max-width: 1279px) 0vw, 762px"
           />
         </div>
       </div>

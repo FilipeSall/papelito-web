@@ -10,7 +10,7 @@ interface BestSellersSectionProps {
 export function BestSellersSection({ products }: BestSellersSectionProps) {
   return (
     <section className="w-full bg-white py-14">
-      <div className="max-w-450 mx-auto px-43.5">
+      <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-8">
           <SectionHeader
             emoji="🔥"
@@ -18,7 +18,7 @@ export function BestSellersSection({ products }: BestSellersSectionProps) {
             title={"NOSSOS\nPRODUTOS"}
           />
 
-          <div className="grid grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

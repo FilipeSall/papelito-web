@@ -14,7 +14,7 @@ export function ProductCardImage({
   discount,
 }: ProductCardImageProps) {
   return (
-    <div className="relative w-73 h-48 bg-bg-light shrink-0">
+    <div className="relative h-48 w-full shrink-0 bg-bg-light">
       {image ? (
         <div className="absolute left-4 top-6 w-65 h-36">
           <ImageWithSkeleton

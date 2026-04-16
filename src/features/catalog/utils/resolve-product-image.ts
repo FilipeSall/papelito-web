@@ -5,6 +5,38 @@ interface ResolveProductImageInput {
   productImageUrl?: string;
 }
 
+const LEGACY_IMAGE_PATHS: Record<string, string> = {
+  "/images/products/Image (Brown King Size).png":
+    "/images/products/sedas/SEDA DISPLAY BROWN KS 50.png",
+  "/images/products/Image (Tradicional Slim).png":
+    "/images/products/sedas/SEDA DISPLAY SLIM KS 50.png",
+  "/images/products/Image (Hemp King Size).png":
+    "/images/products/sedas/SEDA DISPLAY HEMP KS 25.png",
+  "/images/products/Image (Insane Brown).png":
+    "/images/products/sedas/SEDA DISPLAY INSANE BROWN.png",
+  "/images/products/Image (Pink Queen Size).png":
+    "/images/products/sedas/SEDA DISPLAY PINK KS 50.png",
+  "/images/products/Image (Alfafa King Size).png":
+    "/images/products/sedas/SEDA DISPLAY ALFAFA KS 50.png",
+  "/images/products/Image (Piteira Tradicional).png":
+    "/images/products/piteiras/PITEIRA PITEIRA TRADICIONAL.png",
+  "/images/products/Image (Bag Tradicional).png":
+    "/images/products/piteiras/PITEIRA DISPLAY - FUN TRADICIONAL.png",
+};
+
+function normalizeImagePath(value?: string) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return LEGACY_IMAGE_PATHS[trimmed] ?? trimmed;
+}
+
 /**
  * Resolve a imagem do produto priorizando o caminho principal do catálogo.
  *
@@ -15,12 +47,14 @@ export function resolveProductImage({
   homeImageUrl,
   productImageUrl,
 }: ResolveProductImageInput) {
-  if (typeof productImageUrl === "string" && productImageUrl.trim().length > 0) {
-    return productImageUrl;
+  const normalizedProductImage = normalizeImagePath(productImageUrl);
+  if (normalizedProductImage) {
+    return normalizedProductImage;
   }
 
-  if (typeof homeImageUrl === "string" && homeImageUrl.trim().length > 0) {
-    return homeImageUrl;
+  const normalizedHomeImage = normalizeImagePath(homeImageUrl);
+  if (normalizedHomeImage) {
+    return normalizedHomeImage;
   }
 
   return undefined;

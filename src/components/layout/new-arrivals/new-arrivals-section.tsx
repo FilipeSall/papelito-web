@@ -47,7 +47,7 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
 
   return (
     <section className="w-full bg-white py-12">
-      <div className="max-w-450 mx-auto px-43.5">
+      <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-6">
           <div className="flex items-center gap-3">
             <SectionHeader emoji="✨" title="Recém Chegados" variant="compact" />

@@ -55,7 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div
-      className={`relative w-73 h-82.5 cursor-pointer bg-white rounded-xl overflow-hidden flex flex-col shrink-0 ${
+      className={`relative h-82.5 w-full max-w-73 cursor-pointer overflow-hidden rounded-xl bg-white ${
         featured
           ? "shadow-[0px_0px_0px_2px_#FFE500,0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
           : "shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
