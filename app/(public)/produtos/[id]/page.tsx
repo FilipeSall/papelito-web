@@ -1,7 +1,5 @@
 import { use } from "react";
 import { notFound } from "next/navigation";
-import { access } from "node:fs/promises";
-import path from "node:path";
 import {
   ProductBreadcrumbs,
   ProductDetailMainSection,
@@ -29,19 +27,11 @@ function readSingleParam(value: string | string[] | undefined) {
   return value;
 }
 
-async function resolveNavigationImage(imageParam: string | undefined) {
-  if (!imageParam || !imageParam.startsWith("/") || imageParam.includes("..")) {
+function sanitizeNavigationImage(imageParam: string | undefined): string | null {
+  if (!imageParam || !imageParam.startsWith("/images/") || imageParam.includes("..")) {
     return null;
   }
-
-  const filePath = path.join(process.cwd(), "public", imageParam);
-
-  try {
-    await access(filePath);
-    return imageParam;
-  } catch {
-    return null;
-  }
+  return imageParam;
 }
 
 /**
@@ -57,7 +47,7 @@ export default function ProdutoDetalhePage({
   const { id } = use(params);
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const imageFromNavigation = readSingleParam(resolvedSearchParams.img);
-  const safeNavigationImage = use(resolveNavigationImage(imageFromNavigation));
+  const safeNavigationImage = sanitizeNavigationImage(imageFromNavigation);
   const product = use(useProductDetail(id));
 
   if (!product) {
