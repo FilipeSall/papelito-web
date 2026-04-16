@@ -46,13 +46,13 @@ export function PartnerBanner() {
         </div>
 
         {/* Image - Right Side */}
-        <div className="absolute right-0 top-0 hidden h-full w-190.5 xl:block">
+        <div className="absolute right-0 top-0 hidden h-full w-190.5 lg:block">
           <Image
             src="/images/CT1A3510 1.png"
             alt="Parceiros PDV Perfeito sorrindo"
             fill
             className="object-cover object-[center_top]"
-            sizes="(max-width: 1279px) 0vw, 762px"
+            sizes="(max-width: 1023px) 0vw, 762px"
           />
         </div>
       </div>

@@ -10,7 +10,7 @@ import { CATEGORIES_NAV_ITEMS } from "./constants";
 export function CategoriesNav() {
   return (
     <section className="w-full bg-white py-5">
-      <div className="mx-auto grid max-w-450 grid-cols-2 gap-4 px-4 sm:px-6 lg:px-8 xl:grid-cols-4 xl:gap-12 xl:px-43.5 filter-[drop-shadow(0px_4px_4px_rgba(0,0,0,0.25))]">
+      <div className="mx-auto grid max-w-450 grid-cols-2 gap-4 px-4 sm:px-6 lg:grid-cols-4 lg:gap-4 lg:px-8 xl:gap-8 xl:px-43.5 filter-[drop-shadow(0px_4px_4px_rgba(0,0,0,0.25))]">
         {CATEGORIES_NAV_ITEMS.map((item) => (
           <CategoryNavItem
             key={item.title}
