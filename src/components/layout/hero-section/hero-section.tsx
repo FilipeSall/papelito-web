@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { AUTO_INTERVAL } from "@/constants/auto-interval";
 
 const slides = [
   {
@@ -45,21 +46,35 @@ const NAV_BTN: React.CSSProperties = {
 
 export function HeroSection() {
   const [current, setCurrent] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const prev = useCallback(
-    () => setCurrent((c) => (c - 1 + slides.length) % slides.length),
-    []
-  );
+  const resetTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    intervalRef.current = setInterval(() => {
+      setCurrent((c) => (c + 1) % slides.length);
+    }, AUTO_INTERVAL);
+  }, []);
 
-  const next = useCallback(
-    () => setCurrent((c) => (c + 1) % slides.length),
-    []
-  );
+  const prev = useCallback(() => {
+    setCurrent((c) => (c - 1 + slides.length) % slides.length);
+    resetTimer();
+  }, [resetTimer]);
+
+  const next = useCallback(() => {
+    setCurrent((c) => (c + 1) % slides.length);
+    resetTimer();
+  }, [resetTimer]);
 
   useEffect(() => {
-    const timer = setInterval(next, 5000);
-    return () => clearInterval(timer);
-  }, [next]);
+    resetTimer();
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [resetTimer]);
 
   return (
     <>
@@ -118,7 +133,10 @@ export function HeroSection() {
           {slides.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              onClick={() => {
+                setCurrent(i);
+                resetTimer();
+              }}
               aria-label={`Ir para slide ${i + 1}`}
               style={{
                 width: i === current ? 28 : 8,
