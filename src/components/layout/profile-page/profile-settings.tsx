@@ -40,8 +40,8 @@ function ToggleItem({ checked, description, label, onToggle }: ToggleItemProps) 
         <span
           className={`inline-block h-5 w-5 transform rounded-full transition ${
             checked
-              ? "translate-x-[23px] bg-white"
-              : "translate-x-[3px] bg-[#9CA3AF]"
+              ? "translate-x-5.75 bg-white"
+              : "translate-x-0.75 bg-[#9CA3AF]"
           }`}
         />
       </button>

@@ -33,6 +33,7 @@ export function ProductCardInfo({
       <div className="flex items-center justify-between mt-3">
         <ProductPrice original={originalPrice} current={price} />
         <AddToCartButton
+          className="relative z-20"
           product={{
             id,
             category,

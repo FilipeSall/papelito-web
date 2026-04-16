@@ -1,3 +1,7 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { KeyboardEvent } from "react";
 import { ImageWithSkeleton, ProductImageFallback, DiscountBadge, ProductPrice, AddToCartButton } from "@/components/ui";
 
 interface MiniProductCardProps {
@@ -19,8 +23,33 @@ export function MiniProductCard({
   discount,
   image,
 }: MiniProductCardProps) {
+  const router = useRouter();
+
+  function navigateToProduct() {
+    if (image) {
+      router.push(`/produtos/${id}?img=${encodeURIComponent(image)}`);
+      return;
+    }
+
+    router.push(`/produtos/${id}`);
+  }
+
+  function handleCardKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      navigateToProduct();
+    }
+  }
+
   return (
-    <div className="h-65.5 w-44 shrink-0 snap-start select-none overflow-hidden rounded-xl border border-[#F3F4F6] bg-white p-px shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex flex-col items-start">
+    <div
+      role="link"
+      tabIndex={0}
+      aria-label={`Ver produto ${name}`}
+      onClick={navigateToProduct}
+      onKeyDown={handleCardKeyDown}
+      className="relative h-65.5 w-44 shrink-0 snap-start select-none overflow-hidden rounded-xl border border-[#F3F4F6] bg-white p-px shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex cursor-pointer flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+    >
       <div className="relative h-36 w-full bg-bg-light">
         {image ? (
           <div className="absolute inset-x-0 top-4 h-28">
@@ -48,7 +77,7 @@ export function MiniProductCard({
           <ProductPrice original={originalPrice} current={price} />
         </div>
 
-        <div className="mt-auto pt-3">
+        <div className="mt-auto pt-3" onClick={(event) => event.stopPropagation()}>
           <AddToCartButton
             label="Adicionar"
             product={{

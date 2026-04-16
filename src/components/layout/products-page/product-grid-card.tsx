@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 
 /**
@@ -103,7 +104,15 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
   } = product;
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] hover:shadow-md transition-shadow">
+    <div className="relative cursor-pointer bg-white rounded-xl overflow-hidden shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] hover:shadow-md transition-shadow">
+      <Link
+        href={{
+          pathname: `/produtos/${product.id}`,
+          query: image ? { img: image } : undefined,
+        }}
+        aria-label={`Ver produto ${name}`}
+        className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+      />
       {/* Image container with badge */}
       <div className="relative aspect-square bg-bg-light p-4">
         {/* Category Badge */}
@@ -158,7 +167,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
 
           <AddToCartButton
             label="Adicionar"
-            className="min-w-26 w-auto px-3"
+            className="relative z-20 min-w-26 w-auto px-3"
             product={{
               id: product.id,
               category,

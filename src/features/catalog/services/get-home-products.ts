@@ -2,6 +2,7 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
   HomeNewArrivalProduct,
   HomeProductCard,
@@ -26,6 +27,7 @@ interface MockCatalogProduct {
   id: string;
   name: string;
   category: string;
+  imageUrl?: string;
   price?: {
     amount?: number | null;
   };
@@ -78,65 +80,86 @@ function toBadge(tags: string[]) {
   return tags[0] ?? "Destaque";
 }
 
-function toHomeCandidate(
-  product: MockCatalogProduct,
-  index: number,
-): HomeCandidate | null {
-  const homeData = product.homeData;
-  if (!homeData?.imageUrl) {
+function toHomeCandidate(product: MockCatalogProduct | null | undefined, index: number): HomeCandidate | null {
+  if (!product) {
     return null;
   }
 
-  const amount = product.price?.amount;
-  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+  try {
+    const homeData = product.homeData;
+    if (!homeData) {
+      return null;
+    }
+
+    const resolvedImage = resolveProductImage({
+      productImageUrl: product.imageUrl,
+      homeImageUrl: homeData.imageUrl,
+    });
+
+    if (!resolvedImage) {
+      return null;
+    }
+
+    const amount = product.price?.amount;
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+      return null;
+    }
+
+    const rawTags = homeData.tags;
+    const tags = Array.isArray(rawTags)
+      ? rawTags.filter((tag) => typeof tag === "string" && tag.length > 0)
+      : [];
+
+    const originalPriceRaw =
+      typeof homeData.originalPrice === "number" && Number.isFinite(homeData.originalPrice)
+        ? homeData.originalPrice
+        : amount;
+    const originalPrice = toMoney(originalPriceRaw);
+
+    const explicitPrice =
+      typeof homeData.price === "number" && Number.isFinite(homeData.price) && homeData.price > 0
+        ? toMoney(homeData.price)
+        : null;
+
+    let discount = toDiscountPercent(homeData.discountPercent);
+    const price =
+      explicitPrice ??
+      (discount > 0
+        ? toMoney(originalPrice * (1 - discount / 100))
+        : originalPrice);
+
+    if (discount === 0 && originalPrice > 0 && price < originalPrice) {
+      discount = toDiscountPercent(((originalPrice - price) / originalPrice) * 100);
+    }
+
+    return {
+      card: {
+        id: product.id,
+        category: homeData.type || product.category,
+        name: homeData.displayName || product.name,
+        badge: toBadge(tags),
+        discount,
+        originalPrice,
+        price,
+        rating: 4.5,
+        reviews: 120 + index * 31,
+        image: resolvedImage,
+      },
+      flags: {
+        isNewArrival: homeData.isNewArrival === true,
+        isBestSeller: homeData.isBestSeller === true,
+        isMostSold: homeData.isMostSold === true,
+      },
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn("[home-products] Item inválido ignorado ao montar HomeCandidate.", {
+      index,
+      productId: product.id,
+      error: errorMessage,
+    });
     return null;
   }
-
-  const tags = Array.isArray(homeData.tags)
-    ? homeData.tags.filter((tag) => typeof tag === "string" && tag.length > 0)
-    : [];
-
-  const originalPriceRaw =
-    typeof homeData.originalPrice === "number" && Number.isFinite(homeData.originalPrice)
-      ? homeData.originalPrice
-      : amount;
-  const originalPrice = toMoney(originalPriceRaw);
-
-  const explicitPrice =
-    typeof homeData.price === "number" && Number.isFinite(homeData.price) && homeData.price > 0
-      ? toMoney(homeData.price)
-      : null;
-
-  let discount = toDiscountPercent(homeData.discountPercent);
-  const price =
-    explicitPrice ??
-    (discount > 0
-      ? toMoney(originalPrice * (1 - discount / 100))
-      : originalPrice);
-
-  if (discount === 0 && originalPrice > 0 && price < originalPrice) {
-    discount = toDiscountPercent(((originalPrice - price) / originalPrice) * 100);
-  }
-
-  return {
-    card: {
-      id: product.id,
-      category: homeData.type || product.category,
-      name: homeData.displayName || product.name,
-      badge: toBadge(tags),
-      discount,
-      originalPrice,
-      price,
-      rating: 4.5,
-      reviews: 120 + index * 31,
-      image: homeData.imageUrl,
-    },
-    flags: {
-      isNewArrival: homeData.isNewArrival === true,
-      isBestSeller: homeData.isBestSeller === true,
-      isMostSold: homeData.isMostSold === true,
-    },
-  };
 }
 
 async function requestProductsMockFile() {
@@ -156,7 +179,9 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
   // e consumir payload pronto aqui para simplificar a camada de UI.
   const mockFile = await requestProductsMockFile();
 
-  const candidates = mockFile.products
+  const products = Array.isArray(mockFile?.products) ? mockFile.products : [];
+
+  const candidates = products
     .map(toHomeCandidate)
     .filter((item): item is HomeCandidate => item !== null);
 

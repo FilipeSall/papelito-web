@@ -1,41 +1,16 @@
 import Link from "next/link";
+import { buildProductsHref } from "./products-query-helpers";
 import type { ProductTypeId } from "@/features/catalog";
+import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsPaginationProps {
   currentPage: number;
   totalPages: number;
-  activeType: ProductTypeId;
   selectedTypes: Exclude<ProductTypeId, "todos">[];
   minPrice: number | null;
   maxPrice: number | null;
-}
-
-function buildProductsHref(
-  page: number,
-  type: ProductTypeId,
-  selectedTypes: Exclude<ProductTypeId, "todos">[],
-  minPrice: number | null,
-  maxPrice: number | null,
-) {
-  const params = new URLSearchParams();
-
-  if (selectedTypes.length > 1) {
-    params.set("tipos", selectedTypes.join(","));
-  } else if (type !== "todos") {
-    params.set("tipo", type);
-  }
-  if (page > 1) {
-    params.set("page", String(page));
-  }
-  if (typeof minPrice === "number") {
-    params.set("precoMin", String(minPrice));
-  }
-  if (typeof maxPrice === "number") {
-    params.set("precoMax", String(maxPrice));
-  }
-
-  const query = params.toString();
-  return query ? `/produtos?${query}` : "/produtos";
+  viewMode: ProductsViewMode;
+  perPage: number;
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {
@@ -79,10 +54,11 @@ function getPaginationItems(currentPage: number, totalPages: number) {
 export function ProductsPagination({
   currentPage,
   totalPages,
-  activeType,
   selectedTypes,
   minPrice,
   maxPrice,
+  viewMode,
+  perPage,
 }: ProductsPaginationProps) {
   if (totalPages <= 1) {
     return null;
@@ -100,13 +76,14 @@ export function ProductsPagination({
       <Link
         href={
           hasPrevious
-            ? buildProductsHref(
-                currentPage - 1,
-                activeType,
+            ? buildProductsHref({
+                page: currentPage - 1,
                 selectedTypes,
                 minPrice,
                 maxPrice,
-              )
+                viewMode,
+                perPage,
+              })
             : "#"
         }
         aria-disabled={!hasPrevious}
@@ -135,13 +112,14 @@ export function ProductsPagination({
         return (
           <Link
             key={item}
-            href={buildProductsHref(
-              item,
-              activeType,
+            href={buildProductsHref({
+              page: item,
               selectedTypes,
               minPrice,
               maxPrice,
-            )}
+              viewMode,
+              perPage,
+            })}
             aria-current={isActive ? "page" : undefined}
             className={`h-10 min-w-10 inline-flex items-center justify-center rounded-xl border text-sm font-black transition-colors ${
               isActive
@@ -157,13 +135,14 @@ export function ProductsPagination({
       <Link
         href={
           hasNext
-            ? buildProductsHref(
-                currentPage + 1,
-                activeType,
+            ? buildProductsHref({
+                page: currentPage + 1,
                 selectedTypes,
                 minPrice,
                 maxPrice,
-              )
+                viewMode,
+                perPage,
+              })
             : "#"
         }
         aria-disabled={!hasNext}

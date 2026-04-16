@@ -5,6 +5,10 @@ import {
 } from "@/components/layout/products-page";
 import type { ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
+import {
+  normalizeProductsPerPage,
+  normalizeProductsViewMode,
+} from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProdutosPageProps {
   searchParams?:
@@ -12,6 +16,8 @@ interface ProdutosPageProps {
         tipo?: string | string[];
         tipos?: string | string[];
         page?: string | string[];
+        view?: string | string[];
+        perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
       }>
@@ -19,6 +25,8 @@ interface ProdutosPageProps {
         tipo?: string | string[];
         tipos?: string | string[];
         page?: string | string[];
+        view?: string | string[];
+        perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
       };
@@ -108,6 +116,11 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         : [];
 
   const currentPage = normalizePage(readSingleParam(resolvedSearchParams.page));
+  const viewMode = normalizeProductsViewMode(readSingleParam(resolvedSearchParams.view));
+  const perPage = normalizeProductsPerPage(
+    readSingleParam(resolvedSearchParams.perPage),
+    viewMode,
+  );
   const minPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMin));
   const maxPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMax));
 
@@ -118,7 +131,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
       minPrice,
       maxPrice,
       page: currentPage,
-      perPage: 9,
+      perPage,
     }),
   );
 
@@ -135,6 +148,8 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         selectedTypes={catalog.selectedTypes}
         minPrice={catalog.minPrice}
         maxPrice={catalog.maxPrice}
+        viewMode={viewMode}
+        perPage={catalog.perPage}
       />
     </main>
   );

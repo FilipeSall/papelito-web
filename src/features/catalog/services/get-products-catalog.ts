@@ -2,6 +2,7 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
   ProductTypeId,
   ProductsCatalogItem,
@@ -20,6 +21,7 @@ interface MockHomeData {
 interface MockCatalogProduct {
   id: string;
   name: string;
+  imageUrl?: string;
   subcategory?: string | null;
   subcategory2?: string | null;
   price?: {
@@ -144,37 +146,6 @@ function inferTypeFromName(name: string): Exclude<ProductTypeId, "todos"> {
   return "acessorios";
 }
 
-function inferImageFromName(name: string) {
-  const normalized = normalizeText(name);
-
-  if (normalized.includes("alfafa")) {
-    return "/images/products/Image (Alfafa King Size).png";
-  }
-  if (normalized.includes("hemp")) {
-    return "/images/products/Image (Hemp King Size).png";
-  }
-  if (normalized.includes("pink")) {
-    return "/images/products/Image (Pink Queen Size).png";
-  }
-  if (normalized.includes("insane")) {
-    return "/images/products/Image (Insane Brown).png";
-  }
-  if (normalized.includes("brown") && normalized.includes("king")) {
-    return "/images/products/Image (Brown King Size).png";
-  }
-  if (normalized.includes("slim")) {
-    return "/images/products/Image (Tradicional Slim).png";
-  }
-  if (normalized.includes("piteira tradicional")) {
-    return "/images/products/Image (Piteira Tradicional).png";
-  }
-  if (normalized.includes("bag")) {
-    return "/images/products/Image (Bag Tradicional).png";
-  }
-
-  return undefined;
-}
-
 function inferBadge(product: MockCatalogProduct, type: Exclude<ProductTypeId, "todos">) {
   const homeTags = product.homeData?.tags ?? [];
   for (const badge of BADGE_PRIORITY) {
@@ -231,7 +202,7 @@ function mapMockProductToCatalogItem(
       : originalPrice;
 
   return {
-    id: `${product.id}-${index}`,
+    id: product.id,
     category: CATEGORY_LABEL[type],
     name,
     badge: inferBadge(product, type),
@@ -239,7 +210,10 @@ function mapMockProductToCatalogItem(
     price,
     rating: Number((3.9 + (index % 10) * 0.1).toFixed(1)),
     reviews: 48 + ((index * 37) % 760),
-    image: product.homeData?.imageUrl || inferImageFromName(name),
+    image: resolveProductImage({
+      productImageUrl: product.imageUrl,
+      homeImageUrl: product.homeData?.imageUrl,
+    }),
     type,
   };
 }

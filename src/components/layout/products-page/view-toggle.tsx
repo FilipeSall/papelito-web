@@ -1,11 +1,23 @@
+import Link from "next/link";
 import { ViewToggleGridIcon } from "./view-toggle-grid-icon";
 import { ViewToggleListIcon } from "./view-toggle-list-icon";
+import { buildProductsHref } from "./products-query-helpers";
+import {
+  getDefaultPerPageForView,
+  type ProductsViewMode,
+} from "@/features/catalog/utils/products-listing-preferences";
+import type { ProductTypeId } from "@/features/catalog";
 
-type ViewMode = "grid" | "list";
+type SpecificType = Exclude<ProductTypeId, "todos">;
 
 interface ViewToggleProps {
   /** Modo de visualização atual */
-  activeView?: ViewMode;
+  activeView?: ProductsViewMode;
+  selectedTypes: SpecificType[];
+  minPrice: number | null;
+  maxPrice: number | null;
+  currentPage: number;
+  perPage: number;
 }
 
 /**
@@ -13,34 +25,60 @@ interface ViewToggleProps {
  *
  * Exibe dois botões de ícone para alternar entre visualização em grid
  * e visualização em lista. O modo ativo é destacado com cor escura.
- * Por enquanto, o toggle é apenas visual (estático).
  *
  * @example
  * ```tsx
  * <ViewToggle activeView="grid" />
  * ```
  */
-export function ViewToggle({ activeView = "grid" }: ViewToggleProps) {
+export function ViewToggle({
+  activeView = "grid",
+  selectedTypes,
+  minPrice,
+  maxPrice,
+  currentPage,
+  perPage,
+}: ViewToggleProps) {
+  const defaultGridPerPage = getDefaultPerPageForView("grid");
+  const defaultListPerPage = getDefaultPerPageForView("list");
+
+  const gridPerPage = perPage > defaultListPerPage ? defaultGridPerPage : perPage;
+  const listPerPage = perPage < defaultListPerPage ? defaultListPerPage : perPage;
+
   return (
     <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-      <button
-        type="button"
+      <Link
         aria-label="Visualização em grade"
+        href={buildProductsHref({
+          selectedTypes,
+          minPrice,
+          maxPrice,
+          page: currentPage,
+          viewMode: "grid",
+          perPage: gridPerPage,
+        })}
         className={`p-1.5 rounded-md transition-colors ${
           activeView === "grid" ? "bg-white shadow-sm" : "hover:bg-gray-200"
         }`}
       >
         <ViewToggleGridIcon active={activeView === "grid"} />
-      </button>
-      <button
-        type="button"
+      </Link>
+      <Link
         aria-label="Visualização em lista"
+        href={buildProductsHref({
+          selectedTypes,
+          minPrice,
+          maxPrice,
+          page: currentPage,
+          viewMode: "list",
+          perPage: listPerPage,
+        })}
         className={`p-1.5 rounded-md transition-colors ${
           activeView === "list" ? "bg-white shadow-sm" : "hover:bg-gray-200"
         }`}
       >
         <ViewToggleListIcon active={activeView === "list"} />
-      </button>
+      </Link>
     </div>
   );
 }

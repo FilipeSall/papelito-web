@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { CartIcon } from "./icons";
 import type { CartProductInput } from "@/features/cart";
 import { useCartStore } from "@/features/cart";
@@ -21,10 +23,19 @@ export function AddToCartButton({
   className = "",
   onClick,
 }: AddToCartButtonProps) {
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const { status } = useSession();
 
   function handleClick() {
     if (product) {
+      if (status === "loading") return;
+
+      if (status !== "authenticated") {
+        router.push("/entrar");
+        return;
+      }
+
       addItem(product, quantity);
 
       if (typeof window !== "undefined") {

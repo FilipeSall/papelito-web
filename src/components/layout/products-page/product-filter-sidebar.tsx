@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { buildProductsHref } from "./products-query-helpers";
 import type { ProductTypeId } from "@/features/catalog";
+import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
 
@@ -111,6 +113,8 @@ interface ProductFilterSidebarProps {
   categories?: FilterCategory[];
   /** Categorias selecionadas via query params */
   selectedTypes: SpecificType[];
+  viewMode: ProductsViewMode;
+  perPage: number;
 }
 
 function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
@@ -134,25 +138,16 @@ function buildHrefFromSelection(
   selection: SpecificType[],
   minPrice: number | null,
   maxPrice: number | null,
+  viewMode: ProductsViewMode,
+  perPage: number,
 ) {
-  const params = new URLSearchParams();
-  if (selection.length === 1) {
-    params.set("tipo", selection[0]);
-  } else {
-    if (selection.length > 1) {
-      params.set("tipos", selection.join(","));
-    }
-  }
-
-  if (typeof minPrice === "number") {
-    params.set("precoMin", String(minPrice));
-  }
-  if (typeof maxPrice === "number") {
-    params.set("precoMax", String(maxPrice));
-  }
-
-  const query = params.toString();
-  return query ? `/produtos?${query}` : "/produtos";
+  return buildProductsHref({
+    selectedTypes: selection,
+    minPrice,
+    maxPrice,
+    viewMode,
+    perPage,
+  });
 }
 
 /**
@@ -166,6 +161,8 @@ export function ProductFilterSidebar({
   maxPrice = null,
   categories = DEFAULT_CATEGORIES,
   selectedTypes,
+  viewMode,
+  perPage,
 }: ProductFilterSidebarProps) {
   const isTodosChecked = selectedTypes.length === 0;
 
@@ -189,6 +186,8 @@ export function ProductFilterSidebar({
             {selectedTypes.length > 1 ? (
               <input type="hidden" name="tipos" value={selectedTypes.join(",")} />
             ) : null}
+            {viewMode === "list" ? <input type="hidden" name="view" value="list" /> : null}
+            <input type="hidden" name="perPage" value={String(perPage)} />
 
             <div className="flex items-center gap-2">
               <PriceRangeInput
@@ -235,7 +234,13 @@ export function ProductFilterSidebar({
                   key={category.id}
                   category={category}
                   checked={checked}
-                  href={buildHrefFromSelection(nextSelection, minPrice, maxPrice)}
+                  href={buildHrefFromSelection(
+                    nextSelection,
+                    minPrice,
+                    maxPrice,
+                    viewMode,
+                    perPage,
+                  )}
                 />
               );
             })}
@@ -247,7 +252,7 @@ export function ProductFilterSidebar({
 
         {/* Clear Filters */}
         <Link
-          href="/produtos"
+          href={buildHrefFromSelection([], null, null, viewMode, perPage)}
           className="text-sm text-text-muted hover:text-brand-dark transition-colors underline"
         >
           Limpar filtros

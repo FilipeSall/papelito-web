@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { buildProductsHref } from "./products-query-helpers";
 import type { ProductTypeId, ProductsCatalogTab } from "@/features/catalog";
+import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 /**
  * Categoria disponível para filtragem de produtos.
@@ -29,14 +31,16 @@ interface ProductFilterTabsProps {
   /** Faixa de preço ativa */
   minPrice?: number | null;
   maxPrice?: number | null;
+  viewMode: ProductsViewMode;
+  perPage: number;
 }
 
 /**
  * Barra de abas para filtragem de produtos por categoria.
  *
- * Exibe pills horizontais com as categorias principais de produtos.
+ * Exibe pills horizontais com as categorias principais de produtos
+ * e mantém os filtros ativos via query params.
  * A aba ativa é destacada com fundo preto e texto branco.
- * Por enquanto, os filtros são apenas visuais (estáticos).
  *
  * @example
  * ```tsx
@@ -48,6 +52,8 @@ export function ProductFilterTabs({
   tabs = FILTER_TABS,
   minPrice = null,
   maxPrice = null,
+  viewMode,
+  perPage,
 }: ProductFilterTabsProps) {
   const typedTabs = tabs.map((tab) => ({
     id: tab.id,
@@ -56,20 +62,13 @@ export function ProductFilterTabs({
   }));
 
   const createHref = (tabId: ProductTypeId) => {
-    const params = new URLSearchParams();
-
-    if (tabId !== "todos") {
-      params.set("tipo", tabId);
-    }
-    if (typeof minPrice === "number") {
-      params.set("precoMin", String(minPrice));
-    }
-    if (typeof maxPrice === "number") {
-      params.set("precoMax", String(maxPrice));
-    }
-
-    const query = params.toString();
-    return query ? `/produtos?${query}` : "/produtos";
+    return buildProductsHref({
+      selectedTypes: tabId === "todos" ? [] : [tabId],
+      minPrice,
+      maxPrice,
+      viewMode,
+      perPage,
+    });
   };
 
   return (

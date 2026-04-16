@@ -1,8 +1,11 @@
 import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
+import { ProductsList } from "./products-list";
+import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsGridProps {
   /** Lista de produtos para exibir no grid */
   products: ProductGridItem[];
+  viewMode: ProductsViewMode;
 }
 
 /**
@@ -16,7 +19,7 @@ interface ProductsGridProps {
  * <ProductsGrid products={products} />
  * ```
  */
-export function ProductsGrid({ products }: ProductsGridProps) {
+export function ProductsGrid({ products, viewMode }: ProductsGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -25,6 +28,10 @@ export function ProductsGrid({ products }: ProductsGridProps) {
         </p>
       </div>
     );
+  }
+
+  if (viewMode === "list") {
+    return <ProductsList products={products} />;
   }
 
   return (
