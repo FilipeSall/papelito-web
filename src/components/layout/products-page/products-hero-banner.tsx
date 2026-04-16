@@ -19,7 +19,7 @@ export function ProductsHeroBanner() {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/Rectangle 21.png"
+          src="/images/Rectangle21.png"
           alt="Produtos Papelito - Made in Brazil"
           fill
           className="object-cover object-center"
