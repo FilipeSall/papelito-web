@@ -1,3 +1,6 @@
+"use client";
+
+import useEmblaCarousel from "embla-carousel-react";
 import { CategoryNavItem } from "./category-nav-item";
 import { CATEGORIES_NAV_ITEMS } from "./constants";
 
@@ -8,18 +11,46 @@ import { CATEGORIES_NAV_ITEMS } from "./constants";
  * em layout horizontal com gap uniforme e sombra aplicada ao conjunto.
  */
 export function CategoriesNav() {
+  const [emblaRef] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+  });
+
   return (
-    <section className="w-full bg-white py-5">
-      <div className="mx-auto grid max-w-450 grid-cols-2 gap-4 px-4 sm:px-6 lg:grid-cols-4 lg:gap-4 lg:px-8 xl:gap-8 xl:px-43.5 filter-[drop-shadow(0px_4px_4px_rgba(0,0,0,0.25))]">
-        {CATEGORIES_NAV_ITEMS.map((item) => (
-          <CategoryNavItem
-            key={item.title}
-            emoji={item.emoji}
-            title={item.title}
-            subtitle={item.subtitle}
-            href={item.href}
-          />
-        ))}
+    <section className="w-full bg-white py-3 md:py-5">
+      <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
+        <div
+          ref={emblaRef}
+          className="overflow-hidden pb-0.5 lg:hidden"
+          aria-label="Carrossel de categorias"
+        >
+          <div className="flex gap-3.5 pr-4">
+            {CATEGORIES_NAV_ITEMS.map((item) => (
+              <div key={item.title} className="min-w-0 shrink-0 basis-[46%]">
+                <CategoryNavItem
+                  emoji={item.emoji}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  href={item.href}
+                  className="h-27 max-w-none px-4"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="hidden grid-cols-4 gap-4 filter-[drop-shadow(0px_4px_4px_rgba(0,0,0,0.25))] lg:grid xl:gap-8">
+          {CATEGORIES_NAV_ITEMS.map((item) => (
+            <CategoryNavItem
+              key={item.title}
+              emoji={item.emoji}
+              title={item.title}
+              subtitle={item.subtitle}
+              href={item.href}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

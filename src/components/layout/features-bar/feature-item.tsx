@@ -4,7 +4,7 @@ interface FeatureItemProps {
   icon: string;
   title: string;
   subtitle: string;
-  isLast?: boolean;
+  className?: string;
 }
 
 /**
@@ -17,14 +17,10 @@ export function FeatureItem({
   icon,
   title,
   subtitle,
-  isLast = false,
+  className,
 }: FeatureItemProps) {
   return (
-    <div
-      className={`flex flex-1 flex-row items-center pl-6 gap-3 h-[72px]${
-        !isLast ? " border-r border-[#F3F4F6]" : ""
-      }`}
-    >
+    <div className={`flex items-center gap-3 ${className ?? ""}`}>
       <div className="flex items-center justify-center w-9 h-9 bg-[#FFE500] rounded-full shrink-0">
         <Image src={icon} alt="" aria-hidden width={16} height={16} />
       </div>

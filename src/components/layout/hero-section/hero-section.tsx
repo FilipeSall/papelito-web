@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AUTO_INTERVAL } from "@/constants/auto-interval";
 
-const slides = [
+const desktopSlides = [
   {
     src: "/images/hero-section/Banners-Marketplace-B2B-01.png",
     alt: "Banner Marketplace B2B 01",
@@ -22,6 +22,27 @@ const slides = [
     alt: "Banner Marketplace B2B 04",
   },
 ];
+
+const mobileSlides = [
+  {
+    src: "/images/hero-section/Banners-Marketplace-B2B-07_-Mobile.png",
+    alt: "Banner Marketplace B2B 07 Mobile",
+  },
+  {
+    src: "/images/hero-section/Banners-Marketplace-B2B-08--Mobile.png",
+    alt: "Banner Marketplace B2B 08 Mobile",
+  },
+  {
+    src: "/images/hero-section/Banners-Marketplace-B2B-09--Mobile.png",
+    alt: "Banner Marketplace B2B 09 Mobile",
+  },
+  {
+    src: "/images/hero-section/Banners-Marketplace-B2B-10---Mobile.png",
+    alt: "Banner Marketplace B2B 10 Mobile",
+  },
+];
+
+const MOBILE_ONLY_MAX_WIDTH = 500;
 
 const NAV_BTN: React.CSSProperties = {
   position: "absolute",
@@ -46,7 +67,9 @@ const NAV_BTN: React.CSSProperties = {
 
 export function HeroSection() {
   const [current, setCurrent] = useState(0);
+  const [isMobileOnly, setIsMobileOnly] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const slides = isMobileOnly ? mobileSlides : desktopSlides;
 
   const resetTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -55,17 +78,32 @@ export function HeroSection() {
     intervalRef.current = setInterval(() => {
       setCurrent((c) => (c + 1) % slides.length);
     }, AUTO_INTERVAL);
-  }, []);
+  }, [slides.length]);
 
   const prev = useCallback(() => {
     setCurrent((c) => (c - 1 + slides.length) % slides.length);
     resetTimer();
-  }, [resetTimer]);
+  }, [resetTimer, slides.length]);
 
   const next = useCallback(() => {
     setCurrent((c) => (c + 1) % slides.length);
     resetTimer();
-  }, [resetTimer]);
+  }, [resetTimer, slides.length]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_ONLY_MAX_WIDTH}px)`);
+
+    const handleViewportChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobileOnly(event.matches);
+    };
+
+    handleViewportChange(mediaQuery);
+    mediaQuery.addEventListener("change", handleViewportChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleViewportChange);
+    };
+  }, []);
 
   useEffect(() => {
     resetTimer();
@@ -74,11 +112,17 @@ export function HeroSection() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [resetTimer]);
+  }, [resetTimer, slides.length]);
 
   return (
     <>
-      <section className="relative flex-1 overflow-hidden">
+      <section
+        className={
+          isMobileOnly
+            ? "relative h-[calc(100vw*2)] min-h-[640px] w-full flex-none overflow-hidden"
+            : "relative flex-1 overflow-hidden"
+        }
+      >
         {slides.map((slide, i) => (
           <div
             key={slide.src}
@@ -94,29 +138,33 @@ export function HeroSection() {
               alt={slide.alt}
               fill
               priority={i === 0}
-              className="object-cover"
+              className={isMobileOnly ? "object-contain object-top" : "object-cover"}
               sizes="100vw"
             />
           </div>
         ))}
 
-        {/* Botão anterior */}
-        <button
-          onClick={prev}
-          style={{ ...NAV_BTN, left: 16 }}
-          aria-label="Slide anterior"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
+        {!isMobileOnly ? (
+          <>
+            {/* Botão anterior */}
+            <button
+              onClick={prev}
+              style={{ ...NAV_BTN, left: 16 }}
+              aria-label="Slide anterior"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
 
-        {/* Botão próximo */}
-        <button
-          onClick={next}
-          style={{ ...NAV_BTN, right: 16 }}
-          aria-label="Próximo slide"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
+            {/* Botão próximo */}
+            <button
+              onClick={next}
+              style={{ ...NAV_BTN, right: 16 }}
+              aria-label="Próximo slide"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </>
+        ) : null}
 
         {/* Indicadores */}
         <div
@@ -152,7 +200,7 @@ export function HeroSection() {
           ))}
         </div>
       </section>
-      <div style={{ width: "100%", height: "0.25rem", background: "#FFE500" }} />
+      <div className="h-[0.125rem] w-full bg-[#FFE500] max-[500px]:h-[0.25rem]" />
     </>
   );
 }

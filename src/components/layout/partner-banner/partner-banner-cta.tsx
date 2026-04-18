@@ -10,7 +10,7 @@ export function PartnerBannerCta({ children, href }: PartnerBannerCtaProps) {
   return (
     <Link
       href={href}
-      className="inline-flex self-start items-center gap-4 bg-brand-dark text-white px-10 py-4 rounded-full hover:bg-brand-dark/90 transition-colors"
+      className="inline-flex h-14 w-full max-w-[313.625px] self-start items-center justify-center gap-4 rounded-full bg-brand-dark px-10 text-white transition-colors hover:bg-brand-dark/90 sm:w-auto"
     >
       <span className="font-black text-base leading-6 tracking-[-0.3125px] uppercase">
         {children}

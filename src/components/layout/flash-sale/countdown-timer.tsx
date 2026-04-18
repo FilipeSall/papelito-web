@@ -13,7 +13,7 @@ function parseTime(totalSeconds: number) {
 
 function Separator() {
   return (
-    <span className="font-black text-xl leading-7 tracking-[-0.449219px] text-brand-yellow self-start mt-3.5 mx-1">
+    <span className="mx-1 self-start pt-3 font-black text-xl leading-7 tracking-[-0.449219px] text-brand-yellow max-[500px]:self-center max-[500px]:pt-0">
       :
     </span>
   );
@@ -40,15 +40,15 @@ export function CountdownTimer() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm leading-5 tracking-[-0.150391px] text-white/60 whitespace-nowrap">
+      <span className="whitespace-nowrap text-sm leading-5 tracking-[-0.150391px] text-white/60">
         Termina em:
       </span>
-      <div className="flex items-start">
-        <CountdownUnit value={h} />
+      <div className="flex items-start max-[500px]:items-center">
+        <CountdownUnit value={h} label="h" />
         <Separator />
-        <CountdownUnit value={m} />
+        <CountdownUnit value={m} label="m" />
         <Separator />
-        <CountdownUnit value={s} />
+        <CountdownUnit value={s} label="s" />
       </div>
     </div>
   );

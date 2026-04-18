@@ -14,7 +14,7 @@ export function PromoMarquee() {
 
   return (
     <div className="h-8">
-      <div className="fixed inset-x-0 top-[66px] z-40 flex h-8 items-center overflow-hidden bg-white md:top-23.25">
+      <div className="fixed inset-x-0 top-[60px] z-40 flex h-8 items-center overflow-hidden bg-white md:top-23.25">
         <div className="flex whitespace-nowrap animate-marquee">
           {doubled.map((item, i) => (
             <span

@@ -17,10 +17,10 @@ export function PublicHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 w-full border-b border-white/10 bg-brand-dark md:bg-brand-yellow">
       {/* Mobile */}
-      <div className="mx-auto flex w-full max-w-391 items-center justify-between px-4 py-3.75 md:hidden">
+      <div className="mx-auto flex h-15 w-full max-w-391 items-center justify-between px-4 md:hidden">
         <PublicHeaderLogo variant="mobile" />
 
-        <div className="flex items-start gap-2 pt-1">
+        <div className="flex items-center gap-2">
           <PublicHeaderMobileActions invertColors />
 
           <PublicHeaderMobileMenu

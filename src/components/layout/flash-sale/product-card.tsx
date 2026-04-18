@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ProductCardImage, ProductCardInfo } from "./product-card-components";
 import type { HomeProductCard } from "@/features/catalog";
 
-
 interface ProductCardProps {
   product: HomeProductCard;
+  compactOnMobile?: boolean;
 }
 
 /**
@@ -38,7 +38,10 @@ interface ProductCardProps {
  * />
  * ```
  */
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({
+  product,
+  compactOnMobile = false,
+}: ProductCardProps) {
   const {
     id,
     category,
@@ -56,6 +59,10 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div
       className={`relative h-82.5 w-full max-w-73 cursor-pointer overflow-hidden rounded-xl bg-white ${
+        compactOnMobile
+          ? "h-[329.982px] w-full max-w-none sm:h-82.5 sm:max-w-73"
+          : ""
+      } ${
         featured
           ? "shadow-[0px_0px_0px_2px_#FFE500,0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
           : "shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
@@ -74,6 +81,7 @@ export function ProductCard({ product }: ProductCardProps) {
         name={name}
         badge={badge}
         discount={discount}
+        compactOnMobile={compactOnMobile}
       />
       <ProductCardInfo
         id={id}
