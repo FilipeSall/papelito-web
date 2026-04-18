@@ -4,9 +4,12 @@ import { usePathname } from "next/navigation";
 
 import {
   AddressIcon,
+  CouponIcon,
+  FavoritesIcon,
   LogoutIcon,
   OrdersIcon,
   PaymentIcon,
+  ReviewsIcon,
   SettingsIcon,
   UserDataIcon,
 } from "./profile-sidebar-icons";
@@ -17,6 +20,9 @@ const menuItems = [
   { href: "/perfil/dados", label: "Meus Dados", icon: UserDataIcon },
   { href: "/perfil/enderecos", label: "Endereços", icon: AddressIcon },
   { href: "/perfil/pagamentos", label: "Pagamentos", icon: PaymentIcon },
+  { href: "/perfil/favoritos", label: "Favoritos", icon: FavoritesIcon },
+  { href: "/perfil/avaliacoes", label: "Minhas Avaliações", icon: ReviewsIcon },
+  { href: "/perfil/cupons", label: "Meus Cupons", icon: CouponIcon },
   { href: "/perfil/configuracoes", label: "Configurações", icon: SettingsIcon },
 ];
 

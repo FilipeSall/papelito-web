@@ -112,6 +112,68 @@ export function SettingsIcon({ className }: IconProps) {
   );
 }
 
+export function FavoritesIcon({ className }: IconProps) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M12.001 20.25l-1.31-1.194C6.038 14.818 3 12.06 3 8.625A4.875 4.875 0 017.875 3.75c1.95 0 3.384.973 4.126 2.208.742-1.235 2.176-2.208 4.124-2.208A4.875 4.875 0 0121 8.625c0 3.435-3.038 6.193-7.69 10.43L12 20.25z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ReviewsIcon({ className }: IconProps) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M7.5 6.75h9m-9 4.5h5.25m-5.25 4.5h3m10.5-6.75c0 4.556-4.365 8.25-9.75 8.25-.982 0-1.929-.122-2.817-.35L3 18.75l1.743-4.259A7.894 7.894 0 014.5 12c0-4.556 4.365-8.25 9.75-8.25S24 7.444 24 12z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CouponIcon({ className }: IconProps) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M8.25 8.25h.008v.008H8.25V8.25zm7.5 7.5h.008v.008h-.008v-.008z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.25 8.25l7.5 7.5M4.5 8.25A2.25 2.25 0 016.75 6h10.5a2.25 2.25 0 012.25 2.25v7.5A2.25 2.25 0 0117.25 18H6.75A2.25 2.25 0 014.5 15.75v-7.5z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function LogoutIcon({ className }: IconProps) {
   return (
     <svg

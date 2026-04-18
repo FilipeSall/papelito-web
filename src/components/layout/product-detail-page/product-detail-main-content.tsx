@@ -139,7 +139,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
                 type="button"
                 aria-label={`Selecionar miniatura ${thumb.name}`}
                 onClick={() => setSelectedThumbId(thumb.id)}
-                className={`relative h-[76px] w-full overflow-hidden rounded-[14px] border-2 bg-white px-3 py-2 transition ${
+                className={`relative h-19 w-full overflow-hidden rounded-[14px] border-2 bg-white px-3 py-2 transition ${
                   selectedThumbId === thumb.id
                     ? "border-brand-yellow"
                     : "border-transparent hover:border-[#E5E7EB]"
@@ -189,7 +189,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
             Você economiza {formatBRL(Math.max(0, product.originalPrice - product.price))}
           </span>
 
-          <p className="mt-6 max-w-[452px] text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">
+          <p className="mt-6 max-w-113 text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">
             {product.description}
           </p>
 
@@ -224,7 +224,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
               onClick={handleAddToCart}
               className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90"
             >
-              <CartIcon className="size-[18px]" />
+              <CartIcon className="size-4.5" />
               ADICIONAR AO CARRINHO
             </button>
             <button
