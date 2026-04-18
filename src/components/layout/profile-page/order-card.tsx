@@ -28,9 +28,9 @@ export function OrderCard({ order }: OrderCardProps) {
   const itemsLabel = order.itemsCount === 1 ? "item" : "itens";
 
   return (
-    <article className="flex items-center justify-between rounded-2xl bg-white px-6 py-6 shadow-sm">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
+    <article className="flex flex-col gap-4 rounded-2xl bg-white px-6 py-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.1)] sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <span className="text-base font-black tracking-[-0.31px] text-brand-dark">
             {order.orderNumber}
           </span>
@@ -44,12 +44,12 @@ export function OrderCard({ order }: OrderCardProps) {
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className="text-lg font-black tracking-[-0.44px] text-brand-dark">
+      <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
+        <span className="text-base font-black tracking-[-0.44px] text-brand-dark sm:text-lg">
           {formattedTotal}
         </span>
         <Link
-          className="inline-flex h-8 items-center rounded-full bg-brand-dark px-4 text-xs font-black text-white transition hover:opacity-90"
+          className="inline-flex h-8 shrink-0 items-center rounded-full bg-brand-dark px-4 text-[10px] font-black uppercase tracking-[0.2px] text-white transition hover:opacity-90"
           href={`/perfil/pedidos/${order.id}`}
         >
           Ver Detalhes

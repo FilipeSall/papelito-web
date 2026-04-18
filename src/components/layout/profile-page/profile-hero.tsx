@@ -16,7 +16,7 @@ type ProfileHeroProps = {
 export function ProfileHero({ name, email, image, badge, points }: ProfileHeroProps) {
   return (
     <section className="w-full bg-brand-dark">
-      <div className="mx-auto flex w-full max-w-391 items-center gap-6 px-8 py-6">
+      <div className="mx-auto flex w-full max-w-391 items-center gap-6 px-4 py-6 sm:px-6 lg:px-8 max-[500px]:min-h-[176px]">
         <ProfileAvatar image={image} name={name} />
         <ProfileInfo badge={badge} email={email} name={name} points={points} />
       </div>

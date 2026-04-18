@@ -34,7 +34,7 @@ export function ProfileSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm">
+    <aside className="w-full overflow-hidden rounded-2xl bg-white shadow-sm lg:w-72 lg:shrink-0 xl:w-80">
       <nav className="flex flex-col">
         {menuItems.map((item) => (
           <ProfileSidebarItem

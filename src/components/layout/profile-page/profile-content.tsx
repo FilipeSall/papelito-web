@@ -12,10 +12,10 @@ type ProfileContentProps = {
  */
 export function ProfileContent({ children }: ProfileContentProps) {
   return (
-    <div className="mx-auto w-full max-w-391 px-8 py-8">
-      <div className="flex gap-6">
+    <div className="relative z-10 mx-auto w-full max-w-391 px-4 py-6 sm:px-6 md:py-7 lg:px-8 lg:py-8 max-[500px]:mt-4">
+      <div className="flex flex-col gap-6 lg:flex-row">
         <ProfileSidebar />
-        <div className="flex-1">{children}</div>
+        <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>
   );

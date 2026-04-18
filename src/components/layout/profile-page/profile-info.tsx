@@ -14,11 +14,11 @@ type ProfileInfoProps = {
  */
 export function ProfileInfo({ name, email, badge, points }: ProfileInfoProps) {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <h1 className="text-2xl font-black leading-8 tracking-[0.07px] text-white">
         {name}
       </h1>
-      <p className="text-sm font-normal leading-5 tracking-[-0.15px] text-white/60">
+      <p className="truncate text-sm font-normal leading-5 tracking-[-0.15px] text-white/60">
         {email}
       </p>
       {(badge || points !== undefined) && (

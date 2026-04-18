@@ -22,7 +22,8 @@ export function ProfileSidebarItem({
   isActive = false,
   variant = "default",
 }: ProfileSidebarItemProps) {
-  const baseClasses = "flex w-full items-center justify-between border-b border-gray-100 px-5 py-4";
+  const baseClasses =
+    "flex h-[53px] w-full items-center justify-between border-b border-bg-light px-5 py-4";
 
   const activeClasses = isActive ? "bg-brand-dark text-white" : "";
 
