@@ -21,3 +21,4 @@ export { ProfileSettings } from "./profile-settings";
 export { OrderStatusBadge, type OrderStatus } from "./order-status-badge";
 export { OrderCard, type Order } from "./order-card";
 export { OrdersList } from "./orders-list";
+export { OrderTrackingCopyButton } from "./order-tracking-copy-button";
