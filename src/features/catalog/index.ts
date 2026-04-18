@@ -9,6 +9,7 @@ export type {
   HomeProductsPayload,
 } from "./types/home-products";
 export type {
+  ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
   ProductsCatalogPayload,

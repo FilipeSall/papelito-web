@@ -1,9 +1,11 @@
-import type { ProductTypeId } from "@/features/catalog";
+import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
 
 interface BuildProductsHrefInput {
+  basePath?: string;
+  collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
   minPrice: number | null;
   maxPrice: number | null;
@@ -13,6 +15,8 @@ interface BuildProductsHrefInput {
 }
 
 export function buildProductsHref({
+  basePath = "/produtos",
+  collection = "todos",
   selectedTypes,
   minPrice,
   maxPrice,
@@ -26,6 +30,10 @@ export function buildProductsHref({
     params.set("tipo", selectedTypes[0]);
   } else if (selectedTypes.length > 1) {
     params.set("tipos", selectedTypes.join(","));
+  }
+
+  if (collection !== "todos" || basePath !== "/produtos") {
+    params.set("colecao", collection);
   }
 
   if (typeof page === "number" && page > 1) {
@@ -47,5 +55,5 @@ export function buildProductsHref({
   params.set("perPage", String(perPage));
 
   const query = params.toString();
-  return query ? `/produtos?${query}` : "/produtos";
+  return query ? `${basePath}?${query}` : basePath;
 }

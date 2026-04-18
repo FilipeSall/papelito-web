@@ -5,6 +5,13 @@ export type ProductTypeId =
   | "filtros"
   | "acessorios";
 
+export type ProductCollectionId =
+  | "todos"
+  | "premium"
+  | "novidades"
+  | "promocoes"
+  | "kits";
+
 export interface ProductsCatalogItem {
   id: string;
   category: string;
@@ -16,6 +23,10 @@ export interface ProductsCatalogItem {
   reviews: number;
   image?: string;
   type: Exclude<ProductTypeId, "todos">;
+  isPremium: boolean;
+  isNewArrival: boolean;
+  isOnSale: boolean;
+  isKit: boolean;
 }
 
 export interface ProductsCatalogTab {
@@ -31,6 +42,7 @@ export interface ProductsCatalogPayload {
   minPrice: number | null;
   maxPrice: number | null;
   activeType: ProductTypeId;
+  activeCollection: ProductCollectionId;
   totalItems: number;
   totalPages: number;
   currentPage: number;

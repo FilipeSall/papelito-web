@@ -1,11 +1,13 @@
 import { ProductFilterTabs } from "./product-filter-tabs";
 import { ProductFilterSidebar } from "./product-filter-sidebar";
+import { ProductCollectionFilters } from "./product-collection-filters";
 import { ProductsGrid } from "./products-grid";
 import { ProductsPagination } from "./products-pagination";
 import { ProductsPerPageSelector } from "./products-per-page-selector";
 import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import type {
+  ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
   ProductsCatalogTab,
@@ -13,6 +15,9 @@ import type {
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsSectionProps {
+  basePath?: string;
+  activeCollection?: ProductCollectionId;
+  showCollectionFilters?: boolean;
   products: ProductsCatalogItem[];
   tabs: ProductsCatalogTab[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
@@ -44,6 +49,9 @@ interface ProductsSectionProps {
  * ```
  */
 export function ProductsSection({
+  basePath = "/produtos",
+  activeCollection = "todos",
+  showCollectionFilters = false,
   products,
   tabs,
   selectedTypes,
@@ -61,8 +69,24 @@ export function ProductsSection({
       <AddToCartToastHost />
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Filter Tabs */}
+        {showCollectionFilters ? (
+          <div className="mb-4">
+            <ProductCollectionFilters
+              basePath={basePath}
+              activeCollection={activeCollection}
+              selectedTypes={selectedTypes}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              viewMode={viewMode}
+              perPage={perPage}
+            />
+          </div>
+        ) : null}
+
         <div className="mb-6">
           <ProductFilterTabs
+            basePath={basePath}
+            collection={activeCollection}
             activeTab={activeType}
             tabs={tabs}
             minPrice={minPrice}
@@ -80,6 +104,8 @@ export function ProductsSection({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <ProductsPerPageSelector
+              basePath={basePath}
+              collection={activeCollection}
               selectedTypes={selectedTypes}
               minPrice={minPrice}
               maxPrice={maxPrice}
@@ -87,6 +113,8 @@ export function ProductsSection({
               perPage={perPage}
             />
             <ViewToggle
+              basePath={basePath}
+              collection={activeCollection}
               activeView={viewMode}
               selectedTypes={selectedTypes}
               minPrice={minPrice}
@@ -101,6 +129,8 @@ export function ProductsSection({
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
           <ProductFilterSidebar
+            basePath={basePath}
+            collection={activeCollection}
             selectedTypes={selectedTypes}
             minPrice={minPrice}
             maxPrice={maxPrice}
@@ -112,6 +142,8 @@ export function ProductsSection({
           <div className="flex-1">
             <ProductsGrid products={products} viewMode={viewMode} />
             <ProductsPagination
+              basePath={basePath}
+              collection={activeCollection}
               currentPage={currentPage}
               totalPages={totalPages}
               selectedTypes={selectedTypes}

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
+import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import {
   getPerPageOptionsForView,
   type ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
-import type { ProductTypeId } from "@/features/catalog";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
 
 interface ProductsPerPageSelectorProps {
+  basePath?: string;
+  collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
   minPrice: number | null;
   maxPrice: number | null;
@@ -17,6 +19,8 @@ interface ProductsPerPageSelectorProps {
 }
 
 export function ProductsPerPageSelector({
+  basePath = "/produtos",
+  collection = "todos",
   selectedTypes,
   minPrice,
   maxPrice,
@@ -35,6 +39,8 @@ export function ProductsPerPageSelector({
           <Link
             key={option}
             href={buildProductsHref({
+              basePath,
+              collection,
               selectedTypes,
               minPrice,
               maxPrice,

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
-import type { ProductTypeId, ProductsCatalogTab } from "@/features/catalog";
+import type {
+  ProductCollectionId,
+  ProductTypeId,
+  ProductsCatalogTab,
+} from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 /**
@@ -24,6 +28,8 @@ export const FILTER_TABS: FilterTab[] = [
 ];
 
 interface ProductFilterTabsProps {
+  basePath?: string;
+  collection?: ProductCollectionId;
   /** Aba atualmente selecionada */
   activeTab?: ProductTypeId;
   /** Lista de abas disponíveis */
@@ -48,6 +54,8 @@ interface ProductFilterTabsProps {
  * ```
  */
 export function ProductFilterTabs({
+  basePath = "/produtos",
+  collection = "todos",
   activeTab = "todos",
   tabs = FILTER_TABS,
   minPrice = null,
@@ -63,6 +71,8 @@ export function ProductFilterTabs({
 
   const createHref = (tabId: ProductTypeId) => {
     return buildProductsHref({
+      basePath,
+      collection,
       selectedTypes: tabId === "todos" ? [] : [tabId],
       minPrice,
       maxPrice,

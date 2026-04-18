@@ -9,6 +9,7 @@ const getCachedProductsCatalog = cache(
   async (
     page: number,
     type: GetProductsCatalogInput["type"],
+    collection: GetProductsCatalogInput["collection"],
     selectedTypesKey: string,
     minPrice: number | null,
     maxPrice: number | null,
@@ -17,6 +18,7 @@ const getCachedProductsCatalog = cache(
     getProductsCatalog({
       page,
       type,
+      collection,
       selectedTypes:
         selectedTypesKey.length > 0
           ? (selectedTypesKey.split(",") as Exclude<
@@ -33,6 +35,7 @@ const getCachedProductsCatalog = cache(
 export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
   const page = input.page ?? 1;
   const type = input.type ?? "todos";
+  const collection = input.collection ?? "todos";
   const selectedTypesKey = [...(input.selectedTypes ?? [])].sort().join(",");
   const minPrice =
     typeof input.minPrice === "number" && Number.isFinite(input.minPrice)
@@ -47,6 +50,7 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
   return getCachedProductsCatalog(
     page,
     type,
+    collection,
     selectedTypesKey,
     minPrice,
     maxPrice,

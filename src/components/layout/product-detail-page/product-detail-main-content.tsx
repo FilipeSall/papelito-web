@@ -76,12 +76,12 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
   );
   const relatedProducts = useMemo(() => product.relatedThumbs.slice(0, 4), [product.relatedThumbs]);
 
-  function handleAddToCart() {
+  function addCurrentProductToCart() {
     if (status === "loading") return;
 
     if (status !== "authenticated") {
       router.push("/entrar");
-      return;
+      return false;
     }
 
     addItem(
@@ -103,6 +103,22 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
         }),
       );
     }
+
+    return true;
+  }
+
+  function handleAddToCart() {
+    addCurrentProductToCart();
+  }
+
+  function handleBuyNow() {
+    const added = addCurrentProductToCart();
+
+    if (!added) {
+      return;
+    }
+
+    router.push("/carrinho");
   }
 
   return (
@@ -289,6 +305,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
 
           <button
             type="button"
+            onClick={handleBuyNow}
             className="mt-4 h-14 w-full rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90"
           >
             COMPRAR AGORA

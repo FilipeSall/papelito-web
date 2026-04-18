@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
+  ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
   ProductsCatalogPayload,
@@ -16,6 +17,8 @@ interface MockHomeData {
   tags?: string[];
   originalPrice?: number;
   price?: number;
+  isNewArrival?: boolean;
+  discountPercent?: number;
 }
 
 interface MockCatalogProduct {
@@ -37,6 +40,7 @@ interface ProductsMockFile {
 export interface GetProductsCatalogInput {
   page?: number;
   type?: ProductTypeId;
+  collection?: ProductCollectionId;
   selectedTypes?: Exclude<ProductTypeId, "todos">[];
   minPrice?: number | null;
   maxPrice?: number | null;
@@ -109,6 +113,22 @@ function normalizeSelectedTypes(
   }
 
   return [];
+}
+
+function normalizeCollection(
+  value: GetProductsCatalogInput["collection"],
+): ProductCollectionId {
+  if (
+    value === "todos" ||
+    value === "premium" ||
+    value === "novidades" ||
+    value === "promocoes" ||
+    value === "kits"
+  ) {
+    return value;
+  }
+
+  return "todos";
 }
 
 function normalizePriceValue(value: number | null | undefined) {
@@ -201,6 +221,35 @@ function mapMockProductToCatalogItem(
       ? toMoney(product.homeData.price)
       : originalPrice;
 
+  const normalizedName = normalizeText(product.name);
+  const normalizedSubcategory =
+    typeof product.subcategory === "string" ? normalizeText(product.subcategory) : "";
+  const normalizedSubcategory2 =
+    typeof product.subcategory2 === "string" ? normalizeText(product.subcategory2) : "";
+  const normalizedTags = (product.homeData?.tags ?? []).map((tag) =>
+    normalizeText(tag),
+  );
+  const hasTag = (value: string) => normalizedTags.includes(normalizeText(value));
+
+  const isPremium =
+    hasTag("Premium") ||
+    normalizedSubcategory.includes("premium") ||
+    normalizedSubcategory2.includes("premium") ||
+    normalizedName.includes("premium");
+  const isNewArrival =
+    product.homeData?.isNewArrival === true ||
+    hasTag("Recém Chegado") ||
+    hasTag("Novo");
+  const isOnSale =
+    (typeof product.homeData?.discountPercent === "number" &&
+      product.homeData.discountPercent > 0) ||
+    price < originalPrice;
+  const isKit =
+    hasTag("Kit") ||
+    normalizedSubcategory.includes("kit") ||
+    normalizedSubcategory2.includes("kit") ||
+    normalizedName.includes("kit");
+
   return {
     id: product.id,
     category: CATEGORY_LABEL[type],
@@ -215,6 +264,10 @@ function mapMockProductToCatalogItem(
       homeImageUrl: product.homeData?.imageUrl,
     }),
     type,
+    isPremium,
+    isNewArrival,
+    isOnSale,
+    isKit,
   };
 }
 
@@ -234,6 +287,7 @@ export async function getProductsCatalog(
   input: GetProductsCatalogInput = {},
 ): Promise<ProductsCatalogPayload> {
   const selectedTypes = normalizeSelectedTypes(input.selectedTypes, input.type);
+  const activeCollection = normalizeCollection(input.collection);
   const activeType = selectedTypes.length === 1 ? selectedTypes[0] : "todos";
   const { minPrice, maxPrice } = normalizePriceRange({
     minPrice: input.minPrice,
@@ -258,7 +312,27 @@ export async function getProductsCatalog(
       ? allItems
       : allItems.filter((item) => selectedTypes.includes(item.type));
 
-  const filteredItems = typeFilteredItems.filter((item) => {
+  const collectionFilteredItems = typeFilteredItems.filter((item) => {
+    if (activeCollection === "premium") {
+      return item.isPremium;
+    }
+
+    if (activeCollection === "novidades") {
+      return item.isNewArrival;
+    }
+
+    if (activeCollection === "promocoes") {
+      return item.isOnSale;
+    }
+
+    if (activeCollection === "kits") {
+      return item.isKit;
+    }
+
+    return true;
+  });
+
+  const filteredItems = collectionFilteredItems.filter((item) => {
     if (minPrice !== null && item.price < minPrice) {
       return false;
     }
@@ -283,6 +357,7 @@ export async function getProductsCatalog(
     minPrice,
     maxPrice,
     activeType,
+    activeCollection,
     totalItems,
     totalPages,
     currentPage,

@@ -2,17 +2,19 @@ import Link from "next/link";
 import { ViewToggleGridIcon } from "./view-toggle-grid-icon";
 import { ViewToggleListIcon } from "./view-toggle-list-icon";
 import { buildProductsHref } from "./products-query-helpers";
+import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import {
   getDefaultPerPageForView,
   type ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
-import type { ProductTypeId } from "@/features/catalog";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
 
 interface ViewToggleProps {
   /** Modo de visualização atual */
   activeView?: ProductsViewMode;
+  basePath?: string;
+  collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
   minPrice: number | null;
   maxPrice: number | null;
@@ -33,6 +35,8 @@ interface ViewToggleProps {
  */
 export function ViewToggle({
   activeView = "grid",
+  basePath = "/produtos",
+  collection = "todos",
   selectedTypes,
   minPrice,
   maxPrice,
@@ -50,6 +54,8 @@ export function ViewToggle({
       <Link
         aria-label="Visualização em grade"
         href={buildProductsHref({
+          basePath,
+          collection,
           selectedTypes,
           minPrice,
           maxPrice,
@@ -66,6 +72,8 @@ export function ViewToggle({
       <Link
         aria-label="Visualização em lista"
         href={buildProductsHref({
+          basePath,
+          collection,
           selectedTypes,
           minPrice,
           maxPrice,

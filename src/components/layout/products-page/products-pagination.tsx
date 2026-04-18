@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
-import type { ProductTypeId } from "@/features/catalog";
+import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsPaginationProps {
+  basePath?: string;
+  collection?: ProductCollectionId;
   currentPage: number;
   totalPages: number;
   selectedTypes: Exclude<ProductTypeId, "todos">[];
@@ -52,6 +54,8 @@ function getPaginationItems(currentPage: number, totalPages: number) {
  * e URL compartilhável.
  */
 export function ProductsPagination({
+  basePath = "/produtos",
+  collection = "todos",
   currentPage,
   totalPages,
   selectedTypes,
@@ -77,6 +81,8 @@ export function ProductsPagination({
         href={
           hasPrevious
             ? buildProductsHref({
+                basePath,
+                collection,
                 page: currentPage - 1,
                 selectedTypes,
                 minPrice,
@@ -113,6 +119,8 @@ export function ProductsPagination({
           <Link
             key={item}
             href={buildProductsHref({
+              basePath,
+              collection,
               page: item,
               selectedTypes,
               minPrice,
@@ -136,6 +144,8 @@ export function ProductsPagination({
         href={
           hasNext
             ? buildProductsHref({
+                basePath,
+                collection,
                 page: currentPage + 1,
                 selectedTypes,
                 minPrice,

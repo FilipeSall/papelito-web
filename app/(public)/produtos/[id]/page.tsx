@@ -4,6 +4,7 @@ import {
   ProductBreadcrumbs,
   ProductDetailMainSection,
 } from "@/components/layout/product-detail-page";
+import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { useProductDetail } from "@/features/catalog";
 
 interface ProdutoDetalhePageProps {
@@ -66,6 +67,7 @@ export default function ProdutoDetalhePage({
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
       <ProductBreadcrumbs productName={resolvedProduct.name} />
       <ProductDetailMainSection product={resolvedProduct} />
+      <AddToCartToastHost />
     </main>
   );
 }

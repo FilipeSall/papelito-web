@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
-import type { ProductTypeId } from "@/features/catalog";
+import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
@@ -105,6 +105,8 @@ function CategoryCheckbox({ category, checked, href }: CategoryCheckboxProps) {
 }
 
 interface ProductFilterSidebarProps {
+  basePath?: string;
+  collection?: ProductCollectionId;
   /** Valor mínimo do filtro de preço */
   minPrice?: number | null;
   /** Valor máximo do filtro de preço */
@@ -135,6 +137,8 @@ function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
 }
 
 function buildHrefFromSelection(
+  basePath: string,
+  collection: ProductCollectionId,
   selection: SpecificType[],
   minPrice: number | null,
   maxPrice: number | null,
@@ -142,6 +146,8 @@ function buildHrefFromSelection(
   perPage: number,
 ) {
   return buildProductsHref({
+    basePath,
+    collection,
     selectedTypes: selection,
     minPrice,
     maxPrice,
@@ -157,6 +163,8 @@ function buildHrefFromSelection(
  * para manter o fluxo server-side.
  */
 export function ProductFilterSidebar({
+  basePath = "/produtos",
+  collection = "todos",
   minPrice = null,
   maxPrice = null,
   categories = DEFAULT_CATEGORIES,
@@ -179,7 +187,10 @@ export function ProductFilterSidebar({
           <h4 className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2">
             Faixa de Preço
           </h4>
-          <form method="GET" action="/produtos" className="space-y-2">
+          <form method="GET" action={basePath} className="space-y-2">
+            {collection !== "todos" ? (
+              <input type="hidden" name="colecao" value={collection} />
+            ) : null}
             {selectedTypes.length === 1 ? (
               <input type="hidden" name="tipo" value={selectedTypes[0]} />
             ) : null}
@@ -235,6 +246,8 @@ export function ProductFilterSidebar({
                   category={category}
                   checked={checked}
                   href={buildHrefFromSelection(
+                    basePath,
+                    collection,
                     nextSelection,
                     minPrice,
                     maxPrice,
@@ -252,7 +265,15 @@ export function ProductFilterSidebar({
 
         {/* Clear Filters */}
         <Link
-          href={buildHrefFromSelection([], null, null, viewMode, perPage)}
+          href={buildHrefFromSelection(
+            basePath,
+            collection,
+            [],
+            null,
+            null,
+            viewMode,
+            perPage,
+          )}
           className="text-sm text-text-muted hover:text-brand-dark transition-colors underline"
         >
           Limpar filtros
