@@ -15,7 +15,6 @@ export { PaymentCard, type PaymentMethod } from "./payment-card";
 export { AddPaymentCard } from "./add-payment-card";
 export { PaymentList } from "./payment-list";
 export { ProfileWishlist } from "./profile-wishlist";
-export { ProfileReviews } from "./profile-reviews";
 export { ProfileCoupons } from "./profile-coupons";
 export { ProfileSettings } from "./profile-settings";
 export { OrderStatusBadge, type OrderStatus } from "./order-status-badge";

@@ -5,6 +5,7 @@ interface FeatureItemProps {
   title: string;
   subtitle: string;
   className?: string;
+  contentClassName?: string;
 }
 
 /**
@@ -18,6 +19,7 @@ export function FeatureItem({
   title,
   subtitle,
   className,
+  contentClassName,
 }: FeatureItemProps) {
   return (
     <div className={`flex items-center gap-3 ${className ?? ""}`}>
@@ -25,7 +27,7 @@ export function FeatureItem({
         <Image src={icon} alt="" aria-hidden width={16} height={16} />
       </div>
 
-      <div className="flex flex-col">
+      <div className={`flex flex-col ${contentClassName ?? ""}`}>
         <span className="font-black text-sm leading-5 tracking-[-0.150391px] text-[#231F20]">
           {title}
         </span>

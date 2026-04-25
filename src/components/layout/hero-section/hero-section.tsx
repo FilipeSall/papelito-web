@@ -50,19 +50,16 @@ const NAV_BTN: React.CSSProperties = {
   transform: "translateY(-50%)",
   width: 40,
   height: 40,
-  opacity: 1,
   borderRadius: "50%",
-  border: "1px solid #FFE50044",
-  borderTop: "1px solid #FFE50044",
+  border: "1px solid rgba(255, 229, 0, 0.27)",
   padding: "0 9px",
-  background: "#FFE50022",
+  background: "rgba(255, 229, 0, 0.13)",
   color: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
   zIndex: 10,
-  backdropFilter: "blur(4px)",
 };
 
 export function HeroSection() {
@@ -120,7 +117,7 @@ export function HeroSection() {
         className={
           isMobileOnly
             ? "relative h-[calc(100vw*2)] min-h-[640px] w-full flex-none overflow-hidden"
-            : "relative flex-1 overflow-hidden"
+            : "relative h-[540px] w-full flex-none overflow-hidden"
         }
       >
         {slides.map((slide, i) => (
@@ -170,11 +167,11 @@ export function HeroSection() {
         <div
           style={{
             position: "absolute",
-            bottom: 12,
+            bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
             display: "flex",
-            gap: 6,
+            gap: 8,
             zIndex: 10,
           }}
         >

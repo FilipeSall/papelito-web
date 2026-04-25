@@ -10,9 +10,9 @@ import { FEATURES_BAR_ITEMS } from "./constants";
  */
 export function FeaturesBar() {
   return (
-    <section className="w-full bg-white border-b border-[#F3F4F6]">
-      <div className="mx-auto max-w-450 md:hidden">
-        <div className="grid grid-cols-2 border-t border-brand-yellow max-[360px]:hidden">
+    <section className="w-full border-b border-[#F3F4F6] bg-white">
+      <div className="mx-auto max-w-450">
+        <div className="grid grid-cols-2 border-t border-brand-yellow md:hidden max-[360px]:hidden">
           {FEATURES_BAR_ITEMS.map((item, index) => (
             <div
               key={item.title}
@@ -32,7 +32,7 @@ export function FeaturesBar() {
         </div>
 
         {/* fallback for very narrow mobile widths */}
-        <div className="hidden flex-col border-t border-brand-yellow max-[360px]:flex">
+        <div className="hidden flex-col border-t border-brand-yellow md:hidden max-[360px]:flex">
           {FEATURES_BAR_ITEMS.map((item, index) => (
             <div
               key={`${item.title}-stack`}
@@ -50,11 +50,11 @@ export function FeaturesBar() {
           ))}
         </div>
 
-        <div className="mx-auto hidden h-18 max-w-450 flex-row px-4 sm:px-6 md:flex lg:px-8 xl:px-43.5">
+        <div className="mx-auto hidden md:grid md:h-17 md:grid-cols-4 md:px-4 lg:px-8 xl:px-43.5">
           {FEATURES_BAR_ITEMS.map((item, index) => (
             <div
               key={item.title}
-              className={`flex flex-1 items-center pl-6 ${
+              className={`flex items-center pl-6 ${
                 index !== FEATURES_BAR_ITEMS.length - 1 ? "border-r border-[#F3F4F6]" : ""
               }`}
             >
@@ -62,7 +62,8 @@ export function FeaturesBar() {
                 icon={item.icon}
                 title={item.title}
                 subtitle={item.subtitle}
-                className="h-[72px] w-full"
+                className="h-17 w-full"
+                contentClassName="h-9 justify-start"
               />
             </div>
           ))}

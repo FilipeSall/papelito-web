@@ -18,7 +18,7 @@ export function CategoriesNav() {
   });
 
   return (
-    <section className="w-full bg-white py-3 md:py-5">
+    <section className="w-full bg-white py-3 lg:bg-[#F9FAFB] lg:pt-8 lg:pb-[25px]">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div
           ref={emblaRef}
@@ -40,7 +40,7 @@ export function CategoriesNav() {
           </div>
         </div>
 
-        <div className="hidden grid-cols-4 gap-4 filter-[drop-shadow(0px_4px_4px_rgba(0,0,0,0.25))] lg:grid xl:gap-8">
+        <div className="hidden justify-center gap-12 lg:grid lg:grid-cols-[repeat(4,186px)] lg:drop-shadow-[0px_4px_2px_rgba(0,0,0,0.25)]">
           {CATEGORIES_NAV_ITEMS.map((item) => (
             <CategoryNavItem
               key={item.title}

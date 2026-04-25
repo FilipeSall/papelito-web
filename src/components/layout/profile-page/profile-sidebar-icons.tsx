@@ -131,25 +131,6 @@ export function FavoritesIcon({ className }: IconProps) {
   );
 }
 
-export function ReviewsIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M7.5 6.75h9m-9 4.5h5.25m-5.25 4.5h3m10.5-6.75c0 4.556-4.365 8.25-9.75 8.25-.982 0-1.929-.122-2.817-.35L3 18.75l1.743-4.259A7.894 7.894 0 014.5 12c0-4.556 4.365-8.25 9.75-8.25S24 7.444 24 12z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function CouponIcon({ className }: IconProps) {
   return (
     <svg

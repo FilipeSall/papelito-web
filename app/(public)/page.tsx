@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <main className="flex flex-col bg-white">
       <AddToCartToastHost />
-      <div className="flex min-h-[calc(100vh-66px)] flex-col pb-8 md:min-h-[calc(100vh-93px)] md:pb-10">
+      <div className="flex flex-col">
         <PromoMarquee />
         <HeroSection />
         <FeaturesBar />
