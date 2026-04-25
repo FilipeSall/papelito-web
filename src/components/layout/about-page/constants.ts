@@ -10,6 +10,7 @@ export type AboutValue = {
   iconAlt: string;
   iconWidth: number;
   iconHeight: number;
+  iconClassName?: string;
   title: string;
   description: string;
 };
@@ -42,6 +43,7 @@ export const ABOUT_VALUES: AboutValue[] = [
     iconAlt: "Icone de inovacao em reducao de danos",
     iconWidth: 33,
     iconHeight: 25,
+    iconClassName: "max-w-[1.625rem]",
     title: "Inovacao em Reducao de Danos",
     description:
       "Somos pioneiros na reducao de danos, dedicados a desenvolver produtos inovadores para uma experiencia segura e de qualidade. Nosso foco e a saude e o bem-estar dos clientes, oferecendo alternativas de menor risco atraves de pesquisa e tecnologia de ponta.",

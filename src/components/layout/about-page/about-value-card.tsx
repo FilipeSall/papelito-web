@@ -7,10 +7,13 @@ type AboutValueCardProps = {
 
 export function AboutValueCard({ value }: AboutValueCardProps) {
   return (
-    <article className="flex min-h-[254px] w-full flex-col gap-3 rounded-2xl bg-[#F9FAFB] p-6 md:h-[415px] md:w-[237px] md:gap-4">
-      <div className="flex size-12 items-center justify-center rounded-[14px] bg-brand-yellow">
+    <article className="flex min-h-[254px] w-full flex-col gap-3 rounded-2xl bg-[#F9FAFB] p-6 md:h-[415px] md:w-[261px] md:gap-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-[0.875rem] bg-brand-yellow px-[0.8125rem]">
         <AboutValueIconImage
           alt={value.iconAlt}
+          className={`block h-auto max-h-[1.875rem] w-auto max-w-full object-contain ${
+            value.iconClassName ?? ""
+          }`}
           height={value.iconHeight}
           src={value.iconSrc}
           width={value.iconWidth}

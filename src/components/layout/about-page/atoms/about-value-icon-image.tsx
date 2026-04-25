@@ -2,6 +2,7 @@ import Image from "next/image";
 
 type AboutValueIconImageProps = {
   alt: string;
+  className?: string;
   height: number;
   src: string;
   width: number;
@@ -15,6 +16,7 @@ type AboutValueIconImageProps = {
  */
 export function AboutValueIconImage({
   alt,
+  className,
   height,
   src,
   width,
@@ -22,6 +24,7 @@ export function AboutValueIconImage({
   return (
     <Image
       alt={alt}
+      className={className}
       height={height}
       src={src}
       unoptimized

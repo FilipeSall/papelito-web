@@ -5,26 +5,28 @@ import { ABOUT_STORY_CONTENT } from "./constants";
 export function AboutStorySection() {
   return (
     <section className="px-4 pt-9 lg:px-0 lg:pt-[51px]">
-      <div className="mx-auto max-w-[1020px] lg:grid lg:grid-cols-[486px_486px] lg:gap-12">
-        <div className="relative">
-          <div className="relative h-[420px] overflow-hidden rounded-2xl shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)]">
-            <AboutFactoryImage
-              className="object-cover object-[48%_center] lg:object-[52%_center]"
-              priority
-              sizes="(max-width: 1023px) calc(100vw - 32px), 486px"
-            />
+      <div className="mx-auto max-w-[1122px] lg:grid lg:grid-cols-[535px_535px] lg:gap-[52px]">
+        <div className="relative lg:h-[570.5px]">
+          <div className="relative lg:absolute lg:left-0 lg:top-[108.5px] lg:w-[535px]">
+            <div className="relative z-10 h-[462px] overflow-hidden rounded-2xl shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)]">
+              <AboutFactoryImage
+                className="object-cover object-[48%_center] lg:object-[52%_center]"
+                priority
+                sizes="(max-width: 1023px) calc(100vw - 32px), 535px"
+              />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[68px] bg-gradient-to-t from-brand-dark via-brand-dark/80 to-transparent px-6 pt-6 lg:block">
-              <div className="flex items-center gap-2">
-                <span aria-hidden className="h-1 w-8 bg-brand-yellow" />
-                <span className="text-sm font-black uppercase tracking-[1.2496px] text-white/80">
-                  Fabrica Papelito | Brasilia - DF
-                </span>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[68px] bg-gradient-to-t from-brand-dark via-brand-dark/80 to-transparent px-6 pt-6 lg:block">
+                <div className="flex items-center gap-2">
+                  <span aria-hidden className="h-1 w-8 bg-brand-yellow" />
+                  <span className="text-sm font-black uppercase tracking-[1.2496px] text-white/80">
+                    Fabrica Papelito | Brasilia - DF
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="pointer-events-none absolute -left-4 -top-4 hidden h-[420px] w-[486px] rounded-2xl border-2 border-brand-yellow lg:block" />
+            <div className="pointer-events-none absolute -left-4 -top-4 z-0 hidden h-[462px] w-[535px] rounded-2xl border-2 border-brand-yellow lg:block" />
+          </div>
         </div>
 
         <div className="pt-12 lg:pt-0">
@@ -32,7 +34,7 @@ export function AboutStorySection() {
             {ABOUT_STORY_CONTENT.eyebrow}
           </span>
 
-          <h1 className="mt-3 max-w-[342px] text-[2.25rem] font-black uppercase leading-[2.8125rem] tracking-[0.3691px] text-brand-dark lg:mt-2 lg:max-w-[406px]">
+          <h1 className="mt-3 max-w-[342px] text-[2.25rem] font-black uppercase leading-[2.8125rem] tracking-[0.3691px] text-brand-dark lg:mt-2 lg:max-w-[447px]">
             {ABOUT_STORY_CONTENT.title}
           </h1>
 
