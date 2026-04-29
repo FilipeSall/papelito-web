@@ -21,7 +21,6 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -31,6 +30,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={inter.variable}>
+      <head>
+        <link
+          rel="manifest"
+          href="/site.webmanifest"
+          crossOrigin="use-credentials"
+        />
+      </head>
       <body className="font-sans" suppressHydrationWarning>
         <SessionProvider>{children}</SessionProvider>
       </body>
