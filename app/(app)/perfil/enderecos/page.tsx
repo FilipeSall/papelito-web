@@ -35,7 +35,6 @@ const mockAddresses: Address[] = [
  * - /perfil - Meus Pedidos
  * - /perfil/dados - Meus Dados
  * - /perfil/enderecos - Enderecos (atual)
- * - /perfil/pagamentos - Pagamentos
  * - /perfil/configuracoes - Configuracoes
  */
 export default function ProfileAddressesPage() {

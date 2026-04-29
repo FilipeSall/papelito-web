@@ -32,8 +32,8 @@ function StarIcon() {
  */
 function ProductBadge({ label }: { label: string }) {
   return (
-    <div className="absolute top-3 left-3 px-2 py-0.5 bg-brand-yellow rounded-full">
-      <span className="text-xs font-black leading-4 text-brand-dark whitespace-nowrap">
+    <div className="inline-flex w-fit rounded-full bg-brand-yellow px-2.5 py-1">
+      <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-[0.08em] leading-none text-brand-dark">
         {label}
       </span>
     </div>
@@ -113,11 +113,8 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
         aria-label={`Ver produto ${name}`}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
       />
-      {/* Image container with badge */}
+      {/* Image container */}
       <div className="relative aspect-square bg-bg-light p-4">
-        {/* Category Badge */}
-        <ProductBadge label={badge} />
-
         {/* Product Image */}
         <div className="relative w-full h-full">
           {image ? (
@@ -137,6 +134,10 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
 
       {/* Product Info */}
       <div className="p-4">
+        <div className="mb-2">
+          <ProductBadge label={badge} />
+        </div>
+
         {/* Category */}
         <span className="text-xs text-text-muted">{category}</span>
 

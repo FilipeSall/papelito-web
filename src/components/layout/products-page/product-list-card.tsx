@@ -25,8 +25,8 @@ function StarIcon() {
 
 function ProductBadge({ label }: { label: string }) {
   return (
-    <div className="absolute left-2.5 top-2.5 rounded-full bg-brand-yellow px-2 py-0.5">
-      <span className="whitespace-nowrap text-[11px] font-black leading-4 text-brand-dark">
+    <div className="inline-flex w-fit rounded-full bg-brand-yellow px-2.5 py-1">
+      <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-[0.08em] leading-none text-brand-dark">
         {label}
       </span>
     </div>
@@ -61,7 +61,6 @@ export function ProductListCard({ product }: ProductListCardProps) {
           className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
         >
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-bg-light p-2">
-            <ProductBadge label={badge} />
             {image ? (
               <ImageWithSkeleton
                 src={image}
@@ -77,6 +76,9 @@ export function ProductListCard({ product }: ProductListCardProps) {
           </div>
 
           <div className="min-w-0">
+            <div className="mb-2">
+              <ProductBadge label={badge} />
+            </div>
             <p className="text-xs text-text-muted">{category}</p>
             <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-5 text-brand-dark group-hover:underline">
               {name}
