@@ -18,7 +18,7 @@ export function RevendedorRadioPill({
 }: RevendedorRadioPillProps) {
   return (
     <label
-      className={`flex h-12 flex-1 cursor-pointer items-center justify-center rounded-[14px] border-2 transition-colors ${
+      className={`flex h-12 flex-1 cursor-pointer items-center justify-center rounded-3.5 border-2 transition-colors ${
         checked
           ? "border-brand-yellow bg-brand-yellow text-brand-dark"
           : "border-[#E5E7EB] bg-white text-text-muted"

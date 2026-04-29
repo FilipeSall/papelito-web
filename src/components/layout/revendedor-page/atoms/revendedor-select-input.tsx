@@ -17,7 +17,7 @@ export function RevendedorSelectInput({
 
   return (
     <div
-      className={`relative flex h-[46px] items-center rounded-[14px] border bg-white px-4 transition-colors ${borderClass} ${className}`.trim()}
+      className={`relative flex h-11.5 items-center rounded-3.5 border bg-white px-4 transition-colors ${borderClass} ${className}`.trim()}
     >
       <select
         className="w-full appearance-none border-0 bg-transparent pr-6 text-sm tracking-[-0.1504px] text-brand-dark outline-none"

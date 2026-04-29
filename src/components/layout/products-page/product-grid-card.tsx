@@ -106,10 +106,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
   return (
     <div className="relative cursor-pointer bg-white rounded-xl overflow-hidden shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] hover:shadow-md transition-shadow">
       <Link
-        href={{
-          pathname: `/produtos/${product.id}`,
-          query: image ? { img: image } : undefined,
-        }}
+        href={`/produtos/${product.id}`}
         aria-label={`Ver produto ${name}`}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
       />

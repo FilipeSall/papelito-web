@@ -53,10 +53,7 @@ export function ProductListCard({ product }: ProductListCardProps) {
     <article className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
-          href={{
-            pathname: `/produtos/${product.id}`,
-            query: image ? { img: image } : undefined,
-          }}
+          href={`/produtos/${product.id}`}
           aria-label={`Ver produto ${name}`}
           className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
         >

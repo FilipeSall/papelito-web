@@ -25,7 +25,7 @@ export function RevendedorCtaButton({
   type = "button",
   variant = "yellow",
 }: RevendedorCtaButtonProps) {
-  const sizeClass = compact ? "h-11 px-6 text-sm" : "h-[52px] px-8 text-sm";
+  const sizeClass = compact ? "h-11 px-6 text-sm" : "h-13 px-8 text-sm";
   const variantClass =
     variant === "outline"
       ? "border-2 border-brand-dark bg-transparent text-brand-dark hover:bg-brand-dark hover:text-white"

@@ -18,7 +18,7 @@ export function RevendedorTestimonialCard({
         &quot;
       </span>
 
-      <p className="mt-5 min-h-[136px] text-sm italic leading-[22.75px] tracking-[-0.1504px] text-white/80">
+      <p className="mt-5 min-h-34 text-sm italic leading-5.6875 tracking-[-0.1504px] text-white/80">
         {testimonial.quote}
       </p>
 

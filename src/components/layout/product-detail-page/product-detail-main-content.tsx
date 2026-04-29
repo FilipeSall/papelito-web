@@ -155,7 +155,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
                 type="button"
                 aria-label={`Selecionar miniatura ${thumb.name}`}
                 onClick={() => setSelectedThumbId(thumb.id)}
-                className={`relative h-19 w-full overflow-hidden rounded-[14px] border-2 bg-white px-3 py-2 transition ${
+                className={`relative h-19 w-full overflow-hidden rounded-3.5 border-2 bg-white px-3 py-2 transition ${
                   selectedThumbId === thumb.id
                     ? "border-brand-yellow"
                     : "border-transparent hover:border-[#E5E7EB]"
@@ -182,7 +182,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
           <span className="text-sm font-normal leading-5 tracking-[-0.150391px] text-[#99A1AF]">
             {product.category}
           </span>
-          <span className="mt-2 text-[32px] font-black leading-9 tracking-[0.369141px] uppercase text-brand-dark sm:text-[36px] sm:leading-10">
+          <span className="mt-2 text-8 font-black leading-9 tracking-[0.369141px] uppercase text-brand-dark sm:text-9 sm:leading-10">
             {product.name.toUpperCase()}
           </span>
           <div className="mt-4 flex items-center gap-3 text-sm text-[#6A7282]">
@@ -193,7 +193,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
           </div>
 
           <div className="mt-5 flex items-end gap-2">
-            <span className="text-[36px] font-black leading-10 tracking-[0.369141px] text-brand-dark">
+            <span className="text-9 font-black leading-10 tracking-[0.369141px] text-brand-dark">
               {formatBRL(product.price)}
             </span>
             <span className="pb-1 text-xl font-normal leading-7 tracking-[-0.449219px] text-[#D1D5DC] line-through">
@@ -211,7 +211,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
 
           <div className="mt-8 flex items-center gap-4">
             <span className="text-sm font-normal leading-5 tracking-[-0.150391px] text-[#6A7282]">Quantidade:</span>
-            <div className="flex h-[42px] w-[122px] items-center rounded-full border border-[#E5E7EB] bg-white px-px">
+            <div className="flex h-10.5 w-30.5 items-center rounded-full border border-[#E5E7EB] bg-white px-px">
               <button
                 type="button"
                 aria-label="Diminuir quantidade"
@@ -335,19 +335,19 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
         <div className="flex items-center overflow-x-auto border-b border-[#E5E7EB]">
           <button
             type="button"
-            className="h-[54px] shrink-0 border-b-2 border-brand-yellow px-4 text-sm font-black uppercase tracking-[-0.3125px] text-brand-dark md:px-8 md:text-base"
+            className="h-13.5 shrink-0 border-b-2 border-brand-yellow px-4 text-sm font-black uppercase tracking-[-0.3125px] text-brand-dark md:px-8 md:text-base"
           >
             Descrição
           </button>
           <button
             type="button"
-            className="h-[54px] shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
+            className="h-13.5 shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
           >
             Detalhes
           </button>
           <button
             type="button"
-            className="h-[54px] shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
+            className="h-13.5 shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
           >
             <span className="md:hidden">Avaliações</span>
             <span className="hidden md:inline">Avaliações ({product.reviews})</span>
@@ -361,17 +361,14 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
       </section>
 
       <section className="flex flex-col gap-6">
-        <h2 className="text-3xl font-black leading-8 uppercase text-brand-dark md:text-[32px]">
+        <h2 className="text-3xl font-black leading-8 uppercase text-brand-dark md:text-8">
           Produtos Relacionados
         </h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {relatedProducts.map((related) => (
             <Link
               key={related.id}
-              href={{
-                pathname: `/produtos/${related.id}`,
-                query: related.image ? { img: related.image } : undefined,
-              }}
+              href={`/produtos/${related.id}`}
               className="group overflow-hidden rounded-xl border border-[#E5E7EB] bg-white transition hover:border-[#D1D5DB] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.08)]"
             >
               <div className="relative h-40 bg-[#F9FAFB] p-6">

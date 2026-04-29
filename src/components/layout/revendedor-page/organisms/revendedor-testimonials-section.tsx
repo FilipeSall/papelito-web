@@ -12,13 +12,13 @@ import { RevendedorTestimonialCard } from "../molecules/revendedor-testimonial-c
 export function RevendedorTestimonialsSection() {
   return (
     <section className="bg-brand-dark py-20">
-      <div className="mx-auto max-w-[1564px] px-4 lg:px-12 2xl:px-[238px]">
+      <div className="mx-auto max-w-391 px-4 lg:px-12 2xl:px-59.5">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-[777px]">
+          <div className="max-w-194.25">
             <RevendedorSectionEyebrow tone="light">
               {REVENDEDOR_TESTIMONIALS_HEADER.eyebrow}
             </RevendedorSectionEyebrow>
-            <h2 className="mt-2 text-4xl font-black uppercase leading-[1.2] tracking-[0.3516px] text-white lg:text-5xl lg:leading-[60px]">
+            <h2 className="mt-2 text-4xl font-black uppercase leading-[1.2] tracking-[0.3516px] text-white lg:text-5xl lg:leading-15">
               <span className="block">{REVENDEDOR_TESTIMONIALS_HEADER.titlePrefix}</span>
               <span className="block text-brand-yellow">
                 {REVENDEDOR_TESTIMONIALS_HEADER.titleHighlight}

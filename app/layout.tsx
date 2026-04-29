@@ -34,7 +34,6 @@ export default function RootLayout({
         <link
           rel="manifest"
           href="/site.webmanifest"
-          crossOrigin="use-credentials"
         />
       </head>
       <body className="font-sans" suppressHydrationWarning>

@@ -110,7 +110,7 @@ export function FooterSocialLinks() {
           aria-label={social.name}
           className="text-white/60 hover:text-white transition-colors"
         >
-          <social.icon className="size-[18px]" />
+          <social.icon className="size-4.5" />
         </Link>
       ))}
     </div>

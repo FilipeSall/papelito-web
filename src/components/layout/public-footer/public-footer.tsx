@@ -49,8 +49,8 @@ const supportLinks = [
  */
 export function PublicFooter() {
   return (
-    <footer className="w-full bg-brand-dark pt-16 px-6 lg:px-[174px] pb-6">
-      <div className="max-w-[1564px] mx-auto flex flex-col gap-12">
+    <footer className="w-full bg-brand-dark pt-16 px-6 pb-6 lg:px-43.5">
+      <div className="mx-auto flex max-w-391 flex-col gap-12">
         {/* Main Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <FooterLogo />

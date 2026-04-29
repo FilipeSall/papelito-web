@@ -12,14 +12,14 @@ import { RevendedorBenefitCard } from "../molecules/revendedor-benefit-card";
 export function RevendedorBenefitsSection() {
   return (
     <section className="bg-white py-20">
-      <div className="mx-auto max-w-[1564px] px-4 lg:px-12 2xl:px-[206px]">
-        <div className="mx-auto max-w-[1152px]">
+      <div className="mx-auto max-w-391 px-4 lg:px-12 2xl:px-51.5">
+        <div className="mx-auto max-w-288">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-[487px]">
+            <div className="max-w-121.75">
               <RevendedorSectionEyebrow>
                 {REVENDEDOR_BENEFITS_HEADER.eyebrow}
               </RevendedorSectionEyebrow>
-              <h2 className="mt-2 text-4xl font-black uppercase leading-[1.2] tracking-[0.3516px] text-brand-dark lg:text-5xl lg:leading-[60px]">
+              <h2 className="mt-2 text-4xl font-black uppercase leading-[1.2] tracking-[0.3516px] text-brand-dark lg:text-5xl lg:leading-15">
                 <span className="block">{REVENDEDOR_BENEFITS_HEADER.titlePrefix}</span>
                 <span className="block text-brand-yellow">
                   {REVENDEDOR_BENEFITS_HEADER.titleHighlight}

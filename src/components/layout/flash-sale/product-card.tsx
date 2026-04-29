@@ -69,10 +69,7 @@ export function ProductCard({
       }`}
     >
       <Link
-        href={{
-          pathname: `/produtos/${id}`,
-          query: image ? { img: image } : undefined,
-        }}
+        href={`/produtos/${id}`}
         aria-label={`Ver produto ${name}`}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
       />

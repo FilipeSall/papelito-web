@@ -13,10 +13,10 @@ import { RevendedorBusinessListItem } from "../molecules/revendedor-business-lis
 export function RevendedorBusinessTypesSection() {
   return (
     <section className="bg-bg-light py-20">
-      <div className="mx-auto max-w-[1564px] px-4 lg:px-12 2xl:px-[238px]">
+      <div className="mx-auto max-w-391 px-4 lg:px-12 2xl:px-59.5">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,516px)_minmax(0,516px)] lg:justify-between">
-          <div className="relative mx-auto grid w-full max-w-[516px] gap-4 md:grid-cols-[250px_250px] md:grid-rows-[200px_200px] lg:mx-0">
-            <div className="relative min-h-[400px] overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] md:row-span-2">
+          <div className="relative mx-auto grid w-full max-w-129 gap-4 md:grid-cols-[250px_250px] md:grid-rows-[200px_200px] lg:mx-0">
+            <div className="relative min-h-100 overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] md:row-span-2">
               <Image
                 alt="Parceira Papelito sorrindo em um ponto de venda"
                 className="object-cover"
@@ -26,7 +26,7 @@ export function RevendedorBusinessTypesSection() {
               />
             </div>
 
-            <div className="relative min-h-[200px] overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+            <div className="relative min-h-50 overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
               <Image
                 alt="Equipe parceira Papelito em loja"
                 className="object-cover"
@@ -36,9 +36,9 @@ export function RevendedorBusinessTypesSection() {
               />
             </div>
 
-            <div className="relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-2xl bg-brand-yellow shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)]">
-              <div className="relative h-[178px] w-[147px]">
-                <div className="absolute left-0 top-[38px] h-[118px] w-[108px]">
+            <div className="relative flex min-h-50 items-center justify-center overflow-hidden rounded-2xl bg-brand-yellow shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)]">
+              <div className="relative h-44.5 w-36.75">
+                <div className="absolute left-0 top-9.5 h-29.5 w-27">
                   <Image
                     alt=""
                     className="object-contain"
@@ -46,7 +46,7 @@ export function RevendedorBusinessTypesSection() {
                     src="/images/revendedor/business-card-vector.svg"
                   />
                 </div>
-                <div className="absolute left-[14px] top-0 h-[76px] w-[75px]">
+                <div className="absolute left-3.5 top-0 h-19 w-18.75">
                   <Image
                     alt=""
                     className="object-contain"
@@ -54,7 +54,7 @@ export function RevendedorBusinessTypesSection() {
                     src="/images/revendedor/business-card-group-top.svg"
                   />
                 </div>
-                <div className="absolute bottom-0 right-0 h-[89px] w-[135px]">
+                <div className="absolute bottom-0 right-0 h-22.25 w-33.75">
                   <Image
                     alt=""
                     className="object-contain"
@@ -66,11 +66,11 @@ export function RevendedorBusinessTypesSection() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[516px] lg:mx-0">
+          <div className="mx-auto w-full max-w-129 lg:mx-0">
             <RevendedorSectionEyebrow>
               {REVENDEDOR_BUSINESS_TYPES_HEADER.eyebrow}
             </RevendedorSectionEyebrow>
-            <h2 className="mt-3 text-3xl font-black uppercase leading-[1.15] tracking-[0.3691px] text-brand-dark lg:text-[36px] lg:leading-[45px]">
+            <h2 className="mt-3 text-3xl font-black uppercase leading-[1.15] tracking-[0.3691px] text-brand-dark lg:text-4xl lg:leading-11.25">
               <span className="block">{REVENDEDOR_BUSINESS_TYPES_HEADER.titlePrefix}</span>
               <span className="block text-brand-yellow">
                 {REVENDEDOR_BUSINESS_TYPES_HEADER.titleHighlight}
