@@ -52,7 +52,7 @@ export function AboutStorySection() {
 
           <div className="mt-10 flex flex-col gap-3 lg:mt-[60px] lg:flex-row lg:gap-3">
             <AboutCtaLink href="/produtos" label="Ver Produtos" />
-            <AboutCtaLink href="/cadastro" label="Seja Revendedor" variant="outline" />
+            <AboutCtaLink href="/revendedor" label="Seja Revendedor" variant="outline" />
           </div>
         </div>
       </div>

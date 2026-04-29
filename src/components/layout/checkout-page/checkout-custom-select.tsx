@@ -3,12 +3,24 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronRightIcon } from "@/components/ui/icons";
 
+type CheckoutCustomSelectOption =
+  | string
+  | {
+      label: string;
+      value: string;
+    };
+
 export interface CheckoutCustomSelectProps {
   label: string;
   placeholder: string;
   value: string;
-  options: readonly string[];
+  options: readonly CheckoutCustomSelectOption[];
   onChange: (value: string) => void;
+  errorMessage?: string;
+  labelClassName?: string;
+  triggerClassName?: string;
+  listClassName?: string;
+  optionClassName?: string;
 }
 
 export function CheckoutCustomSelect({
@@ -17,10 +29,16 @@ export function CheckoutCustomSelect({
   value,
   options,
   onChange,
+  errorMessage,
+  labelClassName = "text-xs font-medium uppercase tracking-[0.6px] text-text-tertiary",
+  triggerClassName = "",
+  listClassName = "",
+  optionClassName = "",
 }: CheckoutCustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
+  const selectedOption = options.find((option) => getOptionValue(option) === value);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -44,7 +62,7 @@ export function CheckoutCustomSelect({
 
   return (
     <div className="flex flex-col gap-2" ref={wrapperRef}>
-      <label className="text-xs font-medium uppercase tracking-[0.6px] text-text-tertiary">
+      <label className={labelClassName}>
         {label}
       </label>
 
@@ -53,14 +71,18 @@ export function CheckoutCustomSelect({
           aria-controls={listboxId}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className={`flex h-[46px] w-full items-center justify-between rounded-[14px] border border-[#E5E7EB] bg-white px-4 text-sm tracking-[-0.1504px] outline-none transition ${
-            isOpen ? "border-brand-dark/30" : "focus:border-brand-dark/25"
-          }`}
+          className={`flex h-[46px] w-full items-center justify-between rounded-[14px] border bg-white px-4 text-sm tracking-[-0.1504px] outline-none transition ${
+            errorMessage
+              ? "border-red-400 focus:border-red-500"
+              : isOpen
+                ? "border-brand-dark/30"
+                : "border-[#E5E7EB] focus:border-brand-dark/25"
+          } ${triggerClassName}`.trim()}
           type="button"
           onClick={() => setIsOpen((current) => !current)}
         >
           <span className={value ? "text-brand-dark" : "text-black/50"}>
-            {value || placeholder}
+            {selectedOption ? getOptionLabel(selectedOption) : placeholder}
           </span>
           <ChevronRightIcon
             className={`h-4 w-4 text-text-muted transition-transform ${
@@ -71,28 +93,30 @@ export function CheckoutCustomSelect({
 
         {isOpen && (
           <ul
-            className="absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-[14px] border border-[#E5E7EB] bg-white py-1 shadow-[0_10px_24px_rgba(35,31,32,0.12)]"
+            className={`absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-[14px] border border-[#E5E7EB] bg-white py-1 shadow-[0_10px_24px_rgba(35,31,32,0.12)] ${listClassName}`.trim()}
             id={listboxId}
             role="listbox"
           >
             {options.map((option) => {
-              const isSelected = value === option;
+              const optionValue = getOptionValue(option);
+              const optionLabel = getOptionLabel(option);
+              const isSelected = value === optionValue;
 
               return (
-                <li key={option} role="option" aria-selected={isSelected}>
+                <li key={optionValue} role="option" aria-selected={isSelected}>
                   <button
                     className={`w-full px-4 py-2 text-left text-sm tracking-[-0.1504px] transition ${
                       isSelected
                         ? "bg-brand-dark text-white"
                         : "text-brand-dark hover:bg-bg-light"
-                    }`}
+                    } ${optionClassName}`.trim()}
                     type="button"
                     onClick={() => {
-                      onChange(option);
+                      onChange(optionValue);
                       setIsOpen(false);
                     }}
                   >
-                    {option}
+                    {optionLabel}
                   </button>
                 </li>
               );
@@ -100,6 +124,20 @@ export function CheckoutCustomSelect({
           </ul>
         )}
       </div>
+
+      {errorMessage ? (
+        <span className="min-h-5 text-[11px] tracking-[0.05px] text-red-500">
+          {errorMessage}
+        </span>
+      ) : null}
     </div>
   );
+}
+
+function getOptionValue(option: CheckoutCustomSelectOption) {
+  return typeof option === "string" ? option : option.value;
+}
+
+function getOptionLabel(option: CheckoutCustomSelectOption) {
+  return typeof option === "string" ? option : option.label;
 }

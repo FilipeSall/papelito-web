@@ -41,7 +41,7 @@ export function PartnerBanner() {
               Receba brindes, prêmios e benefícios exclusivos
             </p>
 
-            <PartnerBannerCta href="/parceiros">
+            <PartnerBannerCta href="/revendedor">
               Quero ser um parceiro
             </PartnerBannerCta>
           </div>
