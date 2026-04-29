@@ -13,26 +13,26 @@ import { RevendedorBusinessListItem } from "../molecules/revendedor-business-lis
 export function RevendedorBusinessTypesSection() {
   return (
     <section className="bg-bg-light py-20">
-      <div className="mx-auto max-w-[1564px] px-4 lg:px-[238px]">
-        <div className="grid items-center gap-10 lg:grid-cols-[516px_516px] lg:justify-between">
-          <div className="relative grid gap-4 md:grid-cols-[250px_250px] md:grid-rows-[200px_200px]">
-            <div className="overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] md:row-span-2">
+      <div className="mx-auto max-w-[1564px] px-4 lg:px-12 2xl:px-[238px]">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,516px)_minmax(0,516px)] lg:justify-between">
+          <div className="relative mx-auto grid w-full max-w-[516px] gap-4 md:grid-cols-[250px_250px] md:grid-rows-[200px_200px] lg:mx-0">
+            <div className="relative min-h-[400px] overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] md:row-span-2">
               <Image
                 alt="Parceira Papelito sorrindo em um ponto de venda"
-                className="h-full w-full object-cover"
-                height={420}
+                className="object-cover"
+                fill
+                sizes="(min-width: 768px) 250px, 50vw"
                 src="/images/revendedor/business-main.jpg"
-                width={250}
               />
             </div>
 
-            <div className="overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+            <div className="relative min-h-[200px] overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
               <Image
                 alt="Equipe parceira Papelito em loja"
-                className="h-full w-full object-cover"
-                height={200}
+                className="object-cover"
+                fill
+                sizes="(min-width: 768px) 250px, 50vw"
                 src="/images/revendedor/business-secondary.jpg"
-                width={250}
               />
             </div>
 
@@ -66,7 +66,7 @@ export function RevendedorBusinessTypesSection() {
             </div>
           </div>
 
-          <div className="max-w-[516px]">
+          <div className="mx-auto w-full max-w-[516px] lg:mx-0">
             <RevendedorSectionEyebrow>
               {REVENDEDOR_BUSINESS_TYPES_HEADER.eyebrow}
             </RevendedorSectionEyebrow>

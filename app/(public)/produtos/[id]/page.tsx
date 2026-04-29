@@ -6,6 +6,7 @@ import {
 } from "@/components/layout/product-detail-page";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { useProductDetail } from "@/features/catalog";
+import { resolveProductImage } from "@/features/catalog/utils/resolve-product-image";
 
 interface ProdutoDetalhePageProps {
   params: Promise<{
@@ -32,7 +33,8 @@ function sanitizeNavigationImage(imageParam: string | undefined): string | null 
   if (!imageParam || !imageParam.startsWith("/images/") || imageParam.includes("..")) {
     return null;
   }
-  return imageParam;
+
+  return resolveProductImage({ productImageUrl: imageParam }) ?? null;
 }
 
 /**

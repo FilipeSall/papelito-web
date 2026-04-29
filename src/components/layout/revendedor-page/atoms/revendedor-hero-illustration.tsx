@@ -7,7 +7,7 @@ import { REVENDEDOR_HERO_CONTENT } from "@/features/revendedor";
  */
 export function RevendedorHeroIllustration() {
   return (
-    <div className="flex max-w-[520px] flex-col pt-4 lg:pt-[132px]">
+    <div className="mx-auto flex w-full max-w-[520px] flex-col pt-4 lg:pt-[132px]">
       <Image
         alt=""
         className="w-full max-w-[428px]"

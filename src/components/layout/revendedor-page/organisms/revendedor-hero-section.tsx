@@ -28,11 +28,11 @@ export function RevendedorHeroSection() {
 
   return (
     <section className="bg-brand-dark">
-      <div className="mx-auto max-w-[1564px] px-4 py-16 lg:px-[238px] lg:py-24">
-        <div className="grid items-start gap-10 lg:grid-cols-[520px_520px] lg:justify-between">
+      <div className="mx-auto max-w-[1564px] px-4 py-16 lg:px-12 lg:py-24 2xl:px-[238px]">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,520px)_minmax(0,520px)] lg:justify-between">
           <RevendedorHeroIllustration />
 
-          <div id="revendedor-form" className="scroll-mt-32">
+          <div id="revendedor-form" className="mx-auto w-full max-w-[520px] scroll-mt-32 lg:max-w-none">
             <div className="rounded-2xl bg-white p-6 shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] lg:px-8 lg:py-8">
               <div>
                 <h2 className="text-xl font-black uppercase tracking-[-0.4492px] text-brand-dark">

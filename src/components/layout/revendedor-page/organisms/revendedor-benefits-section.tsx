@@ -12,7 +12,7 @@ import { RevendedorBenefitCard } from "../molecules/revendedor-benefit-card";
 export function RevendedorBenefitsSection() {
   return (
     <section className="bg-white py-20">
-      <div className="mx-auto max-w-[1564px] px-4 lg:px-[206px]">
+      <div className="mx-auto max-w-[1564px] px-4 lg:px-12 2xl:px-[206px]">
         <div className="mx-auto max-w-[1152px]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-[487px]">
