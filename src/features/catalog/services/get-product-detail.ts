@@ -2,6 +2,13 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import { isMockDataEnabled } from "@/lib/server/env";
+import {
+  fetchWpProductByDatabaseId,
+  fetchWpProducts,
+  mapWpProductToDetailItem,
+} from "./wp-catalog";
 import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type { ProductDetailItem } from "../types/product-detail";
@@ -114,7 +121,11 @@ function computePrices(product: MockCatalogProduct) {
   };
 }
 
-function buildRelatedThumbs(currentId: string, type: ProductDetailItem["type"], all: MockCatalogProduct[]) {
+function buildRelatedThumbs(
+  currentId: string,
+  type: ProductDetailItem["type"],
+  all: MockCatalogProduct[],
+) {
   return all
     .filter((item) => item.id !== currentId)
     .filter((item) => inferProductTypeFromName(item.name) === type)
@@ -133,17 +144,26 @@ function buildRelatedThumbs(currentId: string, type: ProductDetailItem["type"], 
 async function requestProductsMockFile() {
   const filePath = path.join(process.cwd(), "mock", "products.json");
 
-  // Simula latência da API real enquanto o catálogo usa mock local.
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   const raw = await readFile(filePath, "utf8");
   return JSON.parse(raw) as ProductsMockFile;
 }
 
-/**
- * Busca um produto único por `id` para compor a página dedicada.
- */
 export async function getProductDetail(id: string): Promise<ProductDetailItem | null> {
+  if (!isMockDataEnabled()) {
+    const [product, allProducts] = await Promise.all([
+      fetchWpProductByDatabaseId(id),
+      fetchWpProducts(64),
+    ]);
+
+    if (!product) {
+      return null;
+    }
+
+    return mapWpProductToDetailItem(product, allProducts);
+  }
+
   const mockFile = await requestProductsMockFile();
   const product = mockFile.products.find((item) => item.id === id);
 
@@ -159,7 +179,7 @@ export async function getProductDetail(id: string): Promise<ProductDetailItem | 
       ? product.description.split("\n\n")[0]
       : `${name} com qualidade premium para o seu dia a dia.`;
 
-  const payload: ProductDetailItem = {
+  return {
     id: product.id,
     name,
     category: product.homeData?.type || product.category || "Piteira",
@@ -177,6 +197,4 @@ export async function getProductDetail(id: string): Promise<ProductDetailItem | 
     discountPercent: prices.discountPercent,
     relatedThumbs: buildRelatedThumbs(product.id, type, mockFile.products),
   };
-
-  return payload;
 }

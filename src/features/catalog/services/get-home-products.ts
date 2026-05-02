@@ -2,6 +2,9 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import { isMockDataEnabled } from "@/lib/server/env";
+import { fetchWpProducts, mapWpProductToHomeCard } from "./wp-catalog";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
   HomeNewArrivalProduct,
@@ -80,7 +83,10 @@ function toBadge(tags: string[]) {
   return tags[0] ?? "Destaque";
 }
 
-function toHomeCandidate(product: MockCatalogProduct | null | undefined, index: number): HomeCandidate | null {
+function toHomeCandidate(
+  product: MockCatalogProduct | null | undefined,
+  index: number,
+): HomeCandidate | null {
   if (!product) {
     return null;
   }
@@ -111,25 +117,28 @@ function toHomeCandidate(product: MockCatalogProduct | null | undefined, index: 
       : [];
 
     const originalPriceRaw =
-      typeof homeData.originalPrice === "number" && Number.isFinite(homeData.originalPrice)
+      typeof homeData.originalPrice === "number" &&
+      Number.isFinite(homeData.originalPrice)
         ? homeData.originalPrice
         : amount;
     const originalPrice = toMoney(originalPriceRaw);
 
     const explicitPrice =
-      typeof homeData.price === "number" && Number.isFinite(homeData.price) && homeData.price > 0
+      typeof homeData.price === "number" &&
+      Number.isFinite(homeData.price) &&
+      homeData.price > 0
         ? toMoney(homeData.price)
         : null;
 
     let discount = toDiscountPercent(homeData.discountPercent);
     const price =
       explicitPrice ??
-      (discount > 0
-        ? toMoney(originalPrice * (1 - discount / 100))
-        : originalPrice);
+      (discount > 0 ? toMoney(originalPrice * (1 - discount / 100)) : originalPrice);
 
     if (discount === 0 && originalPrice > 0 && price < originalPrice) {
-      discount = toDiscountPercent(((originalPrice - price) / originalPrice) * 100);
+      discount = toDiscountPercent(
+        ((originalPrice - price) / originalPrice) * 100,
+      );
     }
 
     return {
@@ -163,11 +172,8 @@ function toHomeCandidate(product: MockCatalogProduct | null | undefined, index: 
 }
 
 async function requestProductsMockFile() {
-  // TODO: Substituir leitura de arquivo local por chamada real ao backend (REST/GraphQL).
-  // Exemplo esperado: GET /api/home/products com dados já segmentados para a home.
   const filePath = path.join(process.cwd(), "mock", "products.json");
 
-  // Simula latência de uma chamada HTTP para o mock local.
   await new Promise((resolve) => setTimeout(resolve, 60));
 
   const raw = await readFile(filePath, "utf8");
@@ -175,10 +181,31 @@ async function requestProductsMockFile() {
 }
 
 export async function getHomeProducts(): Promise<HomeProductsPayload> {
-  // TODO: Quando migrar para API real, mover a transformação para o backend
-  // e consumir payload pronto aqui para simplificar a camada de UI.
-  const mockFile = await requestProductsMockFile();
+  if (!isMockDataEnabled()) {
+    const products = await fetchWpProducts(48);
+    const cards = products.map(mapWpProductToHomeCard);
 
+    const flashSaleProducts = cards
+      .filter((item) => item.discount > 0)
+      .slice(0, 4);
+    const bestSellerProducts = cards.slice(0, 8);
+    const newArrivalProducts: HomeNewArrivalProduct[] = cards.slice(0, 8).map((card) => ({
+      id: card.id,
+      name: card.name,
+      originalPrice: card.originalPrice,
+      price: card.price,
+      discount: card.discount,
+      image: card.image,
+    }));
+
+    return {
+      flashSaleProducts,
+      bestSellerProducts,
+      newArrivalProducts,
+    };
+  }
+
+  const mockFile = await requestProductsMockFile();
   const products = Array.isArray(mockFile?.products) ? mockFile.products : [];
 
   const candidates = products

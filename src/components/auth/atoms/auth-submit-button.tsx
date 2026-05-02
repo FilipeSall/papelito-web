@@ -3,13 +3,19 @@ import type { ReactNode } from "react";
 interface AuthSubmitButtonProps {
   children: ReactNode;
   icon?: ReactNode;
+  disabled?: boolean;
 }
 
-export function AuthSubmitButton({ children, icon }: AuthSubmitButtonProps) {
+export function AuthSubmitButton({
+  children,
+  icon,
+  disabled = false,
+}: AuthSubmitButtonProps) {
   return (
     <button
       type="submit"
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90"
+      disabled={disabled}
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
       {icon}

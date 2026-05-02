@@ -1,22 +1,27 @@
 import "server-only";
 
+import { getWpGraphqlEndpoint } from "./env";
+
 export async function wpGraphqlRequest<TData>(
   query: string,
   variables?: Record<string, unknown>,
+  options?: {
+    token?: string;
+    headers?: Record<string, string>;
+    cache?: RequestCache;
+  },
 ): Promise<TData> {
-  const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT;
-
-  if (!endpoint) {
-    throw new Error("NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT is not configured.");
-  }
+  const endpoint = getWpGraphqlEndpoint();
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(options?.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...options?.headers,
     },
     body: JSON.stringify({ query, variables }),
-    cache: "no-store",
+    cache: options?.cache ?? "no-store",
   });
 
   if (!response.ok) {

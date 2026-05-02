@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ApolloAppProvider } from "@/lib/apollo/provider";
 import { SessionProvider } from "@/components/providers/session-provider";
 
 const inter = Inter({
@@ -37,7 +38,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans" suppressHydrationWarning>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <ApolloAppProvider>{children}</ApolloAppProvider>
+        </SessionProvider>
       </body>
     </html>
   );

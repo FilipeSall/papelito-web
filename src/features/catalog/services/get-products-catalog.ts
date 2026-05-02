@@ -2,6 +2,9 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import { isMockDataEnabled } from "@/lib/server/env";
+import { fetchWpProducts, mapWpProductToCatalogItem } from "./wp-catalog";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
   ProductCollectionId,
@@ -102,7 +105,8 @@ function normalizeSelectedTypes(
 
     const normalized = selectedTypes.filter(
       (item): item is Exclude<ProductTypeId, "todos"> =>
-        typeof item === "string" && allowed.includes(item as Exclude<ProductTypeId, "todos">),
+        typeof item === "string" &&
+        allowed.includes(item as Exclude<ProductTypeId, "todos">),
     );
 
     return Array.from(new Set(normalized));
@@ -143,7 +147,11 @@ function normalizePriceRange(input: { minPrice?: number | null; maxPrice?: numbe
   const normalizedMin = normalizePriceValue(input.minPrice);
   const normalizedMax = normalizePriceValue(input.maxPrice);
 
-  if (normalizedMin !== null && normalizedMax !== null && normalizedMin > normalizedMax) {
+  if (
+    normalizedMin !== null &&
+    normalizedMax !== null &&
+    normalizedMin > normalizedMax
+  ) {
     return { minPrice: normalizedMax, maxPrice: normalizedMin };
   }
 
@@ -197,10 +205,7 @@ function mapMockProductToCatalogItem(
   index: number,
 ): ProductsCatalogItem {
   const name = product.homeData?.displayName || product.name;
-  // Usa o nome original do catálogo para inferir tipo com maior precisão
-  // (ex.: "Seda Brown King Size" mesmo quando o displayName é "Brown King Size").
   const type = inferTypeFromName(product.name);
-
   const fallbackAmount = 0;
   const amount = product.price?.amount;
   const basePrice =
@@ -225,7 +230,9 @@ function mapMockProductToCatalogItem(
   const normalizedSubcategory =
     typeof product.subcategory === "string" ? normalizeText(product.subcategory) : "";
   const normalizedSubcategory2 =
-    typeof product.subcategory2 === "string" ? normalizeText(product.subcategory2) : "";
+    typeof product.subcategory2 === "string"
+      ? normalizeText(product.subcategory2)
+      : "";
   const normalizedTags = (product.homeData?.tags ?? []).map((tag) =>
     normalizeText(tag),
   );
@@ -272,11 +279,8 @@ function mapMockProductToCatalogItem(
 }
 
 async function requestProductsCatalogMockFile() {
-  // TODO: Substituir por requisição real de catálogo:
-  // GET /api/products?page=1&perPage=9&type=sedas
   const filePath = path.join(process.cwd(), "mock", "products.json");
 
-  // Simula latência de rede da chamada ao backend.
   await new Promise((resolve) => setTimeout(resolve, 80));
 
   const raw = await readFile(filePath, "utf8");
@@ -295,8 +299,9 @@ export async function getProductsCatalog(
   });
   const perPage = clamp(input.perPage ?? 9, 1, 60);
 
-  const mockFile = await requestProductsCatalogMockFile();
-  const allItems = mockFile.products.map(mapMockProductToCatalogItem);
+  const allItems = isMockDataEnabled()
+    ? (await requestProductsCatalogMockFile()).products.map(mapMockProductToCatalogItem)
+    : (await fetchWpProducts(120)).map(mapWpProductToCatalogItem);
 
   const tabs: ProductsCatalogTab[] = [
     { id: "todos", label: TYPE_LABEL.todos, count: allItems.length },
