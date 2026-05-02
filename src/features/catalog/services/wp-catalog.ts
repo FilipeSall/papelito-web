@@ -169,7 +169,10 @@ export async function fetchWpProducts(first = 100) {
     products?: {
       nodes?: WpProductNode[];
     };
-  }>(print(PRODUCTS_QUERY), { first });
+  }>(print(PRODUCTS_QUERY), { first }, {
+    revalidate: 60,
+    tags: ["wp:products"],
+  });
 
   return data.products?.nodes ?? [];
 }
@@ -187,7 +190,10 @@ export async function fetchWpProductByDatabaseId(id: string) {
 
   const data = await wpGraphqlRequest<{
     product?: WpProductNode | null;
-  }>(print(PRODUCT_QUERY), { id: parsedId });
+  }>(print(PRODUCT_QUERY), { id: parsedId }, {
+    revalidate: 300,
+    tags: ["wp:products", `wp:product:${parsedId}`],
+  });
 
   return data.product ?? null;
 }

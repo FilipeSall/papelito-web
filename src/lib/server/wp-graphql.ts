@@ -2,18 +2,24 @@ import "server-only";
 
 import { getWpGraphqlEndpoint } from "./env";
 
+type WpGraphqlOptions = {
+  token?: string;
+  headers?: Record<string, string>;
+  cache?: RequestCache;
+  revalidate?: number | false;
+  tags?: string[];
+};
+
 export async function wpGraphqlRequest<TData>(
   query: string,
   variables?: Record<string, unknown>,
-  options?: {
-    token?: string;
-    headers?: Record<string, string>;
-    cache?: RequestCache;
-  },
+  options?: WpGraphqlOptions,
 ): Promise<TData> {
   const endpoint = getWpGraphqlEndpoint();
 
-  const response = await fetch(endpoint, {
+  const fetchInit: RequestInit & {
+    next?: { revalidate?: number | false; tags?: string[] };
+  } = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -21,8 +27,22 @@ export async function wpGraphqlRequest<TData>(
       ...options?.headers,
     },
     body: JSON.stringify({ query, variables }),
-    cache: options?.cache ?? "no-store",
-  });
+  };
+
+  const isAuthRequest = Boolean(options?.token);
+
+  if (isAuthRequest || options?.cache === "no-store") {
+    fetchInit.cache = "no-store";
+  } else if (options?.cache) {
+    fetchInit.cache = options.cache;
+  } else {
+    fetchInit.next = {
+      revalidate: options?.revalidate ?? 60,
+      ...(options?.tags?.length ? { tags: options.tags } : {}),
+    };
+  }
+
+  const response = await fetch(endpoint, fetchInit);
 
   if (!response.ok) {
     throw new Error(`WPGraphQL request failed with status ${response.status}`);
