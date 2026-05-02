@@ -25,22 +25,6 @@ function StarIcon() {
 }
 
 /**
- * Badge de categoria do produto.
- *
- * Pill amarelo com texto escuro em fonte black, utilizado para identificar
- * o tipo/categoria do produto (ex: "Essencial", "Clássico", "Orgânico").
- */
-function ProductBadge({ label }: { label: string }) {
-  return (
-    <div className="inline-flex w-fit rounded-full bg-brand-yellow px-2.5 py-1">
-      <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-[0.08em] leading-none text-brand-dark">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-/**
  * Dados de um produto para exibição no grid.
  */
 export interface ProductGridItem {
@@ -131,10 +115,6 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
 
       {/* Product Info */}
       <div className="p-4">
-        <div className="mb-2">
-          <ProductBadge label={badge} />
-        </div>
-
         {/* Category */}
         <span className="text-xs text-text-muted">{category}</span>
 

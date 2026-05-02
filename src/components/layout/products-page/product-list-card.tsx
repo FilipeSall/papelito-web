@@ -23,16 +23,6 @@ function StarIcon() {
   );
 }
 
-function ProductBadge({ label }: { label: string }) {
-  return (
-    <div className="inline-flex w-fit rounded-full bg-brand-yellow px-2.5 py-1">
-      <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-[0.08em] leading-none text-brand-dark">
-        {label}
-      </span>
-    </div>
-  );
-}
-
 interface ProductListCardProps {
   product: ProductGridItem;
 }
@@ -73,9 +63,6 @@ export function ProductListCard({ product }: ProductListCardProps) {
           </div>
 
           <div className="min-w-0">
-            <div className="mb-2">
-              <ProductBadge label={badge} />
-            </div>
             <p className="text-xs text-text-muted">{category}</p>
             <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-5 text-brand-dark group-hover:underline">
               {name}
