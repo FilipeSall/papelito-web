@@ -2,6 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import {
+  ArrowRightIcon,
+  AuthSubmitButton,
+} from "@/components/auth/atoms";
+import { AuthTextField } from "@/components/auth/molecules";
+
+import { CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "./shared";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -11,9 +20,25 @@ const benefits = [
 ];
 
 export default function CadastroPage() {
+  const router = useRouter();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const payload: CadastroStep1Data = {
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.phone) return;
+
+    window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
+    router.push("/cadastro/etapa-2");
+  }
+
   return (
     <div className="flex min-h-screen">
-      {/* Seção Logo - Lado Esquerdo */}
       <div className="hidden lg:flex lg:w-1/2 bg-brand-yellow items-center justify-center relative">
         <div className="flex flex-col items-center text-center px-12">
           <Image
@@ -31,7 +56,6 @@ export default function CadastroPage() {
             Junte-se a mais de 100 mil Pontos de Venda
           </p>
 
-          {/* Lista de benefícios */}
           <ul className="mt-10 space-y-3">
             {benefits.map((benefit) => (
               <li key={benefit} className="flex items-center gap-3">
@@ -47,10 +71,8 @@ export default function CadastroPage() {
         </div>
       </div>
 
-      {/* Seção Formulário - Lado Direito */}
       <div className="w-full lg:w-1/2 bg-brand-dark flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          {/* Step Indicator */}
           <div className="flex items-center gap-2 mb-8">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-8 h-8 bg-brand-yellow rounded-full text-xs font-black text-brand-dark">
@@ -64,7 +86,6 @@ export default function CadastroPage() {
             <span className="ml-2 text-xs text-white/40">Etapa 1 de 2</span>
           </div>
 
-          {/* Header */}
           <h2 className="text-3xl font-black text-white uppercase tracking-wide">
             Criar Conta
           </h2>
@@ -78,70 +99,41 @@ export default function CadastroPage() {
             </Link>
           </p>
 
-          {/* Formulário */}
-          <form className="mt-10 space-y-5">
-            {/* Campo Nome Completo */}
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="name"
-                className="text-xs font-medium text-white/70 uppercase tracking-widest"
-              >
-                Nome Completo
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Seu nome completo"
-                autoComplete="name"
-                className="w-full h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
-              />
-            </div>
+          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+            <AuthTextField
+              id="name"
+              name="name"
+              label="Nome Completo"
+              placeholder="Seu nome completo"
+              autoComplete="name"
+              required
+            />
 
-            {/* Campo E-mail */}
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="email"
-                className="text-xs font-medium text-white/70 uppercase tracking-widest"
-              >
-                E-mail
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="seu@email.com"
-                autoComplete="email"
-                className="w-full h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
-              />
-            </div>
+            <AuthTextField
+              id="email"
+              name="email"
+              label="E-mail"
+              type="email"
+              placeholder="seu@email.com"
+              autoComplete="email"
+              required
+            />
 
-            {/* Campo Telefone */}
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="phone"
-                className="text-xs font-medium text-white/70 uppercase tracking-widest"
-              >
-                Telefone
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="(11) 99999-9999"
-                autoComplete="tel"
-                className="w-full h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
-              />
-            </div>
+            <AuthTextField
+              id="phone"
+              name="phone"
+              label="Telefone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              autoComplete="tel"
+              required
+            />
 
-            {/* Botão Próximo */}
-            <Link
-              href="/cadastro/etapa-2"
-              className="w-full h-14 bg-brand-yellow rounded-full flex items-center justify-center gap-2 text-brand-dark font-black uppercase tracking-wide hover:bg-brand-yellow/90 transition mt-6"
-            >
-              Próximo
-              <ArrowRightIcon className="w-5 h-5" />
-            </Link>
+            <div className="pt-2">
+              <AuthSubmitButton icon={<ArrowRightIcon className="w-5 h-5" />}>
+                Próximo
+              </AuthSubmitButton>
+            </div>
           </form>
         </div>
       </div>
@@ -159,25 +151,6 @@ function CheckIcon({ className }: { className?: string }) {
     >
       <path
         d="M2 6L5 9L10 3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M4 10H16M16 10L11 5M16 10L11 15"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"

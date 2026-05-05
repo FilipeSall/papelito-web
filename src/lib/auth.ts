@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
+import { wpRest } from "@/lib/server/wp-rest";
 
 const WP_LOGIN_MUTATION = `
   mutation Login($u: String!, $p: String!) {
@@ -19,6 +20,18 @@ const WP_LOGIN_MUTATION = `
     }
   }
 `;
+
+type WpAuthResponse = {
+  authToken: string;
+  refreshToken: string;
+  user: {
+    databaseId: number;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  profileComplete: boolean;
+};
 
 async function wpLogin(username: string, password: string) {
   const response = await fetch(getWpGraphqlEndpoint(), {
@@ -51,6 +64,19 @@ async function wpLogin(username: string, password: string) {
   };
 
   return json.data?.login ?? null;
+}
+
+async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | null> {
+  const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/google", {
+    json: { id_token: idToken },
+  });
+
+  if (!result.ok) {
+    console.error("[auth] Google → WP exchange failed", result.status, result.error);
+    return null;
+  }
+
+  return result.data;
 }
 
 const providers = [];
@@ -88,6 +114,7 @@ providers.push(
         name: `${data.user.firstName ?? ""} ${data.user.lastName ?? ""}`.trim(),
         accessToken: data.authToken,
         refreshToken: data.refreshToken,
+        profileComplete: true,
       };
     },
   }),
@@ -99,11 +126,43 @@ export const authOptions: NextAuthOptions = {
     signIn: "/entrar",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") {
+        return true;
+      }
+
+      const idToken = account.id_token;
+
+      if (!idToken) {
+        return false;
+      }
+
+      const wpAuth = await wpExchangeGoogleToken(idToken);
+
+      if (!wpAuth) {
+        return false;
+      }
+
+      const userWithTokens = user as typeof user & {
+        accessToken?: string;
+        refreshToken?: string;
+        profileComplete?: boolean;
+        id?: string;
+      };
+
+      userWithTokens.id = String(wpAuth.user.databaseId);
+      userWithTokens.accessToken = wpAuth.authToken;
+      userWithTokens.refreshToken = wpAuth.refreshToken;
+      userWithTokens.profileComplete = wpAuth.profileComplete;
+
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.accessToken = (user as { accessToken?: string }).accessToken;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;
+        token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
       }
 
       return token;
@@ -117,6 +176,8 @@ export const authOptions: NextAuthOptions = {
         typeof token.accessToken === "string" ? token.accessToken : undefined;
       session.refreshToken =
         typeof token.refreshToken === "string" ? token.refreshToken : undefined;
+      session.profileComplete =
+        typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
 
       return session;
     },

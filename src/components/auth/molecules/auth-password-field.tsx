@@ -13,6 +13,8 @@ interface AuthPasswordFieldProps {
   label: string;
   placeholder: string;
   autoComplete?: string;
+  required?: boolean;
+  minLength?: number;
 }
 
 export function AuthPasswordField({
@@ -21,6 +23,8 @@ export function AuthPasswordField({
   label,
   placeholder,
   autoComplete,
+  required,
+  minLength,
 }: AuthPasswordFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,6 +38,8 @@ export function AuthPasswordField({
           type={showPassword ? "text" : "password"}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          required={required}
+          minLength={minLength}
           className="pr-12"
         />
         <AuthIconButton

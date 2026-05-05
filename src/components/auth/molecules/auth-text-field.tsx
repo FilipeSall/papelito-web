@@ -5,9 +5,11 @@ interface AuthTextFieldProps {
   id: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "password";
+  type?: "text" | "email" | "password" | "tel";
   placeholder: string;
   autoComplete?: string;
+  defaultValue?: string;
+  required?: boolean;
 }
 
 export function AuthTextField({
@@ -17,6 +19,8 @@ export function AuthTextField({
   type = "text",
   placeholder,
   autoComplete,
+  defaultValue,
+  required,
 }: AuthTextFieldProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -27,6 +31,8 @@ export function AuthTextField({
         type={type}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        defaultValue={defaultValue}
+        required={required}
       />
     </div>
   );
