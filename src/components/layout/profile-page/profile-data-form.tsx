@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -137,6 +138,11 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
         const body = (await response.json().catch(() => null)) as
           | { message?: string }
           | null;
+
+        if (response.status === 401) {
+          await signOut({ callbackUrl: "/entrar" });
+          return;
+        }
 
         if (!response.ok) {
           setFeedback({

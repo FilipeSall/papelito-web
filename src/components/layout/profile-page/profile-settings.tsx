@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import { useState, useTransition } from "react";
 
 import type { ProfilePasswordFormValues } from "@/features/profile/types/profile-customer";
@@ -67,6 +68,11 @@ export function ProfileSettings() {
         const body = (await response.json().catch(() => null)) as
           | { message?: string }
           | null;
+
+        if (response.status === 401) {
+          await signOut({ callbackUrl: "/entrar" });
+          return;
+        }
 
         if (!response.ok) {
           setFeedback({

@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -118,6 +119,11 @@ export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
         const body = (await response.json().catch(() => null)) as
           | { customer?: ProfileCustomer; message?: string }
           | null;
+
+        if (response.status === 401) {
+          await signOut({ callbackUrl: "/entrar" });
+          return;
+        }
 
         if (!response.ok || !body?.customer) {
           setFeedback({

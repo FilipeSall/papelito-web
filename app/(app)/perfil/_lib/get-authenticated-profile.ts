@@ -22,7 +22,7 @@ type AuthenticatedProfile = {
 export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile> {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || !session.accessToken) {
     redirect("/entrar");
   }
 
