@@ -10,17 +10,9 @@ import {
   ArrowRightIcon,
   AuthSubmitButton,
 } from "@/components/auth/atoms";
-import {
-  AuthPasswordField,
-  AuthSelectField,
-  AuthTextField,
-} from "@/components/auth/molecules";
+import { AuthPasswordField, AuthTextField } from "@/components/auth/molecules";
 
-import {
-  BRAZILIAN_STATES,
-  CADASTRO_STORAGE_KEY,
-  type CadastroStep1Data,
-} from "../shared";
+import { CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "../shared";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -67,11 +59,7 @@ export default function CadastroEtapa2Page() {
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
-    const storeName = String(formData.get("storeName") ?? "").trim();
-    const cnpj = String(formData.get("cnpj") ?? "").trim();
     const cep = String(formData.get("cep") ?? "").trim();
-    const stateUf = String(formData.get("state") ?? "");
-    const city = String(formData.get("city") ?? "").trim();
 
     if (password.length < 8) {
       setErrorMessage("A senha precisa ter pelo menos 8 caracteres.");
@@ -83,8 +71,8 @@ export default function CadastroEtapa2Page() {
       return;
     }
 
-    if (!storeName || !cnpj || !cep || !stateUf || !city) {
-      setErrorMessage("Preencha todos os campos para continuar.");
+    if (!cep) {
+      setErrorMessage("Informe o CEP para continuar.");
       return;
     }
 
@@ -103,11 +91,7 @@ export default function CadastroEtapa2Page() {
             first_name: first,
             last_name: last,
             phone_number: step1.phone,
-            store_name: storeName,
-            cnpj,
             cep,
-            state: stateUf,
-            city,
           }),
         });
 
@@ -215,49 +199,13 @@ export default function CadastroEtapa2Page() {
           <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
             <fieldset className="space-y-5" disabled={isSubmitting}>
               <AuthTextField
-                id="storeName"
-                name="storeName"
-                label="Nome da loja"
-                placeholder="Nome do seu estabelecimento"
-                required
-              />
-
-              <AuthTextField
-                id="cnpj"
-                name="cnpj"
-                label="CNPJ"
-                placeholder="12.345.678/0001-90"
-                required
-              />
-
-              <AuthTextField
                 id="cep"
                 name="cep"
                 label="CEP"
                 placeholder="01.310-000"
+                autoComplete="postal-code"
                 required
               />
-
-              <div className="grid grid-cols-[8rem_1fr] gap-3">
-                <AuthSelectField id="state" name="state" label="Estado" required defaultValue="">
-                  <option value="" disabled>
-                    UF
-                  </option>
-                  {BRAZILIAN_STATES.map((state) => (
-                    <option key={state.value} value={state.value}>
-                      {state.value}
-                    </option>
-                  ))}
-                </AuthSelectField>
-
-                <AuthTextField
-                  id="city"
-                  name="city"
-                  label="Cidade"
-                  placeholder="Cidade"
-                  required
-                />
-              </div>
 
               <AuthPasswordField
                 id="password"

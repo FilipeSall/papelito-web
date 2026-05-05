@@ -284,6 +284,10 @@ function buildProductGallery(product: WpProductNode) {
   const seen = new Set<string>();
 
   return galleryCandidates.filter((item) => {
+    if (!item.image?.trim()) {
+      return false;
+    }
+
     const key = item.image?.trim() || item.id;
     if (seen.has(key)) {
       return false;
@@ -300,6 +304,8 @@ export function mapWpProductToDetailItem(
 ): ProductDetailItem {
   const type = inferType(product);
   const prices = resolvePrices(product);
+  const galleryImages = buildProductGallery(product);
+  const primaryImage = resolveImage(product) ?? galleryImages[0]?.image;
   const description =
     stripHtml(product.shortDescription) ||
     stripHtml(product.description) ||
@@ -312,13 +318,13 @@ export function mapWpProductToDetailItem(
     type,
     badge: resolveBadge(product, type),
     description,
-    image: resolveImage(product),
+    image: primaryImage,
     rating: 4.4,
     reviews: 678,
     price: prices.price,
     originalPrice: prices.originalPrice,
     discountPercent: prices.discountPercent,
-    galleryImages: buildProductGallery(product),
+    galleryImages,
     relatedThumbs: relatedProducts
       .filter((item) => item.databaseId !== product.databaseId)
       .filter((item) => inferType(item) === type)

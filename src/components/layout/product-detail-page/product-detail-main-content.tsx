@@ -65,7 +65,9 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
     () =>
       (galleryImages.length > 0
         ? galleryImages
-        : [{ id: `${product.id}:primary`, name: product.name, image: product.image }]).slice(0, 4),
+        : [{ id: `${product.id}:primary`, name: product.name, image: product.image }]).filter(
+        (thumb) => Boolean(thumb.image?.trim()),
+      ).slice(0, 4),
     [galleryImages, product.id, product.image, product.name],
   );
   const initialSelectedThumbId = useMemo(
@@ -81,6 +83,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
     [selectedThumbId, thumbnails],
   );
   const relatedProducts = useMemo(() => product.relatedThumbs.slice(0, 4), [product.relatedThumbs]);
+  const shouldShowThumbnails = thumbnails.length > 1;
 
   function addCurrentProductToCart() {
     if (status === "loading") return;
@@ -154,34 +157,32 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
-            {thumbnails.map((thumb) => (
-              <button
-                key={thumb.id}
-                type="button"
-                aria-label={`Selecionar miniatura ${thumb.name}`}
-                onClick={() => setSelectedThumbId(thumb.id)}
-                className={`relative h-19 w-full overflow-hidden rounded-3.5 border-2 bg-white px-3 py-2 transition ${
-                  selectedThumbId === thumb.id
-                    ? "border-brand-yellow"
-                    : "border-transparent hover:border-[#E5E7EB]"
-                }`}
-              >
-                {thumb.image ? (
+          {shouldShowThumbnails ? (
+            <div className="grid grid-cols-4 gap-3">
+              {thumbnails.map((thumb) => (
+                <button
+                  key={thumb.id}
+                  type="button"
+                  aria-label={`Selecionar miniatura ${thumb.name}`}
+                  onClick={() => setSelectedThumbId(thumb.id)}
+                  className={`relative h-19 w-full overflow-hidden rounded-3.5 border-2 bg-white px-3 py-2 transition ${
+                    selectedThumbId === thumb.id
+                      ? "border-brand-yellow"
+                      : "border-transparent hover:border-[#E5E7EB]"
+                  }`}
+                >
                   <ImageWithSkeleton
-                    src={thumb.image}
+                    src={thumb.image!}
                     alt={thumb.name}
                     fill
                     sizes="120px"
                     imageClassName="object-contain p-1"
                     fallback={<ProductImageFallback className="h-full w-full" />}
                   />
-                ) : (
-                  <ProductImageFallback className="h-full w-full" />
-                )}
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-col">
