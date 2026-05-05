@@ -5,6 +5,8 @@ interface ResolveProductImageInput {
   productImageUrl?: string;
 }
 
+export const PRODUCT_FALLBACK_IMAGE = "/images/products/Papelito_Site_Arte_Fallback.png";
+
 const LEGACY_IMAGE_PATHS: Record<string, string> = {
   "/images/products/Image (Brown King Size).png":
     "/images/products/sedas/SEDA DISPLAY BROWN KS 50.png",

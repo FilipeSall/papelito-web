@@ -5,7 +5,10 @@ import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import { fetchWpProducts, mapWpProductToCatalogItem } from "./wp-catalog";
-import { resolveProductImage } from "../utils/resolve-product-image";
+import {
+  PRODUCT_FALLBACK_IMAGE,
+  resolveProductImage,
+} from "../utils/resolve-product-image";
 import type {
   ProductCollectionId,
   ProductTypeId,
@@ -266,10 +269,11 @@ function mapMockProductToCatalogItem(
     price,
     rating: Number((3.9 + (index % 10) * 0.1).toFixed(1)),
     reviews: 48 + ((index * 37) % 760),
-    image: resolveProductImage({
-      productImageUrl: product.imageUrl,
-      homeImageUrl: product.homeData?.imageUrl,
-    }),
+    image:
+      resolveProductImage({
+        productImageUrl: product.imageUrl,
+        homeImageUrl: product.homeData?.imageUrl,
+      }) ?? PRODUCT_FALLBACK_IMAGE,
     type,
     isPremium,
     isNewArrival,

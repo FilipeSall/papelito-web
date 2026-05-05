@@ -7,6 +7,12 @@ export interface ProductDetailRelatedThumb {
   price: number;
 }
 
+export interface ProductDetailGalleryImage {
+  id: string;
+  name: string;
+  image?: string;
+}
+
 export interface ProductDetailItem {
   id: string;
   name: string;
@@ -20,5 +26,6 @@ export interface ProductDetailItem {
   price: number;
   originalPrice: number;
   discountPercent: number;
+  galleryImages: ProductDetailGalleryImage[];
   relatedThumbs: ProductDetailRelatedThumb[];
 }

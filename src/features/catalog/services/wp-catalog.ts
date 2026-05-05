@@ -9,7 +9,10 @@ import type { ProductDetailItem, ProductDetailRelatedThumb } from "../types/prod
 import type { ProductTypeId, ProductsCatalogItem } from "../types/products-catalog";
 import { PRODUCTS_QUERY, PRODUCT_QUERY } from "../queries/products";
 import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
-import { resolveProductImage } from "../utils/resolve-product-image";
+import {
+  PRODUCT_FALLBACK_IMAGE,
+  resolveProductImage,
+} from "../utils/resolve-product-image";
 
 interface WpProductCategoryNode {
   id?: string | null;
@@ -29,6 +32,12 @@ interface WpProductNode {
   image?: {
     sourceUrl?: string | null;
     altText?: string | null;
+  } | null;
+  galleryImages?: {
+    nodes?: Array<{
+      sourceUrl?: string | null;
+      altText?: string | null;
+    } | null> | null;
   } | null;
   productCategories?: {
     nodes?: Array<WpProductCategoryNode | null> | null;
@@ -214,7 +223,7 @@ export function mapWpProductToCatalogItem(
     price: prices.price,
     rating: Number((4.1 + (index % 8) * 0.1).toFixed(1)),
     reviews: 32 + ((index * 19) % 480),
-    image: resolveImage(product),
+    image: resolveImage(product) ?? PRODUCT_FALLBACK_IMAGE,
     type,
     isPremium: normalizeText(product.name).includes("premium"),
     isNewArrival: index < 8,
@@ -240,7 +249,7 @@ export function mapWpProductToHomeCard(
     price: prices.price,
     rating: Number((4.2 + (index % 6) * 0.1).toFixed(1)),
     reviews: 80 + index * 17,
-    image: resolveImage(product) ?? "/images/products/product-placeholder.png",
+    image: resolveImage(product) ?? PRODUCT_FALLBACK_IMAGE,
   };
 }
 
@@ -255,6 +264,34 @@ function mapWpProductToRelatedThumb(
     image: resolveImage(product),
     price: prices.price,
   };
+}
+
+function buildProductGallery(product: WpProductNode) {
+  const galleryCandidates = [
+    {
+      id: `${product.databaseId}:primary`,
+      name: product.name,
+      image: resolveImage(product),
+    },
+    ...(product.galleryImages?.nodes ?? []).map((node, index) => ({
+      id: `${product.databaseId}:gallery:${index}`,
+      name: node?.altText?.trim() || product.name,
+      image: resolveProductImage({
+        productImageUrl: node?.sourceUrl ?? undefined,
+      }),
+    })),
+  ];
+  const seen = new Set<string>();
+
+  return galleryCandidates.filter((item) => {
+    const key = item.image?.trim() || item.id;
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
 }
 
 export function mapWpProductToDetailItem(
@@ -281,6 +318,7 @@ export function mapWpProductToDetailItem(
     price: prices.price,
     originalPrice: prices.originalPrice,
     discountPercent: prices.discountPercent,
+    galleryImages: buildProductGallery(product),
     relatedThumbs: relatedProducts
       .filter((item) => item.databaseId !== product.databaseId)
       .filter((item) => inferType(item) === type)

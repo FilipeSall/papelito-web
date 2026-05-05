@@ -195,6 +195,16 @@ export async function getProductDetail(id: string): Promise<ProductDetailItem | 
     price: prices.price,
     originalPrice: prices.originalPrice,
     discountPercent: prices.discountPercent,
+    galleryImages: [
+      {
+        id: `${product.id}:primary`,
+        name,
+        image: resolveProductImage({
+          homeImageUrl: product.homeData?.imageUrl,
+          productImageUrl: product.imageUrl,
+        }),
+      },
+    ],
     relatedThumbs: buildRelatedThumbs(product.id, type, mockFile.products),
   };
 }

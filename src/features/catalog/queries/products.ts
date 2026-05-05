@@ -19,6 +19,12 @@ export const PRODUCTS_QUERY = gql`
           sourceUrl
           altText
         }
+        galleryImages {
+          nodes {
+            sourceUrl
+            altText
+          }
+        }
         productCategories(first: 20) {
           nodes {
             id
@@ -61,6 +67,12 @@ export const PRODUCT_QUERY = gql`
       image {
         sourceUrl
         altText
+      }
+      galleryImages {
+        nodes {
+          sourceUrl
+          altText
+        }
       }
       productCategories(first: 20) {
         nodes {

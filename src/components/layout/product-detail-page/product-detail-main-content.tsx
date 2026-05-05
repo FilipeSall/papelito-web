@@ -16,6 +16,8 @@ interface ProductDetailMainContentProps {
   product: ProductDetailItem;
 }
 
+const EMPTY_GALLERY: ProductDetailItem["galleryImages"] = [];
+
 function ProductRatingStars({ rating }: { rating: number }) {
   const filledCount = Math.max(0, Math.min(5, Math.round(rating)));
 
@@ -57,13 +59,17 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const { status } = useSession();
+  const galleryImages = product.galleryImages ?? EMPTY_GALLERY;
 
   const thumbnails = useMemo(
-    () => [{ id: product.id, name: product.name, image: product.image }, ...product.relatedThumbs].slice(0, 4),
-    [product.id, product.image, product.name, product.relatedThumbs],
+    () =>
+      (galleryImages.length > 0
+        ? galleryImages
+        : [{ id: `${product.id}:primary`, name: product.name, image: product.image }]).slice(0, 4),
+    [galleryImages, product.id, product.image, product.name],
   );
   const initialSelectedThumbId = useMemo(
-    () => thumbnails.find((thumb) => Boolean(thumb.image))?.id ?? thumbnails[0]?.id ?? product.id,
+    () => thumbnails[0]?.id ?? `${product.id}:primary`,
     [product.id, thumbnails],
   );
 
@@ -127,11 +133,11 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
         <div className="flex flex-col gap-4">
           <div className="relative h-80 w-full overflow-hidden rounded-3xl bg-white p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)] sm:h-96 sm:p-10">
             {product.discountPercent > 0 ? (
-              <div className="absolute left-5 top-5 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black leading-4 text-brand-dark">
+              <div className="pointer-events-none absolute left-5 top-5 z-10 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black leading-4 text-brand-dark">
                 -{product.discountPercent}%
               </div>
             ) : null}
-            <div className="absolute right-5 top-5 rounded-full bg-[#231F20] px-3 py-1 text-xs font-black leading-4 text-white">
+            <div className="pointer-events-none absolute right-5 top-5 z-10 rounded-full bg-[#231F20] px-3 py-1 text-xs font-black leading-4 text-white">
               {product.badge}
             </div>
             {selectedThumb?.image ? (
