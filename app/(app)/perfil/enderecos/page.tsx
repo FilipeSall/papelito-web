@@ -1,29 +1,6 @@
-import {
-  Address,
-  AddressList,
-  ProfileContent,
-  ProfileHero,
-} from "@/components/layout/profile-page";
+import { ProfileAddressBook, ProfileContent, ProfileHero } from "@/components/layout/profile-page";
 
-// TODO: Obter dados do usuario via API/context de autenticacao
-const mockUser = {
-  name: "Joao Silva",
-  email: "joao.silva@email.com",
-  badge: "MEMBRO PREMIUM",
-  points: 1240,
-};
-
-// TODO: Obter enderecos do usuario via API
-const mockAddresses: Address[] = [
-  {
-    id: "1",
-    name: "Casa",
-    street: "Rua das Flores, 123 - Apto 45",
-    neighborhood: "Vila Mariana, Sao Paulo - SP",
-    zipCode: "04101-000",
-    isDefault: true,
-  },
-];
+import { getAuthenticatedProfile } from "../_lib/get-authenticated-profile";
 
 /**
  * Pagina de enderecos do usuario.
@@ -35,19 +12,19 @@ const mockAddresses: Address[] = [
  * - /perfil - Meus Pedidos
  * - /perfil/dados - Meus Dados
  * - /perfil/enderecos - Enderecos (atual)
- * - /perfil/configuracoes - Configuracoes
  */
-export default function ProfileAddressesPage() {
+export default async function ProfileAddressesPage() {
+  const profile = await getAuthenticatedProfile();
+
   return (
     <>
       <ProfileHero
-        badge={mockUser.badge}
-        email={mockUser.email}
-        name={mockUser.name}
-        points={mockUser.points}
+        email={profile.email}
+        image={profile.image}
+        name={profile.name}
       />
       <ProfileContent>
-        <AddressList addresses={mockAddresses} />
+        <ProfileAddressBook customer={profile.customer} />
       </ProfileContent>
     </>
   );

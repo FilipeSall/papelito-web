@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/lib/apollo/provider";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { NavigationLoader } from "@/components/ui/navigation-loader";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans" suppressHydrationWarning>
+        <NavigationLoader />
         <SessionProvider>
           <ApolloAppProvider>{children}</ApolloAppProvider>
         </SessionProvider>

@@ -1,36 +1,28 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-
-import { authOptions } from "@/lib/auth";
 import {
   ProfileContent,
   ProfileDataForm,
   ProfileHero,
 } from "@/components/layout/profile-page";
+import { buildProfileAccountFormValues } from "@/features/profile/utils/profile-customer-mappers";
+
+import { getAuthenticatedProfile } from "../_lib/get-authenticated-profile";
 
 export default async function ProfileDataPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) redirect("/entrar");
-
-  const { name, email, image } = session.user;
+  const profile = await getAuthenticatedProfile();
 
   return (
     <>
       <ProfileHero
-        email={email ?? ""}
-        image={image}
-        name={name ?? ""}
+        email={profile.email}
+        image={profile.image}
+        name={profile.name}
       />
       <ProfileContent>
         <ProfileDataForm
-          userData={{
-            name: name ?? "",
-            email: email ?? "",
-            phone: "",
-            cpf: "",
-            birthDate: "",
-          }}
+          initialValues={buildProfileAccountFormValues(profile.customer, {
+            email: profile.email,
+            name: profile.name,
+          })}
         />
       </ProfileContent>
     </>

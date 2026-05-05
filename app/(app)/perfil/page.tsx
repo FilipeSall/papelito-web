@@ -1,58 +1,19 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
+import { OrdersList, ProfileContent, ProfileHero } from "@/components/layout/profile-page";
 
-import { authOptions } from "@/lib/auth";
-import {
-  Order,
-  OrdersList,
-  ProfileContent,
-  ProfileHero,
-} from "@/components/layout/profile-page";
-
-// TODO: Obter pedidos do usuário via API
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    orderNumber: "#PB-001234",
-    status: "delivered",
-    date: "10 Mar 2026",
-    itemsCount: 3,
-    total: 45.8,
-  },
-  {
-    id: "2",
-    orderNumber: "#PB-001189",
-    status: "in_transit",
-    date: "02 Mar 2026",
-    itemsCount: 2,
-    total: 28.9,
-  },
-  {
-    id: "3",
-    orderNumber: "#PB-001100",
-    status: "delivered",
-    date: "20 Fev 2026",
-    itemsCount: 5,
-    total: 67.5,
-  },
-];
+import { getAuthenticatedProfile } from "./_lib/get-authenticated-profile";
 
 export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) redirect("/entrar");
-
-  const { name, email, image } = session.user;
+  const profile = await getAuthenticatedProfile();
 
   return (
     <>
       <ProfileHero
-        email={email ?? ""}
-        image={image}
-        name={name ?? ""}
+        email={profile.email}
+        image={profile.image}
+        name={profile.name}
       />
       <ProfileContent>
-        <OrdersList orders={mockOrders} />
+        <OrdersList orders={[]} />
       </ProfileContent>
     </>
   );

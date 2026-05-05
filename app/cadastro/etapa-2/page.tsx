@@ -230,7 +230,7 @@ export default function CadastroEtapa2Page() {
                 <button
                   type="button"
                   onClick={() => setAcceptTerms(!acceptTerms)}
-                  className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                  className={`mt-0.5 flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border transition ${
                     acceptTerms
                       ? "border-brand-yellow bg-brand-yellow"
                       : "border-white/30 bg-transparent"

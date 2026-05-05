@@ -37,7 +37,7 @@ export function AddressList({
   onAdd,
 }: AddressListProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4">
       <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
         Meus Enderecos
       </h2>
@@ -53,6 +53,6 @@ export function AddressList({
         ))}
         <AddAddressCard onClick={onAdd} />
       </div>
-    </div>
+    </section>
   );
 }

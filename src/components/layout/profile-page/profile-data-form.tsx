@@ -1,77 +1,290 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+
+import type { ProfileAccountFormValues } from "@/features/profile/types/profile-customer";
+import { ArrowRightIcon } from "@/components/ui/icons";
+
 import { ProfileFormField } from "./profile-form-field";
 
-type UserData = {
-  /** Nome completo do usuario */
-  name: string;
-  /** Email do usuario */
-  email: string;
-  /** Telefone do usuario */
-  phone: string;
-  /** CPF do usuario */
-  cpf: string;
-  /** Data de nascimento do usuario */
-  birthDate: string;
-};
-
 type ProfileDataFormProps = {
-  /** Dados do usuario para exibir no formulario */
-  userData: UserData;
+  initialValues: ProfileAccountFormValues;
 };
 
-/**
- * Formulario de dados pessoais do usuario.
- *
- * Exibe os campos de dados cadastrais do usuario com opcao
- * de edicao e salvamento. Atualmente implementado com dados estaticos.
- *
- * @example
- * ```tsx
- * <ProfileDataForm userData={userData} />
- * ```
- */
-export function ProfileDataForm({ userData }: ProfileDataFormProps) {
+type FeedbackState =
+  | { type: "error"; message: string }
+  | { type: "success"; message: string }
+  | null;
+
+export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
+  const router = useRouter();
+  const [form, setForm] = useState(initialValues);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isPending, startTransition] = useTransition();
+
+  const isCustomer = form.role === "customer";
+  const isSeller = form.role === "seller";
+
+  function updateField<Key extends keyof ProfileAccountFormValues>(
+    key: Key,
+    value: ProfileAccountFormValues[Key],
+  ) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setFieldErrors((current) => ({ ...current, [key]: "" }));
+    setFeedback(null);
+  }
+
+  function handlePhoneChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+
+    if (digits.length <= 2) {
+      updateField("phoneNumber", digits);
+      return;
+    }
+
+    if (digits.length <= 7) {
+      updateField("phoneNumber", `(${digits.slice(0, 2)}) ${digits.slice(2)}`);
+      return;
+    }
+
+    if (digits.length <= 10) {
+      updateField(
+        "phoneNumber",
+        `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`,
+      );
+      return;
+    }
+
+    updateField(
+      "phoneNumber",
+      `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`,
+    );
+  }
+
+  function handleCnpjChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+
+    if (digits.length <= 2) {
+      updateField("cnpj", digits);
+      return;
+    }
+
+    if (digits.length <= 5) {
+      updateField("cnpj", `${digits.slice(0, 2)}.${digits.slice(2)}`);
+      return;
+    }
+
+    if (digits.length <= 8) {
+      updateField("cnpj", `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`);
+      return;
+    }
+
+    if (digits.length <= 12) {
+      updateField(
+        "cnpj",
+        `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`,
+      );
+      return;
+    }
+
+    updateField(
+      "cnpj",
+      `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`,
+    );
+  }
+
+  function validateForm() {
+    const nextErrors: Record<string, string> = {};
+
+    if (!form.firstName.trim()) nextErrors.firstName = "Informe seu nome.";
+    if (!form.lastName.trim()) nextErrors.lastName = "Informe seu sobrenome.";
+    if (!form.displayName.trim()) nextErrors.displayName = "Defina como deseja aparecer.";
+    if (!form.email.trim()) nextErrors.email = "Informe seu e-mail.";
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const response = await fetch("/api/profile/account", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: form.firstName,
+            lastName: form.lastName,
+            displayName: form.displayName,
+            email: form.email,
+            phoneNumber: form.phoneNumber,
+            storeName: form.storeName,
+            cnpj: form.cnpj,
+            instagram: form.instagram,
+            role: form.role,
+          }),
+        });
+
+        const body = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!response.ok) {
+          setFeedback({
+            type: "error",
+            message: body?.message ?? "Nao foi possivel atualizar seus dados.",
+          });
+          return;
+        }
+
+        setFeedback({
+          type: "success",
+          message: "Seus dados foram atualizados com sucesso.",
+        });
+        router.refresh();
+      } catch {
+        setFeedback({
+          type: "error",
+          message: "Erro de rede ao salvar seus dados. Tente novamente.",
+        });
+      }
+    });
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
-        Meus Dados
-      </h2>
-
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <ProfileFormField
-            label="Nome Completo"
-            value={userData.name}
-          />
-          <ProfileFormField
-            label="E-mail"
-            type="email"
-            value={userData.email}
-          />
-          <ProfileFormField
-            label="Telefone"
-            type="tel"
-            value={userData.phone}
-          />
-          <ProfileFormField
-            label="CPF"
-            value={userData.cpf}
-          />
-          <ProfileFormField
-            label="Data de Nascimento"
-            type="date"
-            value={userData.birthDate}
-          />
-        </div>
-
-        <button
-          className="mt-6 rounded-full bg-brand-yellow px-8 py-3 text-sm font-black uppercase tracking-tight text-brand-dark transition-colors hover:bg-yellow-400"
-          type="button"
-        >
-          Salvar Alteracoes
-        </button>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
+          Meus Dados
+        </h2>
+        <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
+          Atualize suas informacoes de conta e deixe seu cadastro pronto para os proximos
+          pedidos.
+        </p>
       </div>
-    </div>
+
+      <form
+        className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-sm"
+        onSubmit={handleSubmit}
+      >
+        <div className="h-1.5 bg-brand-yellow" />
+
+        <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
+          <div className="rounded-2xl border border-[#EFE8B0] bg-[#FFFBE6] px-4 py-4">
+            <p className="text-sm font-semibold text-brand-dark">Cadastro ativo e editavel</p>
+            <p className="mt-1 text-sm leading-6 text-brand-dark/70">
+              Nome e e-mail sao preenchidos a partir da sua conta quando estiverem disponiveis.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <ProfileFormField
+              autoComplete="given-name"
+              errorMessage={fieldErrors.firstName}
+              label="Nome"
+              onChange={(value) => updateField("firstName", value)}
+              placeholder="Seu primeiro nome"
+              value={form.firstName}
+            />
+            <ProfileFormField
+              autoComplete="family-name"
+              errorMessage={fieldErrors.lastName}
+              label="Sobrenome"
+              onChange={(value) => updateField("lastName", value)}
+              placeholder="Seu sobrenome"
+              value={form.lastName}
+            />
+            <ProfileFormField
+              errorMessage={fieldErrors.displayName}
+              label="Nome de exibicao"
+              onChange={(value) => updateField("displayName", value)}
+              placeholder="Como devemos te chamar"
+              value={form.displayName}
+            />
+            <ProfileFormField
+              autoComplete="email"
+              errorMessage={fieldErrors.email}
+              label="E-mail"
+              onChange={(value) => updateField("email", value)}
+              placeholder="voce@papelito.com"
+              type="email"
+              value={form.email}
+            />
+            <ProfileFormField
+              autoComplete="tel"
+              label="Telefone"
+              onChange={handlePhoneChange}
+              placeholder="(11) 99999-9999"
+              type="tel"
+              value={form.phoneNumber}
+            />
+
+            {isSeller ? (
+              <>
+                <ProfileFormField
+                  label="Nome da loja"
+                  onChange={(value) => updateField("storeName", value)}
+                  placeholder="Como sua loja aparece"
+                  value={form.storeName}
+                />
+                <ProfileFormField
+                  label="CNPJ"
+                  onChange={handleCnpjChange}
+                  placeholder="00.000.000/0000-00"
+                  value={form.cnpj}
+                />
+                <ProfileFormField
+                  label="Instagram"
+                  onChange={(value) => updateField("instagram", value)}
+                  placeholder="@suamarca"
+                  value={form.instagram}
+                />
+              </>
+            ) : null}
+          </div>
+
+          {feedback ? (
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm ${
+                feedback.type === "error"
+                  ? "bg-red-50 text-red-600"
+                  : "bg-emerald-50 text-emerald-700"
+              }`}
+              role={feedback.type === "error" ? "alert" : "status"}
+            >
+              {feedback.message}
+            </div>
+          ) : null}
+
+          <div className="flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-text-tertiary">
+              {isCustomer
+                ? "A alteracao de senha agora fica na aba Configuracoes."
+                : "Dados comerciais ficam disponiveis apenas para perfis seller."}
+            </p>
+
+            <button
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand-dark px-6 text-sm font-black uppercase tracking-[0.28px] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isPending}
+              type="submit"
+            >
+              {isPending ? "Salvando..." : "Salvar dados"}
+              {!isPending ? (
+                <ArrowRightIcon className="h-4 w-4" size={18} strokeWidth={1.8} />
+              ) : null}
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
   );
 }

@@ -2,8 +2,8 @@ export default function ProfileSectionsLoading() {
   return (
     <>
       <section aria-busy="true" className="w-full bg-brand-dark">
-        <div className="mx-auto flex w-full max-w-391 items-center gap-6 px-4 py-6 sm:px-6 lg:px-8 max-[500px]:min-h-[176px]">
-          <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-white/15" />
+        <div className="mx-auto flex w-full max-w-391 items-center gap-6 px-4 py-6 sm:px-6 lg:px-8 max-[500px]:min-h-44">
+          <div className="h-18 w-18 animate-pulse rounded-full bg-white/15" />
           <div className="flex-1 space-y-3">
             <div className="h-8 w-48 animate-pulse rounded-md bg-white/20" />
             <div className="h-5 w-64 animate-pulse rounded-md bg-white/15" />
@@ -21,7 +21,7 @@ export default function ProfileSectionsLoading() {
             <div className="space-y-0 border-t border-gray-100">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
-                  className="flex h-[53px] items-center justify-between border-b border-bg-light px-5 py-4"
+                  className="flex h-13.25 items-center justify-between border-b border-bg-light px-5 py-4"
                   key={`profile-loading-item-${index}`}
                 >
                   <div className="h-5 w-36 animate-pulse rounded bg-gray-200" />

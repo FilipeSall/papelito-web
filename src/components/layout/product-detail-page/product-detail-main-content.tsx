@@ -222,7 +222,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
               <button
                 type="button"
                 aria-label="Diminuir quantidade"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
               >
                 <span className="text-sm leading-none">−</span>
@@ -233,7 +233,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
               <button
                 type="button"
                 aria-label="Aumentar quantidade"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
                 onClick={() => setQuantity((prev) => prev + 1)}
               >
                 <span className="text-sm leading-none">+</span>
@@ -245,7 +245,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90"
+              className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90"
             >
               <CartIcon className="size-4.5" />
               ADICIONAR AO CARRINHO
@@ -253,7 +253,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
             <button
               type="button"
               aria-label="Adicionar aos favoritos"
-              className="flex size-14 items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
+              className="flex size-14 cursor-pointer items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
             >
               <svg
                 width="18"
@@ -275,7 +275,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
             <button
               type="button"
               aria-label="Compartilhar produto"
-              className="flex size-14 items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
+              className="flex size-14 cursor-pointer items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
             >
               <svg
                 width="18"
@@ -313,7 +313,7 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
           <button
             type="button"
             onClick={handleBuyNow}
-            className="mt-4 h-14 w-full rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90"
+            className="mt-4 h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90"
           >
             COMPRAR AGORA
           </button>

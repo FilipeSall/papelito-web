@@ -1,4 +1,5 @@
 import { Order, OrderCard } from "./order-card";
+import { ProfileEmptyShoppingState } from "./profile-empty-shopping-state";
 
 type OrdersListProps = {
   orders: Order[];
@@ -17,9 +18,11 @@ export function OrdersList({ orders }: OrdersListProps) {
 
       <div className="flex flex-col gap-4">
         {orders.length === 0 ? (
-          <div className="flex items-center justify-center rounded-2xl bg-white px-6 py-12 shadow-sm">
-            <p className="text-sm text-gray-500">Você ainda não tem pedidos.</p>
-          </div>
+          <ProfileEmptyShoppingState
+            ctaLabel="Ir as compras"
+            description="Seu historico de pedidos vai aparecer aqui assim que voce fechar a primeira compra. Explore os produtos e aproveite para montar seu carrinho."
+            title="Voce ainda nao fez seu primeiro pedido"
+          />
         ) : (
           orders.map((order) => <OrderCard key={order.id} order={order} />)
         )}

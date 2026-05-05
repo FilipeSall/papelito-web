@@ -1,134 +1,172 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
-type SettingsState = {
-  orderUpdates: boolean;
-  marketingEmails: boolean;
-  whatsappAlerts: boolean;
-  profileVisibility: boolean;
-  saveCardsForNextPurchase: boolean;
+import type { ProfilePasswordFormValues } from "@/features/profile/types/profile-customer";
+import { ArrowRightIcon } from "@/components/ui/icons";
+
+import { ProfileFormField } from "./profile-form-field";
+
+type FeedbackState =
+  | { type: "error"; message: string }
+  | { type: "success"; message: string }
+  | null;
+
+const INITIAL_PASSWORD_FORM: ProfilePasswordFormValues = {
+  password: "",
+  confirmPassword: "",
 };
-
-type ToggleItemProps = {
-  checked: boolean;
-  description: string;
-  label: string;
-  onToggle: () => void;
-};
-
-function ToggleItem({ checked, description, label, onToggle }: ToggleItemProps) {
-  return (
-    <div className="flex items-start justify-between gap-4 rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-brand-dark">{label}</p>
-        <p className="text-xs tracking-[-0.12px] text-text-tertiary">{description}</p>
-      </div>
-
-      <button
-        aria-checked={checked}
-        aria-label={`Alternar ${label}`}
-        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition ${
-          checked
-            ? "border-brand-dark bg-brand-dark"
-            : "border-[#D1D5DB] bg-white"
-        }`}
-        onClick={onToggle}
-        role="switch"
-        type="button"
-      >
-        <span
-          className={`inline-block h-5 w-5 transform rounded-full transition ${
-            checked
-              ? "translate-x-5.75 bg-white"
-              : "translate-x-0.75 bg-[#9CA3AF]"
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
 
 export function ProfileSettings() {
-  const [settings, setSettings] = useState<SettingsState>({
-    orderUpdates: true,
-    marketingEmails: false,
-    whatsappAlerts: true,
-    profileVisibility: false,
-    saveCardsForNextPurchase: true,
-  });
+  const [form, setForm] = useState(INITIAL_PASSWORD_FORM);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isPending, startTransition] = useTransition();
 
-  function toggleSetting(key: keyof SettingsState) {
-    setSettings((current) => ({ ...current, [key]: !current[key] }));
+  function updateField<Key extends keyof ProfilePasswordFormValues>(
+    key: Key,
+    value: ProfilePasswordFormValues[Key],
+  ) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setFieldErrors((current) => ({ ...current, [key]: "" }));
+    setFeedback(null);
+  }
+
+  function validateForm() {
+    const nextErrors: Record<string, string> = {};
+
+    if (form.password.length < 8) {
+      nextErrors.password = "A nova senha precisa ter pelo menos 8 caracteres.";
+    }
+
+    if (form.password !== form.confirmPassword) {
+      nextErrors.confirmPassword = "As senhas precisam coincidir.";
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const response = await fetch("/api/profile/password", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        });
+
+        const body = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!response.ok) {
+          setFeedback({
+            type: "error",
+            message: body?.message ?? "Nao foi possivel atualizar sua senha.",
+          });
+          return;
+        }
+
+        setFeedback({
+          type: "success",
+          message: "Sua senha foi atualizada com sucesso.",
+        });
+        setForm(INITIAL_PASSWORD_FORM);
+      } catch {
+        setFeedback({
+          type: "error",
+          message: "Erro de rede ao atualizar a senha. Tente novamente.",
+        });
+      }
+    });
   }
 
   return (
-    <section className="flex flex-1 flex-col gap-4">
-      <h2 className="text-xl font-black uppercase tracking-[-0.45px] text-brand-dark">
-        Configuracoes
-      </h2>
-
-      <div className="space-y-4 rounded-2xl bg-white p-6 shadow-sm">
-        <div className="space-y-3">
-          <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-            Notificacoes
-          </h3>
-
-          <ToggleItem
-            checked={settings.orderUpdates}
-            description="Receba avisos sobre aprovacao, envio e entrega dos seus pedidos."
-            label="Atualizacoes de pedido"
-            onToggle={() => toggleSetting("orderUpdates")}
-          />
-
-          <ToggleItem
-            checked={settings.marketingEmails}
-            description="Fique por dentro de lancamentos, descontos e campanhas da Papelito."
-            label="Emails promocionais"
-            onToggle={() => toggleSetting("marketingEmails")}
-          />
-
-          <ToggleItem
-            checked={settings.whatsappAlerts}
-            description="Receba comunicacoes rapidas no WhatsApp para eventos importantes."
-            label="Alertas no WhatsApp"
-            onToggle={() => toggleSetting("whatsappAlerts")}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-            Privacidade
-          </h3>
-
-          <ToggleItem
-            checked={settings.profileVisibility}
-            description="Permite mostrar seu nome e avatar em areas publicas da plataforma."
-            label="Perfil publico"
-            onToggle={() => toggleSetting("profileVisibility")}
-          />
-
-          <ToggleItem
-            checked={settings.saveCardsForNextPurchase}
-            description="Mantem seus cartoes salvos para agilizar o checkout futuro."
-            label="Salvar cartoes para proxima compra"
-            onToggle={() => toggleSetting("saveCardsForNextPurchase")}
-          />
-        </div>
-
-        <div className="rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-          <p className="text-sm font-semibold text-brand-dark">Sessoes ativas</p>
-          <p className="mt-1 text-xs tracking-[-0.12px] text-text-tertiary">
-            Encerre sua conta em todos os dispositivos conectados.
-          </p>
-          <button
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-full border border-brand-dark px-5 text-xs font-black uppercase tracking-[0.3px] text-brand-dark transition hover:bg-brand-dark hover:text-white"
-            type="button"
-          >
-            Encerrar todas as sessoes
-          </button>
-        </div>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
+          Configuracoes
+        </h2>
+        <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
+          Use esta area para alterar sua senha sem misturar a mudanca com os dados do cadastro.
+        </p>
       </div>
+
+      <form
+        className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-sm"
+        onSubmit={handleSubmit}
+      >
+        <div className="h-1.5 bg-brand-yellow" />
+
+        <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
+          <div className="rounded-2xl border border-[#EFE8B0] bg-[#FFFBE6] px-4 py-4">
+            <p className="text-sm font-semibold text-brand-dark">Seguranca da conta</p>
+            <p className="mt-1 text-sm leading-6 text-brand-dark/70">
+              Defina uma nova senha forte para sua conta Papelito.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <ProfileFormField
+              autoComplete="new-password"
+              errorMessage={fieldErrors.password}
+              label="Nova senha"
+              onChange={(value) => updateField("password", value)}
+              placeholder="Minimo de 8 caracteres"
+              type="password"
+              value={form.password}
+            />
+            <ProfileFormField
+              autoComplete="new-password"
+              errorMessage={fieldErrors.confirmPassword}
+              label="Confirmar nova senha"
+              onChange={(value) => updateField("confirmPassword", value)}
+              placeholder="Repita a nova senha"
+              type="password"
+              value={form.confirmPassword}
+            />
+          </div>
+
+          {feedback ? (
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm ${
+                feedback.type === "error"
+                  ? "bg-red-50 text-red-600"
+                  : "bg-emerald-50 text-emerald-700"
+              }`}
+              role={feedback.type === "error" ? "alert" : "status"}
+            >
+              {feedback.message}
+            </div>
+          ) : null}
+
+          <div className="flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-text-tertiary">
+              Esta acao atualiza a senha diretamente na conta autenticada.
+            </p>
+
+            <button
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand-dark px-6 text-sm font-black uppercase tracking-[0.28px] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isPending}
+              type="submit"
+            >
+              {isPending ? "Salvando..." : "Atualizar senha"}
+              {!isPending ? (
+                <ArrowRightIcon className="h-4 w-4" size={18} strokeWidth={1.8} />
+              ) : null}
+            </button>
+          </div>
+        </div>
+      </form>
     </section>
   );
 }

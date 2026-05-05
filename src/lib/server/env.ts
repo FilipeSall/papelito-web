@@ -38,6 +38,13 @@ export function getServerEnv() {
   };
 }
 
+function ensureAbsoluteUrl(endpoint: string): string {
+  if (endpoint.startsWith("//")) {
+    return `https:${endpoint}`;
+  }
+  return endpoint;
+}
+
 export function getWpGraphqlEndpoint(): string {
   const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT;
 
@@ -45,7 +52,7 @@ export function getWpGraphqlEndpoint(): string {
     return LOCAL_WP_GRAPHQL_ENDPOINT;
   }
 
-  return endpoint;
+  return ensureAbsoluteUrl(endpoint);
 }
 
 export function getWpRestBase(): string {
@@ -55,7 +62,7 @@ export function getWpRestBase(): string {
     return LOCAL_WP_REST_BASE;
   }
 
-  return endpoint;
+  return ensureAbsoluteUrl(endpoint);
 }
 
 export function isMockDataEnabled() {

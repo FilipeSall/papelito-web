@@ -11,8 +11,16 @@ type ProfileFormFieldProps = {
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
   /** Placeholder do campo */
   placeholder?: string;
+  /** Auto complete do campo */
+  autoComplete?: string;
   /** Se o campo esta desabilitado */
   disabled?: boolean;
+  /** Input mode do campo */
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  /** Comprimento maximo */
+  maxLength?: number;
+  /** Mensagem de erro */
+  errorMessage?: string;
   /** Callback de mudanca de valor */
   onChange?: (value: string) => void;
 };
@@ -37,7 +45,11 @@ export function ProfileFormField({
   value,
   type = "text",
   placeholder,
+  autoComplete,
   disabled = false,
+  inputMode,
+  maxLength,
+  errorMessage,
   onChange,
 }: ProfileFormFieldProps) {
   return (
@@ -46,13 +58,19 @@ export function ProfileFormField({
         {label}
       </label>
       <input
-        className="h-[46px] w-full rounded-[10px] border border-gray-200 px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-yellow disabled:bg-gray-50 disabled:text-text-muted"
+        autoComplete={autoComplete}
+        className={`h-[46px] w-full rounded-[10px] border px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-yellow disabled:bg-gray-50 disabled:text-text-muted ${
+          errorMessage ? "border-red-400" : "border-gray-200"
+        }`}
         disabled={disabled}
+        inputMode={inputMode}
+        maxLength={maxLength}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         type={type}
         value={value}
       />
+      {errorMessage ? <p className="text-xs text-red-500">{errorMessage}</p> : null}
     </div>
   );
 }
