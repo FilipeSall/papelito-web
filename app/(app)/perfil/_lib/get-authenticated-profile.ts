@@ -10,7 +10,6 @@ import {
 import { authOptions } from "@/lib/auth";
 
 type AuthenticatedProfile = {
-  accessToken?: string;
   customer: ProfileCustomer;
   image?: string | null;
   name: string;
@@ -30,7 +29,6 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile> {
   const customer = await fetchProfileCustomer(session.accessToken);
 
   return {
-    accessToken: session.accessToken,
     customer,
     name: buildProfileName(customer, session.user.name),
     email: buildProfileEmail(customer, session.user.email),

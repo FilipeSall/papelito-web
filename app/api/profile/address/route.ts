@@ -47,9 +47,15 @@ export async function PATCH(request: Request) {
 
   try {
     const currentCustomer = await fetchProfileCustomer(session.accessToken);
-    const recipientFirstName = currentCustomer.firstName || currentCustomer.billing.firstName;
-    const recipientLastName = currentCustomer.lastName || currentCustomer.billing.lastName;
-    const recipientEmail = currentCustomer.email || currentCustomer.billing.email;
+    const { firstName: sessionFirstName, lastName: sessionLastName } = splitFullName(
+      session.user.name,
+    );
+    const recipientFirstName =
+      currentCustomer.firstName || currentCustomer.billing.firstName || sessionFirstName;
+    const recipientLastName =
+      currentCustomer.lastName || currentCustomer.billing.lastName || sessionLastName;
+    const recipientEmail =
+      currentCustomer.email || currentCustomer.billing.email || session.user.email || "";
     const recipientPhone =
       currentCustomer.meta.phoneNumber || currentCustomer.billing.phone || "";
     const company = currentCustomer.meta.storeName || currentCustomer.billing.company || "";
@@ -88,4 +94,22 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ message }, { status: 500 });
   }
+}
+
+function splitFullName(fullName?: string | null) {
+  const normalizedName = String(fullName ?? "").trim();
+  const parts = normalizedName.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return { firstName: "", lastName: "" };
+  }
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: "" };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
 }

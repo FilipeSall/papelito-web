@@ -179,77 +179,83 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
         <div className="h-1.5 bg-brand-yellow" />
 
         <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
-          <div className="rounded-2xl border border-[#EFE8B0] bg-[#FFFBE6] px-4 py-4">
-            <p className="text-sm font-semibold text-brand-dark">Cadastro ativo e editavel</p>
-            <p className="mt-1 text-sm leading-6 text-brand-dark/70">
-              Nome e e-mail sao preenchidos a partir da sua conta quando estiverem disponiveis.
-            </p>
-          </div>
+          <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
+            <div className="mb-5 flex items-center justify-between gap-3 border-b border-[#E9E1D0] pb-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
+                  Identidade da conta
+                </p>
+                <p className="mt-1 text-sm text-brand-dark/65">
+                  Campos com contraste maior para facilitar leitura e edicao.
+                </p>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <ProfileFormField
-              autoComplete="given-name"
-              errorMessage={fieldErrors.firstName}
-              label="Nome"
-              onChange={(value) => updateField("firstName", value)}
-              placeholder="Seu primeiro nome"
-              value={form.firstName}
-            />
-            <ProfileFormField
-              autoComplete="family-name"
-              errorMessage={fieldErrors.lastName}
-              label="Sobrenome"
-              onChange={(value) => updateField("lastName", value)}
-              placeholder="Seu sobrenome"
-              value={form.lastName}
-            />
-            <ProfileFormField
-              errorMessage={fieldErrors.displayName}
-              label="Nome de exibicao"
-              onChange={(value) => updateField("displayName", value)}
-              placeholder="Como devemos te chamar"
-              value={form.displayName}
-            />
-            <ProfileFormField
-              autoComplete="email"
-              errorMessage={fieldErrors.email}
-              label="E-mail"
-              onChange={(value) => updateField("email", value)}
-              placeholder="voce@papelito.com"
-              type="email"
-              value={form.email}
-            />
-            <ProfileFormField
-              autoComplete="tel"
-              label="Telefone"
-              onChange={handlePhoneChange}
-              placeholder="(11) 99999-9999"
-              type="tel"
-              value={form.phoneNumber}
-            />
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <ProfileFormField
+                autoComplete="given-name"
+                errorMessage={fieldErrors.firstName}
+                label="Nome"
+                onChange={(value) => updateField("firstName", value)}
+                placeholder="Seu primeiro nome"
+                value={form.firstName}
+              />
+              <ProfileFormField
+                autoComplete="family-name"
+                errorMessage={fieldErrors.lastName}
+                label="Sobrenome"
+                onChange={(value) => updateField("lastName", value)}
+                placeholder="Seu sobrenome"
+                value={form.lastName}
+              />
+              <ProfileFormField
+                errorMessage={fieldErrors.displayName}
+                label="Nome de exibicao"
+                onChange={(value) => updateField("displayName", value)}
+                placeholder="Como devemos te chamar"
+                value={form.displayName}
+              />
+              <ProfileFormField
+                autoComplete="email"
+                errorMessage={fieldErrors.email}
+                label="E-mail"
+                onChange={(value) => updateField("email", value)}
+                placeholder="voce@papelito.com"
+                type="email"
+                value={form.email}
+              />
+              <ProfileFormField
+                autoComplete="tel"
+                label="Telefone"
+                onChange={handlePhoneChange}
+                placeholder="(11) 99999-9999"
+                type="tel"
+                value={form.phoneNumber}
+              />
 
-            {isSeller ? (
-              <>
-                <ProfileFormField
-                  label="Nome da loja"
-                  onChange={(value) => updateField("storeName", value)}
-                  placeholder="Como sua loja aparece"
-                  value={form.storeName}
-                />
-                <ProfileFormField
-                  label="CNPJ"
-                  onChange={handleCnpjChange}
-                  placeholder="00.000.000/0000-00"
-                  value={form.cnpj}
-                />
-                <ProfileFormField
-                  label="Instagram"
-                  onChange={(value) => updateField("instagram", value)}
-                  placeholder="@suamarca"
-                  value={form.instagram}
-                />
-              </>
-            ) : null}
+              {isSeller ? (
+                <>
+                  <ProfileFormField
+                    label="Nome da loja"
+                    onChange={(value) => updateField("storeName", value)}
+                    placeholder="Como sua loja aparece"
+                    value={form.storeName}
+                  />
+                  <ProfileFormField
+                    label="CNPJ"
+                    onChange={handleCnpjChange}
+                    placeholder="00.000.000/0000-00"
+                    value={form.cnpj}
+                  />
+                  <ProfileFormField
+                    label="Instagram"
+                    onChange={(value) => updateField("instagram", value)}
+                    placeholder="@suamarca"
+                    value={form.instagram}
+                  />
+                </>
+              ) : null}
+            </div>
           </div>
 
           {feedback ? (
@@ -268,7 +274,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
           <div className="flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-6 text-text-tertiary">
               {isCustomer
-                ? "A alteracao de senha agora fica na aba Configuracoes."
+                ? "As alteracoes sao aplicadas diretamente no seu cadastro principal."
                 : "Dados comerciais ficam disponiveis apenas para perfis seller."}
             </p>
 

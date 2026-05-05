@@ -108,32 +108,36 @@ export function ProfileSettings() {
         <div className="h-1.5 bg-brand-yellow" />
 
         <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
-          <div className="rounded-2xl border border-[#EFE8B0] bg-[#FFFBE6] px-4 py-4">
-            <p className="text-sm font-semibold text-brand-dark">Seguranca da conta</p>
-            <p className="mt-1 text-sm leading-6 text-brand-dark/70">
-              Defina uma nova senha forte para sua conta Papelito.
-            </p>
-          </div>
+          <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
+            <div className="mb-5 border-b border-[#E9E1D0] pb-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
+                Atualizacao segura
+              </p>
+              <p className="mt-1 text-sm text-brand-dark/65">
+                Escolha uma senha nova e confirme abaixo para concluir a troca.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <ProfileFormField
-              autoComplete="new-password"
-              errorMessage={fieldErrors.password}
-              label="Nova senha"
-              onChange={(value) => updateField("password", value)}
-              placeholder="Minimo de 8 caracteres"
-              type="password"
-              value={form.password}
-            />
-            <ProfileFormField
-              autoComplete="new-password"
-              errorMessage={fieldErrors.confirmPassword}
-              label="Confirmar nova senha"
-              onChange={(value) => updateField("confirmPassword", value)}
-              placeholder="Repita a nova senha"
-              type="password"
-              value={form.confirmPassword}
-            />
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <ProfileFormField
+                autoComplete="new-password"
+                errorMessage={fieldErrors.password}
+                label="Nova senha"
+                onChange={(value) => updateField("password", value)}
+                placeholder="Minimo de 8 caracteres"
+                type="password"
+                value={form.password}
+              />
+              <ProfileFormField
+                autoComplete="new-password"
+                errorMessage={fieldErrors.confirmPassword}
+                label="Confirmar nova senha"
+                onChange={(value) => updateField("confirmPassword", value)}
+                placeholder="Repita a nova senha"
+                type="password"
+                value={form.confirmPassword}
+              />
+            </div>
           </div>
 
           {feedback ? (

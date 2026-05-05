@@ -1,6 +1,4 @@
-import { ProfileAddressBook, ProfileContent, ProfileHero } from "@/components/layout/profile-page";
-
-import { getAuthenticatedProfile } from "../_lib/get-authenticated-profile";
+import { ProfileAddressesPageContent } from "@/components/layout/profile-page";
 
 /**
  * Pagina de enderecos do usuario.
@@ -13,19 +11,6 @@ import { getAuthenticatedProfile } from "../_lib/get-authenticated-profile";
  * - /perfil/dados - Meus Dados
  * - /perfil/enderecos - Enderecos (atual)
  */
-export default async function ProfileAddressesPage() {
-  const profile = await getAuthenticatedProfile();
-
-  return (
-    <>
-      <ProfileHero
-        email={profile.email}
-        image={profile.image}
-        name={profile.name}
-      />
-      <ProfileContent>
-        <ProfileAddressBook customer={profile.customer} />
-      </ProfileContent>
-    </>
-  );
+export default function ProfileAddressesPage() {
+  return <ProfileAddressesPageContent />;
 }

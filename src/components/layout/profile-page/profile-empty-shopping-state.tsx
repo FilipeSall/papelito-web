@@ -20,9 +20,6 @@ export function ProfileEmptyShoppingState({
       <div className="h-1.5 bg-brand-yellow" />
       <div className="flex flex-col gap-5 px-6 py-8 sm:px-8">
         <div className="space-y-2">
-          <span className="inline-flex rounded-full bg-brand-yellow/25 px-3 py-1 text-[11px] font-black uppercase tracking-[0.28px] text-brand-dark">
-            Sua vitrine esta pronta
-          </span>
           <h3 className="text-xl font-black uppercase tracking-[-0.48px] text-brand-dark">
             {title}
           </h3>

@@ -181,19 +181,35 @@ export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <ProfileFormField
-                errorMessage={fieldErrors.zipCode || cepError || undefined}
-                inputMode="numeric"
-                label="CEP"
-                maxLength={9}
-                onChange={handleZipCodeChange}
-                placeholder="00000-000"
-                value={form.zipCode}
-              />
-              <div className="hidden md:block" />
+            <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
+              <div className="mb-5 flex flex-col gap-3 border-b border-[#E9E1D0] pb-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
+                    Endereco principal
+                  </p>
+                  <p className="mt-1 text-sm text-brand-dark/65">
+                    Use o CEP para preencher o restante automaticamente.
+                  </p>
+                </div>
 
-              <div className="md:col-span-2">
+                <div className="rounded-2xl border border-[#E7DFA9] bg-[#FFF7CC] px-4 py-3 text-sm text-brand-dark/75">
+                  O CEP busca cidade, estado e bairro para acelerar o cadastro.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <ProfileFormField
+                    errorMessage={fieldErrors.zipCode || cepError || undefined}
+                    inputMode="numeric"
+                    label="CEP"
+                    maxLength={9}
+                    onChange={handleZipCodeChange}
+                    placeholder="00000-000"
+                    value={form.zipCode}
+                  />
+                </div>
+
                 <ProfileFormField
                   errorMessage={fieldErrors.street}
                   label="Logradouro"
@@ -201,43 +217,45 @@ export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
                   placeholder="Rua, avenida ou travessa"
                   value={form.street}
                 />
-              </div>
 
-              <ProfileFormField
-                errorMessage={fieldErrors.number}
-                label="Numero"
-                onChange={(value) => updateField("number", value.replace(/[^\dA-Za-z-]/g, ""))}
-                placeholder="Ex: 123"
-                value={form.number}
-              />
-              <ProfileFormField
-                label="Complemento"
-                onChange={(value) => updateField("complement", value)}
-                placeholder="Apto, bloco, sala..."
-                value={form.complement}
-              />
-              <ProfileFormField
-                errorMessage={fieldErrors.neighborhood}
-                label="Bairro"
-                onChange={(value) => updateField("neighborhood", value)}
-                placeholder="Nome do bairro"
-                value={form.neighborhood}
-              />
-              <ProfileFormField
-                errorMessage={fieldErrors.city}
-                label="Cidade"
-                onChange={(value) => updateField("city", value)}
-                placeholder="Cidade"
-                value={form.city}
-              />
-              <CheckoutCustomSelect
-                errorMessage={fieldErrors.state}
-                label="Estado"
-                onChange={(value) => updateField("state", value)}
-                options={BRAZIL_STATES}
-                placeholder="Selecione"
-                value={form.state}
-              />
+                <ProfileFormField
+                  errorMessage={fieldErrors.number}
+                  label="Numero"
+                  onChange={(value) => updateField("number", value.replace(/[^\dA-Za-z-]/g, ""))}
+                  placeholder="Ex: 123"
+                  value={form.number}
+                />
+                <ProfileFormField
+                  label="Complemento"
+                  onChange={(value) => updateField("complement", value)}
+                  placeholder="Apto, bloco, sala..."
+                  value={form.complement}
+                />
+                <ProfileFormField
+                  errorMessage={fieldErrors.neighborhood}
+                  label="Bairro"
+                  onChange={(value) => updateField("neighborhood", value)}
+                  placeholder="Nome do bairro"
+                  value={form.neighborhood}
+                />
+                <ProfileFormField
+                  errorMessage={fieldErrors.city}
+                  label="Cidade"
+                  onChange={(value) => updateField("city", value)}
+                  placeholder="Cidade"
+                  value={form.city}
+                />
+                <CheckoutCustomSelect
+                  errorMessage={fieldErrors.state}
+                  label="Estado"
+                  labelClassName="text-[11px] font-black uppercase tracking-[0.22em] text-brand-dark/70"
+                  onChange={(value) => updateField("state", value)}
+                  options={BRAZIL_STATES}
+                  placeholder="Selecione"
+                  triggerClassName="h-13 rounded-[18px] border-[#D8D1C2] bg-[#FFFDF8] px-4 text-[15px] font-medium text-brand-dark shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(35,31,32,0.03)] focus:ring-4 focus:ring-[#FFF1A6]"
+                  value={form.state}
+                />
+              </div>
             </div>
 
             {cepLoading ? (

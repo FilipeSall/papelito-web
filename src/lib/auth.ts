@@ -21,6 +21,14 @@ const WP_LOGIN_MUTATION = `
   }
 `;
 
+const WP_REFRESH_TOKEN_MUTATION = `
+  mutation Refresh($r: String!) {
+    refreshJwtAuthToken(input: { jwtRefreshToken: $r }) {
+      authToken
+    }
+  }
+`;
+
 type WpAuthResponse = {
   authToken: string;
   refreshToken: string;
@@ -31,6 +39,10 @@ type WpAuthResponse = {
     lastName?: string;
   };
   profileComplete: boolean;
+};
+
+type WpRefreshResponse = {
+  authToken: string;
 };
 
 async function wpLogin(username: string, password: string) {
@@ -79,6 +91,60 @@ async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | 
   return result.data;
 }
 
+async function wpRefreshAuthToken(refreshToken: string): Promise<string | null> {
+  const response = await fetch(getWpGraphqlEndpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: WP_REFRESH_TOKEN_MUTATION,
+      variables: {
+        r: refreshToken,
+      },
+    }),
+  });
+
+  const json = (await response.json()) as {
+    data?: {
+      refreshJwtAuthToken?: WpRefreshResponse | null;
+    };
+    errors?: Array<{ message?: string }>;
+  };
+
+  if (!response.ok || json.errors?.length) {
+    console.error("[auth] JWT refresh failed", json.errors);
+    return null;
+  }
+
+  return json.data?.refreshJwtAuthToken?.authToken ?? null;
+}
+
+function getAccessTokenExpiresAt(accessToken?: string) {
+  if (!accessToken) {
+    return undefined;
+  }
+
+  try {
+    const [, payload] = accessToken.split(".");
+
+    if (!payload) {
+      return undefined;
+    }
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decodedPayload = JSON.parse(
+      Buffer.from(normalizedPayload, "base64").toString("utf-8"),
+    ) as { exp?: number };
+
+    return typeof decodedPayload.exp === "number"
+      ? decodedPayload.exp * 1000
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const providers = [];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -113,6 +179,7 @@ providers.push(
         email: data.user.email ?? credentials.username,
         name: `${data.user.firstName ?? ""} ${data.user.lastName ?? ""}`.trim(),
         accessToken: data.authToken,
+        accessTokenExpires: getAccessTokenExpiresAt(data.authToken),
         refreshToken: data.refreshToken,
         profileComplete: true,
       };
@@ -145,6 +212,7 @@ export const authOptions: NextAuthOptions = {
 
       const userWithTokens = user as typeof user & {
         accessToken?: string;
+        accessTokenExpires?: number;
         refreshToken?: string;
         profileComplete?: boolean;
         id?: string;
@@ -152,6 +220,7 @@ export const authOptions: NextAuthOptions = {
 
       userWithTokens.id = String(wpAuth.user.databaseId);
       userWithTokens.accessToken = wpAuth.authToken;
+      userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpAuth.authToken);
       userWithTokens.refreshToken = wpAuth.refreshToken;
       userWithTokens.profileComplete = wpAuth.profileComplete;
 
@@ -161,9 +230,37 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.accessToken = (user as { accessToken?: string }).accessToken;
+        token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;
         token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
       }
+
+      const accessTokenExpires =
+        typeof token.accessTokenExpires === "number"
+          ? token.accessTokenExpires
+          : getAccessTokenExpiresAt(token.accessToken);
+
+      if (!accessTokenExpires || Date.now() < accessTokenExpires - 30_000) {
+        token.accessTokenExpires = accessTokenExpires;
+        return token;
+      }
+
+      if (!token.refreshToken) {
+        delete token.accessToken;
+        delete token.accessTokenExpires;
+        return token;
+      }
+
+      const refreshedAccessToken = await wpRefreshAuthToken(token.refreshToken);
+
+      if (!refreshedAccessToken) {
+        delete token.accessToken;
+        delete token.accessTokenExpires;
+        return token;
+      }
+
+      token.accessToken = refreshedAccessToken;
+      token.accessTokenExpires = getAccessTokenExpiresAt(refreshedAccessToken);
 
       return token;
     },

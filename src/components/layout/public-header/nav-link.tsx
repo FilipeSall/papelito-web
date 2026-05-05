@@ -26,7 +26,7 @@ export function PublicHeaderNavLink({ href, label, widthClass = "" }: PublicHead
       {isActive && (
         <span
           aria-hidden
-          className="animate-underline-slide absolute bottom-0 left-0 h-0.5 w-full origin-left bg-brand-dark"
+          className="animate-underline-slide absolute bottom-0 left-0 h-1 w-full origin-left bg-brand-dark [clip-path:polygon(0_37.5%,100%_0,100%_100%,0_62.5%)]"
         />
       )}
     </Link>
