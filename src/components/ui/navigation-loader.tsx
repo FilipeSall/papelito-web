@@ -1,16 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
-export function NavigationLoader() {
-  const [startPathname, setStartPathname] = useState<string | null>(null);
+function NavigationLoaderInner() {
+  const [startUrl, setStartUrl] = useState<string | null>(null);
   const pathname = usePathname();
-  const loading = startPathname !== null && startPathname === pathname;
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const currentUrl = search ? `${pathname}?${search}` : pathname;
+  const loading = startUrl !== null && startUrl === currentUrl;
 
-  if (startPathname !== null && startPathname !== pathname) {
-    setStartPathname(null);
+  if (startUrl !== null && startUrl !== currentUrl) {
+    setStartUrl(null);
   }
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export function NavigationLoader() {
         ) {
           return;
         }
-        setStartPathname(window.location.pathname);
+        setStartUrl(`${window.location.pathname}${window.location.search}`);
       } catch {
         // href inválido — ignorar
       }
@@ -56,7 +59,7 @@ export function NavigationLoader() {
     <div
       aria-hidden={!loading}
       role="status"
-      className={`fixed inset-0 z-[1600] flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 ${
+      className={`fixed inset-0 z-1600 flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 ${
         loading ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
@@ -74,5 +77,13 @@ export function NavigationLoader() {
       </div>
       <span className="sr-only">Carregando…</span>
     </div>
+  );
+}
+
+export function NavigationLoader() {
+  return (
+    <Suspense fallback={null}>
+      <NavigationLoaderInner />
+    </Suspense>
   );
 }
