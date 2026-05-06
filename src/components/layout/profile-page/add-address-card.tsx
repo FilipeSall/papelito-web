@@ -19,7 +19,7 @@ type AddAddressCardProps = {
 export function AddAddressCard({ onClick }: AddAddressCardProps) {
   return (
     <button
-      className="flex min-h-[212px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50"
+      className="flex min-h-53 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50"
       onClick={onClick}
       type="button"
     >

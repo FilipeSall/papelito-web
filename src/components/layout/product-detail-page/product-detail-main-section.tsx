@@ -5,6 +5,7 @@ import { ProductDetailMainContent } from "./product-detail-main-content";
 interface ProductDetailMainSectionProps {
   /** Produto carregado para a seção principal da PDP. */
   product: ProductDetailItem;
+  initialIsFavorite?: boolean;
 }
 
 /**
@@ -12,7 +13,10 @@ interface ProductDetailMainSectionProps {
  *
  * Define fundo, largura máxima e espaçamento vertical da área.
  */
-export function ProductDetailMainSection({ product }: ProductDetailMainSectionProps) {
+export function ProductDetailMainSection({
+  product,
+  initialIsFavorite = false,
+}: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
       <div className="relative mx-auto w-full max-w-271 px-4 md:px-8">
@@ -41,7 +45,10 @@ export function ProductDetailMainSection({ product }: ProductDetailMainSectionPr
         </Link>
 
         <div className="mt-6 md:mt-7">
-          <ProductDetailMainContent product={product} />
+          <ProductDetailMainContent
+            product={product}
+            initialIsFavorite={initialIsFavorite}
+          />
         </div>
       </div>
     </section>

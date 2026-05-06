@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
 import { ADD_TO_CART_EVENT_NAME } from "@/components/ui/add-to-cart-button";
-import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
+import { FavoriteToggleButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { CartIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/features/cart";
 import type { ProductDetailItem } from "@/features/catalog";
@@ -14,6 +14,7 @@ import { formatBRL } from "@/lib/format-currency";
 interface ProductDetailMainContentProps {
   /** Dados do produto atual para renderização da seção principal. */
   product: ProductDetailItem;
+  initialIsFavorite?: boolean;
 }
 
 const EMPTY_GALLERY: ProductDetailItem["galleryImages"] = [];
@@ -55,7 +56,10 @@ function ProductRatingStars({ rating }: { rating: number }) {
  * - seleção de miniatura
  * - quantidade para adicionar ao carrinho
  */
-export function ProductDetailMainContent({ product }: ProductDetailMainContentProps) {
+export function ProductDetailMainContent({
+  product,
+  initialIsFavorite = false,
+}: ProductDetailMainContentProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const { status } = useSession();
@@ -250,28 +254,10 @@ export function ProductDetailMainContent({ product }: ProductDetailMainContentPr
               <CartIcon className="size-4.5" />
               ADICIONAR AO CARRINHO
             </button>
-            <button
-              type="button"
-              aria-label="Adicionar aos favoritos"
-              className="flex size-14 cursor-pointer items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden
-              >
-                <path
-                  d="M9 15.2C9 15.2 3.6 11.8 2.15 8.65C0.85 5.85 1.95 3.45 4.3 3.15C5.95 2.95 7.4 3.75 8.2 5.05L9 6.35L9.8 5.05C10.6 3.75 12.05 2.95 13.7 3.15C16.05 3.45 17.15 5.85 15.85 8.65C14.4 11.8 9 15.2 9 15.2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+            <FavoriteToggleButton
+              productId={product.id}
+              initialIsFavorite={initialIsFavorite}
+            />
             <button
               type="button"
               aria-label="Compartilhar produto"

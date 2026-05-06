@@ -3,6 +3,7 @@ import {
   ProfileHero,
   ProfileShellProvider,
 } from "@/components/layout/profile-page";
+import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 
 import { getAuthenticatedProfile } from "./_lib/get-authenticated-profile";
 
@@ -26,6 +27,7 @@ export default async function ProfileLayout({
         name={profile.name}
       />
       <ProfileContent>{children}</ProfileContent>
+      <AddToCartToastHost />
     </ProfileShellProvider>
   );
 }
