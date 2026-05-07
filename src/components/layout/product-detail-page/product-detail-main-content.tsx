@@ -325,26 +325,10 @@ export function ProductDetailMainContent({
       </div>
 
       <section className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white">
-        <div className="flex items-center overflow-x-auto border-b border-[#E5E7EB]">
-          <button
-            type="button"
-            className="h-13.5 shrink-0 border-b-2 border-brand-yellow px-4 text-sm font-black uppercase tracking-[-0.3125px] text-brand-dark md:px-8 md:text-base"
-          >
+        <div className="border-b border-[#E5E7EB]">
+          <div className="inline-flex h-13.5 items-center border-b-2 border-brand-yellow px-4 text-sm font-black uppercase tracking-[-0.3125px] text-brand-dark md:px-8 md:text-base">
             Descrição
-          </button>
-          <button
-            type="button"
-            className="h-13.5 shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
-          >
-            Detalhes
-          </button>
-          <button
-            type="button"
-            className="h-13.5 shrink-0 px-4 text-sm font-black uppercase tracking-[-0.3125px] text-[#99A1AF] md:px-8 md:text-base"
-          >
-            <span className="md:hidden">Avaliações</span>
-            <span className="hidden md:inline">Avaliações ({product.reviews})</span>
-          </button>
+          </div>
         </div>
         <div className="px-8 py-8">
           <p className="text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">

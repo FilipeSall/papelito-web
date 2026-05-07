@@ -102,9 +102,44 @@ function stripHtml(value: string | null | undefined) {
   }
 
   return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
     .replace(/<[^>]+>/g, " ")
+    .replace(/&(#x?[0-9a-f]+|\w+);/gi, decodeHtmlEntity)
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function decodeHtmlEntity(_match: string, entity: string) {
+  const normalizedEntity = entity.toLowerCase();
+
+  if (normalizedEntity.startsWith("#x")) {
+    const codePoint = Number.parseInt(normalizedEntity.slice(2), 16);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _match;
+  }
+
+  if (normalizedEntity.startsWith("#")) {
+    const codePoint = Number.parseInt(normalizedEntity.slice(1), 10);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _match;
+  }
+
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    hellip: "...",
+    ldquo: "\"",
+    lsquo: "'",
+    mdash: "—",
+    nbsp: " ",
+    ndash: "–",
+    quot: "\"",
+    rdquo: "\"",
+    rsquo: "'",
+    lt: "<",
+  };
+
+  return namedEntities[normalizedEntity] ?? _match;
 }
 
 function getCategories(product: WpProductNode) {

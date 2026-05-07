@@ -118,11 +118,11 @@ export function ProductsDiscoveryPage({
       : queryType !== "todos"
         ? [queryType]
         : [];
-  const collectionFromQuery = normalizeCollection(
-    readSingleParam(resolvedSearchParams.colecao),
-  );
-  const activeCollection =
-    collectionFromQuery !== "todos" ? collectionFromQuery : initialCollection;
+  const rawCollection = readSingleParam(resolvedSearchParams.colecao);
+  const collectionFromQuery = normalizeCollection(rawCollection);
+  const hasExplicitCollection =
+    typeof rawCollection === "string" && rawCollection.trim().length > 0;
+  const activeCollection = hasExplicitCollection ? collectionFromQuery : initialCollection;
 
   const currentPage = normalizePage(readSingleParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleParam(resolvedSearchParams.view));
