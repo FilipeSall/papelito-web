@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { startTransition, useState } from "react";
 
@@ -15,8 +15,10 @@ import { AuthTextField } from "../molecules/auth-text-field";
 
 export function AuthLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const callbackUrl = searchParams.get("callbackUrl") || "/produtos";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +40,7 @@ export function AuthLoginForm() {
         redirect: false,
         username,
         password,
-        callbackUrl: "/produtos",
+        callbackUrl,
       });
 
       if (!result || result.error) {
@@ -47,7 +49,7 @@ export function AuthLoginForm() {
         return;
       }
 
-      router.push(result.url ?? "/produtos");
+      router.push(result.url ?? callbackUrl);
       router.refresh();
     });
   }

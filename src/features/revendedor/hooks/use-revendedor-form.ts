@@ -49,11 +49,21 @@ const INITIAL_VALUES: RevendedorFormValues = {
   storeName: "",
 };
 
+type UseRevendedorFormOptions = {
+  initialValues?: Partial<RevendedorFormValues>;
+  onValidSubmit?: (values: RevendedorFormValues) => Promise<{ ok: boolean; error?: string }>;
+};
+
 /**
  * Centraliza o estado, formatacao e validacao do formulario da landing `/revendedor`.
  */
-export function useRevendedorForm(): UseRevendedorFormResult {
-  const [values, setValues] = useState<RevendedorFormValues>(INITIAL_VALUES);
+export function useRevendedorForm(
+  options: UseRevendedorFormOptions = {},
+): UseRevendedorFormResult {
+  const [values, setValues] = useState<RevendedorFormValues>({
+    ...INITIAL_VALUES,
+    ...options.initialValues,
+  });
   const [errors, setErrors] = useState<RevendedorFormErrors>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,10 +80,11 @@ export function useRevendedorForm(): UseRevendedorFormResult {
     }));
 
     setErrors((current) => {
-      if (!current[key]) return current;
+      if (!current[key] && !current.form) return current;
 
       const nextErrors = { ...current };
       delete nextErrors[key];
+      delete nextErrors.form;
       return nextErrors;
     });
 
@@ -98,10 +109,33 @@ export function useRevendedorForm(): UseRevendedorFormResult {
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 450));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    const result = await options.onValidSubmit?.({
+      ...values,
+      storeName: values.storeName.trim(),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      email: values.email.trim(),
+      instagram: values.instagram.trim(),
+      city: values.city.trim(),
+    });
 
+    setIsSubmitting(false);
+    setErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors.form;
+      return nextErrors;
+    });
+
+    if (result && !result.ok) {
+      setErrors((current) => ({
+        ...current,
+        form: result.error ?? "Nao foi possivel enviar sua triagem.",
+      }));
+      setIsSubmitted(false);
+      return false;
+    }
+
+    setIsSubmitted(true);
     return true;
   }
 

@@ -22,7 +22,7 @@ export const BRAZILIAN_STATES: Array<{ value: string; label: string }> = [
   { value: "MG", label: "Minas Gerais" },
   { value: "PA", label: "Pará" },
   { value: "PB", label: "Paraíba" },
-  { value: "PN", label: "Paraná" },
+  { value: "PR", label: "Paraná" },
   { value: "PE", label: "Pernambuco" },
   { value: "PI", label: "Piauí" },
   { value: "RJ", label: "Rio de Janeiro" },

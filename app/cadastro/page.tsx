@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   ArrowRightIcon,
@@ -21,6 +21,8 @@ const benefits = [
 
 export default function CadastroPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,7 +36,11 @@ export default function CadastroPage() {
     if (!payload.name || !payload.email || !payload.phone) return;
 
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
-    router.push("/cadastro/etapa-2");
+    router.push(
+      callbackUrl
+        ? `/cadastro/etapa-2?callbackUrl=${encodeURIComponent(callbackUrl)}`
+        : "/cadastro/etapa-2",
+    );
   }
 
   return (
@@ -92,7 +98,7 @@ export default function CadastroPage() {
           <p className="mt-2 text-sm text-white/50">
             Já tem uma conta?{" "}
             <Link
-              href="/entrar"
+              href={callbackUrl ? `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/entrar"}
               className="text-brand-yellow font-medium hover:underline"
             >
               Entrar

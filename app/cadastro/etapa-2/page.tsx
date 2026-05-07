@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { startTransition, useEffect, useState } from "react";
 
@@ -30,10 +30,12 @@ function splitName(fullName: string): { first: string; last: string } {
 
 export default function CadastroEtapa2Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step1, setStep1] = useState<CadastroStep1Data | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const callbackUrl = searchParams.get("callbackUrl") || "/produtos";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -118,7 +120,7 @@ export default function CadastroEtapa2Page() {
           username: step1.email,
           password,
           redirect: false,
-          callbackUrl: "/produtos",
+          callbackUrl,
         });
 
         if (signInResult?.error) {
@@ -128,7 +130,7 @@ export default function CadastroEtapa2Page() {
         }
 
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
-        router.push(signInResult?.url ?? "/produtos");
+        router.push(signInResult?.url ?? callbackUrl);
         router.refresh();
       } catch {
         setErrorMessage("Erro de rede. Tente novamente.");
@@ -191,7 +193,10 @@ export default function CadastroEtapa2Page() {
           </h2>
           <p className="mt-2 text-sm text-white/50">
             Já tem uma conta?{" "}
-            <Link href="/entrar" className="font-medium text-brand-yellow hover:underline">
+            <Link
+              href={callbackUrl ? `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/entrar"}
+              className="font-medium text-brand-yellow hover:underline"
+            >
               Entrar
             </Link>
           </p>

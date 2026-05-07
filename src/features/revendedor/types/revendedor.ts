@@ -20,7 +20,7 @@ export type RevendedorFormValues = {
 /**
  * Mapa de mensagens de erro por campo do formulario.
  */
-export type RevendedorFormErrors = Partial<Record<keyof RevendedorFormValues, string>>;
+export type RevendedorFormErrors = Partial<Record<keyof RevendedorFormValues | "form", string>>;
 
 /**
  * Opcao padrao usada por radios e selects da landing.
