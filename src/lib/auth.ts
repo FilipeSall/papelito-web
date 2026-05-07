@@ -29,6 +29,14 @@ const WP_REFRESH_TOKEN_MUTATION = `
   }
 `;
 
+const WP_CUSTOMER_ROLE_QUERY = `
+  query CurrentCustomerRole {
+    customer {
+      role
+    }
+  }
+`;
+
 type WpAuthResponse = {
   authToken: string;
   refreshToken: string;
@@ -43,6 +51,12 @@ type WpAuthResponse = {
 
 type WpRefreshResponse = {
   authToken: string;
+};
+
+type WpCustomerRoleResponse = {
+  customer?: {
+    role?: string | null;
+  } | null;
 };
 
 async function wpLogin(username: string, password: string) {
@@ -120,6 +134,36 @@ async function wpRefreshAuthToken(refreshToken: string): Promise<string | null> 
   return json.data?.refreshJwtAuthToken?.authToken ?? null;
 }
 
+async function wpFetchCustomerRole(accessToken: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(getWpGraphqlEndpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        query: WP_CUSTOMER_ROLE_QUERY,
+      }),
+      cache: "no-store",
+    });
+
+    const json = (await response.json()) as {
+      data?: WpCustomerRoleResponse;
+      errors?: Array<{ message?: string }>;
+    };
+
+    if (!response.ok || json.errors?.length) {
+      return undefined;
+    }
+
+    const role = json.data?.customer?.role;
+    return typeof role === "string" ? role.trim().toLowerCase() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function getAccessTokenExpiresAt(accessToken?: string) {
   if (!accessToken) {
     return undefined;
@@ -174,6 +218,8 @@ providers.push(
         return null;
       }
 
+      const role = await wpFetchCustomerRole(data.authToken);
+
       return {
         id: String(data.user.databaseId),
         email: data.user.email ?? credentials.username,
@@ -182,6 +228,7 @@ providers.push(
         accessTokenExpires: getAccessTokenExpiresAt(data.authToken),
         refreshToken: data.refreshToken,
         profileComplete: true,
+        role,
       };
     },
   }),
@@ -216,6 +263,7 @@ export const authOptions: NextAuthOptions = {
         refreshToken?: string;
         profileComplete?: boolean;
         id?: string;
+        role?: string;
       };
 
       userWithTokens.id = String(wpAuth.user.databaseId);
@@ -223,6 +271,7 @@ export const authOptions: NextAuthOptions = {
       userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpAuth.authToken);
       userWithTokens.refreshToken = wpAuth.refreshToken;
       userWithTokens.profileComplete = wpAuth.profileComplete;
+      userWithTokens.role = await wpFetchCustomerRole(wpAuth.authToken);
 
       return true;
     },
@@ -233,6 +282,11 @@ export const authOptions: NextAuthOptions = {
         token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;
         token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
+        token.role = (user as { role?: string }).role;
+      }
+
+      if (!token.role && typeof token.accessToken === "string") {
+        token.role = await wpFetchCustomerRole(token.accessToken);
       }
 
       const accessTokenExpires =
@@ -275,6 +329,7 @@ export const authOptions: NextAuthOptions = {
         typeof token.refreshToken === "string" ? token.refreshToken : undefined;
       session.profileComplete =
         typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
+      session.role = typeof token.role === "string" ? token.role : undefined;
 
       return session;
     },
