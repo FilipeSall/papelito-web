@@ -32,11 +32,16 @@ export function RevendedorCtaButton({
     variant === "outline"
       ? "border-2 border-brand-dark bg-transparent text-brand-dark hover:bg-brand-dark hover:text-white"
       : "bg-brand-yellow text-brand-dark shadow-[0px_10px_15px_0px_rgba(255,229,0,0.2),0px_4px_6px_0px_rgba(255,229,0,0.2)] hover:brightness-95";
+  const shouldUseExternalIcon = target === "_blank";
 
   const content = (
     <>
       <span className="font-black uppercase tracking-[-0.1504px]">{children}</span>
-      <ArrowRightIcon className="size-4 shrink-0" size={20} strokeWidth={1.8} />
+      {shouldUseExternalIcon ? (
+        <OpenInNewIcon className="size-4 shrink-0" />
+      ) : (
+        <ArrowRightIcon className="size-4 shrink-0" size={20} strokeWidth={1.8} />
+      )}
     </>
   );
 
@@ -68,5 +73,24 @@ export function RevendedorCtaButton({
     >
       {content}
     </button>
+  );
+}
+
+function OpenInNewIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M8 5H5.75A1.75 1.75 0 0 0 4 6.75v7.5C4 15.2165 4.7835 16 5.75 16h7.5A1.75 1.75 0 0 0 15 14.25V12" />
+      <path d="M10 10L16 4" />
+      <path d="M11.5 4H16V8.5" />
+    </svg>
   );
 }

@@ -254,11 +254,23 @@ function SectionHeader({ section }: { section: AdminSectionKey }) {
         <div className="relative px-5 py-6 md:px-6 md:py-7">
           <div
             aria-hidden
-            className="absolute inset-y-0 right-0 hidden w-[42%] md:block"
+            className="absolute inset-y-0 right-0 hidden w-[46%] overflow-hidden md:block"
             style={{
-              backgroundImage:
-                "linear-gradient(135deg, rgba(255,229,0,0.65), rgba(255,229,0,0.05) 56%, transparent 56%)",
+              background: [
+                "radial-gradient(circle at 28% 58%, rgba(255,229,0,0.42), rgba(255,229,0,0.14) 24%, rgba(255,229,0,0.03) 54%, transparent 72%)",
+                "radial-gradient(circle at 72% 18%, rgba(255,244,171,0.94), rgba(255,229,0,0.22) 34%, rgba(255,229,0,0.04) 63%, transparent 79%)",
+                "radial-gradient(circle at 88% 82%, rgba(255,229,0,0.2), rgba(255,229,0,0.03) 42%, transparent 66%)",
+              ].join(", "),
+              filter: "blur(2px)",
             }}
+          />
+          <div
+            aria-hidden
+            className="absolute right-[5%] top-[12%] hidden h-48 w-48 rounded-full border border-[#ffe500]/12 bg-[#fff8b7]/24 blur-3xl md:block"
+          />
+          <div
+            aria-hidden
+            className="absolute bottom-[-18%] right-[20%] hidden h-44 w-44 rounded-full bg-[#ffe500]/8 blur-[72px] md:block"
           />
           <div className="relative max-w-[48rem]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#231f20]/52">
