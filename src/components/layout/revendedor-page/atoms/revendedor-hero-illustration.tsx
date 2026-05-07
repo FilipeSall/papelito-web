@@ -12,6 +12,7 @@ export function RevendedorHeroIllustration() {
         alt=""
         className="w-full max-w-107"
         height={325}
+        priority
         src="/images/revendedor/hero-storefront.svg"
         width={428}
       />

@@ -27,7 +27,7 @@ export function RevendedorBenefitsSection() {
               </h2>
             </div>
 
-            <RevendedorCtaButton compact href="/produtos" variant="outline">
+            <RevendedorCtaButton compact href="/api/catalog" target="_blank" variant="outline">
               {REVENDEDOR_BENEFITS_HEADER.ctaLabel}
             </RevendedorCtaButton>
           </div>

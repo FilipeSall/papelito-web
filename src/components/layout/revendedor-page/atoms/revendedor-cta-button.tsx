@@ -8,6 +8,7 @@ type RevendedorCtaButtonProps = {
   disabled?: boolean;
   href?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  target?: string;
   type?: "button" | "reset" | "submit";
   variant?: "outline" | "yellow";
 };
@@ -22,6 +23,7 @@ export function RevendedorCtaButton({
   disabled = false,
   href,
   onClick,
+  target,
   type = "button",
   variant = "yellow",
 }: RevendedorCtaButtonProps) {
@@ -42,6 +44,14 @@ export function RevendedorCtaButton({
     `inline-flex items-center justify-center gap-3 rounded-full transition ${sizeClass} ${variantClass} ${className}`.trim();
 
   if (href) {
+    if (target === "_blank") {
+      return (
+        <a className={sharedClassName} href={href} rel="noopener noreferrer" target="_blank">
+          {content}
+        </a>
+      );
+    }
+
     return (
       <Link className={sharedClassName} href={href}>
         {content}

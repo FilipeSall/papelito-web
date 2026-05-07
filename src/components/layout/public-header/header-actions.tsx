@@ -19,11 +19,19 @@ const profileButtonMobileClass =
   "border-white/35 bg-white/10 text-white backdrop-blur-sm shadow-[0_8px_18px_rgba(0,0,0,0.25)] focus-visible:ring-offset-brand-dark cursor-pointer";
 
 /** Logado: ícone carrinho + "Sair" link + pill "Perfil" com ícone */
-function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
+function LoggedInActions({
+  invertColors = false,
+  isAdministrator = false,
+}: {
+  invertColors?: boolean;
+  isAdministrator?: boolean;
+}) {
   const { totalItems } = useCartSummary();
   const cartBadgeClass = invertColors
     ? "bg-brand-yellow text-brand-dark"
     : "bg-brand-dark text-brand-yellow";
+  const profileHref = isAdministrator ? "/admin" : "/perfil";
+  const profileLabel = isAdministrator ? "Painel Admin" : "Perfil";
 
   return (
     <div className="flex h-9 items-center gap-2">
@@ -47,7 +55,7 @@ function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
 
       <Link
         className={`${profileButtonBaseClass} ${invertColors ? profileButtonMobileClass : profileButtonDesktopClass}`}
-        href="/perfil"
+        href={profileHref}
       >
         <span
           className={`grid h-6 w-6 place-items-center rounded-full ${
@@ -59,7 +67,7 @@ function LoggedInActions({ invertColors = false }: { invertColors?: boolean }) {
             <path d="M13.9998 13.1667C15.8408 13.1667 17.3332 11.6743 17.3332 9.83333C17.3332 7.99238 15.8408 6.5 13.9998 6.5C12.1589 6.5 10.6665 7.99238 10.6665 9.83333C10.6665 11.6743 12.1589 13.1667 13.9998 13.1667Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
           </svg>
         </span>
-        <span>Perfil</span>
+        <span>{profileLabel}</span>
       </Link>
     </div>
   );
@@ -87,20 +95,20 @@ function AuthButtons() {
 
 /** Seção de ações do cabeçalho desktop — alterna entre botões de auth e ações de usuário logado */
 export function PublicHeaderDesktopActions() {
-  const { isAuthenticated, isLoading } = useAuthSession();
+  const { isAdministrator, isAuthenticated, isLoading, isRoleLoading } = useAuthSession();
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && isRoleLoading)) {
     return <div className="h-9 w-[152.36px]" />;
   }
 
-  return isAuthenticated ? <LoggedInActions /> : <AuthButtons />;
+  return isAuthenticated ? <LoggedInActions isAdministrator={isAdministrator} /> : <AuthButtons />;
 }
 
 /** Seção de ações do cabeçalho mobile — mostra ações apenas quando logado */
 export function PublicHeaderMobileActions({ invertColors = false }: { invertColors?: boolean }) {
-  const { isAuthenticated, isLoading } = useAuthSession();
+  const { isAdministrator, isAuthenticated, isLoading, isRoleLoading } = useAuthSession();
 
-  if (isLoading || !isAuthenticated) return null;
+  if (isLoading || !isAuthenticated || isRoleLoading) return null;
 
-  return <LoggedInActions invertColors={invertColors} />;
+  return <LoggedInActions invertColors={invertColors} isAdministrator={isAdministrator} />;
 }
