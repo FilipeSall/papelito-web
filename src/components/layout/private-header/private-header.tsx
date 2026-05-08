@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PrivateHeaderCartIcon } from "./cart-icon";
 import { privateLinks } from "./constants";
 import { PrivateHeaderLogo } from "./logo";
@@ -7,6 +9,7 @@ import { PrivateHeaderLogoutButton } from "./logout-button";
 import { PrivateHeaderMobileMenu } from "./mobile-menu";
 import { PrivateHeaderNav } from "./nav";
 import { useCartStore } from "@/features/cart";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 const iconButtonClass =
   "order-0 flex h-7 w-7 flex-none grow-0 items-center justify-center transition hover:opacity-70";
@@ -20,6 +23,11 @@ export function PrivateHeader() {
   const cartItemCount = useCartStore((state) =>
     state.items.reduce((count, item) => count + item.quantity, 0),
   );
+  const { isAdministrator } = useAuthSession();
+
+  const mobileLinks = isAdministrator
+    ? [{ href: "/admin", label: "Painel Admin" }, ...privateLinks.map(({ href, label }) => ({ href, label }))]
+    : privateLinks.map(({ href, label }) => ({ href, label }));
 
   return (
     <header className="w-full border-b border-white/10 bg-brand-dark">
@@ -32,7 +40,7 @@ export function PrivateHeader() {
 
           <PrivateHeaderMobileMenu
             iconButtonClass={`${iconButtonClass} text-white`}
-            links={privateLinks.map(({ href, label }) => ({ href, label }))}
+            links={mobileLinks}
           />
         </div>
       </div>
@@ -45,6 +53,14 @@ export function PrivateHeader() {
 
         <div className="order-2 flex h-9 flex-none grow-0 items-center justify-self-end gap-4">
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
+          {isAdministrator ? (
+            <Link
+              className="inline-flex h-9 items-center rounded-full border border-white/18 px-4 text-sm font-black leading-5 tracking-[-0.15px] text-white transition hover:border-white/28 hover:bg-white/6"
+              href="/admin"
+            >
+              Painel Admin
+            </Link>
+          ) : null}
           <PrivateHeaderLogoutButton />
         </div>
       </div>

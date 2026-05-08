@@ -5,6 +5,7 @@ import { ADMIN_NAV_ITEMS, type AdminSectionKey } from "./admin-config";
 type PanelProps = {
   children: React.ReactNode;
   className?: string;
+  tone?: "default" | "muted" | "dark";
 };
 
 type MetricCardProps = {
@@ -198,15 +199,23 @@ function badge(status: string) {
   return <StatusBadge label={status} />;
 }
 
-function panelClassName(className?: string) {
+function panelClassName(tone: PanelProps["tone"], className?: string) {
+  const toneClassName =
+    tone === "dark"
+      ? "bg-[#231f20] text-[#f5f1e8]"
+      : tone === "muted"
+        ? "bg-[#f7f2e7] text-[#231f20]"
+        : "bg-[#fbf7ef] text-[#231f20]";
+
   return [
-    "rounded-[20px] border-2 border-[#231f20] bg-[#fbf7ef] shadow-[8px_8px_0_rgba(35,31,32,0.08)]",
+    "rounded-[20px] border-2 border-[#231f20] shadow-[8px_8px_0_rgba(35,31,32,0.08)]",
+    toneClassName,
     className ?? "",
   ].join(" ");
 }
 
-function Panel({ children, className }: PanelProps) {
-  return <section className={panelClassName(className)}>{children}</section>;
+function Panel({ children, className, tone = "default" }: PanelProps) {
+  return <section className={panelClassName(tone, className)}>{children}</section>;
 }
 
 function StatusBadge({ label }: { label: string }) {
@@ -308,32 +317,32 @@ function SectionHeader({ section }: { section: AdminSectionKey }) {
         </div>
       </Panel>
 
-      <Panel className="bg-[#231f20] text-[#f5f1e8]">
+      <Panel tone="dark">
         <div className="border-b border-white/12 px-5 py-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/48">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/58">
             Signal rail
           </p>
           <div className="mt-3 flex items-center gap-3">
             <StatusBadge label={meta.railValue} />
-            <span className="text-sm text-white/62">{meta.railLabel}</span>
+            <span className="text-sm text-white/76">{meta.railLabel}</span>
           </div>
         </div>
         <div className="space-y-4 px-5 py-5">
           <div className="rounded-[18px] border border-white/12 bg-white/6 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/56">
               layout stack
             </p>
-            <ul className="mt-3 space-y-3 text-sm text-white/78">
+            <ul className="mt-3 space-y-3 text-sm text-white/86">
               <li>sidebar fixa no desktop</li>
               <li>top bar compacta no mobile</li>
               <li>cards compactos e divisorias marcadas</li>
             </ul>
           </div>
           <div className="rounded-[18px] border border-white/12 bg-white/6 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/56">
               phase scope
             </p>
-            <p className="mt-3 text-sm leading-6 text-white/72">
+            <p className="mt-3 text-sm leading-6 text-white/82">
               Mock data consistente, superficies prontas para Chart.js, tabelas densas, upload
               visual e previews de drawer/modal.
             </p>
@@ -556,7 +565,7 @@ function LoadingStateCard() {
 
 function EmptyStateCard({ body, label, title }: EmptyStateCardProps) {
   return (
-    <Panel className="bg-[#f7f2e7]">
+    <Panel tone="muted">
       <div className="flex h-full flex-col justify-between gap-6 px-5 py-5">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] border-2 border-dashed border-[#231f20]/28 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/46">
           {label}
@@ -607,15 +616,15 @@ function DrawerPreview() {
             </p>
             <StatusBadge label="future action" />
           </div>
-          <p className="mt-3 text-sm leading-6 text-white/68">
+          <p className="mt-3 text-sm leading-6 text-white/82">
             Estrutura visual para editar produto, aprovar vendor ou configurar banner sem trocar
             de contexto.
           </p>
           <div className="mt-6 space-y-3">
-            <div className="rounded-[14px] border border-white/12 bg-white/6 px-4 py-3 text-sm text-white/72">
+            <div className="rounded-[14px] border border-white/12 bg-white/6 px-4 py-3 text-sm text-white/84">
               resumo lateral
             </div>
-            <div className="rounded-[14px] border border-white/12 bg-white/6 px-4 py-3 text-sm text-white/72">
+            <div className="rounded-[14px] border border-white/12 bg-white/6 px-4 py-3 text-sm text-white/84">
               historico rapido
             </div>
           </div>
@@ -627,9 +636,9 @@ function DrawerPreview() {
 
 function ModalPreview() {
   return (
-    <Panel className="overflow-hidden bg-[#231f20] text-[#f5f1e8]">
+    <Panel className="overflow-hidden" tone="dark">
       <div className="border-b border-white/12 px-5 py-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/44">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/56">
           modal preview
         </p>
       </div>
@@ -735,7 +744,7 @@ function OverviewContent() {
         <Panel className="p-5">
           <LineChartPlaceholder label="receita por janela" />
         </Panel>
-        <Panel className="bg-[#231f20] p-5 text-[#f5f1e8]">
+        <Panel className="p-5" tone="dark">
           <div className="flex items-center justify-between gap-3">
             <h3
               className="text-xl font-semibold uppercase tracking-[0.08em]"
@@ -753,7 +762,7 @@ function OverviewContent() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-[16px] border border-white/12 bg-white/6 px-4 py-3 text-sm leading-6 text-white/74"
+                className="rounded-[16px] border border-white/12 bg-white/6 px-4 py-3 text-sm leading-6 text-white/86"
               >
                 {item}
               </div>
@@ -781,7 +790,7 @@ function OverviewContent() {
 
         <Panel className="p-5">
           <div className="rounded-[18px] border border-[#231f20]/12 bg-[#231f20] p-4 text-[#f5f1e8]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/44">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/56">
               oferta relampago
             </p>
             <p
@@ -792,7 +801,7 @@ function OverviewContent() {
             </p>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {["starts 10:00", "ends 23:59", "08 SKUs"].map((item) => (
-                <div key={item} className="rounded-[14px] border border-white/12 bg-white/6 px-3 py-2 text-xs uppercase tracking-[0.14em] text-white/74">
+                <div key={item} className="rounded-[14px] border border-white/12 bg-white/6 px-3 py-2 text-xs uppercase tracking-[0.14em] text-white/84">
                   {item}
                 </div>
               ))}
@@ -913,8 +922,8 @@ function FlashSaleContent() {
   return (
     <>
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Panel className="bg-[#231f20] p-5 text-[#f5f1e8]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/44">
+        <Panel className="p-5" tone="dark">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/56">
             campanha ativa
           </p>
           <h3
@@ -923,7 +932,7 @@ function FlashSaleContent() {
           >
             Giro hemp week
           </h3>
-          <p className="mt-4 max-w-[40ch] text-sm leading-6 text-white/68">
+          <p className="mt-4 max-w-[40ch] text-sm leading-6 text-white/82">
             Labels, supporting text, janela ativa e grade de produtos preparados com mock data para
             depois plugar o dominio `papelito/v1`.
           </p>
@@ -934,7 +943,7 @@ function FlashSaleContent() {
               { label: "label", value: "flash bundle" },
             ].map((item) => (
               <div key={item.label} className="rounded-[16px] border border-white/12 bg-white/6 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/56">
                   {item.label}
                 </p>
                 <p

@@ -1,7 +1,9 @@
+import { getServerSession } from "next-auth";
 import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { redirect } from "next/navigation";
 
-import { PrivateHeader } from "@/components/layout/private-header";
-import { AdminShell } from "@/components/layout/admin-panel";
+import { AdminHeader, AdminShell } from "@/components/layout/admin-panel";
+import { authOptions } from "@/lib/auth";
 
 const adminDisplay = Chakra_Petch({
   subsets: ["latin"],
@@ -21,16 +23,32 @@ const adminMono = IBM_Plex_Mono({
   weight: ["500", "600"],
 });
 
-export default function AdminLayout({
+function normalizeRole(role: unknown) {
+  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
+}
+
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/entrar");
+  }
+
+  const role = normalizeRole(session.role);
+
+  if (role !== "administrator") {
+    redirect("/perfil");
+  }
+
   return (
     <section
       className={`${adminDisplay.variable} ${adminBody.variable} ${adminMono.variable} flex min-h-screen flex-col bg-bg-light`}
     >
-      <PrivateHeader />
+      <AdminHeader role={role} userName={session.user?.name} />
       <main className="flex-1">
         <AdminShell>{children}</AdminShell>
       </main>
