@@ -71,7 +71,7 @@ export function CheckoutCustomSelect({
           aria-controls={listboxId}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className={`flex h-[46px] w-full items-center justify-between rounded-[14px] border bg-white px-4 text-sm tracking-[-0.1504px] outline-none transition ${
+          className={`flex h-11.5 w-full cursor-pointer items-center justify-between rounded-[14px] border bg-white px-4 text-sm tracking-[-0.1504px] outline-none transition ${
             errorMessage
               ? "border-red-400 focus:border-red-500"
               : isOpen
@@ -105,7 +105,7 @@ export function CheckoutCustomSelect({
               return (
                 <li key={optionValue} role="option" aria-selected={isSelected}>
                   <button
-                    className={`w-full px-4 py-2 text-left text-sm tracking-[-0.1504px] transition ${
+                    className={`w-full cursor-pointer px-4 py-2 text-left text-sm tracking-[-0.1504px] transition ${
                       isSelected
                         ? "bg-brand-dark text-white"
                         : "text-brand-dark hover:bg-bg-light"

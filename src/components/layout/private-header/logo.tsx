@@ -1,19 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
 
-/**
- * Logo da Papelito no cabeçalho privado.
- * Renderiza o logo amarelo com texto "PAPELITO" em preto.
- */
 export function PrivateHeaderLogo() {
   return (
     <Link
       aria-label="Ir para a home"
-      className="inline-flex h-9 w-fit shrink-0 items-center justify-center justify-self-start rounded bg-brand-yellow px-3"
+      className="inline-flex w-fit shrink-0 items-center justify-self-start"
       href="/"
     >
-      <span className="font-black text-lg uppercase leading-7 tracking-[0.46px] text-brand-dark">
-        PAPELITO
-      </span>
+      <Image
+        alt="Papelito"
+        height={36}
+        priority
+        src="/images/logo2.svg"
+        width={121}
+      />
     </Link>
   );
 }

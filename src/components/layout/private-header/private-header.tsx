@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { PrivateHeaderCartIcon } from "./cart-icon";
 import { privateLinks } from "./constants";
@@ -24,8 +25,11 @@ export function PrivateHeader() {
     state.items.reduce((count, item) => count + item.quantity, 0),
   );
   const { isAdministrator } = useAuthSession();
+  const pathname = usePathname();
 
-  const mobileLinks = isAdministrator
+  const isAdminRoute = pathname?.startsWith("/admin");
+
+  const mobileLinks = isAdministrator && !isAdminRoute
     ? [{ href: "/admin", label: "Painel Admin" }, ...privateLinks.map(({ href, label }) => ({ href, label }))]
     : privateLinks.map(({ href, label }) => ({ href, label }));
 
@@ -53,7 +57,7 @@ export function PrivateHeader() {
 
         <div className="order-2 flex h-9 flex-none grow-0 items-center justify-self-end gap-4">
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
-          {isAdministrator ? (
+          {isAdministrator && !isAdminRoute ? (
             <Link
               className="inline-flex h-9 items-center rounded-full border border-white/18 px-4 text-sm font-black leading-5 tracking-[-0.15px] text-white transition hover:border-white/28 hover:bg-white/6"
               href="/admin"

@@ -31,42 +31,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const currentItem = getCurrentNavItem(pathname);
 
   return (
-    <div className="min-h-full bg-[#ede9df] text-[#231f20]">
+    <div className="relative min-h-full overflow-hidden bg-[#ede9df] text-[#231f20]">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           backgroundImage: [
             "linear-gradient(to right, rgba(35,31,32,0.06) 1px, transparent 1px)",
             "linear-gradient(to bottom, rgba(35,31,32,0.06) 1px, transparent 1px)",
-            "radial-gradient(circle at top left, rgba(255,229,0,0.28), transparent 32%)",
           ].join(","),
-          backgroundPosition: "0 0, 0 0, 0 0",
-          backgroundSize: "28px 28px, 28px 28px, 100% 100%",
+          backgroundPosition: "0 0, 0 0",
+          backgroundSize: "28px 28px, 28px 28px",
         }}
       />
 
       <div className="relative flex min-h-full">
-        <aside className="hidden w-[292px] shrink-0 border-r-2 border-[#0e0d0d] bg-[#171516] text-[#f5f1e8] lg:flex lg:flex-col">
-          <div className="border-b border-white/10 px-6 py-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#ffe500]">
-              Control Room
-            </div>
-            <div className="mt-4">
-              <div>
-                <p
-                  className="text-[2rem] font-semibold uppercase leading-none tracking-[0.12em] text-[#ffe500]"
-                  style={{ fontFamily: "var(--font-admin-display)" }}
-                >
-                  Papelito
-                </p>
-                <p className="mt-2 max-w-[19ch] text-sm leading-5 text-white/58">
-                  Area administrativa com leitura mais limpa e foco na operacao.
-                </p>
-              </div>
-            </div>
-          </div>
-
+        <aside className="hidden w-73 shrink-0 border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex lg:flex-col">
           <nav className="flex-1 space-y-1.5 px-4 py-5">
             {ADMIN_NAV_ITEMS.map((item, index) => {
               const active = item.href === currentItem.href;
@@ -106,15 +86,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="border-t border-white/10 px-4 py-5">
-            <div className="rounded-[18px] border border-white/12 bg-white/5 p-4">
+            <Link
+              className="block rounded-[18px] border border-white/12 bg-white/5 p-4 transition hover:border-white/24 hover:bg-white/8"
+              href="/"
+            >
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/46">
-                Shell administrativa
+                Voltar para o site
               </p>
-              <p className="mt-3 text-sm leading-6 text-white/62">
-                O header superior segue o mesmo padrao do perfil para acesso rapido a home e outras
-                areas do site.
+              <p className="mt-2 text-sm leading-6 text-white/72">
+                Sair do painel e abrir a navegacao publica do Papelito.
               </p>
-            </div>
+            </Link>
           </div>
         </aside>
 
@@ -127,7 +109,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     Admin / Papelito
                   </p>
                   <p
-                    className="mt-1 text-xl font-semibold uppercase tracking-[0.1em]"
+                    className="mt-1 text-xl font-semibold uppercase tracking-widest"
                     style={{ fontFamily: "var(--font-admin-display)" }}
                   >
                     {currentItem.label}
@@ -149,25 +131,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     </Link>
                   );
                 })}
-              </div>
-            </div>
-          </div>
-
-          <div className="sticky top-0 z-20 hidden border-b-2 border-[#231f20] bg-[#efe9dd]/94 backdrop-blur lg:block">
-            <div className="px-8 py-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#231f20]/54">
-                Papelito / Admin / {currentItem.shortLabel}
-              </p>
-              <div className="mt-2 flex flex-wrap items-end gap-3">
-                <h1
-                  className="text-[2rem] font-semibold uppercase leading-none tracking-[0.08em]"
-                  style={{ fontFamily: "var(--font-admin-display)" }}
-                >
-                  {currentItem.label}
-                </h1>
-                <p className="pb-0.5 text-sm text-[#231f20]/58">
-                  Navegacao global pelo header e navegacao da area pela sidebar.
-                </p>
               </div>
             </div>
           </div>

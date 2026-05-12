@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { redirect } from "next/navigation";
 
-import { AdminHeader, AdminShell } from "@/components/layout/admin-panel";
+import { AdminShell } from "@/components/layout/admin-panel";
+import { PrivateHeader } from "@/components/layout/private-header";
 import { authOptions } from "@/lib/auth";
 
 const adminDisplay = Chakra_Petch({
@@ -48,7 +49,7 @@ export default async function AdminLayout({
     <section
       className={`${adminDisplay.variable} ${adminBody.variable} ${adminMono.variable} flex min-h-screen flex-col bg-bg-light`}
     >
-      <AdminHeader role={role} userName={session.user?.name} />
+      <PrivateHeader />
       <main className="flex-1">
         <AdminShell>{children}</AdminShell>
       </main>

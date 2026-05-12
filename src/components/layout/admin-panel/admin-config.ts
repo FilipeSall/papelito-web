@@ -5,7 +5,8 @@ export type AdminSectionKey =
   | "flash-sale"
   | "vendors"
   | "reports"
-  | "assets";
+  | "assets"
+  | "config";
 
 export type AdminNavItem = {
   description: string;
@@ -64,6 +65,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Assets",
     shortLabel: "Assets",
     description: "Hero banners e biblioteca",
+  },
+  {
+    key: "config",
+    href: "/admin/config",
+    label: "Configuracao",
+    shortLabel: "Config",
+    description: "Senha e preferencias",
   },
 ];
 
