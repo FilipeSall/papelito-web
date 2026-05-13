@@ -64,6 +64,23 @@ const STOCK_OPTIONS = [
 
 const EDIT_STOCK_OPTIONS = STOCK_OPTIONS.filter((option) => option.value);
 
+const TAG_PLACEHOLDER_EXAMPLES = "ex: vegano, artesanal, sem-glúten, edição-limitada";
+
+const TAG_TOOLTIP_TEXT =
+  "Tags ajudam o cliente a encontrar este produto pelos filtros de busca da loja.";
+
+const PROMOTION_TAG_KEYS = new Set(["promocoes", "promocao", "ofertas", "oferta"]);
+
+function normalizeKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&amp;/g, "e")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function stripHtml(value: string) {
   return value
     .replace(/<br\s*\/?>/gi, " ")
@@ -229,7 +246,23 @@ function buildPayload(draft: ProductDraft) {
 function termNames(ids: string[], terms: AdminProductTaxonomyTerm[]) {
   const selected = terms.filter((term) => ids.includes(String(term.id)));
   if (selected.length === 0) return "Sem categoria";
-  return selected.map((term) => term.name).join(", ");
+  return selected.map((term) => formatTermLabel(term, terms)).join(", ");
+}
+
+function formatTermLabel(term: AdminProductTaxonomyTerm, terms: AdminProductTaxonomyTerm[]) {
+  const parents: string[] = [];
+  let currentParent = term.parent;
+  const seen = new Set<number>();
+
+  while (currentParent && !seen.has(currentParent)) {
+    seen.add(currentParent);
+    const parent = terms.find((candidate) => candidate.id === currentParent);
+    if (!parent) break;
+    parents.unshift(parent.name);
+    currentParent = parent.parent;
+  }
+
+  return [...parents, term.name].join(" > ");
 }
 
 function getFrontendProductHref(product: AdminProduct | null) {
@@ -238,6 +271,12 @@ function getFrontendProductHref(product: AdminProduct | null) {
 
 function canViewProduct(product: AdminProduct | null) {
   return product?.status === "publish";
+}
+
+function findPromotionTag(tags: AdminProductTaxonomyTerm[]) {
+  return tags.find((tag) =>
+    PROMOTION_TAG_KEYS.has(normalizeKey(tag.slug || tag.name)),
+  );
 }
 
 function messageFromError(error: unknown, fallback: string) {
@@ -268,6 +307,8 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [notice, setNotice] = useState("");
 
   const selectedProduct = useMemo(
@@ -285,6 +326,12 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
     const published = products.filter((product) => product.status === "publish").length;
     return { lowStock, published };
   }, [products]);
+
+  const promotionTag = useMemo(() => findPromotionTag(tags), [tags]);
+  const isPromotionEnabled =
+    Boolean(draft.salePrice.trim()) ||
+    Boolean(draft.dateOnSaleFrom || draft.dateOnSaleTo) ||
+    Boolean(promotionTag && draft.tagIds.includes(String(promotionTag.id)));
 
   function selectProduct(product: AdminProduct) {
     setSelectedProductId(product.id);
@@ -393,7 +440,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
     }
   }
 
-  async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
+  async function handleUpload(event: ChangeEvent<HTMLInputElement>, target: "cover" | "secondary") {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -420,22 +467,102 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
       const media = json.media as { alt: string; id: number; src: string };
       setDraft((currentDraft) => ({
         ...currentDraft,
-        imageIds: [...currentDraft.imageIds, String(media.id)],
-        images: [
-          ...currentDraft.images,
-          {
-            alt: media.alt,
-            id: media.id,
-            position: currentDraft.images.length,
-            src: media.src,
-          },
-        ],
+        imageIds:
+          target === "cover"
+            ? [
+                String(media.id),
+                ...currentDraft.imageIds.filter((_, index) => index > 0),
+              ]
+            : [...currentDraft.imageIds, String(media.id)],
+        images:
+          target === "cover"
+            ? [
+                {
+                  alt: media.alt,
+                  id: media.id,
+                  position: 0,
+                  src: media.src,
+                },
+                ...currentDraft.images.slice(1).map((image, index) => ({
+                  ...image,
+                  position: index + 1,
+                })),
+              ]
+            : [
+                ...currentDraft.images,
+                {
+                  alt: media.alt,
+                  id: media.id,
+                  position: currentDraft.images.length,
+                  src: media.src,
+                },
+              ],
       }));
-      setNotice("Imagem adicionada a galeria.");
+      setNotice(target === "cover" ? "Imagem principal atualizada." : "Foto secundaria adicionada.");
     } catch (error) {
       setNotice(messageFromError(error, "Nao foi possivel enviar imagem."));
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleCreateTag(name: string, shouldSelect = false) {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      setNotice("Informe o nome da tag.");
+      return;
+    }
+
+    const existingTag = tags.find((tag) => normalizeKey(tag.name) === normalizeKey(trimmedName));
+
+    if (existingTag) {
+      if (shouldSelect) {
+        setDraft((currentDraft) => ({
+          ...currentDraft,
+          tagIds: currentDraft.tagIds.includes(String(existingTag.id))
+            ? currentDraft.tagIds
+            : [...currentDraft.tagIds, String(existingTag.id)],
+        }));
+      }
+      setNewTagName("");
+      setNotice("Tag ja existente aplicada ao produto.");
+      return;
+    }
+
+    setIsCreatingTag(true);
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/admin/products/tags", {
+        body: JSON.stringify({ name: trimmedName }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message ?? "Nao foi possivel criar a tag.");
+      }
+
+      const tag = json.tag as AdminProductTaxonomyTerm;
+      setTags((currentTags) =>
+        [...currentTags, tag].sort((left, right) => left.name.localeCompare(right.name, "pt-BR")),
+      );
+      if (shouldSelect) {
+        setDraft((currentDraft) => ({
+          ...currentDraft,
+          tagIds: currentDraft.tagIds.includes(String(tag.id))
+            ? currentDraft.tagIds
+            : [...currentDraft.tagIds, String(tag.id)],
+        }));
+      }
+      setNewTagName("");
+      setNotice("Tag criada.");
+    } catch (error) {
+      setNotice(messageFromError(error, "Nao foi possivel criar a tag."));
+    } finally {
+      setIsCreatingTag(false);
     }
   }
 
@@ -485,6 +612,26 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
     });
   }
 
+  function togglePromotion(isEnabled: boolean) {
+    setDraft((currentDraft) => {
+      const promotionTagId = promotionTag ? String(promotionTag.id) : "";
+      const nextTagIds =
+        isEnabled && promotionTagId
+          ? Array.from(new Set([...currentDraft.tagIds, promotionTagId]))
+          : currentDraft.tagIds.filter((id) => id !== promotionTagId);
+
+      return {
+        ...currentDraft,
+        tagIds: nextTagIds,
+        ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "", salePrice: "" }),
+      };
+    });
+
+    if (isEnabled && !promotionTag) {
+      setNotice("Tag de promocao nao encontrada. Crie ou mantenha uma tag chamada Promocoes.");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Panel>
@@ -531,7 +678,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
             options={[
               { label: "Todas", value: "" },
               ...categories.map((category) => ({
-                label: category.name,
+                label: formatTermLabel(category, categories),
                 value: String(category.id),
               })),
             ]}
@@ -600,7 +747,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
             </p>
             <div className="flex gap-2">
               <button
-                className="rounded-[10px] border border-[#231f20]/18 px-3 py-2 text-xs font-semibold disabled:opacity-40"
+                className="cursor-pointer rounded-[10px] border border-[#231f20]/18 px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={page <= 1 || isLoading}
                 onClick={() => loadProducts(page - 1)}
                 type="button"
@@ -608,7 +755,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                 Anterior
               </button>
               <button
-                className="rounded-[10px] border border-[#231f20]/18 px-3 py-2 text-xs font-semibold disabled:opacity-40"
+                className="cursor-pointer rounded-[10px] border border-[#231f20]/18 px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={page >= totalPages || isLoading}
                 onClick={() => loadProducts(page + 1)}
                 type="button"
@@ -701,7 +848,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
               <Panel className="max-h-[calc(100vh-2rem)] overflow-hidden">
                 <button
                   aria-label="Fechar modal"
-                  className="absolute -right-2 -top-2 z-20 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#231f20] bg-[#d9362b] text-lg font-black leading-none text-white shadow-[4px_4px_0_rgba(35,31,32,0.18)] transition hover:bg-[#b92d24] md:-right-3 md:-top-3"
+                  className="absolute -right-2 -top-2 z-20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#231f20] bg-[#d9362b] text-lg font-black leading-none text-white shadow-[4px_4px_0_rgba(35,31,32,0.18)] transition hover:bg-[#b92d24] md:-right-3 md:-top-3"
                   onClick={() => setIsEditorOpen(false)}
                   type="button"
                 >
@@ -726,7 +873,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
             <div className="flex gap-2">
               {canViewProduct(selectedProduct) ? (
                 <a
-                  className="inline-flex min-h-10 items-center rounded-[12px] border-2 border-[#231f20] px-3 text-xs font-semibold uppercase tracking-[0.14em]"
+                  className="inline-flex min-h-10 cursor-pointer items-center rounded-[12px] border-2 border-[#231f20] px-3 text-xs font-semibold uppercase tracking-[0.14em]"
                   href={getFrontendProductHref(selectedProduct)}
                   rel="noreferrer"
                   target="_blank"
@@ -735,7 +882,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                 </a>
               ) : null}
               <button
-                className="inline-flex min-h-10 items-center rounded-[12px] border-2 border-[#231f20] bg-[#231f20] px-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#ffe500] disabled:opacity-60"
+                className="inline-flex min-h-10 cursor-pointer items-center rounded-[12px] border-2 border-[#231f20] bg-[#231f20] px-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#ffe500] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSaving}
                 onClick={handleSave}
                 type="button"
@@ -755,11 +902,13 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                 />
                 <TextField
                   label="Slug"
+                  helpText="Endereco amigavel do produto no site. Use texto curto, sem espacos; o WordPress tambem pode gerar isso automaticamente."
                   onChange={(value) => updateDraft("slug", value)}
                   value={draft.slug}
                 />
                 <TextField
                   label="SKU"
+                  helpText="Codigo interno unico do produto para controle de estoque, busca e integracoes."
                   onChange={(value) => updateDraft("sku", value)}
                   value={draft.sku}
                 />
@@ -785,18 +934,26 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                   onChange={(value) => updateDraft("salePrice", value)}
                   value={draft.salePrice}
                 />
-                <TextField
-                  label="Inicio promocao"
-                  onChange={(value) => updateDraft("dateOnSaleFrom", value)}
-                  type="datetime-local"
-                  value={draft.dateOnSaleFrom}
+                <PromotionToggle
+                  isEnabled={isPromotionEnabled}
+                  onChange={togglePromotion}
                 />
-                <TextField
-                  label="Fim promocao"
-                  onChange={(value) => updateDraft("dateOnSaleTo", value)}
-                  type="datetime-local"
-                  value={draft.dateOnSaleTo}
-                />
+                {isPromotionEnabled ? (
+                  <>
+                    <TextField
+                      label="Inicio promocao"
+                      onChange={(value) => updateDraft("dateOnSaleFrom", value)}
+                      type="datetime-local"
+                      value={draft.dateOnSaleFrom}
+                    />
+                    <TextField
+                      label="Fim promocao"
+                      onChange={(value) => updateDraft("dateOnSaleTo", value)}
+                      type="datetime-local"
+                      value={draft.dateOnSaleTo}
+                    />
+                  </>
+                ) : null}
               </div>
 
               <div className="grid gap-3 md:grid-cols-4">
@@ -852,9 +1009,10 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
               </div>
 
               <label className="grid gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
-                  Descricao curta
-                </span>
+                <FieldLabel
+                  helpText="Resumo curto exibido em areas compactas do produto. Mantenha direto e comercial."
+                  label="Descricao curta"
+                />
                 <textarea
                   className="min-h-24 rounded-[12px] border-2 border-[#231f20]/18 bg-white px-3 py-3 text-sm outline-none transition focus:border-[#231f20]"
                   onChange={(event) => updateDraft("shortDescription", event.target.value)}
@@ -876,11 +1034,14 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                 terms={categories}
               />
 
-              <TermChecklist
-                label="Tags"
-                onToggle={(id) => toggleDraftTerm("tagIds", id)}
+              <TagInputField
+                isCreating={isCreatingTag}
+                newTagName={newTagName}
+                onCreateTag={(name) => handleCreateTag(name, true)}
+                onNewTagNameChange={setNewTagName}
+                onRemoveTag={(id) => toggleDraftTerm("tagIds", id)}
                 selectedIds={draft.tagIds}
-                terms={tags}
+                tags={tags}
               />
 
               <div className="rounded-[14px] border-2 border-[#231f20]/18 bg-white p-3">
@@ -889,12 +1050,12 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                     Fotos do produto
                   </span>
                   <label className="cursor-pointer rounded-[10px] border border-[#231f20] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em]">
-                    {isUploading ? "Enviando" : "Upload"}
+                    {isUploading ? "Enviando" : "Upload capa"}
                     <input
                       accept="image/*"
                       className="sr-only"
                       disabled={isUploading}
-                      onChange={handleUpload}
+                      onChange={(event) => handleUpload(event, "cover")}
                       type="file"
                     />
                   </label>
@@ -920,9 +1081,21 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                   </div>
 
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/48">
-                      Fotos secundarias
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/48">
+                        Fotos secundarias
+                      </p>
+                      <label className="cursor-pointer rounded-[10px] border border-[#231f20]/30 bg-white px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        adicionar
+                        <input
+                          accept="image/*"
+                          className="sr-only"
+                          disabled={isUploading}
+                          onChange={(event) => handleUpload(event, "secondary")}
+                          type="file"
+                        />
+                      </label>
+                    </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       {draft.images.slice(1).length === 0 ? (
                         <div className="col-span-2 rounded-[12px] border border-dashed border-[#231f20]/24 px-3 py-8 text-center text-xs font-semibold uppercase tracking-[0.14em] text-[#231f20]/42">
@@ -946,7 +1119,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                             )}
                             <div className="absolute inset-x-1 bottom-1 flex gap-1">
                               <button
-                                className="flex-1 rounded-full border border-[#231f20] bg-[#ffe500] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em]"
+                                className="flex-1 cursor-pointer rounded-full border border-[#231f20] bg-[#ffe500] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em]"
                                 onClick={() => moveImageToCover(String(image.id))}
                                 type="button"
                               >
@@ -954,7 +1127,7 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
                               </button>
                               <button
                                 aria-label="Remover foto secundaria"
-                                className="rounded-full border border-[#231f20] bg-[#d9362b] px-2 py-1 text-[9px] font-bold text-white"
+                                className="cursor-pointer rounded-full border border-[#231f20] bg-[#d9362b] px-2 py-1 text-[9px] font-bold text-white"
                                 onClick={() => removeImage(String(image.id))}
                                 type="button"
                               >
@@ -980,12 +1153,14 @@ export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot 
 }
 
 function TextField({
+  helpText,
   inputMode,
   label,
   onChange,
   type = "text",
   value,
 }: {
+  helpText?: string;
   inputMode?: "decimal" | "numeric";
   label: string;
   onChange: (value: string) => void;
@@ -994,9 +1169,7 @@ function TextField({
 }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
-        {label}
-      </span>
+      <FieldLabel helpText={helpText} label={label} />
       <input
         className="min-h-11 rounded-[12px] border-2 border-[#231f20]/18 bg-white px-3 text-sm outline-none transition focus:border-[#231f20]"
         inputMode={inputMode}
@@ -1008,6 +1181,151 @@ function TextField({
   );
 }
 
+function FieldLabel({ helpText, label }: { helpText?: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
+      {label}
+      {helpText ? <InfoTooltip text={helpText} /> : null}
+    </span>
+  );
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[#231f20]/35 bg-white text-[10px] font-black leading-none text-[#231f20]">
+        i
+      </span>
+      <span className="pointer-events-none absolute bottom-full left-0 z-[9999] mb-2 hidden w-72 rounded-[10px] border border-[#231f20] bg-[#231f20] px-3 py-2 text-left text-[11px] font-medium normal-case leading-4 tracking-normal text-[#f5f1e8] shadow-[4px_4px_0_rgba(35,31,32,0.16)] group-hover:block">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+function PromotionToggle({
+  isEnabled,
+  onChange,
+}: {
+  isEnabled: boolean;
+  onChange: (isEnabled: boolean) => void;
+}) {
+  return (
+    <div className="rounded-[12px] border-2 border-[#231f20]/18 bg-white px-3 py-3 md:col-span-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
+        Esse produto esta na promocao?
+      </p>
+      <div className="mt-3 flex gap-2">
+        {[
+          { label: "Sim", value: true },
+          { label: "Nao", value: false },
+        ].map((option) => (
+          <label
+            className={[
+              "flex min-h-10 cursor-pointer items-center gap-2 rounded-[12px] border-2 px-3 text-sm font-semibold transition",
+              isEnabled === option.value
+                ? "border-[#231f20] bg-[#ffe500]"
+                : "border-[#231f20]/14 bg-[#fbf7ef] hover:border-[#231f20]/35",
+            ].join(" ")}
+            key={option.label}
+          >
+            <input
+              checked={isEnabled === option.value}
+              className="h-4 w-4 accent-[#231f20]"
+              name="promotion-enabled"
+              onChange={() => onChange(option.value)}
+              type="radio"
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TagInputField({
+  isCreating,
+  newTagName,
+  onCreateTag,
+  onNewTagNameChange,
+  onRemoveTag,
+  selectedIds,
+  tags,
+}: {
+  isCreating: boolean;
+  newTagName: string;
+  onCreateTag: (name: string) => void;
+  onNewTagNameChange: (value: string) => void;
+  onRemoveTag: (id: string) => void;
+  selectedIds: string[];
+  tags: AdminProductTaxonomyTerm[];
+}) {
+  const selectedTags = tags.filter((tag) => selectedIds.includes(String(tag.id)));
+
+  function commit() {
+    const trimmed = newTagName.trim().replace(/,$/, "").trim();
+    if (trimmed) {
+      onCreateTag(trimmed);
+    }
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      commit();
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
+          Tags
+        </span>
+        <InfoTooltip text={TAG_TOOLTIP_TEXT} />
+      </div>
+
+      <div className="rounded-[12px] border-2 border-[#231f20]/18 bg-white p-2 transition focus-within:border-[#231f20]">
+        {selectedTags.length > 0 ? (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {selectedTags.map((tag) => (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#231f20] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#ffe500]"
+                key={tag.id}
+              >
+                {tag.name}
+                <button
+                  aria-label={`Remover tag ${tag.name}`}
+                  className="cursor-pointer text-[#ffe500]/80 transition hover:text-white"
+                  onClick={() => onRemoveTag(String(tag.id))}
+                  type="button"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <input
+          className="min-h-9 w-full bg-transparent px-1.5 text-sm outline-none placeholder:text-[#231f20]/35 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isCreating}
+          onBlur={commit}
+          onChange={(event) => onNewTagNameChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isCreating ? "Criando tag..." : TAG_PLACEHOLDER_EXAMPLES}
+          value={newTagName}
+        />
+      </div>
+
+      <p className="text-[10px] leading-relaxed text-[#231f20]/48">
+        Pressione Enter ou vírgula para adicionar.
+      </p>
+    </div>
+  );
+}
+
 function LongDescriptionEditor({
   onChange,
   value,
@@ -1016,69 +1334,60 @@ function LongDescriptionEditor({
   value: string;
 }) {
   const paragraphs = useMemo(() => parseDescriptionParagraphs(value), [value]);
+  const textareaValue = paragraphs.join("\n");
+  const paragraphRows = textareaValue.split("\n");
 
-  function updateParagraph(index: number, nextValue: string) {
-    const nextParagraphs = paragraphs.map((paragraph, paragraphIndex) =>
-      paragraphIndex === index ? nextValue : paragraph,
-    );
-    onChange(buildDescriptionHtml(nextParagraphs));
+  function updateParagraphs(nextValue: string) {
+    onChange(buildDescriptionHtml(nextValue.split("\n")));
   }
 
-  function addParagraph() {
-    onChange(buildDescriptionHtml([...paragraphs, ""]));
-  }
-
-  function removeParagraph(index: number) {
-    const nextParagraphs = paragraphs.filter((_, paragraphIndex) => paragraphIndex !== index);
-    onChange(buildDescriptionHtml(nextParagraphs.length > 0 ? nextParagraphs : [""]));
+  function addParagraphLine() {
+    updateParagraphs(`${textareaValue}${textareaValue ? "\n" : ""}`);
   }
 
   return (
     <div className="grid gap-2">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/52">
-            Descricao longa
-          </span>
+          <FieldLabel
+            helpText="Campo agrupado por paragrafos. Cada linha deste editor vira um paragrafo separado no WordPress."
+            label="Descricao longa"
+          />
           <p className="mt-1 text-xs leading-5 text-[#231f20]/56">
-            O WordPress salva esse campo como paragrafos HTML. Edite o conteudo em blocos
-            visuais; cada bloco vira um paragrafo no produto.
+            Cada linha representa um paragrafo. Use o botao P para inserir uma nova linha de
+            paragrafo.
           </p>
         </div>
         <button
-          className="inline-flex min-h-10 items-center justify-center rounded-[12px] border-2 border-[#231f20] bg-[#ffe500] px-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#231f20]"
-          onClick={addParagraph}
+          aria-label="Adicionar paragrafo"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border-2 border-[#231f20] bg-[#ffe500] text-base font-black text-[#231f20]"
+          onClick={addParagraphLine}
           type="button"
         >
-          Adicionar paragrafo
+          P
         </button>
       </div>
 
-      <div className="space-y-3 rounded-[14px] border-2 border-[#231f20]/18 bg-white p-3">
-        {paragraphs.map((paragraph, index) => (
-          <div className="rounded-[12px] border border-[#231f20]/12 bg-[#fbf7ef] p-3" key={index}>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/48">
-                Paragrafo {index + 1}
-              </span>
-              {paragraphs.length > 1 ? (
-                <button
-                  className="rounded-full border border-[#231f20]/20 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9a3f2f]"
-                  onClick={() => removeParagraph(index)}
-                  type="button"
-                >
-                  remover
-                </button>
-              ) : null}
-            </div>
-            <textarea
-              className="min-h-24 w-full resize-y rounded-[10px] border-2 border-[#231f20]/14 bg-white px-3 py-3 text-sm leading-6 outline-none transition focus:border-[#231f20]"
-              onChange={(event) => updateParagraph(index, event.target.value)}
-              placeholder="Escreva este paragrafo. Quebras de linha viram linhas dentro do mesmo paragrafo."
-              value={paragraph}
-            />
-          </div>
-        ))}
+      <div className="relative rounded-[12px] border-2 border-[#231f20]/18 bg-white p-3 focus-within:border-[#231f20]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-4 top-3 z-10 grid gap-0 py-[1px]"
+        >
+          {paragraphRows.map((_, index) => (
+            <span
+              className="flex h-7 w-6 items-center justify-center rounded-[7px] border border-[#231f20] bg-[#ffe500] text-[11px] font-black leading-none text-[#231f20]"
+              key={`${index}-${paragraphRows.length}`}
+            >
+              P
+            </span>
+          ))}
+        </div>
+        <textarea
+          className="min-h-44 w-full resize-y rounded-[10px] border-0 bg-transparent py-0 pl-11 pr-3 text-sm leading-7 outline-none [background-image:linear-gradient(to_bottom,transparent_calc(100%-1px),rgba(35,31,32,0.08)_calc(100%-1px))] [background-size:100%_1.75rem]"
+          onChange={(event) => updateParagraphs(event.target.value)}
+          placeholder={"Primeiro paragrafo\nSegundo paragrafo\nTerceiro paragrafo"}
+          value={textareaValue}
+        />
       </div>
     </div>
   );
@@ -1147,7 +1456,7 @@ function TermChecklist({
                   onChange={() => onToggle(termId)}
                   type="checkbox"
                 />
-                <span className="min-w-0 flex-1 truncate">{term.name}</span>
+                <span className="min-w-0 flex-1 truncate">{formatTermLabel(term, terms)}</span>
               </label>
             );
           })

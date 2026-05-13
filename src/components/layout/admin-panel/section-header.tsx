@@ -7,7 +7,7 @@ export function SectionHeader({ section }: { section: AdminSectionKey }) {
   const navItem = ADMIN_NAV_ITEMS.find((item) => item.key === section) ?? ADMIN_NAV_ITEMS[0];
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1.6fr_0.8fr]">
+    <section className={section === "products" ? "grid gap-4" : "grid gap-4 xl:grid-cols-[1.6fr_0.8fr]"}>
       <Panel className="overflow-hidden">
         <div className="border-b border-[#231f20]/10 bg-[#231f20] px-5 py-3 text-[#ffe500] md:px-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">{meta.eyebrow}</p>
@@ -69,6 +69,7 @@ export function SectionHeader({ section }: { section: AdminSectionKey }) {
         </div>
       </Panel>
 
+      {section === "products" ? null : (
       <Panel tone="dark">
         <div className="border-b border-white/12 px-5 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/58">
@@ -101,6 +102,7 @@ export function SectionHeader({ section }: { section: AdminSectionKey }) {
           </div>
         </div>
       </Panel>
+      )}
     </section>
   );
 }
