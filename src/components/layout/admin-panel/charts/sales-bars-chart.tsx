@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatCompactNumber, niceMax } from "../formatters";
-import { CardNotification } from "../primitives";
+import { CardNotification, FramedPanel } from "../primitives";
 
 export function SalesBarsChart({
   label,
@@ -32,12 +32,12 @@ export function SalesBarsChart({
   const barWidth = Math.min(72, groupWidth * 0.72);
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-white/75 p-4">
-      <div className="flex items-center justify-between gap-3">
+    <FramedPanel className="flex h-full flex-1 flex-col">
+      <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
       </div>
-      <div className="mt-3 flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-2">
+      <div className="mx-5 mt-5 mb-5 flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-2">
         <svg
           className="h-full w-full flex-1"
           fill="none"
@@ -126,6 +126,6 @@ export function SalesBarsChart({
           })}
         </svg>
       </div>
-    </div>
+    </FramedPanel>
   );
 }

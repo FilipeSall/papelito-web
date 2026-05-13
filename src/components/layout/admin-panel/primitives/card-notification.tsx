@@ -56,7 +56,7 @@ export function CardNotification({ issues, tone = "warning" }: CardNotificationP
       </button>
       <div
         role="tooltip"
-        className="pointer-events-none invisible absolute right-0 top-full z-30 mt-2 w-max max-w-[320px] -translate-y-1 rounded-[12px] border border-[#231f20]/14 bg-[#fbf7ef] p-3 text-left text-xs leading-5 text-[#231f20]/84 opacity-0 shadow-[4px_4px_0_rgba(35,31,32,0.12)] transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
+        className="pointer-events-none invisible absolute right-0 top-full z-50 mt-2 w-max max-w-[320px] -translate-y-1 rounded-[12px] border border-[#231f20]/14 bg-[#fbf7ef] p-3 text-left text-xs leading-5 text-[#231f20]/84 opacity-0 shadow-[4px_4px_0_rgba(35,31,32,0.12)] transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
       >
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/52">
           {issues.length === 1 ? "1 notificacao" : `${issues.length} notificacoes`}

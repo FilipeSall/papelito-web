@@ -1,4 +1,5 @@
 export { Panel, type PanelProps } from "./panel";
+export { FramedPanel, type FramedPanelProps } from "./framed-panel";
 export { StatusBadge, badge } from "./status-badge";
 export { MetricCard, type MetricCardProps } from "./metric-card";
 export { FilterBar } from "./filter-bar";

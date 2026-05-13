@@ -12,7 +12,7 @@ import {
   formatDateTimeLabel,
   formatOrderStatusLabel,
 } from "../../formatters";
-import { Panel, StatusBadge } from "../../primitives";
+import { FramedPanel, StatusBadge } from "../../primitives";
 
 function buildPageWindow(current: number, total: number): Array<number | "ellipsis"> {
   if (total <= 7) {
@@ -67,7 +67,7 @@ export function SalesOrdersPanel({
       : null;
 
   return (
-    <Panel className="overflow-hidden pb-2">
+    <FramedPanel className="overflow-hidden pb-2">
       <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
@@ -226,6 +226,6 @@ export function SalesOrdersPanel({
           </nav>
         ) : null}
       </div>
-    </Panel>
+    </FramedPanel>
   );
 }

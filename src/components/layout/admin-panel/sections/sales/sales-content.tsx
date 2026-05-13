@@ -13,7 +13,7 @@ import {
   formatCompactCurrency,
   formatPercent,
 } from "../../formatters";
-import { CardNotification, CompactTable, Panel } from "../../primitives";
+import { CardNotification, CompactTable, FramedPanel } from "../../primitives";
 import { SalesFiltersPanel } from "./sales-filters-panel";
 import { SalesMetricCard } from "./sales-metric-card";
 import { SalesOrdersPanel } from "./sales-orders-panel";
@@ -150,26 +150,22 @@ export async function SalesContent({
       </div>
 
       <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-2 [animation-delay:220ms]">
-        <Panel className="flex flex-col overflow-hidden">
-          <SalesLineChart
-            key={`revenue-${animationKey}`}
-            label="receita por periodo"
-            notifications={classified.revenue}
-            points={analytics.revenueSeries}
-          />
-        </Panel>
-        <Panel className="flex flex-col overflow-hidden">
-          <SalesBarsChart
-            key={`status-${animationKey}`}
-            label="pedidos por status"
-            notifications={classified.orders}
-            points={statusChartSeries}
-          />
-        </Panel>
+        <SalesLineChart
+          key={`revenue-${animationKey}`}
+          label="receita por periodo"
+          notifications={classified.revenue}
+          points={analytics.revenueSeries}
+        />
+        <SalesBarsChart
+          key={`status-${animationKey}`}
+          label="pedidos por status"
+          notifications={classified.orders}
+          points={statusChartSeries}
+        />
       </div>
 
       <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-[1.15fr_0.85fr] [animation-delay:320ms]">
-        <Panel className="overflow-hidden pb-3">
+        <FramedPanel className="overflow-hidden pb-3">
           <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
@@ -184,15 +180,13 @@ export async function SalesContent({
           <div className="px-2 pt-2">
             <CompactTable headers={["item", "receita", "share"]} rows={leaderboardRows} />
           </div>
-        </Panel>
-        <Panel className="flex flex-col overflow-hidden">
-          <SalesDonutChart
-            key={`payment-${animationKey}`}
-            label="mix por metodo de pagamento"
-            notifications={classified.paymentMix}
-            points={paymentMixSeries}
-          />
-        </Panel>
+        </FramedPanel>
+        <SalesDonutChart
+          key={`payment-${animationKey}`}
+          label="mix por metodo de pagamento"
+          notifications={classified.paymentMix}
+          points={paymentMixSeries}
+        />
       </div>
 
       <div className="animate-admin-panel-enter [animation-delay:420ms]">

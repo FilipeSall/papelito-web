@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatPercent } from "../formatters";
-import { CardNotification } from "../primitives";
+import { CardNotification, FramedPanel } from "../primitives";
 
 export function SalesDonutChart({
   label,
@@ -33,12 +33,12 @@ export function SalesDonutChart({
     .segments.join(",");
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-white/75 p-5">
-      <div className="flex items-center justify-between gap-3">
+    <FramedPanel className="flex h-full flex-1 flex-col">
+      <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
       </div>
-      <div className="mt-5 flex flex-1 flex-col gap-4 rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-4 md:flex-row md:items-center md:justify-center">
+      <div className="mx-5 mt-5 mb-5 flex flex-1 flex-col gap-4 rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-4 md:flex-row md:items-center md:justify-center">
         <div
           className="animate-admin-donut-in relative h-36 w-36 rounded-full border-2 border-[#231f20]"
           style={{ background: `conic-gradient(${gradient})` }}
@@ -56,6 +56,6 @@ export function SalesDonutChart({
           ))}
         </div>
       </div>
-    </div>
+    </FramedPanel>
   );
 }

@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatCompactCurrency, niceMax } from "../formatters";
-import { CardNotification } from "../primitives";
+import { CardNotification, FramedPanel } from "../primitives";
 
 export function SalesLineChart({
   label,
@@ -47,12 +47,12 @@ export function SalesLineChart({
   const areaPath = `${linePath} L${paddingLeft + plotWidth},${paddingTop + plotHeight} L${paddingLeft},${paddingTop + plotHeight} Z`;
 
   return (
-    <div className="flex h-full flex-1 flex-col bg-white/75 p-5">
-      <div className="flex items-center justify-between gap-3">
+    <FramedPanel className="flex h-full flex-1 flex-col">
+      <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
       </div>
-      <div className="relative mt-5 flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-3">
+      <div className="relative mx-5 mt-5 mb-5 flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-3">
         <svg
           className="h-full w-full flex-1"
           fill="none"
@@ -160,6 +160,6 @@ export function SalesLineChart({
           })}
         </svg>
       </div>
-    </div>
+    </FramedPanel>
   );
 }

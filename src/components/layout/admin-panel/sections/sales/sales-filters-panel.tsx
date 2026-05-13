@@ -3,6 +3,7 @@ import {
   type parseAdminSalesFilters,
 } from "@/lib/server/admin-sales-filters";
 
+import { AdminSalesGranularitySelect } from "../../admin-sales-granularity-select";
 import { CardNotification } from "../../primitives";
 import { SalesPresetLink } from "./sales-preset-link";
 
@@ -83,15 +84,7 @@ export function SalesFiltersPanel({
                 type="date"
               />
             </label>
-            <select
-              className="min-h-9 rounded-[8px] border border-[#231f20]/18 bg-white px-3 text-sm text-[#231f20] outline-none transition focus:border-[#231f20]"
-              defaultValue={filters.interval}
-              name="interval"
-            >
-              <option value="day">Dia</option>
-              <option value="week">Semana</option>
-              <option value="month">Mes</option>
-            </select>
+            <AdminSalesGranularitySelect defaultValue={filters.interval} />
             <button className="inline-flex min-h-9 items-center justify-center rounded-[8px] border border-[#231f20] bg-[#231f20] px-5 text-sm font-semibold text-[#ffe500] transition hover:bg-[#3a3536] md:ml-auto">
               aplicar filtro
             </button>
