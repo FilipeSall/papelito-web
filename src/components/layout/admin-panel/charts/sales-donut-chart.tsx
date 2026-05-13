@@ -40,7 +40,7 @@ export function SalesDonutChart({
       </div>
       <div className="mt-5 flex flex-1 flex-col gap-4 rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-4 md:flex-row md:items-center md:justify-center">
         <div
-          className="relative h-36 w-36 rounded-full border-2 border-[#231f20]"
+          className="animate-admin-donut-in relative h-36 w-36 rounded-full border-2 border-[#231f20]"
           style={{ background: `conic-gradient(${gradient})` }}
         >
           <div className="absolute inset-5 rounded-full border-2 border-[#231f20] bg-[#fbf7ef]" />

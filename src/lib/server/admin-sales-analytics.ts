@@ -755,13 +755,6 @@ export async function getAdminSalesAnalyticsSnapshot(
     issues,
   };
 
-  if (snapshot.leaderboard.length < 2 && itemsSold > 0) {
-    snapshot.leaderboard = toShareRows([
-      { label: "itens vendidos", value: itemsSold },
-      { label: "receita consolidada", value: Math.max(snapshot.grossRevenue, 1) },
-    ]);
-  }
-
   if (isSnapshotEmpty(snapshot)) {
     const ordersAggregate = await getAdminSalesOrdersAggregate(accessToken, filters);
     const aggregateIssues: string[] = [
@@ -818,15 +811,19 @@ export async function getAdminSalesAnalyticsSnapshot(
     );
   }
 
-  // Quando wc-analytics esta vazio mas reports/sales tem dados, completa status e leaderboard
-  // com aggregate de /wc/v3/orders pra evitar grafico/tabela em branco.
-  if (
+  // Quando wc-analytics nao retorna serie de status ou produtos no leaderboard,
+  // completa com agregacao de /wc/v3/orders pra trazer status reais e nomes de
+  // produtos a partir dos line_items.
+  const needsStatusFallback =
     salesReportActive &&
     !wcAnalyticsOrdersActive &&
     !wcAnalyticsProductsActive &&
-    (snapshot.orderStatusSeries.length === 0 || snapshot.leaderboard.length < 2) &&
-    snapshot.orders > 0
-  ) {
+    snapshot.orderStatusSeries.length === 0 &&
+    snapshot.orders > 0;
+  const needsLeaderboardFallback =
+    productsLeaderboardRows.length === 0 && snapshot.orders > 0;
+
+  if (needsStatusFallback || needsLeaderboardFallback) {
     const ordersAggregate = await getAdminSalesOrdersAggregate(accessToken, filters);
 
     if (snapshot.orderStatusSeries.length === 0 && ordersAggregate.orderStatusSeries.length > 0) {
@@ -836,7 +833,7 @@ export async function getAdminSalesAnalyticsSnapshot(
       }
     }
 
-    if (snapshot.leaderboard.length < 2 && ordersAggregate.leaderboard.length > 0) {
+    if (needsLeaderboardFallback && ordersAggregate.leaderboard.length > 0) {
       snapshot.leaderboard = ordersAggregate.leaderboard;
     }
 

@@ -12,10 +12,10 @@ export function SalesPresetLink({
   return (
     <Link
       className={[
-        "inline-flex min-h-10 items-center rounded-[14px] border px-3 text-sm font-semibold uppercase tracking-[0.14em]",
+        "inline-flex min-h-9 items-center rounded-[8px] border px-4 text-sm font-semibold transition-colors",
         active
-          ? "border-[#231f20] bg-[#231f20] text-[#ffe500]"
-          : "border-[#231f20]/16 bg-white/76 text-[#231f20]/72",
+          ? "border-[#ffe500] bg-[#ffe500] text-[#231f20]"
+          : "border-[#231f20]/18 bg-white text-[#231f20] hover:bg-[#f7f2e7]",
       ].join(" ")}
       href={href}
     >

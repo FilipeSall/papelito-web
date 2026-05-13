@@ -84,6 +84,68 @@
     to   { transform: scaleX(1); }
 }
 
+@keyframes admin-panel-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes admin-line-draw {
+    from {
+        stroke-dashoffset: 1;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes admin-chart-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes admin-bar-rise {
+    from {
+        opacity: 0;
+        transform: scaleY(0.08);
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+@keyframes admin-point-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.12);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes admin-donut-in {
+    from {
+        opacity: 0;
+        transform: rotate(-18deg) scale(0.86);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
 @layer utilities {
     .animate-marquee {
         animation: marquee 50s linear infinite;
@@ -94,6 +156,30 @@
     .animate-underline-slide {
         animation: underline-slide-in 0.25s ease-out forwards;
         transform-origin: left;
+    }
+    .animate-admin-panel-enter {
+        animation: admin-panel-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .animate-admin-line-draw {
+        animation: admin-line-draw 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+    }
+    .animate-admin-chart-fade {
+        animation: admin-chart-fade 0.9s ease-out 0.3s both;
+    }
+    .animate-admin-bar-rise {
+        animation: admin-bar-rise 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+        transform-box: fill-box;
+        transform-origin: bottom;
+    }
+    .animate-admin-point-pop {
+        animation: admin-point-pop 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.7s both;
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+    .animate-admin-donut-in {
+        animation: admin-donut-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     .products-hero-cut {

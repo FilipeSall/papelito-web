@@ -91,8 +91,16 @@ export function SalesLineChart({
             );
           })}
 
-          <path d={areaPath} fill="rgba(255,229,0,0.28)" />
-          <path d={linePath} stroke="#231F20" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+          <path className="animate-admin-chart-fade" d={areaPath} fill="rgba(255,229,0,0.28)" />
+          <path
+            className="animate-admin-line-draw"
+            d={linePath}
+            pathLength={1}
+            stroke="#231F20"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="3"
+          />
 
           {mappedPoints.map((point, index) => {
             const showLabel =
@@ -110,12 +118,14 @@ export function SalesLineChart({
                 />
                 {showCircles ? (
                   <circle
+                    className="animate-admin-point-pop"
                     cx={point.x}
                     cy={point.y}
                     fill="#FFE500"
                     r="5"
                     stroke="#231F20"
                     strokeWidth="2"
+                    style={{ animationDelay: `${800 + index * 32}ms` }}
                   />
                 ) : null}
                 <text

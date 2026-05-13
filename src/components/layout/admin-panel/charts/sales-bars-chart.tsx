@@ -86,11 +86,13 @@ export function SalesBarsChart({
             return (
               <g key={`${point.label}-${point.value}`}>
                 <rect
+                  className="animate-admin-bar-rise"
                   fill={fill}
                   height={Math.max(barHeight, 2)}
                   rx="6"
                   stroke="#231F20"
                   strokeWidth="2"
+                  style={{ animationDelay: `${180 + index * 105}ms` }}
                   width={barWidth}
                   x={barX}
                   y={barY}

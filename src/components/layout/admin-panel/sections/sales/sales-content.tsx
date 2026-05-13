@@ -11,11 +11,11 @@ import { getAdminSalesOrdersSnapshot } from "@/lib/server/admin-sales-orders";
 import { SalesBarsChart, SalesDonutChart, SalesLineChart } from "../../charts";
 import {
   formatCompactCurrency,
-  formatCompactNumber,
   formatPercent,
 } from "../../formatters";
-import { CardNotification, CompactTable, MetricCard, Panel } from "../../primitives";
+import { CardNotification, CompactTable, Panel } from "../../primitives";
 import { SalesFiltersPanel } from "./sales-filters-panel";
+import { SalesMetricCard } from "./sales-metric-card";
 import { SalesOrdersPanel } from "./sales-orders-panel";
 
 function classifyIssues(issues: string[]) {
@@ -56,50 +56,58 @@ export async function SalesContent({
 
   const salesKpis = [
     {
+      format: "currency" as const,
       label: "Receita bruta",
-      value: formatCompactCurrency(analytics.grossRevenue),
+      value: analytics.grossRevenue,
       detail: `Janela ${analytics.periodLabel}`,
       tone: "default" as const,
     },
     {
+      format: "currency" as const,
       label: "Receita liquida",
-      value: formatCompactCurrency(analytics.netRevenue),
+      value: analytics.netRevenue,
       detail: `Variacao ${formatPercent(analytics.revenueDeltaRate)}`,
       tone: "default" as const,
     },
     {
+      format: "number" as const,
       label: "Pedidos no periodo",
-      value: formatCompactNumber(analytics.orders),
+      value: analytics.orders,
       detail: "Mesmo filtro aplicado no historico abaixo.",
       tone: "default" as const,
     },
     {
+      format: "currency" as const,
       label: "Ticket medio",
-      value: formatCompactCurrency(analytics.avgOrderValue),
+      value: analytics.avgOrderValue,
       detail: "Receita bruta dividida pelo total de pedidos.",
       tone: "default" as const,
     },
     {
+      format: "number" as const,
       label: "Itens vendidos",
-      value: formatCompactNumber(analytics.itemsSold),
+      value: analytics.itemsSold,
       detail: "Volume agregado de itens no recorte.",
       tone: "default" as const,
     },
     {
+      format: "currency" as const,
       label: "Descontos",
-      value: formatCompactCurrency(analytics.discountsTotal),
+      value: analytics.discountsTotal,
       detail: "Total de cupons e descontos concedidos.",
       tone: "default" as const,
     },
     {
+      format: "currency" as const,
       label: "Frete",
-      value: formatCompactCurrency(analytics.shippingTotal),
+      value: analytics.shippingTotal,
       detail: `Impostos ${formatCompactCurrency(analytics.taxesTotal)}`,
       tone: "default" as const,
     },
     {
+      format: "currency" as const,
       label: "Reembolsos",
-      value: formatCompactCurrency(analytics.refundsTotal),
+      value: analytics.refundsTotal,
       detail: analytics.refundsTotal > 0 ? "Pedidos devolvidos no periodo." : "Sem reembolsos no periodo.",
       tone: analytics.refundsTotal > 0 ? ("warning" as const) : ("default" as const),
     },
@@ -125,20 +133,26 @@ export async function SalesContent({
       ? ["Dados parciais: WooCommerce Analytics indisponivel ou incompleto; KPIs e graficos podem nao refletir o periodo inteiro."]
       : []),
   ];
+  const animationKey = `${filters.preset}-${filters.from}-${filters.to}-${filters.interval}`;
 
   return (
     <>
       <SalesFiltersPanel filters={filters} notifications={generalNotifications} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {salesKpis.map((card) => (
-          <MetricCard key={card.label} {...card} />
+        {salesKpis.map((card, index) => (
+          <SalesMetricCard
+            key={card.label}
+            {...card}
+            animationDelayMs={80 + index * 45}
+          />
         ))}
       </div>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-2">
+      <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-2 [animation-delay:220ms]">
         <Panel className="flex flex-col overflow-hidden">
           <SalesLineChart
+            key={`revenue-${animationKey}`}
             label="receita por periodo"
             notifications={classified.revenue}
             points={analytics.revenueSeries}
@@ -146,6 +160,7 @@ export async function SalesContent({
         </Panel>
         <Panel className="flex flex-col overflow-hidden">
           <SalesBarsChart
+            key={`status-${animationKey}`}
             label="pedidos por status"
             notifications={classified.orders}
             points={statusChartSeries}
@@ -153,7 +168,7 @@ export async function SalesContent({
         </Panel>
       </div>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-[1.15fr_0.85fr] [animation-delay:320ms]">
         <Panel className="overflow-hidden pb-3">
           <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -172,6 +187,7 @@ export async function SalesContent({
         </Panel>
         <Panel className="flex flex-col overflow-hidden">
           <SalesDonutChart
+            key={`payment-${animationKey}`}
             label="mix por metodo de pagamento"
             notifications={classified.paymentMix}
             points={paymentMixSeries}
@@ -179,7 +195,9 @@ export async function SalesContent({
         </Panel>
       </div>
 
-      <SalesOrdersPanel filters={filters} snapshot={ordersSnapshot} />
+      <div className="animate-admin-panel-enter [animation-delay:420ms]">
+        <SalesOrdersPanel filters={filters} snapshot={ordersSnapshot} />
+      </div>
     </>
   );
 }
