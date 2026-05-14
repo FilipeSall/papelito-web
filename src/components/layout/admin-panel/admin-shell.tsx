@@ -31,7 +31,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const currentItem = getCurrentNavItem(pathname);
 
   return (
-    <div className="relative min-h-full overflow-hidden bg-[#ede9df] text-[#231f20]">
+    <div className="relative min-h-screen overflow-hidden bg-[#ede9df] text-[#231f20]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"
@@ -45,7 +45,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      <div className="relative flex min-h-full">
+      <div className="relative flex min-h-screen">
         <aside className="hidden w-73 shrink-0 border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex lg:flex-col">
           <nav className="flex-1 space-y-1.5 px-4 py-5">
             {ADMIN_NAV_ITEMS.map((item) => {

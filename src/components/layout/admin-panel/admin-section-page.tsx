@@ -26,7 +26,7 @@ function renderSection(
     case "vendors":
       return <VendorsContent />;
     case "reports":
-      return <ReportsContent />;
+      return <ReportsContent searchParams={searchParams} />;
     case "assets":
       return <AssetsContent />;
     case "config":
@@ -47,6 +47,7 @@ export function AdminSectionPage({
     <div className="space-y-4 md:space-y-5">
       {section === "sales" ||
       section === "products" ||
+      section === "reports" ||
       section === "config" ||
       section === "flash-sale" ? null : (
         <SectionHeader section={section} />
