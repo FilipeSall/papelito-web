@@ -2,6 +2,15 @@ import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
 
+import type { AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
+
+type WcProductTerm = {
+  id?: number;
+  name?: string;
+  parent?: number;
+  slug?: string;
+};
+
 type WpFlashSaleCampaign = {
   title?: string;
   slug?: string;
@@ -9,6 +18,7 @@ type WpFlashSaleCampaign = {
   starts_at?: string;
   ends_at?: string;
   productIds?: number[];
+  discountPercent?: number;
   label?: string;
   supportingText?: string;
 };
@@ -28,6 +38,7 @@ type WpFlashSaleProduct = {
   image?: string;
   permalink?: string;
   status?: string;
+  hasImage?: boolean;
 };
 
 type WpAdminFlashSaleSnapshot = {
@@ -43,8 +54,7 @@ export type AdminFlashSaleCampaign = {
   startsAt: string;
   endsAt: string;
   productIds: number[];
-  label: string;
-  supportingText: string;
+  discountPercent: number;
 };
 
 export type AdminFlashSaleProduct = {
@@ -60,6 +70,7 @@ export type AdminFlashSaleProduct = {
   rating: number;
   reviews: number;
   image: string;
+  hasImage: boolean;
   permalink: string;
   status: string;
 };
@@ -75,8 +86,7 @@ export type AdminFlashSalePayload = {
   startsAt: string;
   endsAt: string;
   productIds: number[];
-  label: string;
-  supportingText: string;
+  discountPercent: number;
 };
 
 function cleanText(value: unknown) {
@@ -87,28 +97,36 @@ function toNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
+function clampDiscount(value: unknown) {
+  const numeric = typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
+  return Math.min(99, Math.max(0, numeric));
+}
+
 function mapCampaign(campaign: WpFlashSaleCampaign | null | undefined): AdminFlashSaleCampaign | null {
   if (!campaign) {
     return null;
   }
 
   const title = cleanText(campaign.title);
+  const startsAt = cleanText(campaign.starts_at);
+  const endsAt = cleanText(campaign.ends_at);
+  const productIds = Array.isArray(campaign.productIds)
+    ? campaign.productIds.filter((id) => Number.isInteger(id) && id > 0)
+    : [];
+  const discountPercent = clampDiscount(campaign.discountPercent);
 
-  if (!title) {
+  if (!title && !startsAt && !endsAt && productIds.length === 0 && discountPercent === 0) {
     return null;
   }
 
   return {
     title,
-    slug: cleanText(campaign.slug),
+    slug: cleanText(campaign.slug) || "oferta-relampago",
     status: cleanText(campaign.status) || "draft",
-    startsAt: cleanText(campaign.starts_at),
-    endsAt: cleanText(campaign.ends_at),
-    productIds: Array.isArray(campaign.productIds)
-      ? campaign.productIds.filter((id) => Number.isInteger(id) && id > 0)
-      : [],
-    label: cleanText(campaign.label) || "Oferta Relampago",
-    supportingText: cleanText(campaign.supportingText),
+    startsAt,
+    endsAt,
+    productIds,
+    discountPercent,
   };
 }
 
@@ -119,6 +137,8 @@ function mapProduct(product: WpFlashSaleProduct): AdminFlashSaleProduct | null {
   if (!productId || !id) {
     return null;
   }
+
+  const image = cleanText(product.image);
 
   return {
     id,
@@ -132,7 +152,8 @@ function mapProduct(product: WpFlashSaleProduct): AdminFlashSaleProduct | null {
     price: toNumber(product.price),
     rating: toNumber(product.rating),
     reviews: toNumber(product.reviews),
-    image: cleanText(product.image),
+    image,
+    hasImage: typeof product.hasImage === "boolean" ? product.hasImage : image.length > 0,
     permalink: cleanText(product.permalink),
     status: cleanText(product.status) || "draft",
   };
@@ -190,6 +211,43 @@ export async function saveAdminFlashSale(accessToken: string, payload: AdminFlas
   }
 
   return mapSnapshot(result.data);
+}
+
+export async function getFlashSaleProductCategories(
+  accessToken: string | undefined,
+): Promise<AdminProductTaxonomyTerm[]> {
+  if (!accessToken) {
+    return [];
+  }
+
+  const result = await wpRest<WcProductTerm[]>(
+    "/wc/v3/products/categories?per_page=100&orderby=name&order=asc&hide_empty=true",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      revalidate: 300,
+      tags: ["admin-product-categories-all"],
+    },
+  );
+
+  if (!result.ok) {
+    return [];
+  }
+
+  return result.data
+    .map((term) => {
+      const id = typeof term.id === "number" ? term.id : 0;
+      if (id <= 0) {
+        return null;
+      }
+      return {
+        id,
+        name: typeof term.name === "string" ? term.name : "",
+        parent: typeof term.parent === "number" ? term.parent : 0,
+        slug: typeof term.slug === "string" ? term.slug : "",
+      } satisfies AdminProductTaxonomyTerm;
+    })
+    .filter((term): term is AdminProductTaxonomyTerm => term !== null)
+    .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
 }
 
 export async function deleteAdminFlashSale(accessToken: string) {

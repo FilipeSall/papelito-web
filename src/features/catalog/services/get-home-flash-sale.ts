@@ -62,10 +62,15 @@ function mapProduct(product: WpHomeFlashSaleProduct): HomeProductCard | null {
 }
 
 export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> {
-  const result = await wpRest<WpHomeFlashSaleResponse>("/papelito/v1/home/flash-sale", {
-    revalidate: 60,
-    tags: ["wp:home-flash-sale"],
-  });
+  const result = await wpRest<WpHomeFlashSaleResponse>(
+    "/papelito/v1/home/flash-sale",
+    process.env.NODE_ENV === "development"
+      ? {}
+      : {
+          revalidate: 60,
+          tags: ["wp:home-flash-sale"],
+        },
+  );
 
   if (!result.ok) {
     if (result.status !== 404) {
@@ -77,7 +82,7 @@ export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> 
   const campaign = result.data.campaign;
   const title = cleanText(campaign?.title);
 
-  if (!campaign || !title) {
+  if (!campaign) {
     return null;
   }
 
@@ -91,7 +96,7 @@ export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> 
 
   return {
     title,
-    slug: cleanText(campaign.slug),
+    slug: cleanText(campaign.slug) || "oferta-relampago",
     status: cleanText(campaign.status) || "active",
     startsAt: cleanText(campaign.starts_at),
     endsAt: cleanText(campaign.ends_at),

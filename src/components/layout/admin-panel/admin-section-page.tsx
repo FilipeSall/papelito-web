@@ -45,7 +45,10 @@ export function AdminSectionPage({
 }) {
   return (
     <div className="space-y-4 md:space-y-5">
-      {section === "sales" || section === "products" || section === "config" ? null : (
+      {section === "sales" ||
+      section === "products" ||
+      section === "config" ||
+      section === "flash-sale" ? null : (
         <SectionHeader section={section} />
       )}
       {renderSection(section, searchParams)}

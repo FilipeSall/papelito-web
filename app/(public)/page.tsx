@@ -29,7 +29,7 @@ export default function Home() {
         <CategoriesNav />
       </div>
       {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-      <PromoBanner />
+      {flashSaleCampaign ? <PromoBanner /> : null}
       <BestSellersSection products={bestSellerProducts} />
       <PromoCardsSection />
       <NewArrivalsSection products={newArrivalProducts} />

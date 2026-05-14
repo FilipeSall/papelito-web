@@ -35,13 +35,28 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const snapshot = await getAdminProductsSnapshot(auth.accessToken, {
+  const filters = {
     category: url.searchParams.get("category") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     perPage: url.searchParams.get("perPage") ?? undefined,
     search: url.searchParams.get("search") ?? undefined,
     status: url.searchParams.get("status") ?? undefined,
     stockStatus: url.searchParams.get("stockStatus") ?? undefined,
+  };
+
+  console.info("[api/admin/products][GET] incoming", filters);
+
+  const snapshot = await getAdminProductsSnapshot(auth.accessToken, filters);
+
+  console.info("[api/admin/products][GET] result", {
+    currentPage: snapshot.currentPage,
+    filters,
+    issueCount: snapshot.issues.length,
+    issues: snapshot.issues,
+    productIds: snapshot.products.slice(0, 10).map((product) => product.id),
+    productsCount: snapshot.products.length,
+    totalPages: snapshot.totalPages,
+    totalProducts: snapshot.totalProducts,
   });
 
   return NextResponse.json(snapshot);

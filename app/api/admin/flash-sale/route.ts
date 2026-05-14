@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -57,6 +57,7 @@ export async function PUT(request: Request) {
     const snapshot = await saveAdminFlashSale(auth.accessToken, payload);
     revalidateTag("admin-flash-sale", "max");
     revalidateTag("wp:home-flash-sale", "max");
+    revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nao foi possivel salvar a campanha.";
@@ -75,6 +76,7 @@ export async function DELETE() {
     const snapshot = await deleteAdminFlashSale(auth.accessToken);
     revalidateTag("admin-flash-sale", "max");
     revalidateTag("wp:home-flash-sale", "max");
+    revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nao foi possivel remover a campanha.";
