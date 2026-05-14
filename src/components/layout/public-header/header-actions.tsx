@@ -95,20 +95,16 @@ function AuthButtons() {
 
 /** Seção de ações do cabeçalho desktop — alterna entre botões de auth e ações de usuário logado */
 export function PublicHeaderDesktopActions() {
-  const { isAdministrator, isAuthenticated, isLoading, isRoleLoading } = useAuthSession();
-
-  if (isLoading || (isAuthenticated && isRoleLoading)) {
-    return <div className="h-9 w-[152.36px]" />;
-  }
+  const { isAdministrator, isAuthenticated } = useAuthSession();
 
   return isAuthenticated ? <LoggedInActions isAdministrator={isAdministrator} /> : <AuthButtons />;
 }
 
 /** Seção de ações do cabeçalho mobile — mostra ações apenas quando logado */
 export function PublicHeaderMobileActions({ invertColors = false }: { invertColors?: boolean }) {
-  const { isAdministrator, isAuthenticated, isLoading, isRoleLoading } = useAuthSession();
+  const { isAdministrator, isAuthenticated } = useAuthSession();
 
-  if (isLoading || !isAuthenticated || isRoleLoading) return null;
+  if (!isAuthenticated) return null;
 
   return <LoggedInActions invertColors={invertColors} isAdministrator={isAdministrator} />;
 }
