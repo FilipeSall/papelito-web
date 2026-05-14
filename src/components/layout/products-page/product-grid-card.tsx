@@ -79,7 +79,6 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
   const {
     category,
     name,
-    badge,
     originalPrice,
     price,
     rating,

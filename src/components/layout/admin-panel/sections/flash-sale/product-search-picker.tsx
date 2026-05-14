@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, ImageOff, Plus, Search } from "lucide-react";
 
 import type {
@@ -128,7 +129,13 @@ export function ProductSearchPicker({
                   <div className="flex min-w-0 items-center gap-2">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded border border-[#cec7aa] bg-[#e9e2cf]">
                       {hasImage ? (
-                        <img alt={product.name} className="h-full w-full object-cover" src={image} />
+                        <Image
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                          height={40}
+                          src={image}
+                          width={40}
+                        />
                       ) : (
                         <ImageOff className="h-5 w-5 text-[#a06b00]" strokeWidth={1.75} />
                       )}

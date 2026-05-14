@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ImageOff, ListChecks, ShoppingBasket, Trash2 } from "lucide-react";
 
 import type { AdminFlashSaleProduct } from "@/lib/server/admin-flash-sale";
@@ -55,10 +56,12 @@ export function SelectedProductsList({
                       <div className="flex items-center gap-2">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded border border-[#cec7aa] bg-[#e9e2cf]">
                           {product.hasImage && product.image ? (
-                            <img
+                            <Image
                               alt={product.name}
                               className="h-full w-full object-cover"
+                              height={40}
                               src={product.image}
+                              width={40}
                             />
                           ) : (
                             <ImageOff

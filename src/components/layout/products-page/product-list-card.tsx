@@ -31,7 +31,6 @@ export function ProductListCard({ product }: ProductListCardProps) {
   const {
     category,
     name,
-    badge,
     originalPrice,
     price,
     rating,

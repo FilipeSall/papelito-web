@@ -25,17 +25,17 @@ function Separator() {
  * campanha. Cada unidade exibe animação de entrada ao trocar de valor.
  */
 export function CountdownTimer({ endsAt }: { endsAt: string }) {
-  const [remaining, setRemaining] = useState(() => getRemainingSeconds(endsAt));
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    setRemaining(getRemainingSeconds(endsAt));
-
     const interval = setInterval(() => {
-      setRemaining(getRemainingSeconds(endsAt));
+      setNow(Date.now());
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [endsAt]);
+  }, []);
+
+  const remaining = getRemainingSeconds(endsAt, now);
 
   const { h, m, s } = parseTime(remaining);
 
@@ -55,7 +55,7 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
   );
 }
 
-function getRemainingSeconds(endsAt: string) {
+function getRemainingSeconds(endsAt: string, now = Date.now()) {
   if (!endsAt) {
     return 0;
   }
@@ -66,5 +66,5 @@ function getRemainingSeconds(endsAt: string) {
     return 0;
   }
 
-  return Math.max(0, Math.floor((endsAtTimestamp - Date.now()) / 1000));
+  return Math.max(0, Math.floor((endsAtTimestamp - now) / 1000));
 }
