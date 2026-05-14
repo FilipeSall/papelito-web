@@ -125,12 +125,17 @@ Token e refresh do WP ficam na sessão JWT do NextAuth (`session.accessToken`, `
 ## Comandos comuns
 
 ```bash
+nvm use
 bun install
 bun run dev                     # next dev
 bun run build                   # next build
 bun run lint                    # eslint
 ./node_modules/.bin/tsc --noEmit   # typecheck
+npm ci                          # CI / validacao do package-lock.json
 ```
+
+- Padrao local: Bun para instalar dependencias e rodar scripts.
+- CI: Node 24 + `npm ci`, entao `package-lock.json` deve permanecer sincronizado com `package.json`.
 
 ## Pontos de integração com `../papelito-wordpress`
 
