@@ -91,7 +91,7 @@ export function ProductEditorModal({
       }}
       role="dialog"
     >
-      <div className="relative w-full max-w-[min(80rem,calc(100vw-2rem))]">
+      <div className="relative w-full max-w-[75vw]">
         <section
           className="max-h-[calc(100vh-2rem)] overflow-hidden rounded-[14px] border border-[#c9bd96] bg-[#fbf7ef] text-[#231f20] shadow-[0_24px_80px_rgba(35,31,32,0.34)]"
           onMouseDown={(event) => event.stopPropagation()}
@@ -143,7 +143,10 @@ export function ProductEditorModal({
                 />
               </ModalSection>
 
-              <ModalSection title="Tags">
+              <ModalSection
+                helpText="Tags ajudam o cliente a encontrar o produto pela busca por texto. Use palavras-chave que descrevam o item (ex.: vegano, ecologico, pet friendly)."
+                title="Tags"
+              >
                 <TagInputField
                   isCreating={isCreatingTag}
                   newTagName={newTagName}

@@ -6,7 +6,6 @@ import {
   AssetsContent,
   ConfigContent,
   FlashSaleContent,
-  OverviewContent,
   ProductsContent,
   ReportsContent,
   SalesContent,
@@ -18,8 +17,6 @@ function renderSection(
   searchParams?: AdminSalesPageSearchParams,
 ) {
   switch (section) {
-    case "overview":
-      return <OverviewContent />;
     case "sales":
       return <SalesContent searchParams={searchParams} />;
     case "products":

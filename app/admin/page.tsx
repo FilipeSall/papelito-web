@@ -1,5 +1,5 @@
-import { AdminSectionPage } from "@/components/layout/admin-panel";
+import { redirect } from "next/navigation";
 
-export default function AdminOverviewPage() {
-  return <AdminSectionPage section="overview" />;
+export default function AdminIndexPage() {
+  redirect("/admin/sales");
 }

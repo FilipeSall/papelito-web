@@ -15,7 +15,7 @@ import { useHomeProducts } from "@/features/catalog";
 export default function Home() {
   // TODO: Quando a integração real estiver pronta, manter este consumo server-side
   // apontando para a API de catálogo/home em vez do mock local.
-  const { flashSaleProducts, bestSellerProducts, newArrivalProducts } = use(
+  const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = use(
     useHomeProducts(),
   );
 
@@ -28,7 +28,7 @@ export default function Home() {
         <FeaturesBar />
         <CategoriesNav />
       </div>
-      <FlashSaleSection products={flashSaleProducts} />
+      {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
       <PromoBanner />
       <BestSellersSection products={bestSellerProducts} />
       <PromoCardsSection />

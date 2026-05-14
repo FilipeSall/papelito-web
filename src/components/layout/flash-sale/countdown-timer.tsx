@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CountdownUnit } from "./countdown-unit";
-import { FLASH_SALE_INITIAL_SECONDS } from "./constants";
 
 function parseTime(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
@@ -22,19 +21,21 @@ function Separator() {
 /**
  * Contador regressivo molecular da oferta.
  *
- * Componente cliente que parte de `FLASH_SALE_INITIAL_SECONDS` e decrementa
- * um segundo a cada intervalo. Cada unidade exibe animação de entrada
- * ao trocar de valor (via `key` no `CountdownUnit`).
+ * Componente cliente que calcula o restante a partir do encerramento da
+ * campanha. Cada unidade exibe animação de entrada ao trocar de valor.
  */
-export function CountdownTimer() {
-  const [remaining, setRemaining] = useState(FLASH_SALE_INITIAL_SECONDS);
+export function CountdownTimer({ endsAt }: { endsAt: string }) {
+  const [remaining, setRemaining] = useState(() => getRemainingSeconds(endsAt));
 
   useEffect(() => {
+    setRemaining(getRemainingSeconds(endsAt));
+
     const interval = setInterval(() => {
-      setRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+      setRemaining(getRemainingSeconds(endsAt));
     }, 1000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [endsAt]);
 
   const { h, m, s } = parseTime(remaining);
 
@@ -52,4 +53,18 @@ export function CountdownTimer() {
       </div>
     </div>
   );
+}
+
+function getRemainingSeconds(endsAt: string) {
+  if (!endsAt) {
+    return 0;
+  }
+
+  const endsAtTimestamp = Date.parse(endsAt);
+
+  if (Number.isNaN(endsAtTimestamp)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((endsAtTimestamp - Date.now()) / 1000));
 }

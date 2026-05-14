@@ -48,8 +48,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex min-h-full">
         <aside className="hidden w-73 shrink-0 border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex lg:flex-col">
           <nav className="flex-1 space-y-1.5 px-4 py-5">
-            {ADMIN_NAV_ITEMS.map((item, index) => {
+            {ADMIN_NAV_ITEMS.map((item) => {
               const active = item.href === currentItem.href;
+              const Icon = item.icon;
 
               return (
                 <Link
@@ -60,13 +61,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <div className="flex w-full items-start gap-4">
                     <span
                       className={[
-                        "mt-0.5 inline-flex h-8 min-w-8 items-center justify-center rounded-full text-[11px] font-semibold uppercase tracking-[0.18em]",
+                        "mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full",
                         active
                           ? "bg-[#231f20] text-[#ffe500]"
-                          : "bg-white/7 text-white/42 group-hover:bg-white/10 group-hover:text-white/58",
+                          : "bg-white/7 text-white/52 group-hover:bg-white/10 group-hover:text-white/72",
                       ].join(" ")}
                     >
-                      {String(index + 1).padStart(2, "0")}
+                      <Icon aria-hidden className="h-4 w-4" strokeWidth={2} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p
@@ -119,6 +120,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {ADMIN_NAV_ITEMS.map((item) => {
                   const active = item.href === currentItem.href;
+                  const Icon = item.icon;
 
                   return (
                     <Link
@@ -126,7 +128,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={getMobileNavClassName(active)}
                     >
-                      <span className="opacity-52">{String(ADMIN_NAV_ITEMS.indexOf(item) + 1).padStart(2, "0")}</span>
+                      <Icon aria-hidden className="h-4 w-4" strokeWidth={2} />
                       <span className="ml-2">{item.shortLabel}</span>
                     </Link>
                   );

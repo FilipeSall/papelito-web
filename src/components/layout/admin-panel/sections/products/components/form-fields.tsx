@@ -5,17 +5,20 @@ import type { ReactNode } from "react";
 export function ModalSection({
   action,
   children,
+  helpText,
   title,
 }: {
   action?: ReactNode;
   children: ReactNode;
+  helpText?: string;
   title: string;
 }) {
   return (
     <section className="rounded-[10px] border border-[#c9bd96] bg-[#fff9e9] p-5">
       <div className="mb-5 flex items-center justify-between gap-4 border-b border-[#c9bd96] pb-3">
-        <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-[#111111]">
+        <h4 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-[#111111]">
           {title}
+          {helpText ? <InfoTooltip text={helpText} /> : null}
         </h4>
         {action}
       </div>

@@ -1,5 +1,15 @@
+import {
+  FileText,
+  Image,
+  Package,
+  Settings,
+  Store,
+  TrendingUp,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+
 export type AdminSectionKey =
-  | "overview"
   | "sales"
   | "products"
   | "flash-sale"
@@ -11,6 +21,7 @@ export type AdminSectionKey =
 export type AdminNavItem = {
   description: string;
   href: string;
+  icon: LucideIcon;
   key: AdminSectionKey;
   label: string;
   shortLabel: string;
@@ -18,15 +29,9 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
-    key: "overview",
-    href: "/admin",
-    label: "Visao Geral",
-    shortLabel: "Geral",
-    description: "Pulse operacional",
-  },
-  {
     key: "sales",
     href: "/admin/sales",
+    icon: TrendingUp,
     label: "Vendas",
     shortLabel: "Vendas",
     description: "Receita, pedidos e mix",
@@ -34,6 +39,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "products",
     href: "/admin/products",
+    icon: Package,
     label: "Produtos",
     shortLabel: "Produtos",
     description: "Catalogo e estoque",
@@ -41,6 +47,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "flash-sale",
     href: "/admin/flash-sale",
+    icon: Zap,
     label: "Oferta Relampago",
     shortLabel: "Oferta",
     description: "Campanha e janela ativa",
@@ -48,6 +55,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "vendors",
     href: "/admin/vendors",
+    icon: Store,
     label: "Vendors",
     shortLabel: "Vendors",
     description: "Triagem e cobertura",
@@ -55,6 +63,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "reports",
     href: "/admin/reports",
+    icon: FileText,
     label: "Relatorios",
     shortLabel: "Relatorios",
     description: "Consultas e exportacao",
@@ -62,6 +71,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "assets",
     href: "/admin/assets",
+    icon: Image,
     label: "Assets",
     shortLabel: "Assets",
     description: "Hero banners e biblioteca",
@@ -69,12 +79,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     key: "config",
     href: "/admin/config",
+    icon: Settings,
     label: "Configuracao",
     shortLabel: "Config",
     description: "Senha e preferencias",
   },
 ];
 
-export function isAdminSection(value: string): value is Exclude<AdminSectionKey, "overview"> {
-  return ADMIN_NAV_ITEMS.slice(1).some((item) => item.key === value);
+export function isAdminSection(value: string): value is AdminSectionKey {
+  return ADMIN_NAV_ITEMS.some((item) => item.key === value);
 }

@@ -2,11 +2,6 @@ import type { AdminSectionKey } from "./admin-config";
 import { badge } from "./primitives";
 
 export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value: string }>> = {
-  overview: [
-    { label: "receita 30d", value: "R$ 184k" },
-    { label: "pedidos ativos", value: "428" },
-    { label: "assets live", value: "12" },
-  ],
   sales: [
     { label: "ticket medio", value: "R$ 121" },
     { label: "repique", value: "+18.4%" },
@@ -54,14 +49,6 @@ export const SECTION_META: Record<
     signalTone: "default" | "warning";
   }
 > = {
-  overview: {
-    eyebrow: "Pulse operacional",
-    description:
-      "Painel base para leitura rapida da operacao: receitas, pedidos, campanhas, fila de vendors e blocos de status preparados para plugar APIs reais.",
-    railLabel: "health",
-    railValue: "stable",
-    signalTone: "default",
-  },
   sales: {
     eyebrow: "Receita e pedidos",
     description:

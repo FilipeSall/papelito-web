@@ -30,8 +30,8 @@ function LoggedInActions({
   const cartBadgeClass = invertColors
     ? "bg-brand-yellow text-brand-dark"
     : "bg-brand-dark text-brand-yellow";
-  const profileHref = isAdministrator ? "/admin" : "/perfil";
-  const profileLabel = isAdministrator ? "Painel Admin" : "Perfil";
+  const profileHref = isAdministrator ? "/admin/sales" : "/perfil";
+  const profileLabel = isAdministrator ? "Admin" : "Perfil";
 
   return (
     <div className="flex h-9 items-center gap-2">

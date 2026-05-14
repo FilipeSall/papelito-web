@@ -12,6 +12,18 @@ export interface HomeProductCard {
   featured?: boolean;
 }
 
+export interface HomeFlashSaleCampaign {
+  title: string;
+  slug: string;
+  status: string;
+  startsAt: string;
+  endsAt: string;
+  productIds: number[];
+  label: string;
+  supportingText: string;
+  products: HomeProductCard[];
+}
+
 export interface HomeNewArrivalProduct {
   id: string;
   name: string;
@@ -22,7 +34,7 @@ export interface HomeNewArrivalProduct {
 }
 
 export interface HomeProductsPayload {
-  flashSaleProducts: HomeProductCard[];
+  flashSaleCampaign: HomeFlashSaleCampaign | null;
   bestSellerProducts: HomeProductCard[];
   newArrivalProducts: HomeNewArrivalProduct[];
 }

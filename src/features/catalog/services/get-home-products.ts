@@ -5,8 +5,10 @@ import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import { fetchWpProducts, mapWpProductToHomeCard } from "./wp-catalog";
+import { getHomeFlashSale } from "./get-home-flash-sale";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
+  HomeFlashSaleCampaign,
   HomeNewArrivalProduct,
   HomeProductCard,
   HomeProductsPayload,
@@ -181,13 +183,11 @@ async function requestProductsMockFile() {
 }
 
 export async function getHomeProducts(): Promise<HomeProductsPayload> {
+  const flashSaleCampaign = await getHomeFlashSale();
+
   if (!isMockDataEnabled()) {
     const products = await fetchWpProducts(48);
     const cards = products.map(mapWpProductToHomeCard);
-
-    const flashSaleProducts = cards
-      .filter((item) => item.discount > 0)
-      .slice(0, 4);
     const bestSellerProducts = cards.slice(0, 8);
     const newArrivalProducts: HomeNewArrivalProduct[] = cards.slice(0, 8).map((card) => ({
       id: card.id,
@@ -199,7 +199,7 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
     }));
 
     return {
-      flashSaleProducts,
+      flashSaleCampaign,
       bestSellerProducts,
       newArrivalProducts,
     };
@@ -211,12 +211,6 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
   const candidates = products
     .map(toHomeCandidate)
     .filter((item): item is HomeCandidate => item !== null);
-
-  const flashSaleProducts = candidates
-    .filter((item) => item.card.discount > 0)
-    .sort((a, b) => b.card.discount - a.card.discount)
-    .slice(0, 4)
-    .map((item) => item.card);
 
   const bestSellerProducts = candidates
     .filter((item) => item.flags.isBestSeller)
@@ -234,8 +228,39 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
     }));
 
   return {
-    flashSaleProducts,
+    flashSaleCampaign: mergeMockFlashSale(flashSaleCampaign, candidates),
     bestSellerProducts,
     newArrivalProducts,
+  };
+}
+
+function mergeMockFlashSale(
+  flashSaleCampaign: HomeFlashSaleCampaign | null,
+  candidates: HomeCandidate[],
+): HomeFlashSaleCampaign | null {
+  if (flashSaleCampaign) {
+    return flashSaleCampaign;
+  }
+
+  const mockProducts = candidates
+    .filter((item) => item.card.discount > 0)
+    .sort((left, right) => right.card.discount - left.card.discount)
+    .slice(0, 4)
+    .map((item) => item.card);
+
+  if (mockProducts.length === 0) {
+    return null;
+  }
+
+  return {
+    title: "Oferta Relampago",
+    slug: "oferta-relampago",
+    status: "active",
+    startsAt: "",
+    endsAt: "",
+    productIds: mockProducts.map((product) => Number(product.id)).filter((id) => Number.isInteger(id)),
+    label: "Oferta Relampago",
+    supportingText: "Mock local ativo enquanto a campanha do WordPress nao estiver configurada.",
+    products: mockProducts,
   };
 }
