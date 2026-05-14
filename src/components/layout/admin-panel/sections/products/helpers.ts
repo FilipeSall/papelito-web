@@ -125,3 +125,40 @@ export function findPromotionTag(tags: AdminProductTaxonomyTerm[]) {
     PROMOTION_TAG_KEYS.has(normalizeKey(tag.slug || tag.name)),
   );
 }
+
+function parsePromotionDate(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function isPromotionActive(
+  product: AdminProduct,
+  promotionTagId?: number,
+) {
+  const hasPromotionPrice = Boolean(product.salePrice.trim());
+  const hasPromotionTag =
+    typeof promotionTagId === "number" &&
+    product.tags.some((tag) => tag.id === promotionTagId);
+
+  if (!hasPromotionPrice && !hasPromotionTag) {
+    return false;
+  }
+
+  const now = new Date();
+  const startsAt = parsePromotionDate(product.dateOnSaleFrom);
+  const endsAt = parsePromotionDate(product.dateOnSaleTo);
+
+  if (startsAt && startsAt > now) {
+    return false;
+  }
+
+  if (endsAt && endsAt < now) {
+    return false;
+  }
+
+  return true;
+}

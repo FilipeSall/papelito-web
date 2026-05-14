@@ -24,13 +24,13 @@ export function AdminSelectField({
     return (
       <CheckoutCustomSelect
         label={label}
-        labelClassName="text-sm font-semibold leading-none text-[#231f20]"
-        listClassName="z-[90] rounded-[12px] border border-[#cfc9bd] shadow-[0_12px_28px_rgba(35,31,32,0.14)]"
+        labelClassName="text-[11px] font-semibold uppercase tracking-[0.18em] leading-none text-[#756d5f]"
+        listClassName="z-[90] rounded-[18px] border border-[#d6ccb6] shadow-[0_18px_32px_rgba(35,31,32,0.12)]"
         onChange={onChange}
         optionClassName="tracking-normal"
         options={options}
         placeholder={placeholder}
-        triggerClassName="h-11 min-h-0 rounded-none border border-[#cfc9bd] bg-white px-5 text-sm font-medium tracking-normal text-[#231f20] focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
+        triggerClassName="h-12 min-h-0 rounded-[14px] border border-[#d6ccb6] bg-white px-4 text-sm font-medium tracking-normal text-[#231f20] focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
         value={value}
       />
     );

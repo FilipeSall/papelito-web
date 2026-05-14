@@ -11,6 +11,7 @@ import {
 import {
   buildPayload,
   findPromotionTag,
+  isPromotionActive,
   newProductDraft,
   productToDraft,
 } from "@/components/layout/admin-panel/sections/products/helpers";
@@ -28,6 +29,20 @@ import type {
 import { messageFromError } from "@/utils/error-message";
 import { normalizeKey } from "@/utils/normalize-key";
 
+const EMPTY_FILTERS: ProductFilters = {
+  category: "",
+  search: "",
+  status: "",
+};
+
+function normalizeFilters(filters: ProductFilters): ProductFilters {
+  return {
+    category: filters.category.trim(),
+    search: filters.search.trim(),
+    status: filters.status.trim(),
+  };
+}
+
 export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
   const [products, setProducts] = useState(snapshot.products);
   const [categories, setCategories] = useState(snapshot.categories);
@@ -36,11 +51,8 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
   const [page, setPage] = useState(snapshot.currentPage);
   const [totalPages, setTotalPages] = useState(snapshot.totalPages);
   const [totalProducts, setTotalProducts] = useState(snapshot.totalProducts);
-  const [filters, setFilters] = useState<ProductFilters>({
-    category: "",
-    search: "",
-    status: "",
-  });
+  const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<ProductFilters>(EMPTY_FILTERS);
   const [selectedProductId, setSelectedProductId] = useState<number | "new">(
     snapshot.products[0]?.id ?? "new",
   );
@@ -65,8 +77,12 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
       (product) => product.status === PUBLISHED_PRODUCT_STATUS,
     ).length;
     const drafts = products.filter((product) => product.status === "draft").length;
-    return { drafts, published };
-  }, [products]);
+    const promotionTag = findPromotionTag(tags);
+    const promotions = products.filter((product) =>
+      isPromotionActive(product, promotionTag?.id),
+    ).length;
+    return { drafts, promotions, published };
+  }, [products, tags]);
 
   const promotionTag = useMemo(() => findPromotionTag(tags), [tags]);
   const isPromotionEnabled =
@@ -92,19 +108,20 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
     setIsEditorOpen(false);
   }
 
-  async function loadProducts(nextPage = 1) {
+  async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
     setIsLoading(true);
     setNotice("");
 
     try {
+      const normalizedFilters = normalizeFilters(sourceFilters);
       const params = new URLSearchParams({
         page: String(nextPage),
         perPage: String(snapshot.perPage),
       });
 
-      if (filters.search.trim()) params.set("search", filters.search.trim());
-      if (filters.status) params.set("status", filters.status);
-      if (filters.category) params.set("category", filters.category);
+      if (normalizedFilters.search) params.set("search", normalizedFilters.search);
+      if (normalizedFilters.status) params.set("status", normalizedFilters.status);
+      if (normalizedFilters.category) params.set("category", normalizedFilters.category);
 
       const response = await fetch(`${ADMIN_PRODUCTS_API.list}?${params.toString()}`, {
         cache: "no-store",
@@ -123,6 +140,7 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
       setPage(nextSnapshot.currentPage);
       setTotalPages(nextSnapshot.totalPages);
       setTotalProducts(nextSnapshot.totalProducts);
+      setAppliedFilters(normalizedFilters);
 
       setSelectedProductId(nextSnapshot.products[0]?.id ?? "new");
       setDraft(
@@ -386,6 +404,7 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
   }
 
   return {
+    appliedFilters,
     catalogSummary,
     categories,
     closeEditor,
@@ -406,6 +425,7 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
     newTagName,
     notice,
     page,
+    perPage: snapshot.perPage,
     products,
     removeImage,
     selectedProduct,

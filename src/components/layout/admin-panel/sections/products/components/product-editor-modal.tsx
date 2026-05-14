@@ -84,10 +84,18 @@ export function ProductEditorModal({
     <div
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#231f20]/68 px-3 py-3 backdrop-blur-[3px] md:px-5 md:py-5"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
       role="dialog"
     >
       <div className="relative w-full max-w-[min(80rem,calc(100vw-2rem))]">
-        <section className="max-h-[calc(100vh-2rem)] overflow-hidden rounded-[14px] border border-[#c9bd96] bg-[#fbf7ef] text-[#231f20] shadow-[0_24px_80px_rgba(35,31,32,0.34)]">
+        <section
+          className="max-h-[calc(100vh-2rem)] overflow-hidden rounded-[14px] border border-[#c9bd96] bg-[#fbf7ef] text-[#231f20] shadow-[0_24px_80px_rgba(35,31,32,0.34)]"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
           <button
             aria-label="Fechar modal"
             className="absolute right-5 top-5 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-none border-0 bg-transparent text-4xl font-light leading-none text-[#231f20] transition hover:text-[#8b3f2d]"
@@ -404,47 +412,68 @@ function ImagesSection({
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        {draft.images.slice(0, 4).map((image, index) => (
-          <div
-            className={[
-              "group relative aspect-square overflow-hidden rounded-[4px] border bg-[#f1ead9]",
-              index === 0 ? "border-2 border-[#ffe500]" : "border-[#c9bd96]",
-            ].join(" ")}
-            key={`${image.id}-${image.src}-${index}`}
-          >
-            {image.src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt={image.alt || draft.name || "Produto"}
-                className="h-full w-full object-cover"
-                src={image.src}
+      <div aria-busy={isUploading} className="relative">
+        {isUploading ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[10px] bg-[#fff9e9]/82 backdrop-blur-[1px]">
+            <div className="flex flex-col items-center gap-3 rounded-[14px] border border-[#d7caab] bg-white/88 px-5 py-4 shadow-[0_16px_36px_rgba(35,31,32,0.12)]">
+              <span
+                aria-hidden
+                className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#231f20]/12 border-t-[#231f20]"
               />
-            ) : (
-              <ProductImageFallback className="h-full w-full" />
-            )}
-            {index > 0 ? (
-              <div className="absolute inset-x-1 bottom-1 hidden gap-1 group-hover:flex">
-                <button
-                  className="flex-1 cursor-pointer bg-[#ffe500] px-1 py-1 text-[9px] font-bold uppercase text-[#231f20]"
-                  onClick={() => onMoveToCover(String(image.id))}
-                  type="button"
-                >
-                  capa
-                </button>
-                <button
-                  aria-label="Remover foto secundaria"
-                  className="cursor-pointer bg-[#231f20] px-1.5 py-1 text-[9px] font-bold text-white"
-                  onClick={() => onRemoveImage(String(image.id))}
-                  type="button"
-                >
-                  x
-                </button>
+              <div className="text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#231f20]">
+                  Enviando imagem
+                </p>
+                <p className="mt-1 text-xs text-[#6e6658]">
+                  Aguarde o upload concluir para continuar.
+                </p>
               </div>
-            ) : null}
+            </div>
           </div>
-        ))}
-        <AdditionalImageInput isUploading={isUploading} onFileChange={onFileChange} />
+        ) : null}
+
+        <div className="grid grid-cols-4 gap-2">
+          {draft.images.slice(0, 4).map((image, index) => (
+            <div
+              className={[
+                "group relative aspect-square overflow-hidden rounded-[4px] border bg-[#f1ead9]",
+                index === 0 ? "border-2 border-[#ffe500]" : "border-[#c9bd96]",
+              ].join(" ")}
+              key={`${image.id}-${image.src}-${index}`}
+            >
+              {image.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  alt={image.alt || draft.name || "Produto"}
+                  className="h-full w-full object-cover"
+                  src={image.src}
+                />
+              ) : (
+                <ProductImageFallback className="h-full w-full" />
+              )}
+              {index > 0 ? (
+                <div className="absolute inset-x-1 bottom-1 hidden gap-1 group-hover:flex">
+                  <button
+                    className="flex-1 cursor-pointer bg-[#ffe500] px-1 py-1 text-[9px] font-bold uppercase text-[#231f20]"
+                    onClick={() => onMoveToCover(String(image.id))}
+                    type="button"
+                  >
+                    capa
+                  </button>
+                  <button
+                    aria-label="Remover foto secundaria"
+                    className="cursor-pointer bg-[#231f20] px-1.5 py-1 text-[9px] font-bold text-white"
+                    onClick={() => onRemoveImage(String(image.id))}
+                    type="button"
+                  >
+                    x
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ))}
+          <AdditionalImageInput isUploading={isUploading} onFileChange={onFileChange} />
+        </div>
       </div>
     </ModalSection>
   );
@@ -459,7 +488,14 @@ function AdditionalImageInput({
 }) {
   return (
     <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[4px] border border-dashed border-[#c9bd96] bg-[#f6f0df] text-2xl font-light text-[#231f20] transition hover:border-[#231f20]">
-      +
+      {isUploading ? (
+        <span
+          aria-hidden
+          className="h-6 w-6 animate-spin rounded-full border-2 border-[#231f20]/15 border-t-[#231f20]"
+        />
+      ) : (
+        "+"
+      )}
       <input
         accept="image/*"
         className="sr-only"
