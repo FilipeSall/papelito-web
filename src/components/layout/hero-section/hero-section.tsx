@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AUTO_INTERVAL } from "@/constants/auto-interval";
+import type { HeroBanner } from "@/types/home-assets";
 
-const desktopSlides = [
+const fallbackDesktopSlides = [
   {
     src: "/images/hero-section/Banners-Marketplace-B2B-01.png",
     alt: "Banner Marketplace B2B 01",
@@ -23,7 +24,7 @@ const desktopSlides = [
   },
 ];
 
-const mobileSlides = [
+const fallbackMobileSlides = [
   {
     src: "/images/hero-section/Banners-Marketplace-B2B-07_-Mobile.png",
     alt: "Banner Marketplace B2B 07 Mobile",
@@ -44,6 +45,13 @@ const mobileSlides = [
 
 const MOBILE_ONLY_MAX_WIDTH = 500;
 
+type HeroSlide = {
+  alt: string;
+  desktopSrc: string;
+  id: string;
+  mobileSrc: string;
+};
+
 const NAV_BTN: React.CSSProperties = {
   position: "absolute",
   top: "50%",
@@ -62,20 +70,43 @@ const NAV_BTN: React.CSSProperties = {
   zIndex: 10,
 };
 
-export function HeroSection() {
+function buildSlides(banners: HeroBanner[]): HeroSlide[] {
+  if (banners.length === 0) {
+    return fallbackDesktopSlides.map((slide, index) => ({
+      alt: slide.alt,
+      desktopSrc: slide.src,
+      id: `fallback-${index + 1}`,
+      mobileSrc: fallbackMobileSlides[index]?.src ?? slide.src,
+    }));
+  }
+
+  return banners.map((banner, index) => ({
+    alt: banner.alt || `Hero banner ${index + 1}`,
+    desktopSrc: banner.desktopImageUrl,
+    id: banner.id,
+    mobileSrc: banner.mobileImageUrl,
+  }));
+}
+
+export function HeroSection({ banners = [] }: { banners?: HeroBanner[] }) {
   const [current, setCurrent] = useState(0);
   const [isMobileOnly, setIsMobileOnly] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const slides = isMobileOnly ? mobileSlides : desktopSlides;
+  const slides = buildSlides(banners);
+  const activeIndex = current % slides.length;
+  const isCarousel = slides.length > 1;
 
   const resetTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
+    if (!isCarousel) {
+      return;
+    }
     intervalRef.current = setInterval(() => {
       setCurrent((c) => (c + 1) % slides.length);
     }, AUTO_INTERVAL);
-  }, [slides.length]);
+  }, [isCarousel, slides.length]);
 
   const prev = useCallback(() => {
     setCurrent((c) => (c - 1 + slides.length) % slides.length);
@@ -122,26 +153,28 @@ export function HeroSection() {
       >
         {slides.map((slide, i) => (
           <div
-            key={slide.src}
+            key={slide.id}
             style={{
               position: "absolute",
               inset: 0,
-              opacity: i === current ? 1 : 0,
+              opacity: i === activeIndex ? 1 : 0,
               transition: "opacity 0.6s ease-in-out",
             }}
           >
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              fill
-              priority={i === 0}
-              className={isMobileOnly ? "object-contain object-top" : "object-cover"}
-              sizes="100vw"
-            />
+            <div className="relative h-full w-full">
+              <Image
+                src={isMobileOnly ? slide.mobileSrc : slide.desktopSrc}
+                alt={slide.alt}
+                fill
+                priority={i === 0}
+                className={isMobileOnly ? "object-contain object-top" : "object-cover"}
+                sizes="100vw"
+              />
+            </div>
           </div>
         ))}
 
-        {!isMobileOnly ? (
+        {!isMobileOnly && isCarousel ? (
           <>
             {/* Botão anterior */}
             <button
@@ -164,38 +197,40 @@ export function HeroSection() {
         ) : null}
 
         {/* Indicadores */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: 8,
-            zIndex: 10,
-          }}
-        >
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setCurrent(i);
-                resetTimer();
-              }}
-              aria-label={`Ir para slide ${i + 1}`}
-              style={{
-                width: i === current ? 28 : 8,
-                height: 8,
-                borderRadius: 9999,
-                background: i === current ? "#FFE500" : "#FFE50055",
-                border: "none",
-                cursor: "pointer",
-                transition: "width 0.3s ease, background 0.3s ease",
-                padding: 0,
-              }}
-            />
-          ))}
-        </div>
+        {isCarousel ? (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 16,
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: 8,
+              zIndex: 10,
+            }}
+          >
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setCurrent(i);
+                  resetTimer();
+                }}
+                aria-label={`Ir para slide ${i + 1}`}
+                style={{
+                  width: i === activeIndex ? 28 : 8,
+                  height: 8,
+                  borderRadius: 9999,
+                  background: i === activeIndex ? "#FFE500" : "#FFE50055",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "width 0.3s ease, background 0.3s ease",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+        ) : null}
       </section>
       <div className="h-[0.125rem] w-full bg-[#FFE500] max-[500px]:h-[0.25rem]" />
     </>

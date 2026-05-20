@@ -1,7 +1,10 @@
 import Image from "next/image";
 
+import type { ManagedImageAsset } from "@/types/home-assets";
+
 type AboutFactoryImageProps = {
   className?: string;
+  image?: ManagedImageAsset;
   priority?: boolean;
   sizes: string;
 };
@@ -14,6 +17,7 @@ type AboutFactoryImageProps = {
  */
 export function AboutFactoryImage({
   className,
+  image,
   priority = false,
   sizes,
 }: AboutFactoryImageProps) {
@@ -21,10 +25,10 @@ export function AboutFactoryImage({
     <Image
       fill
       priority={priority}
-      alt="Socios da Papelito em pe diante da linha de producao da fabrica."
+      alt={image?.alt || "Socios da Papelito em pe diante da linha de producao da fabrica."}
       className={className ?? "object-cover object-center"}
       sizes={sizes}
-      src="/images/sobre-page/fabrica-papelito.jpg"
+      src={image?.imageUrl || "/images/sobre-page/fabrica-papelito.jpg"}
     />
   );
 }

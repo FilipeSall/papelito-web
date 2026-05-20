@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import { RevendedorPage } from "@/components/layout/revendedor-page";
+import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import { fetchProfileCustomer } from "@/features/profile/server/customer";
 import { fetchRevendedorApplication } from "@/features/revendedor/server/application";
 import { authOptions } from "@/lib/auth";
@@ -9,9 +10,10 @@ export default async function RevendedorRoutePage() {
   const session = await getServerSession(authOptions);
   const isAuthenticated = Boolean(session?.user && session.accessToken);
 
-  const [customer, application] = await Promise.all([
+  const [customer, application, images] = await Promise.all([
     isAuthenticated ? fetchProfileCustomer(session?.accessToken) : null,
     isAuthenticated ? fetchRevendedorApplication(session?.accessToken) : null,
+    getSiteImageAssets(),
   ]);
 
   return (
@@ -33,6 +35,7 @@ export default async function RevendedorRoutePage() {
           hasSoldPapelito: "",
         }
       }
+      images={images}
       initialValues={
         customer
           ? {

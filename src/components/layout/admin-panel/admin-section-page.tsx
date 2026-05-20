@@ -49,7 +49,8 @@ export function AdminSectionPage({
       section === "products" ||
       section === "reports" ||
       section === "config" ||
-      section === "flash-sale" ? null : (
+      section === "flash-sale" ||
+      section === "assets" ? null : (
         <SectionHeader section={section} />
       )}
       {renderSection(section, searchParams)}

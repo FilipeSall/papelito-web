@@ -10,13 +10,26 @@ import { PartnerBanner } from "@/components/layout/partner-banner";
 import { PromoBanner } from "@/components/layout/promo-banner";
 import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
+import {
+  getHomeHeroBanners,
+  getHomePartnerBanner,
+  getHomePromoBanner,
+} from "@/features/catalog/services/get-home-assets";
 import { useHomeProducts } from "@/features/catalog";
 
 export default function Home() {
-  // TODO: Quando a integração real estiver pronta, manter este consumo server-side
-  // apontando para a API de catálogo/home em vez do mock local.
-  const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = use(
-    useHomeProducts(),
+  const [
+    { flashSaleCampaign, bestSellerProducts, newArrivalProducts },
+    heroBanners,
+    promoBanner,
+    partnerBanner,
+  ] = use(
+    Promise.all([
+      useHomeProducts(),
+      getHomeHeroBanners(),
+      getHomePromoBanner(),
+      getHomePartnerBanner(),
+    ]),
   );
 
   return (
@@ -24,16 +37,16 @@ export default function Home() {
       <AddToCartToastHost />
       <div className="flex flex-col">
         <PromoMarquee />
-        <HeroSection />
+        <HeroSection banners={heroBanners} />
         <FeaturesBar />
         <CategoriesNav />
       </div>
       {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-      {flashSaleCampaign ? <PromoBanner /> : null}
+      {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
       <BestSellersSection products={bestSellerProducts} />
       <PromoCardsSection />
       <NewArrivalsSection products={newArrivalProducts} />
-      <PartnerBanner />
+      {partnerBanner ? <PartnerBanner banner={partnerBanner} /> : null}
     </main>
   );
 }

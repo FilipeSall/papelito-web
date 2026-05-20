@@ -2,6 +2,7 @@ import { use } from "react";
 import { ProductsHeroBanner, ProductsSection } from "@/components/layout/products-page";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
+import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -133,21 +134,24 @@ export function ProductsDiscoveryPage({
   const minPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMin));
   const maxPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMax));
 
-  const catalog = use(
-    useProductsCatalog({
-      type: queryType,
-      collection: activeCollection,
-      selectedTypes,
-      minPrice,
-      maxPrice,
-      page: currentPage,
-      perPage,
-    }),
+  const [catalog, siteImages] = use(
+    Promise.all([
+      useProductsCatalog({
+        type: queryType,
+        collection: activeCollection,
+        selectedTypes,
+        minPrice,
+        maxPrice,
+        page: currentPage,
+        perPage,
+      }),
+      getSiteImageAssets(),
+    ]),
   );
 
   return (
     <main className="flex flex-col bg-white">
-      <ProductsHeroBanner />
+      <ProductsHeroBanner image={siteImages.productHero} />
       <ProductsSection
         basePath={basePath}
         showCollectionFilters

@@ -1,8 +1,9 @@
 import { AboutCtaLink } from "./about-cta-link";
 import { AboutFactoryImage } from "./atoms/about-factory-image";
 import { ABOUT_STORY_CONTENT } from "./constants";
+import type { ManagedImageAsset } from "@/types/home-assets";
 
-export function AboutStorySection() {
+export function AboutStorySection({ image }: { image?: ManagedImageAsset }) {
   return (
     <section className="px-4 pt-9 lg:px-0 lg:pt-[51px]">
       <div className="mx-auto max-w-[1122px] lg:grid lg:grid-cols-[535px_535px] lg:gap-[52px]">
@@ -11,6 +12,7 @@ export function AboutStorySection() {
             <div className="relative z-10 h-[462px] overflow-hidden rounded-2xl shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)]">
               <AboutFactoryImage
                 className="object-cover object-[48%_center] lg:object-[52%_center]"
+                image={image}
                 priority
                 sizes="(max-width: 1023px) calc(100vw - 32px), 535px"
               />

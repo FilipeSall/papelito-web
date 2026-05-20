@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import type { ManagedImageAsset } from "@/types/home-assets";
+
 /**
  * Banner hero da página de produtos.
  *
@@ -13,14 +15,14 @@ import Image from "next/image";
  * <ProductsHeroBanner />
  * ```
  */
-export function ProductsHeroBanner() {
+export function ProductsHeroBanner({ image }: { image?: ManagedImageAsset }) {
   return (
     <section className="products-hero-cut relative w-full h-72 md:h-80 overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/Rectangle21.png"
-          alt="Produtos Papelito - Made in Brazil"
+          src={image?.imageUrl || "/images/Rectangle21.png"}
+          alt={image?.alt || "Produtos Papelito - Made in Brazil"}
           fill
           className="object-cover object-center"
           sizes="100vw"
