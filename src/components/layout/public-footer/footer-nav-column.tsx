@@ -51,7 +51,7 @@ export function FooterNavColumn({ title, links }: FooterNavColumnProps) {
             <Link
               href={link.href}
               prefetch={false}
-              className="text-sm leading-5 tracking-[-0.15px] text-white/60 hover:text-white transition-colors"
+              className="text-sm leading-5 tracking-normal text-white/60 transition-colors hover:text-white"
             >
               {link.label}
             </Link>

@@ -13,7 +13,7 @@ export function FooterCopyright() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-white/10">
+    <div className="flex min-h-[49px] flex-col items-start justify-between gap-4 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:pt-px">
       <p className="text-xs leading-4 text-white/40">
         &copy; {currentYear} Papelito Brasil. Todos os direitos reservados.
       </p>

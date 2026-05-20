@@ -14,17 +14,17 @@ import { FooterSocialLinks } from "./footer-social-links";
  */
 export function FooterLogo() {
   return (
-    <div className="flex max-w-68.5 flex-col gap-5">
+    <div className="flex max-w-[274px] flex-col gap-5">
       <Image
         src="/images/logo3.svg"
         alt="Papelito"
         width={183}
         height={31}
-        className="h-7.75"
+        className="h-[31px] w-[183px]"
       />
-      <p className="text-sm leading-5.6875 tracking-[-0.15px] text-white/60">
-        A primeira e unica industria de papeis para enrolar do Brasil.
-        Qualidade, inovacao e sustentabilidade.
+      <p className="max-w-[243px] text-sm leading-[22.75px] tracking-normal text-white/60">
+        A primeira e única indústria de papéis para enrolar do Brasil.
+        Qualidade, inovação e sustentabilidade.
       </p>
       <FooterSocialLinks />
     </div>
