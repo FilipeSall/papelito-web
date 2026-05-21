@@ -39,6 +39,31 @@ export function formatPhone(value: string) {
 }
 
 /**
+ * Aplica a mascara visual de CEP (00000-000) mantendo apenas os digitos.
+ */
+export function formatCep(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+/**
+ * Retorna apenas os digitos do CEP (string vazia se a quantidade for diferente de 8).
+ */
+export function normalizeCep(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 8 ? digits : "";
+}
+
+/**
+ * Valida se um valor representa um CEP brasileiro completo (8 digitos).
+ */
+export function isValidCep(value: string) {
+  return normalizeCep(value) !== "";
+}
+
+/**
  * Valida o formato basico de e-mail suficiente para o submit mock da landing.
  */
 export function isValidEmail(value: string) {

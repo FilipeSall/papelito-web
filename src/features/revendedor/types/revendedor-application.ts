@@ -12,6 +12,9 @@ export type RevendedorApplication = {
   instagram: string;
   state: string;
   city: string;
+  cep: string;
+  minCep: string;
+  maxCep: string;
   discoveryChannel: string;
   hasSoldPapelito: string;
 };
@@ -26,6 +29,9 @@ export type SubmitRevendedorApplicationInput = {
   instagram: string;
   city: string;
   state: string;
+  cep: string;
+  minCep: string;
+  maxCep: string;
   discoveryChannel: string;
   hasSoldPapelito: "sim" | "nao";
 };

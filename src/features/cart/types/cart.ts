@@ -5,6 +5,8 @@ export interface CartProductInput {
   image?: string;
   price: number;
   originalPrice?: number;
+  vendorId?: number;
+  vendorName?: string;
 }
 
 export interface CartItem extends CartProductInput {

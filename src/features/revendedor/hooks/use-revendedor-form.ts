@@ -12,10 +12,13 @@ import type {
   RevendedorSoldOption,
 } from "../types/revendedor";
 import {
+  formatCep,
   formatCnpj,
   formatPhone,
+  isValidCep,
   isValidCnpj,
   isValidEmail,
+  normalizeCep,
   sanitizeInstagramHandle,
 } from "../utils/revendedor-formatters";
 
@@ -36,6 +39,7 @@ type UseRevendedorFormResult = {
 };
 
 const INITIAL_VALUES: RevendedorFormValues = {
+  cep: "",
   city: "",
   cnpj: "",
   discoveryChannel: "",
@@ -44,6 +48,8 @@ const INITIAL_VALUES: RevendedorFormValues = {
   hasSoldPapelito: "",
   instagram: "",
   lastName: "",
+  maxCep: "",
+  minCep: "",
   phone: "",
   state: "",
   storeName: "",
@@ -168,6 +174,10 @@ function formatFieldValue<Key extends keyof RevendedorFormValues>(
       return formatPhone(value) as RevendedorFormValues[Key];
     case "instagram":
       return sanitizeInstagramHandle(value) as RevendedorFormValues[Key];
+    case "cep":
+    case "minCep":
+    case "maxCep":
+      return formatCep(value) as RevendedorFormValues[Key];
     default:
       return value as RevendedorFormValues[Key];
   }
@@ -187,6 +197,16 @@ function validateValues(values: RevendedorFormValues): RevendedorFormErrors {
   if (!values.instagram.trim()) nextErrors.instagram = "Informe o Instagram da loja.";
   if (!values.city.trim()) nextErrors.city = "Informe a cidade.";
   if (!values.state.trim()) nextErrors.state = "Selecione o estado.";
+  if (!isValidCep(values.cep)) nextErrors.cep = "Informe um CEP de operação válido.";
+  if (!isValidCep(values.minCep)) nextErrors.minCep = "Informe um CEP inicial válido.";
+  if (!isValidCep(values.maxCep)) nextErrors.maxCep = "Informe um CEP final válido.";
+  if (
+    !nextErrors.minCep &&
+    !nextErrors.maxCep &&
+    Number(normalizeCep(values.minCep)) > Number(normalizeCep(values.maxCep))
+  ) {
+    nextErrors.maxCep = "O CEP final precisa ser maior ou igual ao CEP inicial.";
+  }
   if (!values.hasSoldPapelito) {
     nextErrors.hasSoldPapelito = "Escolha se você já vende produtos Papelito.";
   }

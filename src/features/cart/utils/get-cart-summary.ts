@@ -12,6 +12,7 @@ function roundMoney(value: number) {
 export function getCartSummary(
   items: CartItem[],
   couponCode: string | null,
+  shippingOverride?: number | null,
 ): CartSummary {
   const subtotal = roundMoney(
     items.reduce((acc, item) => acc + item.price * item.quantity, 0),
@@ -26,7 +27,16 @@ export function getCartSummary(
 
   const hasItems = subtotal > 0;
   const hasFreeShipping = hasItems && subtotal >= CART_SHIPPING_THRESHOLD;
-  const shipping = hasItems && !hasFreeShipping ? CART_SHIPPING_COST : 0;
+  const quotedShipping =
+    typeof shippingOverride === "number" && Number.isFinite(shippingOverride)
+      ? Math.max(0, shippingOverride)
+      : null;
+  const shipping =
+    quotedShipping !== null
+      ? quotedShipping
+      : hasItems && !hasFreeShipping
+        ? CART_SHIPPING_COST
+        : 0;
   const amountToFreeShipping = hasFreeShipping
     ? 0
     : roundMoney(Math.max(0, CART_SHIPPING_THRESHOLD - subtotal));

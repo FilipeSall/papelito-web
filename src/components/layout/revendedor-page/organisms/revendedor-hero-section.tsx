@@ -60,6 +60,9 @@ export function RevendedorHeroSection({
           instagram: formValues.instagram,
           city: formValues.city,
           state: formValues.state,
+          cep: formValues.cep,
+          minCep: formValues.minCep,
+          maxCep: formValues.maxCep,
           discoveryChannel: formValues.discoveryChannel,
           hasSoldPapelito: formValues.hasSoldPapelito,
         }),
@@ -228,6 +231,44 @@ export function RevendedorHeroSection({
                     />
                   </RevendedorFormRow>
 
+                  <RevendedorFormField
+                    autoComplete="postal-code"
+                    error={errors.cep}
+                    id="cep"
+                    inputMode="numeric"
+                    label="CEP de operação *"
+                    maxLength={9}
+                    name="cep"
+                    onChange={(event) => setFieldValue("cep", event.target.value)}
+                    placeholder="00000-000"
+                    value={values.cep}
+                  />
+
+                  <RevendedorFormRow>
+                    <RevendedorFormField
+                      error={errors.minCep}
+                      id="minCep"
+                      inputMode="numeric"
+                      label="CEP inicial da região atendida *"
+                      maxLength={9}
+                      name="minCep"
+                      onChange={(event) => setFieldValue("minCep", event.target.value)}
+                      placeholder="00000-000"
+                      value={values.minCep}
+                    />
+                    <RevendedorFormField
+                      error={errors.maxCep}
+                      id="maxCep"
+                      inputMode="numeric"
+                      label="CEP final da região atendida *"
+                      maxLength={9}
+                      name="maxCep"
+                      onChange={(event) => setFieldValue("maxCep", event.target.value)}
+                      placeholder="99999-999"
+                      value={values.maxCep}
+                    />
+                  </RevendedorFormRow>
+
                   <RevendedorFormSelectField
                     label="Como você conheceu a Papelito?"
                     onChange={(value) => setFieldValue("discoveryChannel", value)}
@@ -360,6 +401,18 @@ function RevendedorApplicationPendingSummary({
           <div>
             <dt className="font-black">Cidade / Estado</dt>
             <dd>{[application.city, application.state].filter(Boolean).join(", ") || "-"}</dd>
+          </div>
+          <div>
+            <dt className="font-black">CEP de operação</dt>
+            <dd>{application.cep || "-"}</dd>
+          </div>
+          <div>
+            <dt className="font-black">Faixa atendida</dt>
+            <dd>
+              {application.minCep || application.maxCep
+                ? `${application.minCep || "-"} a ${application.maxCep || "-"}`
+                : "-"}
+            </dd>
           </div>
           <div>
             <dt className="font-black">Origem do contato</dt>

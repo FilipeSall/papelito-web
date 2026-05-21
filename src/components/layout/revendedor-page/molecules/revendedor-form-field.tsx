@@ -5,7 +5,9 @@ type RevendedorFormFieldProps = {
   autoComplete?: string;
   error?: string;
   id: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   label: string;
+  maxLength?: number;
   name: string;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   placeholder: string;
@@ -21,7 +23,9 @@ export function RevendedorFormField({
   autoComplete,
   error,
   id,
+  inputMode,
   label,
+  maxLength,
   name,
   onChange,
   placeholder,
@@ -38,6 +42,8 @@ export function RevendedorFormField({
         autoComplete={autoComplete}
         error={error}
         id={id}
+        inputMode={inputMode}
+        maxLength={maxLength}
         name={name}
         onChange={onChange}
         placeholder={placeholder}

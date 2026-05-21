@@ -21,6 +21,9 @@ const SELLER_APPLICATION_QUERY = `
         instagram
         state
         city
+        cep
+        minCep
+        maxCep
         discoveryChannel
         hasSoldPapelito
       }
@@ -45,6 +48,9 @@ const SUBMIT_SELLER_APPLICATION_MUTATION = `
         instagram
         state
         city
+        cep
+        minCep
+        maxCep
         discoveryChannel
         hasSoldPapelito
       }
@@ -72,6 +78,9 @@ function createEmptyApplication(): RevendedorApplication {
     instagram: "",
     state: "",
     city: "",
+    cep: "",
+    minCep: "",
+    maxCep: "",
     discoveryChannel: "",
     hasSoldPapelito: "",
   };
@@ -101,6 +110,9 @@ function normalizeApplication(payload: SellerApplicationPayload): RevendedorAppl
     instagram: payload.instagram ?? "",
     state: payload.state ?? "",
     city: payload.city ?? "",
+    cep: payload.cep ?? "",
+    minCep: payload.minCep ?? "",
+    maxCep: payload.maxCep ?? "",
     discoveryChannel: payload.discoveryChannel ?? "",
     hasSoldPapelito: payload.hasSoldPapelito ?? "",
   };

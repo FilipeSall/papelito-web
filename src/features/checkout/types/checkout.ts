@@ -24,3 +24,23 @@ export type CepLookupResult = {
   city: string;
   state: string;
 };
+
+export type ShippingQuoteItem = {
+  productId: number;
+  qty: number;
+};
+
+export type ShippingQuoteOption = {
+  service: string;
+  code: string;
+  name: string;
+  price: number;
+  deliveryTime: number | null;
+};
+
+export type ShippingQuoteResult = {
+  originCep: string;
+  destinationCep: string;
+  vendorId: number;
+  options: ShippingQuoteOption[];
+};

@@ -13,6 +13,9 @@ export type RevendedorFormValues = {
   instagram: string;
   city: string;
   state: string;
+  cep: string;
+  minCep: string;
+  maxCep: string;
   discoveryChannel: string;
   hasSoldPapelito: RevendedorSoldOption;
 };

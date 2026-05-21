@@ -6,6 +6,7 @@ import type {
   CheckoutAddressForm,
   PaymentForm,
   PaymentMethod,
+  ShippingQuoteOption,
 } from "../types/checkout";
 
 const INITIAL_ADDRESS_FORM: CheckoutAddressForm = {
@@ -30,10 +31,12 @@ interface CheckoutState {
   addressForm: CheckoutAddressForm;
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
+  selectedShippingQuote: ShippingQuoteOption | null;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
   setPaymentField: (field: keyof PaymentForm, value: string) => void;
+  setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
   resetCheckout: () => void;
 }
 
@@ -43,6 +46,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       addressForm: INITIAL_ADDRESS_FORM,
       paymentMethod: "credit_card",
       paymentForm: INITIAL_PAYMENT_FORM,
+      selectedShippingQuote: null,
       setAddressField: (field, value) =>
         set((state) => ({
           addressForm: {
@@ -65,11 +69,13 @@ export const useCheckoutStore = create<CheckoutState>()(
             [field]: value,
           },
         })),
+      setSelectedShippingQuote: (quote) => set({ selectedShippingQuote: quote }),
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
           paymentMethod: "credit_card",
           paymentForm: INITIAL_PAYMENT_FORM,
+          selectedShippingQuote: null,
         }),
     }),
     {
@@ -82,8 +88,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         addressForm: state.addressForm,
         paymentMethod: state.paymentMethod,
         paymentForm: state.paymentForm,
+        selectedShippingQuote: state.selectedShippingQuote,
       }),
     },
   ),
 );
-

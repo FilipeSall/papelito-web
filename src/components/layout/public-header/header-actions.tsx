@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { NotificationBell } from "@/components/layout/site-header";
 import { useCartSummary } from "@/features/cart";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
@@ -35,6 +36,8 @@ function LoggedInActions({
 
   return (
     <div className="flex h-9 items-center gap-2">
+      <NotificationBell inverted={invertColors} />
+
       <Link aria-label="Carrinho" className={`${iconButtonClass} relative`} href="/carrinho">
         <Image
           alt=""

@@ -31,6 +31,9 @@ export default async function RevendedorRoutePage() {
           instagram: "",
           state: "",
           city: "",
+          cep: "",
+          minCep: "",
+          maxCep: "",
           discoveryChannel: "",
           hasSoldPapelito: "",
         }

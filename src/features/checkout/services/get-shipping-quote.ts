@@ -1,0 +1,114 @@
+import type { ShippingQuoteOption, ShippingQuoteResult } from "../types/checkout";
+
+type ShippingQuoteApiOption = {
+  service?: unknown;
+  code?: unknown;
+  name?: unknown;
+  price?: unknown;
+  delivery_time?: unknown;
+};
+
+type ShippingQuoteApiResponse = {
+  origin_cep?: unknown;
+  destination_cep?: unknown;
+  vendor_id?: unknown;
+  options?: unknown;
+};
+
+export type GetShippingQuoteInput = {
+  vendorId: number;
+  destinationCep: string;
+  items: Array<{ productId: number; qty: number }>;
+};
+
+function getWpRestBase() {
+  return process.env.NEXT_PUBLIC_WP_REST_BASE || "http://localhost:8080/wp-json";
+}
+
+function toNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : Number(value);
+}
+
+function mapOption(option: ShippingQuoteApiOption): ShippingQuoteOption | null {
+  const price = toNumber(option.price);
+
+  if (
+    typeof option.service !== "string" ||
+    typeof option.code !== "string" ||
+    typeof option.name !== "string" ||
+    !Number.isFinite(price)
+  ) {
+    return null;
+  }
+
+  const deliveryTime = toNumber(option.delivery_time);
+
+  return {
+    service: option.service,
+    code: option.code,
+    name: option.name,
+    price,
+    deliveryTime: Number.isFinite(deliveryTime) ? deliveryTime : null,
+  };
+}
+
+function mapResponse(payload: ShippingQuoteApiResponse): ShippingQuoteResult {
+  const options = Array.isArray(payload.options)
+    ? payload.options
+        .map((option) => mapOption(option as ShippingQuoteApiOption))
+        .filter((option): option is ShippingQuoteOption => Boolean(option))
+    : [];
+  const vendorId = toNumber(payload.vendor_id);
+
+  if (
+    typeof payload.origin_cep !== "string" ||
+    typeof payload.destination_cep !== "string" ||
+    !Number.isFinite(vendorId) ||
+    options.length === 0
+  ) {
+    throw new Error("Resposta de frete invalida.");
+  }
+
+  return {
+    originCep: payload.origin_cep,
+    destinationCep: payload.destination_cep,
+    vendorId,
+    options,
+  };
+}
+
+export async function getShippingQuote(
+  input: GetShippingQuoteInput,
+): Promise<ShippingQuoteResult> {
+  const response = await fetch(`${getWpRestBase()}/papelito/v1/shipping/quote`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      vendor_id: input.vendorId,
+      destination_cep: input.destinationCep,
+      items: input.items.map((item) => ({
+        product_id: item.productId,
+        qty: item.qty,
+      })),
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as ShippingQuoteApiResponse | null;
+
+  if (!response.ok) {
+    const message =
+      payload && "message" in payload && typeof payload.message === "string"
+        ? payload.message
+        : "Nao foi possivel cotar o frete.";
+    throw new Error(message);
+  }
+
+  if (!payload) {
+    throw new Error("Nao foi possivel cotar o frete.");
+  }
+
+  return mapResponse(payload);
+}
