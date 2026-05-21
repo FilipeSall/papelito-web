@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
+import { getCoverage } from "./get-coverage";
 import { fetchWpProducts, mapWpProductToCatalogItem } from "./wp-catalog";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -51,6 +52,7 @@ export interface GetProductsCatalogInput {
   minPrice?: number | null;
   maxPrice?: number | null;
   perPage?: number;
+  cep?: string | null;
 }
 
 const TYPE_LABEL: Record<ProductTypeId, string> = {
@@ -159,6 +161,11 @@ function normalizePriceRange(input: { minPrice?: number | null; maxPrice?: numbe
   }
 
   return { minPrice: normalizedMin, maxPrice: normalizedMax };
+}
+
+function normalizeCepForCoverage(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  return digits.length === 8 ? digits : null;
 }
 
 function inferTypeFromName(name: string): Exclude<ProductTypeId, "todos"> {
@@ -294,6 +301,7 @@ async function requestProductsCatalogMockFile() {
 export async function getProductsCatalog(
   input: GetProductsCatalogInput = {},
 ): Promise<ProductsCatalogPayload> {
+  const useMockData = isMockDataEnabled();
   const selectedTypes = normalizeSelectedTypes(input.selectedTypes, input.type);
   const activeCollection = normalizeCollection(input.collection);
   const activeType = selectedTypes.length === 1 ? selectedTypes[0] : "todos";
@@ -302,10 +310,43 @@ export async function getProductsCatalog(
     maxPrice: input.maxPrice,
   });
   const perPage = clamp(input.perPage ?? 9, 1, 60);
+  const coverageCep = normalizeCepForCoverage(input.cep);
 
-  const allItems = isMockDataEnabled()
+  const fetchedItems = useMockData
     ? (await requestProductsCatalogMockFile()).products.map(mapMockProductToCatalogItem)
     : (await fetchWpProducts(120)).map(mapWpProductToCatalogItem);
+  let allItems = fetchedItems;
+  let coverageStatus: ProductsCatalogPayload["coverageStatus"] = "not_requested";
+
+  if (coverageCep && !useMockData && fetchedItems.length > 0) {
+    try {
+      const coverage = await getCoverage(
+        coverageCep,
+        fetchedItems.map((item) => item.id),
+      );
+
+      const coveredItems: ProductsCatalogItem[] = [];
+
+      for (const item of fetchedItems) {
+        const itemCoverage = coverage[item.id];
+
+        if (!itemCoverage?.hasCoverage || !itemCoverage.bestVendor) {
+          continue;
+        }
+
+        coveredItems.push({
+          ...item,
+          bestVendor: itemCoverage.bestVendor,
+        });
+      }
+
+      allItems = coveredItems;
+      coverageStatus = "applied";
+    } catch {
+      allItems = fetchedItems;
+      coverageStatus = "unavailable";
+    }
+  }
 
   const tabs: ProductsCatalogTab[] = [
     { id: "todos", label: TYPE_LABEL.todos, count: allItems.length },
@@ -371,5 +412,7 @@ export async function getProductsCatalog(
     totalPages,
     currentPage,
     perPage,
+    coverageCep,
+    coverageStatus,
   };
 }

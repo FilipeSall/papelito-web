@@ -6,6 +6,7 @@ interface ProductsGridProps {
   /** Lista de produtos para exibir no grid */
   products: ProductGridItem[];
   viewMode: ProductsViewMode;
+  emptyMessage?: string;
 }
 
 /**
@@ -19,12 +20,16 @@ interface ProductsGridProps {
  * <ProductsGrid products={products} />
  * ```
  */
-export function ProductsGrid({ products, viewMode }: ProductsGridProps) {
+export function ProductsGrid({
+  products,
+  viewMode,
+  emptyMessage = "Nenhum produto encontrado.",
+}: ProductsGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-text-muted text-sm">
-          Nenhum produto encontrado.
+          {emptyMessage}
         </p>
       </div>
     );

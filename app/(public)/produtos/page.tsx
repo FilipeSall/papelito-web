@@ -5,6 +5,7 @@ import {
 } from "@/components/layout/products-page";
 import type { ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
+import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   normalizeProductsPerPage,
@@ -106,6 +107,7 @@ function normalizePrice(value: string | undefined) {
  */
 export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
+  const coverageCep = use(getAccountCoverageCepContext()).cep;
 
   const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
   const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
@@ -134,6 +136,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         maxPrice,
         page: currentPage,
         perPage,
+        cep: coverageCep,
       }),
       getSiteImageAssets(),
     ]),
@@ -154,6 +157,8 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         maxPrice={catalog.maxPrice}
         viewMode={viewMode}
         perPage={catalog.perPage}
+        coverageCep={catalog.coverageCep}
+        coverageStatus={catalog.coverageStatus}
       />
     </main>
   );

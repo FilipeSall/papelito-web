@@ -12,6 +12,7 @@ export { ProfileDataForm } from "./profile-data-form";
 export { ProfileDataPageContent } from "./profile-data-page-content";
 export { ProfileAddressBook } from "./profile-address-book";
 export { ProfileAddressesPageContent } from "./profile-addresses-page-content";
+export { AccountCepNotice } from "./account-cep-notice";
 export { AddressCard, type Address } from "./address-card";
 export { AddAddressCard } from "./add-address-card";
 export { AddressList } from "./address-list";

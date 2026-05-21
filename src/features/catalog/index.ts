@@ -10,6 +10,8 @@ export type {
   HomeProductsPayload,
 } from "./types/home-products";
 export type {
+  CatalogBestVendor,
+  CatalogCoverageStatus,
   ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,

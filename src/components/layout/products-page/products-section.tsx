@@ -7,6 +7,7 @@ import { ProductsPerPageSelector } from "./products-per-page-selector";
 import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import type {
+  CatalogCoverageStatus,
   ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
@@ -29,6 +30,8 @@ interface ProductsSectionProps {
   activeType: ProductTypeId;
   viewMode: ProductsViewMode;
   perPage: number;
+  coverageCep?: string | null;
+  coverageStatus?: CatalogCoverageStatus;
 }
 
 /**
@@ -63,11 +66,25 @@ export function ProductsSection({
   activeType,
   viewMode,
   perPage,
+  coverageCep = null,
+  coverageStatus = "not_requested",
 }: ProductsSectionProps) {
+  const showCoverageWarning = coverageStatus === "unavailable";
+  const emptyMessage =
+    coverageStatus === "applied" && coverageCep
+      ? "Em breve atenderemos sua região."
+      : "Nenhum produto encontrado.";
+
   return (
     <section className="bg-white py-8">
       <AddToCartToastHost />
       <div className="max-w-7xl mx-auto px-4 md:px-8">
+        {showCoverageWarning ? (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+            Não foi possível validar a disponibilidade por CEP agora.
+          </div>
+        ) : null}
+
         {/* Filter Tabs */}
         {showCollectionFilters ? (
           <div className="mb-4">
@@ -140,7 +157,11 @@ export function ProductsSection({
 
           {/* Products Grid */}
           <div className="flex-1">
-            <ProductsGrid products={products} viewMode={viewMode} />
+            <ProductsGrid
+              emptyMessage={emptyMessage}
+              products={products}
+              viewMode={viewMode}
+            />
             <ProductsPagination
               basePath={basePath}
               collection={activeCollection}

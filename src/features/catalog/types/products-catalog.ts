@@ -12,6 +12,21 @@ export type ProductCollectionId =
   | "promocoes"
   | "kits";
 
+export interface CatalogBestVendor {
+  vendorId: number;
+  storeName: string;
+  city: string;
+  state: string;
+  distanceKm: number;
+  qty: number;
+  leadTimeDays: number;
+}
+
+export type CatalogCoverageStatus =
+  | "not_requested"
+  | "applied"
+  | "unavailable";
+
 export interface ProductsCatalogItem {
   id: string;
   category: string;
@@ -27,6 +42,7 @@ export interface ProductsCatalogItem {
   isNewArrival: boolean;
   isOnSale: boolean;
   isKit: boolean;
+  bestVendor?: CatalogBestVendor;
 }
 
 export interface ProductsCatalogTab {
@@ -47,4 +63,6 @@ export interface ProductsCatalogPayload {
   totalPages: number;
   currentPage: number;
   perPage: number;
+  coverageCep: string | null;
+  coverageStatus: CatalogCoverageStatus;
 }
