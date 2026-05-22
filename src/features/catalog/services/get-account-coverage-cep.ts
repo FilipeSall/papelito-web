@@ -22,10 +22,7 @@ export async function getAccountCoverageCepContext(): Promise<AccountCoverageCep
   }
 
   const customer = await fetchProfileCustomer(session.accessToken);
-  const cep =
-    normalizeUserCep(customer.shipping.postcode) ??
-    normalizeUserCep(customer.billing.postcode) ??
-    normalizeUserCep(customer.meta.cep);
+  const cep = normalizeUserCep(customer.meta.cep);
 
   return {
     isAuthenticated: true,

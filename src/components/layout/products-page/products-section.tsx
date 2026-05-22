@@ -6,6 +6,7 @@ import { ProductsPagination } from "./products-pagination";
 import { ProductsPerPageSelector } from "./products-per-page-selector";
 import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
+import { CoverageWarningToastHost } from "./coverage-warning-toast-host";
 import type {
   CatalogCoverageStatus,
   ProductCollectionId,
@@ -78,13 +79,8 @@ export function ProductsSection({
   return (
     <section className="bg-white py-8">
       <AddToCartToastHost />
+      <CoverageWarningToastHost shouldShow={showCoverageWarning} />
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        {showCoverageWarning ? (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            Não foi possível validar a disponibilidade por CEP agora.
-          </div>
-        ) : null}
-
         {/* Filter Tabs */}
         {showCollectionFilters ? (
           <div className="mb-4">

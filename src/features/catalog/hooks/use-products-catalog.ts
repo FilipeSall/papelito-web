@@ -15,6 +15,7 @@ const getCachedProductsCatalog = cache(
     maxPrice: number | null,
     perPage: number,
     cep: string | null,
+    activeVendorId: number | null,
   ) =>
     getProductsCatalog({
       page,
@@ -31,6 +32,7 @@ const getCachedProductsCatalog = cache(
       maxPrice,
       perPage,
       cep,
+      activeVendorId,
     }),
 );
 
@@ -52,6 +54,12 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
     typeof input.cep === "string" && input.cep.replace(/\D/g, "").length === 8
       ? input.cep.replace(/\D/g, "")
       : null;
+  const activeVendorId =
+    typeof input.activeVendorId === "number" &&
+    Number.isInteger(input.activeVendorId) &&
+    input.activeVendorId > 0
+      ? input.activeVendorId
+      : null;
 
   return getCachedProductsCatalog(
     page,
@@ -62,5 +70,6 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
     maxPrice,
     perPage,
     cep,
+    activeVendorId,
   );
 }

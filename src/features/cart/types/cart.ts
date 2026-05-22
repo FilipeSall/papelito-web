@@ -5,12 +5,28 @@ export interface CartProductInput {
   image?: string;
   price: number;
   originalPrice?: number;
-  vendorId?: number;
-  vendorName?: string;
 }
 
-export interface CartItem extends CartProductInput {
+export interface CartVendor {
+  vendorId: number;
+  vendorName: string;
+  city?: string;
+  state?: string;
+  distanceKm?: number;
+  leadTimeDays?: number;
+}
+
+export interface ResolvedCartProductInput extends CartProductInput, CartVendor {
+}
+
+export interface CartItem extends ResolvedCartProductInput {
   quantity: number;
+}
+
+export interface CartVendorGroup extends CartVendor {
+  items: CartItem[];
+  subtotal: number;
+  totalItems: number;
 }
 
 export interface CartSummary {
@@ -19,6 +35,7 @@ export interface CartSummary {
   discount: number;
   total: number;
   totalItems: number;
+  vendorGroups: CartVendorGroup[];
   amountToFreeShipping: number;
   hasFreeShipping: boolean;
   couponCode: string | null;

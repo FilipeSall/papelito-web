@@ -1,4 +1,4 @@
-import type { CartItem, CartSummary } from "../types/cart";
+import type { CartItem, CartSummary, CartVendorGroup } from "../types/cart";
 
 export const CART_SHIPPING_THRESHOLD = 99;
 export const CART_SHIPPING_COST = 8.9;
@@ -7,6 +7,35 @@ export const CART_COUPON_PERCENT = 10;
 
 function roundMoney(value: number) {
   return Number(value.toFixed(2));
+}
+
+function getVendorGroups(items: CartItem[]): CartVendorGroup[] {
+  const groups = new Map<number, CartVendorGroup>();
+
+  for (const item of items) {
+    const existing = groups.get(item.vendorId);
+
+    if (existing) {
+      existing.items.push(item);
+      existing.subtotal = roundMoney(existing.subtotal + item.price * item.quantity);
+      existing.totalItems += item.quantity;
+      continue;
+    }
+
+    groups.set(item.vendorId, {
+      vendorId: item.vendorId,
+      vendorName: item.vendorName,
+      city: item.city,
+      state: item.state,
+      distanceKm: item.distanceKm,
+      leadTimeDays: item.leadTimeDays,
+      items: [item],
+      subtotal: roundMoney(item.price * item.quantity),
+      totalItems: item.quantity,
+    });
+  }
+
+  return Array.from(groups.values());
 }
 
 export function getCartSummary(
@@ -49,6 +78,7 @@ export function getCartSummary(
     discount,
     total,
     totalItems,
+    vendorGroups: getVendorGroups(items),
     amountToFreeShipping,
     hasFreeShipping,
     couponCode: couponApplied,

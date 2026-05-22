@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import { ProductDetailMainContent } from "./product-detail-main-content";
 
@@ -6,6 +7,7 @@ interface ProductDetailMainSectionProps {
   /** Produto carregado para a seção principal da PDP. */
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
+  activeVendor?: ActiveVendor | null;
 }
 
 /**
@@ -16,6 +18,7 @@ interface ProductDetailMainSectionProps {
 export function ProductDetailMainSection({
   product,
   initialIsFavorite = false,
+  activeVendor = null,
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -48,6 +51,7 @@ export function ProductDetailMainSection({
           <ProductDetailMainContent
             product={product}
             initialIsFavorite={initialIsFavorite}
+            activeVendor={activeVendor}
           />
         </div>
       </div>

@@ -4,10 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
-import { ADD_TO_CART_EVENT_NAME } from "@/components/ui/add-to-cart-button";
+import {
+  ADD_TO_CART_EVENT_NAME,
+  type AddToCartEventDetail,
+} from "@/components/ui/add-to-cart-button";
+import { ActiveVendorSummary } from "@/components/active-vendor";
 import { FavoriteToggleButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { CartIcon } from "@/components/ui/icons";
-import { useCartStore } from "@/features/cart";
+import { resolveCartVendor, useCartStore, type ResolveCartVendorResult } from "@/features/cart";
+import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import { formatBRL } from "@/lib/format-currency";
 
@@ -15,6 +20,7 @@ interface ProductDetailMainContentProps {
   /** Dados do produto atual para renderização da seção principal. */
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
+  activeVendor?: ActiveVendor | null;
 }
 
 const EMPTY_GALLERY: ProductDetailItem["galleryImages"] = [];
@@ -59,9 +65,12 @@ function ProductRatingStars({ rating }: { rating: number }) {
 export function ProductDetailMainContent({
   product,
   initialIsFavorite = false,
+  activeVendor = null,
 }: ProductDetailMainContentProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const applyVendorToCart = useCartStore((state) => state.applyVendorToCart);
+  const cartItems = useCartStore((state) => state.items);
   const { status } = useSession();
   const galleryImages = product.galleryImages ?? EMPTY_GALLERY;
 
@@ -81,6 +90,7 @@ export function ProductDetailMainContent({
 
   const [selectedThumbId, setSelectedThumbId] = useState<string>(initialSelectedThumbId);
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const selectedThumb = useMemo(
     () => thumbnails.find((thumb) => thumb.id === selectedThumbId) ?? thumbnails[0],
@@ -89,7 +99,34 @@ export function ProductDetailMainContent({
   const relatedProducts = useMemo(() => product.relatedThumbs.slice(0, 4), [product.relatedThumbs]);
   const shouldShowThumbnails = thumbnails.length > 1;
 
-  function addCurrentProductToCart() {
+  function dispatchCartEvent(detail: AddToCartEventDetail) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent<AddToCartEventDetail>(ADD_TO_CART_EVENT_NAME, {
+        detail,
+      }),
+    );
+  }
+
+  function dispatchResolveFailure(result: Exclude<ResolveCartVendorResult, { status: "ok" }>) {
+    dispatchCartEvent({
+      title:
+        result.status === "missing_cep"
+          ? "CEP necessario"
+          : result.status === "vendor_conflict"
+            ? "Vendor indisponivel"
+            : "Disponibilidade indisponivel",
+      message: result.message,
+      tone: result.status === "vendor_conflict" ? "warning" : "error",
+      href: result.href,
+      actionLabel: result.status === "missing_cep" ? "Cadastrar CEP" : undefined,
+    });
+  }
+
+  async function addCurrentProductToCart() {
     if (status === "loading") return;
 
     if (status !== "authenticated") {
@@ -97,35 +134,64 @@ export function ProductDetailMainContent({
       return false;
     }
 
-    addItem(
-      {
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        image: product.image,
-        price: product.price,
-        originalPrice: product.originalPrice,
-      },
-      quantity,
-    );
-
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent(ADD_TO_CART_EVENT_NAME, {
-          detail: { productName: product.name },
-        }),
-      );
+    if (isAddingToCart) {
+      return false;
     }
 
-    return true;
+    setIsAddingToCart(true);
+
+    try {
+      const result = await resolveCartVendor({
+        product: {
+          id: product.id,
+          quantity,
+        },
+        currentItems: cartItems,
+      });
+
+      if (result.status !== "ok") {
+        dispatchResolveFailure(result);
+        return false;
+      }
+
+      applyVendorToCart(result.vendor);
+      addItem(
+        {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          image: product.image,
+          price: product.price,
+          originalPrice: product.originalPrice,
+          ...result.vendor,
+        },
+        quantity,
+      );
+
+      dispatchCartEvent({
+        productName: product.name,
+        tone: "success",
+      });
+
+      return true;
+    } catch {
+      dispatchCartEvent({
+        title: "Disponibilidade indisponivel",
+        message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+        tone: "error",
+      });
+      return false;
+    } finally {
+      setIsAddingToCart(false);
+    }
   }
 
   function handleAddToCart() {
-    addCurrentProductToCart();
+    void addCurrentProductToCart();
   }
 
-  function handleBuyNow() {
-    const added = addCurrentProductToCart();
+  async function handleBuyNow() {
+    const added = await addCurrentProductToCart();
 
     if (!added) {
       return;
@@ -249,10 +315,11 @@ export function ProductDetailMainContent({
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90"
+              disabled={isAddingToCart}
+              className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CartIcon className="size-4.5" />
-              ADICIONAR AO CARRINHO
+              {isAddingToCart ? "VALIDANDO" : "ADICIONAR AO CARRINHO"}
             </button>
             <FavoriteToggleButton
               productId={product.id}
@@ -299,10 +366,20 @@ export function ProductDetailMainContent({
           <button
             type="button"
             onClick={handleBuyNow}
-            className="mt-4 h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90"
+            disabled={isAddingToCart}
+            className="mt-4 h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            COMPRAR AGORA
+            {isAddingToCart ? "VALIDANDO" : "COMPRAR AGORA"}
           </button>
+
+          {activeVendor ? (
+            <div className="mt-4">
+              <ActiveVendorSummary
+                vendor={activeVendor}
+                changeHref={`/produtos/${product.id}/escolher-vendor`}
+              />
+            </div>
+          ) : null}
 
           <div className="mt-6 grid grid-cols-3 rounded-2xl bg-[#F9FAFB] px-4 py-4 text-center">
             <div className="flex flex-col items-center">

@@ -53,6 +53,7 @@ export interface GetProductsCatalogInput {
   maxPrice?: number | null;
   perPage?: number;
   cep?: string | null;
+  activeVendorId?: number | null;
 }
 
 const TYPE_LABEL: Record<ProductTypeId, string> = {
@@ -323,6 +324,7 @@ export async function getProductsCatalog(
       const coverage = await getCoverage(
         coverageCep,
         fetchedItems.map((item) => item.id),
+        input.activeVendorId ?? null,
       );
 
       const coveredItems: ProductsCatalogItem[] = [];

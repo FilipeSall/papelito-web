@@ -2,6 +2,7 @@ import { use } from "react";
 import { ProductsHeroBanner, ProductsSection } from "@/components/layout/products-page";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
+import { getActiveVendor } from "@/features/active-vendor/server";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
@@ -112,6 +113,8 @@ export function ProductsDiscoveryPage({
 }: ProductsDiscoveryPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const coverageCep = use(getAccountCoverageCepContext()).cep;
+  const activeVendorResult = use(getActiveVendor());
+  const activeVendorId = activeVendorResult.ok ? activeVendorResult.vendor.vendorId : null;
 
   const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
   const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
@@ -147,6 +150,7 @@ export function ProductsDiscoveryPage({
         page: currentPage,
         perPage,
         cep: coverageCep,
+        activeVendorId,
       }),
       getSiteImageAssets(),
     ]),

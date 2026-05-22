@@ -1,13 +1,18 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { CartItem, CartProductInput } from "../types/cart";
+import type {
+  CartItem,
+  CartVendor,
+  ResolvedCartProductInput,
+} from "../types/cart";
 import { CART_COUPON_CODE } from "../utils/get-cart-summary";
 import { normalizeProductImage } from "../utils/normalize-product-image";
 
 interface CartState {
   items: CartItem[];
   couponCode: string | null;
-  addItem: (product: CartProductInput, quantity?: number) => void;
+  addItem: (product: ResolvedCartProductInput, quantity?: number) => void;
+  applyVendorToCart: (vendor: CartVendor) => void;
   decreaseItem: (productId: string) => void;
   increaseItem: (productId: string) => void;
   setItemQuantity: (productId: string, quantity: number) => void;
@@ -19,7 +24,7 @@ interface CartState {
 
 function upsertItem(
   items: CartItem[],
-  product: CartProductInput,
+  product: ResolvedCartProductInput,
   quantity: number,
 ): CartItem[] {
   const safeQuantity = Math.max(1, Math.floor(quantity));
@@ -40,6 +45,86 @@ function normalizeCoupon(code: string) {
   return code.trim().toUpperCase();
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizePersistedItem(value: unknown): CartItem | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = typeof value.id === "string" ? value.id : "";
+  const name = typeof value.name === "string" ? value.name : "";
+  const price = typeof value.price === "number" ? value.price : Number(value.price);
+  const quantity =
+    typeof value.quantity === "number" ? value.quantity : Number(value.quantity);
+  const vendorId =
+    typeof value.vendorId === "number" ? value.vendorId : Number(value.vendorId);
+  const vendorName =
+    typeof value.vendorName === "string" ? value.vendorName.trim() : "";
+
+  if (
+    !id ||
+    !name ||
+    !Number.isFinite(price) ||
+    !Number.isFinite(quantity) ||
+    quantity <= 0 ||
+    !Number.isInteger(vendorId) ||
+    vendorId <= 0 ||
+    !vendorName
+  ) {
+    return null;
+  }
+
+  const originalPrice =
+    typeof value.originalPrice === "number"
+      ? value.originalPrice
+      : value.originalPrice === undefined
+        ? undefined
+        : Number(value.originalPrice);
+
+  return {
+    id,
+    name,
+    category: typeof value.category === "string" ? value.category : undefined,
+    image:
+      typeof value.image === "string"
+        ? normalizeProductImage(value.image, name)
+        : undefined,
+    price,
+    originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
+    quantity: Math.max(1, Math.floor(quantity)),
+    vendorId,
+    vendorName,
+    city: typeof value.city === "string" ? value.city : undefined,
+    state: typeof value.state === "string" ? value.state : undefined,
+    distanceKm:
+      typeof value.distanceKm === "number" && Number.isFinite(value.distanceKm)
+        ? value.distanceKm
+        : undefined,
+    leadTimeDays:
+      typeof value.leadTimeDays === "number" && Number.isFinite(value.leadTimeDays)
+        ? value.leadTimeDays
+        : undefined,
+  };
+}
+
+function normalizePersistedState(value: unknown): Partial<CartState> {
+  if (!isRecord(value)) {
+    return { items: [], couponCode: null };
+  }
+
+  const items = Array.isArray(value.items)
+    ? value.items
+        .map(normalizePersistedItem)
+        .filter((item): item is CartItem => item !== null)
+    : [];
+  const couponCode = typeof value.couponCode === "string" ? value.couponCode : null;
+
+  return { items, couponCode };
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
@@ -53,6 +138,14 @@ export const useCartStore = create<CartState>()(
 
         set((state) => ({
           items: upsertItem(state.items, normalizedProduct, quantity),
+        }));
+      },
+      applyVendorToCart: (vendor) => {
+        set((state) => ({
+          items: state.items.map((item) => ({
+            ...item,
+            ...vendor,
+          })),
         }));
       },
       decreaseItem: (productId) => {
@@ -112,10 +205,12 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "papelito-cart-store",
+      version: 2,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
           : undefined,
+      migrate: (persistedState) => normalizePersistedState(persistedState),
       partialize: (state) => ({
         items: state.items,
         couponCode: state.couponCode,

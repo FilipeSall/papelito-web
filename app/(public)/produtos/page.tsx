@@ -5,6 +5,7 @@ import {
 } from "@/components/layout/products-page";
 import type { ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
+import { getActiveVendor } from "@/features/active-vendor/server";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
@@ -108,6 +109,8 @@ function normalizePrice(value: string | undefined) {
 export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const coverageCep = use(getAccountCoverageCepContext()).cep;
+  const activeVendorResult = use(getActiveVendor());
+  const activeVendorId = activeVendorResult.ok ? activeVendorResult.vendor.vendorId : null;
 
   const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
   const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
@@ -137,6 +140,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         page: currentPage,
         perPage,
         cep: coverageCep,
+        activeVendorId,
       }),
       getSiteImageAssets(),
     ]),

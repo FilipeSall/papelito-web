@@ -63,6 +63,7 @@ function mapCoverage(item: WpProductCoverage): ProductCoverage {
 export async function getCoverage(
   cep: string,
   productIds: string[],
+  activeVendorId?: number | null,
 ): Promise<ProductsCoverageMap> {
   const numericProductIds = productIds
     .map((id) => Number(id))
@@ -76,6 +77,10 @@ export async function getCoverage(
     cep,
     product_ids: Array.from(new Set(numericProductIds)).join(","),
   });
+
+  if (activeVendorId && Number.isInteger(activeVendorId) && activeVendorId > 0) {
+    params.set("vendor_id", String(activeVendorId));
+  }
 
   const result = await wpRest<WpProductsCoverageResponse>(
     `/papelito/v1/coverage/products?${params.toString()}`,

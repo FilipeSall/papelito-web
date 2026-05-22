@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ADD_TO_CART_EVENT_NAME } from "@/components/ui/add-to-cart-button";
+import {
+  ADD_TO_CART_EVENT_NAME,
+  type AddToCartEventDetail,
+} from "@/components/ui/add-to-cart-button";
 import { AddToCartToast } from "./add-to-cart-toast";
 
-interface AddToCartEventDetail {
-  productName?: string;
-}
-
 export function AddToCartToastHost() {
-  const [toastProductName, setToastProductName] = useState<string | null>(null);
+  const [toastDetail, setToastDetail] = useState<AddToCartEventDetail | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -18,10 +17,10 @@ export function AddToCartToastHost() {
   useEffect(() => {
     function handleAddToCart(event: Event) {
       const customEvent = event as CustomEvent<AddToCartEventDetail>;
-      const productName = customEvent.detail?.productName ?? "Produto";
+      const detail = customEvent.detail ?? {};
 
       setToastVisible(false);
-      setToastProductName(productName);
+      setToastDetail(detail);
 
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
@@ -42,7 +41,7 @@ export function AddToCartToastHost() {
       }, 1800);
 
       removeTimeoutRef.current = setTimeout(() => {
-        setToastProductName(null);
+        setToastDetail(null);
       }, 2050);
     }
 
@@ -65,9 +64,9 @@ export function AddToCartToastHost() {
     };
   }, []);
 
-  if (!toastProductName) {
+  if (!toastDetail) {
     return null;
   }
 
-  return <AddToCartToast productName={toastProductName} visible={toastVisible} />;
+  return <AddToCartToast detail={toastDetail} visible={toastVisible} />;
 }
