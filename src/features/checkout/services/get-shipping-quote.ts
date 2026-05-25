@@ -9,10 +9,18 @@ type ShippingQuoteApiOption = {
 };
 
 type ShippingQuoteApiResponse = {
+  code?: unknown;
+  message?: unknown;
+  data?: unknown;
   origin_cep?: unknown;
   destination_cep?: unknown;
   vendor_id?: unknown;
   options?: unknown;
+};
+
+type ShippingQuoteApiErrorData = {
+  correios_status?: unknown;
+  correios_message?: unknown;
 };
 
 export type GetShippingQuoteInput = {
@@ -77,6 +85,35 @@ function mapResponse(payload: ShippingQuoteApiResponse): ShippingQuoteResult {
   };
 }
 
+function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
+  if (!payload || typeof payload.message !== "string") {
+    return "Nao foi possivel cotar o frete.";
+  }
+
+  const data =
+    payload.data && typeof payload.data === "object"
+      ? (payload.data as ShippingQuoteApiErrorData)
+      : null;
+  const correiosStatus =
+    data && typeof data.correios_status === "number"
+      ? data.correios_status
+      : typeof data?.correios_status === "string"
+        ? Number(data.correios_status)
+        : null;
+  const correiosMessage =
+    data && typeof data.correios_message === "string"
+      ? data.correios_message.trim()
+      : "";
+
+  if (correiosMessage) {
+    return Number.isFinite(correiosStatus)
+      ? `${payload.message} (${correiosStatus}: ${correiosMessage})`
+      : `${payload.message} (${correiosMessage})`;
+  }
+
+  return payload.message;
+}
+
 export async function getShippingQuote(
   input: GetShippingQuoteInput,
 ): Promise<ShippingQuoteResult> {
@@ -99,11 +136,7 @@ export async function getShippingQuote(
   const payload = (await response.json().catch(() => null)) as ShippingQuoteApiResponse | null;
 
   if (!response.ok) {
-    const message =
-      payload && "message" in payload && typeof payload.message === "string"
-        ? payload.message
-        : "Nao foi possivel cotar o frete.";
-    throw new Error(message);
+    throw new Error(getApiErrorMessage(payload));
   }
 
   if (!payload) {

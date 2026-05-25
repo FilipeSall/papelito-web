@@ -20,6 +20,7 @@ export function CheckoutReviewStepContent() {
   const addressForm = useCheckoutStore((state) => state.addressForm);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
+  const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
 
   if (items.length === 0) return <CheckoutEmptyCart />;
 
@@ -41,6 +42,35 @@ export function CheckoutReviewStepContent() {
       : true;
 
   const canFinishOrder = isAddressValid && isPaymentValid;
+  const selectedShippingQuote = shippingQuote.selectedOption;
+  const currentShippingQuote = shippingQuote.quote;
+  const isShippingValid =
+    Boolean(selectedShippingQuote) &&
+    Boolean(currentShippingQuote) &&
+    currentShippingQuote?.destinationCep === addressForm.zipCode.replace(/\D/g, "");
+  const placeOrderItems = items
+    .map((item) => {
+      const productId = Number.parseInt(item.id, 10);
+
+      if (!Number.isInteger(productId) || productId <= 0) {
+        return null;
+      }
+
+      return {
+        productId,
+        qty: item.quantity,
+        vendorId: item.vendorId,
+        vendorName: item.vendorName,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const hasInvalidCartItems = placeOrderItems.length !== items.length;
+  const isCheckoutBlocked = true;
+  const canSubmitOrder =
+    canFinishOrder &&
+    isShippingValid &&
+    !hasInvalidCartItems &&
+    !isCheckoutBlocked;
 
   const cartLines = items.map((item) => ({
     id: item.id,
@@ -138,16 +168,56 @@ export function CheckoutReviewStepContent() {
               </ul>
             </section>
 
+            <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
+              <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                Frete
+              </h3>
+
+              {selectedShippingQuote ? (
+                <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
+                  <p className="font-medium text-brand-dark">{selectedShippingQuote.service}</p>
+                  <p>{formatBRL(selectedShippingQuote.price)}</p>
+                  <p>
+                    {selectedShippingQuote.deliveryTime
+                      ? `${selectedShippingQuote.deliveryTime} dias uteis`
+                      : "Prazo sob consulta"}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm tracking-[-0.1504px] text-[#B42318]">
+                  Selecione uma opcao de frete valida antes de finalizar.
+                </p>
+              )}
+            </section>
+
             {!canFinishOrder ? (
               <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
                 Complete os dados de endereco e pagamento para finalizar o pedido.
               </p>
             ) : null}
 
+            {canFinishOrder && !isShippingValid ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                Revise a cotacao de frete antes de concluir o pedido.
+              </p>
+            ) : null}
+
+            {hasInvalidCartItems ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                Seu carrinho contem um item invalido para fechamento do pedido.
+              </p>
+            ) : null}
+
+            {canFinishOrder && isShippingValid && !hasInvalidCartItems ? (
+              <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
+                Checkout temporariamente bloqueado ate a integracao headless com o Pagar.me.
+              </p>
+            ) : null}
+
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canFinishOrder}
+              disabled={!canSubmitOrder}
             >
               Finalizar pedido
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />

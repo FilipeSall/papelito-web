@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/auth";
-import { deleteCoupon } from "@/features/coupons/services/delete-coupon";
+import { deleteCoupon, DeleteCouponError } from "@/features/coupons/services/delete-coupon";
 import { getAdminCoupon } from "@/features/coupons/services/get-admin-coupon";
 import { updateCoupon } from "@/features/coupons/services/update-coupon";
 import type { CouponInput } from "@/features/coupons/types/coupon";
@@ -99,7 +99,16 @@ export async function DELETE(
     revalidateTag("admin-coupons", "max");
     return NextResponse.json({ deleted: true, id });
   } catch (error) {
+    if (error instanceof DeleteCouponError) {
+      console.error("[admin/coupons:DELETE]", { id, code: error.code, status: error.status, message: error.message });
+      const isMissing = error.status === 404 || error.code === "papelito_coupon_not_found";
+      return NextResponse.json(
+        { message: error.message, code: error.code },
+        { status: isMissing ? 404 : error.status },
+      );
+    }
     const message = error instanceof Error ? error.message : "Nao foi possivel remover o cupom.";
+    console.error("[admin/coupons:DELETE]", { id, message });
     return NextResponse.json({ message }, { status: 500 });
   }
 }

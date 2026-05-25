@@ -114,7 +114,7 @@ export function ProductSearchPicker({
             Nenhum produto publicado encontrado para o filtro atual.
           </p>
         ) : (
-          <ul className="max-h-[420px] overflow-y-auto">
+          <ul className="max-h-105 overflow-y-auto">
             {candidates.map((product) => {
               const image = product.images[0]?.src ?? "";
               const basePrice = toMoney(product.regularPrice) || toMoney(product.price);
@@ -141,10 +141,10 @@ export function ProductSearchPicker({
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-[12px] font-semibold leading-4 tracking-[0.02em] text-[#1e1c10]">
+                      <p className="truncate text-[12px] font-semibold leading-4 -tracking-tight text-[#1e1c10]">
                         {product.name}
                       </p>
-                      <p className="truncate text-[13px] leading-[18px] text-[#4b4731]">
+                      <p className="truncate text-[13px] leading-4.5 text-[#4b4731]">
                         SKU: {product.sku || "—"}
                         {basePrice > 0 ? ` • ${formatBRL(basePrice)}` : ""}
                         {product.categories[0]?.name ? ` • ${product.categories[0].name}` : ""}

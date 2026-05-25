@@ -10,6 +10,24 @@ import type {
   CouponRole,
   CouponStatus,
 } from "@/features/coupons/types/coupon";
+import type { SelectOption } from "@/types/admin-products-manager";
+
+import { AdminSelectField } from "../products/components/admin-select-field";
+
+const STATUS_OPTIONS: readonly SelectOption[] = [
+  { label: "Ativo (publish)", value: "publish" },
+  { label: "Rascunho (draft)", value: "draft" },
+];
+
+const DISCOUNT_TYPE_OPTIONS: readonly SelectOption[] = [
+  { label: "Percentual", value: "percent" },
+  { label: "Valor fixo", value: "fixed_cart" },
+];
+
+const ROLE_OPTIONS: readonly SelectOption[] = [
+  { label: "Apenas consumidor final (customer)", value: "customer" },
+  { label: "Qualquer usuario logado", value: "any" },
+];
 
 type CouponFormModalProps = {
   coupon: Coupon | null;
@@ -271,33 +289,21 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
               />
             </label>
 
-            <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Status
-              </span>
-              <select
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                value={form.status}
-                onChange={(event) => update("status", event.target.value as CouponStatus)}
-              >
-                <option value="publish">Ativo (publish)</option>
-                <option value="draft">Rascunho (draft)</option>
-              </select>
-            </label>
+            <AdminSelectField
+              label="Status"
+              onChange={(value) => update("status", value as CouponStatus)}
+              options={STATUS_OPTIONS}
+              placeholder="Selecione"
+              value={form.status}
+            />
 
-            <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Tipo de desconto
-              </span>
-              <select
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                value={form.discountType}
-                onChange={(event) => update("discountType", event.target.value as CouponDiscountType)}
-              >
-                <option value="percent">Percentual</option>
-                <option value="fixed_cart">Valor fixo</option>
-              </select>
-            </label>
+            <AdminSelectField
+              label="Tipo de desconto"
+              onChange={(value) => update("discountType", value as CouponDiscountType)}
+              options={DISCOUNT_TYPE_OPTIONS}
+              placeholder="Selecione"
+              value={form.discountType}
+            />
 
             <label className="block text-sm">
               <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
@@ -366,19 +372,15 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
               />
             </label>
 
-            <label className="block text-sm md:col-span-2">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Quem pode usar
-              </span>
-              <select
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
+            <div className="md:col-span-2">
+              <AdminSelectField
+                label="Quem pode usar"
+                onChange={(value) => update("role", value as CouponRole)}
+                options={ROLE_OPTIONS}
+                placeholder="Selecione"
                 value={form.role}
-                onChange={(event) => update("role", event.target.value as CouponRole)}
-              >
-                <option value="customer">Apenas consumidor final (customer)</option>
-                <option value="any">Qualquer usuario logado</option>
-              </select>
-            </label>
+              />
+            </div>
           </div>
 
           <fieldset className="rounded-xl border border-[#cec7aa] bg-[#fff9ea] p-4">

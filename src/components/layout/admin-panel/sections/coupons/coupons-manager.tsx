@@ -1,12 +1,13 @@
 "use client";
 
-import { BadgePercent, Pencil, Plus, Trash2 } from "lucide-react";
+import { BadgePercent, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState, useTransition } from "react";
 
 import type { Coupon, CouponInput, CouponListSnapshot } from "@/features/coupons/types/coupon";
 import { formatBRL } from "@/lib/format-currency";
 
 import { Panel } from "../../primitives";
+import { CouponDeleteModal } from "./coupon-delete-modal";
 import { CouponFormModal } from "./coupon-form-modal";
 
 type CouponsManagerProps = {
@@ -54,6 +55,9 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
   const [issues] = useState<string[]>(initialIssues);
   const [modalCoupon, setModalCoupon] = useState<Coupon | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -104,17 +108,49 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
     }
   }
 
-  async function handleDelete(coupon: Coupon) {
-    if (!window.confirm(`Remover o cupom ${coupon.code}?`)) return;
+  function openDelete(coupon: Coupon) {
+    setDeleteError(null);
+    setDeleteTarget(coupon);
+  }
 
-    const response = await fetch(`/api/admin/coupons/${coupon.id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}) as { message?: string });
-      setToast({ kind: "error", message: body?.message || "Falha ao remover cupom." });
-      return;
+  function closeDelete() {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDeleteError(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/admin/coupons/${targetId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok || response.status === 404) {
+        setCoupons((prev) => prev.filter((c) => c.id !== targetId));
+        setToast({
+          kind: "success",
+          message:
+            response.status === 404
+              ? "Cupom ja havia sido removido. Lista atualizada."
+              : "Cupom removido.",
+        });
+        setDeleteTarget(null);
+        startTransition(refresh);
+        return;
+      }
+
+      const body = (await response.json().catch(() => ({}))) as { message?: string };
+      setDeleteError(body?.message || "Falha ao remover cupom.");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Erro inesperado.");
+    } finally {
+      setDeleting(false);
     }
-    setToast({ kind: "success", message: "Cupom removido." });
-    startTransition(refresh);
   }
 
   return (
@@ -202,10 +238,15 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
                         <button
                           type="button"
                           aria-label={`Excluir ${coupon.code}`}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#b91c1c] transition hover:bg-[#fee2e2]"
-                          onClick={() => handleDelete(coupon)}
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#b91c1c] transition hover:bg-[#fee2e2] disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={deleting && deleteTarget?.id === coupon.id}
+                          onClick={() => openDelete(coupon)}
                         >
-                          <Trash2 className="h-4 w-4" strokeWidth={2} />
+                          {deleting && deleteTarget?.id === coupon.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                          ) : (
+                            <Trash2 className="h-4 w-4" strokeWidth={2} />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -250,6 +291,16 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
           coupon={modalCoupon}
           onClose={() => setModalOpen(false)}
           onSubmit={handleSubmit}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <CouponDeleteModal
+          coupon={deleteTarget}
+          deleting={deleting}
+          errorMessage={deleteError}
+          onCancel={closeDelete}
+          onConfirm={confirmDelete}
         />
       ) : null}
     </>

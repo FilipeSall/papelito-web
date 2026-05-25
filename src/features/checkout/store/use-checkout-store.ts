@@ -3,9 +3,11 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
+  CheckoutShippingQuoteState,
   CheckoutAddressForm,
   PaymentForm,
   PaymentMethod,
+  ShippingQuoteResult,
   ShippingQuoteOption,
 } from "../types/checkout";
 
@@ -31,14 +33,21 @@ interface CheckoutState {
   addressForm: CheckoutAddressForm;
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
-  selectedShippingQuote: ShippingQuoteOption | null;
+  shippingQuote: CheckoutShippingQuoteState;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
   setPaymentField: (field: keyof PaymentForm, value: string) => void;
+  setShippingQuote: (quote: ShippingQuoteResult | null) => void;
   setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
+  clearShippingQuote: () => void;
   resetCheckout: () => void;
 }
+
+const INITIAL_SHIPPING_QUOTE: CheckoutShippingQuoteState = {
+  quote: null,
+  selectedOption: null,
+};
 
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
@@ -46,7 +55,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       addressForm: INITIAL_ADDRESS_FORM,
       paymentMethod: "credit_card",
       paymentForm: INITIAL_PAYMENT_FORM,
-      selectedShippingQuote: null,
+      shippingQuote: INITIAL_SHIPPING_QUOTE,
       setAddressField: (field, value) =>
         set((state) => ({
           addressForm: {
@@ -69,26 +78,65 @@ export const useCheckoutStore = create<CheckoutState>()(
             [field]: value,
           },
         })),
-      setSelectedShippingQuote: (quote) => set({ selectedShippingQuote: quote }),
+      setShippingQuote: (quote) =>
+        set((state) => ({
+          shippingQuote: {
+            quote,
+            selectedOption: quote
+              ? state.shippingQuote.selectedOption
+              : null,
+          },
+        })),
+      setSelectedShippingQuote: (quote) =>
+        set((state) => ({
+          shippingQuote: {
+            quote: state.shippingQuote.quote,
+            selectedOption: quote,
+          },
+        })),
+      clearShippingQuote: () => set({ shippingQuote: INITIAL_SHIPPING_QUOTE }),
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
           paymentMethod: "credit_card",
           paymentForm: INITIAL_PAYMENT_FORM,
-          selectedShippingQuote: null,
+          shippingQuote: INITIAL_SHIPPING_QUOTE,
         }),
     }),
     {
       name: "papelito-checkout-store",
+      version: 2,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
           : undefined,
+      migrate: (persistedState) => {
+        if (!persistedState || typeof persistedState !== "object") {
+          return persistedState;
+        }
+
+        const state = persistedState as {
+          selectedShippingQuote?: ShippingQuoteOption | null;
+          shippingQuote?: CheckoutShippingQuoteState;
+        };
+
+        if (state.shippingQuote) {
+          return state;
+        }
+
+        return {
+          ...state,
+          shippingQuote: {
+            quote: null,
+            selectedOption: state.selectedShippingQuote ?? null,
+          },
+        };
+      },
       partialize: (state) => ({
         addressForm: state.addressForm,
         paymentMethod: state.paymentMethod,
         paymentForm: state.paymentForm,
-        selectedShippingQuote: state.selectedShippingQuote,
+        shippingQuote: state.shippingQuote,
       }),
     },
   ),

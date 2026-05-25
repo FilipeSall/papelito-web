@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ArrowRightIcon } from "@/components/ui/icons";
@@ -36,8 +36,13 @@ function resolveCartVendorId(items: ReturnType<typeof useCartStore.getState>["it
 export function CheckoutAddressStepContent() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const selectedShippingQuote = useCheckoutStore((state) => state.selectedShippingQuote);
+  const shippingQuoteState = useCheckoutStore((state) => state.shippingQuote);
+  const selectedShippingQuote = shippingQuoteState.selectedOption;
+  const currentShippingQuote = shippingQuoteState.quote;
+  const setShippingQuote = useCheckoutStore((state) => state.setShippingQuote);
   const setSelectedShippingQuote = useCheckoutStore((state) => state.setSelectedShippingQuote);
+  const clearShippingQuote = useCheckoutStore((state) => state.clearShippingQuote);
+  const previousSelectedShippingCodeRef = useRef<string | null>(null);
 
   const {
     form,
@@ -78,6 +83,18 @@ export function CheckoutAddressStepContent() {
     shouldQuoteShipping && vendorId
       ? ["shippingQuote", vendorId, destinationCep, quoteItemsKey]
       : null;
+  const shippingQuoteRequestKey = shippingQuoteKey ? shippingQuoteKey.join("|") : null;
+
+  useEffect(() => {
+    if (selectedShippingQuote?.code) {
+      previousSelectedShippingCodeRef.current = selectedShippingQuote.code;
+    }
+  }, [selectedShippingQuote?.code]);
+
+  useEffect(() => {
+    clearShippingQuote();
+  }, [clearShippingQuote, shippingQuoteRequestKey]);
+
   const shippingQuote = useSWR(
     shippingQuoteKey,
     ([, currentVendorId, currentDestinationCep]) =>
@@ -87,24 +104,34 @@ export function CheckoutAddressStepContent() {
         items: quoteItems,
       }),
     {
-      onError: () => setSelectedShippingQuote(null),
+      onError: () => clearShippingQuote(),
       onSuccess: (result) => {
-        if (!selectedShippingQuote) {
+        setShippingQuote(result);
+
+        const preferredCode = previousSelectedShippingCodeRef.current;
+
+        if (!preferredCode) {
+          setSelectedShippingQuote(null);
           return;
         }
 
-        const hasSelectedOption = result.options.some(
-          (option) => option.code === selectedShippingQuote.code,
+        const matchedOption = result.options.find(
+          (option) => option.code === preferredCode,
         );
 
-        if (!hasSelectedOption) {
+        if (!matchedOption) {
           setSelectedShippingQuote(null);
+          previousSelectedShippingCodeRef.current = null;
+          return;
         }
+
+        previousSelectedShippingCodeRef.current = matchedOption.code;
+        setSelectedShippingQuote(matchedOption);
       },
       revalidateOnFocus: false,
     },
   );
-  const shippingOptions = shippingQuote.data?.options ?? [];
+  const shippingOptions = currentShippingQuote?.options ?? [];
   const invalidProductIdsForShipping =
     vendorId && destinationCep.length === 8 && quoteItems.length !== items.length;
   const shippingStatus: ShippingStatus = invalidProductIdsForShipping
@@ -113,7 +140,7 @@ export function CheckoutAddressStepContent() {
       ? "loading"
       : shippingQuote.error
         ? "error"
-        : shippingOptions.length > 0
+      : shippingOptions.length > 0
           ? "success"
           : "idle";
   const shippingError =
@@ -231,7 +258,10 @@ export function CheckoutAddressStepContent() {
                             ? "border-brand-dark bg-white shadow-sm"
                             : "border-[#E5E7EB] bg-white/70 hover:border-brand-dark/30"
                         }`}
-                        onClick={() => setSelectedShippingQuote(option)}
+                        onClick={() => {
+                          previousSelectedShippingCodeRef.current = option.code;
+                          setSelectedShippingQuote(option);
+                        }}
                       >
                         <span>
                           <span className="block text-sm font-black text-brand-dark">
