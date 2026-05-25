@@ -9,13 +9,25 @@ function isAdminPath(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
+function isSellerBlockedPath(pathname: string) {
+  return pathname === "/carrinho" || pathname === "/checkout" || pathname.startsWith("/checkout/");
+}
+
 export default withAuth(
   function proxy(request) {
+    const role = normalizeRole(request.nextauth.token?.role);
+
+    if (role === "seller" && isSellerBlockedPath(request.nextUrl.pathname)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/perfil";
+      redirectUrl.search = "";
+
+      return NextResponse.redirect(redirectUrl);
+    }
+
     if (!isAdminPath(request.nextUrl.pathname)) {
       return NextResponse.next();
     }
-
-    const role = normalizeRole(request.nextauth.token?.role);
 
     if (role === "administrator") {
       return NextResponse.next();
@@ -38,5 +50,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/perfil/:path*", "/checkout/:path*", "/admin/:path*"],
+  matcher: ["/perfil/:path*", "/carrinho", "/checkout", "/checkout/:path*", "/admin/:path*"],
 };

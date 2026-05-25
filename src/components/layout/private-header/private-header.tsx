@@ -9,6 +9,7 @@ import { PrivateHeaderLogo } from "./logo";
 import { PrivateHeaderLogoutButton } from "./logout-button";
 import { PrivateHeaderMobileMenu } from "./mobile-menu";
 import { PrivateHeaderNav } from "./nav";
+import { SellerPurchaseGuard } from "@/components/layout/seller-purchase-guard";
 import { NotificationBell } from "@/components/layout/site-header";
 import { useCartStore } from "@/features/cart";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -36,6 +37,7 @@ export function PrivateHeader() {
 
   return (
     <header className="w-full border-b border-white/10 bg-brand-dark">
+      <SellerPurchaseGuard />
       {/* Mobile */}
       <div className="mx-auto flex w-full max-w-391 items-center justify-between px-4 py-3.75 md:hidden">
         <PrivateHeaderLogo />

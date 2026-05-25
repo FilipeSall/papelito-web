@@ -29,6 +29,13 @@ export interface CartVendorGroup extends CartVendor {
   totalItems: number;
 }
 
+export interface CartCoupon {
+  code: string;
+  discountValue: number;
+  discountType: "percent" | "fixed_cart";
+  appliedProductIds: number[];
+}
+
 export interface CartSummary {
   subtotal: number;
   shipping: number;
@@ -38,5 +45,5 @@ export interface CartSummary {
   vendorGroups: CartVendorGroup[];
   amountToFreeShipping: number;
   hasFreeShipping: boolean;
-  couponCode: string | null;
+  coupon: CartCoupon | null;
 }

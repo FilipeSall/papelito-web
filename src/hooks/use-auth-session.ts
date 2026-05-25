@@ -19,5 +19,6 @@ export function useAuthSession() {
     isLoading: status === "loading",
     isRoleLoading: status === "authenticated" && role === undefined,
     isAdministrator: role === "administrator",
+    isSeller: role === "seller",
   };
 }

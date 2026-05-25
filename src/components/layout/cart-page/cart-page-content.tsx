@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   normalizeProductImage,
+  useCartCouponRevalidator,
   useCartStore,
   useCartSummary,
 } from "@/features/cart";
@@ -94,19 +95,50 @@ export function CartPageContent() {
   const summary = useCartSummary();
 
   const [couponInput, setCouponInput] = useState("");
-  const [couponFeedback, setCouponFeedback] = useState<"idle" | "applied" | "invalid">(
+  const [couponStatus, setCouponStatus] = useState<"idle" | "applying" | "applied" | "invalid">(
     "idle",
   );
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
 
-  function handleApplyCoupon() {
-    if (!couponInput.trim()) {
+  const handleCouponRevalidation = useCallback(
+    ({ removed, code }: { removed: boolean; reason?: string; code: string | null }) => {
+      if (removed && code) {
+        setCouponStatus("invalid");
+        setCouponMessage(`O cupom ${code} nao vale mais para este carrinho.`);
+      }
+    },
+    [],
+  );
+  useCartCouponRevalidator(handleCouponRevalidation);
+
+  async function handleApplyCoupon() {
+    const trimmed = couponInput.trim();
+    if (!trimmed) {
       removeCoupon();
-      setCouponFeedback("idle");
+      setCouponStatus("idle");
+      setCouponMessage(null);
       return;
     }
 
-    const success = applyCoupon(couponInput);
-    setCouponFeedback(success ? "applied" : "invalid");
+    setCouponStatus("applying");
+    setCouponMessage(null);
+    const result = await applyCoupon(trimmed);
+
+    if (result.ok) {
+      setCouponStatus("applied");
+      setCouponMessage(null);
+      setCouponInput("");
+    } else {
+      setCouponStatus("invalid");
+      setCouponMessage(result.message);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    removeCoupon();
+    setCouponStatus("idle");
+    setCouponMessage(null);
+    setCouponInput("");
   }
 
   if (items.length === 0) {
@@ -266,33 +298,48 @@ export function CartPageContent() {
                 Cupom de desconto
               </p>
 
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  className="h-10.5 min-w-0 flex-1 rounded-[14px] border border-[#E5E7EB] bg-white px-4 text-sm tracking-[-0.1504px] text-brand-dark outline-none placeholder:text-black/50 focus:border-brand-dark/25"
-                  placeholder="PAPELITO10"
-                  type="text"
-                  value={couponInput}
-                  onChange={(event) => setCouponInput(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className="h-10.5 shrink-0 cursor-pointer whitespace-nowrap rounded-[14px] bg-brand-dark px-4 text-xs font-black text-white transition hover:opacity-90 md:px-5"
-                  onClick={handleApplyCoupon}
-                >
-                  Aplicar
-                </button>
-              </div>
+              {summary.coupon ? (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-[14px] bg-[#ECFDF5] px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black tracking-[-0.1504px] text-[#047857]">
+                      {summary.coupon.code}
+                    </p>
+                    <p className="text-xs text-[#047857]/80">
+                      -{formatBRL(summary.coupon.discountValue)} aplicado
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 cursor-pointer text-xs font-bold uppercase tracking-[0.6px] text-[#047857] transition hover:opacity-80"
+                    onClick={handleRemoveCoupon}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    className="h-10.5 min-w-0 flex-1 rounded-[14px] border border-[#E5E7EB] bg-white px-4 text-sm tracking-[-0.1504px] text-brand-dark outline-none placeholder:text-black/50 focus:border-brand-dark/25"
+                    placeholder="Insira seu cupom"
+                    type="text"
+                    value={couponInput}
+                    disabled={couponStatus === "applying"}
+                    onChange={(event) => setCouponInput(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="h-10.5 shrink-0 cursor-pointer whitespace-nowrap rounded-[14px] bg-brand-dark px-4 text-xs font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:px-5"
+                    onClick={handleApplyCoupon}
+                    disabled={couponStatus === "applying"}
+                  >
+                    {couponStatus === "applying" ? "Aplicando..." : "Aplicar"}
+                  </button>
+                </div>
+              )}
 
-              {couponFeedback === "applied" && (
-                <p className="mt-2 text-xs text-[#16A34A]">
-                  Cupom aplicado com sucesso.
-                </p>
-              )}
-              {couponFeedback === "invalid" && (
-                <p className="mt-2 text-xs text-[#FF6467]">
-                  Cupom invalido.
-                </p>
-              )}
+              {couponStatus === "invalid" && couponMessage ? (
+                <p className="mt-2 text-xs text-[#FF6467]">{couponMessage}</p>
+              ) : null}
             </div>
 
             <div className="mt-6 space-y-3">
@@ -306,13 +353,13 @@ export function CartPageContent() {
                   valueClassName="text-sm font-medium text-[#16A34A]"
                 />
               )}
-              {summary.couponCode ? (
+              {summary.hasFreeShipping ? (
                 <p className="text-xs text-[#16A34A]">Parabens! Voce ganhou frete gratis.</p>
-              ) : !summary.hasFreeShipping ? (
+              ) : (
                 <p className="text-xs text-text-muted">
                   Faltam {formatBRL(summary.amountToFreeShipping)} para frete gratis
                 </p>
-              ) : null}
+              )}
 
               <div className="border-t border-[#F3F4F6] pt-3">
                 <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">

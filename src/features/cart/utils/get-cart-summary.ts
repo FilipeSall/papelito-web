@@ -1,9 +1,12 @@
-import type { CartItem, CartSummary, CartVendorGroup } from "../types/cart";
+import type {
+  CartCoupon,
+  CartItem,
+  CartSummary,
+  CartVendorGroup,
+} from "../types/cart";
 
 export const CART_SHIPPING_THRESHOLD = 99;
 export const CART_SHIPPING_COST = 8.9;
-export const CART_COUPON_CODE = "PAPELITO10";
-export const CART_COUPON_PERCENT = 10;
 
 function roundMoney(value: number) {
   return Number(value.toFixed(2));
@@ -40,7 +43,7 @@ function getVendorGroups(items: CartItem[]): CartVendorGroup[] {
 
 export function getCartSummary(
   items: CartItem[],
-  couponCode: string | null,
+  coupon: CartCoupon | null,
   shippingOverride?: number | null,
 ): CartSummary {
   const subtotal = roundMoney(
@@ -48,11 +51,7 @@ export function getCartSummary(
   );
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const normalizedCoupon = couponCode?.trim().toUpperCase() ?? null;
-  const couponApplied =
-    normalizedCoupon === CART_COUPON_CODE ? normalizedCoupon : null;
-  const discountPercent = couponApplied ? CART_COUPON_PERCENT : 0;
-  const discount = roundMoney((subtotal * discountPercent) / 100);
+  const discount = coupon ? roundMoney(Math.min(coupon.discountValue, subtotal)) : 0;
 
   const hasItems = subtotal > 0;
   const hasFreeShipping = hasItems && subtotal >= CART_SHIPPING_THRESHOLD;
@@ -81,6 +80,6 @@ export function getCartSummary(
     vendorGroups: getVendorGroups(items),
     amountToFreeShipping,
     hasFreeShipping,
-    couponCode: couponApplied,
+    coupon,
   };
 }

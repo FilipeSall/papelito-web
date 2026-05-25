@@ -1,16 +1,26 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+
+import { applyCouponClient } from "@/features/coupons/services/apply-coupon";
+import type { CouponApplyResult } from "@/features/coupons/types/coupon";
+
 import type {
+  CartCoupon,
   CartItem,
   CartVendor,
   ResolvedCartProductInput,
 } from "../types/cart";
-import { CART_COUPON_CODE } from "../utils/get-cart-summary";
 import { normalizeProductImage } from "../utils/normalize-product-image";
+
+export interface CartCouponRevalidationResult {
+  revalidated: boolean;
+  removed: boolean;
+  reason?: string;
+}
 
 interface CartState {
   items: CartItem[];
-  couponCode: string | null;
+  coupon: CartCoupon | null;
   addItem: (product: ResolvedCartProductInput, quantity?: number) => void;
   applyVendorToCart: (vendor: CartVendor) => void;
   decreaseItem: (productId: string) => void;
@@ -18,7 +28,8 @@ interface CartState {
   setItemQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
-  applyCoupon: (code: string) => boolean;
+  applyCoupon: (code: string) => Promise<CouponApplyResult>;
+  revalidateCoupon: () => Promise<CartCouponRevalidationResult>;
   removeCoupon: () => void;
 }
 
@@ -39,10 +50,6 @@ function upsertItem(
       ? { ...item, ...product, quantity: item.quantity + safeQuantity }
       : item,
   );
-}
-
-function normalizeCoupon(code: string) {
-  return code.trim().toUpperCase();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -110,9 +117,30 @@ function normalizePersistedItem(value: unknown): CartItem | null {
   };
 }
 
+function normalizePersistedCoupon(value: unknown): CartCoupon | null {
+  if (!isRecord(value)) return null;
+
+  const code = typeof value.code === "string" ? value.code.trim().toUpperCase() : "";
+  const discountValue =
+    typeof value.discountValue === "number" ? value.discountValue : Number(value.discountValue);
+  const discountType =
+    value.discountType === "fixed_cart" ? "fixed_cart" : "percent";
+  const appliedProductIds = Array.isArray(value.appliedProductIds)
+    ? value.appliedProductIds
+        .map((id) => (typeof id === "number" ? id : Number(id)))
+        .filter((id): id is number => Number.isInteger(id) && id > 0)
+    : [];
+
+  if (!code || !Number.isFinite(discountValue) || discountValue < 0) {
+    return null;
+  }
+
+  return { code, discountValue, discountType, appliedProductIds };
+}
+
 function normalizePersistedState(value: unknown): Partial<CartState> {
   if (!isRecord(value)) {
-    return { items: [], couponCode: null };
+    return { items: [], coupon: null };
   }
 
   const items = Array.isArray(value.items)
@@ -120,16 +148,31 @@ function normalizePersistedState(value: unknown): Partial<CartState> {
         .map(normalizePersistedItem)
         .filter((item): item is CartItem => item !== null)
     : [];
-  const couponCode = typeof value.couponCode === "string" ? value.couponCode : null;
+  const coupon = normalizePersistedCoupon(value.coupon);
 
-  return { items, couponCode };
+  return { items, coupon };
+}
+
+function buildCartItemsPayload(items: CartItem[]) {
+  return items
+    .map((item) => {
+      const productId = Number.parseInt(item.id, 10);
+      if (!Number.isInteger(productId) || productId <= 0) return null;
+      return {
+        productId,
+        vendorId: item.vendorId,
+        qty: item.quantity,
+        price: item.price,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 }
 
 export const useCartStore = create<CartState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       items: [],
-      couponCode: null,
+      coupon: null,
       addItem: (product, quantity = 1) => {
         const normalizedProduct = {
           ...product,
@@ -187,25 +230,73 @@ export const useCartStore = create<CartState>()(
         }));
       },
       clearCart: () => {
-        set({ items: [], couponCode: null });
+        set({ items: [], coupon: null });
       },
-      applyCoupon: (code) => {
-        const normalized = normalizeCoupon(code);
-        const isValid = normalized === CART_COUPON_CODE;
+      applyCoupon: async (code) => {
+        const trimmed = code.trim();
+        if (!trimmed) {
+          set({ coupon: null });
+          return {
+            ok: false,
+            status: 422,
+            errorCode: "papelito_coupon_missing_code",
+            message: "Informe um cupom.",
+          };
+        }
 
-        set({
-          couponCode: isValid ? normalized : null,
-        });
+        const result = await applyCouponClient(trimmed, buildCartItemsPayload(get().items));
 
-        return isValid;
+        if (result.ok) {
+          set({
+            coupon: {
+              code: result.code,
+              discountValue: result.discountValue,
+              discountType: result.discountType,
+              appliedProductIds: result.appliedProductIds,
+            },
+          });
+        } else {
+          set({ coupon: null });
+        }
+
+        return result;
+      },
+      revalidateCoupon: async () => {
+        const current = get().coupon;
+        if (!current) {
+          return { revalidated: false, removed: false };
+        }
+
+        const cartItems = buildCartItemsPayload(get().items);
+        if (cartItems.length === 0) {
+          set({ coupon: null });
+          return { revalidated: true, removed: true, reason: "empty_cart" };
+        }
+
+        const result = await applyCouponClient(current.code, cartItems);
+
+        if (result.ok) {
+          set({
+            coupon: {
+              code: result.code,
+              discountValue: result.discountValue,
+              discountType: result.discountType,
+              appliedProductIds: result.appliedProductIds,
+            },
+          });
+          return { revalidated: true, removed: false };
+        }
+
+        set({ coupon: null });
+        return { revalidated: true, removed: true, reason: result.errorCode };
       },
       removeCoupon: () => {
-        set({ couponCode: null });
+        set({ coupon: null });
       },
     }),
     {
       name: "papelito-cart-store",
-      version: 2,
+      version: 3,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
@@ -213,7 +304,7 @@ export const useCartStore = create<CartState>()(
       migrate: (persistedState) => normalizePersistedState(persistedState),
       partialize: (state) => ({
         items: state.items,
-        couponCode: state.couponCode,
+        coupon: state.coupon,
       }),
     },
   ),

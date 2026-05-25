@@ -1,4 +1,5 @@
 import {
+  BadgePercent,
   FileText,
   Image,
   Package,
@@ -14,6 +15,7 @@ export type AdminSectionKey =
   | "products"
   | "flash-sale"
   | "vendors"
+  | "coupons"
   | "reports"
   | "assets"
   | "config";
@@ -59,6 +61,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Vendors",
     shortLabel: "Vendors",
     description: "Triagem e cobertura",
+  },
+  {
+    key: "coupons",
+    href: "/admin/coupons",
+    icon: BadgePercent,
+    label: "Cupons",
+    shortLabel: "Cupons",
+    description: "Engine de cupons e restricoes",
   },
   {
     key: "reports",

@@ -22,6 +22,11 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "aprovacao media", value: "6h" },
     { label: "faixas cep", value: "31" },
   ],
+  coupons: [
+    { label: "cupons ativos", value: "-" },
+    { label: "tipos", value: "% / R$" },
+    { label: "restricoes", value: "vendor + produto" },
+  ],
   reports: [
     { label: "consultas", value: "14" },
     { label: "fila xlsx", value: "03" },
@@ -80,6 +85,14 @@ export const SECTION_META: Record<
     railLabel: "backlog",
     railValue: "19 entries",
     signalTone: "warning",
+  },
+  coupons: {
+    eyebrow: "Engine de cupons",
+    description:
+      "Cupons percentuais ou de valor fixo, restricoes por role, vendor e produto. Suporta notificacao de favorito-em-promocao.",
+    railLabel: "status",
+    railValue: "ativo",
+    signalTone: "default",
   },
   reports: {
     eyebrow: "Consultas versionadas",

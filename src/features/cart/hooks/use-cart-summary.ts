@@ -7,11 +7,11 @@ import { getCartSummary } from "../utils/get-cart-summary";
 
 export function useCartSummary() {
   const items = useCartStore((state) => state.items);
-  const couponCode = useCartStore((state) => state.couponCode);
+  const coupon = useCartStore((state) => state.coupon);
   const selectedShippingQuote = useCheckoutStore((state) => state.selectedShippingQuote);
 
   return useMemo(
-    () => getCartSummary(items, couponCode, selectedShippingQuote?.price ?? null),
-    [items, couponCode, selectedShippingQuote],
+    () => getCartSummary(items, coupon, selectedShippingQuote?.price ?? null),
+    [items, coupon, selectedShippingQuote],
   );
 }

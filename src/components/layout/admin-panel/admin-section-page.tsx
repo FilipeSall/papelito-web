@@ -5,6 +5,7 @@ import { SectionHeader } from "./section-header";
 import {
   AssetsContent,
   ConfigContent,
+  CouponsContent,
   FlashSaleContent,
   ProductsContent,
   ReportsContent,
@@ -25,6 +26,8 @@ function renderSection(
       return <FlashSaleContent />;
     case "vendors":
       return <VendorsContent />;
+    case "coupons":
+      return <CouponsContent />;
     case "reports":
       return <ReportsContent searchParams={searchParams} />;
     case "assets":
@@ -50,7 +53,8 @@ export function AdminSectionPage({
       section === "reports" ||
       section === "config" ||
       section === "flash-sale" ||
-      section === "assets" ? null : (
+      section === "assets" ||
+      section === "coupons" ? null : (
         <SectionHeader section={section} />
       )}
       {renderSection(section, searchParams)}

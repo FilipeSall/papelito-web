@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { CartIcon } from "./icons";
 import type { CartProductInput, ResolveCartVendorResult } from "@/features/cart";
 import { resolveCartVendor, useCartStore } from "@/features/cart";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 export const ADD_TO_CART_EVENT_NAME = "papelito:add-to-cart";
 
@@ -39,8 +39,10 @@ export function AddToCartButton({
   const addItem = useCartStore((state) => state.addItem);
   const applyVendorToCart = useCartStore((state) => state.applyVendorToCart);
   const items = useCartStore((state) => state.items);
-  const { status } = useSession();
+  const { isAuthenticated, isSeller, isLoading } = useAuthSession();
   const [isResolving, setIsResolving] = useState(false);
+  const sellerBlockedMessage = "Vendors nao compram pela plataforma.";
+  const isDisabled = isResolving || isSeller;
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -71,9 +73,9 @@ export function AddToCartButton({
 
   async function handleClick() {
     if (product) {
-      if (status === "loading" || isResolving) return;
+      if (isSeller || isLoading || isResolving) return;
 
-      if (status !== "authenticated") {
+      if (!isAuthenticated) {
         router.push("/entrar");
         return;
       }
@@ -128,13 +130,15 @@ export function AddToCartButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={isResolving}
+        disabled={isDisabled}
         aria-label="Adicionar ao carrinho"
+        aria-disabled={isDisabled}
+        title={isSeller ? sellerBlockedMessage : undefined}
         className={`flex cursor-pointer items-center justify-center gap-1.5 w-full h-7 bg-brand-dark rounded-[10px] hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
       >
         <CartIcon className="size-3 text-white" />
         <span className="font-black text-xs leading-4 text-white">
-          {isResolving ? "Validando" : label}
+          {isSeller ? sellerBlockedMessage : isResolving ? "Validando" : label}
         </span>
       </button>
     );
@@ -144,8 +148,10 @@ export function AddToCartButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isResolving}
+      disabled={isDisabled}
       aria-label="Adicionar ao carrinho"
+      aria-disabled={isDisabled}
+      title={isSeller ? sellerBlockedMessage : undefined}
       className={`flex cursor-pointer items-center justify-center w-9 h-9 bg-brand-dark rounded-[14px] shrink-0 hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
     >
       <CartIcon className="size-4 text-white" />
