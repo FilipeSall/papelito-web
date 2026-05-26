@@ -148,13 +148,6 @@ export const FLASH_SALE_ROWS = [
   ["Display Hemp", "SKU-HEMP", "R$ 13,20", "R$ 11,20", badge("draft")],
 ];
 
-export const VENDOR_ROWS = [
-  ["Headshop Centro", "Curitiba / PR", badge("review"), "2h", "00000-000 -> 19999-999"],
-  ["Tabacaria Norte", "Manaus / AM", badge("queued"), "5h", "69000-000 -> 69299-999"],
-  ["Boutique Rua 9", "Goiania / GO", badge("approved"), "1d", "74000-000 -> 74899-999"],
-  ["Loja Ponto 21", "Campinas / SP", badge("rejected"), "3d", "13000-000 -> 13199-999"],
-];
-
 export const REPORT_ROWS = [
   ["Usuarios cadastrados v3", "Clientes", "XLSX", badge("ready"), "2 colunas chave"],
   ["Receita por janela", "Financeiro", "CSV + chart", badge("live"), "Padrao board"],

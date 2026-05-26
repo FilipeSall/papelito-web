@@ -1,4 +1,4 @@
-export { getProfileOrderDetail } from "./services/get-profile-order-detail";
+export { getProfileOrderDetail, getProfileOrders } from "./services/get-profile-order-detail";
 export type {
   ProfileOrderDetail,
   ProfileOrderItem,

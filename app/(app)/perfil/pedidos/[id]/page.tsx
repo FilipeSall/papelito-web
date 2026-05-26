@@ -95,18 +95,24 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </span>
                 <div>
                   <p className="text-sm font-black text-brand-dark">Código de Rastreamento</p>
-                  <p className="text-xs text-gray-400">{order.tracking.carrier}</p>
+                  <p className="text-xs text-gray-400">{order.tracking?.carrier ?? "Aguardando informacao do vendor"}</p>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between rounded-[14px] bg-bg-light px-4 py-3">
-                <code className="font-mono text-sm font-bold tracking-[1.4px] text-brand-dark">
-                  {order.tracking.code}
-                </code>
-                <OrderTrackingCopyButton code={order.tracking.code} />
-              </div>
+              {order.tracking ? (
+                <div className="mt-4 flex items-center justify-between rounded-[14px] bg-bg-light px-4 py-3">
+                  <code className="font-mono text-sm font-bold tracking-[1.4px] text-brand-dark">
+                    {order.tracking.code}
+                  </code>
+                  <OrderTrackingCopyButton code={order.tracking.code} />
+                </div>
+              ) : (
+                <p className="mt-4 rounded-[14px] bg-bg-light px-4 py-3 text-sm text-gray-500">
+                  Codigo de rastreamento ainda nao informado.
+                </p>
+              )}
 
-              <p className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
+              {order.tracking ? <p className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
                 <svg
                   aria-hidden
                   className="size-3"
@@ -123,7 +129,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </svg>
                 Previsão de entrega:
                 <span className="font-bold text-brand-dark">{order.tracking.estimatedDeliveryLabel}</span>
-              </p>
+              </p> : null}
             </article>
 
             <article className="rounded-2xl bg-white p-6 shadow-sm">
@@ -206,13 +212,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                           >
                             {event.description}
                           </p>
-                          <p
-                            className={`mt-1 text-xs ${
-                              event.state === "pending" ? "text-gray-300" : "text-gray-400"
-                            }`}
-                          >
-                            {event.timestampLabel}
-                          </p>
+                          {event.timestampLabel ? (
+                            <p
+                              className={`mt-1 text-xs ${
+                                event.state === "pending" ? "text-gray-300" : "text-gray-400"
+                              }`}
+                            >
+                              {event.timestampLabel}
+                            </p>
+                          ) : null}
                           {event.expectedLabel && (
                             <p className="mt-1 text-xs font-semibold text-gray-400">
                               {event.expectedLabel}
@@ -308,7 +316,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </span>
                 <div>
                   <p className="text-sm font-black text-brand-dark">{order.payment.methodLabel}</p>
-                  <p className="text-xs text-gray-400">{order.payment.maskedLabel}</p>
+                  {order.payment.maskedLabel ? (
+                    <p className="text-xs text-gray-400">{order.payment.maskedLabel}</p>
+                  ) : null}
                 </div>
               </div>
             </article>
@@ -316,12 +326,18 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             <article className="rounded-2xl bg-brand-yellow p-5">
               <p className="text-base font-black text-brand-dark">{order.supportTitle}</p>
               <p className="mt-1 text-xs text-brand-dark/80">{order.supportSubtitle}</p>
-              <a
-                className="mt-3 inline-flex h-8 items-center rounded-full bg-brand-dark px-4 text-sm font-black text-white"
-                href={`tel:${order.supportPhone.replace(/\s/g, "")}`}
-              >
-                {order.supportPhone}
-              </a>
+              {order.supportPhone ? (
+                <a
+                  className="mt-3 inline-flex h-8 items-center rounded-full bg-brand-dark px-4 text-sm font-black text-white"
+                  href={`tel:${order.supportPhone.replace(/\s/g, "")}`}
+                >
+                  {order.supportPhone}
+                </a>
+              ) : (
+                <p className="mt-3 text-sm font-semibold text-brand-dark/70">
+                  Telefone de contato nao informado.
+                </p>
+              )}
             </article>
           </aside>
         </div>

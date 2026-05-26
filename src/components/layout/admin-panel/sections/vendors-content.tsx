@@ -1,42 +1,60 @@
-import { LineChartPlaceholder } from "../charts";
-import { VENDOR_ROWS } from "../mock-data";
-import {
-  CompactTable,
-  LoadingStateCard,
-  MetricCard,
-  Panel,
-} from "../primitives";
+import { getServerSession } from "next-auth";
 
-export function VendorsContent() {
+import { authOptions } from "@/lib/auth";
+import {
+  getAdminVendorDetail,
+  getAdminVendorsSnapshot,
+} from "@/lib/server/admin-vendors";
+import type { AdminVendorsPageSearchParams } from "@/lib/server/admin-vendors-filters";
+import {
+  buildAdminVendorsQuery,
+  parseAdminVendorsFilters,
+} from "@/lib/server/admin-vendors-filters";
+
+import {
+  VendorDetailDrawer,
+  VendorsList,
+  VendorsMetrics,
+  VendorsTabs,
+} from "./vendors";
+
+function firstString(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+export async function VendorsContent({
+  searchParams,
+}: {
+  searchParams?: AdminVendorsPageSearchParams;
+}) {
+  const session = await getServerSession(authOptions);
+  const filters = parseAdminVendorsFilters(searchParams);
+  const snapshot = await getAdminVendorsSnapshot(session?.accessToken, filters);
+
+  const rawVendorId = firstString(searchParams?.vendor);
+  const vendorId = rawVendorId ? Number.parseInt(rawVendorId, 10) : NaN;
+  const detail =
+    Number.isFinite(vendorId) && vendorId > 0
+      ? await getAdminVendorDetail(session?.accessToken, vendorId)
+      : null;
+
+  const closeQuery = buildAdminVendorsQuery(filters, {});
+  const closeHref = closeQuery ? `?${closeQuery}` : "?";
+
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Fila aberta", value: "19", detail: "07 aguardando leitura", tone: "warning" as const },
-          { label: "Aprovados no dia", value: "06", detail: "Pico em Curitiba e Goiania", tone: "default" as const },
-          { label: "Faixas CEP", value: "31", detail: "08 em revisao de cobertura", tone: "default" as const },
-          { label: "Risco de overlap", value: "02", detail: "Faixas precisam merge", tone: "warning" as const },
-        ].map((card) => (
-          <MetricCard key={card.label} {...card} />
-        ))}
-      </div>
-      <Panel className="overflow-hidden">
-        <div className="border-b border-[#231f20]/10 px-5 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-            triagem de vendors
+      <div className="space-y-5">
+        <VendorsMetrics summary={snapshot.summary} totalRows={snapshot.totalRows} />
+        <VendorsTabs filters={filters} summary={snapshot.summary} totalRows={snapshot.totalRows} />
+        <VendorsList filters={filters} snapshot={snapshot} />
+        {snapshot.issues.length > 0 && snapshot.rows.length > 0 ? (
+          <p className="rounded-xl border border-[#d7b0aa] bg-[#fef3f1] px-4 py-3 text-xs leading-5 text-[#7a3428]">
+            {snapshot.issues.join(" • ")}
           </p>
-        </div>
-        <CompactTable
-          headers={["vendor", "cidade", "status", "espera", "faixa"]}
-          rows={VENDOR_ROWS}
-        />
-      </Panel>
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <Panel className="p-5">
-          <LineChartPlaceholder label="cobertura / cep map" />
-        </Panel>
-        <LoadingStateCard />
+        ) : null}
       </div>
+      {detail ? <VendorDetailDrawer closeHref={closeHref} vendor={detail} /> : null}
     </>
   );
 }

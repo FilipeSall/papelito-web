@@ -26,13 +26,19 @@ export function PrivateHeader() {
   const cartItemCount = useCartStore((state) =>
     state.items.reduce((count, item) => count + item.quantity, 0),
   );
-  const { isAdministrator } = useAuthSession();
+  const { isAdministrator, isSeller } = useAuthSession();
   const pathname = usePathname();
 
   const isAdminRoute = pathname?.startsWith("/admin");
 
-  const mobileLinks = isAdministrator && !isAdminRoute
-    ? [{ href: "/admin/sales", label: "Admin" }, ...privateLinks.map(({ href, label }) => ({ href, label }))]
+  const contextLink =
+    isAdministrator && !isAdminRoute
+      ? { href: "/admin/sales", label: "Admin" }
+      : isSeller
+        ? { href: "/vendor/dashboard", label: "Painel vendor" }
+        : null;
+  const mobileLinks = contextLink
+    ? [contextLink, ...privateLinks.map(({ href, label }) => ({ href, label }))]
     : privateLinks.map(({ href, label }) => ({ href, label }));
 
   return (
@@ -68,6 +74,13 @@ export function PrivateHeader() {
               href="/admin/sales"
             >
               Admin
+            </Link>
+          ) : isSeller ? (
+            <Link
+              className="inline-flex h-9 items-center rounded-full border border-white/18 px-4 text-sm font-black leading-5 tracking-[-0.15px] text-white transition hover:border-white/28 hover:bg-white/6"
+              href="/vendor/dashboard"
+            >
+              Painel vendor
             </Link>
           ) : null}
           <PrivateHeaderLogoutButton />

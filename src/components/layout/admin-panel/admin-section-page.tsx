@@ -25,7 +25,7 @@ function renderSection(
     case "flash-sale":
       return <FlashSaleContent />;
     case "vendors":
-      return <VendorsContent />;
+      return <VendorsContent searchParams={searchParams} />;
     case "coupons":
       return <CouponsContent />;
     case "reports":
@@ -54,7 +54,8 @@ export function AdminSectionPage({
       section === "config" ||
       section === "flash-sale" ||
       section === "assets" ||
-      section === "coupons" ? null : (
+      section === "coupons" ||
+      section === "vendors" ? null : (
         <SectionHeader section={section} />
       )}
       {renderSection(section, searchParams)}

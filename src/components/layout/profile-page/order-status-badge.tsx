@@ -1,4 +1,9 @@
-export type OrderStatus = "delivered" | "in_transit" | "pending" | "cancelled";
+export type OrderStatus =
+  | "awaiting_shipment"
+  | "picking"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 
 type OrderStatusBadgeProps = {
   status: OrderStatus;
@@ -10,13 +15,18 @@ const statusConfig: Record<OrderStatus, { label: string; bgColor: string; textCo
     bgColor: "bg-green-500/20",
     textColor: "text-green-400",
   },
-  in_transit: {
-    label: "Em trânsito",
+  shipped: {
+    label: "Enviado",
     bgColor: "bg-blue-500/20",
     textColor: "text-blue-400",
   },
-  pending: {
-    label: "Pendente",
+  picking: {
+    label: "Em separacao",
+    bgColor: "bg-orange-500/20",
+    textColor: "text-orange-600",
+  },
+  awaiting_shipment: {
+    label: "Aguardando envio",
     bgColor: "bg-yellow-500/20",
     textColor: "text-yellow-500",
   },

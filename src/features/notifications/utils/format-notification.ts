@@ -55,7 +55,7 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         icon: "check",
         title: "Candidatura aprovada",
         body: "Sua candidatura para revender Papelito foi aprovada.",
-        href: "/perfil",
+        href: "/vendor/dashboard",
       };
     case "vendor_rejected": {
       const reason = stringValue(payload, "reason");
@@ -69,12 +69,17 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     }
     case "stock_zeroed": {
       const productName = stringValue(payload, "product_name") || "Produto";
+      const productId = numberValue(payload, "product_id");
+      const href =
+        Number.isInteger(productId) && productId > 0
+          ? `/vendor/estoque?focus=${productId}`
+          : "/vendor/estoque";
 
       return {
         icon: "package",
         title: "Estoque zerado",
         body: `${productName} chegou a zero no seu estoque.`,
-        href: "/perfil",
+        href,
       };
     }
     default:

@@ -17,7 +17,7 @@ export interface ProfileOrderTimelineEvent {
   id: string;
   title: string;
   description: string;
-  timestampLabel: string;
+  timestampLabel?: string;
   state: "done" | "current" | "pending";
   expectedLabel?: string;
 }
@@ -48,7 +48,7 @@ export interface ProfileOrderDetail {
   status: OrderStatus;
   dateLabel: string;
   storeLabel: string;
-  tracking: ProfileOrderTrackingInfo;
+  tracking: ProfileOrderTrackingInfo | null;
   timeline: ProfileOrderTimelineEvent[];
   deliveryAddress: string;
   items: ProfileOrderItem[];
