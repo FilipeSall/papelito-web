@@ -43,7 +43,7 @@ export function VendorsTabs({
           status: tab.key,
           page: 1,
         });
-        const href = query ? `?${query}` : "?";
+        const href = query ? `?${query}` : "/admin/vendors";
 
         return (
           <Link

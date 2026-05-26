@@ -3,6 +3,12 @@
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import {
+  VENDOR_REJECTION_REASON_LENGTH_MESSAGE,
+  VENDOR_REJECTION_REASON_MAX_LENGTH,
+  VENDOR_REJECTION_REASON_MIN_LENGTH,
+} from "@/lib/admin-vendors-constants";
+
 type VendorRejectModalProps = {
   errorMessage: string | null;
   loading: boolean;
@@ -10,6 +16,14 @@ type VendorRejectModalProps = {
   onConfirm: (reason: string) => void;
   vendorName: string;
 };
+
+function sanitizeReasonForValidation(value: string) {
+  return value
+    .replace(/<[^>]*>/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+}
 
 export function VendorRejectModal({
   errorMessage,
@@ -29,8 +43,11 @@ export function VendorRejectModal({
     return () => window.removeEventListener("keydown", handleKey);
   }, [loading, onCancel]);
 
-  const trimmed = reason.trim();
-  const canConfirm = trimmed.length > 0 && !loading;
+  const sanitizedReason = sanitizeReasonForValidation(reason);
+  const isLengthValid =
+    sanitizedReason.length >= VENDOR_REJECTION_REASON_MIN_LENGTH &&
+    sanitizedReason.length <= VENDOR_REJECTION_REASON_MAX_LENGTH;
+  const canConfirm = isLengthValid && !loading;
 
   return (
     <div
@@ -73,7 +90,7 @@ export function VendorRejectModal({
           <p className="text-sm leading-6 text-[#4b4731]">
             Voce esta prestes a recusar a solicitacao de{" "}
             <span className="font-semibold text-[#1e1c10]">{vendorName}</span>. O vendor recebera
-            um email com o motivo informado.
+            um email e uma notificacao com o motivo informado.
           </p>
 
           <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
@@ -82,16 +99,24 @@ export function VendorRejectModal({
               autoFocus
               className="mt-2 block h-28 w-full resize-none rounded-xl border border-[#231f20]/14 bg-white px-3 py-2 text-sm text-[#231f20] outline-none focus:border-[#231f20]"
               disabled={loading}
-              maxLength={500}
+              maxLength={VENDOR_REJECTION_REASON_MAX_LENGTH}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Ex.: CNPJ fora da regiao de cobertura atual."
+              placeholder="Explique brevemente o motivo da recusa - sera enviado ao vendor na notificacao."
               value={reason}
             />
           </label>
 
+          <p className="text-[11px] text-[#4b4731]/72">
+            {VENDOR_REJECTION_REASON_LENGTH_MESSAGE}
+          </p>
+
           {errorMessage ? (
             <p className="rounded-lg bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">
               {errorMessage}
+            </p>
+          ) : sanitizedReason.length > 0 && !isLengthValid ? (
+            <p className="rounded-lg bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">
+              {VENDOR_REJECTION_REASON_LENGTH_MESSAGE}
             </p>
           ) : null}
         </div>
@@ -109,7 +134,7 @@ export function VendorRejectModal({
             type="button"
             className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[12px] bg-[#b91c1c] px-5 text-xs font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-[#991b1b] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!canConfirm}
-            onClick={() => onConfirm(trimmed)}
+            onClick={() => onConfirm(sanitizedReason)}
           >
             {loading ? (
               <>

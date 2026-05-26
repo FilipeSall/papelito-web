@@ -5,6 +5,10 @@ import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import { getCoverage } from "./get-coverage";
+import {
+  getCategorySlugsForTypes,
+  getTabCounts,
+} from "./get-wp-product-categories";
 import { fetchWpProducts, mapWpProductToCatalogItem } from "./wp-catalog";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -313,9 +317,55 @@ export async function getProductsCatalog(
   const perPage = clamp(input.perPage ?? 9, 1, 60);
   const coverageCep = normalizeCepForCoverage(input.cep);
 
-  const fetchedItems = useMockData
-    ? (await requestProductsCatalogMockFile()).products.map(mapMockProductToCatalogItem)
-    : (await fetchWpProducts(120)).map(mapWpProductToCatalogItem);
+  const currentPage = clamp(input.page ?? 1, 1, Number.MAX_SAFE_INTEGER);
+  const fetchBufferCap = 120;
+  const fetchFirst = Math.min(
+    fetchBufferCap,
+    Math.max(perPage * 3, currentPage * perPage * 2 + 20),
+  );
+
+  let fetchedItems: ProductsCatalogItem[];
+  let tabs: ProductsCatalogTab[];
+
+  if (useMockData) {
+    fetchedItems = (await requestProductsCatalogMockFile()).products.map(
+      mapMockProductToCatalogItem,
+    );
+    tabs = [
+      { id: "todos", label: TYPE_LABEL.todos, count: fetchedItems.length },
+      ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
+        id: type,
+        label: TYPE_LABEL[type],
+        count: fetchedItems.filter((item) => item.type === type).length,
+      })),
+    ];
+  } else {
+    const categorySlugsPromise =
+      selectedTypes.length > 0 ? getCategorySlugsForTypes(selectedTypes) : Promise.resolve([]);
+
+    const [categorySlugs, tabCounts] = await Promise.all([
+      categorySlugsPromise,
+      getTabCounts(),
+    ]);
+
+    const wpProducts = await fetchWpProducts({
+      first: fetchFirst,
+      categoryIn: categorySlugs,
+      minPrice,
+      maxPrice,
+    });
+
+    fetchedItems = wpProducts.map(mapWpProductToCatalogItem);
+    tabs = [
+      { id: "todos", label: TYPE_LABEL.todos, count: tabCounts.todos },
+      ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
+        id: type,
+        label: TYPE_LABEL[type],
+        count: tabCounts[type],
+      })),
+    ];
+  }
+
   let allItems = fetchedItems;
   let coverageStatus: ProductsCatalogPayload["coverageStatus"] = "not_requested";
 
@@ -350,17 +400,8 @@ export async function getProductsCatalog(
     }
   }
 
-  const tabs: ProductsCatalogTab[] = [
-    { id: "todos", label: TYPE_LABEL.todos, count: allItems.length },
-    ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
-      id: type,
-      label: TYPE_LABEL[type],
-      count: allItems.filter((item) => item.type === type).length,
-    })),
-  ];
-
   const typeFilteredItems =
-    selectedTypes.length === 0
+    selectedTypes.length === 0 || !useMockData
       ? allItems
       : allItems.filter((item) => selectedTypes.includes(item.type));
 
@@ -398,8 +439,8 @@ export async function getProductsCatalog(
 
   const totalItems = filteredItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const currentPage = clamp(input.page ?? 1, 1, totalPages);
-  const start = (currentPage - 1) * perPage;
+  const clampedPage = clamp(currentPage, 1, totalPages);
+  const start = (clampedPage - 1) * perPage;
   const end = start + perPage;
 
   return {
@@ -412,7 +453,7 @@ export async function getProductsCatalog(
     activeCollection,
     totalItems,
     totalPages,
-    currentPage,
+    currentPage: clampedPage,
     perPage,
     coverageCep,
     coverageStatus,

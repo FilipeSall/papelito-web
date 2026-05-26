@@ -48,7 +48,7 @@ function PaginationLink({
   ariaLabel: string;
 }) {
   const query = buildAdminVendorsQuery(filters, { page });
-  const href = query ? `?${query}` : "?";
+  const href = query ? `?${query}` : "/admin/vendors";
 
   if (disabled) {
     return (

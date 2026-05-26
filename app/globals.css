@@ -79,9 +79,35 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes underline-slide-in {
-    from { transform: scaleX(0); }
-    to   { transform: scaleX(1); }
+@keyframes menu-underline-draw {
+    from { stroke-dashoffset: 1; }
+    to   { stroke-dashoffset: 0; }
+}
+
+.menu-underline path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+a[data-active="true"] .menu-underline path,
+a:hover .menu-underline path {
+    animation: menu-underline-draw 700ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+a[data-active="true"] .menu-underline path:nth-child(2),
+a:hover .menu-underline path:nth-child(2) {
+    animation-delay: 90ms;
+}
+
+a[data-active="true"] .menu-underline path:nth-child(3),
+a:hover .menu-underline path:nth-child(3) {
+    animation-delay: 180ms;
 }
 
 @keyframes admin-panel-enter {
@@ -152,10 +178,6 @@
     }
     .animate-countdown {
         animation: countdown-flip 0.25s ease-out;
-    }
-    .animate-underline-slide {
-        animation: underline-slide-in 0.25s ease-out forwards;
-        transform-origin: left;
     }
     .animate-admin-panel-enter {
         animation: admin-panel-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;

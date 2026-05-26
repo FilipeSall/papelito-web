@@ -5,23 +5,14 @@ import {
   getAdminVendorDetail,
   getAdminVendorsSnapshot,
 } from "@/lib/server/admin-vendors";
+import { firstParam } from "@/lib/search-params";
 import type { AdminVendorsPageSearchParams } from "@/lib/server/admin-vendors-filters";
 import {
   buildAdminVendorsQuery,
   parseAdminVendorsFilters,
 } from "@/lib/server/admin-vendors-filters";
 
-import {
-  VendorDetailDrawer,
-  VendorsList,
-  VendorsMetrics,
-  VendorsTabs,
-} from "./vendors";
-
-function firstString(value: string | string[] | undefined) {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
+import { VendorDetailDrawer, VendorsList, VendorsMetrics, VendorsTabs } from "./vendors";
 
 export async function VendorsContent({
   searchParams,
@@ -32,7 +23,7 @@ export async function VendorsContent({
   const filters = parseAdminVendorsFilters(searchParams);
   const snapshot = await getAdminVendorsSnapshot(session?.accessToken, filters);
 
-  const rawVendorId = firstString(searchParams?.vendor);
+  const rawVendorId = firstParam(searchParams?.vendor);
   const vendorId = rawVendorId ? Number.parseInt(rawVendorId, 10) : NaN;
   const detail =
     Number.isFinite(vendorId) && vendorId > 0
@@ -40,7 +31,7 @@ export async function VendorsContent({
       : null;
 
   const closeQuery = buildAdminVendorsQuery(filters, {});
-  const closeHref = closeQuery ? `?${closeQuery}` : "?";
+  const closeHref = closeQuery ? `?${closeQuery}` : "/admin/vendors";
 
   return (
     <>

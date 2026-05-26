@@ -1,8 +1,23 @@
 import { gql } from "@apollo/client";
 
 export const PRODUCTS_QUERY = gql`
-  query Products($first: Int = 100, $after: String) {
-    products(first: $first, after: $after, where: { status: "publish" }) {
+  query Products(
+    $first: Int = 60
+    $after: String
+    $categoryIn: [String]
+    $minPrice: Float
+    $maxPrice: Float
+  ) {
+    products(
+      first: $first
+      after: $after
+      where: {
+        status: "publish"
+        categoryIn: $categoryIn
+        minPrice: $minPrice
+        maxPrice: $maxPrice
+      }
+    ) {
       pageInfo {
         hasNextPage
         endCursor

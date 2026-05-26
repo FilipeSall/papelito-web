@@ -1,8 +1,13 @@
 import { getServerSession } from "next-auth";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { fetchProfileCustomer, updateProfileCustomer } from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import {
+  getAccountActiveVendorTag,
+  getAccountCoverageCepTag,
+} from "@/lib/server/account-cache-tags";
 
 type AddressPayload = {
   zipCode?: string;
@@ -86,6 +91,11 @@ export async function PATCH(request: Request) {
         { key: "cep", value: zipCode },
       ],
     });
+
+    const accountId = session.user.id ?? session.user.email ?? "anonymous";
+    revalidateTag(getAccountCoverageCepTag(accountId), "max");
+    revalidateTag(getAccountActiveVendorTag(accountId), "max");
+    revalidateTag("wp:coverage", "max");
 
     return NextResponse.json({ customer });
   } catch (error) {

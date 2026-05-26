@@ -1,6 +1,11 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
+import {
+  VENDOR_REJECTION_REASON_LENGTH_MESSAGE,
+  VENDOR_REJECTION_REASON_MAX_LENGTH,
+  VENDOR_REJECTION_REASON_MIN_LENGTH,
+} from "@/lib/admin-vendors-constants";
 import { authOptions } from "@/lib/auth";
 import type { AdminVendorDetail } from "@/lib/server/admin-vendors";
 import { wpRest } from "@/lib/server/wp-rest";
@@ -34,15 +39,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const payload = (await request.json().catch(() => null)) as RejectPayload | null;
   const reason = String(payload?.reason ?? "").trim();
 
-  if (!reason) {
+  if (
+    reason.length < VENDOR_REJECTION_REASON_MIN_LENGTH ||
+    reason.length > VENDOR_REJECTION_REASON_MAX_LENGTH
+  ) {
     return NextResponse.json(
-      { message: "Informe o motivo da recusa." },
+      { message: VENDOR_REJECTION_REASON_LENGTH_MESSAGE },
       { status: 422 },
     );
   }
 
   const result = await wpRest<AdminVendorDetail>(
-    `/papelito/v1/admin/vendor-applications/${vendorId}/reject`,
+    `/papelito/v1/admin/vendors/${vendorId}/reject`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${session.accessToken}` },

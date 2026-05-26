@@ -1,5 +1,7 @@
 import "server-only";
 
+import { firstParam } from "@/lib/search-params";
+
 export type AdminVendorsPageSearchParams = Record<string, string | string[] | undefined>;
 
 export const VENDOR_APPLICATION_STATUSES = ["pending", "approved", "rejected", "all"] as const;
@@ -14,13 +16,6 @@ export type AdminVendorsFilters = {
 };
 
 const DEFAULT_PER_PAGE = 20;
-
-function firstString(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
-}
 
 function parsePositiveInt(value: string | undefined, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
@@ -38,10 +33,10 @@ export function parseAdminVendorsFilters(
   searchParams: AdminVendorsPageSearchParams = {},
 ): AdminVendorsFilters {
   return {
-    page: parsePositiveInt(firstString(searchParams.page), 1),
+    page: parsePositiveInt(firstParam(searchParams.page), 1),
     perPage: DEFAULT_PER_PAGE,
-    search: (firstString(searchParams.search) ?? "").trim(),
-    status: normalizeStatus(firstString(searchParams.status)),
+    search: (firstParam(searchParams.search) ?? "").trim(),
+    status: normalizeStatus(firstParam(searchParams.status)),
   };
 }
 

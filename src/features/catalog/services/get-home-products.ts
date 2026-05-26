@@ -2,7 +2,6 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { unstable_noStore as noStore } from "next/cache";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import { fetchWpProducts, mapWpProductToHomeCard } from "./wp-catalog";
@@ -184,8 +183,6 @@ async function requestProductsMockFile() {
 }
 
 export async function getHomeProducts(): Promise<HomeProductsPayload> {
-  noStore();
-
   const flashSaleCampaign = await getHomeFlashSale();
 
   if (!isMockDataEnabled()) {

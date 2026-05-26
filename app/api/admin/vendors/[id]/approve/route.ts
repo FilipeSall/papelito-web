@@ -28,7 +28,7 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
   }
 
   const result = await wpRest<AdminVendorDetail>(
-    `/papelito/v1/admin/vendor-applications/${vendorId}/approve`,
+    `/papelito/v1/admin/vendors/${vendorId}/approve`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${session.accessToken}` },

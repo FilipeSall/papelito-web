@@ -1,9 +1,12 @@
 import "server-only";
 
+import { cache } from "react";
 import { getServerSession } from "next-auth";
+import { unstable_cache } from "next/cache";
 
-import { fetchProfileCustomer } from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import { getWpGraphqlEndpoint } from "@/lib/server/env";
+import { getAccountCoverageCepTag } from "@/lib/server/account-cache-tags";
 import { normalizeUserCep } from "../constants/user-cep";
 
 export interface AccountCoverageCepContext {
@@ -11,7 +14,78 @@ export interface AccountCoverageCepContext {
   cep: string | null;
 }
 
-export async function getAccountCoverageCepContext(): Promise<AccountCoverageCepContext> {
+type GraphqlEnvelope<T> = {
+  data?: T;
+  errors?: Array<{ message?: string }>;
+};
+
+type CoverageCepQueryResponse = {
+  customer?: {
+    metaData?: Array<{ key?: string | null; value?: unknown }> | null;
+  } | null;
+};
+
+const CUSTOMER_COVERAGE_CEP_QUERY = `
+  query CustomerCoverageCep {
+    customer {
+      metaData(keysIn: ["cep"]) {
+        key
+        value
+      }
+    }
+  }
+`;
+
+function resolveAccountId(session: {
+  user?: {
+    id?: string;
+    email?: string | null;
+  };
+} | null) {
+  return session?.user?.id ?? session?.user?.email ?? "anonymous";
+}
+
+async function fetchCustomerCoverageCep(accessToken: string) {
+  const response = await fetch(getWpGraphqlEndpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      query: CUSTOMER_COVERAGE_CEP_QUERY,
+    }),
+    cache: "no-store",
+  });
+
+  const payload = (await response.json()) as GraphqlEnvelope<CoverageCepQueryResponse>;
+
+  if (!response.ok || payload.errors?.length) {
+    const message =
+      payload.errors?.map((error) => error.message).filter(Boolean).join(" ") ||
+      "Nao foi possivel consultar o CEP da conta.";
+    throw new Error(message);
+  }
+
+  const metaData = payload.data?.customer?.metaData ?? [];
+  const cepValue = metaData.find((item) => item?.key === "cep")?.value;
+
+  return normalizeUserCep(typeof cepValue === "string" ? cepValue : null);
+}
+
+function getCachedCustomerCoverageCep(accountId: string, accessToken: string) {
+  return unstable_cache(
+    async () => fetchCustomerCoverageCep(accessToken),
+    ["account-coverage-cep", accountId],
+    {
+      revalidate: 300,
+      tags: [getAccountCoverageCepTag(accountId)],
+    },
+  )();
+}
+
+export const getAccountCoverageCepContext = cache(
+  async (): Promise<AccountCoverageCepContext> => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
@@ -21,11 +95,20 @@ export async function getAccountCoverageCepContext(): Promise<AccountCoverageCep
     };
   }
 
-  const customer = await fetchProfileCustomer(session.accessToken);
-  const cep = normalizeUserCep(customer.meta.cep);
+  const accountId = resolveAccountId(session);
 
-  return {
-    isAuthenticated: true,
-    cep,
-  };
-}
+  try {
+    const cep = await getCachedCustomerCoverageCep(accountId, session.accessToken);
+
+    return {
+      isAuthenticated: true,
+      cep,
+    };
+  } catch {
+    return {
+      isAuthenticated: true,
+      cep: null,
+    };
+  }
+  },
+);

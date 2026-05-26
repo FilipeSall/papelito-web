@@ -1,10 +1,7 @@
 import { MessageThreadsList, MessageThreadPanel, getMessageThread, getMessageThreads } from "@/features/messages";
+import { firstParam } from "@/lib/search-params";
 
 import { Panel } from "../primitives";
-
-function firstString(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
 
 export async function SupportContent({
   searchParams,
@@ -12,7 +9,7 @@ export async function SupportContent({
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const threads = await getMessageThreads();
-  const selectedValue = firstString(searchParams?.thread);
+  const selectedValue = firstParam(searchParams?.thread);
   const selectedId = selectedValue && /^\d+$/.test(selectedValue)
     ? Number.parseInt(selectedValue, 10)
     : threads.items[0]?.threadId ?? null;

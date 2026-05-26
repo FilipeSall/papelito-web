@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { getServerSession } from "next-auth";
 
 import {
   getActiveVendor,
   setActiveVendor,
 } from "@/features/active-vendor/server";
+import { authOptions } from "@/lib/auth";
+import { getAccountActiveVendorTag } from "@/lib/server/account-cache-tags";
 
 function errorStatusFor(reason: string): number {
   switch (reason) {
@@ -47,6 +50,9 @@ export async function PUT(request: Request) {
   const result = await setActiveVendor(payload.vendorId);
 
   if (result.ok) {
+    const session = await getServerSession(authOptions);
+    const accountId = session?.user?.id ?? session?.user?.email ?? "anonymous";
+    revalidateTag(getAccountActiveVendorTag(accountId), "max");
     revalidateTag("wp:coverage", "max");
     return NextResponse.json({ vendor: result.vendor });
   }

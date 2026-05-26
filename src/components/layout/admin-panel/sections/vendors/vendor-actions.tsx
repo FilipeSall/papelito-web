@@ -4,31 +4,18 @@ import { Check, Loader2, Mail, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { postJson } from "@/lib/client/post-json";
+import type { AdminVendorRowStatus } from "@/lib/server/admin-vendors";
+
 import { VendorRejectModal } from "./vendor-reject-modal";
 
 type VendorActionsProps = {
   email: string;
   firstName: string;
-  status: string;
+  status: AdminVendorRowStatus | string;
   storeName: string;
   vendorId: number;
 };
-
-async function postJson<T>(url: string, body: Record<string, unknown> = {}): Promise<T> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as { message?: string };
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? `Erro ${response.status}`);
-  }
-
-  return payload as T;
-}
 
 function buildMailtoHref({
   email,

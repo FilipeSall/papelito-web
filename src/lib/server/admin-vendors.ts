@@ -143,20 +143,16 @@ export async function getAdminVendorsSnapshot(
   }
 
   const query = new URLSearchParams();
-  query.set("role", "all");
-  query.set("applicationStatus", filters.status);
+  query.set("status", filters.status);
   query.set("page", String(filters.page));
   query.set("perPage", String(filters.perPage));
   if (filters.search) {
     query.set("search", filters.search);
   }
 
-  const result = await wpRest<RawSnapshot>(
-    `/papelito/v1/admin/reports/users?${query.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    },
-  );
+  const result = await wpRest<RawSnapshot>(`/papelito/v1/admin/vendors?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
   if (!result.ok) {
     return {
@@ -196,7 +192,7 @@ export async function getAdminVendorDetail(
   }
 
   const result = await wpRest<AdminVendorDetail>(
-    `/papelito/v1/admin/vendor-applications/${vendorId}`,
+    `/papelito/v1/admin/vendors/${vendorId}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 

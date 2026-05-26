@@ -204,16 +204,47 @@ function resolveImage(product: WpProductNode) {
   });
 }
 
-export async function fetchWpProducts(first = 100) {
+export interface FetchWpProductsInput {
+  first?: number;
+  after?: string | null;
+  categoryIn?: string[];
+  minPrice?: number | null;
+  maxPrice?: number | null;
+}
+
+export async function fetchWpProducts(input: FetchWpProductsInput | number = {}) {
   if (isMockDataEnabled()) {
     return [] as WpProductNode[];
+  }
+
+  const normalized: FetchWpProductsInput =
+    typeof input === "number" ? { first: input } : input;
+
+  const variables: Record<string, unknown> = {
+    first: normalized.first ?? 60,
+  };
+
+  if (normalized.after) {
+    variables.after = normalized.after;
+  }
+
+  if (normalized.categoryIn && normalized.categoryIn.length > 0) {
+    variables.categoryIn = normalized.categoryIn;
+  }
+
+  if (typeof normalized.minPrice === "number" && Number.isFinite(normalized.minPrice)) {
+    variables.minPrice = normalized.minPrice;
+  }
+
+  if (typeof normalized.maxPrice === "number" && Number.isFinite(normalized.maxPrice)) {
+    variables.maxPrice = normalized.maxPrice;
   }
 
   const data = await wpGraphqlRequest<{
     products?: {
       nodes?: WpProductNode[];
     };
-  }>(print(PRODUCTS_QUERY), { first }, {
+  }>(print(PRODUCTS_QUERY), variables, {
     revalidate: 60,
     tags: ["wp:products"],
   });
