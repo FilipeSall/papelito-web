@@ -5,4 +5,5 @@ export { FlashSaleContent } from "./flash-sale-content";
 export { ProductsContent } from "./products-content";
 export { ReportsContent } from "./reports-content";
 export { SalesContent } from "./sales/sales-content";
+export { SupportContent } from "./support-content";
 export { VendorsContent } from "./vendors-content";

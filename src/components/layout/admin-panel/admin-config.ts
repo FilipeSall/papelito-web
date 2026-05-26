@@ -2,6 +2,7 @@ import {
   BadgePercent,
   FileText,
   Image,
+  MessageSquare,
   Package,
   Settings,
   Store,
@@ -15,6 +16,7 @@ export type AdminSectionKey =
   | "products"
   | "flash-sale"
   | "vendors"
+  | "suporte"
   | "coupons"
   | "reports"
   | "assets"
@@ -61,6 +63,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Vendors",
     shortLabel: "Vendors",
     description: "Triagem e cobertura",
+  },
+  {
+    key: "suporte",
+    href: "/admin/suporte",
+    icon: MessageSquare,
+    label: "Suporte",
+    shortLabel: "Suporte",
+    description: "Conversas escaladas",
   },
   {
     key: "coupons",

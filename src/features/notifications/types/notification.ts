@@ -3,7 +3,9 @@ export type NotificationType =
   | "favorite_on_promo"
   | "vendor_approved"
   | "vendor_rejected"
-  | "stock_zeroed";
+  | "stock_zeroed"
+  | "support_message"
+  | "support_escalated";
 
 export type NotificationPayload = Record<string, unknown>;
 

@@ -157,9 +157,6 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
       methodLabel: order.payment_method || "Pagamento nao informado",
       maskedLabel: "",
     },
-    supportTitle: order.vendor_name || "Vendor Papelito",
-    supportSubtitle: "Duvidas sobre o pedido?",
-    supportPhone: order.phone ?? "",
   };
 }
 

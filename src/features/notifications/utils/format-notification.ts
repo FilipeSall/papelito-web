@@ -1,7 +1,7 @@
 import type { NotificationItem, NotificationPayload } from "../types/notification";
 
 export type FormattedNotification = {
-  icon: "badge" | "check" | "megaphone" | "package" | "x";
+  icon: "badge" | "check" | "megaphone" | "message" | "package" | "x";
   title: string;
   body: string;
   href: string;
@@ -20,6 +20,28 @@ function numberValue(payload: NotificationPayload, key: string) {
 function productHref(payload: NotificationPayload) {
   const productId = numberValue(payload, "product_id");
   return Number.isInteger(productId) && productId > 0 ? `/produtos/${productId}` : "/produtos";
+}
+
+function supportHref(payload: NotificationPayload) {
+  const threadId = numberValue(payload, "thread_id");
+  const orderId = numberValue(payload, "order_id");
+  const recipientRole = stringValue(payload, "recipient_role");
+
+  if (recipientRole === "administrator") {
+    return Number.isInteger(threadId) && threadId > 0
+      ? `/admin/suporte?thread=${threadId}`
+      : "/admin/suporte";
+  }
+
+  if (recipientRole === "seller") {
+    return Number.isInteger(threadId) && threadId > 0
+      ? `/vendor/mensagens/${threadId}`
+      : "/vendor/mensagens";
+  }
+
+  return Number.isInteger(orderId) && orderId > 0
+    ? `/perfil/pedidos/${orderId}/suporte`
+    : "/perfil";
 }
 
 export function formatNotification(notification: NotificationItem): FormattedNotification {
@@ -82,6 +104,23 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         href,
       };
     }
+    case "support_message": {
+      const senderName = stringValue(payload, "sender_name") || "Atendimento";
+
+      return {
+        icon: "message",
+        title: "Nova mensagem de suporte",
+        body: `${senderName} enviou uma mensagem sobre um pedido.`,
+        href: supportHref(payload),
+      };
+    }
+    case "support_escalated":
+      return {
+        icon: "message",
+        title: "Atendimento escalado",
+        body: "O cliente solicitou acompanhamento da Papelito nesta conversa.",
+        href: supportHref(payload),
+      };
     default:
       return {
         icon: "megaphone",

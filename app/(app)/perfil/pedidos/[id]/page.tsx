@@ -324,20 +324,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </article>
 
             <article className="rounded-2xl bg-brand-yellow p-5">
-              <p className="text-base font-black text-brand-dark">{order.supportTitle}</p>
-              <p className="mt-1 text-xs text-brand-dark/80">{order.supportSubtitle}</p>
-              {order.supportPhone ? (
-                <a
-                  className="mt-3 inline-flex h-8 items-center rounded-full bg-brand-dark px-4 text-sm font-black text-white"
-                  href={`tel:${order.supportPhone.replace(/\s/g, "")}`}
-                >
-                  {order.supportPhone}
-                </a>
-              ) : (
-                <p className="mt-3 text-sm font-semibold text-brand-dark/70">
-                  Telefone de contato nao informado.
-                </p>
-              )}
+              <p className="text-base font-black text-brand-dark">{order.storeLabel}</p>
+              <p className="mt-1 text-xs text-brand-dark/80">Duvidas sobre o pedido?</p>
+              <Link
+                className="mt-4 inline-flex h-9 items-center rounded-full bg-brand-dark px-5 text-sm font-black text-white"
+                href={`/perfil/pedidos/${order.id}/suporte`}
+              >
+                Falar com vendor
+              </Link>
             </article>
           </aside>
         </div>

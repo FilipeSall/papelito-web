@@ -5,6 +5,7 @@ import {
   CheckCheck,
   Megaphone,
   PackageX,
+  MessageSquare,
   Store,
   XCircle,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const iconMap = {
   check: BadgeCheck,
   megaphone: Megaphone,
   package: PackageX,
+  message: MessageSquare,
   x: XCircle,
 } as const;
 

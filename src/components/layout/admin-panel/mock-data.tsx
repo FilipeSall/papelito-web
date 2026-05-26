@@ -22,6 +22,11 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "aprovacao media", value: "6h" },
     { label: "faixas cep", value: "31" },
   ],
+  suporte: [
+    { label: "escaladas", value: "-" },
+    { label: "nao lidas", value: "-" },
+    { label: "sla", value: "-" },
+  ],
   coupons: [
     { label: "cupons ativos", value: "-" },
     { label: "tipos", value: "% / R$" },
@@ -84,6 +89,13 @@ export const SECTION_META: Record<
       "Leitura de fila, aprovacoes e blocos de cobertura por CEP para operar sellers sem misturar a linguagem do site publico.",
     railLabel: "backlog",
     railValue: "19 entries",
+    signalTone: "warning",
+  },
+  suporte: {
+    eyebrow: "Atendimento escalado",
+    description: "Conversas de pedidos encaminhadas para acompanhamento da Papelito.",
+    railLabel: "fila",
+    railValue: "aberta",
     signalTone: "warning",
   },
   coupons: {

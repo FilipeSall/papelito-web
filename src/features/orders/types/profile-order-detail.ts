@@ -56,7 +56,4 @@ export interface ProfileOrderDetail {
   shipping: number;
   total: number;
   payment: ProfileOrderPaymentInfo;
-  supportTitle: string;
-  supportSubtitle: string;
-  supportPhone: string;
 }
