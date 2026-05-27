@@ -105,16 +105,24 @@ export function VendorsList({
   }
 
   const rows = snapshot.rows.map((row) => {
-    const query = buildAdminVendorsQuery(filters, {});
-    const params = new URLSearchParams(query);
-    params.set("vendor", String(row.id));
-    const drawerHref = `?${params.toString()}`;
+    const params = new URLSearchParams();
+    if (filters.status !== "pending") {
+      params.set("originStatus", filters.status);
+    }
+    if (filters.page > 1) {
+      params.set("originPage", String(filters.page));
+    }
+    if (filters.search) {
+      params.set("originSearch", filters.search);
+    }
+    const detailHref = params.toString()
+      ? `/admin/vendors/${row.id}?${params.toString()}`
+      : `/admin/vendors/${row.id}`;
 
     return [
       <Link
         key={`name-${row.id}`}
-        href={drawerHref}
-        scroll={false}
+        href={detailHref}
         className="block font-semibold text-[#231f20] hover:underline"
       >
         {row.storeName || row.name || row.email || `Vendor #${row.id}`}
@@ -131,8 +139,7 @@ export function VendorsList({
       </span>,
       <Link
         key={`open-${row.id}`}
-        href={drawerHref}
-        scroll={false}
+        href={detailHref}
         className="inline-flex items-center rounded-full border border-[#231f20]/24 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20] transition hover:border-[#231f20]"
       >
         Analisar
