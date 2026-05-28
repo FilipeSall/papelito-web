@@ -255,7 +255,7 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-sm">
+            <table className="w-full min-w-205 text-sm">
               <thead className="border-b border-[#231f20]/10 bg-[#f6f1da] text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/64">
                 <tr>
                   <th className="px-5 py-3">Codigo</th>
@@ -281,7 +281,7 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
                     <td className="px-5 py-3 text-[#4b4731]">{formatUsage(coupon)}</td>
                     <td className="px-5 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${
                           coupon.status === "publish"
                             ? "bg-[#ECFDF5] text-[#047857]"
                             : "bg-[#FEF3C7] text-[#92400E]"

@@ -273,14 +273,18 @@ export function ProductDetailMainContent({
             <span className="text-9 font-black leading-10 tracking-[0.369141px] text-brand-dark">
               {formatBRL(product.price)}
             </span>
-            <span className="pb-1 text-xl font-normal leading-7 tracking-[-0.449219px] text-[#D1D5DC] line-through">
-              {formatBRL(product.originalPrice)}
-            </span>
+            {product.originalPrice > product.price && (
+              <span className="pb-1 text-xl font-normal leading-7 tracking-[-0.449219px] text-[#D1D5DC] line-through">
+                {formatBRL(product.originalPrice)}
+              </span>
+            )}
           </div>
 
-          <span className="mt-1 text-sm font-medium leading-5 tracking-[-0.150391px] text-[#00C950]">
-            Você economiza {formatBRL(Math.max(0, product.originalPrice - product.price))}
-          </span>
+          {product.originalPrice > product.price && (
+            <span className="mt-1 text-sm font-medium leading-5 tracking-[-0.150391px] text-[#00C950]">
+              Você economiza {formatBRL(product.originalPrice - product.price)}
+            </span>
+          )}
 
           <p className="mt-6 max-w-113 text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">
             {product.description}
