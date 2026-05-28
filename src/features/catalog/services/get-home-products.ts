@@ -182,8 +182,8 @@ async function requestProductsMockFile() {
   return JSON.parse(raw) as ProductsMockFile;
 }
 
-export async function getHomeProducts(): Promise<HomeProductsPayload> {
-  const flashSaleCampaign = await getHomeFlashSale();
+export async function getHomeProducts(accessToken?: string): Promise<HomeProductsPayload> {
+  const flashSaleCampaign = await getHomeFlashSale(accessToken);
 
   if (!isMockDataEnabled()) {
     const products = await fetchWpProducts(48);

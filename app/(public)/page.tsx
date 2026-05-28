@@ -1,4 +1,5 @@
-import { use } from "react";
+import { getServerSession } from "next-auth";
+
 import { BestSellersSection } from "@/components/layout/best-sellers";
 import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
@@ -15,22 +16,24 @@ import {
   getHomePartnerBanner,
   getHomePromoBanner,
 } from "@/features/catalog/services/get-home-assets";
-import { useHomeProducts } from "@/features/catalog";
+import { getHomeProducts } from "@/features/catalog/services/get-home-products";
+import { authOptions } from "@/lib/auth";
 
-export default function Home() {
-  const [
-    { flashSaleCampaign, bestSellerProducts, newArrivalProducts },
-    heroBanners,
-    promoBanner,
-    partnerBanner,
-  ] = use(
-    Promise.all([
-      useHomeProducts(),
-      getHomeHeroBanners(),
-      getHomePromoBanner(),
-      getHomePartnerBanner(),
-    ]),
-  );
+function normalizeRole(role: unknown) {
+  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
+}
+
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  const isSeller = normalizeRole(session?.role) === "seller";
+  const [homeProducts, heroBanners, promoBanner, partnerBanner] = await Promise.all([
+    getHomeProducts(session?.accessToken),
+    getHomeHeroBanners(),
+    isSeller ? Promise.resolve(null) : getHomePromoBanner(),
+    getHomePartnerBanner(),
+  ]);
+
+  const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = homeProducts;
 
   return (
     <main className="flex flex-col bg-white">
@@ -41,8 +44,8 @@ export default function Home() {
         <FeaturesBar />
         <CategoriesNav />
       </div>
-      {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-      {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
+      {!isSeller && flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
+      {!isSeller && flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
       <BestSellersSection products={bestSellerProducts} />
       <PromoCardsSection />
       <NewArrivalsSection products={newArrivalProducts} />

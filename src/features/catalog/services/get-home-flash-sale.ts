@@ -61,15 +61,24 @@ function mapProduct(product: WpHomeFlashSaleProduct): HomeProductCard | null {
   };
 }
 
-export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> {
+export async function getHomeFlashSale(
+  accessToken?: string,
+): Promise<HomeFlashSaleCampaign | null> {
   const result = await wpRest<WpHomeFlashSaleResponse>(
     "/papelito/v1/home/flash-sale",
-    process.env.NODE_ENV === "development"
-      ? {}
-      : {
-          revalidate: 60,
-          tags: ["wp:home-flash-sale"],
-        },
+    accessToken
+      ? {
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      : process.env.NODE_ENV === "development"
+        ? {}
+        : {
+            revalidate: 60,
+            tags: ["wp:home-flash-sale"],
+          },
   );
 
   if (!result.ok) {
