@@ -1,12 +1,13 @@
 "use client";
 
 import { BadgePercent, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import type { Coupon, CouponInput, CouponListSnapshot } from "@/features/coupons/types/coupon";
 import { formatBRL } from "@/lib/format-currency";
 
-import { Panel } from "../../primitives";
+import { AdminToast, Panel } from "../../primitives";
 import { CouponDeleteModal } from "./coupon-delete-modal";
 import { CouponFormModal } from "./coupon-form-modal";
 
@@ -15,10 +16,13 @@ type CouponsManagerProps = {
   initialIssues: string[];
 };
 
-type ToastState =
-  | { kind: "success"; message: string }
-  | { kind: "error"; message: string }
-  | null;
+type ToastState = {
+  description: string;
+  title: string;
+} | null;
+
+const TOAST_HIDE_DELAY_MS = 2600;
+const TOAST_REMOVE_DELAY_MS = 2900;
 
 function formatDiscount(coupon: Coupon): string {
   if (coupon.discountType === "percent") {
@@ -29,11 +33,9 @@ function formatDiscount(coupon: Coupon): string {
 
 function formatRestrictions(coupon: Coupon): string {
   const parts: string[] = [];
-  if (coupon.role === "customer") parts.push("Customer");
-  else parts.push("Qualquer logado");
   if (coupon.vendorIds.length > 0) parts.push(`${coupon.vendorIds.length} vendor(s)`);
   if (coupon.productIds.length > 0) parts.push(`${coupon.productIds.length} produto(s)`);
-  return parts.join(" • ");
+  return parts.length > 0 ? parts.join(" • ") : "Sem restricoes";
 }
 
 function formatDate(value: string | null): string {
@@ -51,6 +53,7 @@ function formatUsage(coupon: Coupon): string {
 }
 
 export function CouponsManager({ initialList, initialIssues }: CouponsManagerProps) {
+  const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialList.items);
   const [issues] = useState<string[]>(initialIssues);
   const [modalCoupon, setModalCoupon] = useState<Coupon | null>(null);
@@ -59,7 +62,25 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
+  const [toastVisible, setToastVisible] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastEnterFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastHideTimerRef.current) {
+        clearTimeout(toastHideTimerRef.current);
+      }
+      if (toastRemoveTimerRef.current) {
+        clearTimeout(toastRemoveTimerRef.current);
+      }
+      if (toastEnterFrameRef.current) {
+        cancelAnimationFrame(toastEnterFrameRef.current);
+      }
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/admin/coupons?status=any&perPage=50", {
@@ -68,6 +89,33 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
     if (!response.ok) return;
     const data = (await response.json()) as { list?: CouponListSnapshot };
     if (data.list) setCoupons(data.list.items);
+  }, []);
+
+  const showToast = useCallback((nextToast: NonNullable<ToastState>) => {
+    setToastVisible(false);
+    setToast(nextToast);
+
+    if (toastHideTimerRef.current) {
+      clearTimeout(toastHideTimerRef.current);
+    }
+    if (toastRemoveTimerRef.current) {
+      clearTimeout(toastRemoveTimerRef.current);
+    }
+    if (toastEnterFrameRef.current) {
+      cancelAnimationFrame(toastEnterFrameRef.current);
+    }
+
+    toastEnterFrameRef.current = requestAnimationFrame(() => {
+      setToastVisible(true);
+    });
+
+    toastHideTimerRef.current = setTimeout(() => {
+      setToastVisible(false);
+    }, TOAST_HIDE_DELAY_MS);
+
+    toastRemoveTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, TOAST_REMOVE_DELAY_MS);
   }, []);
 
   function openCreate() {
@@ -96,12 +144,22 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
         return body?.message || "Falha ao salvar cupom.";
       }
 
-      setToast({
-        kind: "success",
-        message: id ? "Cupom atualizado." : "Cupom criado.",
-      });
+      showToast(
+        id
+          ? {
+              description: "As alteracoes do cupom ja foram salvas e ele esta pronto para uso conforme as restricoes definidas.",
+              title: "Cupom atualizado com sucesso.",
+            }
+          : {
+              description: "O novo cupom foi criado e ja pode ser usado conforme as configuracoes preenchidas.",
+              title: "Cupom criado com sucesso.",
+            },
+      );
       setModalOpen(false);
-      startTransition(refresh);
+      startTransition(() => {
+        router.refresh();
+        void refresh();
+      });
       return null;
     } catch (error) {
       return error instanceof Error ? error.message : "Erro inesperado.";
@@ -132,15 +190,22 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
 
       if (response.ok || response.status === 404) {
         setCoupons((prev) => prev.filter((c) => c.id !== targetId));
-        setToast({
-          kind: "success",
-          message:
-            response.status === 404
-              ? "Cupom ja havia sido removido. Lista atualizada."
-              : "Cupom removido.",
-        });
+        showToast(
+          response.status === 404
+            ? {
+                description: "O registro nao existia mais no backend e a lista foi sincronizada com o estado atual.",
+                title: "Lista de cupons atualizada.",
+              }
+            : {
+                description: "O cupom foi removido e nao podera mais ser usado em novas compras.",
+                title: "Cupom removido com sucesso.",
+              },
+        );
         setDeleteTarget(null);
-        startTransition(refresh);
+        startTransition(() => {
+          router.refresh();
+          void refresh();
+        });
         return;
       }
 
@@ -162,7 +227,7 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
             <div>
               <h2 className="text-base font-semibold text-[#1e1c10]">Cupons</h2>
               <p className="text-xs text-[#4b4731]">
-                Gerencie cupons percentuais e de valor fixo, com restricoes por role, vendor e produto.
+                Gerencie cupons percentuais e de valor fixo, com restricoes por vendor e produto.
               </p>
             </div>
           </div>
@@ -265,25 +330,11 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
       </Panel>
 
       {toast ? (
-        <div
-          className={`fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl px-4 py-3 text-sm shadow-lg ${
-            toast.kind === "success"
-              ? "bg-[#047857] text-white"
-              : "bg-[#b91c1c] text-white"
-          }`}
-          role="status"
-        >
-          <div className="flex items-center gap-3">
-            <span>{toast.message}</span>
-            <button
-              type="button"
-              className="cursor-pointer text-xs font-bold uppercase tracking-[0.1em] opacity-80 hover:opacity-100"
-              onClick={() => setToast(null)}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
+        <AdminToast
+          description={toast.description}
+          title={toast.title}
+          visible={toastVisible}
+        />
       ) : null}
 
       {modalOpen ? (

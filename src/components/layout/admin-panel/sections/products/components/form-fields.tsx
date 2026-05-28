@@ -38,11 +38,16 @@ export function FieldLabel({ helpText, label }: { helpText?: string; label: stri
 
 export function InfoTooltip({ text }: { text: string }) {
   return (
-    <span className="group relative inline-flex">
-      <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[#c9bd96] bg-white text-[10px] font-black leading-none text-[#231f20]">
+    <span className="group relative inline-flex shrink-0 items-center self-center align-middle">
+      <span
+        aria-label="Mais informacoes"
+        className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[#c9bd96] bg-white text-[10px] font-black leading-none text-[#231f20] outline-none transition focus-visible:ring-2 focus-visible:ring-[#231f20]/20"
+        role="button"
+        tabIndex={0}
+      >
         i
       </span>
-      <span className="pointer-events-none absolute bottom-full left-0 z-[9999] mb-2 hidden w-72 border border-[#231f20] bg-[#231f20] px-3 py-2 text-left text-[11px] font-medium normal-case leading-4 tracking-normal text-[#f5f1e8] shadow-[0_10px_24px_rgba(35,31,32,0.16)] group-hover:block">
+      <span className="pointer-events-none absolute bottom-full left-0 z-[9999] invisible mb-2 w-72 -translate-y-1 border border-[#231f20] bg-[#231f20] px-3 py-2 text-left text-[11px] font-medium normal-case leading-4 tracking-normal text-[#f5f1e8] opacity-0 shadow-[0_10px_24px_rgba(35,31,32,0.16)] transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
         {text}
       </span>
     </span>

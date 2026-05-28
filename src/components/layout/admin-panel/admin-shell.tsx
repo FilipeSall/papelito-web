@@ -57,6 +57,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   key={item.key}
                   href={item.href}
                   className={getNavItemClassName(active)}
+                  prefetch={false}
                 >
                   <div className="flex w-full items-start gap-4">
                     <span
@@ -127,6 +128,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       key={item.key}
                       href={item.href}
                       className={getMobileNavClassName(active)}
+                      prefetch={false}
                     >
                       <Icon aria-hidden className="h-4 w-4" strokeWidth={2} />
                       <span className="ml-2">{item.shortLabel}</span>

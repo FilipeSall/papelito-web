@@ -6,7 +6,7 @@ const formatTwoDigits = (nextValue: number) =>
 interface CountdownUnitProps {
   /** Valor numérico a exibir (0–99) */
   value: number;
-  label?: "h" | "m" | "s";
+  label?: "d" | "h" | "m" | "s";
 }
 
 export function CountdownUnit({ value, label }: CountdownUnitProps) {
@@ -23,7 +23,7 @@ export function CountdownUnit({ value, label }: CountdownUnitProps) {
         />
       </div>
       {label ? (
-        <span className="hidden text-xs font-black uppercase leading-4 text-brand-dark max-[500px]:inline">
+        <span className="text-[10px] font-bold uppercase leading-none tracking-[0.12em] text-white/30">
           {label}
         </span>
       ) : null}

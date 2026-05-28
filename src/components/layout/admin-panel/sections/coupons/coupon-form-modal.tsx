@@ -7,11 +7,11 @@ import type {
   Coupon,
   CouponDiscountType,
   CouponInput,
-  CouponRole,
   CouponStatus,
 } from "@/features/coupons/types/coupon";
 import type { SelectOption } from "@/types/admin-products-manager";
 
+import { InfoTooltip } from "../products/components/form-fields";
 import { AdminSelectField } from "../products/components/admin-select-field";
 
 const STATUS_OPTIONS: readonly SelectOption[] = [
@@ -22,11 +22,6 @@ const STATUS_OPTIONS: readonly SelectOption[] = [
 const DISCOUNT_TYPE_OPTIONS: readonly SelectOption[] = [
   { label: "Percentual", value: "percent" },
   { label: "Valor fixo", value: "fixed_cart" },
-];
-
-const ROLE_OPTIONS: readonly SelectOption[] = [
-  { label: "Apenas consumidor final (customer)", value: "customer" },
-  { label: "Qualquer usuario logado", value: "any" },
 ];
 
 type CouponFormModalProps = {
@@ -53,6 +48,15 @@ type AdminProductsResponse = {
   products?: Array<{ id?: number; name?: string; sku?: string }>;
 };
 
+function CouponFieldLabel({ label, text }: { label: string; text: string }) {
+  return (
+    <span className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase leading-none tracking-[0.18em] text-[#4b4731]">
+      <span className="leading-none">{label}</span>
+      <InfoTooltip text={text} />
+    </span>
+  );
+}
+
 function buildInitialState(coupon: Coupon | null): CouponInput {
   if (!coupon) {
     return {
@@ -78,7 +82,7 @@ function buildInitialState(coupon: Coupon | null): CouponInput {
     usageLimit: coupon.usageLimit,
     usageLimitPerUser: coupon.usageLimitPerUser,
     minimumAmount: coupon.minimumAmount,
-    role: coupon.role,
+    role: "customer",
     vendorIds: coupon.vendorIds,
     productIds: coupon.productIds,
     status: coupon.status,
@@ -242,7 +246,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
     }
 
     setSubmitting(true);
-    const message = await onSubmit({ ...form, code }, coupon?.id ?? null);
+    const message = await onSubmit({ ...form, code, role: "customer" }, coupon?.id ?? null);
     setSubmitting(false);
     if (message) setError(message);
   }
@@ -275,9 +279,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
         <form className="space-y-5 px-6 py-5" onSubmit={handleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Codigo
-              </span>
+              <CouponFieldLabel
+                label="Codigo"
+                text="Codigo unico do cupom. Ele e digitado pelo cliente no carrinho ou checkout."
+              />
               <input
                 type="text"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 font-mono text-sm uppercase outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -290,6 +295,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <AdminSelectField
+              helpText="Define se o cupom fica disponivel para uso imediato ou salvo como rascunho."
               label="Status"
               onChange={(value) => update("status", value as CouponStatus)}
               options={STATUS_OPTIONS}
@@ -298,6 +304,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             />
 
             <AdminSelectField
+              helpText="Escolha entre desconto percentual sobre o pedido ou valor fixo abatido no total."
               label="Tipo de desconto"
               onChange={(value) => update("discountType", value as CouponDiscountType)}
               options={DISCOUNT_TYPE_OPTIONS}
@@ -306,9 +313,14 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             />
 
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Valor {form.discountType === "percent" ? "(%)" : "(R$)"}
-              </span>
+              <CouponFieldLabel
+                label={`Valor ${form.discountType === "percent" ? "(%)" : "(R$)"}`}
+                text={
+                  form.discountType === "percent"
+                    ? "Percentual de desconto aplicado sobre os itens elegiveis do pedido."
+                    : "Valor fixo abatido do total elegivel do pedido."
+                }
+              />
               <input
                 type="number"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -321,9 +333,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Validade
-              </span>
+              <CouponFieldLabel
+                label="Validade"
+                text="Data limite para uso do cupom. Se ficar vazia, o cupom continua sem expiracao."
+              />
               <input
                 type="date"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -333,9 +346,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Subtotal minimo (R$)
-              </span>
+              <CouponFieldLabel
+                label="Subtotal minimo (R$)"
+                text="Valor minimo do subtotal do pedido para liberar o uso do cupom."
+              />
               <input
                 type="number"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -347,9 +361,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Limite total de usos (0 = ilimitado)
-              </span>
+              <CouponFieldLabel
+                label="Limite total de usos (0 = ilimitado)"
+                text="Quantidade maxima de vezes que o cupom pode ser usado no total."
+              />
               <input
                 type="number"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -360,9 +375,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <label className="block text-sm">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Limite por usuario (0 = ilimitado)
-              </span>
+              <CouponFieldLabel
+                label="Limite por usuario (0 = ilimitado)"
+                text="Quantidade maxima de usos do mesmo cupom por cliente."
+              />
               <input
                 type="number"
                 className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -372,15 +388,6 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
               />
             </label>
 
-            <div className="md:col-span-2">
-              <AdminSelectField
-                label="Quem pode usar"
-                onChange={(value) => update("role", value as CouponRole)}
-                options={ROLE_OPTIONS}
-                placeholder="Selecione"
-                value={form.role}
-              />
-            </div>
           </div>
 
           <fieldset className="rounded-xl border border-[#cec7aa] bg-[#fff9ea] p-4">
@@ -389,7 +396,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </legend>
 
             <div className="mt-3">
-              <p className="text-xs font-semibold text-[#1e1c10]">Vendors permitidos</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold text-[#1e1c10]">Vendors permitidos</p>
+                <InfoTooltip text="Se selecionar vendors, o cupom so vale para produtos vendidos por essas lojas." />
+              </div>
               <input
                 type="search"
                 className="mt-2 h-10 w-full rounded-lg border border-[#cec7aa] bg-white px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
@@ -430,7 +440,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </div>
 
             <div className="mt-4">
-              <p className="text-xs font-semibold text-[#1e1c10]">Produtos permitidos</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold text-[#1e1c10]">Produtos permitidos</p>
+                <InfoTooltip text="Se selecionar produtos, o cupom so vale para esses itens especificos." />
+              </div>
               <input
                 type="search"
                 className="mt-2 h-10 w-full rounded-lg border border-[#cec7aa] bg-white px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"

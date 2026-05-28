@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronRightIcon } from "@/components/ui/icons";
 
@@ -11,7 +12,7 @@ type CheckoutCustomSelectOption =
     };
 
 export interface CheckoutCustomSelectProps {
-  label: string;
+  label: ReactNode;
   placeholder: string;
   value: string;
   options: readonly CheckoutCustomSelectOption[];

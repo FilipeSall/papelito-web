@@ -7,3 +7,4 @@ export { CompactTable, type CompactTableProps } from "./compact-table";
 export { EmptyStateCard, type EmptyStateCardProps } from "./empty-state-card";
 export { LoadingStateCard } from "./loading-state-card";
 export { CardNotification } from "./card-notification";
+export { AdminToast } from "./admin-toast";

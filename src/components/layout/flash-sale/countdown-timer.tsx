@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { CountdownUnit } from "./countdown-unit";
+import { MenuUnderline } from "@/components/ui/menu-underline";
+
+const SECONDS_IN_DAY = 86400;
 
 function parseTime(totalSeconds: number) {
-  const h = Math.floor(totalSeconds / 3600);
+  const d = Math.floor(totalSeconds / SECONDS_IN_DAY);
+  const h = Math.floor((totalSeconds % SECONDS_IN_DAY) / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  return { h, m, s };
+  return { d, h, m, s };
 }
 
 function Separator() {
@@ -37,7 +41,9 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
 
   const remaining = getRemainingSeconds(endsAt, now);
 
-  const { h, m, s } = parseTime(remaining);
+  const { d, h, m, s } = parseTime(remaining);
+
+  const showDays = remaining >= SECONDS_IN_DAY;
 
   return (
     <div className="flex items-center gap-3">
@@ -45,11 +51,27 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
         Termina em:
       </span>
       <div className="flex items-start max-[500px]:items-center">
-        <CountdownUnit value={h} label="h" />
-        <Separator />
-        <CountdownUnit value={m} label="m" />
-        <Separator />
-        <CountdownUnit value={s} label="s" />
+        {showDays ? (
+          <span
+            data-underline-draw="true"
+            className="relative isolate inline-flex items-center pb-1 font-black text-2xl leading-8 tracking-[0.0703125px] text-brand-yellow"
+          >
+            {d} {d === 1 ? "dia" : "dias"}
+            <MenuUnderline
+              className="text-brand-yellow z-[-1] h-3"
+              strokeWidth={3}
+              options={{ roughness: 2.6, bowing: 3.5, strokeWidth: 3, seed: 11 }}
+            />
+          </span>
+        ) : (
+          <>
+            <CountdownUnit value={h} />
+            <Separator />
+            <CountdownUnit value={m} />
+            <Separator />
+            <CountdownUnit value={s} />
+          </>
+        )}
       </div>
     </div>
   );
