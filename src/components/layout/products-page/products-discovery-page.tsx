@@ -2,8 +2,6 @@ import { use } from "react";
 import { ProductsHeroBanner, ProductsSection } from "@/components/layout/products-page";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
-import { getActiveVendor, type ActiveVendorResult } from "@/features/active-vendor/server";
-import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   normalizeProductsPerPage,
@@ -113,13 +111,6 @@ export function ProductsDiscoveryPage({
 }: ProductsDiscoveryPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
-  const coverageContext = use(getAccountCoverageCepContext());
-  const activeVendorResult: ActiveVendorResult =
-    coverageContext.cep && coverageContext.isAuthenticated
-      ? use(getActiveVendor())
-      : { ok: false, error: { reason: "missing_cep", message: "" } };
-  const coverageCep = coverageContext.cep;
-  const activeVendorId = activeVendorResult.ok ? activeVendorResult.vendor.vendorId : null;
 
   const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
   const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
@@ -154,8 +145,6 @@ export function ProductsDiscoveryPage({
         maxPrice,
         page: currentPage,
         perPage,
-        cep: coverageCep,
-        activeVendorId,
       }),
       siteImagesPromise,
     ]),

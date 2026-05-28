@@ -1,5 +1,7 @@
 import { ProductsDiscoveryPage } from "@/components/layout/products-page";
 
+export const revalidate = 60;
+
 interface NovidadesPageProps {
   searchParams?:
     | Promise<{

@@ -4,7 +4,6 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
-import { getCoverage } from "./get-coverage";
 import {
   getCategorySlugsForTypes,
   getTabCounts,
@@ -56,8 +55,6 @@ export interface GetProductsCatalogInput {
   minPrice?: number | null;
   maxPrice?: number | null;
   perPage?: number;
-  cep?: string | null;
-  activeVendorId?: number | null;
 }
 
 const TYPE_LABEL: Record<ProductTypeId, string> = {
@@ -166,11 +163,6 @@ function normalizePriceRange(input: { minPrice?: number | null; maxPrice?: numbe
   }
 
   return { minPrice: normalizedMin, maxPrice: normalizedMax };
-}
-
-function normalizeCepForCoverage(value: string | null | undefined) {
-  const digits = value?.replace(/\D/g, "") ?? "";
-  return digits.length === 8 ? digits : null;
 }
 
 function inferTypeFromName(name: string): Exclude<ProductTypeId, "todos"> {
@@ -315,7 +307,6 @@ export async function getProductsCatalog(
     maxPrice: input.maxPrice,
   });
   const perPage = clamp(input.perPage ?? 9, 1, 60);
-  const coverageCep = normalizeCepForCoverage(input.cep);
 
   const currentPage = clamp(input.page ?? 1, 1, Number.MAX_SAFE_INTEGER);
   const fetchBufferCap = 120;
@@ -366,44 +357,10 @@ export async function getProductsCatalog(
     ];
   }
 
-  let allItems = fetchedItems;
-  let coverageStatus: ProductsCatalogPayload["coverageStatus"] = "not_requested";
-
-  if (coverageCep && !useMockData && fetchedItems.length > 0) {
-    try {
-      const coverage = await getCoverage(
-        coverageCep,
-        fetchedItems.map((item) => item.id),
-        input.activeVendorId ?? null,
-      );
-
-      const coveredItems: ProductsCatalogItem[] = [];
-
-      for (const item of fetchedItems) {
-        const itemCoverage = coverage[item.id];
-
-        if (!itemCoverage?.hasCoverage || !itemCoverage.bestVendor) {
-          continue;
-        }
-
-        coveredItems.push({
-          ...item,
-          bestVendor: itemCoverage.bestVendor,
-        });
-      }
-
-      allItems = coveredItems;
-      coverageStatus = "applied";
-    } catch {
-      allItems = fetchedItems;
-      coverageStatus = "unavailable";
-    }
-  }
-
   const typeFilteredItems =
     selectedTypes.length === 0 || !useMockData
-      ? allItems
-      : allItems.filter((item) => selectedTypes.includes(item.type));
+      ? fetchedItems
+      : fetchedItems.filter((item) => selectedTypes.includes(item.type));
 
   const collectionFilteredItems = typeFilteredItems.filter((item) => {
     if (activeCollection === "premium") {
@@ -455,7 +412,7 @@ export async function getProductsCatalog(
     totalPages,
     currentPage: clampedPage,
     perPage,
-    coverageCep,
-    coverageStatus,
+    coverageCep: null,
+    coverageStatus: "not_requested",
   };
 }

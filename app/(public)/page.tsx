@@ -1,55 +1,61 @@
-import { getServerSession } from "next-auth";
-
 import { BestSellersSection } from "@/components/layout/best-sellers";
 import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
 import { HeroSection } from "@/components/layout/hero-section";
+import { SellerHidden } from "@/components/layout/home/seller-hidden";
 import { NewArrivalsSection } from "@/components/layout/new-arrivals";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { PartnerBanner } from "@/components/layout/partner-banner";
 import { PromoBanner } from "@/components/layout/promo-banner";
 import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
+import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import {
   getHomeHeroBanners,
   getHomePartnerBanner,
   getHomePromoBanner,
 } from "@/features/catalog/services/get-home-assets";
 import { getHomeProducts } from "@/features/catalog/services/get-home-products";
-import { authOptions } from "@/lib/auth";
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
+export const revalidate = 60;
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
-  const isSeller = normalizeRole(session?.role) === "seller";
   const [homeProducts, heroBanners, promoBanner, partnerBanner] = await Promise.all([
-    getHomeProducts(session?.accessToken),
+    getHomeProducts(),
     getHomeHeroBanners(),
-    isSeller ? Promise.resolve(null) : getHomePromoBanner(),
+    getHomePromoBanner(),
     getHomePartnerBanner(),
   ]);
 
   const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = homeProducts;
+  const productIds = Array.from(
+    new Set([
+      ...bestSellerProducts.map((product) => product.id),
+      ...newArrivalProducts.map((product) => product.id),
+      ...(flashSaleCampaign?.products.map((product) => product.id) ?? []),
+    ]),
+  );
 
   return (
-    <main className="flex flex-col bg-white">
-      <AddToCartToastHost />
-      <div className="flex flex-col">
-        <PromoMarquee />
-        <HeroSection banners={heroBanners} />
-        <FeaturesBar />
-        <CategoriesNav />
-      </div>
-      {!isSeller && flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-      {!isSeller && flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
-      <BestSellersSection products={bestSellerProducts} />
-      <PromoCardsSection />
-      <NewArrivalsSection products={newArrivalProducts} />
-      {partnerBanner ? <PartnerBanner banner={partnerBanner} /> : null}
-    </main>
+    <ProductAvailabilityProvider productIds={productIds}>
+      <main className="flex flex-col bg-white">
+        <AddToCartToastHost />
+        <div className="flex flex-col">
+          <PromoMarquee />
+          <HeroSection banners={heroBanners} />
+          <FeaturesBar />
+          <CategoriesNav />
+        </div>
+        <SellerHidden>
+          {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
+          {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
+        </SellerHidden>
+        <BestSellersSection products={bestSellerProducts} />
+        <PromoCardsSection />
+        <NewArrivalsSection products={newArrivalProducts} />
+        {partnerBanner ? <PartnerBanner banner={partnerBanner} /> : null}
+      </main>
+    </ProductAvailabilityProvider>
   );
 }

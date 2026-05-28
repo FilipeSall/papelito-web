@@ -7,7 +7,7 @@ import { wpGraphqlRequest } from "@/lib/server/wp-graphql";
 import type { HomeProductCard } from "../types/home-products";
 import type { ProductDetailItem, ProductDetailRelatedThumb } from "../types/product-detail";
 import type { ProductTypeId, ProductsCatalogItem } from "../types/products-catalog";
-import { PRODUCTS_QUERY, PRODUCT_QUERY } from "../queries/products";
+import { PRODUCTS_LIST_QUERY, PRODUCT_QUERY } from "../queries/products";
 import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -244,7 +244,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     products?: {
       nodes?: WpProductNode[];
     };
-  }>(print(PRODUCTS_QUERY), variables, {
+  }>(print(PRODUCTS_LIST_QUERY), variables, {
     revalidate: 60,
     tags: ["wp:products"],
   });

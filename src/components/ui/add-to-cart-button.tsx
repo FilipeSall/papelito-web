@@ -23,6 +23,7 @@ interface AddToCartButtonProps {
   product?: CartProductInput;
   quantity?: number;
   className?: string;
+  disabledReason?: string;
   onClick?: () => void;
   onAdded?: () => void;
 }
@@ -32,6 +33,7 @@ export function AddToCartButton({
   product,
   quantity = 1,
   className = "",
+  disabledReason,
   onClick,
   onAdded,
 }: AddToCartButtonProps) {
@@ -42,7 +44,8 @@ export function AddToCartButton({
   const { isAuthenticated, isSeller, isLoading } = useAuthSession();
   const [isResolving, setIsResolving] = useState(false);
   const sellerBlockedMessage = "Vendors nao compram pela plataforma.";
-  const isDisabled = isResolving || isSeller;
+  const blockedMessage = disabledReason ?? (isSeller ? sellerBlockedMessage : undefined);
+  const isDisabled = isResolving || isSeller || Boolean(disabledReason);
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -72,6 +75,10 @@ export function AddToCartButton({
   }
 
   async function handleClick() {
+    if (disabledReason) {
+      return;
+    }
+
     if (product) {
       if (isSeller || isLoading || isResolving) return;
 
@@ -133,12 +140,12 @@ export function AddToCartButton({
         disabled={isDisabled}
         aria-label="Adicionar ao carrinho"
         aria-disabled={isDisabled}
-        title={isSeller ? sellerBlockedMessage : undefined}
+        title={blockedMessage}
         className={`flex cursor-pointer items-center justify-center gap-1.5 w-full h-7 bg-brand-dark rounded-[10px] hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
       >
         <CartIcon className="size-3 text-white" />
         <span className="font-black text-xs leading-4 text-white">
-          {isSeller ? sellerBlockedMessage : isResolving ? "Validando" : label}
+          {disabledReason ? "Indisponível" : isSeller ? sellerBlockedMessage : isResolving ? "Validando" : label}
         </span>
       </button>
     );
@@ -151,7 +158,7 @@ export function AddToCartButton({
       disabled={isDisabled}
       aria-label="Adicionar ao carrinho"
       aria-disabled={isDisabled}
-      title={isSeller ? sellerBlockedMessage : undefined}
+      title={blockedMessage}
       className={`flex cursor-pointer items-center justify-center w-9 h-9 bg-brand-dark rounded-[14px] shrink-0 hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
     >
       <CartIcon className="size-4 text-white" />

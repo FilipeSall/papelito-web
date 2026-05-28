@@ -7,6 +7,7 @@ import { ProductsPerPageSelector } from "./products-per-page-selector";
 import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import { CoverageWarningToastHost } from "./coverage-warning-toast-host";
+import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import type {
   CatalogCoverageStatus,
   ProductCollectionId,
@@ -77,46 +78,72 @@ export function ProductsSection({
       : "Nenhum produto encontrado.";
 
   return (
-    <section className="bg-white py-8">
-      <AddToCartToastHost />
-      <CoverageWarningToastHost shouldShow={showCoverageWarning} />
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        {/* Filter Tabs */}
-        {showCollectionFilters ? (
-          <div className="mb-4">
-            <ProductCollectionFilters
+    <ProductAvailabilityProvider productIds={products.map((product) => product.id)}>
+      <section className="bg-white py-8">
+        <AddToCartToastHost />
+        <CoverageWarningToastHost shouldShow={showCoverageWarning} />
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          {/* Filter Tabs */}
+          {showCollectionFilters ? (
+            <div className="mb-4">
+              <ProductCollectionFilters
+                basePath={basePath}
+                activeCollection={activeCollection}
+                selectedTypes={selectedTypes}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                viewMode={viewMode}
+                perPage={perPage}
+              />
+            </div>
+          ) : null}
+
+          <div className="mb-6">
+            <ProductFilterTabs
               basePath={basePath}
-              activeCollection={activeCollection}
-              selectedTypes={selectedTypes}
+              collection={activeCollection}
+              activeTab={activeType}
+              tabs={tabs}
               minPrice={minPrice}
               maxPrice={maxPrice}
               viewMode={viewMode}
               perPage={perPage}
             />
           </div>
-        ) : null}
 
-        <div className="mb-6">
-          <ProductFilterTabs
-            basePath={basePath}
-            collection={activeCollection}
-            activeTab={activeType}
-            tabs={tabs}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            viewMode={viewMode}
-            perPage={perPage}
-          />
-        </div>
+          {/* Products count and view toggle */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-text-secondary">
+              <span className="font-bold text-brand-dark">{totalItems}</span>{" "}
+              produtos encontrados
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <ProductsPerPageSelector
+                basePath={basePath}
+                collection={activeCollection}
+                selectedTypes={selectedTypes}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                viewMode={viewMode}
+                perPage={perPage}
+              />
+              <ViewToggle
+                basePath={basePath}
+                collection={activeCollection}
+                activeView={viewMode}
+                selectedTypes={selectedTypes}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                currentPage={currentPage}
+                perPage={perPage}
+              />
+            </div>
+          </div>
 
-        {/* Products count and view toggle */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-text-secondary">
-            <span className="font-bold text-brand-dark">{totalItems}</span>{" "}
-            produtos encontrados
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <ProductsPerPageSelector
+          {/* Main content: Sidebar + Grid */}
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Sidebar */}
+            <ProductFilterSidebar
               basePath={basePath}
               collection={activeCollection}
               selectedTypes={selectedTypes}
@@ -125,53 +152,29 @@ export function ProductsSection({
               viewMode={viewMode}
               perPage={perPage}
             />
-            <ViewToggle
-              basePath={basePath}
-              collection={activeCollection}
-              activeView={viewMode}
-              selectedTypes={selectedTypes}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              currentPage={currentPage}
-              perPage={perPage}
-            />
+
+            {/* Products Grid */}
+            <div className="flex-1">
+              <ProductsGrid
+                emptyMessage={emptyMessage}
+                products={products}
+                viewMode={viewMode}
+              />
+              <ProductsPagination
+                basePath={basePath}
+                collection={activeCollection}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                selectedTypes={selectedTypes}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                viewMode={viewMode}
+                perPage={perPage}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Main content: Sidebar + Grid */}
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar */}
-          <ProductFilterSidebar
-            basePath={basePath}
-            collection={activeCollection}
-            selectedTypes={selectedTypes}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            viewMode={viewMode}
-            perPage={perPage}
-          />
-
-          {/* Products Grid */}
-          <div className="flex-1">
-            <ProductsGrid
-              emptyMessage={emptyMessage}
-              products={products}
-              viewMode={viewMode}
-            />
-            <ProductsPagination
-              basePath={basePath}
-              collection={activeCollection}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              selectedTypes={selectedTypes}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              viewMode={viewMode}
-              perPage={perPage}
-            />
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </ProductAvailabilityProvider>
   );
 }

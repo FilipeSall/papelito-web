@@ -9,6 +9,7 @@ interface ProductCardInfoProps {
   reviews: number;
   originalPrice: number;
   price: number;
+  disabledReason?: string;
 }
 
 export function ProductCardInfo({
@@ -20,6 +21,7 @@ export function ProductCardInfo({
   reviews,
   originalPrice,
   price,
+  disabledReason,
 }: ProductCardInfoProps) {
   return (
     <div className="flex-1 px-4 pt-4 pb-4 flex flex-col">
@@ -34,6 +36,7 @@ export function ProductCardInfo({
         <ProductPrice original={originalPrice} current={price} />
         <AddToCartButton
           className="relative z-20"
+          disabledReason={disabledReason}
           product={{
             id,
             category,

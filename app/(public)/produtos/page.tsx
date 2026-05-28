@@ -5,13 +5,13 @@ import {
 } from "@/components/layout/products-page";
 import type { ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
-import { getActiveVendor, type ActiveVendorResult } from "@/features/active-vendor/server";
-import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
+
+export const revalidate = 60;
 
 interface ProdutosPageProps {
   searchParams?:
@@ -109,13 +109,6 @@ function normalizePrice(value: string | undefined) {
 export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
-  const coverageContext = use(getAccountCoverageCepContext());
-  const activeVendorResult: ActiveVendorResult =
-    coverageContext.cep && coverageContext.isAuthenticated
-      ? use(getActiveVendor())
-      : { ok: false, error: { reason: "missing_cep", message: "" } };
-  const coverageCep = coverageContext.cep;
-  const activeVendorId = activeVendorResult.ok ? activeVendorResult.vendor.vendorId : null;
 
   const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
   const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
@@ -144,8 +137,6 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         maxPrice,
         page: currentPage,
         perPage,
-        cep: coverageCep,
-        activeVendorId,
       }),
       siteImagesPromise,
     ]),

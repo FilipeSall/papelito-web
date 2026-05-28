@@ -100,6 +100,28 @@ Token e refresh do WP ficam na sessão JWT do NextAuth (`session.accessToken`, `
 
 `session.profileComplete = false` indica usuário Google sem perfil preenchido (CNPJ/CEP/etc. faltando) — middleware redireciona para `/perfil/completar` em rotas protegidas.
 
+## Performance — home, catálogo e disponibilidade regional
+
+Contexto completo em [docs/performance/home-produtos-loading-fix.md](docs/performance/home-produtos-loading-fix.md). Invariantes que qualquer agente deve preservar:
+
+- **Home pública deve continuar cacheável/ISR.** Não reintroduza `getServerSession`, `cookies()`, `headers()` ou fetch `no-store` em `app/(public)/page.tsx`. Seller-specific UI deve ser escondida no cliente com `SellerHidden`.
+- **Catálogo público renderiza todos os produtos.** `/produtos`, `/colecoes`, `/kits`, `/novidades`, `/premium` e `/promocoes` não devem bloquear SSR em CEP, vendor ativo ou cobertura.
+- **Disponibilidade regional é progressiva no cliente.** Use `ProductAvailabilityProvider` + `useProductAvailability`; a API interna é `GET /api/catalog/availability?productIds=...`.
+- **Produto sem estoque/cobertura no vendor da região não some do catálogo.** Ele fica com opacidade reduzida, mostra tooltip em hover/focus e o `AddToCartButton` recebe `disabledReason`.
+- **Fonte da região:** apenas CEP salvo na conta do usuário logado. Usuário anônimo ou sem CEP não chama availability e vê catálogo normal.
+- **Cache esperado:** disponibilidade tem cache server-side por `accountId + cep + activeVendorId + productIdsHash` por 5 min e cache client em `localStorage`/SWR por 5 min.
+- **Query GraphQL de listagem é leve.** `PRODUCTS_LIST_QUERY` não deve voltar a carregar campos de detalhe como descrição completa, galeria e SKU; esses pertencem à query de detalhe.
+
+## Pagamento / Checkout (Pagar.me) — em implementação
+
+Plano completo em [../pagarme-integration-plan.MD](../pagarme-integration-plan.MD). Pontos que afetam o front:
+
+- **Pagamento direto ao vendor, sem split.** O front não calcula nem exibe comissão de marketplace; o vendor recebe 100% (produtos + frete) e arca com as taxas.
+- **Cartão é tokenizado no browser** (`POST /tokens?appId=<NEXT_PUBLIC_PAGARME_PUBLIC_KEY>`); só o `token_id` trafega para o backend — PCI fora de escopo.
+- O botão "Finalizar" está travado por `isCheckoutBlocked = true` ([checkout-review-step-content.tsx:68](src/components/layout/checkout-page/checkout-review-step-content.tsx#L68)) — será removido ao ligar `placeOrder()`.
+- Telas de resultado a construir: PIX (QR + copia-e-cola + polling), boleto (linha digitável), cartão (sucesso/falha síncrono).
+- Onboarding do vendor: form de KYC/dados bancários no painel do vendor → cria o recebedor Pagar.me (vendor só vende com recebedor `active`).
+
 ## Variáveis de ambiente (`.env.local`)
 
 | Var | Obrigatória | Descrição |
@@ -111,6 +133,7 @@ Token e refresh do WP ficam na sessão JWT do NextAuth (`session.accessToken`, `
 | `GOOGLE_CLIENT_ID` | opcional | Habilita botão Google. Mesmo valor deve estar no WP como `PAPELITO_GOOGLE_CLIENT_ID` |
 | `GOOGLE_CLIENT_SECRET` | opcional | Par com o id acima |
 | `USE_MOCK_DATA` | opcional | `true` força mocks (`mock/`) sem chamar WP |
+| `NEXT_PUBLIC_PAGARME_PUBLIC_KEY` | quando pagamento ligado | `pk_test`/`pk_live` — só tokeniza cartão no browser (`/tokens`); nunca envia PAN ao backend |
 
 ## Convenções
 

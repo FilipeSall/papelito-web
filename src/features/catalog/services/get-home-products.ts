@@ -182,11 +182,12 @@ async function requestProductsMockFile() {
   return JSON.parse(raw) as ProductsMockFile;
 }
 
-export async function getHomeProducts(accessToken?: string): Promise<HomeProductsPayload> {
-  const flashSaleCampaign = await getHomeFlashSale(accessToken);
-
+export async function getHomeProducts(): Promise<HomeProductsPayload> {
   if (!isMockDataEnabled()) {
-    const products = await fetchWpProducts(48);
+    const [flashSaleCampaign, products] = await Promise.all([
+      getHomeFlashSale(),
+      fetchWpProducts(48),
+    ]);
     const cards = products.map(mapWpProductToHomeCard);
     const bestSellerProducts = cards.slice(0, 8);
     const newArrivalProducts: HomeNewArrivalProduct[] = cards.slice(0, 8).map((card) => ({
@@ -205,7 +206,10 @@ export async function getHomeProducts(accessToken?: string): Promise<HomeProduct
     };
   }
 
-  const mockFile = await requestProductsMockFile();
+  const [flashSaleCampaign, mockFile] = await Promise.all([
+    getHomeFlashSale(),
+    requestProductsMockFile(),
+  ]);
   const products = Array.isArray(mockFile?.products) ? mockFile.products : [];
 
   const candidates = products

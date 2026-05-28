@@ -8,6 +8,6 @@ const getCachedHomeProducts =
     ? getHomeProducts
     : cache(getHomeProducts);
 
-export async function useHomeProducts(accessToken?: string) {
-  return getCachedHomeProducts(accessToken);
+export async function useHomeProducts() {
+  return getCachedHomeProducts();
 }

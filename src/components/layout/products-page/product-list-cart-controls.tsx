@@ -6,10 +6,15 @@ import type { CartProductInput } from "@/features/cart";
 
 interface ProductListCartControlsProps {
   product: CartProductInput;
+  disabledReason?: string;
 }
 
-export function ProductListCartControls({ product }: ProductListCartControlsProps) {
+export function ProductListCartControls({
+  product,
+  disabledReason,
+}: ProductListCartControlsProps) {
   const [quantity, setQuantity] = useState(1);
+  const isDisabled = Boolean(disabledReason);
 
   return (
     <div className="flex flex-col gap-3 sm:items-end">
@@ -19,7 +24,8 @@ export function ProductListCartControls({ product }: ProductListCartControlsProp
           <button
             type="button"
             aria-label="Diminuir quantidade"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-gray-100 hover:text-brand-dark"
+            disabled={isDisabled}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-gray-100 hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setQuantity((previous) => Math.max(1, previous - 1))}
           >
             -
@@ -30,7 +36,8 @@ export function ProductListCartControls({ product }: ProductListCartControlsProp
           <button
             type="button"
             aria-label="Aumentar quantidade"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-gray-100 hover:text-brand-dark"
+            disabled={isDisabled}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-gray-100 hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setQuantity((previous) => previous + 1)}
           >
             +
@@ -42,6 +49,7 @@ export function ProductListCartControls({ product }: ProductListCartControlsProp
         label="Adicionar"
         quantity={quantity}
         product={product}
+        disabledReason={disabledReason}
         className="h-9 min-w-35 rounded-full px-4 text-[11px] tracking-wide uppercase sm:w-auto"
       />
     </div>
