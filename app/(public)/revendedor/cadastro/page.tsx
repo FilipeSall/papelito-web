@@ -1,26 +1,23 @@
 import { getServerSession } from "next-auth";
 
-import { RevendedorPage } from "@/components/layout/revendedor-page";
-import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
+import { RevendedorRegistrationWizard } from "@/components/layout/revendedor-page/organisms/revendedor-registration-wizard";
 import { fetchProfileCustomer } from "@/features/profile/server/customer";
 import { fetchRevendedorApplication } from "@/features/revendedor/server/application";
 import { buildDraftFromSources } from "@/features/revendedor/utils/revendedor-registration";
 import { authOptions } from "@/lib/auth";
 
-export default async function RevendedorRoutePage() {
+export default async function RevendedorCadastroPage() {
   const session = await getServerSession(authOptions);
   const isAuthenticated = Boolean(session?.user && session.accessToken);
 
-  const [customer, application, images] = await Promise.all([
+  const [customer, application] = await Promise.all([
     isAuthenticated ? fetchProfileCustomer(session?.accessToken) : null,
     fetchRevendedorApplication(session?.accessToken),
-    getSiteImageAssets(),
   ]);
 
   return (
-    <RevendedorPage
+    <RevendedorRegistrationWizard
       application={application}
-      images={images}
       initialDraft={buildDraftFromSources(customer, application)}
       isAuthenticated={isAuthenticated}
     />

@@ -113,6 +113,10 @@ a:hover .menu-underline path:nth-child(3),
     animation-delay: 180ms;
 }
 
+[data-underline-draw="true"] .menu-underline path {
+    animation-duration: 2100ms;
+}
+
 @keyframes admin-panel-enter {
     from {
         opacity: 0;

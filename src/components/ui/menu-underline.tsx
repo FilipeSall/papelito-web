@@ -3,7 +3,7 @@ import rough from "roughjs";
 import type { Options } from "roughjs/bin/core";
 
 const VB_WIDTH = 120;
-const VB_HEIGHT = 12;
+const VB_HEIGHT = 11;
 
 const generator = rough.generator();
 

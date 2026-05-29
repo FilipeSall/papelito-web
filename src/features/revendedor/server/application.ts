@@ -1,197 +1,86 @@
 import "server-only";
 
-import { getWpGraphqlEndpoint } from "@/lib/server/env";
+import { wpRest } from "@/lib/server/wp-rest";
 import type {
   RevendedorApplication,
   SubmitRevendedorApplicationInput,
+  VendorApplicationResponse,
 } from "@/features/revendedor/types/revendedor-application";
+import {
+  createEmptyRevendedorApplication,
+  normalizeRevendedorApplication,
+} from "@/features/revendedor/utils/revendedor-registration";
 
-const SELLER_APPLICATION_QUERY = `
-  query RevendedorApplication {
-    customer {
-      sellerApplication {
-        status
-        submittedAt
-        storeName
-        firstName
-        lastName
-        email
-        phoneNumber
-        cnpj
-        instagram
-        state
-        city
-        cep
-        minCep
-        maxCep
-        discoveryChannel
-        hasSoldPapelito
-      }
-    }
+const VENDOR_APPLICATION_PATH = "/papelito/v1/vendor/application";
+
+class RevendedorApplicationRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
   }
-`;
-
-const SUBMIT_SELLER_APPLICATION_MUTATION = `
-  mutation SubmitSellerApplication($input: SubmitSellerApplicationInput!) {
-    submitSellerApplication(input: $input) {
-      success
-      message
-      application {
-        status
-        submittedAt
-        storeName
-        firstName
-        lastName
-        email
-        phoneNumber
-        cnpj
-        instagram
-        state
-        city
-        cep
-        minCep
-        maxCep
-        discoveryChannel
-        hasSoldPapelito
-      }
-    }
-  }
-`;
-
-type GraphqlEnvelope<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
-
-type SellerApplicationPayload = Partial<RevendedorApplication> | null;
-
-function createEmptyApplication(): RevendedorApplication {
-  return {
-    status: "none",
-    submittedAt: "",
-    storeName: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
-    cnpj: "",
-    instagram: "",
-    state: "",
-    city: "",
-    cep: "",
-    minCep: "",
-    maxCep: "",
-    discoveryChannel: "",
-    hasSoldPapelito: "",
-  };
-}
-
-function normalizeApplication(payload: SellerApplicationPayload): RevendedorApplication {
-  const empty = createEmptyApplication();
-
-  if (!payload) {
-    return empty;
-  }
-
-  return {
-    status:
-      payload.status === "pending" ||
-      payload.status === "approved" ||
-      payload.status === "rejected"
-        ? payload.status
-        : "none",
-    submittedAt: payload.submittedAt ?? "",
-    storeName: payload.storeName ?? "",
-    firstName: payload.firstName ?? "",
-    lastName: payload.lastName ?? "",
-    email: payload.email ?? "",
-    phoneNumber: payload.phoneNumber ?? "",
-    cnpj: payload.cnpj ?? "",
-    instagram: payload.instagram ?? "",
-    state: payload.state ?? "",
-    city: payload.city ?? "",
-    cep: payload.cep ?? "",
-    minCep: payload.minCep ?? "",
-    maxCep: payload.maxCep ?? "",
-    discoveryChannel: payload.discoveryChannel ?? "",
-    hasSoldPapelito: payload.hasSoldPapelito ?? "",
-  };
-}
-
-async function executeRevendedorGraphql<TData>(
-  accessToken: string,
-  body: {
-    query: string;
-    variables?: Record<string, unknown>;
-  },
-): Promise<TData> {
-  const response = await fetch(getWpGraphqlEndpoint(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  const payload = (await response.json()) as GraphqlEnvelope<TData>;
-
-  if (!response.ok || payload.errors?.length) {
-    const message =
-      payload.errors?.map((error) => error.message).filter(Boolean).join(" ") ||
-      "Nao foi possivel processar a triagem do revendedor.";
-    throw new Error(message);
-  }
-
-  if (!payload.data) {
-    throw new Error("Resposta vazia ao processar a triagem do revendedor.");
-  }
-
-  return payload.data;
 }
 
 export async function fetchRevendedorApplication(
   accessToken?: string,
 ): Promise<RevendedorApplication> {
   if (!accessToken) {
-    return createEmptyApplication();
+    return createEmptyRevendedorApplication();
   }
 
-  try {
-    const response = await executeRevendedorGraphql<{
-      customer?: { sellerApplication?: SellerApplicationPayload } | null;
-    }>(accessToken, {
-      query: SELLER_APPLICATION_QUERY,
-    });
+  const result = await wpRest<VendorApplicationResponse>(VENDOR_APPLICATION_PATH, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 
-    return normalizeApplication(response.customer?.sellerApplication ?? null);
-  } catch {
-    return createEmptyApplication();
-  }
+  return result.ok ? normalizeRevendedorApplication(result.data) : createEmptyRevendedorApplication();
 }
 
 export async function submitRevendedorApplication(
   accessToken: string,
   input: SubmitRevendedorApplicationInput,
 ): Promise<{ message: string; application: RevendedorApplication }> {
-  const response = await executeRevendedorGraphql<{
-    submitSellerApplication?: {
-      success?: boolean | null;
-      message?: string | null;
-      application?: SellerApplicationPayload;
-    } | null;
-  }>(accessToken, {
-    query: SUBMIT_SELLER_APPLICATION_MUTATION,
-    variables: {
-      input,
+  const result = await wpRest<{
+    message?: string;
+    status?: string;
+    submittedAt?: string;
+    application?: VendorApplicationResponse["application"];
+    pagarmeDraft?: VendorApplicationResponse["pagarmeDraft"];
+  }>(VENDOR_APPLICATION_PATH, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
+    json: input,
   });
+
+  if (!result.ok) {
+    throw new RevendedorApplicationRequestError(
+      result.error.message || "Não foi possível enviar a candidatura.",
+      result.status || result.error.data?.status || 422,
+    );
+  }
 
   return {
     message:
-      response.submitSellerApplication?.message ??
+      result.data.message ??
       "Triagem enviada com sucesso. Nosso time vai analisar seus dados.",
-    application: normalizeApplication(response.submitSellerApplication?.application ?? null),
+    application: normalizeRevendedorApplication({
+      status:
+        result.data.status === "pending" ||
+        result.data.status === "approved" ||
+        result.data.status === "rejected"
+          ? result.data.status
+          : "none",
+      submittedAt: result.data.submittedAt ?? "",
+      application:
+        result.data.application ?? {
+          step1: createEmptyRevendedorApplication().step1,
+          step2: createEmptyRevendedorApplication().step2,
+        },
+      pagarmeDraft: result.data.pagarmeDraft ?? null,
+    }),
   };
 }

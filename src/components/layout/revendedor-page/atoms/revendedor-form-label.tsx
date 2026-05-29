@@ -1,6 +1,7 @@
 type RevendedorFormLabelProps = {
   children: React.ReactNode;
   htmlFor: string;
+  tone?: "light" | "dark";
 };
 
 /**
@@ -9,11 +10,16 @@ type RevendedorFormLabelProps = {
 export function RevendedorFormLabel({
   children,
   htmlFor,
+  tone = "light",
 }: RevendedorFormLabelProps) {
   return (
     <label
       htmlFor={htmlFor}
-      className="text-xs font-black uppercase tracking-[0.6px] text-brand-dark"
+      className={
+        tone === "dark"
+          ? "text-xs font-medium uppercase tracking-widest text-white/70"
+          : "text-xs font-black uppercase tracking-[0.6px] text-brand-dark"
+      }
     >
       {children}
     </label>

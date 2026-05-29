@@ -1,4 +1,7 @@
-import type { RevendedorApplication, RevendedorFormValues } from "@/features/revendedor";
+import type {
+  RevendedorApplication,
+  VendorRegistrationDraft,
+} from "@/features/revendedor";
 import type { SiteImageAssets } from "@/types/home-assets";
 
 import { RevendedorBenefitsSection } from "./organisms/revendedor-benefits-section";
@@ -12,21 +15,21 @@ import { RevendedorTestimonialsSection } from "./organisms/revendedor-testimonia
 type RevendedorPageProps = {
   application: RevendedorApplication;
   images?: SiteImageAssets;
-  initialValues?: Partial<RevendedorFormValues>;
+  initialDraft: VendorRegistrationDraft;
   isAuthenticated: boolean;
 };
 
 export function RevendedorPage({
   application,
   images,
-  initialValues,
+  initialDraft,
   isAuthenticated,
 }: RevendedorPageProps) {
   return (
     <main className="bg-white">
       <RevendedorHeroSection
         application={application}
-        initialValues={initialValues}
+        initialDraft={initialDraft}
         isAuthenticated={isAuthenticated}
       />
       <RevendedorBenefitsSection />

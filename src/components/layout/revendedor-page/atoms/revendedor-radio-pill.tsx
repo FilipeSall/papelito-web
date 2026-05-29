@@ -3,6 +3,7 @@ type RevendedorRadioPillProps = {
   label: string;
   name: string;
   onChange: () => void;
+  tone?: "light" | "dark";
   value: string;
 };
 
@@ -14,14 +15,20 @@ export function RevendedorRadioPill({
   label,
   name,
   onChange,
+  tone = "light",
   value,
 }: RevendedorRadioPillProps) {
+  const uncheckedClasses =
+    tone === "dark"
+      ? "border-white/20 bg-white/10 text-white/70"
+      : "border-[#E5E7EB] bg-white text-text-muted";
+
   return (
     <label
       className={`flex h-12 flex-1 cursor-pointer items-center justify-center rounded-3.5 border-2 transition-colors ${
         checked
           ? "border-brand-yellow bg-brand-yellow text-brand-dark"
-          : "border-[#E5E7EB] bg-white text-text-muted"
+          : uncheckedClasses
       }`}
     >
       <input

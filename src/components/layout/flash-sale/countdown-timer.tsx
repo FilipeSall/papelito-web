@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CountdownUnit } from "./countdown-unit";
 import { MenuUnderline } from "@/components/ui/menu-underline";
 
@@ -30,6 +30,8 @@ function Separator() {
  */
 export function CountdownTimer({ endsAt }: { endsAt: string }) {
   const [now, setNow] = useState(() => Date.now());
+  const [centered, setCentered] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -39,6 +41,27 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCentered(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "0px", threshold: 0 },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   const remaining = getRemainingSeconds(endsAt, now);
 
   const { d, h, m, s } = parseTime(remaining);
@@ -46,14 +69,14 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
   const showDays = remaining >= SECONDS_IN_DAY;
 
   return (
-    <div className="flex items-center gap-3">
+    <div ref={rootRef} className="flex items-center gap-3">
       <span className="whitespace-nowrap text-sm leading-5 tracking-[-0.150391px] text-white/60">
         Termina em:
       </span>
       <div className="flex items-start max-[500px]:items-center">
         {showDays ? (
           <span
-            data-underline-draw="true"
+            data-underline-draw={centered ? "true" : "false"}
             className="relative isolate inline-flex items-center pb-1 font-black text-2xl leading-8 tracking-[0.0703125px] text-brand-yellow"
           >
             {d} {d === 1 ? "dia" : "dias"}

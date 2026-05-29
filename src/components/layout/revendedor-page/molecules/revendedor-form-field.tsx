@@ -12,6 +12,7 @@ type RevendedorFormFieldProps = {
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   placeholder: string;
   prefixContent?: React.ReactNode;
+  tone?: "light" | "dark";
   type?: React.HTMLInputTypeAttribute;
   value: string;
 };
@@ -30,12 +31,15 @@ export function RevendedorFormField({
   onChange,
   placeholder,
   prefixContent,
+  tone = "light",
   type = "text",
   value,
 }: RevendedorFormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <RevendedorFormLabel htmlFor={id}>{label}</RevendedorFormLabel>
+      <RevendedorFormLabel htmlFor={id} tone={tone}>
+        {label}
+      </RevendedorFormLabel>
       <RevendedorTextInput
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={Boolean(error)}
@@ -48,12 +52,15 @@ export function RevendedorFormField({
         onChange={onChange}
         placeholder={placeholder}
         prefixContent={prefixContent}
+        tone={tone}
         type={type}
         value={value}
       />
       <span
         id={`${id}-error`}
-        className="min-h-5 text-[11px] tracking-[0.05px] text-red-500"
+        className={`min-h-5 text-[11px] tracking-[0.05px] ${
+          tone === "dark" ? "text-red-300" : "text-red-500"
+        }`}
       >
         {error ?? ""}
       </span>
