@@ -7,7 +7,7 @@ import {
   parseAdminVendorsFilters,
 } from "@/lib/server/admin-vendors-filters";
 
-import { VendorsList, VendorsMetrics, VendorsTabs } from "./vendors";
+import { VendorCreateLauncher, VendorsList, VendorsMetrics, VendorsTabs } from "./vendors";
 
 export async function VendorsContent({
   searchParams,
@@ -20,6 +20,7 @@ export async function VendorsContent({
 
   return (
     <div className="space-y-5">
+      <VendorCreateLauncher />
       <VendorsMetrics summary={snapshot.summary} totalRows={snapshot.totalRows} />
       <VendorsTabs filters={filters} summary={snapshot.summary} totalRows={snapshot.totalRows} />
       <VendorsList filters={filters} snapshot={snapshot} />
