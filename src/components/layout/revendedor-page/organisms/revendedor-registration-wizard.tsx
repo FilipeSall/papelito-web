@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { useCepLookup } from "@/features/checkout";
 import {
+  REVENDEDOR_CORPORATION_TYPE_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
   useRevendedorRegistrationDraftStore,
 } from "@/features/revendedor";
@@ -75,6 +76,8 @@ export function RevendedorRegistrationWizard({
   } = useRevendedorRegistrationDraftStore((state) => state);
   const { isLoading: cepLoading, error: cepError, fetchCep } = useCepLookup();
   const bootstrappedRef = useRef(false);
+  const formTopRef = useRef<HTMLDivElement | null>(null);
+  const previousStepRef = useRef<1 | 2 | 3 | null>(null);
   const [step1Errors, setStep1Errors] = useState<RevendedorStep1Errors>({});
   const [step2Errors, setStep2Errors] = useState<RevendedorStep2Errors>({});
   const [step3Errors, setStep3Errors] = useState<RevendedorStep3Errors>({});
@@ -199,6 +202,19 @@ export function RevendedorRegistrationWizard({
     }
   }, [draft.step1, draft.step2, draft.step3, hasHydrated, patchStep3]);
 
+  useEffect(() => {
+    if (!hasHydrated || !bootstrappedRef.current) {
+      previousStepRef.current = draft.currentStep;
+      return;
+    }
+
+    if (previousStepRef.current !== null && previousStepRef.current !== draft.currentStep) {
+      formTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+
+    previousStepRef.current = draft.currentStep;
+  }, [draft.currentStep, hasHydrated]);
+
   if (!hasHydrated) {
     return (
       <div className="flex min-h-screen">
@@ -235,6 +251,16 @@ export function RevendedorRegistrationWizard({
   }
 
   const partner = draft.step3.managingPartners[0];
+  const partnerSectionTitle =
+    draft.step3.hasManagingPartner === "yes" ? "Sócio administrador" : "Responsável legal";
+  const combinedBranchValue = formatBankFieldWithDigit(
+    draft.step3.bankAccount.branchNumber,
+    draft.step3.bankAccount.branchCheckDigit,
+  );
+  const combinedAccountValue = formatBankFieldWithDigit(
+    draft.step3.bankAccount.accountNumber,
+    draft.step3.bankAccount.accountCheckDigit,
+  );
 
   function handleStep1Change<Key extends keyof VendorRegistrationDraft["step1"]>(
     key: Key,
@@ -291,6 +317,26 @@ export function RevendedorRegistrationWizard({
     setSubmitMessage(null);
   }
 
+  function handleCorporationTypeSelection(value: string) {
+    patchStep3({
+      corporationType: value === "outro" ? draft.step3.corporationTypeOther : value,
+      corporationTypeOther: value === "outro" ? draft.step3.corporationTypeOther : "",
+      corporationTypeSelection: value,
+    });
+    setStep3Errors((current) => ({ ...current, corporationType: undefined }));
+    setSubmitMessage(null);
+  }
+
+  function handleCorporationTypeOtherChange(value: string) {
+    patchStep3({
+      corporationType: value,
+      corporationTypeOther: value,
+      corporationTypeSelection: "outro",
+    });
+    setStep3Errors((current) => ({ ...current, corporationType: undefined }));
+    setSubmitMessage(null);
+  }
+
   function handleBankAccountChange(
     key: keyof VendorRegistrationDraft["step3"]["bankAccount"],
     value: string,
@@ -303,6 +349,50 @@ export function RevendedorRegistrationWizard({
       bankAccount: {
         ...current.bankAccount,
         [key]: undefined,
+      },
+    }));
+  }
+
+  function handleCombinedAgencyChange(rawValue: string) {
+    const sanitized = rawValue.replace(/[^0-9A-Za-z]/g, "");
+    const branchNumber = sanitized.length > 1 ? sanitized.slice(0, -1) : sanitized;
+    const branchCheckDigit = sanitized.length > 1 ? sanitized.slice(-1) : "";
+
+    patchStep3({
+      bankAccount: {
+        ...draft.step3.bankAccount,
+        branchNumber,
+        branchCheckDigit,
+      },
+    });
+    setStep3Errors((current) => ({
+      ...current,
+      bankAccount: {
+        ...current.bankAccount,
+        branchNumber: undefined,
+        branchCheckDigit: undefined,
+      },
+    }));
+  }
+
+  function handleCombinedAccountChange(rawValue: string) {
+    const sanitized = rawValue.replace(/[^0-9A-Za-z]/g, "");
+    const accountNumber = sanitized.length > 1 ? sanitized.slice(0, -1) : sanitized;
+    const accountCheckDigit = sanitized.length > 1 ? sanitized.slice(-1) : "";
+
+    patchStep3({
+      bankAccount: {
+        ...draft.step3.bankAccount,
+        accountNumber,
+        accountCheckDigit,
+      },
+    });
+    setStep3Errors((current) => ({
+      ...current,
+      bankAccount: {
+        ...current.bankAccount,
+        accountNumber: undefined,
+        accountCheckDigit: undefined,
       },
     }));
   }
@@ -444,6 +534,8 @@ export function RevendedorRegistrationWizard({
 
       <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-3xl">
+          <div ref={formTopRef} className="scroll-mt-28" />
+
           <div className="mb-8 flex items-center gap-2">
             <RevendedorRegistrationStepper
               currentStep={draft.currentStep}
@@ -466,7 +558,7 @@ export function RevendedorRegistrationWizard({
               ? "Revise ou edite a triagem inicial antes de seguir."
               : draft.currentStep === 2
                 ? "Cadastre o endereço base da operação e a faixa de CEP atendida."
-                : "Preencha os dados necessários para o onboarding do recebedor Pagar.me."}
+                : "Preencha os dados bancários e de KYC necessários para o onboarding do recebedor Pagar.me."}
           </p>
 
           <div className="mt-10">
@@ -476,7 +568,7 @@ export function RevendedorRegistrationWizard({
                   ? "Step 1: Dados iniciais"
                   : draft.currentStep === 2
                     ? "Step 2: Localização"
-                    : "Step 3: Dados do pagamento"}
+                    : "Step 3: Dados bancários e KYC"}
               </h2>
               <p className="text-sm leading-6 text-white/45">
                 Os dados ficam salvos neste navegador até o envio final.
@@ -644,17 +736,14 @@ export function RevendedorRegistrationWizard({
                     </RevendedorFormRow>
 
                     <RevendedorFormRow>
-                      <RevendedorFormField
+                      <RevendedorFormSelectField
                         error={step3Errors.corporationType}
-                        id="corporationType"
                         label="Natureza jurídica *"
-                        name="corporationType"
-                        onChange={(event) =>
-                          handleStep3Change("corporationType", event.target.value)
-                        }
-                        placeholder="Ex: Sociedade Empresária Limitada"
+                        onChange={handleCorporationTypeSelection}
+                        options={REVENDEDOR_CORPORATION_TYPE_OPTIONS}
+                        placeholder="Selecione a natureza jurídica"
                         tone="dark"
-                        value={draft.step3.corporationType}
+                        value={draft.step3.corporationTypeSelection}
                       />
                       <RevendedorFormField
                         error={step3Errors.foundingDate}
@@ -668,6 +757,19 @@ export function RevendedorRegistrationWizard({
                         value={draft.step3.foundingDate}
                       />
                     </RevendedorFormRow>
+
+                    {draft.step3.corporationTypeSelection === "outro" ? (
+                      <RevendedorFormField
+                        error={step3Errors.corporationType}
+                        id="corporationTypeOther"
+                        label="Qual é a natureza jurídica? *"
+                        name="corporationTypeOther"
+                        onChange={(event) => handleCorporationTypeOtherChange(event.target.value)}
+                        placeholder="Descreva a natureza jurídica"
+                        tone="dark"
+                        value={draft.step3.corporationTypeOther}
+                      />
+                    ) : null}
 
                     <RevendedorFormField
                       error={step3Errors.annualRevenue}
@@ -685,10 +787,54 @@ export function RevendedorRegistrationWizard({
 
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/45">
-                    Sócio administrador
+                    Pessoa responsável pelo recebedor
                   </p>
 
                   <div className="mt-4 flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <RevendedorFormLabel htmlFor="hasManagingPartner" tone="dark">
+                        Tem sócio administrador?
+                      </RevendedorFormLabel>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label
+                          className={`flex h-12 cursor-pointer items-center justify-center rounded-3.5 border-2 ${
+                            draft.step3.hasManagingPartner === "yes"
+                              ? "border-brand-yellow bg-brand-yellow text-brand-dark"
+                              : "border-white/20 bg-white/10 text-white/70"
+                          }`}
+                        >
+                          <input
+                            checked={draft.step3.hasManagingPartner === "yes"}
+                            className="sr-only"
+                            name="hasManagingPartner"
+                            onChange={() => patchStep3({ hasManagingPartner: "yes" })}
+                            type="radio"
+                          />
+                          <span className="text-sm font-black uppercase">Sim</span>
+                        </label>
+                        <label
+                          className={`flex h-12 cursor-pointer items-center justify-center rounded-3.5 border-2 ${
+                            draft.step3.hasManagingPartner === "no"
+                              ? "border-brand-yellow bg-brand-yellow text-brand-dark"
+                              : "border-white/20 bg-white/10 text-white/70"
+                          }`}
+                        >
+                          <input
+                            checked={draft.step3.hasManagingPartner === "no"}
+                            className="sr-only"
+                            name="hasManagingPartner"
+                            onChange={() => patchStep3({ hasManagingPartner: "no" })}
+                            type="radio"
+                          />
+                          <span className="text-sm font-black uppercase">Não</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/45">
+                      {partnerSectionTitle}
+                    </p>
+
                     <RevendedorFormRow>
                       <RevendedorFormField
                         error={step3Errors.managingPartners?.[0]?.name}
@@ -696,7 +842,11 @@ export function RevendedorRegistrationWizard({
                         label="Nome completo *"
                         name="partnerName"
                         onChange={(event) => handleManagingPartnerChange("name", event.target.value)}
-                        placeholder="Nome do sócio"
+                        placeholder={
+                          draft.step3.hasManagingPartner === "yes"
+                            ? "Nome do sócio"
+                            : "Nome do responsável legal"
+                        }
                         tone="dark"
                         value={partner?.name ?? ""}
                       />
@@ -706,7 +856,11 @@ export function RevendedorRegistrationWizard({
                         label="E-mail *"
                         name="partnerEmail"
                         onChange={(event) => handleManagingPartnerChange("email", event.target.value)}
-                        placeholder="socio@email.com"
+                        placeholder={
+                          draft.step3.hasManagingPartner === "yes"
+                            ? "socio@email.com"
+                            : "responsavel@email.com"
+                        }
                         tone="dark"
                         type="email"
                         value={partner?.email ?? ""}
@@ -777,7 +931,11 @@ export function RevendedorRegistrationWizard({
                       onChange={(event) =>
                         handleManagingPartnerChange("professionalOccupation", event.target.value)
                       }
-                      placeholder="Ex: Sócio administrador"
+                      placeholder={
+                        draft.step3.hasManagingPartner === "yes"
+                          ? "Ex: Sócio administrador"
+                          : "Ex: Proprietário"
+                      }
                       tone="dark"
                       value={partner?.professionalOccupation ?? ""}
                     />
@@ -841,7 +999,9 @@ export function RevendedorRegistrationWizard({
 
                     <div className="rounded-3xl border border-white/10 bg-brand-dark/40 p-4">
                       <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/45">
-                        Endereço do sócio
+                        {draft.step3.hasManagingPartner === "yes"
+                          ? "Endereço do sócio"
+                          : "Endereço do responsável legal"}
                       </p>
 
                       <div className="mt-4 flex flex-col gap-4">
@@ -1014,57 +1174,34 @@ export function RevendedorRegistrationWizard({
 
                     <RevendedorFormRow>
                       <RevendedorFormField
-                        error={step3Errors.bankAccount?.branchNumber}
-                        id="branchNumber"
+                        error={
+                          step3Errors.bankAccount?.branchNumber ||
+                          step3Errors.bankAccount?.branchCheckDigit
+                        }
+                        id="branchCombined"
                         inputMode="numeric"
-                        label="Agência *"
-                        name="branchNumber"
-                        onChange={(event) =>
-                          handleBankAccountChange("branchNumber", event.target.value)
-                        }
-                        placeholder="0001"
+                        label="Agência com dígito *"
+                        maxLength={8}
+                        name="branchCombined"
+                        onChange={(event) => handleCombinedAgencyChange(event.target.value)}
+                        placeholder="0001-9"
                         tone="dark"
-                        value={draft.step3.bankAccount.branchNumber}
+                        value={combinedBranchValue}
                       />
                       <RevendedorFormField
-                        error={step3Errors.bankAccount?.branchCheckDigit}
-                        id="branchCheckDigit"
-                        label="Dígito da agência"
-                        name="branchCheckDigit"
-                        onChange={(event) =>
-                          handleBankAccountChange("branchCheckDigit", event.target.value)
+                        error={
+                          step3Errors.bankAccount?.accountNumber ||
+                          step3Errors.bankAccount?.accountCheckDigit
                         }
-                        placeholder="0"
-                        tone="dark"
-                        value={draft.step3.bankAccount.branchCheckDigit}
-                      />
-                    </RevendedorFormRow>
-
-                    <RevendedorFormRow>
-                      <RevendedorFormField
-                        error={step3Errors.bankAccount?.accountNumber}
-                        id="accountNumber"
+                        id="accountCombined"
                         inputMode="numeric"
-                        label="Conta *"
-                        name="accountNumber"
-                        onChange={(event) =>
-                          handleBankAccountChange("accountNumber", event.target.value)
-                        }
-                        placeholder="123456"
+                        label="Conta com dígito *"
+                        maxLength={20}
+                        name="accountCombined"
+                        onChange={(event) => handleCombinedAccountChange(event.target.value)}
+                        placeholder="123456-7"
                         tone="dark"
-                        value={draft.step3.bankAccount.accountNumber}
-                      />
-                      <RevendedorFormField
-                        error={step3Errors.bankAccount?.accountCheckDigit}
-                        id="accountCheckDigit"
-                        label="Dígito da conta *"
-                        name="accountCheckDigit"
-                        onChange={(event) =>
-                          handleBankAccountChange("accountCheckDigit", event.target.value)
-                        }
-                        placeholder="7"
-                        tone="dark"
-                        value={draft.step3.bankAccount.accountCheckDigit}
+                        value={combinedAccountValue}
                       />
                     </RevendedorFormRow>
 
@@ -1112,7 +1249,7 @@ export function RevendedorRegistrationWizard({
                   </RevendedorCtaButton>
                 ) : (
                   <RevendedorCtaButton disabled={isSubmitting} onClick={() => void submit()} type="button">
-                    {isSubmitting ? "Enviando..." : "Enviar para análise"}
+                    {isSubmitting ? "Enviando..." : "Enviar"}
                   </RevendedorCtaButton>
                 )}
               </div>
@@ -1133,7 +1270,7 @@ const benefits = [
 
 function RevendedorWizardShowcase() {
   return (
-    <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:w-1/2">
+    <div className="relative hidden items-center justify-center bg-brand-yellow lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-1/2">
       <div className="flex flex-col items-center px-12 text-center">
         <Image
           src="/images/auth/logo-with-flag.svg"
@@ -1165,6 +1302,17 @@ function RevendedorWizardShowcase() {
       </div>
     </div>
   );
+}
+
+function formatBankFieldWithDigit(value: string, digit: string) {
+  const sanitizedValue = value.replace(/[^0-9A-Za-z]/g, "");
+  const sanitizedDigit = digit.replace(/[^0-9A-Za-z]/g, "").slice(0, 1);
+
+  if (!sanitizedValue) {
+    return sanitizedDigit;
+  }
+
+  return sanitizedDigit ? `${sanitizedValue}-${sanitizedDigit}` : sanitizedValue;
 }
 
 function WizardCheckIcon({ className }: { className?: string }) {

@@ -1,6 +1,5 @@
 import { RevendedorSelectOption } from "@/features/revendedor";
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
-import { RevendedorFormLabel } from "../atoms/revendedor-form-label";
 
 type RevendedorFormSelectFieldProps = {
   error?: string;
@@ -24,40 +23,32 @@ export function RevendedorFormSelectField({
   tone = "light",
   value,
 }: RevendedorFormSelectFieldProps) {
-  if (tone === "dark") {
-    const selectId = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const normalizedOptions = options.filter((option) => option.value !== "");
 
+  if (tone === "dark") {
     return (
-      <div className="flex flex-col gap-1.5">
-        <RevendedorFormLabel htmlFor={selectId} tone="dark">
-          {label}
-        </RevendedorFormLabel>
-        <select
-          aria-describedby={error ? `${selectId}-error` : undefined}
-          aria-invalid={Boolean(error)}
-          className={`h-12 w-full appearance-none rounded-xl border bg-white/10 px-4 text-sm text-white transition focus:outline-none focus:ring-1 ${
-            error
-              ? "border-red-400 focus:border-red-400 focus:ring-red-400/40"
-              : "border-white/20 focus:border-brand-yellow focus:ring-brand-yellow"
-          }`}
-          id={selectId}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option className="text-brand-dark" key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <span
-          id={`${selectId}-error`}
-          className="min-h-5 text-[11px] tracking-[0.05px] text-red-300"
-        >
-          {error ?? ""}
-        </span>
-      </div>
+      <CheckoutCustomSelect
+        errorClassName="min-h-5 text-[11px] tracking-[0.05px] text-red-300"
+        errorMessage={error}
+        iconClassName="text-white/60"
+        label={label}
+        labelClassName="text-[11px] font-black uppercase tracking-[0.24em] text-white/45"
+        listClassName="!border-white/10 !bg-[#2b2527] shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+        options={normalizedOptions}
+        optionClassName="rounded-none"
+        placeholder={placeholder}
+        placeholderClassName="text-white/45"
+        selectedOptionClassName="!bg-brand-yellow !text-brand-dark"
+        selectedValueClassName="text-white"
+        triggerClassName={`h-12 rounded-xl border bg-white/10 ${
+          error
+            ? "border-red-400 focus:border-red-400"
+            : "border-white/20 focus:border-brand-yellow"
+        }`}
+        unselectedOptionClassName="!text-white hover:!bg-white/10"
+        value={value}
+        onChange={onChange}
+      />
     );
   }
 
@@ -66,7 +57,7 @@ export function RevendedorFormSelectField({
       errorMessage={error}
       label={label}
       labelClassName="text-xs font-black uppercase tracking-[0.6px] text-brand-dark"
-      options={options}
+      options={normalizedOptions}
       placeholder={placeholder}
       triggerClassName="focus:border-brand-yellow"
       value={value}

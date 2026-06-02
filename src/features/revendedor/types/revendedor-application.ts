@@ -69,12 +69,20 @@ export type VendorRegistrationStep3Data = {
   companyName: string;
   tradingName: string;
   corporationType: string;
+  corporationTypeOther: string;
+  corporationTypeSelection: string;
   foundingDate: string;
   annualRevenue: string;
+  hasManagingPartner: "yes" | "no";
   managingPartners: VendorManagingPartner[];
   bankAccount: VendorBankAccount;
   transfer: VendorTransferSettings;
 };
+
+export type VendorRegistrationStep3SubmitData = Omit<
+  VendorRegistrationStep3Data,
+  "corporationTypeOther" | "corporationTypeSelection" | "hasManagingPartner"
+>;
 
 export type VendorRegistrationDraft = {
   version: 1;
@@ -106,7 +114,7 @@ export type VendorApplicationResponse = {
 export type SubmitRevendedorApplicationInput = {
   step1: VendorRegistrationStep1Data;
   step2: VendorRegistrationStep2Data;
-  step3: VendorRegistrationStep3Data;
+  step3: VendorRegistrationStep3SubmitData;
 };
 
 export type RevendedorStep1Errors = Partial<Record<keyof VendorRegistrationStep1Data, string>>;

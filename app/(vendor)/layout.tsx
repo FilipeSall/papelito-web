@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { VendorShell } from "@/components/layout/vendor-panel";
 import { authOptions } from "@/lib/auth";
+import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 
 const vendorDisplay = Chakra_Petch({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export default async function VendorLayout({ children }: Readonly<{ children: Re
     redirect("/entrar");
   }
 
-  if (typeof session.role !== "string" || session.role.trim().toLowerCase() !== "seller") {
+  if (!session.accessToken || !(await isCurrentUserSeller(session.accessToken, session.role))) {
     redirect("/");
   }
 

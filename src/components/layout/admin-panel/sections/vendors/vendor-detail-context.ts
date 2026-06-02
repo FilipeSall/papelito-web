@@ -1,7 +1,7 @@
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 import type { AdminVendorStockFilter } from "@/lib/server/admin-vendor-operations";
 
-export type DetailTabKey = "data" | "coverage" | "stock" | "orders";
+export type DetailTabKey = "data" | "coverage" | "banking" | "stock" | "orders";
 
 export type OriginFilters = {
   page: number;

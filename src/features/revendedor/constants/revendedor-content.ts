@@ -10,9 +10,6 @@ export const REVENDEDOR_HERO_CONTENT = {
     "Preencha o formulário para começar a fazer parte da melhor comunidade de PDV's do Brasil",
   subtitle: "Todos os campos são obrigatórios.",
   submitLabel: "Quero fazer parte do PDV Perfeito",
-  termsPrefix: "Ao enviar, você concorda com os ",
-  termsLinkLabel: "Termos de Uso",
-  termsSuffix: ". Venda proibida para menores de 18 anos.",
   titleHighlight: "PDV Perfeito",
   titlePrefix: "Seja um",
 } as const;
@@ -121,6 +118,16 @@ export const REVENDEDOR_STATE_OPTIONS: RevendedorSelectOption[] = [
   { label: "São Paulo", value: "SP" },
   { label: "Sergipe", value: "SE" },
   { label: "Tocantins", value: "TO" },
+];
+
+export const REVENDEDOR_CORPORATION_TYPE_OPTIONS: RevendedorSelectOption[] = [
+  { label: "Sociedade Empresária Limitada", value: "Sociedade Empresária Limitada" },
+  { label: "Sociedade Limitada Unipessoal", value: "Sociedade Limitada Unipessoal" },
+  { label: "Empresário Individual", value: "Empresário Individual" },
+  { label: "MEI", value: "MEI" },
+  { label: "Sociedade Anônima", value: "Sociedade Anônima" },
+  { label: "EIRELI", value: "EIRELI" },
+  { label: "Outro", value: "outro" },
 ];
 
 export const REVENDEDOR_DISCOVERY_OPTIONS: RevendedorSelectOption[] = [

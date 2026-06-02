@@ -18,10 +18,17 @@ export interface CheckoutCustomSelectProps {
   options: readonly CheckoutCustomSelectOption[];
   onChange: (value: string) => void;
   errorMessage?: string;
+  errorClassName?: string;
   labelClassName?: string;
+  placeholderClassName?: string;
+  selectedValueClassName?: string;
   triggerClassName?: string;
+  iconClassName?: string;
   listClassName?: string;
   optionClassName?: string;
+  selectedOptionClassName?: string;
+  unselectedOptionClassName?: string;
+  wrapperClassName?: string;
 }
 
 export function CheckoutCustomSelect({
@@ -31,10 +38,17 @@ export function CheckoutCustomSelect({
   options,
   onChange,
   errorMessage,
+  errorClassName = "min-h-5 text-[11px] tracking-[0.05px] text-red-500",
   labelClassName = "text-xs font-medium uppercase tracking-[0.6px] text-text-tertiary",
+  placeholderClassName = "text-black/50",
+  selectedValueClassName = "text-brand-dark",
   triggerClassName = "",
+  iconClassName = "text-text-muted",
   listClassName = "",
   optionClassName = "",
+  selectedOptionClassName = "bg-brand-dark text-white",
+  unselectedOptionClassName = "text-brand-dark hover:bg-bg-light",
+  wrapperClassName = "",
 }: CheckoutCustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -62,7 +76,7 @@ export function CheckoutCustomSelect({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2" ref={wrapperRef}>
+    <div className={`flex flex-col gap-2 ${wrapperClassName}`.trim()} ref={wrapperRef}>
       <label className={labelClassName}>
         {label}
       </label>
@@ -82,11 +96,11 @@ export function CheckoutCustomSelect({
           type="button"
           onClick={() => setIsOpen((current) => !current)}
         >
-          <span className={value ? "text-brand-dark" : "text-black/50"}>
+          <span className={value ? selectedValueClassName : placeholderClassName}>
             {selectedOption ? getOptionLabel(selectedOption) : placeholder}
           </span>
           <ChevronRightIcon
-            className={`h-4 w-4 text-text-muted transition-transform ${
+            className={`h-4 w-4 transition-transform ${iconClassName} ${
               isOpen ? "rotate-90" : "-rotate-90"
             }`}
           />
@@ -107,9 +121,7 @@ export function CheckoutCustomSelect({
                 <li key={optionValue} role="option" aria-selected={isSelected}>
                   <button
                     className={`w-full cursor-pointer px-4 py-2 text-left text-sm tracking-[-0.1504px] transition ${
-                      isSelected
-                        ? "bg-brand-dark text-white"
-                        : "text-brand-dark hover:bg-bg-light"
+                      isSelected ? selectedOptionClassName : unselectedOptionClassName
                     } ${optionClassName}`.trim()}
                     type="button"
                     onClick={() => {
@@ -127,7 +139,7 @@ export function CheckoutCustomSelect({
       </div>
 
       {errorMessage ? (
-        <span className="min-h-5 text-[11px] tracking-[0.05px] text-red-500">
+        <span className={errorClassName}>
           {errorMessage}
         </span>
       ) : null}

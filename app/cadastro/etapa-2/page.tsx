@@ -141,7 +141,7 @@ export default function CadastroEtapa2Page() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:w-1/2">
+      <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:h-screen lg:w-1/2 lg:sticky lg:top-0">
         <div className="flex flex-col items-center px-12 text-center">
           <Image
             src="/images/auth/logo-with-flag.svg"

@@ -15,7 +15,7 @@ export function DetailSection({ title, children }: { children: React.ReactNode; 
   return (
     <Panel className="space-y-4 p-5 md:p-6">
       <h2
-        className="text-xs font-semibold uppercase tracking-[0.22em] text-[#231f20]/72"
+        className="text-sm font-semibold uppercase tracking-[0.2em] text-[#231f20]/74"
         style={{ fontFamily: "var(--font-admin-mono)" }}
       >
         {title}

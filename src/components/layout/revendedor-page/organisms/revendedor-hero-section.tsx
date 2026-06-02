@@ -8,10 +8,7 @@ import type {
   RevendedorStep1Errors,
   VendorRegistrationDraft,
 } from "@/features/revendedor";
-import {
-  REVENDEDOR_HERO_CONTENT,
-  useRevendedorRegistrationDraftStore,
-} from "@/features/revendedor";
+import { useRevendedorRegistrationDraftStore } from "@/features/revendedor";
 import {
   hasStep1Data,
   patchStep1Field,
@@ -135,13 +132,6 @@ export function RevendedorHeroSection({
                     </p>
                   ) : null}
 
-                  <p className="text-center text-[11px] leading-4.46875 tracking-[0.0645px] text-text-muted">
-                    <span>{REVENDEDOR_HERO_CONTENT.termsPrefix}</span>
-                    <span className="underline decoration-solid">
-                      {REVENDEDOR_HERO_CONTENT.termsLinkLabel}
-                    </span>
-                    <span>{REVENDEDOR_HERO_CONTENT.termsSuffix}</span>
-                  </p>
                 </div>
               )}
             </div>

@@ -11,6 +11,7 @@ import {
   UserDataIcon,
 } from "./profile-sidebar-icons";
 import { ProfileSidebarItem } from "./profile-sidebar-item";
+import { useProfileShell } from "./profile-shell-provider";
 
 const menuItems = [
   { href: "/perfil", label: "Meus Pedidos", icon: OrdersIcon },
@@ -26,10 +27,21 @@ const menuItems = [
  */
 export function ProfileSidebar() {
   const pathname = usePathname();
+  const { customer } = useProfileShell();
+  const isSeller = customer.role.trim().toLowerCase() === "seller";
 
   return (
     <aside className="w-full overflow-hidden rounded-2xl bg-white shadow-sm lg:w-72 lg:shrink-0 xl:w-80">
       <nav className="flex flex-col">
+        {isSeller ? (
+          <ProfileSidebarItem
+            href="/vendor/dashboard"
+            icon={<OrdersIcon className="h-4 w-4" />}
+            isActive={pathname.startsWith("/vendor")}
+            key="/vendor/dashboard"
+            label="Painel vendor"
+          />
+        ) : null}
         {menuItems.map((item) => (
           <ProfileSidebarItem
             href={item.href}

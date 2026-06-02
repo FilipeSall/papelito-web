@@ -100,8 +100,11 @@ export function createEmptyStep3Data(): VendorRegistrationStep3Data {
     companyName: "",
     tradingName: "",
     corporationType: "",
+    corporationTypeOther: "",
+    corporationTypeSelection: "",
     foundingDate: "",
     annualRevenue: "",
+    hasManagingPartner: "yes",
     managingPartners: [createEmptyVendorManagingPartner()],
     bankAccount: createEmptyVendorBankAccount(),
     transfer: {
@@ -262,8 +265,12 @@ export function mergeVendorDraft(
       companyName: current.step3.companyName || next.step3.companyName,
       tradingName: current.step3.tradingName || next.step3.tradingName,
       corporationType: current.step3.corporationType || next.step3.corporationType,
+      corporationTypeOther: current.step3.corporationTypeOther || next.step3.corporationTypeOther,
+      corporationTypeSelection:
+        current.step3.corporationTypeSelection || next.step3.corporationTypeSelection,
       foundingDate: current.step3.foundingDate || next.step3.foundingDate,
       annualRevenue: current.step3.annualRevenue || next.step3.annualRevenue,
+      hasManagingPartner: current.step3.hasManagingPartner || next.step3.hasManagingPartner,
       bankAccount: mergeStringRecord(current.step3.bankAccount, next.step3.bankAccount),
       transfer: current.step3.transfer,
       managingPartners: mergeManagingPartners(
@@ -315,13 +322,29 @@ export function normalizeStep3Data(value?: Partial<VendorRegistrationStep3Data> 
   const managingPartners = Array.isArray(value?.managingPartners) && value.managingPartners.length > 0
     ? value.managingPartners.map(normalizeManagingPartner)
     : base.managingPartners;
+  const rawCorporationType = sanitizeText(value?.corporationType);
+  const corporationTypeSelection = deriveCorporationTypeSelection(
+    sanitizeText(value?.corporationTypeSelection),
+    rawCorporationType,
+  );
+  const corporationTypeOther =
+    corporationTypeSelection === "outro"
+      ? sanitizeText(value?.corporationTypeOther) || rawCorporationType
+      : "";
+  const corporationType =
+    corporationTypeSelection === "outro"
+      ? corporationTypeOther
+      : corporationTypeSelection || rawCorporationType;
 
   return {
     companyName: sanitizeText(value?.companyName),
     tradingName: sanitizeText(value?.tradingName),
-    corporationType: sanitizeText(value?.corporationType),
+    corporationType,
+    corporationTypeOther,
+    corporationTypeSelection,
     foundingDate: sanitizeDate(value?.foundingDate),
     annualRevenue: sanitizeMoney(value?.annualRevenue),
+    hasManagingPartner: value?.hasManagingPartner === "no" ? "no" : base.hasManagingPartner,
     managingPartners,
     bankAccount: normalizeBankAccount(value?.bankAccount),
     transfer: base.transfer,
@@ -570,10 +593,21 @@ export function isStep1Ready(values: VendorRegistrationStep1Data): boolean {
 export function buildRevendedorSubmitPayload(
   draft: VendorRegistrationDraft,
 ): SubmitRevendedorApplicationInput {
+  const normalizedStep3 = normalizeStep3Data(draft.step3);
+
   return {
     step1: normalizeStep1Data(draft.step1),
     step2: normalizeStep2Data(draft.step2),
-    step3: normalizeStep3Data(draft.step3),
+    step3: {
+      companyName: normalizedStep3.companyName,
+      tradingName: normalizedStep3.tradingName,
+      corporationType: normalizedStep3.corporationType,
+      foundingDate: normalizedStep3.foundingDate,
+      annualRevenue: normalizedStep3.annualRevenue,
+      managingPartners: normalizedStep3.managingPartners,
+      bankAccount: normalizedStep3.bankAccount,
+      transfer: normalizedStep3.transfer,
+    },
   };
 }
 
@@ -684,6 +718,22 @@ function isPositiveNumber(value: string) {
   return Number.isFinite(parsed) && parsed > 0;
 }
 
+function deriveCorporationTypeSelection(selection: string, corporationType: string) {
+  if (selection === "outro") {
+    return selection;
+  }
+
+  if (CORPORATION_TYPE_VALUES.has(selection)) {
+    return selection;
+  }
+
+  if (CORPORATION_TYPE_VALUES.has(corporationType)) {
+    return corporationType;
+  }
+
+  return corporationType ? "outro" : "";
+}
+
 function isValidIsoDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -706,6 +756,15 @@ function mergeStringRecord<T extends Record<string, unknown>>(current: T, incomi
 
   return next as T;
 }
+
+const CORPORATION_TYPE_VALUES = new Set([
+  "Sociedade Empresária Limitada",
+  "Sociedade Limitada Unipessoal",
+  "Empresário Individual",
+  "MEI",
+  "Sociedade Anônima",
+  "EIRELI",
+]);
 
 function mergeManagingPartners(
   current: VendorManagingPartner[],

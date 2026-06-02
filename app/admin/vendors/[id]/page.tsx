@@ -17,7 +17,9 @@ import { getAdminVendorDetail } from "@/lib/server/admin-vendors";
 import { firstParam } from "@/lib/search-params";
 
 function parseTab(value: string | undefined): DetailTabKey {
-  return value === "coverage" || value === "stock" || value === "orders" ? value : "data";
+  return value === "coverage" || value === "banking" || value === "stock" || value === "orders"
+    ? value
+    : "data";
 }
 
 export default async function AdminVendorDetailRoute({

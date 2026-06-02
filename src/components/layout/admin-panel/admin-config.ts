@@ -65,14 +65,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Triagem e cobertura",
   },
   {
-    key: "suporte",
-    href: "/admin/suporte",
-    icon: MessageSquare,
-    label: "Suporte",
-    shortLabel: "Suporte",
-    description: "Conversas escaladas",
-  },
-  {
     key: "coupons",
     href: "/admin/coupons",
     icon: BadgePercent,
@@ -95,6 +87,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Assets",
     shortLabel: "Assets",
     description: "Hero banners e biblioteca",
+  },
+  {
+    key: "suporte",
+    href: "/admin/suporte",
+    icon: MessageSquare,
+    label: "Suporte",
+    shortLabel: "Suporte",
+    description: "Conversas escaladas",
   },
   {
     key: "config",

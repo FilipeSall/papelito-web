@@ -8,6 +8,7 @@ import type { VendorStockFilter, VendorStockSnapshot } from "../types/vendor-sto
 type WpStockResponse = {
   items?: Array<{
     is_zeroed?: boolean;
+    image_url?: string;
     product_id?: number;
     product_name?: string;
     qty?: number;
@@ -50,6 +51,7 @@ export async function getVendorStock(filters: {
 
   return {
     items: (result.data.items ?? []).map((item) => ({
+      imageUrl: item.image_url ?? "",
       isZeroed: Boolean(item.is_zeroed),
       productId: Number(item.product_id) || 0,
       productName: item.product_name ?? "Produto",

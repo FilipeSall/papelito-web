@@ -1,16 +1,16 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 
 export async function requireVendorAccessToken() {
   const session = await getServerSession(authOptions);
-  const role = typeof session?.role === "string" ? session.role.trim().toLowerCase() : "";
 
   if (!session?.accessToken) {
     return { error: "Nao autenticado.", status: 401 as const };
   }
 
-  if (role !== "seller") {
+  if (!(await isCurrentUserSeller(session.accessToken, session.role))) {
     return { error: "Acesso restrito a vendors.", status: 403 as const };
   }
 

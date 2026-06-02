@@ -3,14 +3,16 @@ import "server-only";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 
 export async function getSellerAccessToken() {
   const session = await getServerSession(authOptions);
-  const role = typeof session?.role === "string" ? session.role.trim().toLowerCase() : "";
 
-  if (role !== "seller" || !session?.accessToken) {
+  if (!session?.accessToken) {
     return null;
   }
 
-  return session.accessToken;
+  return (await isCurrentUserSeller(session.accessToken, session.role))
+    ? session.accessToken
+    : null;
 }

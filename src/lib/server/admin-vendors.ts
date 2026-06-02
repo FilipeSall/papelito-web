@@ -45,7 +45,20 @@ export type AdminVendorReviewer = {
   name: string;
 };
 
+export type AdminVendorBankAccount = {
+  accountCheckDigit: string;
+  accountNumber: string;
+  bankCode: string;
+  branchCheckDigit: string;
+  branchNumber: string;
+  holderDocument: string;
+  holderName: string;
+  holderType: string;
+  type: string;
+};
+
 export type AdminVendorDetail = {
+  bankAccount: AdminVendorBankAccount | null;
   cep: string;
   city: string;
   cnpj: string;

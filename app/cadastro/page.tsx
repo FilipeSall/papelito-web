@@ -6,9 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   ArrowRightIcon,
+  AuthSocialButton,
   AuthSubmitButton,
 } from "@/components/auth/atoms";
-import { AuthTextField } from "@/components/auth/molecules";
+import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 
 import { CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "./shared";
 
@@ -45,7 +46,7 @@ export default function CadastroPage() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="hidden lg:flex lg:w-1/2 bg-brand-yellow items-center justify-center relative">
+      <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:h-screen lg:w-1/2 lg:sticky lg:top-0">
         <div className="flex flex-col items-center text-center px-12">
           <Image
             src="/images/auth/logo-with-flag.svg"
@@ -141,6 +142,16 @@ export default function CadastroPage() {
               </AuthSubmitButton>
             </div>
           </form>
+
+          <AuthSocialDivider label="ou continue com" />
+
+          <AuthSocialButton
+            label="Criar conta com Google"
+            iconAlt="Google"
+            iconSrc="/images/auth/google-icon.svg"
+            provider="google"
+            callbackUrl={callbackUrl ?? "/produtos"}
+          />
         </div>
       </div>
     </div>

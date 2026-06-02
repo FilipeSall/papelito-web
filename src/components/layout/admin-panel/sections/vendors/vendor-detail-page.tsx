@@ -9,6 +9,7 @@ import type { AdminVendorDetail } from "@/lib/server/admin-vendors";
 import { Panel } from "../../primitives";
 
 import { VendorActions } from "./vendor-actions";
+import { VendorBankingTab } from "./vendor-banking-tab";
 import { VendorCoverageTab } from "./vendor-coverage-tab";
 import { VendorDataTab } from "./vendor-data-tab";
 import {
@@ -65,6 +66,7 @@ export function VendorDetailPage({
   const tabs: Array<{ href: string; key: DetailTabKey; label: string }> = [
     { href: vendorDetailHref(ctx, { tab: "data" }), key: "data", label: "Dados" },
     { href: vendorDetailHref(ctx, { tab: "coverage" }), key: "coverage", label: "Cobertura" },
+    { href: vendorDetailHref(ctx, { tab: "banking" }), key: "banking", label: "Dados bancarios" },
     ...(isApproved
       ? ([
           { href: vendorDetailHref(ctx, { tab: "stock" }), key: "stock", label: "Estoque" },
@@ -111,6 +113,7 @@ export function VendorDetailPage({
 
       {activeTab === "data" ? <VendorDataTab status={status} vendor={vendor} /> : null}
       {activeTab === "coverage" ? <VendorCoverageTab vendor={vendor} /> : null}
+      {activeTab === "banking" ? <VendorBankingTab vendor={vendor} /> : null}
       {activeTab === "stock" && isApproved ? (
         <VendorStockTab ctx={ctx} snapshot={stockSnapshot} />
       ) : null}

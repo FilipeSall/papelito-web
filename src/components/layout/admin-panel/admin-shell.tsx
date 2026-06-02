@@ -5,7 +5,15 @@ import { usePathname } from "next/navigation";
 import { ADMIN_NAV_ITEMS } from "./admin-config";
 
 function getCurrentNavItem(pathname: string) {
-  return ADMIN_NAV_ITEMS.find((item) => item.href === pathname) ?? ADMIN_NAV_ITEMS[0];
+  const exactMatch = ADMIN_NAV_ITEMS.find((item) => item.href === pathname);
+
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const nestedMatch = ADMIN_NAV_ITEMS.find((item) => pathname.startsWith(`${item.href}/`));
+
+  return nestedMatch ?? ADMIN_NAV_ITEMS[0];
 }
 
 function getNavItemClassName(active: boolean) {

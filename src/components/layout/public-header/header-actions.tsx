@@ -24,16 +24,22 @@ const profileButtonMobileClass =
 function LoggedInActions({
   invertColors = false,
   isAdministrator = false,
+  compactProfile = false,
 }: {
   invertColors?: boolean;
   isAdministrator?: boolean;
+  compactProfile?: boolean;
 }) {
   const { totalItems } = useCartSummary();
+  const { isSeller } = useAuthSession();
   const cartBadgeClass = invertColors
     ? "bg-brand-yellow text-brand-dark"
     : "bg-brand-dark text-brand-yellow";
-  const profileHref = isAdministrator ? "/admin/sales" : "/perfil";
-  const profileLabel = isAdministrator ? "Admin" : "Perfil";
+  const profileHref = isAdministrator ? "/admin/sales" : isSeller ? "/vendor/dashboard" : "/perfil";
+  const profileLabel = isAdministrator ? "Admin" : isSeller ? "Painel vendor" : "Perfil";
+  const profileButtonClass = compactProfile
+    ? "group inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white backdrop-blur-sm shadow-[0_8px_18px_rgba(0,0,0,0.25)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/80 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark"
+    : `${profileButtonBaseClass} ${invertColors ? profileButtonMobileClass : profileButtonDesktopClass}`;
 
   return (
     <div className="flex h-9 items-center gap-2">
@@ -59,12 +65,17 @@ function LoggedInActions({
       </Link>
 
       <Link
-        className={`${profileButtonBaseClass} ${invertColors ? profileButtonMobileClass : profileButtonDesktopClass}`}
+        aria-label={profileLabel}
+        className={profileButtonClass}
         href={profileHref}
       >
         <span
           className={`grid h-6 w-6 place-items-center rounded-full ${
-            invertColors ? "bg-white/20" : "bg-brand-yellow/20"
+            compactProfile
+              ? "bg-transparent"
+              : invertColors
+                ? "bg-white/20"
+                : "bg-brand-yellow/20"
           }`}
         >
           <svg aria-hidden fill="none" height={18} viewBox="0 0 28 28" width={18} xmlns="http://www.w3.org/2000/svg">
@@ -72,7 +83,7 @@ function LoggedInActions({
             <path d="M13.9998 13.1667C15.8408 13.1667 17.3332 11.6743 17.3332 9.83333C17.3332 7.99238 15.8408 6.5 13.9998 6.5C12.1589 6.5 10.6665 7.99238 10.6665 9.83333C10.6665 11.6743 12.1589 13.1667 13.9998 13.1667Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
           </svg>
         </span>
-        <span>{profileLabel}</span>
+        {compactProfile ? null : <span>{profileLabel}</span>}
       </Link>
     </div>
   );
@@ -111,5 +122,11 @@ export function PublicHeaderMobileActions({ invertColors = false }: { invertColo
 
   if (!isAuthenticated) return null;
 
-  return <LoggedInActions invertColors={invertColors} isAdministrator={isAdministrator} />;
+  return (
+    <LoggedInActions
+      compactProfile
+      invertColors={invertColors}
+      isAdministrator={isAdministrator}
+    />
+  );
 }

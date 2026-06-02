@@ -1,6 +1,7 @@
 export type VendorStockFilter = "all" | "with_stock" | "zeroed_only";
 
 export type VendorStockItem = {
+  imageUrl: string;
   isZeroed: boolean;
   productId: number;
   productName: string;

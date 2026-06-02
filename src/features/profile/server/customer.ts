@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import type {
   ProfileCustomer,
   ProfileCustomerAddress,
@@ -158,6 +159,8 @@ export async function fetchProfileCustomer(accessToken?: string): Promise<Profil
           ? identityResult.customer.role.toLowerCase()
           : customer.role;
     }
+
+    customer.role = (await fetchCurrentUserRole(accessToken).catch(() => undefined)) ?? customer.role;
 
     if (metaResult?.customer?.metaData) {
       customer.meta = normalizeMeta(metaResult.customer.metaData);
