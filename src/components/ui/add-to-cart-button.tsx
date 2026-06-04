@@ -41,11 +41,18 @@ export function AddToCartButton({
   const addItem = useCartStore((state) => state.addItem);
   const applyVendorToCart = useCartStore((state) => state.applyVendorToCart);
   const items = useCartStore((state) => state.items);
-  const { isAuthenticated, isSeller, isLoading } = useAuthSession();
+  const { isAuthenticated, isAdministrator, isSeller, isLoading, isRoleLoading } =
+    useAuthSession();
   const [isResolving, setIsResolving] = useState(false);
+  const adminBlockedMessage = "Admins nao compram pela plataforma.";
   const sellerBlockedMessage = "Vendors nao compram pela plataforma.";
-  const blockedMessage = disabledReason ?? (isSeller ? sellerBlockedMessage : undefined);
-  const isDisabled = isResolving || isSeller || Boolean(disabledReason);
+  const roleBlockedMessage = isSeller ? sellerBlockedMessage : undefined;
+  const blockedMessage = disabledReason ?? (isAdministrator ? undefined : roleBlockedMessage);
+  const isPurchaseBlockedByRole = isAdministrator || isSeller;
+  const isDisabled =
+    isResolving || isLoading || isRoleLoading || isPurchaseBlockedByRole || Boolean(disabledReason);
+  const adminTooltipMessage =
+    isAdministrator && !disabledReason ? adminBlockedMessage : undefined;
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -80,7 +87,7 @@ export function AddToCartButton({
     }
 
     if (product) {
-      if (isSeller || isLoading || isResolving) return;
+      if (isPurchaseBlockedByRole || isLoading || isRoleLoading || isResolving) return;
 
       if (!isAuthenticated) {
         router.push("/entrar");
@@ -132,8 +139,52 @@ export function AddToCartButton({
     onClick?.();
   }
 
+  function renderAdminTooltip() {
+    if (!adminTooltipMessage) {
+      return null;
+    }
+
+    return (
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/admin-tooltip:opacity-100 group-focus-within/admin-tooltip:opacity-100"
+      >
+        {adminTooltipMessage}
+      </span>
+    );
+  }
+
   if (label) {
     return (
+      <span className="group/admin-tooltip relative inline-flex w-full">
+        {renderAdminTooltip()}
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={isDisabled}
+          aria-label="Adicionar ao carrinho"
+          aria-disabled={isDisabled}
+          title={blockedMessage}
+          className={`flex cursor-pointer items-center justify-center gap-1.5 w-full h-7 bg-brand-dark rounded-[10px] hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
+        >
+          <CartIcon className="size-3 text-white" />
+          <span className="font-black text-xs leading-4 text-white">
+            {disabledReason
+              ? "Indisponível"
+              : roleBlockedMessage
+                ? roleBlockedMessage
+                : isResolving
+                  ? "Validando"
+                  : label}
+          </span>
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="group/admin-tooltip relative inline-flex">
+      {renderAdminTooltip()}
       <button
         type="button"
         onClick={handleClick}
@@ -141,27 +192,10 @@ export function AddToCartButton({
         aria-label="Adicionar ao carrinho"
         aria-disabled={isDisabled}
         title={blockedMessage}
-        className={`flex cursor-pointer items-center justify-center gap-1.5 w-full h-7 bg-brand-dark rounded-[10px] hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
+        className={`flex cursor-pointer items-center justify-center w-9 h-9 bg-brand-dark rounded-[14px] shrink-0 hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
       >
-        <CartIcon className="size-3 text-white" />
-        <span className="font-black text-xs leading-4 text-white">
-          {disabledReason ? "Indisponível" : isSeller ? sellerBlockedMessage : isResolving ? "Validando" : label}
-        </span>
+        <CartIcon className="size-4 text-white" />
       </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isDisabled}
-      aria-label="Adicionar ao carrinho"
-      aria-disabled={isDisabled}
-      title={blockedMessage}
-      className={`flex cursor-pointer items-center justify-center w-9 h-9 bg-brand-dark rounded-[14px] shrink-0 hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
-    >
-      <CartIcon className="size-4 text-white" />
-    </button>
+    </span>
   );
 }

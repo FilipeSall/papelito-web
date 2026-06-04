@@ -5,29 +5,6 @@ import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/comp
 import { useProductAvailability } from "@/features/catalog/hooks/use-product-availability";
 
 /**
- * Ícone de estrela para rating.
- */
-function StarIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <path
-        d="M6 1L7.41 4.05L10.8 4.32L8.28 6.52L9.05 9.84L6 8.03L2.95 9.84L3.72 6.52L1.2 4.32L4.59 4.05L6 1Z"
-        fill="#FFE500"
-        stroke="#FFE500"
-        strokeWidth="0.8"
-      />
-    </svg>
-  );
-}
-
-/**
  * Dados de um produto para exibição no grid.
  */
 export interface ProductGridItem {
@@ -42,10 +19,6 @@ export interface ProductGridItem {
   originalPrice: number;
   /** Preço atual */
   price: number;
-  /** Nota de 0 a 5 */
-  rating: number;
-  /** Número de avaliações */
-  reviews: number;
   /** Caminho da imagem */
   image?: string;
 }
@@ -59,7 +32,7 @@ interface ProductGridCardProps {
  *
  * Componente atômico que exibe um produto individual no grid.
  * Inclui badge amarelo de categoria, imagem, informações do produto,
- * avaliação por estrelas, preços e botão de adicionar.
+ * estoque regional, preços e botão de adicionar.
  *
  * @example
  * ```tsx
@@ -71,22 +44,18 @@ interface ProductGridCardProps {
  *     badge: "Essencial",
  *     originalPrice: 8.90,
  *     price: 6.90,
- *     rating: 4.4,
- *     reviews: 678,
  *     image: "/images/products/piteira.png",
  *   }}
  * />
  * ```
  */
 export function ProductGridCard({ product }: ProductGridCardProps) {
-  const { isUnavailable, disabledReason } = useProductAvailability(product.id);
+  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     category,
     name,
     originalPrice,
     price,
-    rating,
-    reviews,
     image,
   } = product;
 
@@ -127,14 +96,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
             {name}
           </h3>
 
-          {/* Rating */}
-          <div className="flex items-center gap-1 mt-1.5">
-            <StarIcon />
-            <span className="text-xs text-text-secondary font-medium">
-              {rating.toFixed(1)}
-            </span>
-            <span className="text-xs text-text-muted">({reviews})</span>
-          </div>
+          <p className="mt-1.5 text-xs text-text-muted">{stockLabel}</p>
 
           {/* Price and Add Button */}
           <div className="flex items-center justify-between mt-3">

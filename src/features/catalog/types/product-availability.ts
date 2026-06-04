@@ -7,6 +7,7 @@ export type ProductAvailabilityStatus =
 
 export interface ProductAvailabilityEntry {
   available: boolean;
+  stockQty?: number;
 }
 
 export interface ProductAvailabilityResponse {

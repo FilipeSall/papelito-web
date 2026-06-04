@@ -1,12 +1,11 @@
-import { StarRating, ProductPrice, AddToCartButton } from "@/components/ui";
+import { ProductPrice, AddToCartButton } from "@/components/ui";
 
 interface ProductCardInfoProps {
   id: string;
   category: string;
   name: string;
   image?: string;
-  rating: number;
-  reviews: number;
+  stockLabel: string;
   originalPrice: number;
   price: number;
   disabledReason?: string;
@@ -17,8 +16,7 @@ export function ProductCardInfo({
   category,
   name,
   image,
-  rating,
-  reviews,
+  stockLabel,
   originalPrice,
   price,
   disabledReason,
@@ -29,9 +27,7 @@ export function ProductCardInfo({
       <span className="font-black text-sm leading-5 tracking-[-0.150391px] text-brand-dark mt-0.5">
         {name}
       </span>
-      <div className="mt-1">
-        <StarRating rating={rating} count={reviews} />
-      </div>
+      <span className="mt-1 text-xs leading-4 text-text-muted">{stockLabel}</span>
       <div className="flex items-center justify-between mt-3">
         <ProductPrice original={originalPrice} current={price} />
         <AddToCartButton

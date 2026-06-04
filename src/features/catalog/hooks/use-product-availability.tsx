@@ -16,7 +16,7 @@ import type {
   ProductAvailabilityStatus,
 } from "../types/product-availability";
 
-const STORAGE_PREFIX = "papelito:catalog-availability:";
+const STORAGE_PREFIX = "papelito:catalog-availability:v3:";
 const STORAGE_TTL_MS = 5 * 60 * 1000;
 
 interface ProductAvailabilityContextValue {
@@ -106,12 +106,12 @@ export function ProductAvailabilityProvider({
   productIds,
   children,
 }: ProductAvailabilityProviderProps) {
-  const { isAuthenticated, isLoading, isSeller } = useAuthSession();
+  const { isAuthenticated, isLoading, role } = useAuthSession();
   const normalizedIds = useMemo(() => normalizeProductIds(productIds), [productIds]);
   const idsKey = normalizedIds.join(",");
   const storageKey = `${STORAGE_PREFIX}${idsKey}`;
   const shouldFetch =
-    isAuthenticated && !isLoading && !isSeller && normalizedIds.length > 0;
+    isAuthenticated && !isLoading && role === "customer" && normalizedIds.length > 0;
   const fallbackData = useMemo(
     () => (shouldFetch ? readCachedAvailability(storageKey) : undefined),
     [shouldFetch, storageKey],
@@ -164,9 +164,23 @@ export function useProductAvailability(productId: string) {
   const context = useContext(ProductAvailabilityContext);
   const entry = context.products[productId];
   const isUnavailable = context.status === "ok" && entry?.available === false;
+  const stockQty =
+    typeof entry?.stockQty === "number" && Number.isFinite(entry.stockQty)
+      ? Math.max(0, Math.floor(entry.stockQty))
+      : null;
+  const stockLabel =
+    context.status === "ok" && stockQty !== null
+      ? stockQty > 0
+        ? `${stockQty} em estoque`
+        : "Sem estoque"
+      : context.status === "loading"
+        ? "Consultando estoque"
+        : "Estoque por região";
 
   return {
     status: context.status,
+    stockQty,
+    stockLabel,
     isUnavailable,
     disabledReason: isUnavailable
       ? "O vendor da sua região não tem esse produto."

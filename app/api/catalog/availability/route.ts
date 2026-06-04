@@ -84,8 +84,9 @@ function getCachedAvailability(input: {
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
+  const role = normalizeRole(session?.role);
 
-  if (!session?.user || !session.accessToken || normalizeRole(session.role) === "seller") {
+  if (!session?.user || !session.accessToken || role !== "customer") {
     return NextResponse.json(notApplicable());
   }
 
@@ -118,7 +119,10 @@ export async function GET(request: Request) {
       products: Object.fromEntries(
         productIds.map((productId) => [
           productId,
-          { available: coverage[productId]?.hasCoverage === true },
+          {
+            available: coverage[productId]?.hasCoverage === true,
+            stockQty: coverage[productId]?.bestVendor?.qty ?? 0,
+          },
         ]),
       ),
     });

@@ -2,6 +2,7 @@ import {
   Boxes,
   Clock3,
   LayoutDashboard,
+  MapPinned,
   MessageSquare,
   ReceiptText,
   Settings,
@@ -19,6 +20,7 @@ export type VendorNavItem = {
 
 export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: "/vendor/dashboard", icon: LayoutDashboard, label: "Dashboard", description: "Visao geral" },
+  { href: "/vendor/cobertura", icon: MapPinned, label: "Cobertura", description: "CEPs atendidos" },
   { href: "/vendor/estoque", icon: Boxes, label: "Estoque", description: "Produtos e saldo" },
   { href: "/vendor/pedidos", icon: ShoppingBag, label: "Pedidos", description: "Separacao e envio" },
   { href: "/vendor/financeiro", icon: Wallet, label: "Financeiro", description: "Faturamento" },

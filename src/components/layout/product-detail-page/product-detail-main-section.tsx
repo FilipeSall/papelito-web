@@ -8,6 +8,7 @@ interface ProductDetailMainSectionProps {
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
   activeVendor?: ActiveVendor | null;
+  selectedVendorStockQty?: number | null;
 }
 
 /**
@@ -19,6 +20,7 @@ export function ProductDetailMainSection({
   product,
   initialIsFavorite = false,
   activeVendor = null,
+  selectedVendorStockQty = null,
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -52,6 +54,7 @@ export function ProductDetailMainSection({
             product={product}
             initialIsFavorite={initialIsFavorite}
             activeVendor={activeVendor}
+            selectedVendorStockQty={selectedVendorStockQty}
           />
         </div>
       </div>

@@ -20,7 +20,7 @@ interface ProductCardProps {
  * Quando `featured` é `true`, aplica borda amarela com sombra elevada ao card.
  * Reutiliza componentes atômicos (`ProductCardImage`, `ProductCardInfo`,
  * `ProductPrice`, `ProductDiscountBadge`, `ProductCategoryBadge`) e
- * moleculares existentes (`StarRating`, `AddToCartButton`).
+ * moleculares existentes (`AddToCartButton`).
  *
  * @example
  * ```tsx
@@ -33,8 +33,6 @@ interface ProductCardProps {
  *     discount: 20,
  *     originalPrice: 29.90,
  *     price: 23.90,
- *     rating: 4.5,
- *     reviews: 128,
  *     image: "/images/products/example.png",
  *     featured: false,
  *   }}
@@ -45,7 +43,7 @@ export function ProductCard({
   product,
   compactOnMobile = false,
 }: ProductCardProps) {
-  const { isUnavailable, disabledReason } = useProductAvailability(product.id);
+  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     id,
     category,
@@ -54,8 +52,6 @@ export function ProductCard({
     discount,
     originalPrice,
     price,
-    rating,
-    reviews,
     image,
     featured,
   } = product;
@@ -90,8 +86,7 @@ export function ProductCard({
           category={category}
           name={name}
           image={image}
-          rating={rating}
-          reviews={reviews}
+          stockLabel={stockLabel}
           originalPrice={originalPrice}
           price={price}
           disabledReason={disabledReason}

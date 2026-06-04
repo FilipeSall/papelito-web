@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ADD_TO_CART_EVENT_NAME,
   type AddToCartEventDetail,
@@ -21,39 +21,10 @@ interface ProductDetailMainContentProps {
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
   activeVendor?: ActiveVendor | null;
+  selectedVendorStockQty?: number | null;
 }
 
 const EMPTY_GALLERY: ProductDetailItem["galleryImages"] = [];
-
-function ProductRatingStars({ rating }: { rating: number }) {
-  const filledCount = Math.max(0, Math.min(5, Math.round(rating)));
-
-  return (
-    <div className="flex items-center gap-0.5" aria-hidden>
-      {Array.from({ length: 5 }, (_, index) => {
-        const isFilled = index < filledCount;
-
-        return (
-          <svg
-            key={index}
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 1.2L9.88 5.24L14.4 5.6L11.04 8.53L12.07 12.95L8 10.54L3.93 12.95L4.96 8.53L1.6 5.6L6.12 5.24L8 1.2Z"
-              fill={isFilled ? "#FFE500" : "none"}
-              stroke={isFilled ? "#FFE500" : "#D1D5DB"}
-              strokeWidth="0.9"
-            />
-          </svg>
-        );
-      })}
-    </div>
-  );
-}
 
 /**
  * Conteúdo principal da página dedicada de produto.
@@ -66,6 +37,7 @@ export function ProductDetailMainContent({
   product,
   initialIsFavorite = false,
   activeVendor = null,
+  selectedVendorStockQty = null,
 }: ProductDetailMainContentProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
@@ -91,6 +63,12 @@ export function ProductDetailMainContent({
   const [selectedThumbId, setSelectedThumbId] = useState<string>(initialSelectedThumbId);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const availableStock =
+    typeof selectedVendorStockQty === "number" && Number.isFinite(selectedVendorStockQty)
+      ? Math.max(0, Math.floor(selectedVendorStockQty))
+      : null;
+  const isOutOfStock = availableStock !== null && availableStock <= 0;
+  const isQuantityAtMax = availableStock !== null && quantity >= availableStock;
 
   const selectedThumb = useMemo(
     () => thumbnails.find((thumb) => thumb.id === selectedThumbId) ?? thumbnails[0],
@@ -98,6 +76,20 @@ export function ProductDetailMainContent({
   );
   const relatedProducts = useMemo(() => product.relatedThumbs.slice(0, 4), [product.relatedThumbs]);
   const shouldShowThumbnails = thumbnails.length > 1;
+
+  useEffect(() => {
+    if (availableStock === null) {
+      return;
+    }
+
+    setQuantity((current) => {
+      if (availableStock <= 0) {
+        return 0;
+      }
+
+      return Math.min(Math.max(1, current), availableStock);
+    });
+  }, [availableStock]);
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -135,6 +127,25 @@ export function ProductDetailMainContent({
     }
 
     if (isAddingToCart) {
+      return false;
+    }
+
+    if (isOutOfStock) {
+      dispatchCartEvent({
+        title: "Produto indisponivel",
+        message: "O vendor selecionado esta sem estoque deste produto.",
+        tone: "warning",
+      });
+      return false;
+    }
+
+    if (availableStock !== null && quantity > availableStock) {
+      setQuantity(availableStock);
+      dispatchCartEvent({
+        title: "Estoque limitado",
+        message: `Este vendor tem ${availableStock} unidade(s) disponivel(is).`,
+        tone: "warning",
+      });
       return false;
     }
 
@@ -262,12 +273,13 @@ export function ProductDetailMainContent({
           <span className="mt-2 text-8 font-black leading-9 tracking-[0.369141px] uppercase text-brand-dark sm:text-9 sm:leading-10">
             {product.name.toUpperCase()}
           </span>
-          <div className="mt-4 flex items-center gap-3 text-sm text-[#6A7282]">
-            <ProductRatingStars rating={product.rating} />
-            <span className="leading-5 tracking-[-0.150391px]">
-              {product.rating.toFixed(1)} ({product.reviews} avaliações)
-            </span>
-          </div>
+          <p className="mt-1 text-sm font-normal leading-5 tracking-[-0.150391px] text-[#99A1AF]">
+            {typeof selectedVendorStockQty === "number"
+              ? selectedVendorStockQty > 0
+                ? `${selectedVendorStockQty} em estoque`
+                : "Sem estoque no vendor selecionado"
+              : "Estoque regional não consultado"}
+          </p>
 
           <div className="mt-5 flex items-end gap-2">
             <span className="text-9 font-black leading-10 tracking-[0.369141px] text-brand-dark">
@@ -296,7 +308,8 @@ export function ProductDetailMainContent({
               <button
                 type="button"
                 aria-label="Diminuir quantidade"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+                disabled={isOutOfStock || quantity <= 1}
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
               >
                 <span className="text-sm leading-none">−</span>
@@ -307,8 +320,13 @@ export function ProductDetailMainContent({
               <button
                 type="button"
                 aria-label="Aumentar quantidade"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6]"
-                onClick={() => setQuantity((prev) => prev + 1)}
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+                disabled={isOutOfStock || isQuantityAtMax}
+                onClick={() =>
+                  setQuantity((prev) =>
+                    availableStock === null ? prev + 1 : Math.min(availableStock, prev + 1),
+                  )
+                }
               >
                 <span className="text-sm leading-none">+</span>
               </button>
@@ -319,7 +337,7 @@ export function ProductDetailMainContent({
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={isAddingToCart}
+              disabled={isAddingToCart || isOutOfStock}
               className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CartIcon className="size-4.5" />
@@ -370,7 +388,7 @@ export function ProductDetailMainContent({
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={isAddingToCart}
+            disabled={isAddingToCart || isOutOfStock}
             className="mt-4 h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isAddingToCart ? "VALIDANDO" : "COMPRAR AGORA"}

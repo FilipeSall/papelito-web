@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, type KeyboardEvent } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon, SectionHeader } from "@/components/ui";
+import { ChevronLeftIcon, ChevronRightIcon, SectionHeader } from "@/components/ui";
 import { MiniProductCard } from "./mini-product-card";
 import type { HomeNewArrivalProduct } from "@/features/catalog";
 
@@ -60,7 +60,6 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
                 <span className="font-black text-sm leading-5 tracking-[-0.150391px] uppercase">
                   Ver todos
                 </span>
-                <ArrowRightIcon className="size-3.5" />
               </Link>
 
               <button

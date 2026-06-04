@@ -25,14 +25,14 @@ export function VendorsTabs({
   totalRows: number;
 }) {
   const tabs: Tab[] = [
-    { key: "pending", label: "Pendentes", count: summary.pendingApplications },
-    { key: "approved", label: "Aprovados", count: summary.approvedSellers },
-    { key: "rejected", label: "Rejeitados" },
     {
       key: "all",
       label: "Todos",
       count: filters.status === "all" ? totalRows : undefined,
     },
+    { key: "pending", label: "Pendentes", count: summary.pendingApplications },
+    { key: "approved", label: "Aprovados", count: summary.approvedSellers },
+    { key: "rejected", label: "Rejeitados" },
   ];
 
   return (

@@ -6,39 +6,17 @@ import { ProductListCartControls } from "./product-list-cart-controls";
 import { useProductAvailability } from "@/features/catalog/hooks/use-product-availability";
 import type { ProductGridItem } from "./product-grid-card";
 
-function StarIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <path
-        d="M6 1L7.41 4.05L10.8 4.32L8.28 6.52L9.05 9.84L6 8.03L2.95 9.84L3.72 6.52L1.2 4.32L4.59 4.05L6 1Z"
-        fill="#FFE500"
-        stroke="#FFE500"
-        strokeWidth="0.8"
-      />
-    </svg>
-  );
-}
-
 interface ProductListCardProps {
   product: ProductGridItem;
 }
 
 export function ProductListCard({ product }: ProductListCardProps) {
-  const { isUnavailable, disabledReason } = useProductAvailability(product.id);
+  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     category,
     name,
     originalPrice,
     price,
-    rating,
-    reviews,
     image,
   } = product;
 
@@ -71,13 +49,7 @@ export function ProductListCard({ product }: ProductListCardProps) {
               <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-5 text-brand-dark group-hover:underline">
                 {name}
               </h3>
-              <div className="mt-1.5 flex items-center gap-1">
-                <StarIcon />
-                <span className="text-xs font-medium text-text-secondary">
-                  {rating.toFixed(1)}
-                </span>
-                <span className="text-xs text-text-muted">({reviews})</span>
-              </div>
+              <p className="mt-1.5 text-xs text-text-muted">{stockLabel}</p>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-base font-black text-brand-dark">
                   R$ {price.toFixed(2).replace(".", ",")}

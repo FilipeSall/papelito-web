@@ -6,6 +6,8 @@ import {
 } from "@/components/layout/product-detail-page";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { fetchProductFavoriteStatus } from "@/features/favorites";
+import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
+import { getCoverage } from "@/features/catalog/services/get-coverage";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
 import { getActiveVendor } from "@/features/active-vendor/server";
 import { authOptions } from "@/lib/auth";
@@ -39,6 +41,18 @@ export default async function ProdutoDetalhePage({
 
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
+  let selectedVendorStockQty: number | null = null;
+
+  if (activeVendor) {
+    const { cep } = await getAccountCoverageCepContext();
+
+    if (cep) {
+      const coverage = await getCoverage(cep, [product.id], activeVendor.vendorId).catch(
+        () => null,
+      );
+      selectedVendorStockQty = coverage?.[product.id]?.bestVendor?.qty ?? null;
+    }
+  }
 
   return (
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
@@ -47,6 +61,7 @@ export default async function ProdutoDetalhePage({
         product={product}
         initialIsFavorite={initialIsFavorite}
         activeVendor={activeVendor}
+        selectedVendorStockQty={selectedVendorStockQty}
       />
       <AddToCartToastHost />
     </main>

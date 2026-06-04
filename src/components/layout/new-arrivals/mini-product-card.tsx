@@ -25,7 +25,7 @@ export function MiniProductCard({
   image,
 }: MiniProductCardProps) {
   const router = useRouter();
-  const { isUnavailable, disabledReason } = useProductAvailability(id);
+  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(id);
 
   function navigateToProduct() {
     if (image) {
@@ -77,6 +77,7 @@ export function MiniProductCard({
             <span className="font-black text-xs leading-4 text-brand-dark truncate">
               {name}
             </span>
+            <span className="text-[11px] leading-3.5 text-text-muted">{stockLabel}</span>
             <ProductPrice original={originalPrice} current={price} />
           </div>
 

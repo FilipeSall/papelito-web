@@ -26,7 +26,7 @@ function normalizeStatus(value: string | undefined): AdminVendorApplicationStatu
   if (value && (VENDOR_APPLICATION_STATUSES as readonly string[]).includes(value)) {
     return value as AdminVendorApplicationStatus;
   }
-  return "pending";
+  return "all";
 }
 
 export function parseAdminVendorsFilters(
@@ -49,7 +49,7 @@ export function buildAdminVendorsQuery(
   const page = overrides.page ?? filters.page;
   const search = overrides.search ?? filters.search;
 
-  if (status !== "pending") {
+  if (status !== "all") {
     params.set("status", status);
   }
   if (page > 1) {
