@@ -114,7 +114,7 @@ a:hover .menu-underline path:nth-child(3),
 }
 
 [data-underline-draw="true"] .menu-underline path {
-    animation-duration: 2100ms;
+    animation-duration: var(--menu-underline-duration, 1100ms);
 }
 
 @keyframes admin-panel-enter {

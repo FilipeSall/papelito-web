@@ -16,17 +16,21 @@ const DEFAULT_OPTIONS: Options = {
 
 const pathCache = new Map<string, string[]>();
 
-function getPaths(options: Options) {
-  const key = JSON.stringify(options);
+function getPaths(options: Options, lineYOffsets: number[]) {
+  const key = JSON.stringify({ options, lineYOffsets });
   const cached = pathCache.get(key);
   if (cached) {
     return cached;
   }
 
-  const drawable = generator.line(4, 7, 116, 5, options);
-  const paths = drawable.sets
-    .filter((set) => set.type === "path")
-    .map((set) => generator.opsToPath(set, 2));
+  const paths = lineYOffsets.flatMap((offset, index) => {
+    const seed = options.seed != null ? options.seed + index * 17 : undefined;
+    const drawable = generator.line(4, offset, 116, offset - 2, { ...options, seed });
+
+    return drawable.sets
+      .filter((set) => set.type === "path")
+      .map((set) => generator.opsToPath(set, 2));
+  });
 
   pathCache.set(key, paths);
   return paths;
@@ -35,6 +39,9 @@ function getPaths(options: Options) {
 interface MenuUnderlineProps {
   className?: string;
   options?: Options;
+  lineYOffsets?: number[];
+  animationDurationMs?: number;
+  staggerMs?: number;
   /** Espessura do traço em px. Sobrescreve o padrão do CSS via custom property. */
   strokeWidth?: number;
 }
@@ -42,12 +49,20 @@ interface MenuUnderlineProps {
 export function MenuUnderline({
   className = "text-black z-[-1] h-1.5",
   options = DEFAULT_OPTIONS,
+  lineYOffsets = [7],
+  animationDurationMs,
+  staggerMs,
   strokeWidth,
 }: MenuUnderlineProps) {
-  const paths = getPaths(options);
+  const paths = getPaths(options, lineYOffsets);
   const style =
-    strokeWidth != null
-      ? ({ "--menu-underline-stroke": `${strokeWidth}px` } as CSSProperties)
+    strokeWidth != null || animationDurationMs != null
+      ? ({
+          ...(strokeWidth != null ? { "--menu-underline-stroke": `${strokeWidth}px` } : {}),
+          ...(animationDurationMs != null
+            ? { "--menu-underline-duration": `${animationDurationMs}ms` }
+            : {}),
+        } as CSSProperties)
       : undefined;
 
   return (
@@ -59,7 +74,12 @@ export function MenuUnderline({
       viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`}
     >
       {paths.map((d, i) => (
-        <path key={i} d={d} pathLength={1} />
+        <path
+          key={i}
+          d={d}
+          pathLength={1}
+          style={staggerMs != null ? { animationDelay: `${i * staggerMs}ms` } : undefined}
+        />
       ))}
     </svg>
   );

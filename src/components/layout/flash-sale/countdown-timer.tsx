@@ -82,8 +82,17 @@ export function CountdownTimer({ endsAt }: { endsAt: string }) {
             {d} {d === 1 ? "dia" : "dias"}
             <MenuUnderline
               className="text-brand-yellow z-[-1] h-3"
-              strokeWidth={3}
-              options={{ roughness: 2.6, bowing: 3.5, strokeWidth: 3, seed: 11 }}
+              lineYOffsets={[6.2, 6.6, 7, 7.35, 7.7]}
+              animationDurationMs={900}
+              staggerMs={28}
+              strokeWidth={1.15}
+              options={{
+                roughness: 2.2,
+                bowing: 2.4,
+                maxRandomnessOffset: 1.1,
+                strokeWidth: 1.15,
+                seed: 11,
+              }}
             />
           </span>
         ) : (
