@@ -3,7 +3,6 @@ import { CategoriesNav } from "@/components/layout/categories-nav";
 import { FeaturesBar } from "@/components/layout/features-bar";
 import { FlashSaleSection } from "@/components/layout/flash-sale";
 import { HeroSection } from "@/components/layout/hero-section";
-import { SellerHidden } from "@/components/layout/home/seller-hidden";
 import { NewArrivalsSection } from "@/components/layout/new-arrivals";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { PartnerBanner } from "@/components/layout/partner-banner";
@@ -47,10 +46,8 @@ export default async function Home() {
           <FeaturesBar />
           <CategoriesNav />
         </div>
-        <SellerHidden>
-          {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-          {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
-        </SellerHidden>
+        {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
+        {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
         <BestSellersSection products={bestSellerProducts} />
         <PromoCardsSection />
         <NewArrivalsSection products={newArrivalProducts} />

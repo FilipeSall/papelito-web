@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import {
   ADD_TO_CART_EVENT_NAME,
@@ -14,6 +13,7 @@ import { CartIcon } from "@/components/ui/icons";
 import { resolveCartVendor, useCartStore, type ResolveCartVendorResult } from "@/features/cart";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { formatBRL } from "@/lib/format-currency";
 
 interface ProductDetailMainContentProps {
@@ -43,7 +43,13 @@ export function ProductDetailMainContent({
   const addItem = useCartStore((state) => state.addItem);
   const applyVendorToCart = useCartStore((state) => state.applyVendorToCart);
   const cartItems = useCartStore((state) => state.items);
-  const { status } = useSession();
+  const { status, isAdministrator, isSeller, isRoleLoading } = useAuthSession();
+  const isPurchaseBlockedByRole = isAdministrator || isSeller;
+  const roleBlockedMessage = isAdministrator
+    ? "Admins nao compram pela plataforma."
+    : isSeller
+      ? "Vendors nao compram pela plataforma."
+      : undefined;
   const galleryImages = product.galleryImages ?? EMPTY_GALLERY;
 
   const thumbnails = useMemo(
@@ -119,7 +125,11 @@ export function ProductDetailMainContent({
   }
 
   async function addCurrentProductToCart() {
-    if (status === "loading") return;
+    if (status === "loading" || isRoleLoading) return;
+
+    if (isPurchaseBlockedByRole) {
+      return false;
+    }
 
     if (status !== "authenticated") {
       router.push("/entrar");
@@ -334,15 +344,26 @@ export function ProductDetailMainContent({
           </div>
 
           <div className="mt-6 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={isAddingToCart || isOutOfStock}
-              className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <CartIcon className="size-4.5" />
-              {isAddingToCart ? "VALIDANDO" : "ADICIONAR AO CARRINHO"}
-            </button>
+            <div className="group/role-tooltip relative flex-1">
+              {roleBlockedMessage ? (
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-56 -translate-x-1/2 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/role-tooltip:opacity-100 group-focus-within/role-tooltip:opacity-100"
+                >
+                  {roleBlockedMessage}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || isOutOfStock || isPurchaseBlockedByRole}
+                title={roleBlockedMessage}
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CartIcon className="size-4.5" />
+                {isAddingToCart ? "VALIDANDO" : "ADICIONAR AO CARRINHO"}
+              </button>
+            </div>
             <FavoriteToggleButton
               productId={product.id}
               initialIsFavorite={initialIsFavorite}
@@ -385,14 +406,25 @@ export function ProductDetailMainContent({
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={isAddingToCart || isOutOfStock}
-            className="mt-4 h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isAddingToCart ? "VALIDANDO" : "COMPRAR AGORA"}
-          </button>
+          <div className="group/role-tooltip relative mt-4">
+            {roleBlockedMessage ? (
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-56 -translate-x-1/2 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/role-tooltip:opacity-100 group-focus-within/role-tooltip:opacity-100"
+              >
+                {roleBlockedMessage}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={isAddingToCart || isOutOfStock || isPurchaseBlockedByRole}
+              title={roleBlockedMessage}
+              className="h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isAddingToCart ? "VALIDANDO" : "COMPRAR AGORA"}
+            </button>
+          </div>
 
           {activeVendor ? (
             <div className="mt-4">
