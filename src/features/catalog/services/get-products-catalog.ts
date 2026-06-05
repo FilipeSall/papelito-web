@@ -8,7 +8,7 @@ import {
   getCategorySlugsForTypes,
   getTabCounts,
 } from "./get-wp-product-categories";
-import { fetchWpProducts, mapWpProductToCatalogItem } from "./wp-catalog";
+import { fetchWpProductsSafe, mapWpProductToCatalogItem } from "./wp-catalog";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
@@ -339,12 +339,15 @@ export async function getProductsCatalog(
       getTabCounts(),
     ]);
 
-    const wpProducts = await fetchWpProducts({
-      first: fetchFirst,
-      categoryIn: categorySlugs,
-      minPrice,
-      maxPrice,
-    });
+    const wpProducts = await fetchWpProductsSafe(
+      {
+        first: fetchFirst,
+        categoryIn: categorySlugs,
+        minPrice,
+        maxPrice,
+      },
+      "products-catalog",
+    );
 
     fetchedItems = wpProducts.map(mapWpProductToCatalogItem);
     tabs = [

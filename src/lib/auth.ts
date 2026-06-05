@@ -53,6 +53,13 @@ type WpRefreshResponse = {
   authToken: string;
 };
 
+type WpRefreshGraphqlResponse = {
+  data?: {
+    refreshJwtAuthToken?: WpRefreshResponse | null;
+  };
+  errors?: Array<{ message?: string }>;
+};
+
 type WpCustomerRoleResponse = {
   customer?: {
     role?: string | null;
@@ -116,32 +123,43 @@ async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | 
 }
 
 async function wpRefreshAuthToken(refreshToken: string): Promise<string | null> {
-  const response = await fetch(getWpGraphqlEndpoint(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: WP_REFRESH_TOKEN_MUTATION,
-      variables: {
-        r: refreshToken,
+  try {
+    const response = await fetch(getWpGraphqlEndpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        query: WP_REFRESH_TOKEN_MUTATION,
+        variables: {
+          r: refreshToken,
+        },
+      }),
+    });
 
-  const json = (await response.json()) as {
-    data?: {
-      refreshJwtAuthToken?: WpRefreshResponse | null;
-    };
-    errors?: Array<{ message?: string }>;
-  };
+    const text = await response.text();
+    let json: WpRefreshGraphqlResponse | null = null;
 
-  if (!response.ok || json.errors?.length) {
-    console.error("[auth] JWT refresh failed", json.errors);
+    if (text) {
+      try {
+        json = JSON.parse(text) as WpRefreshGraphqlResponse;
+      } catch {
+        console.error("[auth] JWT refresh returned non-JSON response", response.status);
+        return null;
+      }
+    }
+
+    if (!response.ok || json?.errors?.length) {
+      console.error("[auth] JWT refresh failed", response.status, json?.errors);
+      return null;
+    }
+
+    return json?.data?.refreshJwtAuthToken?.authToken ?? null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[auth] JWT refresh request failed", message);
     return null;
   }
-
-  return json.data?.refreshJwtAuthToken?.authToken ?? null;
 }
 
 async function wpFetchGraphqlCustomerRole(accessToken: string): Promise<string | undefined> {
@@ -326,7 +344,7 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      if (!token.refreshToken) {
+      if (typeof token.refreshToken !== "string") {
         delete token.accessToken;
         delete token.accessTokenExpires;
         return token;

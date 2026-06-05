@@ -252,6 +252,19 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
   return data.products?.nodes ?? [];
 }
 
+export async function fetchWpProductsSafe(
+  input: FetchWpProductsInput | number = {},
+  context = "wp-products",
+) {
+  try {
+    return await fetchWpProducts(input);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[${context}] Falha ao consultar produtos no WPGraphQL.`, message);
+    return [] as WpProductNode[];
+  }
+}
+
 export async function fetchWpProductByDatabaseId(id: string) {
   if (isMockDataEnabled()) {
     return null;

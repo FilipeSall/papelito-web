@@ -51,8 +51,11 @@ export function AddToCartButton({
   const isPurchaseBlockedByRole = isAdministrator || isSeller;
   const isDisabled =
     isResolving || isLoading || isRoleLoading || isPurchaseBlockedByRole || Boolean(disabledReason);
-  const adminTooltipMessage =
-    isAdministrator && !disabledReason ? adminBlockedMessage : undefined;
+  const roleTooltipMessage = disabledReason
+    ? undefined
+    : isAdministrator
+      ? adminBlockedMessage
+      : roleBlockedMessage;
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -139,8 +142,8 @@ export function AddToCartButton({
     onClick?.();
   }
 
-  function renderAdminTooltip() {
-    if (!adminTooltipMessage) {
+  function renderRoleTooltip() {
+    if (!roleTooltipMessage) {
       return null;
     }
 
@@ -149,15 +152,21 @@ export function AddToCartButton({
         role="tooltip"
         className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/admin-tooltip:opacity-100 group-focus-within/admin-tooltip:opacity-100"
       >
-        {adminTooltipMessage}
+        {roleTooltipMessage}
       </span>
     );
   }
 
   if (label) {
+    const labelText = disabledReason
+      ? "Indisponível"
+      : isResolving
+        ? "Validando"
+        : label;
+
     return (
       <span className="group/admin-tooltip relative inline-flex w-full">
-        {renderAdminTooltip()}
+        {renderRoleTooltip()}
         <button
           type="button"
           onClick={handleClick}
@@ -168,15 +177,7 @@ export function AddToCartButton({
           className={`flex cursor-pointer items-center justify-center gap-1.5 w-full h-7 bg-brand-dark rounded-[10px] hover:opacity-80 transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
         >
           <CartIcon className="size-3 text-white" />
-          <span className="font-black text-xs leading-4 text-white">
-            {disabledReason
-              ? "Indisponível"
-              : roleBlockedMessage
-                ? roleBlockedMessage
-                : isResolving
-                  ? "Validando"
-                  : label}
-          </span>
+          <span className="font-black text-xs leading-4 text-white">{labelText}</span>
         </button>
       </span>
     );
@@ -184,7 +185,7 @@ export function AddToCartButton({
 
   return (
     <span className="group/admin-tooltip relative inline-flex">
-      {renderAdminTooltip()}
+      {renderRoleTooltip()}
       <button
         type="button"
         onClick={handleClick}

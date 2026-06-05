@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
-import { fetchWpProducts, mapWpProductToHomeCard } from "./wp-catalog";
+import { fetchWpProductsSafe, mapWpProductToHomeCard } from "./wp-catalog";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
@@ -186,7 +186,7 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
   if (!isMockDataEnabled()) {
     const [flashSaleCampaign, products] = await Promise.all([
       getHomeFlashSale(),
-      fetchWpProducts(48),
+      fetchWpProductsSafe(48, "home-products"),
     ]);
     const cards = products.map(mapWpProductToHomeCard);
     const bestSellerProducts = cards.slice(0, 8);

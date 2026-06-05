@@ -30,13 +30,23 @@ export const getWpProductCategories = cache(async (): Promise<WpCategoryEntry[]>
     return [];
   }
 
-  const data = await wpGraphqlRequest<{
+  let data: {
     productCategories?: { nodes?: WpCategoryNode[] | null } | null;
-  }>(
-    print(CATEGORIES_QUERY),
-    {},
-    { revalidate: 300, tags: ["wp:categories"] },
-  );
+  };
+
+  try {
+    data = await wpGraphqlRequest<{
+      productCategories?: { nodes?: WpCategoryNode[] | null } | null;
+    }>(
+      print(CATEGORIES_QUERY),
+      {},
+      { revalidate: 300, tags: ["wp:categories"] },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[wp-categories] Falha ao consultar categorias no WPGraphQL.", message);
+    return [];
+  }
 
   const nodes = data.productCategories?.nodes ?? [];
 
