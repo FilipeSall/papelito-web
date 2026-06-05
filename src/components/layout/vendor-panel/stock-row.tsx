@@ -81,6 +81,7 @@ export function StockRow({
             className="h-10 w-20 rounded-[10px] border border-brand-dark/16 bg-white px-3 text-right text-sm outline-none focus:border-brand-dark"
             min={0}
             onChange={(event) => onQtyChange(item.productId, event.target.value)}
+            onFocus={(event) => event.currentTarget.select()}
             type="number"
             value={qty}
           />

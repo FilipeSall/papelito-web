@@ -94,11 +94,13 @@ Por convenção, componentes específicos de uma página vivem em `layout/<nome-
 
 1. **Credenciais** (`/entrar`) → NextAuth `Credentials` provider chama mutation GraphQL `login` no WP → `wp_authenticate()` em `wp_users` → JWT em [src/lib/auth.ts](src/lib/auth.ts)
 2. **Google OAuth** → NextAuth Google provider → `signIn` callback troca `id_token` por par WP via `POST /wp-json/papelito/v1/auth/google` → cria/encontra `wp_users`, retorna o mesmo JWT
-3. **Cadastro** (`/cadastro` → `/cadastro/etapa-2`) → `/api/auth/register` (proxy) → WP `POST /papelito/v1/auth/register` → cria `wp_users` + meta → auto-`signIn('credentials')`
+3. **Cadastro** (`/cadastro` → `/cadastro/etapa-2`) → `/api/auth/register` (proxy) → WP `POST /papelito/v1/auth/register` → cria `wp_users` + meta com status pendente → front redireciona para `/confirmar-email` → `POST /api/auth/verify-email` libera o login por senha
 
 Token e refresh do WP ficam na sessão JWT do NextAuth (`session.accessToken`, `session.refreshToken`). Apollo lê `session.accessToken` automaticamente.
 
 `session.profileComplete = false` indica usuário Google sem perfil preenchido (CNPJ/CEP/etc. faltando) — middleware redireciona para `/perfil/completar` em rotas protegidas.
+
+Login por credenciais pode retornar `papelito_email_not_verified`; a UI deve orientar reenvio para `/confirmar-email?email=...`.
 
 ## Performance — home, catálogo e disponibilidade regional
 

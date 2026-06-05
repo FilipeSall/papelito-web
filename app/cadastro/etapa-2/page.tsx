@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { startTransition, useEffect, useState } from "react";
 
 import {
@@ -116,21 +115,14 @@ export default function CadastroEtapa2Page() {
           return;
         }
 
-        const signInResult = await signIn("credentials", {
-          username: step1.email,
-          password,
-          redirect: false,
-          callbackUrl,
-        });
-
-        if (signInResult?.error) {
-          setErrorMessage("Conta criada, mas houve um erro ao entrar. Tente fazer login.");
-          setIsSubmitting(false);
-          return;
-        }
+        const body = (await response.json()) as
+          | { ok?: boolean; requiresEmailVerification?: boolean; email?: string }
+          | null;
 
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
-        router.push(signInResult?.url ?? callbackUrl);
+        router.push(
+          `/confirmar-email?email=${encodeURIComponent(body?.email ?? step1.email)}`,
+        );
         router.refresh();
       } catch {
         setErrorMessage("Erro de rede. Tente novamente.");

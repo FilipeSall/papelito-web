@@ -72,11 +72,29 @@ type WpAuthIdentityResponse = {
   } | null;
 };
 
+type WpGraphqlError = {
+  message?: string;
+};
+
+type WpLoginResult = {
+  login: {
+    authToken?: string;
+    refreshToken?: string;
+    user?: {
+      databaseId?: number;
+      email?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+    };
+  } | null;
+  errorMessage?: string;
+};
+
 function normalizeRole(role: unknown): string | undefined {
   return typeof role === "string" ? role.trim().toLowerCase() : undefined;
 }
 
-async function wpLogin(username: string, password: string) {
+async function wpLogin(username: string, password: string): Promise<WpLoginResult> {
   const response = await fetch(getWpGraphqlEndpoint(), {
     method: "POST",
     headers: {
@@ -104,9 +122,13 @@ async function wpLogin(username: string, password: string) {
         };
       };
     };
+    errors?: WpGraphqlError[];
   };
 
-  return json.data?.login ?? null;
+  return {
+    login: json.data?.login ?? null,
+    errorMessage: json.errors?.[0]?.message,
+  };
 }
 
 async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | null> {
@@ -257,21 +279,25 @@ providers.push(
         return null;
       }
 
-      const data = await wpLogin(credentials.username, credentials.password);
+      const { login, errorMessage } = await wpLogin(credentials.username, credentials.password);
 
-      if (!data?.authToken || !data.user?.databaseId) {
+      if (errorMessage === "Confirme seu e-mail antes de entrar.") {
+        throw new Error("papelito_email_not_verified");
+      }
+
+      if (!login?.authToken || !login.user?.databaseId) {
         return null;
       }
 
-      const role = await wpFetchAuthenticatedRole(data.authToken);
+      const role = await wpFetchAuthenticatedRole(login.authToken);
 
       return {
-        id: String(data.user.databaseId),
-        email: data.user.email ?? credentials.username,
-        name: `${data.user.firstName ?? ""} ${data.user.lastName ?? ""}`.trim(),
-        accessToken: data.authToken,
-        accessTokenExpires: getAccessTokenExpiresAt(data.authToken),
-        refreshToken: data.refreshToken,
+        id: String(login.user.databaseId),
+        email: login.user.email ?? credentials.username,
+        name: `${login.user.firstName ?? ""} ${login.user.lastName ?? ""}`.trim(),
+        accessToken: login.authToken,
+        accessTokenExpires: getAccessTokenExpiresAt(login.authToken),
+        refreshToken: login.refreshToken,
         profileComplete: true,
         role,
       };

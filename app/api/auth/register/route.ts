@@ -16,16 +16,10 @@ type RegisterPayload = {
   instagram?: string;
 };
 
-type WpAuthResponse = {
-  authToken: string;
-  refreshToken: string;
-  user: {
-    databaseId: number;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  profileComplete: boolean;
+type WpRegisterResponse = {
+  ok: true;
+  requiresEmailVerification: boolean;
+  email: string;
 };
 
 export async function POST(request: Request) {
@@ -37,11 +31,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: "invalid_json", message: "JSON inválido." }, { status: 400 });
   }
 
-  const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/register", { json: body });
+  const result = await wpRest<WpRegisterResponse>("/papelito/v1/auth/register", { json: body });
 
   if (!result.ok) {
     return NextResponse.json(result.error, { status: result.status });
   }
 
-  return NextResponse.json({ ok: true, email: body.email }, { status: 201 });
+  return NextResponse.json(result.data, { status: 201 });
 }

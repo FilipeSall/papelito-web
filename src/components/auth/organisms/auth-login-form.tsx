@@ -17,6 +17,7 @@ export function AuthLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const callbackUrl = searchParams.get("callbackUrl") || "/produtos";
 
@@ -34,6 +35,7 @@ export function AuthLoginForm() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setPendingVerificationEmail(null);
 
     startTransition(async () => {
       const result = await signIn("credentials", {
@@ -45,6 +47,13 @@ export function AuthLoginForm() {
 
       if (!result || result.error) {
         setIsSubmitting(false);
+
+        if (result?.error === "papelito_email_not_verified") {
+          setPendingVerificationEmail(username);
+          setErrorMessage("Confirme seu e-mail antes de entrar.");
+          return;
+        }
+
         setErrorMessage("Não foi possível autenticar com sua conta WordPress.");
         return;
       }
@@ -88,7 +97,17 @@ export function AuthLoginForm() {
             </div>
 
             {errorMessage ? (
-              <p className="text-sm text-red-200">{errorMessage}</p>
+              <div className="space-y-2 text-sm text-red-200">
+                <p>{errorMessage}</p>
+                {pendingVerificationEmail ? (
+                  <Link
+                    href={`/confirmar-email?email=${encodeURIComponent(pendingVerificationEmail)}`}
+                    className="inline-block text-brand-yellow hover:underline"
+                  >
+                    Reenviar e-mail de confirmação
+                  </Link>
+                ) : null}
+              </div>
             ) : null}
 
             <AuthSubmitButton
