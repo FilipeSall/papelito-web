@@ -21,6 +21,8 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npx tsc --noEmit
+      - name: Tests
+        run: npm run test:ci
       - name: Build
         env:
           NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT: https://wp.papelitobrasil.com.br/graphql

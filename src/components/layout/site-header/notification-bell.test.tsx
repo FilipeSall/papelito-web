@@ -1,0 +1,97 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { buildNotification } from "../../../../test/factories/notification";
+import { useNotificationsStore } from "@/features/notifications";
+import { NotificationBell } from "./notification-bell";
+
+const pushMock = vi.fn();
+const refreshMock = vi.fn();
+const markNotificationReadMock = vi.fn();
+const markAllNotificationsReadMock = vi.fn();
+
+let authState = { isApiAuthenticated: true };
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
+vi.mock("@/hooks/use-auth-session", () => ({
+  useAuthSession: () => authState,
+}));
+
+vi.mock("@/features/notifications", async () => {
+  const actual = await vi.importActual<typeof import("@/features/notifications")>(
+    "@/features/notifications",
+  );
+
+  return {
+    ...actual,
+    useNotificationsPoll: () => ({
+      isLoading: false,
+      isError: false,
+      refresh: refreshMock,
+    }),
+    markNotificationRead: (...args: Parameters<typeof markNotificationReadMock>) =>
+      markNotificationReadMock(...args),
+    markAllNotificationsRead: (...args: Parameters<typeof markAllNotificationsReadMock>) =>
+      markAllNotificationsReadMock(...args),
+  };
+});
+
+describe("NotificationBell", () => {
+  beforeEach(() => {
+    authState = { isApiAuthenticated: true };
+    pushMock.mockReset();
+    refreshMock.mockReset();
+    markNotificationReadMock.mockReset();
+    markAllNotificationsReadMock.mockResolvedValue({
+      success: true,
+      unreadCount: 0,
+    });
+    useNotificationsStore.setState({
+      unreadCount: 12,
+      items: [buildNotification()],
+    });
+  });
+
+  it("does not render for unauthenticated users", () => {
+    authState = { isApiAuthenticated: false };
+
+    render(<NotificationBell />);
+
+    expect(screen.queryByRole("button", { name: /notifica/i })).not.toBeInTheDocument();
+  });
+
+  it("shows capped unread badge and toggles the dropdown", async () => {
+    const user = userEvent.setup();
+
+    render(<NotificationBell />);
+
+    const button = screen.getByRole("button", { name: /12 não lidas/i });
+    expect(screen.getByText("9+")).toBeInTheDocument();
+
+    await user.click(button);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("marks all notifications as read from the dropdown", async () => {
+    const user = userEvent.setup();
+
+    render(<NotificationBell />);
+
+    await user.click(screen.getByRole("button", { name: /12 não lidas/i }));
+    await user.click(screen.getByRole("button", { name: /marcar todas/i }));
+
+    await waitFor(() => {
+      expect(markAllNotificationsReadMock).toHaveBeenCalledTimes(1);
+      expect(useNotificationsStore.getState().unreadCount).toBe(0);
+    });
+  });
+});
