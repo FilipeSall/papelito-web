@@ -21,7 +21,7 @@ type NotificationBellProps = {
 
 export function NotificationBell({ inverted = false }: NotificationBellProps) {
   const router = useRouter();
-  const { isAuthenticated } = useAuthSession();
+  const { isApiAuthenticated } = useAuthSession();
   const { isLoading, isError, refresh } = useNotificationsPoll();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
     };
   }, [open]);
 
-  if (!isAuthenticated) {
+  if (!isApiAuthenticated) {
     return null;
   }
 

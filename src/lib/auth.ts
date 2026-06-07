@@ -352,6 +352,7 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = (user as { accessToken?: string }).accessToken;
         token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;
+        delete token.authError;
         token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
         token.role = (user as { role?: string }).role;
       }
@@ -367,12 +368,14 @@ export const authOptions: NextAuthOptions = {
 
       if (!accessTokenExpires || Date.now() < accessTokenExpires - 30_000) {
         token.accessTokenExpires = accessTokenExpires;
+        delete token.authError;
         return token;
       }
 
       if (typeof token.refreshToken !== "string") {
         delete token.accessToken;
         delete token.accessTokenExpires;
+        token.authError = "missing_refresh_token";
         return token;
       }
 
@@ -381,12 +384,14 @@ export const authOptions: NextAuthOptions = {
       if (!refreshedAccessToken) {
         delete token.accessToken;
         delete token.accessTokenExpires;
+        token.authError = "token_refresh_failed";
         return token;
       }
 
       token.accessToken = refreshedAccessToken;
       token.accessTokenExpires = getAccessTokenExpiresAt(refreshedAccessToken);
       token.role = (await wpFetchAuthenticatedRole(refreshedAccessToken)) ?? token.role;
+      delete token.authError;
 
       return token;
     },
@@ -401,6 +406,7 @@ export const authOptions: NextAuthOptions = {
         typeof token.accessTokenExpires === "number" ? token.accessTokenExpires : undefined;
       session.refreshToken =
         typeof token.refreshToken === "string" ? token.refreshToken : undefined;
+      session.authError = typeof token.authError === "string" ? token.authError : undefined;
       session.profileComplete =
         typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
       session.role = typeof token.role === "string" ? token.role : undefined;

@@ -11,7 +11,7 @@ import { useNotificationsStore } from "../store/use-notifications-store";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 export function useNotificationsPoll() {
-  const { isAuthenticated } = useAuthSession();
+  const { isApiAuthenticated } = useAuthSession();
   const [isVisible, setIsVisible] = useState(() =>
     typeof document === "undefined" ? true : document.visibilityState === "visible",
   );
@@ -29,8 +29,8 @@ export function useNotificationsPoll() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  const countKey = isAuthenticated ? "notifications:unread-count" : null;
-  const listKey = isAuthenticated ? "notifications:list" : null;
+  const countKey = isApiAuthenticated ? "notifications:unread-count" : null;
+  const listKey = isApiAuthenticated ? "notifications:list" : null;
 
   const count = useSWR(countKey, getUnreadNotificationCount, {
     refreshInterval: isVisible ? 60_000 : 0,
@@ -62,12 +62,12 @@ export function useNotificationsPoll() {
   }, [list.data, setItems]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isApiAuthenticated) {
       setItems([]);
       setUnreadCount(0);
       previousCountRef.current = null;
     }
-  }, [isAuthenticated, setItems, setUnreadCount]);
+  }, [isApiAuthenticated, setItems, setUnreadCount]);
 
   return {
     isLoading: count.isLoading || list.isLoading,
