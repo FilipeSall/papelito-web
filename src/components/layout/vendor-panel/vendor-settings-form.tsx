@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
+import { PasswordSettingsCard } from "@/components/layout/profile-page/password-settings-card";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
@@ -40,39 +41,47 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
   }
 
   return (
-    <Panel className="max-w-3xl overflow-hidden">
-      <div className="bg-brand-dark px-5 py-3 text-brand-yellow">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.25em]">Prazo operacional</p>
-      </div>
-      <form className="px-5 py-6 md:px-6" onSubmit={submit}>
-        <h3
-          className="text-2xl font-semibold uppercase tracking-[0.1em]"
-          style={{ fontFamily: "var(--font-admin-display)" }}
-        >
-          Preparacao de pedidos
-        </h3>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-brand-dark/68">
-          Defina quantos dias uteis sua loja precisa para preparar pedidos. Este prazo aparece para clientes ao escolherem seu vendor.
-        </p>
-        <div className="mt-6 max-w-sm rounded-[20px] border border-brand-dark/12 bg-[#fbf7ef] p-5">
-          <ProfileFormField
-            errorMessage={days ? error : ""}
-            inputMode="numeric"
-            label="Dias uteis de processamento"
-            onChange={setDays}
-            type="number"
-            value={days}
-          />
+    <div className="grid max-w-6xl gap-4 xl:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] xl:items-stretch">
+      <Panel className="flex h-full flex-col overflow-hidden">
+        <div className="bg-brand-yellow px-5 py-3 text-brand-dark">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em]">
+            Prazo operacional
+          </p>
         </div>
-        <FeedbackBanner className="mt-5" feedback={feedback} />
-        <button
-          className="mt-6 rounded-full bg-brand-dark px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-brand-yellow disabled:opacity-50"
-          disabled={pending || Boolean(error)}
-          type="submit"
-        >
-          {pending ? "Salvando..." : "Salvar prazo"}
-        </button>
-      </form>
-    </Panel>
+        <form className="flex flex-1 flex-col px-5 py-6 md:px-6" onSubmit={submit}>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-brand-dark/68">
+            Defina quantos dias uteis sua loja precisa para preparar pedidos. Este prazo aparece
+            para clientes ao escolherem seu vendor.
+          </p>
+          <div className="mt-6 max-w-sm rounded-[20px] border border-brand-dark/12 bg-[#fbf7ef] p-5">
+            <ProfileFormField
+              errorMessage={days ? error : ""}
+              inputMode="numeric"
+              label="Dias uteis de processamento"
+              onChange={setDays}
+              type="number"
+              value={days}
+            />
+          </div>
+          <div className="mt-auto pt-6">
+            <FeedbackBanner className="mt-5" feedback={feedback} />
+            <button
+              className="mt-6 inline-flex w-fit whitespace-nowrap rounded-full bg-brand-dark px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-brand-yellow disabled:opacity-50"
+              disabled={pending || Boolean(error)}
+              type="submit"
+            >
+              {pending ? "Salvando..." : "Salvar prazo"}
+            </button>
+          </div>
+        </form>
+      </Panel>
+
+      <Panel className="flex h-full flex-col overflow-hidden">
+        <div className="bg-brand-yellow px-5 py-3 text-brand-dark">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em]">Alterar senha</p>
+        </div>
+        <PasswordSettingsCard variant="embedded" />
+      </Panel>
+    </div>
   );
 }

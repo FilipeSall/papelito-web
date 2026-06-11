@@ -46,6 +46,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             kyc_url?: string;
             last_error?: string;
             message?: string;
+            pagarme_errors?: string[];
           }
         | null;
 
@@ -53,6 +54,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
         setFeedback({
           error: true,
           message: body?.message || "Nao foi possivel sincronizar o recebedor.",
+          details: Array.isArray(body?.pagarme_errors) ? body.pagarme_errors : undefined,
         });
         return;
       }

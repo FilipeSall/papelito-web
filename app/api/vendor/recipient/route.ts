@@ -26,8 +26,14 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
+    const pagarmeErrors = result.error.data?.pagarme_errors;
+
     return NextResponse.json(
-      { message: result.error.message, code: result.error.code },
+      {
+        message: result.error.message,
+        code: result.error.code,
+        ...(Array.isArray(pagarmeErrors) ? { pagarme_errors: pagarmeErrors } : {}),
+      },
       { status: result.status || 500 },
     );
   }
