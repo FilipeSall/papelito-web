@@ -13,6 +13,8 @@ export { ProfileDataPageContent } from "./profile-data-page-content";
 export { ProfileAddressBook } from "./profile-address-book";
 export { ProfileAddressesPageContent } from "./profile-addresses-page-content";
 export { AccountCepNotice } from "./account-cep-notice";
+export { MissingCepModal } from "./missing-cep-modal";
+export { MissingCepModalHost } from "./missing-cep-modal-host";
 export { AddressCard, type Address } from "./address-card";
 export { AddAddressCard } from "./add-address-card";
 export { AddressList } from "./address-list";

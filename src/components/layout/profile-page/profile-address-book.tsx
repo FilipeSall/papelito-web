@@ -2,7 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { useCepLookup } from "@/features/checkout";
 import { formatZipCode } from "@/features/checkout/utils/format-checkout-fields";
@@ -20,6 +20,7 @@ import { ProfileFormField } from "./profile-form-field";
 
 type ProfileAddressBookProps = {
   customer: ProfileCustomer;
+  openEditorOnMount?: boolean;
 };
 
 type FeedbackState =
@@ -27,7 +28,10 @@ type FeedbackState =
   | { type: "success"; message: string }
   | null;
 
-export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
+export function ProfileAddressBook({
+  customer,
+  openEditorOnMount = false,
+}: ProfileAddressBookProps) {
   const router = useRouter();
   const { isLoading: cepLoading, error: cepError, fetchCep } = useCepLookup();
   const [currentCustomer, setCurrentCustomer] = useState(customer);
@@ -37,8 +41,9 @@ export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
   const [addresses, setAddresses] = useState(() => buildProfileAddresses(customer));
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(openEditorOnMount);
   const [isPending, startTransition] = useTransition();
+  const hasConsumedOpenEditorRef = useRef(false);
 
   function updateField<Key extends keyof ProfileAddressFormValues>(
     key: Key,
@@ -79,6 +84,15 @@ export function ProfileAddressBook({ customer }: ProfileAddressBookProps) {
     setIsEditorOpen(true);
     setFeedback(null);
   }
+
+  useEffect(() => {
+    if (!openEditorOnMount || hasConsumedOpenEditorRef.current) {
+      return;
+    }
+
+    hasConsumedOpenEditorRef.current = true;
+    router.replace("/perfil/enderecos");
+  }, [openEditorOnMount, router]);
 
   function handleEdit() {
     setForm(buildProfileAddressFormValues(currentCustomer));

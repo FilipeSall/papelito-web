@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/lib/apollo/provider";
+import { MissingCepModalHost } from "@/components/layout/profile-page";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { NavigationLoader } from "@/components/ui/navigation-loader";
 
@@ -41,7 +42,10 @@ export default function RootLayout({
       <body className="font-sans" suppressHydrationWarning>
         <NavigationLoader />
         <SessionProvider>
-          <ApolloAppProvider>{children}</ApolloAppProvider>
+          <ApolloAppProvider>
+            {children}
+            <MissingCepModalHost />
+          </ApolloAppProvider>
         </SessionProvider>
       </body>
     </html>
