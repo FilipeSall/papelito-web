@@ -239,11 +239,21 @@ export default function CadastroEtapa2Page() {
                 </button>
                 <p className="text-xs font-medium leading-relaxed text-white/60">
                   Confirmo que tenho 18 anos ou mais e concordo com os{" "}
-                  <Link href="/termos" className="text-brand-yellow hover:underline">
+                  <Link
+                    href="/termos"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-yellow hover:underline"
+                  >
                     Termos de Uso
                   </Link>{" "}
                   e{" "}
-                  <Link href="/privacidade" className="text-brand-yellow hover:underline">
+                  <Link
+                    href="/privacidade"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-yellow hover:underline"
+                  >
                     Política de Privacidade
                   </Link>
                   .

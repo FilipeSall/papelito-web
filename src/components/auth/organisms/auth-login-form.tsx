@@ -54,7 +54,7 @@ export function AuthLoginForm() {
           return;
         }
 
-        setErrorMessage("Não foi possível autenticar com sua conta WordPress.");
+        setErrorMessage("Não foi possível autenticar com sua conta Papelito.");
         return;
       }
 

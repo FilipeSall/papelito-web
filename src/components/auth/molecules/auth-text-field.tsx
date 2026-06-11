@@ -10,6 +10,7 @@ interface AuthTextFieldProps {
   autoComplete?: string;
   defaultValue?: string;
   required?: boolean;
+  inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
 }
 
 export function AuthTextField({
@@ -21,6 +22,7 @@ export function AuthTextField({
   autoComplete,
   defaultValue,
   required,
+  inputMode,
 }: AuthTextFieldProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -33,6 +35,7 @@ export function AuthTextField({
         autoComplete={autoComplete}
         defaultValue={defaultValue}
         required={required}
+        inputMode={inputMode}
       />
     </div>
   );

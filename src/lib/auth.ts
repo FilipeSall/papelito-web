@@ -131,6 +131,10 @@ async function wpLogin(username: string, password: string): Promise<WpLoginResul
   };
 }
 
+function isEmailVerificationError(message: string | undefined) {
+  return message === "Confirme seu e-mail antes de entrar.";
+}
+
 async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | null> {
   const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/google", {
     json: { id_token: idToken },
@@ -281,12 +285,16 @@ providers.push(
 
       const { login, errorMessage } = await wpLogin(credentials.username, credentials.password);
 
-      if (errorMessage === "Confirme seu e-mail antes de entrar.") {
+      if (isEmailVerificationError(errorMessage)) {
         throw new Error("papelito_email_not_verified");
       }
 
+      if (errorMessage) {
+        throw new Error("papelito_invalid_credentials");
+      }
+
       if (!login?.authToken || !login.user?.databaseId) {
-        return null;
+        throw new Error("papelito_invalid_credentials");
       }
 
       const role = await wpFetchAuthenticatedRole(login.authToken);

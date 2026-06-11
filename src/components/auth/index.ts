@@ -1,1 +1,6 @@
-export { AuthLoginForm, AuthWelcomePanel } from "./organisms";
+export {
+  AuthForgotPasswordForm,
+  AuthLoginForm,
+  AuthResetPasswordForm,
+  AuthWelcomePanel,
+} from "./organisms";
