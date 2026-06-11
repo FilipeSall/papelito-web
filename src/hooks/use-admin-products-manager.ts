@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ADMIN_PRODUCTS_API,
@@ -43,7 +43,11 @@ function normalizeFilters(filters: ProductFilters): ProductFilters {
   };
 }
 
-export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
+export function useAdminProductsManager(
+  snapshot: AdminProductsSnapshot,
+  options: { initialFocusProductId?: number | null } = {},
+) {
+  const initialFocusProductId = options.initialFocusProductId ?? null;
   const [products, setProducts] = useState(snapshot.products);
   const [categories, setCategories] = useState(snapshot.categories);
   const [tags, setTags] = useState(snapshot.tags);
@@ -66,6 +70,7 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [notice, setNotice] = useState("");
+  const handledInitialFocusRef = useRef(false);
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) ?? null,
@@ -107,6 +112,70 @@ export function useAdminProductsManager(snapshot: AdminProductsSnapshot) {
   function closeEditor() {
     setIsEditorOpen(false);
   }
+
+  useEffect(() => {
+    if (handledInitialFocusRef.current || !initialFocusProductId) {
+      return;
+    }
+
+    handledInitialFocusRef.current = true;
+    const existingProduct = products.find((product) => product.id === initialFocusProductId);
+
+    if (existingProduct) {
+      selectProduct(existingProduct);
+      return;
+    }
+
+    let cancelled = false;
+    const focusedProductId = initialFocusProductId;
+
+    async function loadFocusedProduct() {
+      setIsLoading(true);
+      setNotice("");
+
+      try {
+        const response = await fetch(ADMIN_PRODUCTS_API.detail(focusedProductId), {
+          cache: "no-store",
+        });
+        const json = (await response.json().catch(() => null)) as
+          | { message?: string; product?: AdminProduct }
+          | null;
+
+        if (!response.ok || !json?.product) {
+          throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setProducts((currentProducts) => {
+          if (currentProducts.some((product) => product.id === json.product?.id)) {
+            return currentProducts;
+          }
+
+          return [json.product as AdminProduct, ...currentProducts];
+        });
+        setSelectedProductId(json.product.id);
+        setDraft(productToDraft(json.product));
+        setIsEditorOpen(true);
+      } catch (error) {
+        if (!cancelled) {
+          setNotice(messageFromError(error, "Nao foi possivel abrir o produto da notificacao."));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadFocusedProduct();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialFocusProductId, products]);
 
   async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
     setIsLoading(true);

@@ -93,6 +93,7 @@ export default function CadastroEtapa2Page() {
             last_name: last,
             phone_number: step1.phone,
             cep,
+            ...(step1.cpf ? { cpf: step1.cpf } : {}),
           }),
         });
 

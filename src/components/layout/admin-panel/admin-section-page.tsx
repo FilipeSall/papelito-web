@@ -22,7 +22,7 @@ function renderSection(
     case "sales":
       return <SalesContent searchParams={searchParams} />;
     case "products":
-      return <ProductsContent />;
+      return <ProductsContent searchParams={searchParams} />;
     case "flash-sale":
       return <FlashSaleContent />;
     case "vendors":

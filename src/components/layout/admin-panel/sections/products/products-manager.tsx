@@ -7,8 +7,14 @@ import { ProductEditorModal } from "./components/product-editor-modal";
 import { ProductsFilters } from "./components/products-filters";
 import { ProductsList } from "./components/products-list";
 
-export function ProductsManager({ snapshot }: { snapshot: AdminProductsSnapshot }) {
-  const manager = useAdminProductsManager(snapshot);
+export function ProductsManager({
+  snapshot,
+  initialFocusProductId = null,
+}: {
+  snapshot: AdminProductsSnapshot;
+  initialFocusProductId?: number | null;
+}) {
+  const manager = useAdminProductsManager(snapshot, { initialFocusProductId });
   const {
     appliedFilters,
     catalogSummary,

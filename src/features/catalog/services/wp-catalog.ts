@@ -45,6 +45,12 @@ interface WpProductNode {
   price?: string | null;
   regularPrice?: string | null;
   salePrice?: string | null;
+  weight?: string | null;
+  variations?: {
+    nodes?: Array<{
+      weight?: string | null;
+    } | null> | null;
+  } | null;
 }
 
 const CATEGORY_LABEL: Record<Exclude<ProductTypeId, "todos">, string> = {
@@ -204,6 +210,26 @@ function resolveImage(product: WpProductNode) {
   });
 }
 
+function hasPositiveWeight(weight: string | null | undefined) {
+  if (!weight) {
+    return false;
+  }
+
+  const normalized = weight.replace(",", ".").trim();
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed > 0;
+}
+
+function hasValidWeight(product: WpProductNode) {
+  if (hasPositiveWeight(product.weight)) {
+    return true;
+  }
+
+  return (product.variations?.nodes ?? []).some((variation) =>
+    hasPositiveWeight(variation?.weight),
+  );
+}
+
 export interface FetchWpProductsInput {
   first?: number;
   after?: string | null;
@@ -249,7 +275,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     tags: ["wp:products"],
   });
 
-  return data.products?.nodes ?? [];
+  return (data.products?.nodes ?? []).filter(hasValidWeight);
 }
 
 export async function fetchWpProductsSafe(
@@ -283,7 +309,13 @@ export async function fetchWpProductByDatabaseId(id: string) {
     tags: ["wp:products", `wp:product:${parsedId}`],
   });
 
-  return data.product ?? null;
+  const product = data.product ?? null;
+
+  if (!product || !hasValidWeight(product)) {
+    return null;
+  }
+
+  return product;
 }
 
 export function mapWpProductToCatalogItem(

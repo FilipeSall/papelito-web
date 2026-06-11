@@ -96,6 +96,30 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
     );
   }
 
+  function handleCpfChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+
+    if (digits.length <= 3) {
+      updateField("cpf", digits);
+      return;
+    }
+
+    if (digits.length <= 6) {
+      updateField("cpf", `${digits.slice(0, 3)}.${digits.slice(3)}`);
+      return;
+    }
+
+    if (digits.length <= 9) {
+      updateField("cpf", `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`);
+      return;
+    }
+
+    updateField(
+      "cpf",
+      `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`,
+    );
+  }
+
   function validateForm() {
     const nextErrors: Record<string, string> = {};
 
@@ -130,6 +154,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
             phoneNumber: form.phoneNumber,
             storeName: form.storeName,
             cnpj: form.cnpj,
+            cpf: form.cpf,
             instagram: form.instagram,
             role: form.role,
           }),
@@ -238,6 +263,15 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
                 type="tel"
                 value={form.phoneNumber}
               />
+
+              {isCustomer ? (
+                <ProfileFormField
+                  label="CPF"
+                  onChange={handleCpfChange}
+                  placeholder="123.456.789-00"
+                  value={form.cpf}
+                />
+              ) : null}
 
               {isSeller ? (
                 <>

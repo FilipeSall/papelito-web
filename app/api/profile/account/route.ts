@@ -12,6 +12,7 @@ type AccountPayload = {
   phoneNumber?: string;
   storeName?: string;
   cnpj?: string;
+  cpf?: string;
   instagram?: string;
   role?: string;
 };
@@ -36,6 +37,7 @@ export async function PATCH(request: Request) {
   const phoneNumber = String(payload.phoneNumber ?? "").trim();
   const storeName = String(payload.storeName ?? "").trim();
   const cnpj = String(payload.cnpj ?? "").trim();
+  const cpf = String(payload.cpf ?? "").trim();
   const instagram = String(payload.instagram ?? "").trim();
   const role = String(payload.role ?? "customer").trim().toLowerCase();
 
@@ -60,7 +62,10 @@ export async function PATCH(request: Request) {
               { key: "cnpj", value: cnpj },
               { key: "instagram", value: instagram },
             ]
-          : [{ key: "phone_number", value: phoneNumber }],
+          : [
+              { key: "phone_number", value: phoneNumber },
+              { key: "cpf", value: cpf },
+            ],
     });
 
     return NextResponse.json({ customer });

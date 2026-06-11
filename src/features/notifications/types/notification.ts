@@ -4,6 +4,7 @@ export type NotificationType =
   | "vendor_approved"
   | "vendor_rejected"
   | "stock_zeroed"
+  | "product_missing_weight"
   | "support_message"
   | "support_escalated";
 

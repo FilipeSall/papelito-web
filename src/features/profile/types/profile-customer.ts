@@ -2,6 +2,7 @@ export type ProfileMetaDataKey =
   | "store_name"
   | "phone_number"
   | "cnpj"
+  | "cpf"
   | "instagram"
   | "state"
   | "city"
@@ -11,6 +12,7 @@ export type ProfileCustomerMeta = {
   storeName: string;
   phoneNumber: string;
   cnpj: string;
+  cpf: string;
   instagram: string;
   state: string;
   city: string;
@@ -50,6 +52,7 @@ export type ProfileAccountFormValues = {
   phoneNumber: string;
   storeName: string;
   cnpj: string;
+  cpf: string;
   instagram: string;
   role: string;
 };

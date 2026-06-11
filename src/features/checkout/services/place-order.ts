@@ -39,11 +39,15 @@ function friendlyMessage(error: PlaceOrderError | null) {
     return "Nao foi possivel concluir o pedido.";
   }
 
+  if (error.message) {
+    return error.message;
+  }
+
   if (error.code && ERROR_MESSAGES[error.code]) {
     return ERROR_MESSAGES[error.code];
   }
 
-  return error.message || "Nao foi possivel concluir o pedido.";
+  return "Nao foi possivel concluir o pedido.";
 }
 
 export async function placeOrder(
@@ -119,10 +123,7 @@ export async function placeOrder(
         payload && typeof payload.code === "string"
           ? payload.code
           : "papelito_checkout_failed",
-      message:
-        payload && typeof payload.message === "string"
-          ? payload.message
-          : "Nao foi possivel concluir o pedido.",
+      message: payload && typeof payload.message === "string" ? payload.message : "",
       status: response.status,
     };
 

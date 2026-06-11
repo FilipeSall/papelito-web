@@ -50,9 +50,13 @@ export function MiniProductCard({
       aria-label={`Ver produto ${name}`}
       onClick={navigateToProduct}
       onKeyDown={handleCardKeyDown}
-      className="group/availability relative h-65.5 w-44 shrink-0 snap-start select-none overflow-hidden rounded-xl border border-[#F3F4F6] bg-white p-px shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex cursor-pointer flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+      className="group/availability relative h-65.5 w-44 shrink-0 snap-start select-none overflow-visible rounded-xl border border-[#F3F4F6] bg-white p-px shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex cursor-pointer flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
     >
-      <div className={isUnavailable ? "flex h-full w-full flex-col opacity-45 transition-opacity" : "flex h-full w-full flex-col"}>
+      <div
+        className={`flex h-full w-full flex-col overflow-hidden rounded-[11px] ${
+          isUnavailable ? "opacity-45 transition-opacity" : ""
+        }`.trim()}
+      >
         <div className="relative h-36 w-full bg-bg-light">
           {image ? (
             <div className="absolute inset-x-0 top-4 h-28">

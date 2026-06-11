@@ -575,6 +575,19 @@ export async function createAdminProduct(accessToken: string, payload: AdminProd
   return mapProduct(result.data);
 }
 
+export async function getAdminProduct(accessToken: string, productId: number) {
+  const result = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 0,
+  });
+
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  return mapProduct(result.data);
+}
+
 export async function updateAdminProduct(
   accessToken: string,
   productId: number,

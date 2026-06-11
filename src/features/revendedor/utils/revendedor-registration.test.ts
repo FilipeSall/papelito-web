@@ -56,6 +56,7 @@ describe("revendedor-registration", () => {
         storeName: "Loja Maria",
         phoneNumber: "11987654321",
         cnpj: "12345678000195",
+        cpf: "",
         instagram: "@lojadamaria",
         state: "SP",
         city: "Sao Paulo",

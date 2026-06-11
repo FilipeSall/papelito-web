@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/auth";
 import {
+  getAdminProduct,
   updateAdminProduct,
   type AdminProductPayload,
 } from "@/lib/server/admin-products";
@@ -57,6 +58,32 @@ export async function PATCH(
     return NextResponse.json({ product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nao foi possivel salvar o produto.";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ productId: string }> },
+) {
+  const auth = await getAdminAccessToken();
+
+  if ("error" in auth) {
+    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  }
+
+  const { productId } = await params;
+  const parsedProductId = Number.parseInt(productId, 10);
+
+  if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
+    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+  }
+
+  try {
+    const product = await getAdminProduct(auth.accessToken, parsedProductId);
+    return NextResponse.json({ product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Nao foi possivel carregar o produto.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

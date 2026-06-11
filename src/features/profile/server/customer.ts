@@ -14,6 +14,7 @@ const PROFILE_META_KEYS: ProfileMetaDataKey[] = [
   "store_name",
   "phone_number",
   "cnpj",
+  "cpf",
   "instagram",
   "state",
   "city",
@@ -98,7 +99,7 @@ const UPDATE_CUSTOMER_MUTATION = `
           country
           phone
         }
-        metaData(keysIn: ["store_name", "phone_number", "cnpj", "instagram", "state", "city", "cep"]) {
+        metaData(keysIn: ["store_name", "phone_number", "cnpj", "cpf", "instagram", "state", "city", "cep"]) {
           key
           value
         }
@@ -276,6 +277,7 @@ function normalizeMeta(
     storeName: map.get("store_name") ?? "",
     phoneNumber: map.get("phone_number") ?? "",
     cnpj: map.get("cnpj") ?? "",
+    cpf: map.get("cpf") ?? "",
     instagram: map.get("instagram") ?? "",
     state: map.get("state") ?? "",
     city: map.get("city") ?? "",

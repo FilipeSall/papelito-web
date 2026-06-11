@@ -4,6 +4,7 @@ export type CadastroStep1Data = {
   name: string;
   email: string;
   phone: string;
+  cpf?: string;
 };
 
 export const BRAZILIAN_STATES: Array<{ value: string; label: string }> = [

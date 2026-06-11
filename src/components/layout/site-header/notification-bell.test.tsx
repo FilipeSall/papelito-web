@@ -17,6 +17,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+vi.mock("next/image", () => ({
+  default: () => null,
+}));
+
 vi.mock("@/hooks/use-auth-session", () => ({
   useAuthSession: () => authState,
 }));
@@ -92,6 +96,27 @@ describe("NotificationBell", () => {
     await waitFor(() => {
       expect(markAllNotificationsReadMock).toHaveBeenCalledTimes(1);
       expect(useNotificationsStore.getState().unreadCount).toBe(0);
+    });
+  });
+
+  it("shows a blocking loader while redirecting from a notification", async () => {
+    const user = userEvent.setup();
+    markNotificationReadMock.mockResolvedValue({
+      unreadCount: 11,
+      item: buildNotification({ readAt: "2026-06-11T20:00:00.000Z" }),
+    });
+
+    render(<NotificationBell />);
+
+    await user.click(screen.getByRole("button", { name: /12 não lidas/i }));
+    await user.click(screen.getByRole("button", { name: /favorito em promoção/i }));
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getAllByText("Abrindo notificação...")).not.toHaveLength(0);
+    expect(screen.getByRole("button", { name: /11 não lidas/i })).toBeDisabled();
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/produtos/99");
     });
   });
 });

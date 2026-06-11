@@ -104,6 +104,21 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         href,
       };
     }
+    case "product_missing_weight": {
+      const productName = stringValue(payload, "product_name") || "Produto";
+      const productId = numberValue(payload, "product_id");
+      const href =
+        Number.isInteger(productId) && productId > 0
+          ? `/admin/products?focus=${productId}`
+          : "/admin/products";
+
+      return {
+        icon: "package",
+        title: "Produto sem peso",
+        body: `${productName} precisa ter peso cadastrado para aparecer ao cliente.`,
+        href,
+      };
+    }
     case "support_message": {
       const senderName = stringValue(payload, "sender_name") || "Atendimento";
 

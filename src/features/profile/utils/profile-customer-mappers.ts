@@ -18,6 +18,7 @@ export function createEmptyProfileCustomer(): ProfileCustomer {
       storeName: "",
       phoneNumber: "",
       cnpj: "",
+      cpf: "",
       instagram: "",
       state: "",
       city: "",
@@ -49,6 +50,7 @@ export function buildProfileAccountFormValues(
     phoneNumber: customer.meta.phoneNumber || customer.billing.phone,
     storeName: customer.meta.storeName,
     cnpj: customer.meta.cnpj,
+    cpf: customer.meta.cpf,
     instagram: customer.meta.instagram,
     role: customer.role || "customer",
   };

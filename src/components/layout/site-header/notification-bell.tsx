@@ -2,9 +2,10 @@
 
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 
 import { NotificationDropdown } from "./notification-dropdown";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import {
   formatNotification,
   markAllNotificationsRead,
@@ -24,12 +25,26 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
   const { isApiAuthenticated } = useAuthSession();
   const { isLoading, isError, refresh } = useNotificationsPoll();
   const [open, setOpen] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const unreadCount = useNotificationsStore((state) => state.unreadCount);
   const items = useNotificationsStore((state) => state.items);
   const markRead = useNotificationsStore((state) => state.markRead);
   const markAllRead = useNotificationsStore((state) => state.markAllRead);
   const setUnreadCount = useNotificationsStore((state) => state.setUnreadCount);
+
+  useEffect(() => {
+    if (!isRedirecting) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isRedirecting]);
 
   useEffect(() => {
     if (!open) {
@@ -63,6 +78,10 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
 
   async function handleItemClick(item: NotificationItem) {
     const formatted = formatNotification(item);
+    const currentLocation =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : "";
 
     if (!item.readAt) {
       markRead(item.id);
@@ -78,8 +97,18 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
       }
     }
 
+    if (!formatted.href || formatted.href === currentLocation) {
+      setOpen(false);
+      return;
+    }
+
+    setIsRedirecting(true);
     setOpen(false);
-    router.push(formatted.href);
+    requestAnimationFrame(() => {
+      startTransition(() => {
+        router.push(formatted.href);
+      });
+    });
   }
 
   async function handleMarkAllRead() {
@@ -115,6 +144,7 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
             : "Notificações"
         }
         className={`relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${buttonClass}`}
+        disabled={isRedirecting}
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
@@ -137,6 +167,16 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
           onItemClick={handleItemClick}
           onMarkAllRead={handleMarkAllRead}
         />
+      ) : null}
+
+      {isRedirecting ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-dark/15 backdrop-blur-[2px]">
+          <LogoSpinnerLoader
+            className="min-h-[70vh] w-[min(32rem,calc(100vw-2rem))] p-6"
+            label=""
+            message="Abrindo notificação..."
+          />
+        </div>
       ) : null}
     </div>
   );

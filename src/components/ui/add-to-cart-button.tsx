@@ -147,10 +147,14 @@ export function AddToCartButton({
       return null;
     }
 
+    const tooltipClassName = label
+      ? "left-1/2 -translate-x-1/2"
+      : "right-0 left-auto translate-x-0";
+
     return (
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-48 -translate-x-1/2 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/admin-tooltip:opacity-100 group-focus-within/admin-tooltip:opacity-100"
+        className={`pointer-events-none absolute bottom-full z-40 mb-2 w-max max-w-48 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/admin-tooltip:opacity-100 group-focus-within/admin-tooltip:opacity-100 ${tooltipClassName}`.trim()}
       >
         {roleTooltipMessage}
       </span>

@@ -56,6 +56,7 @@ export const PRODUCTS_QUERY = gql`
           salePrice
           stockStatus
           sku
+          weight
         }
         ... on VariableProduct {
           price
@@ -63,6 +64,14 @@ export const PRODUCTS_QUERY = gql`
           salePrice
           stockStatus
           sku
+          weight
+          variations(first: 20) {
+            nodes {
+              ... on ProductVariation {
+                weight
+              }
+            }
+          }
         }
       }
     }
@@ -111,11 +120,20 @@ export const PRODUCTS_LIST_QUERY = gql`
           price
           regularPrice
           salePrice
+          weight
         }
         ... on VariableProduct {
           price
           regularPrice
           salePrice
+          weight
+          variations(first: 20) {
+            nodes {
+              ... on ProductVariation {
+                weight
+              }
+            }
+          }
         }
       }
     }
@@ -158,6 +176,7 @@ export const PRODUCT_QUERY = gql`
         salePrice
         stockStatus
         sku
+        weight
       }
       ... on VariableProduct {
         price
@@ -165,6 +184,14 @@ export const PRODUCT_QUERY = gql`
         salePrice
         stockStatus
         sku
+        weight
+        variations(first: 20) {
+          nodes {
+            ... on ProductVariation {
+              weight
+            }
+          }
+        }
       }
     }
   }

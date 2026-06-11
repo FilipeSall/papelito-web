@@ -10,6 +10,7 @@ type RegisterPayload = {
   store_name: string;
   phone_number: string;
   cnpj: string;
+  cpf?: string;
   cep: string;
   state: string;
   city: string;

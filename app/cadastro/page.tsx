@@ -10,6 +10,7 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
+import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 
 import { CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "./shared";
 
@@ -28,10 +29,12 @@ export default function CadastroPage() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
     const payload: CadastroStep1Data = {
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
+      ...(cpf ? { cpf } : {}),
     };
 
     if (!payload.name || !payload.email || !payload.phone) return;
@@ -134,6 +137,15 @@ export default function CadastroPage() {
               placeholder="(11) 99999-9999"
               autoComplete="tel"
               required
+            />
+
+            <AuthTextField
+              id="cpf"
+              name="cpf"
+              label="CPF (opcional)"
+              inputMode="numeric"
+              placeholder="123.456.789-00"
+              autoComplete="off"
             />
 
             <div className="pt-2">

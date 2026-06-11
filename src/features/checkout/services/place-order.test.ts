@@ -44,12 +44,29 @@ describe("placeOrder", () => {
     });
   });
 
-  it("maps known backend errors to friendly messages", async () => {
+  it("prefers the backend message over the friendly fallback map", async () => {
     await expect(placeOrder({ ...baseInput, couponCode: "EXPIRADO" })).resolves.toEqual({
       ok: false,
       error: {
         code: "papelito_coupon_expired",
-        message: "Este cupom expirou.",
+        message: "Expirado.",
+        status: 422,
+      },
+    });
+  });
+
+  it("falls back to the friendly map when the backend omits a message", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json({ code: "papelito_checkout_vendor_not_approved" }, { status: 422 }),
+      ),
+    );
+
+    await expect(placeOrder(baseInput)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "papelito_checkout_vendor_not_approved",
+        message: "O vendor selecionado nao esta apto para receber pedidos.",
         status: 422,
       },
     });

@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { useCartStore } from "@/features/cart";
 import { getShippingQuote, useCheckoutAddressForm, useCheckoutStore } from "@/features/checkout";
+import { formatDocument } from "@/features/checkout/utils/format-checkout-fields";
+import { isValidCnpj } from "@/features/revendedor/utils/revendedor-formatters";
+import { isValidCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatBRL } from "@/lib/format-currency";
 import { BRAZIL_STATES } from "./checkout-constants";
 import { CheckoutCustomSelect } from "./checkout-custom-select";
@@ -33,9 +37,37 @@ function resolveCartVendorId(items: ReturnType<typeof useCartStore.getState>["it
     : null;
 }
 
-export function CheckoutAddressStepContent() {
+function shouldShowShippingName(service: string, name: string) {
+  return name.trim().toLowerCase() !== service.trim().toLowerCase();
+}
+
+type CheckoutAddressStepContentProps = {
+  initialDocument?: string;
+};
+
+function isValidDocument(document: string) {
+  const digits = document.replace(/\D/g, "");
+  if (digits.length === 11) return isValidCpf(digits);
+  if (digits.length === 14) return isValidCnpj(digits);
+  return false;
+}
+
+export function CheckoutAddressStepContent({
+  initialDocument = "",
+}: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const [document, setDocument] = useState(() => formatDocument(initialDocument));
+  const [documentTouched, setDocumentTouched] = useState(false);
+  const [isSavingDocument, setIsSavingDocument] = useState(false);
+  const [documentSaveError, setDocumentSaveError] = useState<string | null>(null);
+  const initialDocumentDigits = initialDocument.replace(/\D/g, "");
+  const documentDigits = document.replace(/\D/g, "");
+  const isDocumentValid = isValidDocument(document);
+  const documentError =
+    documentTouched && !isDocumentValid
+      ? "Informe um CPF ou CNPJ valido para concluir o pagamento."
+      : documentSaveError;
   const shippingQuoteState = useCheckoutStore((state) => state.shippingQuote);
   const selectedShippingQuote = shippingQuoteState.selectedOption;
   const currentShippingQuote = shippingQuoteState.quote;
@@ -134,9 +166,14 @@ export function CheckoutAddressStepContent() {
   const shippingOptions = currentShippingQuote?.options ?? [];
   const invalidProductIdsForShipping =
     vendorId && destinationCep.length === 8 && quoteItems.length !== items.length;
+  const isShippingLoading =
+    shouldQuoteShipping &&
+    !invalidProductIdsForShipping &&
+    !currentShippingQuote &&
+    shippingQuote.isValidating;
   const shippingStatus: ShippingStatus = invalidProductIdsForShipping
     ? "error"
-    : shippingQuote.isLoading
+    : isShippingLoading
       ? "loading"
       : shippingQuote.error
         ? "error"
@@ -151,6 +188,41 @@ export function CheckoutAddressStepContent() {
         : null;
   const shouldBlockForShipping =
     shouldQuoteShipping && (shippingStatus !== "success" || !selectedShippingQuote);
+  const showShippingLoadingFeedback = shouldQuoteShipping && shippingStatus === "loading";
+
+  async function handleAdvance() {
+    setDocumentTouched(true);
+
+    if (!isDocumentValid) return;
+
+    if (documentDigits !== initialDocumentDigits) {
+      setIsSavingDocument(true);
+      setDocumentSaveError(null);
+
+      try {
+        const response = await fetch("/api/profile/document", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ document: documentDigits }),
+        });
+
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          setDocumentSaveError(body?.message ?? "Nao foi possivel salvar o documento.");
+          setIsSavingDocument(false);
+          return;
+        }
+      } catch {
+        setDocumentSaveError("Falha de rede ao salvar o documento.");
+        setIsSavingDocument(false);
+        return;
+      }
+
+      setIsSavingDocument(false);
+    }
+
+    router.push("/checkout/pagamento");
+  }
 
   if (items.length === 0) return <CheckoutEmptyCart />;
 
@@ -175,7 +247,19 @@ export function CheckoutAddressStepContent() {
                 onChange={handleZipCodeChange}
               />
 
-              <div className="hidden md:block" />
+              <CheckoutField
+                label="CPF / CNPJ"
+                placeholder="000.000.000-00"
+                value={document}
+                inputMode="numeric"
+                isLoading={isSavingDocument}
+                errorMessage={documentError}
+                onChange={(value) => {
+                  setDocumentTouched(true);
+                  setDocumentSaveError(null);
+                  setDocument(formatDocument(value));
+                }}
+              />
 
               <div className="md:col-span-2">
                 <CheckoutField
@@ -267,6 +351,11 @@ export function CheckoutAddressStepContent() {
                           <span className="block text-sm font-black text-brand-dark">
                             {option.service}
                           </span>
+                          {shouldShowShippingName(option.service, option.name) ? (
+                            <span className="block text-xs text-text-secondary">
+                              {option.name}
+                            </span>
+                          ) : null}
                           <span className="block text-xs text-text-tertiary">
                             {option.deliveryTime
                               ? `${option.deliveryTime} dias uteis`
@@ -283,13 +372,23 @@ export function CheckoutAddressStepContent() {
               ) : null}
             </div>
 
+            {showShippingLoadingFeedback ? (
+              <LogoSpinnerLoader
+                className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FFFCF0] px-4 py-4"
+                label=""
+                layout="stacked"
+                message="Carregando opcoes de entrega..."
+                size="sm"
+              />
+            ) : null}
+
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!isFormValid || shouldBlockForShipping}
-              onClick={() => router.push("/checkout/pagamento")}
+              disabled={!isFormValid || shouldBlockForShipping || !isDocumentValid || isSavingDocument}
+              onClick={handleAdvance}
             >
-              Proximo: Pagamento
+              {isSavingDocument ? "Salvando..." : "Proximo: Pagamento"}
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </form>

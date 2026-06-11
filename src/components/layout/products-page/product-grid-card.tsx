@@ -60,8 +60,10 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
   } = product;
 
   return (
-    <div className="group/availability relative cursor-pointer overflow-hidden rounded-xl bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md">
-      <div className={isUnavailable ? "opacity-45 transition-opacity" : undefined}>
+    <div className="group/availability relative cursor-pointer overflow-visible rounded-xl bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md">
+      <div
+        className={`overflow-hidden rounded-xl ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
+      >
         <Link
           href={`/produtos/${product.id}`}
           aria-label={`Ver produto ${name}`}

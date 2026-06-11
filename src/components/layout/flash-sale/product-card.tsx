@@ -58,7 +58,7 @@ export function ProductCard({
 
   return (
     <div
-      className={`group/availability relative h-82.5 w-full max-w-73 cursor-pointer overflow-hidden rounded-xl bg-white ${
+      className={`group/availability relative h-82.5 w-full max-w-73 cursor-pointer overflow-visible rounded-xl bg-white ${
         compactOnMobile
           ? "h-[329.982px] w-full max-w-none sm:h-82.5 sm:max-w-73"
           : ""
@@ -68,7 +68,9 @@ export function ProductCard({
           : "shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
       }`}
     >
-      <div className={isUnavailable ? "opacity-45 transition-opacity" : undefined}>
+      <div
+        className={`overflow-hidden rounded-xl ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
+      >
         <Link
           href={`/produtos/${id}`}
           aria-label={`Ver produto ${name}`}
