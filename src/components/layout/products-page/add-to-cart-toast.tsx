@@ -4,6 +4,8 @@ import type { AddToCartEventDetail } from "@/components/ui/add-to-cart-button";
 interface AddToCartToastProps {
   detail: AddToCartEventDetail;
   visible: boolean;
+  placement?: "fixed-top-right" | "anchor-top";
+  className?: string;
 }
 
 function CheckIcon({ tone }: { tone: NonNullable<AddToCartEventDetail["tone"]> }) {
@@ -70,7 +72,12 @@ const TONE_STYLES = {
   },
 } as const;
 
-export function AddToCartToast({ detail, visible }: AddToCartToastProps) {
+export function AddToCartToast({
+  detail,
+  visible,
+  placement = "fixed-top-right",
+  className = "",
+}: AddToCartToastProps) {
   const tone = detail.tone ?? "success";
   const styles = TONE_STYLES[tone];
   const title = detail.title ?? styles.title;
@@ -79,15 +86,23 @@ export function AddToCartToast({ detail, visible }: AddToCartToastProps) {
     (detail.productName
       ? `${detail.productName} foi adicionado ao carrinho.`
       : "Produto adicionado ao carrinho.");
+  const placementClassName =
+    placement === "anchor-top"
+      ? `absolute bottom-full left-1/2 mb-3 z-30 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 transition-all duration-250 ease-out will-change-transform ${
+          visible
+            ? "translate-y-0 opacity-100"
+            : "translate-y-2 opacity-0"
+        }`
+      : `fixed right-4 top-24 z-70 w-[min(24rem,calc(100vw-2rem))] transition-all duration-250 ease-out will-change-transform md:right-8 md:top-28 ${
+          visible
+            ? "translate-x-0 opacity-100"
+            : "translate-x-8 opacity-0"
+        }`;
 
   return (
     <div
       aria-live="polite"
-      className={`pointer-events-none fixed right-4 top-24 z-70 w-[min(24rem,calc(100vw-2rem))] transition-all duration-250 ease-out will-change-transform md:right-8 md:top-28 ${
-        visible
-          ? "translate-x-0 opacity-100"
-          : "translate-x-8 opacity-0"
-      }`}
+      className={`pointer-events-none ${placementClassName} ${className}`.trim()}
       role="status"
     >
       <div className={`relative overflow-hidden rounded-2xl border ${styles.border} bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]`}>

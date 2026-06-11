@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ADD_TO_CART_EVENT_NAME,
   type AddToCartEventDetail,
 } from "@/components/ui/add-to-cart-button";
+import { AddToCartToast } from "@/components/layout/products-page/add-to-cart-toast";
 import { ActiveVendorSummary } from "@/components/active-vendor";
 import { FavoriteToggleButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { CartIcon } from "@/components/ui/icons";
@@ -69,6 +70,11 @@ export function ProductDetailMainContent({
   const [selectedThumbId, setSelectedThumbId] = useState<string>(initialSelectedThumbId);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [shareToast, setShareToast] = useState<AddToCartEventDetail | null>(null);
+  const [shareToastVisible, setShareToastVisible] = useState(false);
+  const shareToastHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareToastRemoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareToastEnterFrameRef = useRef<number | null>(null);
   const availableStock =
     typeof selectedVendorStockQty === "number" && Number.isFinite(selectedVendorStockQty)
       ? Math.max(0, Math.floor(selectedVendorStockQty))
@@ -96,6 +102,20 @@ export function ProductDetailMainContent({
       return Math.min(Math.max(1, current), availableStock);
     });
   }, [availableStock]);
+
+  useEffect(() => {
+    return () => {
+      if (shareToastHideTimeoutRef.current) {
+        clearTimeout(shareToastHideTimeoutRef.current);
+      }
+      if (shareToastRemoveTimeoutRef.current) {
+        clearTimeout(shareToastRemoveTimeoutRef.current);
+      }
+      if (shareToastEnterFrameRef.current) {
+        cancelAnimationFrame(shareToastEnterFrameRef.current);
+      }
+    };
+  }, []);
 
   function dispatchCartEvent(detail: AddToCartEventDetail) {
     if (typeof window === "undefined") {
@@ -221,6 +241,73 @@ export function ProductDetailMainContent({
     router.push("/carrinho");
   }
 
+  function showShareToast(detail: AddToCartEventDetail) {
+    setShareToastVisible(false);
+    setShareToast(detail);
+
+    if (shareToastHideTimeoutRef.current) {
+      clearTimeout(shareToastHideTimeoutRef.current);
+    }
+    if (shareToastRemoveTimeoutRef.current) {
+      clearTimeout(shareToastRemoveTimeoutRef.current);
+    }
+    if (shareToastEnterFrameRef.current) {
+      cancelAnimationFrame(shareToastEnterFrameRef.current);
+    }
+
+    shareToastEnterFrameRef.current = requestAnimationFrame(() => {
+      setShareToastVisible(true);
+    });
+
+    shareToastHideTimeoutRef.current = setTimeout(() => {
+      setShareToastVisible(false);
+    }, 1800);
+
+    shareToastRemoveTimeoutRef.current = setTimeout(() => {
+      setShareToast(null);
+    }, 2050);
+  }
+
+  async function handleShareProduct() {
+    const productUrl = window.location.href;
+    const shareData = {
+      title: product.name,
+      text: `Confira este produto da Papelito: ${product.name}`,
+      url: productUrl,
+    };
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share(shareData);
+        showShareToast({
+          title: "Compartilhar produto",
+          message: "Link compartilhado.",
+          tone: "success",
+        });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(productUrl);
+      showShareToast({
+        title: "Compartilhar produto",
+        message: "Link copiado.",
+        tone: "success",
+      });
+    } catch {
+      showShareToast({
+        title: "Compartilhar produto",
+        message: "Nao foi possivel compartilhar.",
+        tone: "error",
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col gap-12 md:gap-16">
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[486px_minmax(0,486px)] xl:gap-12">
@@ -343,8 +430,8 @@ export function ProductDetailMainContent({
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
-            <div className="group/role-tooltip relative flex-1">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 max-[319px]:grid max-[319px]:grid-cols-2">
+            <div className="group/role-tooltip relative min-w-0 flex-1 max-[319px]:col-span-2">
               {roleBlockedMessage ? (
                 <span
                   role="tooltip"
@@ -358,52 +445,71 @@ export function ProductDetailMainContent({
                 onClick={handleAddToCart}
                 disabled={isAddingToCart || isOutOfStock || isPurchaseBlockedByRole}
                 title={roleBlockedMessage}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-center text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 max-[425px]:h-auto max-[425px]:min-h-14 max-[425px]:px-4 max-[425px]:py-3 max-[425px]:text-sm max-[425px]:leading-4"
               >
-                <CartIcon className="size-4.5" />
-                {isAddingToCart ? "VALIDANDO" : "ADICIONAR AO CARRINHO"}
+                <CartIcon className="size-4.5 max-[425px]:size-5.5" />
+                <span className="min-w-0 whitespace-normal break-words">
+                  {isAddingToCart ? "VALIDANDO" : (
+                    <>
+                      <span className="inline min-[426px]:hidden">ADICIONAR</span>
+                      <span className="hidden min-[426px]:inline">ADICIONAR AO CARRINHO</span>
+                    </>
+                  )}
+                </span>
               </button>
             </div>
-            <FavoriteToggleButton
-              productId={product.id}
-              initialIsFavorite={initialIsFavorite}
-            />
-            <button
-              type="button"
-              aria-label="Compartilhar produto"
-              className="flex size-14 cursor-pointer items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden
+            <div className="max-[319px]:justify-self-end">
+              <FavoriteToggleButton
+                productId={product.id}
+                initialIsFavorite={initialIsFavorite}
+              />
+            </div>
+            <div className="relative flex max-[319px]:justify-self-start">
+              {shareToast ? (
+                <AddToCartToast
+                  detail={shareToast}
+                  visible={shareToastVisible}
+                  placement="anchor-top"
+                />
+              ) : null}
+              <button
+                type="button"
+                aria-label="Compartilhar produto"
+                className="flex size-14 cursor-pointer items-center justify-center rounded-full border-2 border-[#E5E7EB] bg-white text-[#99A1AF]"
+                onClick={() => void handleShareProduct()}
               >
-                <path
-                  d="M11.8125 3H15V6.1875"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M7.5 10.5L15 3"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M15 10.5V13.125C15 13.6223 14.8025 14.0992 14.4508 14.4508C14.0992 14.8025 13.6223 15 13.125 15H4.875C4.37772 15 3.90081 14.8025 3.54917 14.4508C3.19754 14.0992 3 13.6223 3 13.125V4.875C3 4.37772 3.19754 3.90081 3.54917 3.54917C3.90081 3.19754 4.37772 3 4.875 3H7.5"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden
+                >
+                  <path
+                    d="M11.8125 3H15V6.1875"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M7.5 10.5L15 3"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M15 10.5V13.125C15 13.6223 14.8025 14.0992 14.4508 14.4508C14.0992 14.8025 13.6223 15 13.125 15H4.875C4.37772 15 3.90081 14.8025 3.54917 14.4508C3.19754 14.0992 3 13.6223 3 13.125V4.875C3 4.37772 3.19754 3.90081 3.54917 3.54917C3.90081 3.19754 4.37772 3 4.875 3H7.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="group/role-tooltip relative mt-4">
