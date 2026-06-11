@@ -5,6 +5,7 @@ export { VendorOrdersTable } from "./vendor-orders-table";
 export { VendorCoverageManager } from "./vendor-coverage-manager";
 export { VendorPageHeader } from "./vendor-page-header";
 export { VendorPeriodFilters } from "./vendor-period-filters";
+export { VendorRecipientPanel } from "./vendor-recipient-panel";
 export { VendorSettingsForm } from "./vendor-settings-form";
 export { VendorShell } from "./vendor-shell";
 export { VendorStockManager } from "./vendor-stock-manager";

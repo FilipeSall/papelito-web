@@ -8,7 +8,20 @@ type PlaceOrderApiResponse = {
   order_id?: number;
   order_number?: string;
   status?: string;
-  payment_mocked?: boolean;
+  payment?: {
+    method?: "credit_card" | "pix" | "boleto";
+    state?: string;
+    pix?: {
+      qr_code?: string;
+      copy_paste?: string;
+      expires_at?: string;
+    };
+    boleto?: {
+      url?: string;
+      line?: string;
+      expires_at?: string;
+    };
+  };
 };
 
 export async function POST(request: Request) {
@@ -63,6 +76,6 @@ export async function POST(request: Request) {
     orderId: result.data.order_id,
     orderNumber: result.data.order_number,
     status: result.data.status,
-    paymentMocked: Boolean(result.data.payment_mocked),
+    payment: result.data.payment,
   });
 }

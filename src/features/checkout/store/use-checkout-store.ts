@@ -23,10 +23,9 @@ const INITIAL_ADDRESS_FORM: CheckoutAddressForm = {
 
 const INITIAL_PAYMENT_FORM: PaymentForm = {
   holderName: "",
-  cardNumber: "",
-  expiryDate: "",
-  cvv: "",
   installments: "",
+  cardTokenId: "",
+  cardLast4: "",
 };
 
 interface CheckoutState {
@@ -38,6 +37,7 @@ interface CheckoutState {
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
   setPaymentField: (field: keyof PaymentForm, value: string) => void;
+  patchPaymentForm: (values: Partial<PaymentForm>) => void;
   setShippingQuote: (quote: ShippingQuoteResult | null) => void;
   setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
   clearShippingQuote: () => void;
@@ -78,6 +78,13 @@ export const useCheckoutStore = create<CheckoutState>()(
             [field]: value,
           },
         })),
+      patchPaymentForm: (values) =>
+        set((state) => ({
+          paymentForm: {
+            ...state.paymentForm,
+            ...values,
+          },
+        })),
       setShippingQuote: (quote) =>
         set((state) => ({
           shippingQuote: {
@@ -105,7 +112,7 @@ export const useCheckoutStore = create<CheckoutState>()(
     }),
     {
       name: "papelito-checkout-store",
-      version: 2,
+      version: 3,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
@@ -118,14 +125,38 @@ export const useCheckoutStore = create<CheckoutState>()(
         const state = persistedState as {
           selectedShippingQuote?: ShippingQuoteOption | null;
           shippingQuote?: CheckoutShippingQuoteState;
+          paymentForm?: Partial<PaymentForm>;
+        };
+
+        const safePaymentForm: PaymentForm = {
+          holderName:
+            typeof state.paymentForm?.holderName === "string"
+              ? state.paymentForm.holderName
+              : "",
+          installments:
+            typeof state.paymentForm?.installments === "string"
+              ? state.paymentForm.installments
+              : "",
+          cardTokenId:
+            typeof state.paymentForm?.cardTokenId === "string"
+              ? state.paymentForm.cardTokenId
+              : "",
+          cardLast4:
+            typeof state.paymentForm?.cardLast4 === "string"
+              ? state.paymentForm.cardLast4
+              : "",
         };
 
         if (state.shippingQuote) {
-          return state;
+          return {
+            ...state,
+            paymentForm: safePaymentForm,
+          };
         }
 
         return {
           ...state,
+          paymentForm: safePaymentForm,
           shippingQuote: {
             quote: null,
             selectedOption: state.selectedShippingQuote ?? null,

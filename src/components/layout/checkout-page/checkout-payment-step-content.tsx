@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/features/cart";
 import { useCheckoutPaymentForm } from "@/features/checkout";
@@ -14,19 +15,38 @@ import { PaymentMethodOption } from "./payment-method-option";
 export function CheckoutPaymentStepContent() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const [paymentError, setPaymentError] = useState("");
+  const [pending, startTransition] = useTransition();
 
   const {
     method,
     setMethod,
     form,
+    draft,
     canContinue,
     updateField,
     handleCardNumberChange,
     handleExpiryDateChange,
     handleCvvChange,
+    prepareCardToken,
   } = useCheckoutPaymentForm();
 
   if (items.length === 0) return <CheckoutEmptyCart />;
+
+  function goToReview() {
+    setPaymentError("");
+
+    startTransition(async () => {
+      try {
+        await prepareCardToken();
+        router.push("/checkout/revisao");
+      } catch (error) {
+        setPaymentError(
+          error instanceof Error ? error.message : "Nao foi possivel preparar o pagamento.",
+        );
+      }
+    });
+  }
 
   return (
     <main className="bg-bg-light">
@@ -55,9 +75,9 @@ export function CheckoutPaymentStepContent() {
             {method === "credit_card" && (
               <CreditCardFormFields
                 holderName={form.holderName}
-                cardNumber={form.cardNumber}
-                expiryDate={form.expiryDate}
-                cvv={form.cvv}
+                cardNumber={draft.cardNumber}
+                expiryDate={draft.expiryDate}
+                cvv={draft.cvv}
                 installments={form.installments}
                 onHolderNameChange={(value) => updateField("holderName", value)}
                 onCardNumberChange={handleCardNumberChange}
@@ -67,13 +87,25 @@ export function CheckoutPaymentStepContent() {
               />
             )}
 
+            {paymentError ? (
+              <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
+                {paymentError}
+              </p>
+            ) : null}
+
+            {method === "credit_card" && form.cardTokenId && !draft.cardNumber ? (
+              <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
+                Cartao tokenizado com final {form.cardLast4 || "----"}.
+              </p>
+            ) : null}
+
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canContinue}
-              onClick={() => router.push("/checkout/revisao")}
+              disabled={!canContinue || pending}
+              onClick={goToReview}
             >
-              Proximo: Revisao
+              {pending ? "Preparando pagamento..." : "Proximo: Revisao"}
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </form>

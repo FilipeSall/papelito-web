@@ -12,10 +12,19 @@ export type PaymentMethod = "credit_card" | "pix" | "boleto";
 
 export type PaymentForm = {
   holderName: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
   installments: string;
+  cardTokenId: string;
+  cardLast4: string;
+};
+
+export type PaymentBillingAddress = {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
 };
 
 export type CepLookupResult = {
@@ -64,15 +73,34 @@ export type PlaceOrderInput = {
   };
   payment: {
     method: PaymentMethod;
+    installments?: number;
+    cardTokenId?: string;
+    holderName?: string;
+    billingAddress?: PaymentBillingAddress;
   };
   couponCode?: string | null;
+};
+
+export type PlaceOrderPaymentResult = {
+  method: PaymentMethod;
+  state: string;
+  pix?: {
+    qr_code?: string;
+    copy_paste?: string;
+    expires_at?: string;
+  };
+  boleto?: {
+    url?: string;
+    line?: string;
+    expires_at?: string;
+  };
 };
 
 export type PlaceOrderResult = {
   orderId: number;
   orderNumber: string;
   status: string;
-  paymentMocked: boolean;
+  payment: PlaceOrderPaymentResult;
 };
 
 export type PlaceOrderError = {

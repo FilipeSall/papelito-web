@@ -20,10 +20,9 @@ describe("useCheckoutStore", () => {
           paymentMethod: "credit_card",
           paymentForm: {
             holderName: "",
-            cardNumber: "",
-            expiryDate: "",
-            cvv: "",
             installments: "",
+            cardTokenId: "tok_123",
+            cardLast4: "1111",
           },
           selectedShippingQuote: {
             code: "sedex",
@@ -49,6 +48,12 @@ describe("useCheckoutStore", () => {
         deliveryTime: 2,
       },
     });
+    expect(useCheckoutStore.getState().paymentForm).toEqual({
+      holderName: "",
+      installments: "",
+      cardTokenId: "tok_123",
+      cardLast4: "1111",
+    });
   });
 
   it("resets checkout state to defaults", () => {
@@ -71,11 +76,27 @@ describe("useCheckoutStore", () => {
       paymentMethod: "credit_card",
       paymentForm: {
         holderName: "",
-        cardNumber: "",
-        expiryDate: "",
-        cvv: "",
         installments: "",
+        cardTokenId: "",
+        cardLast4: "",
       },
     });
+  });
+
+  it("persists only non-sensitive payment fields", async () => {
+    useCheckoutStore.getState().patchPaymentForm({
+      holderName: "Maria",
+      installments: "3x sem juros",
+      cardTokenId: "tok_live",
+      cardLast4: "4242",
+    });
+
+    await useCheckoutStore.persist.rehydrate();
+
+    const raw = window.localStorage.getItem("papelito-checkout-store") || "";
+
+    expect(raw).toContain("tok_live");
+    expect(raw).not.toContain("4111111111111111");
+    expect(raw).not.toContain("\"cvv\"");
   });
 });

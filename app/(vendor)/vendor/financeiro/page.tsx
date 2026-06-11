@@ -1,6 +1,7 @@
 import { MetricCard, SalesLineChart } from "@/components/layout/operational-panel";
-import { VendorPageHeader, VendorPeriodFilters } from "@/components/layout/vendor-panel";
+import { VendorPageHeader, VendorPeriodFilters, VendorRecipientPanel } from "@/components/layout/vendor-panel";
 import { getVendorKpis } from "@/features/vendor-dashboard/server";
+import { getVendorRecipient } from "@/features/vendor-recipient/services/get-vendor-recipient";
 import { formatBRLIntl } from "@/lib/format-currency";
 import { parseAdminSalesFilters } from "@/lib/server/admin-sales-filters";
 
@@ -10,7 +11,10 @@ export default async function VendorFinancePage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = parseAdminSalesFilters(searchParams ? await searchParams : {});
-  const snapshot = await getVendorKpis(filters);
+  const [snapshot, recipient] = await Promise.all([
+    getVendorKpis(filters),
+    getVendorRecipient(),
+  ]);
 
   return (
     <div className="space-y-4 md:space-y-5">
@@ -26,6 +30,7 @@ export default async function VendorFinancePage({
         <MetricCard detail="Valor medio por pedido" label="Ticket medio" value={formatBRLIntl(snapshot.averageTicket)} />
         <MetricCard detail="Pedidos nao cancelados" label="Pedidos contabilizados" value={String(snapshot.ordersCount)} />
       </div>
+      <VendorRecipientPanel initialRecipient={recipient} />
       <SalesLineChart label="faturamento registrado" points={snapshot.revenueSeries} />
     </div>
   );

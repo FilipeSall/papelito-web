@@ -32,6 +32,20 @@ type WpProfileOrder = {
   vendor_name?: string;
   vendor_status?: string;
   phone?: string;
+  payment?: {
+    method?: string;
+    state?: string;
+    pix?: {
+      qr_code?: string;
+      copy_paste?: string;
+      expires_at?: string;
+    };
+    boleto?: {
+      url?: string;
+      line?: string;
+      expires_at?: string;
+    };
+  };
 };
 
 type WpProfileOrdersList = {
@@ -156,6 +170,21 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     payment: {
       methodLabel: order.payment_method || "Pagamento nao informado",
       maskedLabel: "",
+      state: order.payment?.state,
+      pix: order.payment?.pix
+        ? {
+            qrCode: order.payment.pix.qr_code,
+            copyPaste: order.payment.pix.copy_paste,
+            expiresAt: order.payment.pix.expires_at,
+          }
+        : undefined,
+      boleto: order.payment?.boleto
+        ? {
+            url: order.payment.boleto.url,
+            line: order.payment.boleto.line,
+            expiresAt: order.payment.boleto.expires_at,
+          }
+        : undefined,
     },
   };
 }

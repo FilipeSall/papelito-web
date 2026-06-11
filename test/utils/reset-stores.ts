@@ -21,10 +21,9 @@ export function resetAllStores() {
     paymentMethod: "credit_card",
     paymentForm: {
       holderName: "",
-      cardNumber: "",
-      expiryDate: "",
-      cvv: "",
       installments: "",
+      cardTokenId: "",
+      cardLast4: "",
     },
     shippingQuote: {
       quote: null,

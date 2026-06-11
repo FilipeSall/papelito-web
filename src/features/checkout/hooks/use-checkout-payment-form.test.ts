@@ -17,9 +17,9 @@ describe("useCheckoutPaymentForm", () => {
       result.current.updateField("installments", "3x");
     });
 
-    expect(result.current.form.cardNumber).toBe("4111 1111 1111 1111");
-    expect(result.current.form.expiryDate).toBe("12/28");
-    expect(result.current.form.cvv).toBe("1234");
+    expect(result.current.draft.cardNumber).toBe("4111 1111 1111 1111");
+    expect(result.current.draft.expiryDate).toBe("12/28");
+    expect(result.current.draft.cvv).toBe("1234");
     expect(result.current.canContinue).toBe(true);
   });
 

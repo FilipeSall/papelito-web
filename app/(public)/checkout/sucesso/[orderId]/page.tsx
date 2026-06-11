@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 
 import { requireCheckoutCustomer } from "@/features/checkout/server/require-checkout-customer";
+import { getProfileOrderDetail } from "@/features/orders";
 
 type CheckoutSuccessPageProps = {
   params: Promise<{ orderId: string }>;
@@ -12,6 +14,21 @@ export default async function CheckoutSuccessPage({
   await requireCheckoutCustomer("/checkout");
 
   const { orderId } = await params;
+  const order = await getProfileOrderDetail(orderId);
+
+  if (!order) {
+    notFound();
+  }
+
+  const paymentState = order.payment.state ?? "";
+
+  if (paymentState !== "paid" && paymentState !== "captured") {
+    if (order.payment.pix || order.payment.boleto) {
+      redirect(`/checkout/pagamento/${order.id}`);
+    }
+
+    redirect(`/perfil/pedidos/${order.id}`);
+  }
 
   return (
     <main className="bg-bg-light">
@@ -22,13 +39,12 @@ export default async function CheckoutSuccessPage({
           </span>
 
           <h1 className="mt-5 text-[32px] font-black uppercase tracking-[-0.4492px] text-brand-dark">
-            Pedido #{orderId}
+            Pedido {order.orderNumber}
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-text-secondary">
             Seu pedido foi criado com sucesso no checkout headless da Papelito.
-            Em ambiente de teste, o pagamento foi aprovado em mock e o pedido ja
-            seguiu para processamento.
+            O pagamento foi confirmado e o pedido ja seguiu para processamento.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

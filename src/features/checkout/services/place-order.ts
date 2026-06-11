@@ -80,6 +80,20 @@ export async function placeOrder(
         },
         payment: {
           method: input.payment.method,
+          installments: input.payment.installments,
+          card_token_id: input.payment.cardTokenId,
+          holder_name: input.payment.holderName,
+          billing_address: input.payment.billingAddress
+            ? {
+                zip_code: input.payment.billingAddress.zipCode,
+                street: input.payment.billingAddress.street,
+                number: input.payment.billingAddress.number,
+                complement: input.payment.billingAddress.complement,
+                neighborhood: input.payment.billingAddress.neighborhood,
+                city: input.payment.billingAddress.city,
+                state: input.payment.billingAddress.state,
+              }
+            : undefined,
         },
         coupon_code: input.couponCode ?? undefined,
       }),
@@ -125,7 +139,9 @@ export async function placeOrder(
     !payload ||
     typeof payload.orderId !== "number" ||
     typeof payload.orderNumber !== "string" ||
-    typeof payload.status !== "string"
+    typeof payload.status !== "string" ||
+    !payload.payment ||
+    typeof payload.payment !== "object"
   ) {
     return {
       ok: false,

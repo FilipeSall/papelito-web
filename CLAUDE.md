@@ -118,10 +118,10 @@ Contexto completo em [docs/performance/home-produtos-loading-fix.md](docs/perfor
 
 Plano completo em [../pagarme-integration-plan.MD](../pagarme-integration-plan.MD). Pontos que afetam o front:
 
-- **Pagamento direto ao vendor, sem split.** O front não calcula nem exibe comissão de marketplace; o vendor recebe 100% (produtos + frete) e arca com as taxas.
+- **Pagamento direto ao vendor, sem split de receita.** O front não calcula nem exibe comissão de marketplace; o vendor recebe 100% (produtos + frete) e arca com as taxas. O backend usa `split` PSP com um único recebedor dentro de `payments[]` apenas para roteamento integral.
 - **Cartão é tokenizado no browser** (`POST /tokens?appId=<NEXT_PUBLIC_PAGARME_PUBLIC_KEY>`); só o `token_id` trafega para o backend — PCI fora de escopo.
-- O botão "Finalizar" está travado por `isCheckoutBlocked = true` ([checkout-review-step-content.tsx:68](src/components/layout/checkout-page/checkout-review-step-content.tsx#L68)) — será removido ao ligar `placeOrder()`.
-- Telas de resultado a construir: PIX (QR + copia-e-cola + polling), boleto (linha digitável), cartão (sucesso/falha síncrono).
+- O botão "Finalizar" chama `placeOrder()` e envia token/cartão, PIX ou boleto para o backend.
+- Telas de resultado: PIX (QR + copia-e-cola + polling), boleto (linha digitável), cartão (sucesso/falha síncrono).
 - Onboarding do vendor: form de KYC/dados bancários no painel do vendor → cria o recebedor Pagar.me (vendor só vende com recebedor `active`).
 
 ## Variáveis de ambiente (`.env.local`)

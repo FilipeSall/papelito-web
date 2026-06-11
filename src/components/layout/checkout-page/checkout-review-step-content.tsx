@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/features/cart";
-import { useCheckoutStore } from "@/features/checkout";
+import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { formatBRL } from "@/lib/format-currency";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
@@ -16,11 +18,17 @@ function getPaymentLabel(method: "credit_card" | "pix" | "boleto") {
 }
 
 export function CheckoutReviewStepContent() {
+  const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const couponCode = useCartStore((state) => state.coupon?.code ?? null);
+  const clearCart = useCartStore((state) => state.clearCart);
   const addressForm = useCheckoutStore((state) => state.addressForm);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
+  const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [pending, startTransition] = useTransition();
 
   if (items.length === 0) return <CheckoutEmptyCart />;
 
@@ -35,10 +43,8 @@ export function CheckoutReviewStepContent() {
   const isPaymentValid =
     paymentMethod === "credit_card"
       ? paymentForm.holderName.trim().length >= 3 &&
-        paymentForm.cardNumber.replace(/\D/g, "").length >= 13 &&
-        paymentForm.expiryDate.replace(/\D/g, "").length === 4 &&
-        paymentForm.cvv.replace(/\D/g, "").length >= 3 &&
-        Boolean(paymentForm.installments)
+        Boolean(paymentForm.installments) &&
+        Boolean(paymentForm.cardTokenId)
       : true;
 
   const canFinishOrder = isAddressValid && isPaymentValid;
@@ -65,12 +71,10 @@ export function CheckoutReviewStepContent() {
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
   const hasInvalidCartItems = placeOrderItems.length !== items.length;
-  const isCheckoutBlocked = true;
   const canSubmitOrder =
     canFinishOrder &&
     isShippingValid &&
-    !hasInvalidCartItems &&
-    !isCheckoutBlocked;
+    !hasInvalidCartItems;
 
   const cartLines = items.map((item) => ({
     id: item.id,
@@ -79,9 +83,60 @@ export function CheckoutReviewStepContent() {
     total: formatBRL(item.quantity * item.price),
   }));
 
-  const maskedCard = paymentForm.cardNumber
-    ? `•••• •••• •••• ${paymentForm.cardNumber.replace(/\D/g, "").slice(-4)}`
+  const maskedCard = paymentForm.cardLast4
+    ? `•••• •••• •••• ${paymentForm.cardLast4}`
     : "Nao informado";
+
+  function submitOrder() {
+    if (!selectedShippingQuote) {
+      return;
+    }
+
+    setCheckoutError("");
+
+    startTransition(async () => {
+      const result = await placeOrder({
+        items: placeOrderItems,
+        address: addressForm,
+        shipping: {
+          selectedCode: selectedShippingQuote.code,
+          destinationCep: addressForm.zipCode.replace(/\D/g, ""),
+        },
+        payment: {
+          method: paymentMethod,
+          installments:
+            paymentMethod === "credit_card"
+              ? Number.parseInt(paymentForm.installments, 10) || 1
+              : undefined,
+          cardTokenId: paymentMethod === "credit_card" ? paymentForm.cardTokenId : undefined,
+          holderName: paymentMethod === "credit_card" ? paymentForm.holderName : undefined,
+          billingAddress: paymentMethod === "credit_card" ? addressForm : undefined,
+        },
+        couponCode,
+      });
+
+      if (!result.ok) {
+        setCheckoutError(result.error.message);
+        return;
+      }
+
+      if (result.result.payment.method === "credit_card") {
+        if (result.result.payment.state !== "paid") {
+          setCheckoutError("Pagamento recusado. Revise os dados ou tente outro metodo.");
+          return;
+        }
+
+        clearCart();
+        resetCheckout();
+        router.push(`/checkout/sucesso/${result.result.orderId}`);
+        return;
+      }
+
+      clearCart();
+      resetCheckout();
+      router.push(`/checkout/pagamento/${result.result.orderId}`);
+    });
+  }
 
   return (
     <main className="bg-bg-light">
@@ -208,18 +263,19 @@ export function CheckoutReviewStepContent() {
               </p>
             ) : null}
 
-            {canFinishOrder && isShippingValid && !hasInvalidCartItems ? (
-              <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
-                Checkout temporariamente bloqueado ate a integracao headless com o Pagar.me.
+            {checkoutError ? (
+              <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
+                {checkoutError}
               </p>
             ) : null}
 
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canSubmitOrder}
+              disabled={!canSubmitOrder || pending}
+              onClick={submitOrder}
             >
-              Finalizar pedido
+              {pending ? "Processando pagamento..." : "Finalizar pedido"}
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </div>

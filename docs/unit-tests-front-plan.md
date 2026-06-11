@@ -350,7 +350,7 @@ Cada step traz: **Objetivo · Arquivos/áreas · Tipos de teste · Regras de neg
 - **Arquivos/áreas:** [use-checkout-store.ts](../src/features/checkout/store/use-checkout-store.ts), [use-checkout-address-form.ts](../src/features/checkout/hooks/use-checkout-address-form.ts), [use-checkout-payment-form.ts](../src/features/checkout/hooks/use-checkout-payment-form.ts), [lookup-cep.ts](../src/features/checkout/services/lookup-cep.ts), [place-order.ts](../src/features/checkout/services/place-order.ts).
 - **Tipos de teste:** `renderHook` para os forms; service com MSW (ViaCEP→BrasilAPI→erro; place-order sucesso/erro tipado).
 - **Regras de negócio:** §5 #23–27; resumo do pedido (subtotal/frete/total via `getCartSummary`); fluxos de sucesso e falha da API.
-- **Riscos:** o botão "Finalizar" está travado por `isCheckoutBlocked = true` (Pagar.me em implementação) — testar `placeOrder` **isolado**, não via UI travada; controlar fallback ViaCEP→BrasilAPI com `server.use`.
+- **Riscos:** checkout depende de tokenização Pagar.me e contrato WP; testar `placeOrder` e `tokenizeCreditCard` com MSW, além dos estados PIX/boleto/cartão; página de sucesso só deve renderizar para pagamento `paid`/`captured`; controlar fallback ViaCEP→BrasilAPI com `server.use`.
 - **Resultado esperado:** validação de dados obrigatórios, CEP, pagamento e criação de pedido cobertas.
 
 ### Step 8 — Testes de vendor/revendedor
@@ -431,7 +431,7 @@ O plano é considerado concluído quando:
 | **SWR / polling** geram timers pendentes e flakiness | `vi.useFakeTimers()` e `await vi.advanceTimersByTimeAsync(...)`; controlar `visibilityState`. |
 | **Divergência Bun ↔ npm** no lockfile | Sempre `npm install` após instalar devDeps com `bun`; CI valida com `npm ci`. |
 | **Testar implementação interna** de stores/hooks gera fragilidade | Testar saída/comportamento observável; extrair regra para função pura quando o teste precisar olhar o estado interno. |
-| **`isCheckoutBlocked = true`** trava a UI de checkout (Pagar.me em implementação) | Testar `placeOrder()` isolado, não via UI; revisar ao ligar o checkout real. |
+| **Checkout Pagar.me depende de API externa e tokenização no browser** | Mockar `/tokens`, `/api/checkout/place-order` e pedido de perfil; validar que PAN/CVV não entram no payload para o backend e que sucesso/pagamento pendente redirecionam corretamente. |
 | **Apollo v4 + React 19** podem exigir setup específico | Preferir interceptar no nível de fetch com MSW; usar `MockedProvider` só se necessário. |
 | **Env vars** ausentes nos testes (`NEXT_PUBLIC_*`, `NEXTAUTH_*`) | Defaults no `vitest.setup.ts`. |
 
@@ -443,4 +443,4 @@ O plano é considerado concluído quando:
 2. **Integrar `test:ci` ao pipeline** de CI (Node 24 + `npm ci` + `npm run test:ci`) como barreira de merge.
 3. **E2E com Playwright** como evolução futura — cobre RSC, middleware e fluxos ponta-a-ponta (login → carrinho → checkout) que ficam fora do escopo unitário.
 4. **Codegen GraphQL** (opcional): gerar tipos a partir do schema do WPGraphQL para fortalecer os mocks e os contratos de `auth.ts`/catálogo.
-5. **Revisitar checkout** quando o Pagar.me for ligado (`isCheckoutBlocked` removido) para adicionar testes da tokenização e dos estados PIX/boleto/cartão.
+5. **Ampliar checkout Pagar.me** com testes da tokenização e dos estados PIX/boleto/cartão na UI de revisão e pagamento pendente.

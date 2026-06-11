@@ -37,6 +37,17 @@ export interface ProfileOrderTrackingInfo {
 export interface ProfileOrderPaymentInfo {
   methodLabel: string;
   maskedLabel: string;
+  state?: string;
+  pix?: {
+    qrCode?: string;
+    copyPaste?: string;
+    expiresAt?: string;
+  };
+  boleto?: {
+    url?: string;
+    line?: string;
+    expiresAt?: string;
+  };
 }
 
 /**

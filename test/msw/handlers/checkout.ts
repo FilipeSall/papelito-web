@@ -27,7 +27,10 @@ export const checkoutHandlers = [
       orderId: 321,
       orderNumber: "321",
       status: "processing",
-      paymentMocked: true,
+      payment: {
+        method: "credit_card",
+        state: "paid",
+      },
     });
   }),
 ];
