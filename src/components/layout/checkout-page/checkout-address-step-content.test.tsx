@@ -58,13 +58,15 @@ describe("CheckoutAddressStepContent", () => {
   });
 
   it("shows a compact loader while shipping options are loading", async () => {
-    let resolveQuote: ((response: HttpResponse) => void) | null = null;
+    let resolveQuote: (response: Response) => void = (_response: Response) => {
+      throw new Error("Shipping quote resolver was used before initialization.");
+    };
 
     server.use(
       http.post(
         shippingQuoteUrl,
         async () =>
-          new Promise<HttpResponse>((resolve) => {
+          new Promise<Response>((resolve) => {
             resolveQuote = resolve;
           }),
       ),
@@ -79,7 +81,7 @@ describe("CheckoutAddressStepContent", () => {
     });
     expect(screen.getByRole("button", { name: /proximo: pagamento/i })).toBeDisabled();
 
-    resolveQuote?.(
+    resolveQuote(
       HttpResponse.json({
         origin_cep: "01001-000",
         destination_cep: "01310930",
@@ -106,13 +108,15 @@ describe("CheckoutAddressStepContent", () => {
   });
 
   it("removes the loader and shows an error when shipping quote fails", async () => {
-    let resolveQuote: ((response: HttpResponse) => void) | null = null;
+    let resolveQuote: (response: Response) => void = (_response: Response) => {
+      throw new Error("Shipping quote resolver was used before initialization.");
+    };
 
     server.use(
       http.post(
         shippingQuoteUrl,
         async () =>
-          new Promise<HttpResponse>((resolve) => {
+          new Promise<Response>((resolve) => {
             resolveQuote = resolve;
           }),
       ),
@@ -126,7 +130,7 @@ describe("CheckoutAddressStepContent", () => {
       ).toBeInTheDocument();
     });
 
-    resolveQuote?.(
+    resolveQuote(
       HttpResponse.json(
         {
           message: "Nao foi possivel cotar o frete.",

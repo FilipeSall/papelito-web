@@ -151,7 +151,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               </h2>
 
               <div className="relative mt-6">
-                <div className="absolute left-[17px] top-4 h-[calc(100%-32px)] w-px bg-gray-100" />
+                <div className="absolute left-4.25 top-4 h-[calc(100%-32px)] w-px bg-gray-100" />
                 <div className="space-y-6">
                   {order.timeline.map((event) => {
                     const isDone = event.state === "done";
