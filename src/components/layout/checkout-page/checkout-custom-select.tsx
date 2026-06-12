@@ -17,6 +17,7 @@ export interface CheckoutCustomSelectProps {
   value: string;
   options: readonly CheckoutCustomSelectOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
   errorMessage?: string;
   errorClassName?: string;
   labelClassName?: string;
@@ -37,6 +38,7 @@ export function CheckoutCustomSelect({
   value,
   options,
   onChange,
+  disabled = false,
   errorMessage,
   errorClassName = "min-h-5 text-[11px] tracking-[0.05px] text-red-500",
   labelClassName = "text-xs font-medium uppercase tracking-[0.6px] text-text-tertiary",
@@ -76,7 +78,10 @@ export function CheckoutCustomSelect({
   }, []);
 
   return (
-    <div className={`flex flex-col gap-2 ${wrapperClassName}`.trim()} ref={wrapperRef}>
+    <div
+      className={`relative flex flex-col gap-2 ${isOpen ? "z-50" : ""} ${wrapperClassName}`.trim()}
+      ref={wrapperRef}
+    >
       <label className={labelClassName}>
         {label}
       </label>
@@ -84,17 +89,27 @@ export function CheckoutCustomSelect({
       <div className="relative">
         <button
           aria-controls={listboxId}
+          aria-disabled={disabled}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           className={`flex h-11.5 w-full cursor-pointer items-center justify-between rounded-[14px] border bg-white px-4 text-sm tracking-[-0.1504px] outline-none transition ${
-            errorMessage
+            disabled
+              ? "cursor-not-allowed border-[#E5E7EB] bg-[#F5F5F5] text-black/40"
+              : errorMessage
               ? "border-red-400 focus:border-red-500"
               : isOpen
                 ? "border-brand-dark/30"
                 : "border-[#E5E7EB] focus:border-brand-dark/25"
           } ${triggerClassName}`.trim()}
+          disabled={disabled}
           type="button"
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={() => {
+            if (disabled) {
+              return;
+            }
+
+            setIsOpen((current) => !current);
+          }}
         >
           <span className={value ? selectedValueClassName : placeholderClassName}>
             {selectedOption ? getOptionLabel(selectedOption) : placeholder}
@@ -108,7 +123,7 @@ export function CheckoutCustomSelect({
 
         {isOpen && (
           <ul
-            className={`absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-[14px] border border-[#E5E7EB] bg-white py-1 shadow-[0_10px_24px_rgba(35,31,32,0.12)] ${listClassName}`.trim()}
+            className={`absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-[14px] border border-[#E5E7EB] bg-white py-1 shadow-[0_10px_24px_rgba(35,31,32,0.12)] ${listClassName}`.trim()}
             id={listboxId}
             role="listbox"
           >
@@ -125,6 +140,10 @@ export function CheckoutCustomSelect({
                     } ${optionClassName}`.trim()}
                     type="button"
                     onClick={() => {
+                      if (disabled) {
+                        return;
+                      }
+
                       onChange(optionValue);
                       setIsOpen(false);
                     }}

@@ -13,6 +13,7 @@ type PlaceOrderApiResponse = {
     state?: string;
     pix?: {
       qr_code?: string;
+      qr_code_url?: string;
       copy_paste?: string;
       expires_at?: string;
     };

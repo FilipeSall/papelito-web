@@ -12,6 +12,7 @@ export type VendorTopProduct = {
 
 export type VendorDashboardSnapshot = {
   averageTicket: number;
+  awaitingPaymentOrders: number;
   grossRevenue: number;
   ordersCount: number;
   pendingOrders: number;

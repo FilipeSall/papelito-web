@@ -228,7 +228,7 @@ export function useAdminProductsManager(
   async function handleSave() {
     if (!draft.name.trim()) {
       setNotice(PRODUCT_ERROR_MESSAGES.missingName);
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -263,8 +263,10 @@ export function useAdminProductsManager(
       setSelectedProductId(savedProduct.id);
       setDraft(productToDraft(savedProduct));
       setNotice(PRODUCT_NOTICES.saved);
+      return true;
     } catch (error) {
       setNotice(messageFromError(error, PRODUCT_ERROR_MESSAGES.save));
+      return false;
     } finally {
       setIsSaving(false);
     }

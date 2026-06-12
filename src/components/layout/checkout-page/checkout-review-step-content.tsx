@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
+import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { formatBRL } from "@/lib/format-currency";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
@@ -120,21 +121,22 @@ export function CheckoutReviewStepContent() {
         return;
       }
 
-      if (result.result.payment.method === "credit_card") {
-        if (result.result.payment.state !== "paid") {
-          setCheckoutError("Pagamento recusado. Revise os dados ou tente outro metodo.");
-          return;
-        }
+      const outcome = resolveCheckoutOutcome(result.result);
 
-        clearCart();
-        resetCheckout();
-        router.push(`/checkout/sucesso/${result.result.orderId}`);
+      if (outcome.kind === "error") {
+        setCheckoutError(outcome.message);
         return;
       }
 
-      clearCart();
+      if (outcome.kind === "confirmed") {
+        clearCart();
+        resetCheckout();
+        router.push(`/checkout/sucesso/${outcome.orderId}`);
+        return;
+      }
+
       resetCheckout();
-      router.push(`/checkout/pagamento/${result.result.orderId}`);
+      router.push(`/checkout/pagamento/${outcome.orderId}`);
     });
   }
 

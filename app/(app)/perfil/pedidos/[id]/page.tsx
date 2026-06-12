@@ -5,6 +5,10 @@ import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { getProfileOrderDetail } from "@/features/orders";
 import {
+  formatPaymentDeadline,
+  getPaymentExpiresAt,
+} from "@/features/orders/utils/payment-deadline";
+import {
   OrderStatusBadge,
   OrderTrackingCopyButton,
 } from "@/components/layout/profile-page";
@@ -20,6 +24,10 @@ function formatCurrency(value: number) {
   });
 }
 
+function currentTimestamp() {
+  return Date.now();
+}
+
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const session = await getServerSession(authOptions);
 
@@ -33,6 +41,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   if (!order) {
     notFound();
   }
+
+  const awaitingPayment = order.status === "awaiting_payment";
+  const paymentDeadline = awaitingPayment
+    ? formatPaymentDeadline(getPaymentExpiresAt(order.payment), currentTimestamp())
+    : null;
 
   return (
     <section className="bg-bg-light">
@@ -321,6 +334,28 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   ) : null}
                 </div>
               </div>
+
+              {awaitingPayment ? (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  {paymentDeadline?.expired ? (
+                    <p className="text-xs font-semibold text-red-600">
+                      Pagamento expirado. Faca um novo pedido para comprar estes itens.
+                    </p>
+                  ) : (
+                    <>
+                      <Link
+                        className="inline-flex h-10 w-full items-center justify-center rounded-full bg-brand-dark px-5 text-sm font-black uppercase tracking-[0.12em] text-white transition hover:opacity-90"
+                        href={`/checkout/pagamento/${order.id}`}
+                      >
+                        Concluir pagamento
+                      </Link>
+                      {paymentDeadline?.hasDeadline ? (
+                        <p className="mt-2 text-center text-xs text-gray-500">{paymentDeadline.label}</p>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              ) : null}
             </article>
 
             <article className="rounded-2xl bg-brand-yellow p-5">

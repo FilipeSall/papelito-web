@@ -81,7 +81,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
       <div className="space-y-5 px-5 py-6 md:px-6">
         <div>
           <h3
-            className="text-2xl font-semibold uppercase tracking-[0.1em]"
+            className="text-2xl font-semibold uppercase tracking-widest"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
             Recebedor

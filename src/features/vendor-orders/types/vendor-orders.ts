@@ -1,4 +1,5 @@
 export type VendorOrderStatus =
+  | "aguardando_pagamento"
   | "aguardando_envio"
   | "em_separacao"
   | "enviado"

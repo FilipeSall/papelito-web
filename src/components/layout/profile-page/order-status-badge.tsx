@@ -1,4 +1,5 @@
 export type OrderStatus =
+  | "awaiting_payment"
   | "awaiting_shipment"
   | "picking"
   | "shipped"
@@ -10,6 +11,11 @@ type OrderStatusBadgeProps = {
 };
 
 const statusConfig: Record<OrderStatus, { label: string; bgColor: string; textColor: string }> = {
+  awaiting_payment: {
+    label: "Aguardando pagamento",
+    bgColor: "bg-gray-500/20",
+    textColor: "text-gray-500",
+  },
   delivered: {
     label: "Entregue",
     bgColor: "bg-green-500/20",

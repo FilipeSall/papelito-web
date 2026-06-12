@@ -1,11 +1,22 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useAdminProductsManager } from "@/hooks/use-admin-products-manager";
 import type { AdminProductsSnapshot } from "@/lib/server/admin-products";
 
+import { AdminToast } from "../../primitives";
 import { ProductEditorModal } from "./components/product-editor-modal";
 import { ProductsFilters } from "./components/products-filters";
 import { ProductsList } from "./components/products-list";
+
+const TOAST_HIDE_DELAY_MS = 2600;
+const TOAST_REMOVE_DELAY_MS = 2900;
+
+type ToastState = {
+  description: string;
+  title: string;
+} | null;
 
 export function ProductsManager({
   snapshot,
@@ -15,6 +26,11 @@ export function ProductsManager({
   initialFocusProductId?: number | null;
 }) {
   const manager = useAdminProductsManager(snapshot, { initialFocusProductId });
+  const [toast, setToast] = useState<ToastState>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastEnterFrameRef = useRef<number | null>(null);
   const {
     appliedFilters,
     catalogSummary,
@@ -36,8 +52,65 @@ export function ProductsManager({
     updateFilter,
   } = manager;
 
+  useEffect(() => {
+    return () => {
+      if (toastHideTimerRef.current) {
+        clearTimeout(toastHideTimerRef.current);
+      }
+      if (toastRemoveTimerRef.current) {
+        clearTimeout(toastRemoveTimerRef.current);
+      }
+      if (toastEnterFrameRef.current) {
+        cancelAnimationFrame(toastEnterFrameRef.current);
+      }
+    };
+  }, []);
+
+  const showToast = useCallback((nextToast: NonNullable<ToastState>) => {
+    setToastVisible(false);
+    setToast(nextToast);
+
+    if (toastHideTimerRef.current) {
+      clearTimeout(toastHideTimerRef.current);
+    }
+    if (toastRemoveTimerRef.current) {
+      clearTimeout(toastRemoveTimerRef.current);
+    }
+    if (toastEnterFrameRef.current) {
+      cancelAnimationFrame(toastEnterFrameRef.current);
+    }
+
+    toastEnterFrameRef.current = requestAnimationFrame(() => {
+      setToastVisible(true);
+    });
+
+    toastHideTimerRef.current = setTimeout(() => {
+      setToastVisible(false);
+    }, TOAST_HIDE_DELAY_MS);
+
+    toastRemoveTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, TOAST_REMOVE_DELAY_MS);
+  }, []);
+
+  const handleProductSave = useCallback(async () => {
+    const saved = await manager.handleSave();
+
+    if (!saved) {
+      return false;
+    }
+
+    showToast({
+      description:
+        "As alteracoes do produto foram aplicadas no catalogo administrativo e ja estao prontas para nova revisao ou publicacao.",
+      title: "Alteracoes salvas com sucesso.",
+    });
+    return true;
+  }, [manager, showToast]);
+
   return (
-    <div className="space-y-5">
+    <>
+      <div className="space-y-5">
       <ProductsHeader />
 
       {(issues.length > 0 || notice) && (
@@ -83,7 +156,7 @@ export function ProductsManager({
           categories={manager.categories}
           draft={manager.draft}
           handleCreateTag={manager.handleCreateTag}
-          handleSave={manager.handleSave}
+          handleSave={handleProductSave}
           handleUpload={manager.handleUpload}
           isCreatingTag={manager.isCreatingTag}
           isPromotionEnabled={manager.isPromotionEnabled}
@@ -102,7 +175,16 @@ export function ProductsManager({
           updateDraft={manager.updateDraft}
         />
       ) : null}
-    </div>
+      </div>
+
+      {toast ? (
+        <AdminToast
+          description={toast.description}
+          title={toast.title}
+          visible={toastVisible}
+        />
+      ) : null}
+    </>
   );
 }
 

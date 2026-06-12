@@ -4,6 +4,7 @@ import {
   buildAdminSalesFilterQuery,
   type parseAdminSalesFilters,
 } from "@/lib/server/admin-sales-filters";
+import { VendorIntervalSelect } from "./vendor-interval-select";
 
 export function VendorPeriodFilters({
   basePath,
@@ -55,15 +56,7 @@ export function VendorPeriodFilters({
             name="to"
             type="date"
           />
-          <select
-            className="min-h-9 rounded-[8px] border border-brand-dark/18 bg-white px-3 text-sm"
-            defaultValue={filters.interval}
-            name="interval"
-          >
-            <option value="day">Dia</option>
-            <option value="week">Semana</option>
-            <option value="month">Mes</option>
-          </select>
+          <VendorIntervalSelect defaultValue={filters.interval} />
           <button className="min-h-9 rounded-[8px] bg-brand-dark px-5 text-sm font-semibold text-brand-yellow">
             Aplicar
           </button>

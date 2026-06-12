@@ -98,13 +98,14 @@ function normalizeStockReason(reason: unknown) {
 }
 
 function normalizeOrderStatus(value: unknown): VendorOrderStatus {
-  return value === "aguardando_envio" ||
+  return value === "aguardando_pagamento" ||
+    value === "aguardando_envio" ||
     value === "em_separacao" ||
     value === "enviado" ||
     value === "entregue" ||
     value === "cancelado"
     ? value
-    : "aguardando_envio";
+    : "aguardando_pagamento";
 }
 
 export async function getAdminVendorStock(

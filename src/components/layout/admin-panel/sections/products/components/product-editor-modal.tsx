@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
+import { X } from "lucide-react";
 
 import { ProductImageFallback } from "@/components/ui";
 import { PRODUCT_EDIT_STATUS_OPTIONS } from "@/constants/admin-products";
@@ -98,11 +99,15 @@ export function ProductEditorModal({
         >
           <button
             aria-label="Fechar modal"
-            className="absolute right-5 top-5 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-none border-0 bg-transparent text-4xl font-light leading-none text-[#231f20] transition hover:text-[#8b3f2d]"
+            className="group absolute right-5 top-5 z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#231f20]/14 bg-white/92 text-[#231f20] shadow-[0_10px_24px_rgba(35,31,32,0.12)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-[#231f20]/28 hover:bg-[#231f20] hover:text-[#ffe500] hover:shadow-[0_16px_34px_rgba(35,31,32,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#231f20]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf7ef]"
             onClick={onClose}
             type="button"
           >
-            x
+            <X
+              aria-hidden
+              className="h-5 w-5 transition duration-200 group-hover:rotate-90"
+              strokeWidth={2.2}
+            />
           </button>
           <ModalHeader
             draftName={draft.name}
@@ -176,7 +181,7 @@ function ModalHeader({
 }: {
   draftName: string;
   isSaving: boolean;
-  onSave: () => void | Promise<void>;
+  onSave: () => void | Promise<boolean>;
   selectedProduct: UseAdminProductsManagerReturn["selectedProduct"];
   selectedProductId: UseAdminProductsManagerReturn["selectedProductId"];
 }) {
@@ -314,9 +319,11 @@ function DimensionsSection({
     <ModalSection title="Dimensoes & Logistica">
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
+          helpText="Informe o peso em quilos. Exemplo: 400g deve ser preenchido como 0.4, nao como 400."
           inputMode="decimal"
           label="Peso (kg)"
           onChange={(value) => updateDraft("weight", value)}
+          placeholder="Ex.: 0.4kg"
           value={draft.weight}
         />
       </div>

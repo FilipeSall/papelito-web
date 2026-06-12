@@ -39,6 +39,7 @@ export type WpVendorOrdersList = {
 };
 
 const statuses = new Set<VendorOrderStatus>([
+  "aguardando_pagamento",
   "aguardando_envio",
   "em_separacao",
   "enviado",
@@ -49,7 +50,7 @@ const statuses = new Set<VendorOrderStatus>([
 export function mapVendorOrderStatus(value: unknown): VendorOrderStatus {
   return typeof value === "string" && statuses.has(value as VendorOrderStatus)
     ? (value as VendorOrderStatus)
-    : "aguardando_envio";
+    : "aguardando_pagamento";
 }
 
 export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary {

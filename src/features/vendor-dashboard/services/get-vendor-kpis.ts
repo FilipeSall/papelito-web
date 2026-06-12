@@ -8,6 +8,7 @@ import type { VendorDashboardSnapshot } from "../types/vendor-dashboard";
 
 type WpVendorKpis = {
   average_ticket?: number;
+  awaiting_payment_orders?: number;
   gross_revenue?: number;
   orders_count?: number;
   pending_orders?: number;
@@ -19,6 +20,7 @@ type WpVendorKpis = {
 function emptySnapshot(filters: AdminSalesFilters): VendorDashboardSnapshot {
   return {
     averageTicket: 0,
+    awaitingPaymentOrders: 0,
     grossRevenue: 0,
     ordersCount: 0,
     pendingOrders: 0,
@@ -56,6 +58,7 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
 
   return {
     averageTicket: Number(data.average_ticket) || 0,
+    awaitingPaymentOrders: Number(data.awaiting_payment_orders) || 0,
     grossRevenue: Number(data.gross_revenue) || 0,
     ordersCount: Number(data.orders_count) || 0,
     pendingOrders: Number(data.pending_orders) || 0,

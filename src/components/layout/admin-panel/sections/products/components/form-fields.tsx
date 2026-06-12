@@ -59,6 +59,7 @@ export function TextField({
   inputMode,
   label,
   onChange,
+  placeholder,
   type = "text",
   value,
 }: {
@@ -66,16 +67,18 @@ export function TextField({
   inputMode?: "decimal" | "numeric";
   label: string;
   onChange: (value: string) => void;
+  placeholder?: string;
   type?: string;
   value: string;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid min-w-0 gap-2">
       <FieldLabel helpText={helpText} label={label} />
       <input
-        className="min-h-12 border border-[#c9bd96] bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
+        className="min-h-12 w-full min-w-0 border border-[#c9bd96] bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         type={type}
         value={value}
       />

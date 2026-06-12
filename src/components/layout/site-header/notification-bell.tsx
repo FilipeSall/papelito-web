@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 
 import { NotificationDropdown } from "./notification-dropdown";
@@ -20,18 +20,28 @@ type NotificationBellProps = {
   inverted?: boolean;
 };
 
+type RedirectState = {
+  from: string;
+  to: string;
+};
+
 export function NotificationBell({ inverted = false }: NotificationBellProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isApiAuthenticated } = useAuthSession();
   const { isLoading, isError, refresh } = useNotificationsPoll();
   const [open, setOpen] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectState, setRedirectState] = useState<RedirectState | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const unreadCount = useNotificationsStore((state) => state.unreadCount);
   const items = useNotificationsStore((state) => state.items);
   const markRead = useNotificationsStore((state) => state.markRead);
   const markAllRead = useNotificationsStore((state) => state.markAllRead);
   const setUnreadCount = useNotificationsStore((state) => state.setUnreadCount);
+  const currentSearch = searchParams?.toString() ?? "";
+  const currentLocation = `${pathname}${currentSearch ? `?${currentSearch}` : ""}`;
+  const isRedirecting = redirectState !== null && currentLocation === redirectState.from;
 
   useEffect(() => {
     if (!isRedirecting) {
@@ -78,10 +88,6 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
 
   async function handleItemClick(item: NotificationItem) {
     const formatted = formatNotification(item);
-    const currentLocation =
-      typeof window !== "undefined"
-        ? `${window.location.pathname}${window.location.search}`
-        : "";
 
     if (!item.readAt) {
       markRead(item.id);
@@ -98,11 +104,15 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
     }
 
     if (!formatted.href || formatted.href === currentLocation) {
+      setRedirectState(null);
       setOpen(false);
       return;
     }
 
-    setIsRedirecting(true);
+    setRedirectState({
+      from: currentLocation,
+      to: formatted.href,
+    });
     setOpen(false);
     requestAnimationFrame(() => {
       startTransition(() => {

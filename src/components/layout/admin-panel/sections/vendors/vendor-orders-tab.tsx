@@ -11,7 +11,8 @@ import { formatVendorDateTime } from "./vendor-detail-format";
 
 const ORDER_STATUSES: Array<[VendorOrderStatus | "all", string]> = [
   ["all", "Todos"],
-  ["aguardando_envio", "Aguardando"],
+  ["aguardando_pagamento", "Aguardando pagamento"],
+  ["aguardando_envio", "Aguardando envio"],
   ["em_separacao", "Separacao"],
   ["enviado", "Enviados"],
   ["entregue", "Entregues"],
@@ -20,21 +21,25 @@ const ORDER_STATUSES: Array<[VendorOrderStatus | "all", string]> = [
 
 function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
   const label =
-    status === "aguardando_envio"
-      ? "Aguardando"
-      : status === "em_separacao"
-        ? "Em separacao"
-        : status === "enviado"
-          ? "Enviado"
-          : status === "entregue"
-            ? "Entregue"
-            : "Cancelado";
+    status === "aguardando_pagamento"
+      ? "Aguardando pagamento"
+      : status === "aguardando_envio"
+        ? "Aguardando envio"
+        : status === "em_separacao"
+          ? "Em separacao"
+          : status === "enviado"
+            ? "Enviado"
+            : status === "entregue"
+              ? "Entregue"
+              : "Cancelado";
   const tone =
     status === "entregue"
       ? "bg-[#e4efe0] text-[#28422d]"
       : status === "cancelado"
         ? "bg-[#f3e3df] text-[#7a3428]"
-        : "bg-[#f4edd3] text-[#5d4d1b]";
+        : status === "aguardando_pagamento"
+          ? "bg-[#e7e7ea] text-[#4a4a52]"
+          : "bg-[#f4edd3] text-[#5d4d1b]";
 
   return (
     <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone}`}>
@@ -73,7 +78,7 @@ export function VendorOrdersTab({
             name="orderSearch"
             placeholder="Pedido ou cliente"
           />
-          <button className="rounded-[12px] bg-[#231f20] px-5 text-sm font-semibold text-[#ffe500]">
+          <button className="rounded-[12px] bg-[#231f20] px-5 text-sm font-semibold text-brand-yellow">
             Buscar
           </button>
         </form>
@@ -82,7 +87,7 @@ export function VendorOrdersTab({
             <Link
               className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
                 orderFilters.status === statusValue
-                  ? "border-[#231f20] bg-[#231f20] text-[#ffe500]"
+                  ? "border-[#231f20] bg-[#231f20] text-brand-yellow"
                   : "border-[#231f20]/15 bg-white"
               }`}
               href={vendorDetailHref(ctx, {

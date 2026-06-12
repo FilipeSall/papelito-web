@@ -40,6 +40,7 @@ export interface ProfileOrderPaymentInfo {
   state?: string;
   pix?: {
     qrCode?: string;
+    qrCodeUrl?: string;
     copyPaste?: string;
     expiresAt?: string;
   };

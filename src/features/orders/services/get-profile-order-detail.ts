@@ -37,6 +37,7 @@ type WpProfileOrder = {
     state?: string;
     pix?: {
       qr_code?: string;
+      qr_code_url?: string;
       copy_paste?: string;
       expires_at?: string;
     };
@@ -52,8 +53,10 @@ type WpProfileOrdersList = {
   items?: WpProfileOrder[];
 };
 
-function mapStatus(status: string | undefined): OrderStatus {
+export function mapStatus(status: string | undefined): OrderStatus {
   switch (status) {
+    case "aguardando_envio":
+      return "awaiting_shipment";
     case "em_separacao":
       return "picking";
     case "enviado":
@@ -62,8 +65,9 @@ function mapStatus(status: string | undefined): OrderStatus {
       return "delivered";
     case "cancelado":
       return "cancelled";
+    case "aguardando_pagamento":
     default:
-      return "awaiting_shipment";
+      return "awaiting_payment";
   }
 }
 
@@ -85,10 +89,27 @@ function buildTimeline(status: OrderStatus): ProfileOrderTimelineEvent[] {
         title: "Pedido realizado",
       },
       {
-        description: "O atendimento foi cancelado pelo vendor antes do envio.",
+        description: "O atendimento foi cancelado antes do envio.",
         id: "cancelled",
         state: "current",
         title: "Atendimento cancelado",
+      },
+    ];
+  }
+
+  if (status === "awaiting_payment") {
+    return [
+      {
+        description: "O pedido foi registrado na plataforma.",
+        id: "received",
+        state: "done",
+        title: "Pedido realizado",
+      },
+      {
+        description: "Conclua o pagamento para liberar o pedido para envio.",
+        id: "awaiting_payment",
+        state: "current",
+        title: "Aguardando pagamento",
       },
     ];
   }
@@ -174,6 +195,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
       pix: order.payment?.pix
         ? {
             qrCode: order.payment.pix.qr_code,
+            qrCodeUrl: order.payment.pix.qr_code_url,
             copyPaste: order.payment.pix.copy_paste,
             expiresAt: order.payment.pix.expires_at,
           }

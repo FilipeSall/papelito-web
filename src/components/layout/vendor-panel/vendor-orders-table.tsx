@@ -46,7 +46,8 @@ export function VendorOrdersTable({
         <div className="flex flex-wrap gap-2">
           {([
             ["all", "Todos"],
-            ["aguardando_envio", "Aguardando"],
+            ["aguardando_pagamento", "Aguardando pagamento"],
+            ["aguardando_envio", "Aguardando envio"],
             ["em_separacao", "Separacao"],
             ["enviado", "Enviados"],
             ["entregue", "Entregues"],

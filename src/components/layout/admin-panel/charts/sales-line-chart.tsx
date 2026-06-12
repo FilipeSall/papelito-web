@@ -30,8 +30,9 @@ export function SalesLineChart({
   const xLabelStride = Math.max(1, Math.ceil(chartPoints.length / 6));
   const showCircles = chartPoints.length <= 40;
 
+  const isSinglePoint = chartPoints.length === 1;
   const mappedPoints = chartPoints.map((point, index) => {
-    const x = paddingLeft + step * index;
+    const x = isSinglePoint ? paddingLeft + plotWidth / 2 : paddingLeft + step * index;
     const y = paddingTop + plotHeight - (point.value / maxValue) * plotHeight;
 
     return {
@@ -41,9 +42,11 @@ export function SalesLineChart({
     };
   });
 
-  const linePath = mappedPoints
-    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
-    .join(" ");
+  const linePath = isSinglePoint
+    ? `M${paddingLeft},${mappedPoints[0].y} L${paddingLeft + plotWidth},${mappedPoints[0].y}`
+    : mappedPoints
+        .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
+        .join(" ");
   const areaPath = `${linePath} L${paddingLeft + plotWidth},${paddingTop + plotHeight} L${paddingLeft},${paddingTop + plotHeight} Z`;
 
   return (
@@ -52,7 +55,7 @@ export function SalesLineChart({
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
       </div>
-      <div className="relative mx-5 mt-5 mb-5 flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[#231f20]/12 bg-[#f3efe4] p-3">
+      <div className="relative mx-5 mt-5 mb-5 flex flex-1 flex-col overflow-hidden rounded-xl border border-[#231f20]/12 bg-[#f3efe4] p-3">
         <svg
           className="h-full w-full flex-1"
           fill="none"

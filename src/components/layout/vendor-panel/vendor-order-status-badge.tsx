@@ -2,6 +2,7 @@ import { StatusBadge } from "@/components/layout/operational-panel";
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 
 export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
+  aguardando_pagamento: "Aguardando pagamento",
   aguardando_envio: "Aguardando envio",
   cancelado: "Cancelado",
   em_separacao: "Em separacao",

@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import { ProductImageFallback } from "@/components/ui";
 import type { AdminProduct } from "@/lib/server/admin-products";
 
@@ -211,25 +212,25 @@ export function ProductsList({
           >
             ‹
           </button>
-          <label className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 md:hidden">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8d8678]">
               Pagina
             </span>
-            <select
-              className="h-9 rounded-[12px] border border-[#231f20]/16 bg-white px-3 text-sm font-semibold text-[#231f20]/72 outline-none transition focus:border-[#231f20]"
+            <CheckoutCustomSelect
               disabled={isLoading || totalPages <= 1}
-              onChange={(event) => onChangePage(Number(event.target.value))}
-              value={page}
-            >
-              {Array.from({ length: Math.max(totalPages, 1) }, (_, index) => index + 1).map(
-                (pageOption) => (
-                  <option key={pageOption} value={pageOption}>
-                    {pageOption}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
+              label=""
+              labelClassName="hidden"
+              listClassName="bottom-full z-[60] mt-0 mb-2"
+              options={Array.from({ length: Math.max(totalPages, 1) }, (_, index) => ({
+                label: String(index + 1),
+                value: String(index + 1),
+              }))}
+              placeholder="Pagina"
+              triggerClassName="h-9 min-h-9 rounded-[12px] border-[#231f20]/16 px-3 py-0 font-semibold text-[#231f20]/72 focus:border-[#231f20]"
+              value={String(page)}
+              onChange={(nextValue) => onChangePage(Number(nextValue))}
+            />
+          </div>
           <div className="hidden items-center gap-2 md:flex">
             {pageItems.map((item) =>
               typeof item === "number" ? (

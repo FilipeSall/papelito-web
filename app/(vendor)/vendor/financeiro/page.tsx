@@ -25,10 +25,16 @@ export default async function VendorFinancePage({
         title="Financeiro"
       />
       <VendorPeriodFilters basePath="/vendor/financeiro" filters={filters} />
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard detail={`Janela ${filters.periodLabel}`} label="Faturamento bruto" value={formatBRLIntl(snapshot.grossRevenue)} />
-        <MetricCard detail="Valor medio por pedido" label="Ticket medio" value={formatBRLIntl(snapshot.averageTicket)} />
-        <MetricCard detail="Pedidos nao cancelados" label="Pedidos contabilizados" value={String(snapshot.ordersCount)} />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard detail={`Pedidos pagos - ${filters.periodLabel}`} label="Faturamento bruto" value={formatBRLIntl(snapshot.grossRevenue)} />
+        <MetricCard detail="Valor medio por pedido pago" label="Ticket medio" value={formatBRLIntl(snapshot.averageTicket)} />
+        <MetricCard detail="Pedidos com pagamento confirmado" label="Pedidos contabilizados" value={String(snapshot.ordersCount)} />
+        <MetricCard
+          detail="Aguardando confirmacao de pagamento"
+          label="Aguardando pagamento"
+          tone={snapshot.awaitingPaymentOrders > 0 ? "warning" : "default"}
+          value={String(snapshot.awaitingPaymentOrders)}
+        />
       </div>
       <VendorRecipientPanel initialRecipient={recipient} />
       <SalesLineChart label="faturamento registrado" points={snapshot.revenueSeries} />

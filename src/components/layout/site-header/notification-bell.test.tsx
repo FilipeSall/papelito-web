@@ -12,9 +12,13 @@ const markNotificationReadMock = vi.fn();
 const markAllNotificationsReadMock = vi.fn();
 
 let authState = { isApiAuthenticated: true };
+let currentPathname = "/";
+let currentSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
+  usePathname: () => currentPathname,
+  useSearchParams: () => currentSearchParams,
 }));
 
 vi.mock("next/image", () => ({
@@ -47,6 +51,8 @@ vi.mock("@/features/notifications", async () => {
 describe("NotificationBell", () => {
   beforeEach(() => {
     authState = { isApiAuthenticated: true };
+    currentPathname = "/";
+    currentSearchParams = new URLSearchParams();
     pushMock.mockReset();
     refreshMock.mockReset();
     markNotificationReadMock.mockReset();
@@ -106,7 +112,7 @@ describe("NotificationBell", () => {
       item: buildNotification({ readAt: "2026-06-11T20:00:00.000Z" }),
     });
 
-    render(<NotificationBell />);
+    const { rerender } = render(<NotificationBell />);
 
     await user.click(screen.getByRole("button", { name: /12 não lidas/i }));
     await user.click(screen.getByRole("button", { name: /favorito em promoção/i }));
@@ -117,6 +123,13 @@ describe("NotificationBell", () => {
 
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/produtos/99");
+    });
+
+    currentPathname = "/produtos/99";
+    rerender(<NotificationBell />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Abrindo notificação...")).not.toBeInTheDocument();
     });
   });
 });

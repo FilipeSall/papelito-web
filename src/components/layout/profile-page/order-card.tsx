@@ -48,6 +48,14 @@ export function OrderCard({ order }: OrderCardProps) {
         <span className="text-base font-black tracking-[-0.44px] text-brand-dark sm:text-lg">
           {formattedTotal}
         </span>
+        {order.status === "awaiting_payment" ? (
+          <Link
+            className="inline-flex h-8 shrink-0 items-center rounded-full bg-brand-yellow px-4 text-[10px] font-black uppercase tracking-[0.2px] text-brand-dark transition hover:opacity-90"
+            href={`/checkout/pagamento/${order.id}`}
+          >
+            Concluir pagamento
+          </Link>
+        ) : null}
         <Link
           className="inline-flex h-8 shrink-0 items-center rounded-full bg-brand-dark px-4 text-[10px] font-black uppercase tracking-[0.2px] text-white transition hover:opacity-90"
           href={`/perfil/pedidos/${order.id}`}

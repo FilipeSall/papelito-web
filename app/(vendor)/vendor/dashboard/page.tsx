@@ -42,7 +42,13 @@ export default async function VendorDashboardPage({
           tone={snapshot.pendingOrders > 0 ? "warning" : "default"}
           value={String(snapshot.pendingOrders).padStart(2, "0")}
         />
-        <MetricCard detail="Pedidos ativos no periodo" label="Pedidos" value={String(snapshot.ordersCount).padStart(2, "0")} />
+        <MetricCard detail="Pedidos pagos no periodo" label="Pedidos" value={String(snapshot.ordersCount).padStart(2, "0")} />
+        <MetricCard
+          detail="Aguardando confirmacao de pagamento"
+          label="Aguardando pagamento"
+          tone={snapshot.awaitingPaymentOrders > 0 ? "warning" : "default"}
+          value={String(snapshot.awaitingPaymentOrders).padStart(2, "0")}
+        />
       </div>
       <div className="grid items-stretch gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <SalesLineChart label="faturamento por periodo" points={snapshot.revenueSeries} />
