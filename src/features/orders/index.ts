@@ -6,3 +6,4 @@ export type {
   ProfileOrderTimelineEvent,
   ProfileOrderTrackingInfo,
 } from "./types/profile-order-detail";
+export type { ProfileOrdersSnapshot } from "./types/profile-orders";

@@ -172,10 +172,6 @@ export function CartPageContent() {
   }
 
   const itemLabel = summary.totalItems === 1 ? "1 item" : `${summary.totalItems} itens`;
-  const activeVendor = summary.vendorGroups[0] ?? null;
-  const activeVendorRegion = activeVendor
-    ? [activeVendor.city, activeVendor.state].filter(Boolean).join(" / ")
-    : "";
 
   return (
     <main className="bg-bg-light">
@@ -191,28 +187,6 @@ export function CartPageContent() {
       <section className="mx-auto w-full max-w-391 px-6 pb-16 pt-6 md:px-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,318px)]">
           <div>
-            {activeVendor ? (
-              <div className="mb-4 rounded-2xl border border-brand-yellow/50 bg-[#FFFBEB] px-5 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <p className="text-xs font-black uppercase tracking-[0.6px] text-brand-dark">
-                  Vendor selecionado
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <p className="text-sm font-black text-brand-dark">
-                    {activeVendor.vendorName}
-                  </p>
-                  {activeVendorRegion ? (
-                    <span className="text-sm text-text-tertiary">
-                      {activeVendorRegion}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-xs text-text-tertiary">
-                  Este carrinho sera atendido por um unico vendor. Itens de outros
-                  vendors serao bloqueados ate que haja cobertura completa.
-                </p>
-              </div>
-            ) : null}
-
             <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
               <div className="flex items-center justify-between border-b border-[#F3F4F6] px-6 py-4">
                 <h2 className="text-sm font-black uppercase tracking-[-0.1504px] text-brand-dark">

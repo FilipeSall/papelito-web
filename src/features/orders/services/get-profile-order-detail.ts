@@ -8,6 +8,8 @@ import { authOptions } from "@/lib/auth";
 import { wpRest } from "@/lib/server/wp-rest";
 
 import type { ProfileOrderDetail, ProfileOrderTimelineEvent } from "../types/profile-order-detail";
+import type { ProfileOrdersSnapshot } from "../types/profile-orders";
+import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
 
 type WpProfileOrder = {
   created_at?: string;
@@ -51,6 +53,10 @@ type WpProfileOrder = {
 
 type WpProfileOrdersList = {
   items?: WpProfileOrder[];
+  page?: number;
+  per_page?: number;
+  total?: number;
+  total_pages?: number;
 };
 
 export function mapStatus(status: string | undefined): OrderStatus {
@@ -71,6 +77,45 @@ export function mapStatus(status: string | undefined): OrderStatus {
   }
 }
 
+function paymentInfo(order: WpProfileOrder) {
+  return {
+    methodLabel: order.payment_method || "Pagamento nao informado",
+    maskedLabel: "",
+    state: order.payment?.state,
+    pix: order.payment?.pix
+      ? {
+          qrCode: order.payment.pix.qr_code,
+          qrCodeUrl: order.payment.pix.qr_code_url,
+          copyPaste: order.payment.pix.copy_paste,
+          expiresAt: order.payment.pix.expires_at,
+        }
+      : undefined,
+    boleto: order.payment?.boleto
+      ? {
+          url: order.payment.boleto.url,
+          line: order.payment.boleto.line,
+          expiresAt: order.payment.boleto.expires_at,
+        }
+      : undefined,
+  };
+}
+
+export function resolveStatus(order: WpProfileOrder, nowMs = Date.now()): OrderStatus {
+  const status = mapStatus(order.vendor_status);
+
+  if (status !== "awaiting_payment") {
+    return status;
+  }
+
+  if (order.payment?.state === "expired") {
+    return "expired";
+  }
+
+  return isPaymentExpired(getPaymentExpiresAt(paymentInfo(order)), nowMs)
+    ? "expired"
+    : status;
+}
+
 function formatDate(value: string | undefined) {
   if (!value) return "Data indisponivel";
   const date = new Date(value.replace(" ", "T"));
@@ -80,6 +125,23 @@ function formatDate(value: string | undefined) {
 }
 
 function buildTimeline(status: OrderStatus): ProfileOrderTimelineEvent[] {
+  if (status === "expired") {
+    return [
+      {
+        description: "O pedido foi registrado na plataforma.",
+        id: "received",
+        state: "done",
+        title: "Pedido realizado",
+      },
+      {
+        description: "O prazo de pagamento terminou antes da confirmacao.",
+        id: "expired",
+        state: "current",
+        title: "Pagamento expirado",
+      },
+    ];
+  }
+
   if (status === "cancelled") {
     return [
       {
@@ -147,7 +209,7 @@ function mapSummary(order: WpProfileOrder): Order {
   return {
     id: String(order.id ?? ""),
     orderNumber: `#${order.order_number ?? ""}`,
-    status: mapStatus(order.vendor_status),
+    status: resolveStatus(order),
     date: formatDate(order.created_at),
     itemsCount: Number(order.items_count) || 0,
     total: Number(order.total) || 0,
@@ -155,7 +217,7 @@ function mapSummary(order: WpProfileOrder): Order {
 }
 
 function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
-  const status = mapStatus(order.vendor_status);
+  const status = resolveStatus(order);
   const trackingCode = typeof order.tracking_code === "string" && order.tracking_code ? order.tracking_code : null;
 
   return {
@@ -188,26 +250,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     subtotal: Number(order.subtotal) || 0,
     shipping: Number(order.shipping_total) || 0,
     total: Number(order.total) || 0,
-    payment: {
-      methodLabel: order.payment_method || "Pagamento nao informado",
-      maskedLabel: "",
-      state: order.payment?.state,
-      pix: order.payment?.pix
-        ? {
-            qrCode: order.payment.pix.qr_code,
-            qrCodeUrl: order.payment.pix.qr_code_url,
-            copyPaste: order.payment.pix.copy_paste,
-            expiresAt: order.payment.pix.expires_at,
-          }
-        : undefined,
-      boleto: order.payment?.boleto
-        ? {
-            url: order.payment.boleto.url,
-            line: order.payment.boleto.line,
-            expiresAt: order.payment.boleto.expires_at,
-          }
-        : undefined,
-    },
+    payment: paymentInfo(order),
   };
 }
 
@@ -216,24 +259,77 @@ async function getProfileAccessToken() {
   return session?.accessToken;
 }
 
-export async function getProfileOrders(): Promise<Order[]> {
-  const accessToken = await getProfileAccessToken();
-  if (!accessToken) return [];
-
-  const result = await wpRest<WpProfileOrdersList>("/papelito/v1/profile/me/orders?per_page=20", {
+async function fetchProfileOrder(orderId: string, accessToken: string): Promise<WpProfileOrder | null> {
+  const result = await wpRest<WpProfileOrder>(`/papelito/v1/profile/me/orders/${orderId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  return result.ok ? (result.data.items ?? []).map(mapSummary) : [];
+  return result.ok ? result.data : null;
+}
+
+export async function getProfileOrders({
+  page = 1,
+  perPage = 10,
+}: {
+  page?: number;
+  perPage?: number;
+} = {}): Promise<ProfileOrdersSnapshot> {
+  const accessToken = await getProfileAccessToken();
+  if (!accessToken) {
+    return {
+      items: [],
+      page,
+      perPage,
+      total: 0,
+      totalPages: 1,
+    };
+  }
+
+  const result = await wpRest<WpProfileOrdersList>(
+    `/papelito/v1/profile/me/orders?page=${page}&per_page=${perPage}`,
+    {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+
+  if (!result.ok) {
+    return {
+      items: [],
+      page,
+      perPage,
+      total: 0,
+      totalPages: 1,
+    };
+  }
+
+  const items = result.data.items ?? [];
+  const awaitingPaymentOrderIds = items
+    .filter((order) => mapStatus(order.vendor_status) === "awaiting_payment")
+    .map((order) => String(order.id ?? ""))
+    .filter(Boolean);
+
+  const detailEntries = await Promise.all(
+    awaitingPaymentOrderIds.map(async (orderId) => [
+      orderId,
+      await fetchProfileOrder(orderId, accessToken),
+    ] as const),
+  );
+  const detailsById = new Map(detailEntries);
+
+  return {
+    items: items.map((order) => mapSummary(detailsById.get(String(order.id ?? "")) ?? order)),
+    page: Number(result.data.page) || page,
+    perPage: Number(result.data.per_page) || perPage,
+    total: Number(result.data.total) || 0,
+    totalPages: Math.max(1, Number(result.data.total_pages) || 1),
+  };
 }
 
 export async function getProfileOrderDetail(orderId: string): Promise<ProfileOrderDetail | null> {
   const accessToken = await getProfileAccessToken();
   if (!accessToken || !/^\d+$/.test(orderId)) return null;
 
-  const result = await wpRest<WpProfileOrder>(`/papelito/v1/profile/me/orders/${orderId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const result = await fetchProfileOrder(orderId, accessToken);
 
-  return result.ok ? mapDetail(result.data) : null;
+  return result ? mapDetail(result) : null;
 }

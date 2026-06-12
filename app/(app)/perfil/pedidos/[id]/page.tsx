@@ -43,6 +43,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   }
 
   const awaitingPayment = order.status === "awaiting_payment";
+  const expiredPayment = order.status === "expired";
   const paymentDeadline = awaitingPayment
     ? formatPaymentDeadline(getPaymentExpiresAt(order.payment), currentTimestamp())
     : null;
@@ -335,9 +336,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </div>
               </div>
 
-              {awaitingPayment ? (
+              {awaitingPayment || expiredPayment ? (
                 <div className="mt-4 border-t border-gray-100 pt-4">
-                  {paymentDeadline?.expired ? (
+                  {expiredPayment || paymentDeadline?.expired ? (
                     <p className="text-xs font-semibold text-red-600">
                       Pagamento expirado. Faca um novo pedido para comprar estes itens.
                     </p>
