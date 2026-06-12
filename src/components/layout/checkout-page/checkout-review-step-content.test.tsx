@@ -1,0 +1,135 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { useCartStore } from "@/features/cart";
+import { useCheckoutStore } from "@/features/checkout";
+import { server } from "../../../../test/msw/server";
+import { buildCartItem } from "../../../../test/factories/cart";
+import { renderWithProviders } from "../../../../test/utils/render-with-providers";
+import { CheckoutReviewStepContent } from "./checkout-review-step-content";
+
+const pushMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
+vi.mock("next/image", () => ({
+  default: () => null,
+}));
+
+function seedCheckoutState() {
+  useCartStore.setState({
+    items: [
+      buildCartItem({
+        id: "11883",
+        name: "Seda Slim Longa",
+        price: 90,
+        quantity: 1,
+      }),
+    ],
+    coupon: null,
+  });
+
+  useCheckoutStore.setState({
+    addressForm: {
+      zipCode: "01310-930",
+      street: "Rua das Flores",
+      number: "123",
+      complement: "",
+      neighborhood: "Centro",
+      city: "Sao Paulo",
+      state: "SP",
+    },
+    paymentMethod: "pix",
+    paymentForm: {
+      holderName: "",
+      installments: "",
+      cardTokenId: "",
+      cardLast4: "",
+    },
+    shippingQuote: {
+      quote: {
+        originCep: "01001000",
+        destinationCep: "01310930",
+        vendorId: 101,
+        options: [
+          {
+            service: "PAC",
+            code: "03298",
+            name: "PAC Contrato",
+            price: 8.9,
+            deliveryTime: 5,
+          },
+        ],
+      },
+      selectedOption: {
+        service: "PAC",
+        code: "03298",
+        name: "PAC Contrato",
+        price: 8.9,
+        deliveryTime: 5,
+      },
+    },
+  });
+}
+
+describe("CheckoutReviewStepContent", () => {
+  beforeEach(() => {
+    pushMock.mockReset();
+    seedCheckoutState();
+  });
+
+  it("keeps a loading state instead of showing local validation errors while redirecting to PIX", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json({
+          orderId: 11883,
+          orderNumber: "11883",
+          status: "pending",
+          payment: {
+            method: "pix",
+            state: "waiting_payment",
+          },
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />);
+
+    await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/checkout/pagamento/11883");
+    });
+    await waitFor(() => {
+      expect(useCheckoutStore.getState().addressForm.street).toBe("");
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Processando pagamento",
+    );
+    expect(
+      screen.queryByRole("button", { name: /finalizar pedido/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Selecione uma opcao de frete valida antes de finalizar.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Complete os dados de endereco e pagamento para finalizar o pedido.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Revise a cotacao de frete antes de concluir o pedido.",
+      ),
+    ).not.toBeInTheDocument();
+  });
+});

@@ -1,4 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -58,7 +59,7 @@ describe("CheckoutAddressStepContent", () => {
   });
 
   it("shows a compact loader while shipping options are loading", async () => {
-    let resolveQuote: (response: Response) => void = (_response: Response) => {
+    let resolveQuote: (response: Response) => void = () => {
       throw new Error("Shipping quote resolver was used before initialization.");
     };
 
@@ -108,7 +109,7 @@ describe("CheckoutAddressStepContent", () => {
   });
 
   it("removes the loader and shows an error when shipping quote fails", async () => {
-    let resolveQuote: (response: Response) => void = (_response: Response) => {
+    let resolveQuote: (response: Response) => void = () => {
       throw new Error("Shipping quote resolver was used before initialization.");
     };
 
@@ -149,5 +150,54 @@ describe("CheckoutAddressStepContent", () => {
     expect(
       screen.getByRole("button", { name: /proximo: pagamento/i }),
     ).toBeDisabled();
+  });
+
+  it("requires selecting PAC or SEDEX and updates the order summary with the selected freight", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              service: "PAC",
+              code: "03298",
+              name: "PAC Contrato",
+              price: 15.88,
+              delivery_time: 5,
+            },
+            {
+              service: "SEDEX",
+              code: "03220",
+              name: "SEDEX Contrato",
+              price: 22.3,
+              delivery_time: 2,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent initialDocument="52998224725" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("PAC Contrato")).toBeInTheDocument();
+      expect(screen.getByText("SEDEX Contrato")).toBeInTheDocument();
+    });
+
+    const advanceButton = screen.getByRole("button", { name: /proximo: pagamento/i });
+    expect(advanceButton).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: /PAC.*R\$ 15,88/i }));
+
+    expect(advanceButton).toBeEnabled();
+    expect(screen.getAllByText("R$ 15,88").length).toBeGreaterThan(0);
+    expect(screen.getByText("R$ 65,38")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /SEDEX.*R\$ 22,30/i }));
+
+    expect(screen.getAllByText("R$ 22,30").length).toBeGreaterThan(0);
+    expect(screen.getByText("R$ 71,80")).toBeInTheDocument();
   });
 });

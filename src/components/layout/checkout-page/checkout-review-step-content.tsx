@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { useCartStore } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
@@ -29,9 +30,11 @@ export function CheckoutReviewStepContent() {
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const [checkoutError, setCheckoutError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pending, startTransition] = useTransition();
+  const isProcessing = isSubmitting || pending;
 
-  if (items.length === 0) return <CheckoutEmptyCart />;
+  if (items.length === 0 && !isProcessing) return <CheckoutEmptyCart />;
 
   const isAddressValid =
     addressForm.zipCode.replace(/\D/g, "").length === 8 &&
@@ -54,7 +57,8 @@ export function CheckoutReviewStepContent() {
   const isShippingValid =
     Boolean(selectedShippingQuote) &&
     Boolean(currentShippingQuote) &&
-    currentShippingQuote?.destinationCep === addressForm.zipCode.replace(/\D/g, "");
+    currentShippingQuote?.destinationCep ===
+      addressForm.zipCode.replace(/\D/g, "");
   const placeOrderItems = items
     .map((item) => {
       const productId = Number.parseInt(item.id, 10);
@@ -73,9 +77,7 @@ export function CheckoutReviewStepContent() {
     .filter((item): item is NonNullable<typeof item> => item !== null);
   const hasInvalidCartItems = placeOrderItems.length !== items.length;
   const canSubmitOrder =
-    canFinishOrder &&
-    isShippingValid &&
-    !hasInvalidCartItems;
+    canFinishOrder && isShippingValid && !hasInvalidCartItems;
 
   const cartLines = items.map((item) => ({
     id: item.id,
@@ -89,54 +91,70 @@ export function CheckoutReviewStepContent() {
     : "Nao informado";
 
   function submitOrder() {
-    if (!selectedShippingQuote) {
+    if (!selectedShippingQuote || isProcessing) {
       return;
     }
 
     setCheckoutError("");
+    setIsSubmitting(true);
 
     startTransition(async () => {
-      const result = await placeOrder({
-        items: placeOrderItems,
-        address: addressForm,
-        shipping: {
-          selectedCode: selectedShippingQuote.code,
-          destinationCep: addressForm.zipCode.replace(/\D/g, ""),
-        },
-        payment: {
-          method: paymentMethod,
-          installments:
-            paymentMethod === "credit_card"
-              ? Number.parseInt(paymentForm.installments, 10) || 1
-              : undefined,
-          cardTokenId: paymentMethod === "credit_card" ? paymentForm.cardTokenId : undefined,
-          holderName: paymentMethod === "credit_card" ? paymentForm.holderName : undefined,
-          billingAddress: paymentMethod === "credit_card" ? addressForm : undefined,
-        },
-        couponCode,
-      });
+      try {
+        const result = await placeOrder({
+          items: placeOrderItems,
+          address: addressForm,
+          shipping: {
+            selectedCode: selectedShippingQuote.code,
+            destinationCep: addressForm.zipCode.replace(/\D/g, ""),
+          },
+          payment: {
+            method: paymentMethod,
+            installments:
+              paymentMethod === "credit_card"
+                ? Number.parseInt(paymentForm.installments, 10) || 1
+                : undefined,
+            cardTokenId:
+              paymentMethod === "credit_card"
+                ? paymentForm.cardTokenId
+                : undefined,
+            holderName:
+              paymentMethod === "credit_card"
+                ? paymentForm.holderName
+                : undefined,
+            billingAddress:
+              paymentMethod === "credit_card" ? addressForm : undefined,
+          },
+          couponCode,
+        });
 
-      if (!result.ok) {
-        setCheckoutError(result.error.message);
-        return;
-      }
+        if (!result.ok) {
+          setCheckoutError(result.error.message);
+          setIsSubmitting(false);
+          return;
+        }
 
-      const outcome = resolveCheckoutOutcome(result.result);
+        const outcome = resolveCheckoutOutcome(result.result);
 
-      if (outcome.kind === "error") {
-        setCheckoutError(outcome.message);
-        return;
-      }
+        if (outcome.kind === "error") {
+          setCheckoutError(outcome.message);
+          setIsSubmitting(false);
+          return;
+        }
 
-      if (outcome.kind === "confirmed") {
-        clearCart();
+        if (outcome.kind === "confirmed") {
+          clearCart();
+          resetCheckout();
+          router.push(`/checkout/sucesso/${outcome.orderId}`);
+          return;
+        }
+
         resetCheckout();
-        router.push(`/checkout/sucesso/${outcome.orderId}`);
+        router.push(`/checkout/pagamento/${outcome.orderId}`);
+      } catch {
+        setCheckoutError("Nao foi possivel concluir o pedido.");
+        setIsSubmitting(false);
         return;
       }
-
-      resetCheckout();
-      router.push(`/checkout/pagamento/${outcome.orderId}`);
     });
   }
 
@@ -155,131 +173,161 @@ export function CheckoutReviewStepContent() {
               Revisao do pedido
             </h2>
 
-            <section className="mt-6 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                  Endereco de entrega
-                </h3>
-                <Link
-                  className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
-                  href="/checkout"
-                >
-                  Editar
-                </Link>
-              </div>
+            {isProcessing ? (
+              <LogoSpinnerLoader
+                className="min-h-80"
+                label="Processando pagamento"
+                message="Aguarde enquanto preparamos a proxima etapa..."
+              />
+            ) : (
+              <>
+                <section className="mt-6 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                      Endereco de entrega
+                    </h3>
+                    <Link
+                      className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
+                      href="/checkout"
+                    >
+                      Editar
+                    </Link>
+                  </div>
 
-              <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
-                <p>
-                  {addressForm.street || "Rua nao informada"}, {addressForm.number || "s/n"}
-                </p>
-                {addressForm.complement ? <p>{addressForm.complement}</p> : null}
-                <p>
-                  {addressForm.neighborhood || "Bairro nao informado"} -{" "}
-                  {addressForm.city || "Cidade nao informada"} / {addressForm.state || "--"}
-                </p>
-                <p>CEP: {addressForm.zipCode || "Nao informado"}</p>
-              </div>
-            </section>
+                  <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
+                    <p>
+                      {addressForm.street || "Rua nao informada"},{" "}
+                      {addressForm.number || "s/n"}
+                    </p>
+                    {addressForm.complement ? (
+                      <p>{addressForm.complement}</p>
+                    ) : null}
+                    <p>
+                      {addressForm.neighborhood || "Bairro nao informado"} -{" "}
+                      {addressForm.city || "Cidade nao informada"} /{" "}
+                      {addressForm.state || "--"}
+                    </p>
+                    <p>CEP: {addressForm.zipCode || "Nao informado"}</p>
+                  </div>
+                </section>
 
-            <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                  Forma de pagamento
-                </h3>
-                <Link
-                  className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
-                  href="/checkout/pagamento"
-                >
-                  Editar
-                </Link>
-              </div>
+                <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                      Forma de pagamento
+                    </h3>
+                    <Link
+                      className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
+                      href="/checkout/pagamento"
+                    >
+                      Editar
+                    </Link>
+                  </div>
 
-              <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
-                <p>{getPaymentLabel(paymentMethod)}</p>
-                {paymentMethod === "credit_card" ? (
-                  <>
-                    <p>{maskedCard}</p>
-                    <p>{paymentForm.holderName || "Titular nao informado"}</p>
-                    <p>{paymentForm.installments || "Parcelamento nao informado"}</p>
-                  </>
-                ) : null}
-              </div>
-            </section>
+                  <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
+                    <p>{getPaymentLabel(paymentMethod)}</p>
+                    {paymentMethod === "credit_card" ? (
+                      <>
+                        <p>{maskedCard}</p>
+                        <p>
+                          {paymentForm.holderName || "Titular nao informado"}
+                        </p>
+                        <p>
+                          {paymentForm.installments ||
+                            "Parcelamento nao informado"}
+                        </p>
+                      </>
+                    ) : null}
+                  </div>
+                </section>
 
-            <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-              <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                Itens
-              </h3>
+                <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
+                  <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                    Itens
+                  </h3>
 
-              <ul className="mt-3 space-y-2">
-                {cartLines.map((line) => (
-                  <li className="flex items-center justify-between gap-3" key={line.id}>
-                    <span className="truncate text-sm tracking-[-0.1504px] text-text-secondary">
-                      {line.name} x{line.quantity}
-                    </span>
-                    <span className="shrink-0 text-sm font-medium text-brand-dark">
-                      {line.total}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                  <ul className="mt-3 space-y-2">
+                    {cartLines.map((line) => (
+                      <li
+                        className="flex items-center justify-between gap-3"
+                        key={line.id}
+                      >
+                        <span className="truncate text-sm tracking-[-0.1504px] text-text-secondary">
+                          {line.name} x{line.quantity}
+                        </span>
+                        <span className="shrink-0 text-sm font-medium text-brand-dark">
+                          {line.total}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
 
-            <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-              <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                Frete
-              </h3>
+                <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
+                  <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                    Frete
+                  </h3>
 
-              {selectedShippingQuote ? (
-                <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
-                  <p className="font-medium text-brand-dark">{selectedShippingQuote.service}</p>
-                  <p>{formatBRL(selectedShippingQuote.price)}</p>
-                  <p>
-                    {selectedShippingQuote.deliveryTime
-                      ? `${selectedShippingQuote.deliveryTime} dias uteis`
-                      : "Prazo sob consulta"}
+                  {selectedShippingQuote ? (
+                    <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
+                      <p className="font-medium text-brand-dark">
+                        {selectedShippingQuote.service}
+                      </p>
+                      <p>{formatBRL(selectedShippingQuote.price)}</p>
+                      <p>
+                        {selectedShippingQuote.deliveryTime
+                          ? `${selectedShippingQuote.deliveryTime} dias uteis`
+                          : "Prazo sob consulta"}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm tracking-[-0.1504px] text-[#B42318]">
+                      Selecione uma opcao de frete valida antes de finalizar.
+                    </p>
+                  )}
+                </section>
+
+                {!canFinishOrder ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                    Complete os dados de endereco e pagamento para finalizar o
+                    pedido.
                   </p>
-                </div>
-              ) : (
-                <p className="mt-3 text-sm tracking-[-0.1504px] text-[#B42318]">
-                  Selecione uma opcao de frete valida antes de finalizar.
-                </p>
-              )}
-            </section>
+                ) : null}
 
-            {!canFinishOrder ? (
-              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                Complete os dados de endereco e pagamento para finalizar o pedido.
-              </p>
-            ) : null}
+                {canFinishOrder && !isShippingValid ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                    Revise a cotacao de frete antes de concluir o pedido.
+                  </p>
+                ) : null}
 
-            {canFinishOrder && !isShippingValid ? (
-              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                Revise a cotacao de frete antes de concluir o pedido.
-              </p>
-            ) : null}
+                {hasInvalidCartItems ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                    Seu carrinho contem um item invalido para fechamento do
+                    pedido.
+                  </p>
+                ) : null}
 
-            {hasInvalidCartItems ? (
-              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                Seu carrinho contem um item invalido para fechamento do pedido.
-              </p>
-            ) : null}
+                {checkoutError ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
+                    {checkoutError}
+                  </p>
+                ) : null}
 
-            {checkoutError ? (
-              <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
-                {checkoutError}
-              </p>
-            ) : null}
-
-            <button
-              type="button"
-              className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canSubmitOrder || pending}
-              onClick={submitOrder}
-            >
-              {pending ? "Processando pagamento..." : "Finalizar pedido"}
-              <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
-            </button>
+                <button
+                  type="button"
+                  className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!canSubmitOrder}
+                  onClick={submitOrder}
+                >
+                  Finalizar pedido
+                  <ArrowRightIcon
+                    className="h-4.5 w-4.5"
+                    size={18}
+                    strokeWidth={1.8}
+                  />
+                </button>
+              </>
+            )}
           </div>
 
           <CheckoutOrderSummary />
