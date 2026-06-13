@@ -28,6 +28,7 @@ export type VendorOrderSummary = {
 export type VendorOrderDetail = VendorOrderSummary & {
   deliveryTimeDays: number;
   items: VendorOrderItem[];
+  paidAt: string;
   phone: string;
   shippingAddress: {
     address1: string;

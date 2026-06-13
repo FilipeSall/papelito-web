@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
 
-import { mapVendorOrderStatus, mapVendorOrderSummary } from "./vendor-order-mappers";
+import { isVendorOrderStatus, mapVendorOrderStatus, mapVendorOrderSummary } from "./vendor-order-mappers";
+
+describe("isVendorOrderStatus", () => {
+  it("accepts aguardando_pagamento so its filter is recognized (regression)", () => {
+    expect(isVendorOrderStatus("aguardando_pagamento")).toBe(true);
+  });
+
+  it("accepts every known vendor order status", () => {
+    for (const status of [
+      "aguardando_pagamento",
+      "aguardando_envio",
+      "em_separacao",
+      "enviado",
+      "entregue",
+      "cancelado",
+    ]) {
+      expect(isVendorOrderStatus(status)).toBe(true);
+    }
+  });
+
+  it("rejects unknown values and non-strings so they fall back to Todos", () => {
+    expect(isVendorOrderStatus("all")).toBe(false);
+    expect(isVendorOrderStatus(undefined)).toBe(false);
+    expect(isVendorOrderStatus("")).toBe(false);
+    expect(isVendorOrderStatus("processing")).toBe(false);
+  });
+});
 
 describe("mapVendorOrderStatus", () => {
   it("maps an order awaiting payment to aguardando_pagamento", () => {

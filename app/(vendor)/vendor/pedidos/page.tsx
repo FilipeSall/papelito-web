@@ -1,15 +1,9 @@
 import { VendorOrdersTable, VendorPageHeader } from "@/components/layout/vendor-panel";
-import { getVendorOrders, type VendorOrderStatus } from "@/features/vendor-orders/server";
+import { getVendorOrders, isVendorOrderStatus, type VendorOrderStatus } from "@/features/vendor-orders/server";
 import { firstParam } from "@/lib/search-params";
 
 function parseStatus(value: string | undefined): VendorOrderStatus | "all" {
-  return value === "aguardando_envio" ||
-    value === "em_separacao" ||
-    value === "enviado" ||
-    value === "entregue" ||
-    value === "cancelado"
-    ? value
-    : "all";
+  return isVendorOrderStatus(value) ? value : "all";
 }
 
 export default async function VendorOrdersPage({

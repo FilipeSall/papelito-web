@@ -1,11 +1,15 @@
+import type { ReactNode } from "react";
+
 import { Panel, StatusBadge } from "@/components/layout/operational-panel";
 
 export function VendorPageHeader({
+  action,
   description,
   eyebrow,
   signal,
   title,
 }: {
+  action?: ReactNode;
   description: string;
   eyebrow: string;
   signal?: string;
@@ -26,7 +30,7 @@ export function VendorPageHeader({
           </h2>
           <p className="mt-3 text-sm leading-6 text-brand-dark/68">{description}</p>
         </div>
-        {signal ? <StatusBadge label={signal} /> : null}
+        {action ?? (signal ? <StatusBadge label={signal} /> : null)}
       </div>
     </Panel>
   );

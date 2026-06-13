@@ -24,6 +24,9 @@ export function createEmptyProfileCustomer(): ProfileCustomer {
       city: "",
       cep: "",
     },
+    preferences: {
+      favoritePromotionEmailEnabled: false,
+    },
     billing: createEmptyProfileCustomerAddress(),
     shipping: createEmptyProfileCustomerAddress(),
   };

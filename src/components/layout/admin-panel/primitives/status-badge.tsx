@@ -1,13 +1,18 @@
+export type StatusBadgeTone = "success" | "warning" | "critical" | "default";
+
 export function StatusBadge({
   label,
+  tone: explicitTone,
   className: extraClassName,
 }: {
   label: string;
+  tone?: StatusBadgeTone;
   className?: string;
 }) {
   const normalized = label.toLowerCase();
   const tone =
-    /(concluido|processing|processando|approved|aprovado|paid|pago|live|stable|ready)/.test(
+    explicitTone ??
+    (/(concluido|processing|processando|approved|aprovado|paid|pago|live|stable|ready)/.test(
       normalized,
     )
       ? "success"
@@ -19,7 +24,7 @@ export function StatusBadge({
               normalized,
             )
           ? "warning"
-          : "default";
+          : "default");
 
   const toneClassName =
     tone === "success"

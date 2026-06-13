@@ -62,6 +62,9 @@ describe("revendedor-registration", () => {
         city: "Sao Paulo",
         cep: "01310930",
       },
+      preferences: {
+        favoritePromotionEmailEnabled: false,
+      },
       billing: {
         firstName: "Maria",
         lastName: "Silva",

@@ -1,4 +1,4 @@
-import { StatusBadge } from "@/components/layout/operational-panel";
+import { StatusBadge, type StatusBadgeTone } from "@/components/layout/operational-panel";
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 
 export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
@@ -10,6 +10,15 @@ export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
   entregue: "Entregue",
 };
 
+const vendorStatusTone: Record<VendorOrderStatus, StatusBadgeTone> = {
+  aguardando_pagamento: "warning",
+  aguardando_envio: "default",
+  cancelado: "critical",
+  em_separacao: "warning",
+  enviado: "default",
+  entregue: "success",
+};
+
 export function VendorOrderStatusBadge({ status }: { status: VendorOrderStatus }) {
-  return <StatusBadge label={vendorStatusLabel[status]} />;
+  return <StatusBadge label={vendorStatusLabel[status]} tone={vendorStatusTone[status]} />;
 }

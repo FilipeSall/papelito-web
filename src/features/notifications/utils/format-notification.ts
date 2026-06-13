@@ -1,3 +1,5 @@
+import { formatBRLIntl } from "@/lib/format-currency";
+
 import type { NotificationItem, NotificationPayload } from "../types/notification";
 
 export type FormattedNotification = {
@@ -64,11 +66,35 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     case "favorite_on_promo": {
       const productName = stringValue(payload, "product_name") || "Produto favorito";
       const promoLabel = stringValue(payload, "promo_label") || "promoção";
+      const discountPercent = numberValue(payload, "discount_percent");
+      const regularPrice = numberValue(payload, "regular_price");
+      const salePrice = numberValue(payload, "sale_price");
+      const promotionDetails: string[] = [];
+
+      if (Number.isFinite(discountPercent) && discountPercent > 0) {
+        promotionDetails.push(`${Math.round(discountPercent)}% de desconto`);
+      }
+
+      if (Number.isFinite(salePrice) && salePrice > 0) {
+        promotionDetails.push(`por ${formatBRLIntl(salePrice)}`);
+      }
+
+      if (
+        Number.isFinite(regularPrice) &&
+        regularPrice > 0 &&
+        Number.isFinite(salePrice) &&
+        salePrice > 0
+      ) {
+        promotionDetails.push(`de ${formatBRLIntl(regularPrice)}`);
+      }
+
+      const detailsSuffix =
+        promotionDetails.length > 0 ? ` (${promotionDetails.join(", ")})` : "";
 
       return {
         icon: "megaphone",
         title: "Favorito em promoção",
-        body: `${productName} entrou em ${promoLabel}.`,
+        body: `${productName} entrou em ${promoLabel}${detailsSuffix}.`,
         href: productHref(payload),
       };
     }
@@ -136,6 +162,37 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         body: "O cliente solicitou acompanhamento da Papelito nesta conversa.",
         href: supportHref(payload),
       };
+    case "new_purchase": {
+      const orderId = numberValue(payload, "order_id");
+      const orderNumber = stringValue(payload, "order_number") || (orderId > 0 ? String(orderId) : "");
+      const total = numberValue(payload, "total");
+      const orderLabel = orderNumber ? `Pedido #${orderNumber}` : "Novo pedido";
+      const totalLabel = Number.isFinite(total) && total > 0 ? ` no valor de ${formatBRLIntl(total)}` : "";
+
+      return {
+        icon: "package",
+        title: "Nova compra",
+        body: `${orderLabel}${totalLabel} aguardando separacao. Prepare o envio.`,
+        href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
+      };
+    }
+    case "vendor_processing_overdue": {
+      const orderId = numberValue(payload, "order_id");
+      const orderNumber = stringValue(payload, "order_number") || (orderId > 0 ? String(orderId) : "");
+      const daysOverdue = numberValue(payload, "days_overdue");
+      const orderLabel = orderNumber ? `Pedido #${orderNumber}` : "Um pedido";
+      const daysLabel =
+        Number.isFinite(daysOverdue) && daysOverdue >= 1
+          ? ` ha ${Math.round(daysOverdue)} dia(s)`
+          : "";
+
+      return {
+        icon: "package",
+        title: "Pedido atrasado",
+        body: `${orderLabel} passou do prazo de separacao${daysLabel}. Separe com urgencia.`,
+        href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
+      };
+    }
     default:
       return {
         icon: "megaphone",

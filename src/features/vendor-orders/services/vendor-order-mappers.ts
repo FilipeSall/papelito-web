@@ -14,6 +14,7 @@ export type WpVendorOrder = {
   items_count?: number;
   items_label?: string;
   order_number?: string;
+  paid_at?: string;
   phone?: string;
   shipping_address?: {
     address_1?: string;
@@ -47,10 +48,12 @@ const statuses = new Set<VendorOrderStatus>([
   "cancelado",
 ]);
 
+export function isVendorOrderStatus(value: unknown): value is VendorOrderStatus {
+  return typeof value === "string" && statuses.has(value as VendorOrderStatus);
+}
+
 export function mapVendorOrderStatus(value: unknown): VendorOrderStatus {
-  return typeof value === "string" && statuses.has(value as VendorOrderStatus)
-    ? (value as VendorOrderStatus)
-    : "aguardando_pagamento";
+  return isVendorOrderStatus(value) ? value : "aguardando_pagamento";
 }
 
 export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary {
@@ -70,6 +73,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
   return {
     ...mapVendorOrderSummary(order),
     deliveryTimeDays: Number(order.delivery_time_days) || 0,
+    paidAt: order.paid_at ?? "",
     items: (order.items ?? []).map((item) => ({
       itemId: Number(item.item_id) || 0,
       name: item.name ?? "Produto",

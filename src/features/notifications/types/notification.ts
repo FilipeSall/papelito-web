@@ -6,7 +6,9 @@ export type NotificationType =
   | "stock_zeroed"
   | "product_missing_weight"
   | "support_message"
-  | "support_escalated";
+  | "support_escalated"
+  | "new_purchase"
+  | "vendor_processing_overdue";
 
 export type NotificationPayload = Record<string, unknown>;
 

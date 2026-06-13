@@ -6,7 +6,8 @@ export type ProfileMetaDataKey =
   | "instagram"
   | "state"
   | "city"
-  | "cep";
+  | "cep"
+  | "papelito_favorite_promo_email_enabled";
 
 export type ProfileCustomerMeta = {
   storeName: string;
@@ -17,6 +18,10 @@ export type ProfileCustomerMeta = {
   state: string;
   city: string;
   cep: string;
+};
+
+export type ProfileCustomerPreferences = {
+  favoritePromotionEmailEnabled: boolean;
 };
 
 export type ProfileCustomerAddress = {
@@ -40,6 +45,7 @@ export type ProfileCustomer = {
   displayName: string;
   role: string;
   meta: ProfileCustomerMeta;
+  preferences: ProfileCustomerPreferences;
   billing: ProfileCustomerAddress;
   shipping: ProfileCustomerAddress;
 };

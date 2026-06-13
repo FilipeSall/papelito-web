@@ -6,6 +6,7 @@ import type {
   ProfileCustomer,
   ProfileCustomerAddress,
   ProfileCustomerMeta,
+  ProfileCustomerPreferences,
   ProfileMetaDataKey,
 } from "@/features/profile/types/profile-customer";
 import { createEmptyProfileCustomer } from "@/features/profile/utils/profile-customer-mappers";
@@ -19,6 +20,7 @@ const PROFILE_META_KEYS: ProfileMetaDataKey[] = [
   "state",
   "city",
   "cep",
+  "papelito_favorite_promo_email_enabled",
 ];
 
 const CUSTOMER_PROFILE_BASE_QUERY = `
@@ -99,7 +101,7 @@ const UPDATE_CUSTOMER_MUTATION = `
           country
           phone
         }
-        metaData(keysIn: ["store_name", "phone_number", "cnpj", "cpf", "instagram", "state", "city", "cep"]) {
+        metaData(keysIn: ["store_name", "phone_number", "cnpj", "cpf", "instagram", "state", "city", "cep", "papelito_favorite_promo_email_enabled"]) {
           key
           value
         }
@@ -236,6 +238,7 @@ function normalizeCustomer(customer: CustomerPayload): ProfileCustomer {
     displayName: customer.displayName ?? "",
     role: typeof customer.role === "string" ? customer.role.toLowerCase() : "customer",
     meta: normalizeMeta(customer.metaData),
+    preferences: normalizePreferences(customer.metaData),
     billing: normalizeAddress(customer.billing, empty.billing),
     shipping: normalizeAddress(customer.shipping, empty.shipping),
   };
@@ -282,6 +285,25 @@ function normalizeMeta(
     state: map.get("state") ?? "",
     city: map.get("city") ?? "",
     cep: map.get("cep") ?? "",
+  };
+}
+
+function normalizePreferences(
+  metaData: Array<{ key?: string | null; value?: unknown }> | null | undefined,
+): ProfileCustomerPreferences {
+  const map = new Map<string, string>();
+
+  for (const item of metaData ?? []) {
+    if (!item.key) {
+      continue;
+    }
+
+    map.set(item.key, normalizeMetaValue(item.value));
+  }
+
+  return {
+    favoritePromotionEmailEnabled:
+      map.get("papelito_favorite_promo_email_enabled") === "1",
   };
 }
 

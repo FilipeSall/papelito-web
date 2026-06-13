@@ -21,16 +21,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const body = (await request.json().catch(() => null)) as { status?: VendorOrderStatus } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { reason?: string; status?: VendorOrderStatus }
+    | null;
 
   if (!/^\d+$/.test(id) || !body?.status || !allowedStatuses.has(body.status)) {
     return NextResponse.json({ message: "Status invalido." }, { status: 400 });
   }
 
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+
+  if (body.status === "cancelado" && !reason) {
+    return NextResponse.json({ message: "Informe o motivo do cancelamento." }, { status: 400 });
+  }
+
   const result = await wpRest<unknown>(`/papelito/v1/vendor/me/orders/${id}/status`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${auth.accessToken}` },
-    json: { status: body.status },
+    json: reason ? { reason, status: body.status } : { status: body.status },
   });
 
   if (!result.ok) {

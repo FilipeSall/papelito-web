@@ -3,13 +3,20 @@ import { notFound } from "next/navigation";
 
 import { Panel } from "@/components/layout/operational-panel";
 import {
+  VendorContactCustomerButton,
   VendorOrderActions,
+  VendorOrderDeliveryCountdown,
   VendorOrderStatusBadge,
+  VendorOrderStatusStepper,
   VendorPageHeader,
 } from "@/components/layout/vendor-panel";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
 import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-orders";
 import { formatBRLIntl } from "@/lib/format-currency";
+
+function currentTimestamp() {
+  return Date.now();
+}
 
 function address(order: VendorOrderDetail) {
   const { shippingAddress } = order;
@@ -27,20 +34,39 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
 
   if (!order) notFound();
 
+  const now = currentTimestamp();
+
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
+        action={
+          <VendorOrderDeliveryCountdown
+            createdAt={order.createdAt}
+            deliveryTimeDays={order.deliveryTimeDays}
+            now={now}
+            paidAt={order.paidAt}
+            status={order.status}
+          />
+        }
         description={`Pedido #${order.orderNumber} atendido pela sua loja. Os dados de entrega abaixo sao disponibilizados para expedicao.`}
         eyebrow="Detalhe de pedido"
-        signal="operacional"
         title={`Pedido #${order.orderNumber}`}
       />
-      <Link className="inline-flex text-sm font-semibold text-brand-dark/66 hover:text-brand-dark" href="/vendor/pedidos">
+      <Link
+        className="inline-flex items-center gap-1 text-sm font-semibold text-brand-dark/66 transition-colors hover:text-brand-dark"
+        href="/vendor/pedidos"
+      >
         &larr; Voltar aos pedidos
       </Link>
+      <Panel className="p-5 md:p-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Rastreamento</p>
+        <div className="mt-5">
+          <VendorOrderStatusStepper status={order.status} />
+        </div>
+      </Panel>
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Panel className="p-5 md:p-6">
-          <div className="flex items-start justify-between gap-4 border-b border-brand-dark/10 pb-5">
+          <div className="flex flex-col gap-4 border-b border-brand-dark/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Atendimento</p>
               <p className="mt-2 text-xl font-semibold">{order.customerName}</p>
@@ -48,7 +74,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             </div>
             <VendorOrderStatusBadge status={order.status} />
           </div>
-          <div className="mt-5">
+          <div className="mt-5 rounded-xl bg-brand-dark/3 p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Endereco de entrega</p>
             <p className="mt-3 text-sm leading-6 text-brand-dark/74">{address(order)}</p>
             <p className="mt-3 text-sm text-brand-dark/62">
@@ -77,6 +103,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
           </div>
         </Panel>
       </div>
+      <VendorContactCustomerButton orderId={order.id} />
     </div>
   );
 }

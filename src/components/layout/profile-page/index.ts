@@ -20,6 +20,7 @@ export { AddAddressCard } from "./add-address-card";
 export { AddressList } from "./address-list";
 export { ProfileWishlist } from "./profile-wishlist";
 export { ProfileSettings } from "./profile-settings";
+export { FavoritePromotionEmailSettingsCard } from "./favorite-promotion-email-settings-card";
 export { ActiveVendorSection } from "./active-vendor-section";
 export { ProfileEmptyShoppingState } from "./profile-empty-shopping-state";
 export { OrderStatusBadge, type OrderStatus } from "./order-status-badge";
