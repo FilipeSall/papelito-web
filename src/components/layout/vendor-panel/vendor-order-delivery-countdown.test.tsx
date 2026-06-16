@@ -14,7 +14,6 @@ function compute(overrides: Partial<Parameters<typeof computeDeliveryCountdown>[
   return computeDeliveryCountdown({
     status: "aguardando_envio",
     paidAt: PAID,
-    createdAt: PAID,
     deliveryTimeDays: 4,
     now: paidTs,
     ...overrides,
@@ -58,12 +57,12 @@ describe("computeDeliveryCountdown", () => {
 
   it("hides when there is no delivery estimate or no start date", () => {
     expect(compute({ deliveryTimeDays: 0 }).kind).toBe("hidden");
-    expect(compute({ paidAt: "", createdAt: "" }).kind).toBe("hidden");
+    expect(compute({ paidAt: "" }).kind).toBe("pending_payment");
   });
 
-  it("falls back to createdAt when paidAt is missing", () => {
+  it("waits for paidAt instead of falling back to createdAt", () => {
     const result = compute({ paidAt: "", now: paidTs + 1 * DAY });
-    expect(result.kind).toBe("remaining");
+    expect(result.kind).toBe("pending_payment");
   });
 });
 
@@ -71,7 +70,6 @@ describe("VendorOrderDeliveryCountdown", () => {
   it("renders the remaining label", () => {
     render(
       <VendorOrderDeliveryCountdown
-        createdAt={PAID}
         deliveryTimeDays={4}
         now={paidTs + 1 * DAY}
         paidAt={PAID}
@@ -85,7 +83,6 @@ describe("VendorOrderDeliveryCountdown", () => {
   it("renders nothing for a cancelled order", () => {
     const { container } = render(
       <VendorOrderDeliveryCountdown
-        createdAt={PAID}
         deliveryTimeDays={4}
         now={paidTs}
         paidAt={PAID}
@@ -98,7 +95,6 @@ describe("VendorOrderDeliveryCountdown", () => {
   it("shows Concluido once the order is shipped", () => {
     render(
       <VendorOrderDeliveryCountdown
-        createdAt={PAID}
         deliveryTimeDays={4}
         now={paidTs + 99 * DAY}
         paidAt={PAID}
@@ -106,5 +102,18 @@ describe("VendorOrderDeliveryCountdown", () => {
       />,
     );
     expect(screen.getByText("Concluido")).toBeInTheDocument();
+  });
+
+  it("shows aguardando pagamento while payment is not confirmed", () => {
+    render(
+      <VendorOrderDeliveryCountdown
+        deliveryTimeDays={4}
+        now={paidTs}
+        paidAt=""
+        status="aguardando_pagamento"
+      />,
+    );
+    expect(screen.getByText("Aguardando pagamento")).toBeInTheDocument();
+    expect(screen.getByText("Pagamento")).toBeInTheDocument();
   });
 });

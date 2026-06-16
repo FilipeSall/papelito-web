@@ -1,10 +1,12 @@
 import { VendorOrdersTable, VendorPageHeader } from "@/components/layout/vendor-panel";
-import { getVendorOrders, isVendorOrderStatus, type VendorOrderStatus } from "@/features/vendor-orders/server";
+import { getVendorOrders } from "@/features/vendor-orders/server";
+import type { VendorOrdersFilters } from "@/features/vendor-orders/types/vendor-orders";
+import {
+  normalizeVendorOrdersStatus,
+  parseVendorOrdersPage,
+  parseVendorOrdersSearch,
+} from "@/features/vendor-orders/utils/vendor-order-filters";
 import { firstParam } from "@/lib/search-params";
-
-function parseStatus(value: string | undefined): VendorOrderStatus | "all" {
-  return isVendorOrderStatus(value) ? value : "all";
-}
 
 export default async function VendorOrdersPage({
   searchParams,
@@ -12,10 +14,12 @@ export default async function VendorOrdersPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const search = firstParam(params.search)?.trim() ?? "";
-  const page = Math.max(1, Number.parseInt(firstParam(params.page) ?? "", 10) || 1);
-  const status = parseStatus(firstParam(params.status));
-  const snapshot = await getVendorOrders({ page, search, status });
+  const initialFilters: VendorOrdersFilters = {
+    page: parseVendorOrdersPage(firstParam(params.page)),
+    search: parseVendorOrdersSearch(firstParam(params.search)),
+    status: normalizeVendorOrdersStatus(firstParam(params.status)),
+  };
+  const snapshot = await getVendorOrders(initialFilters);
 
   return (
     <div className="space-y-4 md:space-y-5">
@@ -25,7 +29,7 @@ export default async function VendorOrdersPage({
         signal="pedidos"
         title="Pedidos"
       />
-      <VendorOrdersTable search={search} snapshot={snapshot} status={status} />
+      <VendorOrdersTable initialFilters={initialFilters} initialSnapshot={snapshot} />
     </div>
   );
 }

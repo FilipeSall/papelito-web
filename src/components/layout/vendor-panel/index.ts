@@ -1,5 +1,4 @@
 export { VendorContactCustomerButton } from "./vendor-contact-customer-button";
-export { VendorEmptyState } from "./vendor-empty-state";
 export { VendorOrderActions } from "./vendor-order-actions";
 export { VendorOrderDeliveryCountdown } from "./vendor-order-delivery-countdown";
 export { VendorOrderStatusBadge, vendorStatusLabel } from "./vendor-order-status-badge";

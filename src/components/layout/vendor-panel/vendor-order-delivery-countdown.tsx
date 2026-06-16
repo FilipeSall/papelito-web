@@ -7,6 +7,7 @@ type CountdownTone = "neutral" | "warning" | "critical";
 
 export type DeliveryCountdown =
   | { kind: "hidden" }
+  | { kind: "pending_payment" }
   | { kind: "done" }
   | { kind: "overdue"; label: string }
   | { kind: "remaining"; label: string; tone: CountdownTone };
@@ -28,13 +29,11 @@ function formatRemaining(ms: number): string {
 export function computeDeliveryCountdown({
   status,
   paidAt,
-  createdAt,
   deliveryTimeDays,
   now,
 }: {
   status: VendorOrderStatus;
   paidAt: string;
-  createdAt: string;
   deliveryTimeDays: number;
   now: number;
 }): DeliveryCountdown {
@@ -42,9 +41,10 @@ export function computeDeliveryCountdown({
   // A partir do envio a responsabilidade passa para a transportadora: o vendor
   // cumpriu o prazo dele, entao o contador para de correr e mostra "Concluido".
   if (status === "enviado" || status === "entregue") return { kind: "done" };
+  if (!Number.isFinite(parseTimestamp(paidAt))) return { kind: "pending_payment" };
   if (deliveryTimeDays <= 0) return { kind: "hidden" };
 
-  const start = parseTimestamp(paidAt) || parseTimestamp(createdAt);
+  const start = parseTimestamp(paidAt);
   if (!Number.isFinite(start)) return { kind: "hidden" };
 
   const totalMs = deliveryTimeDays * DAY_MS;
@@ -74,34 +74,38 @@ const toneClassName: Record<CountdownTone, string> = {
 export function VendorOrderDeliveryCountdown({
   status,
   paidAt,
-  createdAt,
   deliveryTimeDays,
   now,
 }: {
   status: VendorOrderStatus;
   paidAt: string;
-  createdAt: string;
   deliveryTimeDays: number;
   now: number;
 }) {
-  const countdown = computeDeliveryCountdown({ status, paidAt, createdAt, deliveryTimeDays, now });
+  const countdown = computeDeliveryCountdown({ status, paidAt, deliveryTimeDays, now });
 
   if (countdown.kind === "hidden") return null;
 
   const valueClassName =
-    countdown.kind === "done"
+    countdown.kind === "pending_payment"
+      ? "text-brand-dark/62"
+      : countdown.kind === "done"
       ? "text-emerald-600"
       : countdown.kind === "overdue"
         ? "text-red-600"
         : toneClassName[countdown.tone];
 
-  const value = countdown.kind === "done" ? "Concluido" : countdown.label;
+  const title = countdown.kind === "pending_payment" ? "Pagamento" : "Tempo para entregar";
+  const value =
+    countdown.kind === "pending_payment"
+      ? "Aguardando pagamento"
+      : countdown.kind === "done"
+        ? "Concluido"
+        : countdown.label;
 
   return (
     <div className="text-right">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">
-        Tempo para entregar
-      </p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">{title}</p>
       <p className={`mt-1 text-lg font-black tabular-nums ${valueClassName}`}>{value}</p>
     </div>
   );

@@ -25,6 +25,12 @@ export type VendorOrderSummary = {
   total: number;
 };
 
+export type VendorOrdersFilters = {
+  page: number;
+  search: string;
+  status: VendorOrderStatus | "all";
+};
+
 export type VendorOrderDetail = VendorOrderSummary & {
   deliveryTimeDays: number;
   items: VendorOrderItem[];

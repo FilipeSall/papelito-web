@@ -41,7 +41,6 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
       <VendorPageHeader
         action={
           <VendorOrderDeliveryCountdown
-            createdAt={order.createdAt}
             deliveryTimeDays={order.deliveryTimeDays}
             now={now}
             paidAt={order.paidAt}
