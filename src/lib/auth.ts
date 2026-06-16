@@ -60,6 +60,15 @@ type WpRefreshGraphqlResponse = {
   errors?: Array<{ message?: string }>;
 };
 
+type RefreshAuthTokenError =
+  | "invalid_refresh_token"
+  | "missing_refresh_token"
+  | "token_refresh_failed";
+
+type RefreshAuthTokenResult =
+  | { ok: true; accessToken: string }
+  | { ok: false; error: RefreshAuthTokenError };
+
 type WpCustomerRoleResponse = {
   customer?: {
     role?: string | null;
@@ -148,7 +157,34 @@ async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | 
   return result.data;
 }
 
-async function wpRefreshAuthToken(refreshToken: string): Promise<string | null> {
+function clearInvalidAuthState(
+  token: {
+    accessToken?: string;
+    accessTokenExpires?: number;
+    refreshToken?: string;
+    authError?: string;
+    role?: string;
+  },
+  authError: RefreshAuthTokenError,
+) {
+  delete token.accessToken;
+  delete token.accessTokenExpires;
+  delete token.refreshToken;
+  delete token.role;
+  token.authError = authError;
+}
+
+function getRefreshErrorCode(errors: Array<{ message?: string }> | undefined): RefreshAuthTokenError {
+  const message = errors?.[0]?.message?.toLowerCase() ?? "";
+
+  if (message.includes("refresh token") && message.includes("invalid")) {
+    return "invalid_refresh_token";
+  }
+
+  return "token_refresh_failed";
+}
+
+async function wpRefreshAuthToken(refreshToken: string): Promise<RefreshAuthTokenResult> {
   try {
     const response = await fetch(getWpGraphqlEndpoint(), {
       method: "POST",
@@ -171,20 +207,25 @@ async function wpRefreshAuthToken(refreshToken: string): Promise<string | null> 
         json = JSON.parse(text) as WpRefreshGraphqlResponse;
       } catch {
         console.error("[auth] JWT refresh returned non-JSON response", response.status);
-        return null;
+        return { ok: false, error: "token_refresh_failed" };
       }
     }
 
-    if (!response.ok || json?.errors?.length) {
-      console.error("[auth] JWT refresh failed", response.status, json?.errors);
-      return null;
+    if (!response.ok || json?.errors?.length || !json?.data?.refreshJwtAuthToken?.authToken) {
+      const errorCode = getRefreshErrorCode(json?.errors);
+      const logger = errorCode === "invalid_refresh_token" ? console.warn : console.error;
+      logger("[auth] JWT refresh failed", response.status, json?.errors);
+      return { ok: false, error: errorCode };
     }
 
-    return json?.data?.refreshJwtAuthToken?.authToken ?? null;
+    return {
+      ok: true,
+      accessToken: json.data.refreshJwtAuthToken.authToken,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[auth] JWT refresh request failed", message);
-    return null;
+    return { ok: false, error: "token_refresh_failed" };
   }
 }
 
@@ -365,6 +406,10 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as { role?: string }).role;
       }
 
+      if (typeof token.authError === "string" && !token.accessToken) {
+        return token;
+      }
+
       if (!token.role && typeof token.accessToken === "string") {
         token.role = await wpFetchAuthenticatedRole(token.accessToken);
       }
@@ -376,29 +421,24 @@ export const authOptions: NextAuthOptions = {
 
       if (!accessTokenExpires || Date.now() < accessTokenExpires - 30_000) {
         token.accessTokenExpires = accessTokenExpires;
-        delete token.authError;
         return token;
       }
 
       if (typeof token.refreshToken !== "string") {
-        delete token.accessToken;
-        delete token.accessTokenExpires;
-        token.authError = "missing_refresh_token";
+        clearInvalidAuthState(token, "missing_refresh_token");
         return token;
       }
 
-      const refreshedAccessToken = await wpRefreshAuthToken(token.refreshToken);
+      const refreshedToken = await wpRefreshAuthToken(token.refreshToken);
 
-      if (!refreshedAccessToken) {
-        delete token.accessToken;
-        delete token.accessTokenExpires;
-        token.authError = "token_refresh_failed";
+      if (!refreshedToken.ok) {
+        clearInvalidAuthState(token, refreshedToken.error);
         return token;
       }
 
-      token.accessToken = refreshedAccessToken;
-      token.accessTokenExpires = getAccessTokenExpiresAt(refreshedAccessToken);
-      token.role = (await wpFetchAuthenticatedRole(refreshedAccessToken)) ?? token.role;
+      token.accessToken = refreshedToken.accessToken;
+      token.accessTokenExpires = getAccessTokenExpiresAt(refreshedToken.accessToken);
+      token.role = (await wpFetchAuthenticatedRole(refreshedToken.accessToken)) ?? token.role;
       delete token.authError;
 
       return token;

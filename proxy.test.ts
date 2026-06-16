@@ -83,6 +83,16 @@ describe("proxy", () => {
       throw new Error("withAuth options were not captured.");
     }
     expect(wrappedOptions.callbacks.authorized({ token: null })).toBe(false);
-    expect(wrappedOptions.callbacks.authorized({ token: { sub: "42" } })).toBe(true);
+    expect(
+      wrappedOptions.callbacks.authorized({
+        token: { sub: "42", accessToken: "access-token" },
+      }),
+    ).toBe(true);
+    expect(wrappedOptions.callbacks.authorized({ token: { sub: "42" } })).toBe(false);
+    expect(
+      wrappedOptions.callbacks.authorized({
+        token: { sub: "42", accessToken: "access-token", authError: "invalid_refresh_token" },
+      }),
+    ).toBe(false);
   });
 });

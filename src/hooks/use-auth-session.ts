@@ -10,21 +10,24 @@ function normalizeRole(role: unknown) {
 export function useAuthSession() {
   const { data: session, status } = useSession();
   const role = useMemo(() => normalizeRole(session?.role), [session?.role]);
+  const authError = typeof session?.authError === "string" ? session.authError : undefined;
   const hasAccessToken =
     status === "authenticated" &&
     typeof session?.accessToken === "string" &&
     session.accessToken.length > 0 &&
-    typeof session?.authError !== "string";
+    authError === undefined;
 
   return {
     session,
     status,
     role,
-    isAuthenticated: status === "authenticated",
+    authError,
+    hasSession: status === "authenticated",
+    isAuthenticated: hasAccessToken,
     hasAccessToken,
     isApiAuthenticated: hasAccessToken,
     isLoading: status === "loading",
-    isRoleLoading: status === "authenticated" && role === undefined,
+    isRoleLoading: hasAccessToken && role === undefined,
     requiresReauth: status === "authenticated" && !hasAccessToken,
     isAdministrator: role === "administrator",
     isSeller: role === "seller",

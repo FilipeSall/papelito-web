@@ -18,7 +18,7 @@ export default async function EscolherVendorPage({ params }: EscolherVendorPageP
   const { id } = await params;
 
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  if (!session?.user || !session.accessToken) {
     redirect(`/entrar?callbackUrl=/produtos/${id}/escolher-vendor`);
   }
 

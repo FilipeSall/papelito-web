@@ -13,6 +13,17 @@ function isSellerBlockedPath(pathname: string) {
   return pathname === "/carrinho" || pathname === "/checkout" || pathname.startsWith("/checkout/");
 }
 
+function hasAuthenticatedAccessToken(token: {
+  accessToken?: unknown;
+  authError?: unknown;
+} | null) {
+  return (
+    typeof token?.accessToken === "string" &&
+    token.accessToken.length > 0 &&
+    typeof token.authError !== "string"
+  );
+}
+
 export default withAuth(
   function proxy(request) {
     const role = normalizeRole(request.nextauth.token?.role);
@@ -44,7 +55,7 @@ export default withAuth(
       signIn: "/entrar",
     },
     callbacks: {
-      authorized: ({ token }) => Boolean(token),
+      authorized: ({ token }) => hasAuthenticatedAccessToken(token),
     },
   },
 );

@@ -21,6 +21,7 @@ describe("useAuthSession", () => {
 
     expect(result.current.role).toBe("customer");
     expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.hasSession).toBe(true);
     expect(result.current.hasAccessToken).toBe(true);
     expect(result.current.isApiAuthenticated).toBe(true);
   });
@@ -33,8 +34,22 @@ describe("useAuthSession", () => {
 
     const { result } = renderHook(() => useAuthSession());
 
+    expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.requiresReauth).toBe(true);
     expect(result.current.isApiAuthenticated).toBe(false);
+  });
+
+  it("treats auth errors as an unauthenticated API session", () => {
+    useSessionMock.mockReturnValue({
+      data: buildSession({ authError: "invalid_refresh_token" }),
+      status: "authenticated",
+    });
+
+    const { result } = renderHook(() => useAuthSession());
+
+    expect(result.current.authError).toBe("invalid_refresh_token");
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.requiresReauth).toBe(true);
   });
 
   it("identifies seller and administrator roles", () => {

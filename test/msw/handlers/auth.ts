@@ -45,12 +45,12 @@ export const authHandlers = [
 
     if (body.query?.includes("mutation Refresh")) {
       if (body.variables?.r === "refresh-invalido") {
-        return HttpResponse.json(
-          {
-            errors: [{ message: "Refresh token invalido." }],
+        return HttpResponse.json({
+          errors: [{ message: "The provided refresh token is invalid" }],
+          data: {
+            refreshJwtAuthToken: null,
           },
-          { status: 401 },
-        );
+        });
       }
 
       return HttpResponse.json({

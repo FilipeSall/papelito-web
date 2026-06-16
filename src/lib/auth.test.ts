@@ -71,6 +71,26 @@ describe("authOptions callbacks", () => {
     expect(result.authError).toBe("missing_refresh_token");
   });
 
+  it("clears token state and preserves the auth error when refresh token is invalid", async () => {
+    const result = await runJwtCallback({
+      accessToken: makeJwt(Math.floor(Date.now() / 1000) - 10),
+      accessTokenExpires: Date.now() - 1_000,
+      refreshToken: "refresh-invalido",
+      role: "customer",
+    });
+
+    expect(result.accessToken).toBeUndefined();
+    expect(result.accessTokenExpires).toBeUndefined();
+    expect(result.refreshToken).toBeUndefined();
+    expect(result.role).toBeUndefined();
+    expect(result.authError).toBe("invalid_refresh_token");
+
+    const secondPass = await runJwtCallback(result);
+
+    expect(secondPass.authError).toBe("invalid_refresh_token");
+    expect(secondPass.accessToken).toBeUndefined();
+  });
+
   it("maps jwt values into the session payload", async () => {
     if (!authOptions.callbacks?.session) {
       throw new Error("Session callback is not configured.");
@@ -86,7 +106,7 @@ describe("authOptions callbacks", () => {
         accessToken: "token",
         accessTokenExpires: 123,
         refreshToken: "refresh",
-        authError: "token_refresh_failed",
+        authError: "invalid_refresh_token",
         profileComplete: false,
         role: "seller",
       },
@@ -100,7 +120,7 @@ describe("authOptions callbacks", () => {
       accessToken: "token",
       accessTokenExpires: 123,
       refreshToken: "refresh",
-      authError: "token_refresh_failed",
+      authError: "invalid_refresh_token",
       profileComplete: false,
       role: "seller",
     });

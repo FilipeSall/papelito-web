@@ -31,7 +31,7 @@ function currentTimestamp() {
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || !session.accessToken) {
     redirect("/entrar");
   }
 
