@@ -4,7 +4,6 @@ import {
   buildAdminSalesFilterQuery,
   type parseAdminSalesFilters,
 } from "@/lib/server/admin-sales-filters";
-import { VendorIntervalSelect } from "./vendor-interval-select";
 
 export function VendorPeriodFilters({
   basePath,
@@ -14,10 +13,10 @@ export function VendorPeriodFilters({
   filters: ReturnType<typeof parseAdminSalesFilters>;
 }) {
   const presets = [
-    { label: "7 dias", preset: "7d" as const, interval: "day" as const },
-    { label: "30 dias", preset: "30d" as const, interval: "day" as const },
-    { label: "Mes atual", preset: "month" as const, interval: "week" as const },
-    { label: "1 ano", preset: "1y" as const, interval: "month" as const },
+    { label: "7 dias", preset: "7d" as const },
+    { label: "30 dias", preset: "30d" as const },
+    { label: "Mes atual", preset: "month" as const },
+    { label: "1 ano", preset: "1y" as const },
   ];
 
   return (
@@ -32,7 +31,6 @@ export function VendorPeriodFilters({
                   : "border-brand-dark/18 bg-white hover:bg-[#f7f2e7]"
               }`}
               href={`${basePath}?${buildAdminSalesFilterQuery(filters, {
-                interval: item.interval,
                 page: 1,
                 preset: item.preset,
               })}`}
@@ -56,7 +54,9 @@ export function VendorPeriodFilters({
             name="to"
             type="date"
           />
-          <VendorIntervalSelect defaultValue={filters.interval} />
+          <span className="inline-flex min-h-9 items-center rounded-[8px] border border-brand-dark/18 bg-[#f7f2e7] px-3 text-sm font-semibold text-brand-dark/72">
+            granularidade: {filters.interval === "day" ? "dia" : "mes"}
+          </span>
           <button className="min-h-9 rounded-[8px] bg-brand-dark px-5 text-sm font-semibold text-brand-yellow">
             Aplicar
           </button>

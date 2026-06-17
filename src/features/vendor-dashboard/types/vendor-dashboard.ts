@@ -1,7 +1,6 @@
-export type VendorRevenuePoint = {
-  label: string;
-  value: number;
-};
+import type { SalesSeriesInterval, SalesSeriesPoint } from "@/lib/sales-series";
+
+export type VendorRevenuePoint = SalesSeriesPoint;
 
 export type VendorTopProduct = {
   productId: number;
@@ -18,7 +17,7 @@ export type VendorDashboardSnapshot = {
   pendingOrders: number;
   period: {
     from: string;
-    interval: "day" | "week" | "month";
+    interval: SalesSeriesInterval;
     to: string;
   };
   revenueSeries: VendorRevenuePoint[];

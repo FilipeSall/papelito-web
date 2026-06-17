@@ -3,7 +3,6 @@ import {
   type parseAdminSalesFilters,
 } from "@/lib/server/admin-sales-filters";
 
-import { AdminSalesGranularitySelect } from "../../admin-sales-granularity-select";
 import { CardNotification } from "../../primitives";
 import { SalesPresetLink } from "./sales-preset-link";
 
@@ -17,12 +16,11 @@ export function SalesFiltersPanel({
   const presetLinks: Array<{
     label: string;
     preset: "7d" | "30d" | "month" | "1y";
-    interval?: "day" | "week" | "month";
   }> = [
-    { label: "7 dias", preset: "7d", interval: "day" },
-    { label: "30 dias", preset: "30d", interval: "day" },
-    { label: "Mes atual", preset: "month", interval: "week" },
-    { label: "1 ano", preset: "1y", interval: "month" },
+    { label: "7 dias", preset: "7d" },
+    { label: "30 dias", preset: "30d" },
+    { label: "Mes atual", preset: "month" },
+    { label: "1 ano", preset: "1y" },
   ];
 
   return (
@@ -53,7 +51,6 @@ export function SalesFiltersPanel({
                 href={`/admin/sales?${buildAdminSalesFilterQuery(filters, {
                   page: 1,
                   preset: item.preset,
-                  ...(item.interval ? { interval: item.interval } : {}),
                 })}`}
                 label={item.label}
               />
@@ -84,7 +81,9 @@ export function SalesFiltersPanel({
                 type="date"
               />
             </label>
-            <AdminSalesGranularitySelect defaultValue={filters.interval} />
+            <span className="inline-flex min-h-9 items-center rounded-[8px] border border-[#231f20]/18 bg-[#f7f2e7] px-3 text-sm font-semibold text-[#231f20]/72">
+              granularidade: {filters.interval === "day" ? "dia" : "mes"}
+            </span>
             <button className="inline-flex min-h-9 items-center justify-center rounded-[8px] border border-[#231f20] bg-[#231f20] px-5 text-sm font-semibold text-[#ffe500] transition hover:bg-[#3a3536] md:ml-auto">
               aplicar filtro
             </button>

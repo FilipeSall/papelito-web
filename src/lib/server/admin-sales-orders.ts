@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildSalesSeriesPoints } from "@/lib/sales-series";
 import type { AdminSalesFilters } from "@/lib/server/admin-sales-filters";
 import { wpRest } from "@/lib/server/wp-rest";
 
@@ -136,16 +137,6 @@ function normalizeStatus(status: string | null | undefined) {
   return status?.trim().toLowerCase() || "unknown";
 }
 
-function formatSeriesLabel(key: string, interval: AdminSalesFilters["interval"]) {
-  if (interval === "month") {
-    const [year, month] = key.split("-");
-    return year && month ? `${month}/${year}` : key;
-  }
-
-  const [year, month, day] = key.split("-");
-  return year && month && day ? `${day}/${month}` : key;
-}
-
 function getOrderGroupKey(value: string | null | undefined, interval: AdminSalesFilters["interval"]) {
   const datePart = value?.slice(0, 10);
 
@@ -157,27 +148,19 @@ function getOrderGroupKey(value: string | null | undefined, interval: AdminSales
     return datePart.slice(0, 7);
   }
 
-  if (interval === "week") {
-    const date = new Date(`${datePart}T12:00:00-03:00`);
-    const dayOfWeek = date.getUTCDay();
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    date.setUTCDate(date.getUTCDate() + diffToMonday);
-    return date.toISOString().slice(0, 10);
-  }
-
   return datePart;
 }
 
 function sortSeries(
   entries: Map<string, number>,
-  interval: AdminSalesFilters["interval"],
-): Array<{ label: string; value: number }> {
-  return Array.from(entries.entries())
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => ({
-      label: formatSeriesLabel(key, interval),
-      value,
-    }));
+  filters: AdminSalesFilters,
+) {
+  return buildSalesSeriesPoints({
+    from: filters.from,
+    to: filters.to,
+    interval: filters.interval,
+    valuesByKey: entries,
+  });
 }
 
 async function fetchOrdersPage(
@@ -438,11 +421,11 @@ export async function getAdminSalesOrdersAggregate(
         : [],
     netRevenue,
     orderStatusSeries,
-    orderVolumeSeries: sortSeries(orderVolumeByInterval, filters.interval),
+    orderVolumeSeries: sortSeries(orderVolumeByInterval, filters),
     orders: allOrders.length,
     pagesFetched,
     refundsTotal,
-    revenueSeries: sortSeries(revenueByInterval, filters.interval),
+    revenueSeries: sortSeries(revenueByInterval, filters),
     shippingTotal,
     taxesTotal,
     totalOrdersAvailable: firstPage.totalOrders,

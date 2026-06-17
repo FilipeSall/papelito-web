@@ -111,7 +111,7 @@ export function SalesLineChart({
             const hitWidth = Math.max(step, 28);
 
             return (
-              <g key={`${point.label}-${point.value}`} className="group">
+              <g key={`${point.key ?? point.label}-${point.value}`} className="group">
                 <rect
                   fill="transparent"
                   height={plotHeight + 12}
@@ -119,6 +119,7 @@ export function SalesLineChart({
                   x={point.x - hitWidth / 2}
                   y={paddingTop - 6}
                 />
+                <title>{`${point.tooltipLabel ?? point.label}: ${formatCompactCurrency(point.value)}`}</title>
                 {showCircles ? (
                   <circle
                     className="animate-admin-point-pop"
@@ -136,11 +137,24 @@ export function SalesLineChart({
                   fill="#231f20"
                   fillOpacity="0.88"
                   fontFamily="var(--font-admin-mono)"
+                  fontSize="10"
+                  fontWeight="700"
+                  textAnchor="middle"
+                  x={point.x}
+                  y={point.y - 24}
+                >
+                  {point.tooltipLabel ?? point.label}
+                </text>
+                <text
+                  className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+                  fill="#231f20"
+                  fillOpacity="0.88"
+                  fontFamily="var(--font-admin-mono)"
                   fontSize="11"
                   fontWeight="700"
                   textAnchor="middle"
                   x={point.x}
-                  y={point.y - 12}
+                  y={point.y - 10}
                 >
                   {formatCompactCurrency(point.value)}
                 </text>

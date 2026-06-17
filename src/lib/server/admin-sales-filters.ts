@@ -1,12 +1,14 @@
 import "server-only";
 
+import { resolveSalesInterval, type SalesSeriesInterval } from "@/lib/sales-series";
+
 export type AdminSalesPageSearchParams = Record<string, string | string[] | undefined>;
 
 export type AdminSalesFilters = {
   afterIso: string;
   beforeIso: string;
   from: string;
-  interval: "day" | "week" | "month";
+  interval: SalesSeriesInterval;
   page: number;
   periodLabel: string;
   preset: "7d" | "30d" | "month" | "1y" | "custom";
@@ -73,14 +75,6 @@ function startOfMonth(baseDate: string) {
 function parsePositiveInt(value: string | undefined, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function normalizeInterval(value: string | undefined): AdminSalesFilters["interval"] {
-  if (value === "week" || value === "month") {
-    return value;
-  }
-
-  return "day";
 }
 
 function normalizePreset(value: string | undefined, hasCustomDates: boolean): AdminSalesFilters["preset"] {
@@ -160,7 +154,11 @@ export function parseAdminSalesFilters(
     preset: effectivePreset,
     from: normalizedFrom,
     to: normalizedTo,
-    interval: normalizeInterval(firstString(searchParams.interval)),
+    interval: resolveSalesInterval({
+      from: normalizedFrom,
+      to: normalizedTo,
+      preset: effectivePreset,
+    }),
     page: parsePositiveInt(firstString(searchParams.page), 1),
     perPage: DEFAULT_PER_PAGE,
     afterIso: `${normalizedFrom}T00:00:00`,
@@ -171,13 +169,12 @@ export function parseAdminSalesFilters(
 
 export function buildAdminSalesFilterQuery(
   filters: AdminSalesFilters,
-  overrides: Partial<Pick<AdminSalesFilters, "from" | "interval" | "page" | "preset" | "to">> = {},
+  overrides: Partial<Pick<AdminSalesFilters, "from" | "page" | "preset" | "to">> = {},
 ) {
   const params = new URLSearchParams();
   const preset = overrides.preset ?? filters.preset;
   const from = overrides.from ?? filters.from;
   const to = overrides.to ?? filters.to;
-  const interval = overrides.interval ?? filters.interval;
   const page = overrides.page ?? filters.page;
 
   if (preset && preset !== "custom") {
@@ -186,8 +183,6 @@ export function buildAdminSalesFilterQuery(
     params.set("from", from);
     params.set("to", to);
   }
-
-  params.set("interval", interval);
 
   if (page > 1) {
     params.set("page", String(page));

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildSalesSeriesPoints, type SalesSeriesPoint } from "@/lib/sales-series";
 import type { AdminSalesFilters } from "@/lib/server/admin-sales-filters";
 import { getAdminSalesOrdersAggregate } from "@/lib/server/admin-sales-orders";
 import { getAdminSalesPaymentMix } from "@/lib/server/admin-sales-payment-mix";
@@ -30,10 +31,7 @@ type WcSalesReportRow = {
   totals_grouped_by?: unknown;
 };
 
-export type AdminAnalyticsSeriesPoint = {
-  label: string;
-  value: number;
-};
+export type AdminAnalyticsSeriesPoint = SalesSeriesPoint;
 
 export type AdminSalesLeaderboardItem = {
   label: string;
@@ -127,28 +125,10 @@ function firstNumericValue(record: UnknownRecord | null, keys: string[]) {
   return null;
 }
 
-function formatIntervalLabel(value: unknown, index: number) {
-  if (typeof value !== "string" || !value.trim()) {
-    return `p${index + 1}`;
-  }
-
-  const raw = value.trim();
-  const date = new Date(raw);
-
-  if (Number.isNaN(date.getTime())) {
-    return raw.slice(0, 10);
-  }
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
-}
-
 function mapStatsIntervals(
   payload: WcStatsResponse | null,
   valueKeys: string[],
-  maxPoints = 10,
+  filters: AdminSalesFilters,
 ): AdminAnalyticsSeriesPoint[] {
   const intervals = payload?.intervals;
 
@@ -156,25 +136,27 @@ function mapStatsIntervals(
     return [];
   }
 
-  const normalized = intervals
-    .map((entry, index) => {
-      const intervalValue =
-        firstNumericValue(asRecord(entry.subtotals), valueKeys) ??
-        firstNumericValue(asRecord(entry), valueKeys) ??
-        0;
+  const valuesByKey = new Map<string, number>();
 
-      return {
-        label: formatIntervalLabel(entry.interval, index),
-        value: Math.max(0, intervalValue),
-      };
-    })
-    .filter((item) => item.value > 0);
+  for (const entry of intervals) {
+    if (typeof entry.interval !== "string" || !entry.interval.trim()) {
+      continue;
+    }
 
-  if (normalized.length <= maxPoints) {
-    return normalized;
+    const intervalValue =
+      firstNumericValue(asRecord(entry.subtotals), valueKeys) ??
+      firstNumericValue(asRecord(entry), valueKeys) ??
+      0;
+
+    valuesByKey.set(entry.interval.trim(), Math.max(0, intervalValue));
   }
 
-  return normalized.slice(normalized.length - maxPoints);
+  return buildSalesSeriesPoints({
+    from: filters.from,
+    to: filters.to,
+    interval: filters.interval,
+    valuesByKey,
+  });
 }
 
 function normalizeStatusLabel(key: string) {
@@ -239,47 +221,28 @@ function getSalesReportPeriodTotals(
   return Object.keys(result).length > 0 ? result : null;
 }
 
-function formatSalesReportPeriodLabel(key: string) {
-  const dayMatch = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (dayMatch) {
-    return `${dayMatch[3]}/${dayMatch[2]}`;
-  }
-
-  const weekMatch = key.match(/^(\d{4})-W(\d{1,2})$/);
-  if (weekMatch) {
-    return `sem ${weekMatch[2].padStart(2, "0")}/${weekMatch[1].slice(2)}`;
-  }
-
-  const monthMatch = key.match(/^(\d{4})-(\d{1,2})$/);
-  if (monthMatch) {
-    return `${monthMatch[2].padStart(2, "0")}/${monthMatch[1].slice(2)}`;
-  }
-
-  return key;
-}
-
 function mapSalesReportSeries(
   periodTotals: Record<string, UnknownRecord> | null,
   valueKey: string,
-  maxPoints = 12,
+  filters: AdminSalesFilters,
 ): AdminAnalyticsSeriesPoint[] {
   if (!periodTotals) {
     return [];
   }
 
-  const entries = Object.entries(periodTotals)
-    .map(([periodKey, periodData]) => ({
-      key: periodKey,
-      value: toPositiveNumber(periodData[valueKey]),
-    }))
-    .filter((entry) => entry.value > 0)
-    .sort((a, b) => a.key.localeCompare(b.key))
-    .map((entry) => ({
-      label: formatSalesReportPeriodLabel(entry.key),
-      value: entry.value,
-    }));
+  const valuesByKey = Object.fromEntries(
+    Object.entries(periodTotals).map(([periodKey, periodData]) => [
+      periodKey,
+      toPositiveNumber(periodData[valueKey]),
+    ]),
+  );
 
-  return entries.length <= maxPoints ? entries : entries.slice(entries.length - maxPoints);
+  return buildSalesSeriesPoints({
+    from: filters.from,
+    to: filters.to,
+    interval: filters.interval,
+    valuesByKey,
+  });
 }
 
 function mapOrderStatusTotals(totals: UnknownRecord | null): AdminAnalyticsSeriesPoint[] {
@@ -676,20 +639,24 @@ export async function getAdminSalesAnalyticsSnapshot(
     : salesReportItems;
 
   const wcRevenueSeries = wcAnalyticsRevenueActive
-    ? mapStatsIntervals(revenueStats, ["total_sales", "gross_sales", "total_revenue", "net_revenue"])
+    ? mapStatsIntervals(
+        revenueStats,
+        ["total_sales", "gross_sales", "total_revenue", "net_revenue"],
+        filters,
+      )
     : [];
   const revenueSeries =
     wcRevenueSeries.length > 0
       ? wcRevenueSeries
-      : mapSalesReportSeries(salesReportTotals, "sales");
+      : mapSalesReportSeries(salesReportTotals, "sales", filters);
 
   const wcOrderVolumeSeries = wcAnalyticsOrdersActive
-    ? mapStatsIntervals(ordersStats, ["orders_count", "total_orders", "orders"])
+    ? mapStatsIntervals(ordersStats, ["orders_count", "total_orders", "orders"], filters)
     : [];
   const orderVolumeSeries =
     wcOrderVolumeSeries.length > 0
       ? wcOrderVolumeSeries
-      : mapSalesReportSeries(salesReportTotals, "orders");
+      : mapSalesReportSeries(salesReportTotals, "orders", filters);
 
   const orderStatusSeries = mapOrderStatusTotals(ordersTotals);
 
