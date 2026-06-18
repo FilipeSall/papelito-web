@@ -1,4 +1,12 @@
-export type FeedbackState = { error: boolean; message: string; details?: string[] };
+export type FeedbackState = {
+  actionHref?: string;
+  actionLabel?: string;
+  details?: string[];
+  error: boolean;
+  hint?: string;
+  message: string;
+  title?: string;
+};
 
 export function FeedbackBanner({
   className = "",
@@ -17,6 +25,7 @@ export function FeedbackBanner({
       className={`rounded-[12px] px-4 py-3 text-sm ${tone} ${className}`}
       role={feedback.error ? "alert" : "status"}
     >
+      {feedback.title ? <p className="font-semibold">{feedback.title}</p> : null}
       <p>{feedback.message}</p>
       {details.length > 0 ? (
         <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -24,6 +33,12 @@ export function FeedbackBanner({
             <li key={detail}>{detail}</li>
           ))}
         </ul>
+      ) : null}
+      {feedback.hint ? <p className="mt-2 text-[13px] opacity-85">{feedback.hint}</p> : null}
+      {feedback.actionHref && feedback.actionLabel ? (
+        <a className="mt-3 inline-flex font-semibold underline" href={feedback.actionHref}>
+          {feedback.actionLabel}
+        </a>
       ) : null}
     </div>
   );

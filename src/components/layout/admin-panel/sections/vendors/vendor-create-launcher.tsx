@@ -6,10 +6,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import {
+  REVENDEDOR_CORPORATION_TYPE_OPTIONS,
   REVENDEDOR_DISCOVERY_OPTIONS,
   REVENDEDOR_SOLD_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
 } from "@/features/revendedor/constants/revendedor-content";
+import type {
+  RevendedorStep3Errors,
+  VendorRegistrationStep3Data,
+} from "@/features/revendedor/types/revendedor-application";
 import type { AdminVendorCreatePayload } from "@/lib/admin-vendors-types";
 import {
   formatCep,
@@ -20,14 +25,20 @@ import {
   isValidEmail,
   sanitizeInstagramHandle,
 } from "@/features/revendedor/utils/revendedor-formatters";
-import { formatCpf, isValidCpf } from "@/features/revendedor/utils/revendedor-registration";
+import {
+  createEmptyStep3Data,
+  formatCpf,
+  isValidCpf,
+  validateStep3,
+} from "@/features/revendedor/utils/revendedor-registration";
 import { AdminSelectField } from "../products/components/admin-select-field";
 
 type CoverageRange = { minCep: string; maxCep: string };
 
-type VendorCreateForm = Omit<AdminVendorCreatePayload, "coverageRanges" | "bankAccount"> & {
+type VendorCreateForm = Omit<AdminVendorCreatePayload, "coverageRanges" | "bankAccount" | "pagarmeDraft"> & {
   coverageRanges: CoverageRange[];
   bankAccount: AdminVendorCreatePayload["bankAccount"];
+  pagarmeDraft: VendorRegistrationStep3Data;
 };
 
 type CreatedVendor = {
@@ -47,6 +58,10 @@ const INITIAL_FORM: VendorCreateForm = {
   state: "",
   city: "",
   cep: "",
+  street: "",
+  number: "",
+  complement: "",
+  neighborhood: "",
   discoveryChannel: "",
   hasSoldPapelito: "",
   coverageRanges: [{ minCep: "", maxCep: "" }],
@@ -61,6 +76,7 @@ const INITIAL_FORM: VendorCreateForm = {
     accountCheckDigit: "",
     type: "checking",
   },
+  pagarmeDraft: createEmptyStep3Data(),
 };
 
 function digits(value: string, max?: number) {
@@ -131,6 +147,12 @@ function Section({ children, title }: { children: React.ReactNode; title: string
 function validateForm(form: VendorCreateForm): string | null {
   if (!isValidEmail(form.email)) return "Informe um e-mail valido.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ valido.";
+  if (!isValidCep(form.cep ?? "")) return "Informe um CEP valido para a loja.";
+  if (!form.street?.trim()) return "Informe o logradouro da loja.";
+  if (!form.number?.trim()) return "Informe o numero da loja.";
+  if (!form.neighborhood?.trim()) return "Informe o bairro da loja.";
+  if (!form.city?.trim()) return "Informe a cidade da loja.";
+  if (!form.state?.trim()) return "Informe o estado da loja.";
 
   if (form.coverageRanges.length === 0) return "Informe ao menos uma faixa de CEP.";
   for (const [index, range] of form.coverageRanges.entries()) {
@@ -154,7 +176,58 @@ function validateForm(form: VendorCreateForm): string | null {
   if (!/^\d+$/.test(bank.branchNumber)) return "Informe uma agencia valida.";
   if (!/^\d+$/.test(bank.accountNumber)) return "Informe uma conta valida.";
   if (!/^[0-9A-Za-z]+$/.test(bank.accountCheckDigit)) return "Informe o digito da conta.";
+
+  const step3Errors = validateStep3(buildAdminPagarmeDraft(form));
+  const firstStep3Error = getFirstStep3Error(step3Errors);
+  if (firstStep3Error) return firstStep3Error;
+
   return null;
+}
+
+function buildAdminPagarmeDraft(form: VendorCreateForm): VendorRegistrationStep3Data {
+  const partner =
+    form.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+  const fallbackPartnerName = `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim();
+
+  return {
+    ...form.pagarmeDraft,
+    companyName: form.pagarmeDraft.companyName.trim() || form.storeName?.trim() || "",
+    tradingName: form.pagarmeDraft.tradingName.trim() || form.storeName?.trim() || "",
+    bankAccount: {
+      ...form.bankAccount,
+      branchCheckDigit: form.bankAccount.branchCheckDigit ?? "",
+    },
+    managingPartners: [
+      {
+        ...partner,
+        name: partner.name.trim() || fallbackPartnerName,
+        email: partner.email.trim() || form.email.trim(),
+        address: {
+          ...partner.address,
+          zipCode: partner.address.zipCode.trim() || form.cep?.trim() || "",
+          street: partner.address.street.trim() || form.street?.trim() || "",
+          streetNumber: partner.address.streetNumber.trim() || form.number?.trim() || "",
+          complement: partner.address.complement.trim() || form.complement?.trim() || "",
+          neighborhood: partner.address.neighborhood.trim() || form.neighborhood?.trim() || "",
+          city: partner.address.city.trim() || form.city?.trim() || "",
+          state: partner.address.state.trim() || form.state?.trim() || "",
+        },
+      },
+    ],
+  };
+}
+
+function collectMessages(value: unknown): string[] {
+  if (!value) return [];
+  if (typeof value === "string") return value.trim() ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap(collectMessages);
+  if (typeof value === "object") return Object.values(value).flatMap(collectMessages);
+  return [];
+}
+
+function getFirstStep3Error(errors: RevendedorStep3Errors): string | null {
+  const [first] = collectMessages(errors);
+  return first ?? null;
 }
 
 function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
@@ -170,6 +243,10 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
     state: form.state?.trim(),
     city: form.city?.trim(),
     cep: form.cep?.trim(),
+    street: form.street?.trim(),
+    number: form.number?.trim(),
+    complement: form.complement?.trim(),
+    neighborhood: form.neighborhood?.trim(),
     discoveryChannel: form.discoveryChannel?.trim(),
     hasSoldPapelito: form.hasSoldPapelito?.trim(),
     coverageRanges: form.coverageRanges.map((range) => ({
@@ -180,9 +257,10 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
       ...form.bankAccount,
       holderName: form.bankAccount.holderName.trim(),
       holderDocument: form.bankAccount.holderDocument.trim(),
-      branchCheckDigit: form.bankAccount.branchCheckDigit?.trim(),
+      branchCheckDigit: form.bankAccount.branchCheckDigit?.trim() ?? "",
       accountCheckDigit: form.bankAccount.accountCheckDigit.trim(),
     },
+    pagarmeDraft: buildAdminPagarmeDraft(form),
   };
 }
 
@@ -214,6 +292,68 @@ export function VendorCreateLauncher() {
     value: VendorCreateForm["bankAccount"][K],
   ) {
     setForm((prev) => ({ ...prev, bankAccount: { ...prev.bankAccount, [key]: value } }));
+  }
+
+  function updatePagarmeDraft<K extends keyof VendorRegistrationStep3Data>(
+    key: K,
+    value: VendorRegistrationStep3Data[K],
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      pagarmeDraft: {
+        ...prev.pagarmeDraft,
+        [key]: value,
+      },
+    }));
+  }
+
+  function updateManagingPartnerField(
+    key: keyof VendorRegistrationStep3Data["managingPartners"][number],
+    value: string | boolean,
+  ) {
+    setForm((prev) => {
+      const partner =
+        prev.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+
+      return {
+        ...prev,
+        pagarmeDraft: {
+          ...prev.pagarmeDraft,
+          managingPartners: [
+            {
+              ...partner,
+              [key]: value,
+            },
+          ],
+        },
+      };
+    });
+  }
+
+  function updateManagingPartnerAddressField(
+    key: keyof VendorRegistrationStep3Data["managingPartners"][number]["address"],
+    value: string,
+  ) {
+    setForm((prev) => {
+      const partner =
+        prev.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+
+      return {
+        ...prev,
+        pagarmeDraft: {
+          ...prev.pagarmeDraft,
+          managingPartners: [
+            {
+              ...partner,
+              address: {
+                ...partner.address,
+                [key]: value,
+              },
+            },
+          ],
+        },
+      };
+    });
   }
 
   function updateCoverage(index: number, key: keyof CoverageRange, value: string) {
@@ -361,6 +501,8 @@ export function VendorCreateLauncher() {
                     onChange={(value) => {
                       update("storeName", value);
                       if (!form.bankAccount.holderName.trim()) updateBank("holderName", value);
+                      if (!form.pagarmeDraft.companyName.trim()) updatePagarmeDraft("companyName", value);
+                      if (!form.pagarmeDraft.tradingName.trim()) updatePagarmeDraft("tradingName", value);
                     }}
                     value={form.storeName ?? ""}
                   />
@@ -427,6 +569,35 @@ export function VendorCreateLauncher() {
                   <Field label="Cidade" onChange={(value) => update("city", value)} value={form.city ?? ""} />
                 </div>
 
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Rua / Logradouro"
+                    onChange={(value) => update("street", value)}
+                    required
+                    value={form.street ?? ""}
+                  />
+                  <Field
+                    label="Bairro"
+                    onChange={(value) => update("neighborhood", value)}
+                    required
+                    value={form.neighborhood ?? ""}
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Numero"
+                    onChange={(value) => update("number", value.replace(/[^\dA-Za-z-]/g, ""))}
+                    required
+                    value={form.number ?? ""}
+                  />
+                  <Field
+                    label="Complemento"
+                    onChange={(value) => update("complement", value)}
+                    value={form.complement ?? ""}
+                  />
+                </div>
+
                 <div className="mt-4 space-y-3">
                   {form.coverageRanges.map((range, index) => (
                     <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]" key={`coverage-${index}`}>
@@ -473,6 +644,198 @@ export function VendorCreateLauncher() {
                     <Plus className="h-4 w-4" strokeWidth={2} />
                     Faixa de CEP
                   </button>
+                </div>
+              </Section>
+
+              <Section title="KYC da empresa">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Razao social"
+                    onChange={(value) => updatePagarmeDraft("companyName", value)}
+                    required
+                    value={form.pagarmeDraft.companyName}
+                  />
+                  <Field
+                    label="Nome fantasia"
+                    onChange={(value) => updatePagarmeDraft("tradingName", value)}
+                    required
+                    value={form.pagarmeDraft.tradingName}
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <AdminSelectField
+                    label="Natureza juridica *"
+                    onChange={(value) => {
+                      updatePagarmeDraft("corporationTypeSelection", value);
+                      updatePagarmeDraft(
+                        "corporationType",
+                        value === "outro" ? form.pagarmeDraft.corporationTypeOther : value,
+                      );
+                    }}
+                    options={REVENDEDOR_CORPORATION_TYPE_OPTIONS}
+                    placeholder="Selecione"
+                    value={form.pagarmeDraft.corporationTypeSelection}
+                  />
+                  <Field
+                    label="Data de fundacao"
+                    onChange={(value) => updatePagarmeDraft("foundingDate", value)}
+                    required
+                    type="date"
+                    value={form.pagarmeDraft.foundingDate}
+                  />
+                  <Field
+                    label="Faturamento anual"
+                    onChange={(value) => updatePagarmeDraft("annualRevenue", value)}
+                    required
+                    type="number"
+                    value={form.pagarmeDraft.annualRevenue}
+                  />
+                </div>
+
+                {form.pagarmeDraft.corporationTypeSelection === "outro" ? (
+                  <div className="mt-4">
+                    <Field
+                      label="Qual e a natureza juridica?"
+                      onChange={(value) => {
+                        updatePagarmeDraft("corporationTypeOther", value);
+                        updatePagarmeDraft("corporationType", value);
+                      }}
+                      required
+                      value={form.pagarmeDraft.corporationTypeOther}
+                    />
+                  </div>
+                ) : null}
+              </Section>
+
+              <Section title="Responsavel legal / socio administrador">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Nome completo"
+                    onChange={(value) => updateManagingPartnerField("name", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.name ?? ""}
+                  />
+                  <Field
+                    label="E-mail"
+                    onChange={(value) => updateManagingPartnerField("email", value)}
+                    required
+                    type="email"
+                    value={form.pagarmeDraft.managingPartners[0]?.email ?? ""}
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <Field
+                    inputMode="numeric"
+                    label="CPF"
+                    onChange={(value) => updateManagingPartnerField("document", formatCpf(value))}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.document ?? ""}
+                  />
+                  <Field
+                    label="Nome da mae"
+                    onChange={(value) => updateManagingPartnerField("motherName", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.motherName ?? ""}
+                  />
+                  <Field
+                    label="Data de nascimento"
+                    onChange={(value) => updateManagingPartnerField("birthdate", value)}
+                    required
+                    type="date"
+                    value={form.pagarmeDraft.managingPartners[0]?.birthdate ?? ""}
+                  />
+                  <Field
+                    label="Renda mensal"
+                    onChange={(value) => updateManagingPartnerField("monthlyIncome", value)}
+                    required
+                    type="number"
+                    value={form.pagarmeDraft.managingPartners[0]?.monthlyIncome ?? ""}
+                  />
+                  <Field
+                    label="Ocupacao profissional"
+                    onChange={(value) => updateManagingPartnerField("professionalOccupation", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.professionalOccupation ?? ""}
+                  />
+                  <AdminSelectField
+                    label="Representante legal autodeclarado *"
+                    onChange={(value) =>
+                      updateManagingPartnerField("selfDeclaredLegalRepresentative", value === "sim")
+                    }
+                    options={[
+                      { label: "Sim", value: "sim" },
+                      { label: "Nao", value: "nao" },
+                    ]}
+                    placeholder="Selecione"
+                    value={
+                      form.pagarmeDraft.managingPartners[0]?.selfDeclaredLegalRepresentative === false
+                        ? "nao"
+                        : "sim"
+                    }
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <Field
+                    inputMode="numeric"
+                    label="CEP do responsavel"
+                    onChange={(value) => updateManagingPartnerAddressField("zipCode", formatCep(value))}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.address.zipCode ?? ""}
+                  />
+                  <Field
+                    label="Rua do responsavel"
+                    onChange={(value) => updateManagingPartnerAddressField("street", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.address.street ?? ""}
+                  />
+                  <Field
+                    label="Numero"
+                    onChange={(value) =>
+                      updateManagingPartnerAddressField("streetNumber", value.replace(/[^\dA-Za-z-]/g, ""))
+                    }
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.address.streetNumber ?? ""}
+                  />
+                  <Field
+                    label="Complemento"
+                    onChange={(value) => updateManagingPartnerAddressField("complement", value)}
+                    value={form.pagarmeDraft.managingPartners[0]?.address.complement ?? ""}
+                  />
+                  <Field
+                    label="Bairro"
+                    onChange={(value) => updateManagingPartnerAddressField("neighborhood", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.address.neighborhood ?? ""}
+                  />
+                  <Field
+                    label="Cidade"
+                    onChange={(value) => updateManagingPartnerAddressField("city", value)}
+                    required
+                    value={form.pagarmeDraft.managingPartners[0]?.address.city ?? ""}
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <AdminSelectField
+                    label="Estado do responsavel *"
+                    onChange={(value) => updateManagingPartnerAddressField("state", value)}
+                    options={REVENDEDOR_STATE_OPTIONS}
+                    placeholder="Selecione"
+                    value={form.pagarmeDraft.managingPartners[0]?.address.state ?? ""}
+                  />
+                  <AdminSelectField
+                    label="Tem socio administrador? *"
+                    onChange={(value) => updatePagarmeDraft("hasManagingPartner", value === "nao" ? "no" : "yes")}
+                    options={[
+                      { label: "Sim", value: "yes" },
+                      { label: "Nao", value: "no" },
+                    ]}
+                    placeholder="Selecione"
+                    value={form.pagarmeDraft.hasManagingPartner}
+                  />
                 </div>
               </Section>
 

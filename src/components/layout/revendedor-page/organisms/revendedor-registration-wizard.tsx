@@ -43,8 +43,10 @@ import { RevendedorFormLabel } from "../atoms/revendedor-form-label";
 
 type RevendedorRegistrationWizardProps = {
   application: RevendedorApplication;
+  editMode?: "pagarme" | null;
   initialDraft: VendorRegistrationDraft;
   isAuthenticated: boolean;
+  returnTo?: string;
 };
 
 const HOLDER_TYPE_OPTIONS = [
@@ -59,8 +61,10 @@ const ACCOUNT_TYPE_OPTIONS = [
 
 export function RevendedorRegistrationWizard({
   application,
+  editMode,
   initialDraft,
   isAuthenticated,
+  returnTo,
 }: RevendedorRegistrationWizardProps) {
   const router = useRouter();
   const {
@@ -82,7 +86,15 @@ export function RevendedorRegistrationWizard({
   const [step2Errors, setStep2Errors] = useState<RevendedorStep2Errors>({});
   const [step3Errors, setStep3Errors] = useState<RevendedorStep3Errors>({});
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitTone, setSubmitTone] = useState<"error" | "success">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isPagarmeEditMode =
+    editMode === "pagarme" &&
+    (application.status === "pending" || application.status === "approved");
+  const visibleStep: 1 | 2 | 3 = isPagarmeEditMode ? 3 : draft.currentStep;
+  const editCallbackUrl = returnTo
+    ? `/revendedor/cadastro?edit=pagarme&returnTo=${encodeURIComponent(returnTo)}`
+    : "/revendedor/cadastro?edit=pagarme";
 
   useEffect(() => {
     if (!hasHydrated || bootstrappedRef.current) {
@@ -215,6 +227,16 @@ export function RevendedorRegistrationWizard({
     previousStepRef.current = draft.currentStep;
   }, [draft.currentStep, hasHydrated]);
 
+  useEffect(() => {
+    if (!hasHydrated || !bootstrappedRef.current || !isPagarmeEditMode) {
+      return;
+    }
+
+    if (draft.currentStep !== 3) {
+      setCurrentStep(3);
+    }
+  }, [draft.currentStep, hasHydrated, isPagarmeEditMode, setCurrentStep]);
+
   if (!hasHydrated) {
     return (
       <div className="flex min-h-screen">
@@ -228,7 +250,10 @@ export function RevendedorRegistrationWizard({
     );
   }
 
-  if (application.status === "pending" || application.status === "approved") {
+  if (
+    (application.status === "pending" || application.status === "approved") &&
+    !isPagarmeEditMode
+  ) {
     return (
       <div className="flex min-h-screen">
         <RevendedorWizardShowcase />
@@ -469,6 +494,62 @@ export function RevendedorRegistrationWizard({
   }
 
   async function submit() {
+    if (isPagarmeEditMode) {
+      const nextStep3Errors = validateStep3(draft.step3);
+
+      setStep3Errors(nextStep3Errors);
+      setSubmitMessage(null);
+
+      if (Object.keys(nextStep3Errors).length > 0) {
+        setCurrentStep(3);
+        return;
+      }
+
+      if (!isAuthenticated) {
+        router.push(`/entrar?callbackUrl=${encodeURIComponent(editCallbackUrl)}`);
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        const response = await fetch("/api/vendor/recipient-draft", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(buildRevendedorSubmitPayload(draft).step3),
+        });
+
+        const body = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!response.ok) {
+          setSubmitTone("error");
+          setSubmitMessage(body?.message ?? "Nao foi possivel salvar os dados financeiros.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (returnTo) {
+          router.push(returnTo);
+          router.refresh();
+          return;
+        }
+
+        setSubmitTone("success");
+        setSubmitMessage("Dados financeiros atualizados. Volte ao financeiro para sincronizar o recebedor.");
+      } catch {
+        setSubmitTone("error");
+        setSubmitMessage("Erro de rede ao salvar os dados financeiros.");
+      } finally {
+        setIsSubmitting(false);
+      }
+
+      return;
+    }
+
     const nextStep1Errors = validateStep1(draft.step1);
     const nextStep2Errors = validateStep2(draft.step2);
     const nextStep3Errors = validateStep3(draft.step3);
@@ -514,6 +595,7 @@ export function RevendedorRegistrationWizard({
         | null;
 
       if (!response.ok) {
+        setSubmitTone("error");
         setSubmitMessage(body?.message ?? "Não foi possível enviar sua candidatura agora.");
         setIsSubmitting(false);
         return;
@@ -523,6 +605,7 @@ export function RevendedorRegistrationWizard({
       router.push("/revendedor");
       router.refresh();
     } catch {
+      setSubmitTone("error");
       setSubmitMessage("Erro de rede ao enviar a candidatura.");
       setIsSubmitting(false);
     }
@@ -536,27 +619,33 @@ export function RevendedorRegistrationWizard({
         <div className="w-full max-w-3xl">
           <div ref={formTopRef} className="scroll-mt-28" />
 
-          <div className="mb-8 flex items-center gap-2">
-            <RevendedorRegistrationStepper
-              currentStep={draft.currentStep}
-              onStepChange={goToStep}
-            />
-            <span className="ml-2 text-xs text-white/40">
-              Etapa {draft.currentStep} de 3
-            </span>
-          </div>
+          {!isPagarmeEditMode ? (
+            <div className="mb-8 flex items-center gap-2">
+              <RevendedorRegistrationStepper
+                currentStep={visibleStep}
+                onStepChange={goToStep}
+              />
+              <span className="ml-2 text-xs text-white/40">
+                Etapa {visibleStep} de 3
+              </span>
+            </div>
+          ) : null}
 
           <h1 className="text-3xl font-black uppercase tracking-wide text-white">
-            {draft.currentStep === 1
+            {isPagarmeEditMode
+              ? "Dados financeiros"
+              : visibleStep === 1
               ? "Dados Iniciais"
-              : draft.currentStep === 2
+              : visibleStep === 2
                 ? "Localização"
                 : "Gateway de Pagamento"}
           </h1>
           <p className="mt-2 text-sm text-white/50">
-            {draft.currentStep === 1
+            {isPagarmeEditMode
+              ? "Atualize os dados de KYC e a conta bancária usados para sincronizar seu recebedor na Pagar.me."
+              : visibleStep === 1
               ? "Revise ou edite a triagem inicial antes de seguir."
-              : draft.currentStep === 2
+              : visibleStep === 2
                 ? "Cadastre o endereço base da operação e a faixa de CEP atendida."
                 : "Preencha os dados bancários e de KYC necessários para o onboarding do recebedor Pagar.me."}
           </p>
@@ -564,19 +653,23 @@ export function RevendedorRegistrationWizard({
           <div className="mt-10">
             <div className="space-y-1">
               <h2 className="text-xl font-black uppercase tracking-[-0.32px] text-white">
-                {draft.currentStep === 1
+                {isPagarmeEditMode
+                  ? "Dados bancários e KYC"
+                  : visibleStep === 1
                   ? "Step 1: Dados iniciais"
-                  : draft.currentStep === 2
+                  : visibleStep === 2
                     ? "Step 2: Localização"
                     : "Step 3: Dados bancários e KYC"}
               </h2>
               <p className="text-sm leading-6 text-white/45">
-                Os dados ficam salvos neste navegador até o envio final.
+                {isPagarmeEditMode
+                  ? "Salve as alterações e depois volte ao financeiro para sincronizar o recebedor."
+                  : "Os dados ficam salvos neste navegador até o envio final."}
               </p>
             </div>
 
             <div className="mt-8 flex flex-col gap-6">
-            {draft.currentStep === 1 ? (
+            {visibleStep === 1 ? (
               <div className="flex flex-col gap-4">
                 <RevendedorStep1Fields
                   errors={step1Errors}
@@ -587,7 +680,7 @@ export function RevendedorRegistrationWizard({
               </div>
             ) : null}
 
-            {draft.currentStep === 2 ? (
+            {visibleStep === 2 ? (
               <div className="flex flex-col gap-4">
                 <RevendedorFormField
                   autoComplete="postal-code"
@@ -704,7 +797,7 @@ export function RevendedorRegistrationWizard({
               </div>
             ) : null}
 
-            {draft.currentStep === 3 ? (
+            {visibleStep === 3 ? (
               <div className="flex flex-col gap-6">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/45">
@@ -1219,18 +1312,26 @@ export function RevendedorRegistrationWizard({
             ) : null}
 
             {submitMessage ? (
-              <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              <div
+                className={`rounded-2xl px-4 py-3 text-sm ${
+                  submitTone === "success"
+                    ? "border border-emerald-400/40 bg-emerald-500/10 text-emerald-100"
+                    : "border border-red-400/40 bg-red-500/10 text-red-200"
+                }`}
+              >
                 {submitMessage}
               </div>
             ) : null}
 
             <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-white/45">
-                O rascunho só é limpo após o envio final com sucesso.
+                {isPagarmeEditMode
+                  ? "Essas alterações não reenviam sua triagem. Elas apenas atualizam o draft financeiro do recebedor."
+                  : "O rascunho só é limpo após o envio final com sucesso."}
               </p>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                {draft.currentStep > 1 ? (
+                {!isPagarmeEditMode && draft.currentStep > 1 ? (
                   <RevendedorCtaButton
                     onClick={() => setCurrentStep((draft.currentStep - 1) as 1 | 2 | 3)}
                     type="button"
@@ -1240,7 +1341,22 @@ export function RevendedorRegistrationWizard({
                   </RevendedorCtaButton>
                 ) : null}
 
-                {draft.currentStep < 3 ? (
+                {isPagarmeEditMode ? (
+                  <>
+                    {returnTo ? (
+                      <RevendedorCtaButton
+                        onClick={() => router.push(returnTo)}
+                        type="button"
+                        variant="outline"
+                      >
+                        Voltar ao financeiro
+                      </RevendedorCtaButton>
+                    ) : null}
+                    <RevendedorCtaButton disabled={isSubmitting} onClick={() => void submit()} type="button">
+                      {isSubmitting ? "Salvando..." : "Salvar dados financeiros"}
+                    </RevendedorCtaButton>
+                  </>
+                ) : draft.currentStep < 3 ? (
                   <RevendedorCtaButton
                     onClick={() => goToStep((draft.currentStep + 1) as 1 | 2 | 3)}
                     type="button"

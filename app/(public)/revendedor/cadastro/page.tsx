@@ -6,9 +6,20 @@ import { fetchRevendedorApplication } from "@/features/revendedor/server/applica
 import { buildDraftFromSources } from "@/features/revendedor/utils/revendedor-registration";
 import { authOptions } from "@/lib/auth";
 
-export default async function RevendedorCadastroPage() {
+export default async function RevendedorCadastroPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await getServerSession(authOptions);
   const isAuthenticated = Boolean(session?.user && session.accessToken);
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const editMode = resolvedSearchParams.edit === "pagarme" ? "pagarme" : null;
+  const returnToValue = resolvedSearchParams.returnTo;
+  const returnTo =
+    typeof returnToValue === "string" && returnToValue.startsWith("/")
+      ? returnToValue
+      : undefined;
 
   const [customer, application] = await Promise.all([
     isAuthenticated ? fetchProfileCustomer(session?.accessToken) : null,
@@ -18,8 +29,10 @@ export default async function RevendedorCadastroPage() {
   return (
     <RevendedorRegistrationWizard
       application={application}
+      editMode={editMode}
       initialDraft={buildDraftFromSources(customer, application)}
       isAuthenticated={isAuthenticated}
+      returnTo={returnTo}
     />
   );
 }

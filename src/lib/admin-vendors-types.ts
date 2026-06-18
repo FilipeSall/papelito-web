@@ -1,3 +1,5 @@
+import type { VendorRegistrationStep3Data } from "@/features/revendedor/types/revendedor-application";
+
 export type AdminVendorCreatePayload = {
   email: string;
   storeName?: string;
@@ -9,6 +11,10 @@ export type AdminVendorCreatePayload = {
   state?: string;
   city?: string;
   cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   discoveryChannel?: string;
   hasSoldPapelito?: string;
   coverageRanges: Array<{ minCep: string; maxCep: string }>;
@@ -23,5 +29,5 @@ export type AdminVendorCreatePayload = {
     accountCheckDigit: string;
     type: "checking" | "savings";
   };
+  pagarmeDraft: VendorRegistrationStep3Data;
 };
-

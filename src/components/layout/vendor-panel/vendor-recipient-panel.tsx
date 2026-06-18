@@ -17,8 +17,75 @@ const STATUS_LABELS: Record<string, string> = {
   inactive: "Inativo",
 };
 
+const EDIT_FINANCIAL_DATA_HREF = "/revendedor/cadastro?edit=pagarme&returnTo=%2Fvendor%2Ffinanceiro";
+
 function formatStatus(value: string) {
   return STATUS_LABELS[value] || "Nao iniciado";
+}
+
+function buildRecipientErrorFeedback(body: {
+  code?: string;
+  details?: string[];
+  message?: string;
+}): FeedbackState {
+  switch (body.code) {
+    case "papelito_pagarme_missing_partner":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Preencher responsavel legal",
+        error: true,
+        hint: "Cadastre ao menos um responsavel legal ou socio administrador e tente sincronizar novamente.",
+        message: "A Pagar.me exige uma pessoa fisica responsavel pela empresa para concluir o onboarding do recebedor.",
+        title: "Responsavel legal pendente",
+      };
+    case "papelito_pagarme_missing_address":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar dados financeiros",
+        error: true,
+        hint: "Confira o endereco comercial e o endereco do responsavel legal antes de sincronizar novamente.",
+        message: "Faltam dados de endereco obrigatorios para criar ou atualizar o recebedor.",
+        title: "Endereco incompleto",
+      };
+    case "papelito_pagarme_missing_document":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar cadastro financeiro",
+        error: true,
+        hint: "O recebedor precisa de um CNPJ valido e coerente com os dados da empresa.",
+        message: "Nao foi possivel sincronizar porque a documentacao da empresa esta incompleta.",
+        title: "Documento da empresa pendente",
+      };
+    case "papelito_pagarme_missing_draft":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Preencher dados financeiros",
+        error: true,
+        hint: "Abra o formulario financeiro, complete KYC e conta bancaria e depois tente sincronizar novamente.",
+        message: "Os dados financeiros do recebedor ainda nao foram preenchidos.",
+        title: "Dados financeiros pendentes",
+      };
+    case "papelito_pagarme_request_failed":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar dados enviados",
+        details: body.details,
+        error: true,
+        hint: "A Pagar.me recusou os dados enviados. Revise empresa, responsavel legal e conta bancaria.",
+        message: body.message || "A Pagar.me recusou a sincronizacao do recebedor.",
+        title: "Validacao recusada pela Pagar.me",
+      };
+    default:
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Editar dados financeiros",
+        details: body.details,
+        error: true,
+        hint: "Se o erro persistir, revise os dados financeiros do recebedor antes de tentar novamente.",
+        message: body.message || "Nao foi possivel sincronizar o recebedor.",
+        title: "Falha na sincronizacao",
+      };
+  }
 }
 
 export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: VendorRecipient }) {
@@ -40,6 +107,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
 
       const body = (await response.json().catch(() => null)) as
         | {
+            code?: string;
             recipient_id?: string;
             status?: string;
             last_sync_at?: string;
@@ -51,11 +119,13 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
         | null;
 
       if (!response.ok) {
-        setFeedback({
-          error: true,
-          message: body?.message || "Nao foi possivel sincronizar o recebedor.",
-          details: Array.isArray(body?.pagarme_errors) ? body.pagarme_errors : undefined,
-        });
+        setFeedback(
+          buildRecipientErrorFeedback({
+            code: body?.code,
+            details: Array.isArray(body?.pagarme_errors) ? body.pagarme_errors : undefined,
+            message: body?.message,
+          }),
+        );
         return;
       }
 
@@ -137,6 +207,12 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
           >
             Atualizar KYC
           </button>
+          <a
+            className="rounded-full border border-brand-dark px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-dark"
+            href={EDIT_FINANCIAL_DATA_HREF}
+          >
+            Editar dados financeiros
+          </a>
           {recipient.kycUrl ? (
             <a
               className="rounded-full border border-brand-dark/20 px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-dark"
