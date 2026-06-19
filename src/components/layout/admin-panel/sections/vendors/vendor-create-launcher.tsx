@@ -3,11 +3,10 @@
 import { Loader2, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   REVENDEDOR_CORPORATION_TYPE_OPTIONS,
-  REVENDEDOR_DISCOVERY_OPTIONS,
   REVENDEDOR_SOLD_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
 } from "@/features/revendedor/constants/revendedor-content";
@@ -31,7 +30,9 @@ import {
   isValidCpf,
   validateStep3,
 } from "@/features/revendedor/utils/revendedor-registration";
+import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import { AdminSelectField } from "../products/components/admin-select-field";
+import { InfoTooltip } from "../products/components/form-fields";
 
 type CoverageRange = { minCep: string; maxCep: string };
 
@@ -62,7 +63,6 @@ const INITIAL_FORM: VendorCreateForm = {
   number: "",
   complement: "",
   neighborhood: "",
-  discoveryChannel: "",
   hasSoldPapelito: "",
   coverageRanges: [{ minCep: "", maxCep: "" }],
   bankAccount: {
@@ -95,6 +95,8 @@ function fieldClass(hasError = false) {
 function Field({
   autoComplete,
   error,
+  helpText,
+  helperText,
   inputMode,
   label,
   onChange,
@@ -105,6 +107,8 @@ function Field({
 }: {
   autoComplete?: string;
   error?: string;
+  helpText?: string;
+  helperText?: string;
   inputMode?: "decimal" | "email" | "numeric" | "tel" | "text";
   label: string;
   onChange: (value: string) => void;
@@ -115,9 +119,12 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4b4731]">
-        {label}
-        {required ? " *" : ""}
+      <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#4b4731]">
+        <span>
+          {label}
+          {required ? " *" : ""}
+        </span>
+        {helpText ? <InfoTooltip text={helpText} /> : null}
       </span>
       <input
         autoComplete={autoComplete}
@@ -129,6 +136,9 @@ function Field({
         value={value}
       />
       {error ? <span className="mt-1 block text-xs text-[#b91c1c]">{error}</span> : null}
+      {!error && helperText ? (
+        <span className="mt-1 block text-xs text-[#6f6651]">{helperText}</span>
+      ) : null}
     </label>
   );
 }
@@ -247,7 +257,6 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
     number: form.number?.trim(),
     complement: form.complement?.trim(),
     neighborhood: form.neighborhood?.trim(),
-    discoveryChannel: form.discoveryChannel?.trim(),
     hasSoldPapelito: form.hasSoldPapelito?.trim(),
     coverageRanges: form.coverageRanges.map((range) => ({
       minCep: range.minCep.trim(),
@@ -271,6 +280,12 @@ export function VendorCreateLauncher() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdVendor, setCreatedVendor] = useState<CreatedVendor | null>(null);
+  const [cepStatus, setCepStatus] = useState<{
+    tone: "error" | "info";
+    message: string;
+  } | null>(null);
+  const [isCepLookingUp, setIsCepLookingUp] = useState(false);
+  const cepLookupRequestIdRef = useRef(0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -365,6 +380,67 @@ export function VendorCreateLauncher() {
     }));
   }
 
+  async function handleStoreCepChange(rawValue: string) {
+    const formatted = formatCep(rawValue);
+    update("cep", formatted);
+    setCepStatus(null);
+
+    const digits = rawValue.replace(/\D/g, "");
+    cepLookupRequestIdRef.current += 1;
+    const requestId = cepLookupRequestIdRef.current;
+
+    if (digits.length !== 8) {
+      setIsCepLookingUp(false);
+      return;
+    }
+
+    setIsCepLookingUp(true);
+    setCepStatus({ tone: "info", message: "Buscando endereco pelo CEP..." });
+
+    try {
+      const result = await lookupCepDetailed(digits);
+
+      if (requestId !== cepLookupRequestIdRef.current) {
+        return;
+      }
+
+      if (result.status !== "ok") {
+        setCepStatus({ tone: "error", message: result.message });
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        cep: formatted,
+        street: result.data.street || prev.street,
+        neighborhood: result.data.neighborhood || prev.neighborhood,
+        city: result.data.city || prev.city,
+        state: result.data.state || prev.state,
+      }));
+
+      setCepStatus(
+        result.partial
+          ? {
+              tone: "info",
+              message:
+                "CEP encontrado, mas alguns campos vieram incompletos e podem ser ajustados manualmente.",
+            }
+          : null,
+      );
+    } catch {
+      if (requestId === cepLookupRequestIdRef.current) {
+        setCepStatus({
+          tone: "error",
+          message: "Nao foi possivel consultar o CEP agora.",
+        });
+      }
+    } finally {
+      if (requestId === cepLookupRequestIdRef.current) {
+        setIsCepLookingUp(false);
+      }
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -416,6 +492,8 @@ export function VendorCreateLauncher() {
           onClick={() => {
             setError(null);
             setCreatedVendor(null);
+            setCepStatus(null);
+            setIsCepLookingUp(false);
             setIsOpen(true);
           }}
           type="button"
@@ -449,7 +527,7 @@ export function VendorCreateLauncher() {
             onClick={(event) => event.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-2xl border-b border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
+            <div className="z-10 flex items-start justify-between gap-4 rounded-t-2xl border-b border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#4b4731]">
                   Criacao direta
@@ -535,13 +613,6 @@ export function VendorCreateLauncher() {
                     value={form.instagram ?? ""}
                   />
                   <AdminSelectField
-                    label="Origem"
-                    onChange={(value) => update("discoveryChannel", value)}
-                    options={REVENDEDOR_DISCOVERY_OPTIONS}
-                    placeholder="Selecione"
-                    value={form.discoveryChannel ?? ""}
-                  />
-                  <AdminSelectField
                     label="Ja vende Papelito?"
                     onChange={(value) => update("hasSoldPapelito", value)}
                     options={[{ label: "Selecione", value: "" }, ...REVENDEDOR_SOLD_OPTIONS]}
@@ -556,27 +627,46 @@ export function VendorCreateLauncher() {
                   <Field
                     inputMode="numeric"
                     label="CEP da loja"
-                    onChange={(value) => update("cep", formatCep(value))}
+                    helpText="Use o CEP para preencher logradouro, bairro, cidade e estado automaticamente."
+                    helperText={
+                      isCepLookingUp
+                        ? "Buscando endereco pelo CEP..."
+                        : cepStatus?.tone === "info"
+                          ? cepStatus.message
+                          : undefined
+                    }
+                    onChange={(value) => {
+                      void handleStoreCepChange(value);
+                    }}
+                    error={cepStatus?.tone === "error" ? cepStatus.message : undefined}
                     value={form.cep ?? ""}
                   />
                   <AdminSelectField
                     label="Estado"
+                    helpText="Pode ser ajustado manualmente se a busca vier incompleta."
                     onChange={(value) => update("state", value)}
                     options={REVENDEDOR_STATE_OPTIONS}
                     placeholder="Selecione"
                     value={form.state ?? ""}
                   />
-                  <Field label="Cidade" onChange={(value) => update("city", value)} value={form.city ?? ""} />
+                  <Field
+                    helpText="Pode ser ajustado manualmente se a busca vier incompleta."
+                    label="Cidade"
+                    onChange={(value) => update("city", value)}
+                    value={form.city ?? ""}
+                  />
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <Field
+                    helpText="Pode ser ajustado manualmente se a busca vier incompleta."
                     label="Rua / Logradouro"
                     onChange={(value) => update("street", value)}
                     required
                     value={form.street ?? ""}
                   />
                   <Field
+                    helpText="Pode ser ajustado manualmente se a busca vier incompleta."
                     label="Bairro"
                     onChange={(value) => update("neighborhood", value)}
                     required
@@ -828,7 +918,9 @@ export function VendorCreateLauncher() {
                   />
                   <AdminSelectField
                     label="Tem socio administrador? *"
-                    onChange={(value) => updatePagarmeDraft("hasManagingPartner", value === "nao" ? "no" : "yes")}
+                    onChange={(value) =>
+                      updatePagarmeDraft("hasManagingPartner", value === "no" ? "no" : "yes")
+                    }
                     options={[
                       { label: "Sim", value: "yes" },
                       { label: "Nao", value: "no" },
@@ -926,7 +1018,7 @@ export function VendorCreateLauncher() {
               ) : null}
             </div>
 
-            <div className="sticky bottom-0 flex items-center justify-end gap-2 rounded-b-2xl border-t border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
+            <div className="flex items-center justify-end gap-2 rounded-b-2xl border-t border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
               <button
                 className="inline-flex h-10 cursor-pointer items-center rounded-xl border border-[#cec7aa] bg-white px-4 text-xs font-semibold uppercase tracking-[0.08em] text-[#1e1c10] transition hover:bg-[#f6f1da] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={submitting}

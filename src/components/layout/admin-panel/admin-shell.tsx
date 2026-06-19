@@ -72,7 +72,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       className={[
                         "mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full",
                         active
-                          ? "bg-[#231f20] text-[#ffe500]"
+                          ? "bg-[#231f20] text-brand-yellow"
                           : "bg-white/7 text-white/52 group-hover:bg-white/10 group-hover:text-white/72",
                       ].join(" ")}
                     >
