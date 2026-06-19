@@ -8,7 +8,8 @@ export type NotificationType =
   | "support_message"
   | "support_escalated"
   | "new_purchase"
-  | "vendor_processing_overdue";
+  | "vendor_processing_overdue"
+  | "vendor_registration_pending";
 
 export type NotificationPayload = Record<string, unknown>;
 

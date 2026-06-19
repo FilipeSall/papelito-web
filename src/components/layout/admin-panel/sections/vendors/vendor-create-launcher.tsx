@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import {
+  ADMIN_BANK_OPTIONS,
+  OTHER_BANK_OPTION_VALUE,
+  findBankOptionByCode,
+} from "@/features/revendedor/constants/bank-codes";
+import {
   REVENDEDOR_CORPORATION_TYPE_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
 } from "@/features/revendedor/constants/revendedor-content";
-import type {
-  RevendedorStep3Errors,
-  VendorRegistrationStep3Data,
-} from "@/features/revendedor/types/revendedor-application";
+import type { VendorRegistrationStep3Data } from "@/features/revendedor/types/revendedor-application";
 import type { AdminVendorCreatePayload } from "@/lib/admin-vendors-types";
 import {
   formatCep,
@@ -25,8 +27,6 @@ import {
 import {
   createEmptyStep3Data,
   formatCpf,
-  isValidCpf,
-  validateStep3,
 } from "@/features/revendedor/utils/revendedor-registration";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import { AdminSelectField } from "../products/components/admin-select-field";
@@ -155,6 +155,7 @@ function Section({ children, title }: { children: React.ReactNode; title: string
 
 function validateForm(form: VendorCreateForm): string | null {
   if (!isValidEmail(form.email)) return "Informe um e-mail valido.";
+  if (!form.storeName?.trim()) return "Informe o nome da loja.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ valido.";
   if (!isValidCep(form.cep ?? "")) return "Informe um CEP valido para a loja.";
   if (!form.street?.trim()) return "Informe o logradouro da loja.";
@@ -172,23 +173,6 @@ function validateForm(form: VendorCreateForm): string | null {
       return `O CEP final precisa ser maior ou igual ao inicial na faixa ${index + 1}.`;
     }
   }
-
-  const bank = form.bankAccount;
-  if (!bank.holderName.trim()) return "Informe o titular da conta.";
-  if (bank.holderType === "company" && !isValidCnpj(bank.holderDocument)) {
-    return "Informe um CNPJ valido para o titular.";
-  }
-  if (bank.holderType === "individual" && !isValidCpf(bank.holderDocument)) {
-    return "Informe um CPF valido para o titular.";
-  }
-  if (!/^\d{3}$/.test(bank.bankCode)) return "Informe o codigo bancario com 3 digitos.";
-  if (!/^\d+$/.test(bank.branchNumber)) return "Informe uma agencia valida.";
-  if (!/^\d+$/.test(bank.accountNumber)) return "Informe uma conta valida.";
-  if (!/^[0-9A-Za-z]+$/.test(bank.accountCheckDigit)) return "Informe o digito da conta.";
-
-  const step3Errors = validateStep3(buildAdminPagarmeDraft(form));
-  const firstStep3Error = getFirstStep3Error(step3Errors);
-  if (firstStep3Error) return firstStep3Error;
 
   return null;
 }
@@ -224,19 +208,6 @@ function buildAdminPagarmeDraft(form: VendorCreateForm): VendorRegistrationStep3
       },
     ],
   };
-}
-
-function collectMessages(value: unknown): string[] {
-  if (!value) return [];
-  if (typeof value === "string") return value.trim() ? [value] : [];
-  if (Array.isArray(value)) return value.flatMap(collectMessages);
-  if (typeof value === "object") return Object.values(value).flatMap(collectMessages);
-  return [];
-}
-
-function getFirstStep3Error(errors: RevendedorStep3Errors): string | null {
-  const [first] = collectMessages(errors);
-  return first ?? null;
 }
 
 function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
@@ -276,6 +247,7 @@ export function VendorCreateLauncher() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] = useState<VendorCreateForm>(INITIAL_FORM);
+  const [useCustomBankCode, setUseCustomBankCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdVendor, setCreatedVendor] = useState<CreatedVendor | null>(null);
@@ -285,6 +257,15 @@ export function VendorCreateLauncher() {
   } | null>(null);
   const [isCepLookingUp, setIsCepLookingUp] = useState(false);
   const cepLookupRequestIdRef = useRef(0);
+  const bankCode = form.bankAccount.bankCode.trim();
+  const selectedBankOption = findBankOptionByCode(bankCode);
+  const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : (selectedBankOption?.value ?? "");
+
+  useEffect(() => {
+    if (bankCode && !selectedBankOption) {
+      setUseCustomBankCode(true);
+    }
+  }, [bankCode, selectedBankOption]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -469,6 +450,7 @@ export function VendorCreateLauncher() {
       }
 
       setForm(INITIAL_FORM);
+      setUseCustomBankCode(false);
       setCreatedVendor(data?.vendor ?? null);
       setIsOpen(false);
       router.refresh();
@@ -493,6 +475,7 @@ export function VendorCreateLauncher() {
             setCreatedVendor(null);
             setCepStatus(null);
             setIsCepLookingUp(false);
+            setUseCustomBankCode(false);
             setIsOpen(true);
           }}
           type="button"
@@ -550,6 +533,13 @@ export function VendorCreateLauncher() {
             </div>
 
             <div className="space-y-6 px-6 py-5">
+              <div className="border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
+                <p className="font-black uppercase tracking-[0.16em]">Preenchimento minimo do admin</p>
+                <p className="mt-2 leading-6">
+                  Os unicos blocos obrigatorios para o admin preencher agora sao <strong>Conta</strong>, <strong>Dados comerciais</strong> e <strong>Endereco e cobertura</strong>. <strong>KYC da empresa</strong>, <strong>Responsavel legal / socio administrador</strong> e <strong>Dados bancarios</strong> podem ficar incompletos e depois serao exigidos do vendor.
+                </p>
+              </div>
+
               <Section title="Conta">
                 <div className="grid gap-4 md:grid-cols-3">
                   <Field
@@ -584,6 +574,7 @@ export function VendorCreateLauncher() {
                       if (!form.pagarmeDraft.companyName.trim()) updatePagarmeDraft("companyName", value);
                       if (!form.pagarmeDraft.tradingName.trim()) updatePagarmeDraft("tradingName", value);
                     }}
+                    required
                     value={form.storeName ?? ""}
                   />
                   <Field
@@ -733,20 +724,18 @@ export function VendorCreateLauncher() {
                   <Field
                     label="Razao social"
                     onChange={(value) => updatePagarmeDraft("companyName", value)}
-                    required
                     value={form.pagarmeDraft.companyName}
                   />
                   <Field
                     label="Nome fantasia"
                     onChange={(value) => updatePagarmeDraft("tradingName", value)}
-                    required
                     value={form.pagarmeDraft.tradingName}
                   />
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-3">
                   <AdminSelectField
-                    label="Natureza juridica *"
+                    label="Natureza juridica"
                     onChange={(value) => {
                       updatePagarmeDraft("corporationTypeSelection", value);
                       updatePagarmeDraft(
@@ -762,14 +751,12 @@ export function VendorCreateLauncher() {
                   <Field
                     label="Data de fundacao"
                     onChange={(value) => updatePagarmeDraft("foundingDate", value)}
-                    required
                     type="date"
                     value={form.pagarmeDraft.foundingDate}
                   />
                   <Field
                     label="Faturamento anual"
                     onChange={(value) => updatePagarmeDraft("annualRevenue", value)}
-                    required
                     type="number"
                     value={form.pagarmeDraft.annualRevenue}
                   />
@@ -783,7 +770,6 @@ export function VendorCreateLauncher() {
                         updatePagarmeDraft("corporationTypeOther", value);
                         updatePagarmeDraft("corporationType", value);
                       }}
-                      required
                       value={form.pagarmeDraft.corporationTypeOther}
                     />
                   </div>
@@ -795,13 +781,11 @@ export function VendorCreateLauncher() {
                   <Field
                     label="Nome completo"
                     onChange={(value) => updateManagingPartnerField("name", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.name ?? ""}
                   />
                   <Field
                     label="E-mail"
                     onChange={(value) => updateManagingPartnerField("email", value)}
-                    required
                     type="email"
                     value={form.pagarmeDraft.managingPartners[0]?.email ?? ""}
                   />
@@ -812,37 +796,32 @@ export function VendorCreateLauncher() {
                     inputMode="numeric"
                     label="CPF"
                     onChange={(value) => updateManagingPartnerField("document", formatCpf(value))}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.document ?? ""}
                   />
                   <Field
                     label="Nome da mae"
                     onChange={(value) => updateManagingPartnerField("motherName", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.motherName ?? ""}
                   />
                   <Field
                     label="Data de nascimento"
                     onChange={(value) => updateManagingPartnerField("birthdate", value)}
-                    required
                     type="date"
                     value={form.pagarmeDraft.managingPartners[0]?.birthdate ?? ""}
                   />
                   <Field
                     label="Renda mensal"
                     onChange={(value) => updateManagingPartnerField("monthlyIncome", value)}
-                    required
                     type="number"
                     value={form.pagarmeDraft.managingPartners[0]?.monthlyIncome ?? ""}
                   />
                   <Field
                     label="Ocupacao profissional"
                     onChange={(value) => updateManagingPartnerField("professionalOccupation", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.professionalOccupation ?? ""}
                   />
                   <AdminSelectField
-                    label="Representante legal autodeclarado *"
+                    label="Representante legal autodeclarado"
                     onChange={(value) =>
                       updateManagingPartnerField("selfDeclaredLegalRepresentative", value === "sim")
                     }
@@ -865,13 +844,11 @@ export function VendorCreateLauncher() {
                     inputMode="numeric"
                     label="CEP do responsavel"
                     onChange={(value) => updateManagingPartnerAddressField("zipCode", formatCep(value))}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.address.zipCode ?? ""}
                   />
                   <Field
                     label="Rua do responsavel"
                     onChange={(value) => updateManagingPartnerAddressField("street", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.address.street ?? ""}
                   />
                   <Field
@@ -879,7 +856,6 @@ export function VendorCreateLauncher() {
                     onChange={(value) =>
                       updateManagingPartnerAddressField("streetNumber", value.replace(/[^\dA-Za-z-]/g, ""))
                     }
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.address.streetNumber ?? ""}
                   />
                   <Field
@@ -890,20 +866,18 @@ export function VendorCreateLauncher() {
                   <Field
                     label="Bairro"
                     onChange={(value) => updateManagingPartnerAddressField("neighborhood", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.address.neighborhood ?? ""}
                   />
                   <Field
                     label="Cidade"
                     onChange={(value) => updateManagingPartnerAddressField("city", value)}
-                    required
                     value={form.pagarmeDraft.managingPartners[0]?.address.city ?? ""}
                   />
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <AdminSelectField
-                    label="Estado do responsavel *"
+                    label="Estado do responsavel"
                     onChange={(value) => updateManagingPartnerAddressField("state", value)}
                     options={REVENDEDOR_STATE_OPTIONS}
                     placeholder="Selecione"
@@ -911,7 +885,7 @@ export function VendorCreateLauncher() {
                     variant="vendor-create"
                   />
                   <AdminSelectField
-                    label="Tem socio administrador? *"
+                    label="Tem socio administrador?"
                     onChange={(value) =>
                       updatePagarmeDraft("hasManagingPartner", value === "no" ? "no" : "yes")
                     }
@@ -931,11 +905,10 @@ export function VendorCreateLauncher() {
                   <Field
                     label="Titular"
                     onChange={(value) => updateBank("holderName", value)}
-                    required
                     value={form.bankAccount.holderName}
                   />
                   <AdminSelectField
-                    label="Tipo do titular *"
+                    label="Tipo do titular"
                     onChange={(value) => {
                       const holderType = value === "individual" ? "individual" : "company";
                       updateBank("holderType", holderType);
@@ -958,22 +931,39 @@ export function VendorCreateLauncher() {
                         form.bankAccount.holderType === "company" ? formatCnpj(value) : formatCpf(value),
                       )
                     }
-                    required
                     value={form.bankAccount.holderDocument}
                   />
-                  <Field
-                    inputMode="numeric"
+                  <AdminSelectField
                     label="Banco"
-                    onChange={(value) => updateBank("bankCode", digits(value, 3))}
-                    placeholder="001"
-                    required
-                    value={form.bankAccount.bankCode}
+                    helpText="Selecione um banco da lista ou use Outro para informar manualmente o codigo de 3 digitos."
+                    onChange={(value) => {
+                      if (value === OTHER_BANK_OPTION_VALUE) {
+                        setUseCustomBankCode(true);
+                        updateBank("bankCode", "");
+                        return;
+                      }
+
+                      setUseCustomBankCode(false);
+                      updateBank("bankCode", value);
+                    }}
+                    options={ADMIN_BANK_OPTIONS}
+                    placeholder="Selecione"
+                    value={bankSelectValue}
+                    variant="vendor-create"
                   />
+                  {useCustomBankCode ? (
+                    <Field
+                      inputMode="numeric"
+                      label="Codigo do banco"
+                      onChange={(value) => updateBank("bankCode", digits(value, 3))}
+                      placeholder="000"
+                      value={form.bankAccount.bankCode}
+                    />
+                  ) : null}
                   <Field
                     inputMode="numeric"
                     label="Agencia"
                     onChange={(value) => updateBank("branchNumber", digits(value))}
-                    required
                     value={form.bankAccount.branchNumber}
                   />
                   <Field
@@ -985,17 +975,15 @@ export function VendorCreateLauncher() {
                     inputMode="numeric"
                     label="Conta"
                     onChange={(value) => updateBank("accountNumber", digits(value))}
-                    required
                     value={form.bankAccount.accountNumber}
                   />
                   <Field
                     label="Digito conta"
                     onChange={(value) => updateBank("accountCheckDigit", value.replace(/[^0-9A-Za-z]/g, "").slice(0, 2))}
-                    required
                     value={form.bankAccount.accountCheckDigit}
                   />
                   <AdminSelectField
-                    label="Tipo da conta *"
+                    label="Tipo da conta"
                     onChange={(value) => updateBank("type", value === "savings" ? "savings" : "checking")}
                     options={[
                       { label: "Conta corrente", value: "checking" },

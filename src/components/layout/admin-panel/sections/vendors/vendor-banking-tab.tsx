@@ -1,4 +1,5 @@
 import type { AdminVendorBankAccount, AdminVendorDetail } from "@/lib/server/admin-vendors";
+import { formatBankCodeLabel } from "@/features/revendedor/constants/bank-codes";
 
 import { DetailRow, DetailSection } from "./vendor-detail-primitives";
 
@@ -36,7 +37,7 @@ export function VendorBankingTab({ vendor }: { vendor: AdminVendorDetail }) {
       <DetailRow label="Titular" value={bankAccount?.holderName} />
       <DetailRow label="Tipo do titular" value={formatHolderType(bankAccount?.holderType ?? "")} />
       <DetailRow label="Documento do titular" value={bankAccount?.holderDocument} />
-      <DetailRow label="Banco" value={bankAccount?.bankCode} />
+      <DetailRow label="Banco" value={formatBankCodeLabel(bankAccount?.bankCode)} />
       <DetailRow label="Agencia" value={formatBranch(bankAccount)} />
       <DetailRow label="Conta" value={formatAccount(bankAccount)} />
       <DetailRow label="Tipo da conta" value={formatAccountType(bankAccount?.type ?? "")} />

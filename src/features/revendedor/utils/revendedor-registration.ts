@@ -14,6 +14,7 @@ import type {
   VendorRegistrationStep2Data,
   VendorRegistrationStep3Data,
 } from "../types/revendedor-application";
+import { isVendorPendingFieldKey } from "../constants/pending-registration";
 import {
   formatCep,
   formatCnpj,
@@ -129,6 +130,7 @@ export function createEmptyVendorRegistrationDraft(
 
 export function createEmptyRevendedorApplication(): RevendedorApplication {
   return {
+    pendingFields: [],
     status: "none",
     submittedAt: "",
     step1: createEmptyStep1Data(),
@@ -144,7 +146,14 @@ export function normalizeRevendedorApplication(
     return createEmptyRevendedorApplication();
   }
 
+  const pendingFields = Array.isArray(payload.pendingFields)
+    ? payload.pendingFields
+        .map(normalizePendingField)
+        .filter((field): field is NonNullable<ReturnType<typeof normalizePendingField>> => field !== null)
+    : [];
+
   return {
+    pendingFields,
     status:
       payload.status === "pending" ||
       payload.status === "approved" ||
@@ -158,6 +167,10 @@ export function normalizeRevendedorApplication(
       ? normalizeStep3Data(payload.pagarmeDraft)
       : null,
   };
+}
+
+function normalizePendingField(value: unknown) {
+  return typeof value === "string" && isVendorPendingFieldKey(value) ? value : null;
 }
 
 export function buildDraftFromSources(

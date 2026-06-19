@@ -6,6 +6,7 @@ export { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
 export { VendorOrdersTable } from "./vendor-orders-table";
 export { VendorCoverageManager } from "./vendor-coverage-manager";
 export { VendorPageHeader } from "./vendor-page-header";
+export { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";
 export { VendorPeriodFilters } from "./vendor-period-filters";
 export { VendorRecipientPanel } from "./vendor-recipient-panel";
 export { VendorSettingsForm } from "./vendor-settings-form";

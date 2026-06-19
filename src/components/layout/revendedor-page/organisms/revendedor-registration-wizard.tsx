@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 
 import { useCepLookup } from "@/features/checkout";
 import {
+  ADMIN_BANK_OPTIONS,
+  findBankOptionByCode,
+  OTHER_BANK_OPTION_VALUE,
+} from "@/features/revendedor/constants/bank-codes";
+import {
   REVENDEDOR_CORPORATION_TYPE_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
   useRevendedorRegistrationDraftStore,
@@ -88,6 +93,7 @@ export function RevendedorRegistrationWizard({
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitTone, setSubmitTone] = useState<"error" | "success">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useCustomBankCode, setUseCustomBankCode] = useState(false);
   const isPagarmeEditMode =
     editMode === "pagarme" &&
     (application.status === "pending" || application.status === "approved");
@@ -237,6 +243,15 @@ export function RevendedorRegistrationWizard({
     }
   }, [draft.currentStep, hasHydrated, isPagarmeEditMode, setCurrentStep]);
 
+  useEffect(() => {
+    const bankCode = draft.step3.bankAccount.bankCode.trim();
+    const selectedBankOption = findBankOptionByCode(bankCode);
+
+    if (bankCode && !selectedBankOption) {
+      setUseCustomBankCode(true);
+    }
+  }, [draft.step3.bankAccount.bankCode]);
+
   if (!hasHydrated) {
     return (
       <div className="flex min-h-screen">
@@ -286,6 +301,10 @@ export function RevendedorRegistrationWizard({
     draft.step3.bankAccount.accountNumber,
     draft.step3.bankAccount.accountCheckDigit,
   );
+  const selectedBankOption = findBankOptionByCode(draft.step3.bankAccount.bankCode.trim());
+  const bankSelectValue = useCustomBankCode
+    ? OTHER_BANK_OPTION_VALUE
+    : (selectedBankOption?.value ?? "");
 
   function handleStep1Change<Key extends keyof VendorRegistrationDraft["step1"]>(
     key: Key,
@@ -1249,21 +1268,44 @@ export function RevendedorRegistrationWizard({
                         tone="dark"
                         value={draft.step3.bankAccount.holderDocument}
                       />
-                      <RevendedorFormField
+                      <RevendedorFormSelectField
                         error={step3Errors.bankAccount?.bankCode}
-                        id="bankCode"
-                        inputMode="numeric"
-                        label="Código do banco *"
-                        maxLength={3}
-                        name="bankCode"
-                        onChange={(event) =>
-                          handleBankAccountChange("bankCode", event.target.value)
-                        }
-                        placeholder="341"
+                        label="Banco *"
+                        onChange={(value) => {
+                          if (value === OTHER_BANK_OPTION_VALUE) {
+                            setUseCustomBankCode(true);
+                            handleBankAccountChange("bankCode", "");
+                            return;
+                          }
+
+                          setUseCustomBankCode(false);
+                          handleBankAccountChange("bankCode", value);
+                        }}
+                        options={ADMIN_BANK_OPTIONS}
+                        placeholder="Selecione"
                         tone="dark"
-                        value={draft.step3.bankAccount.bankCode}
+                        value={bankSelectValue}
                       />
                     </RevendedorFormRow>
+
+                    {useCustomBankCode ? (
+                      <RevendedorFormRow>
+                        <RevendedorFormField
+                          error={step3Errors.bankAccount?.bankCode}
+                          id="bankCode"
+                          inputMode="numeric"
+                          label="Código do banco *"
+                          maxLength={3}
+                          name="bankCode"
+                          onChange={(event) =>
+                            handleBankAccountChange("bankCode", event.target.value)
+                          }
+                          placeholder="000"
+                          tone="dark"
+                          value={draft.step3.bankAccount.bankCode}
+                        />
+                      </RevendedorFormRow>
+                    ) : null}
 
                     <RevendedorFormRow>
                       <RevendedorFormField

@@ -1,4 +1,5 @@
 import { formatBRLIntl } from "@/lib/format-currency";
+import { VENDOR_PENDING_FIELD_LABELS, isVendorPendingFieldKey } from "@/features/revendedor/constants/pending-registration";
 
 import type { NotificationItem, NotificationPayload } from "../types/notification";
 
@@ -191,6 +192,28 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         title: "Pedido atrasado",
         body: `${orderLabel} passou do prazo de separacao${daysLabel}. Separe com urgencia.`,
         href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
+      };
+    }
+    case "vendor_registration_pending": {
+      const pendingFields = Array.isArray(payload.pending_fields)
+        ? payload.pending_fields
+            .map((value) => (typeof value === "string" && isVendorPendingFieldKey(value) ? value : null))
+            .filter((value): value is keyof typeof VENDOR_PENDING_FIELD_LABELS => value !== null)
+        : [];
+      const firstFields = pendingFields
+        .slice(0, 2)
+        .map((field) => VENDOR_PENDING_FIELD_LABELS[field]);
+      const extraCount = Math.max(0, pendingFields.length - firstFields.length);
+      const fieldsLabel =
+        firstFields.length === 0
+          ? "Existem dados obrigatorios pendentes no seu cadastro."
+          : `${firstFields.join(", ")}${extraCount > 0 ? ` e mais ${extraCount}` : ""}.`;
+
+      return {
+        icon: "message",
+        title: "Cadastro incompleto",
+        body: `Complete os dados pendentes para concluir sua operacao: ${fieldsLabel}`,
+        href: "/vendor/dashboard",
       };
     }
     default:

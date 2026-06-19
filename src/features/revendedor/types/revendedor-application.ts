@@ -1,4 +1,5 @@
 import type { RevendedorSoldOption } from "./revendedor";
+import type { VendorPendingFieldKey } from "../constants/pending-registration";
 
 export type RevendedorApplicationStatus = "none" | "pending" | "approved" | "rejected";
 
@@ -94,6 +95,7 @@ export type VendorRegistrationDraft = {
 };
 
 export type RevendedorApplication = {
+  pendingFields: VendorPendingFieldKey[];
   status: RevendedorApplicationStatus;
   submittedAt: string;
   step1: VendorRegistrationStep1Data;
@@ -102,6 +104,7 @@ export type RevendedorApplication = {
 };
 
 export type VendorApplicationResponse = {
+  pendingFields?: string[] | null;
   status: RevendedorApplicationStatus;
   submittedAt: string;
   application: {
@@ -115,6 +118,12 @@ export type SubmitRevendedorApplicationInput = {
   step1: VendorRegistrationStep1Data;
   step2: VendorRegistrationStep2Data;
   step3: VendorRegistrationStep3SubmitData;
+};
+
+export type VendorPendingRegistrationResponse = {
+  draft: VendorRegistrationStep3Data | null;
+  pendingFields: string[];
+  updatedAt?: string;
 };
 
 export type RevendedorStep1Errors = Partial<Record<keyof VendorRegistrationStep1Data, string>>;
