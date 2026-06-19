@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   REVENDEDOR_CORPORATION_TYPE_OPTIONS,
-  REVENDEDOR_SOLD_OPTIONS,
   REVENDEDOR_STATE_OPTIONS,
 } from "@/features/revendedor/constants/revendedor-content";
 import type {
@@ -22,7 +21,6 @@ import {
   isValidCep,
   isValidCnpj,
   isValidEmail,
-  sanitizeInstagramHandle,
 } from "@/features/revendedor/utils/revendedor-formatters";
 import {
   createEmptyStep3Data,
@@ -55,7 +53,6 @@ const INITIAL_FORM: VendorCreateForm = {
   lastName: "",
   phoneNumber: "",
   cnpj: "",
-  instagram: "",
   state: "",
   city: "",
   cep: "",
@@ -63,7 +60,6 @@ const INITIAL_FORM: VendorCreateForm = {
   number: "",
   complement: "",
   neighborhood: "",
-  hasSoldPapelito: "",
   coverageRanges: [{ minCep: "", maxCep: "" }],
   bankAccount: {
     holderName: "",
@@ -86,9 +82,9 @@ function digits(value: string, max?: number) {
 
 function fieldClass(hasError = false) {
   return [
-    "mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm text-[#231f20] outline-none transition",
-    "placeholder:text-[#231f20]/36 focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]/20",
-    hasError ? "border-[#b91c1c]" : "border-[#231f20]/14",
+    "mt-2 h-11 w-full rounded-none border-2 bg-white px-3 text-sm text-[#1a1a1a] outline-none transition",
+    "placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a] focus:ring-0",
+    hasError ? "border-[#c0392b]" : "border-[#1a1a1a]",
   ].join(" ");
 }
 
@@ -119,7 +115,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#4b4731]">
+      <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
         <span>
           {label}
           {required ? " *" : ""}
@@ -135,9 +131,9 @@ function Field({
         type={type}
         value={value}
       />
-      {error ? <span className="mt-1 block text-xs text-[#b91c1c]">{error}</span> : null}
+      {error ? <span className="mt-1 block text-[11px] font-semibold text-[#c0392b]">{error}</span> : null}
       {!error && helperText ? (
-        <span className="mt-1 block text-xs text-[#6f6651]">{helperText}</span>
+        <span className="mt-1 block text-[11px] text-[#1a1a1a]/50">{helperText}</span>
       ) : null}
     </label>
   );
@@ -145,10 +141,13 @@ function Field({
 
 function Section({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="border-t border-[#231f20]/10 pt-5 first:border-t-0 first:pt-0">
-      <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/58">
-        {title}
-      </h4>
+    <section className="border-t-2 border-[#1a1a1a]/10 pt-5 first:border-t-0 first:pt-0">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" aria-hidden="true" />
+        <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
+          {title}
+        </h4>
+      </div>
       {children}
     </section>
   );
@@ -482,13 +481,13 @@ export function VendorCreateLauncher() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
             Operacao
           </p>
-          <h2 className="text-xl font-semibold text-[#231f20]">Vendors</h2>
+          <h2 className="text-xl font-black uppercase tracking-tight text-[#1a1a1a]">Vendors</h2>
         </div>
         <button
-          className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#231f20] px-4 text-xs font-semibold uppercase tracking-[0.08em] text-[#ffe500] transition hover:bg-black"
+          className="inline-flex h-11 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
           onClick={() => {
             setError(null);
             setCreatedVendor(null);
@@ -499,17 +498,17 @@ export function VendorCreateLauncher() {
           type="button"
         >
           <Plus className="h-4 w-4" strokeWidth={2.4} />
-          Adicionar vendor
+          + Novo vendor
         </button>
       </div>
 
       {createdVendor?.id ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#b9d7aa] bg-[#f1faed] px-4 py-3 text-sm text-[#275319]">
-          <span>
-            Vendor criado: {createdVendor.storeName || createdVendor.email || `#${createdVendor.id}`}.
+        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-brand-yellow px-4 py-3 text-sm shadow-[4px_4px_0px_#1a1a1a]">
+          <span className="font-black uppercase tracking-wide text-[#1a1a1a]">
+            ✓ Vendor criado: {createdVendor.storeName || createdVendor.email || `#${createdVendor.id}`}
           </span>
-          <Link className="font-semibold underline" href={`/admin/vendors/${createdVendor.id}`}>
-            Abrir cadastro
+          <Link className="border-b-2 border-[#1a1a1a] font-black uppercase tracking-widest text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-brand-yellow px-2" href={`/admin/vendors/${createdVendor.id}`}>
+            Abrir cadastro →
           </Link>
         </div>
       ) : null}
@@ -518,32 +517,35 @@ export function VendorCreateLauncher() {
         <div
           aria-modal="true"
           aria-labelledby="vendor-create-title"
-          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 px-4 py-8"
+          className="fixed inset-0 z-70 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8"
           onClick={() => !submitting && setIsOpen(false)}
           role="dialog"
         >
           <form
-            className="relative w-full max-w-5xl rounded-2xl bg-[#fffdf6] shadow-2xl"
+            className="relative w-full max-w-5xl border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
             onClick={(event) => event.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <div className="z-10 flex items-start justify-between gap-4 rounded-t-2xl border-b border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
+            {/* Faixa amarela decorativa no topo */}
+            <div className="h-2 w-full bg-brand-yellow" />
+
+            <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#4b4731]">
-                  Criacao direta
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
+                  Painel admin · criação direta
                 </p>
-                <h3 id="vendor-create-title" className="text-lg font-semibold text-[#1e1c10]">
+                <h3 id="vendor-create-title" className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a]">
                   Adicionar vendor
                 </h3>
               </div>
               <button
                 aria-label="Fechar"
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#1e1c10] transition hover:bg-[#f6f1da] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={submitting}
                 onClick={() => setIsOpen(false)}
                 type="button"
               >
-                <X className="h-5 w-5" strokeWidth={2} />
+                <X className="h-5 w-5" strokeWidth={2.5} />
               </button>
             </div>
 
@@ -607,18 +609,6 @@ export function VendorCreateLauncher() {
                     onChange={(value) => update("phoneNumber", formatPhone(value))}
                     value={form.phoneNumber ?? ""}
                   />
-                  <Field
-                    label="Instagram"
-                    onChange={(value) => update("instagram", sanitizeInstagramHandle(value))}
-                    value={form.instagram ?? ""}
-                  />
-                  <AdminSelectField
-                    label="Ja vende Papelito?"
-                    onChange={(value) => update("hasSoldPapelito", value)}
-                    options={[{ label: "Selecione", value: "" }, ...REVENDEDOR_SOLD_OPTIONS]}
-                    placeholder="Selecione"
-                    value={form.hasSoldPapelito ?? ""}
-                  />
                 </div>
               </Section>
 
@@ -648,6 +638,7 @@ export function VendorCreateLauncher() {
                     options={REVENDEDOR_STATE_OPTIONS}
                     placeholder="Selecione"
                     value={form.state ?? ""}
+                    variant="vendor-create"
                   />
                   <Field
                     helpText="Pode ser ajustado manualmente se a busca vier incompleta."
@@ -707,7 +698,7 @@ export function VendorCreateLauncher() {
                       />
                       <button
                         aria-label="Remover faixa"
-                        className="mt-7 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[#d8cfb4] bg-white text-[#7a3428] transition hover:border-[#7a3428] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="mt-7 inline-flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                         disabled={form.coverageRanges.length === 1}
                         onClick={() =>
                           setForm((prev) => ({
@@ -722,7 +713,7 @@ export function VendorCreateLauncher() {
                     </div>
                   ))}
                   <button
-                    className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[#cec7aa] bg-white px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#1e1c10] transition hover:bg-[#f6f1da]"
+                    className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-dashed border-[#1a1a1a] bg-white px-3 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow"
                     onClick={() =>
                       setForm((prev) => ({
                         ...prev,
@@ -766,6 +757,7 @@ export function VendorCreateLauncher() {
                     options={REVENDEDOR_CORPORATION_TYPE_OPTIONS}
                     placeholder="Selecione"
                     value={form.pagarmeDraft.corporationTypeSelection}
+                    variant="vendor-create"
                   />
                   <Field
                     label="Data de fundacao"
@@ -864,6 +856,7 @@ export function VendorCreateLauncher() {
                         ? "nao"
                         : "sim"
                     }
+                    variant="vendor-create"
                   />
                 </div>
 
@@ -915,6 +908,7 @@ export function VendorCreateLauncher() {
                     options={REVENDEDOR_STATE_OPTIONS}
                     placeholder="Selecione"
                     value={form.pagarmeDraft.managingPartners[0]?.address.state ?? ""}
+                    variant="vendor-create"
                   />
                   <AdminSelectField
                     label="Tem socio administrador? *"
@@ -927,6 +921,7 @@ export function VendorCreateLauncher() {
                     ]}
                     placeholder="Selecione"
                     value={form.pagarmeDraft.hasManagingPartner}
+                    variant="vendor-create"
                   />
                 </div>
               </Section>
@@ -952,6 +947,7 @@ export function VendorCreateLauncher() {
                     ]}
                     placeholder="Selecione"
                     value={form.bankAccount.holderType}
+                    variant="vendor-create"
                   />
                   <Field
                     inputMode="numeric"
@@ -1007,20 +1003,21 @@ export function VendorCreateLauncher() {
                     ]}
                     placeholder="Selecione"
                     value={form.bankAccount.type}
+                    variant="vendor-create"
                   />
                 </div>
               </Section>
 
               {error ? (
-                <p className="rounded-xl border border-[#d7b0aa] bg-[#fef3f1] px-4 py-3 text-sm text-[#7a3428]">
-                  {error}
-                </p>
+                <div className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3">
+                  <p className="text-sm font-bold text-[#c0392b]">⚠ {error}</p>
+                </div>
               ) : null}
             </div>
 
-            <div className="flex items-center justify-end gap-2 rounded-b-2xl border-t border-[#231f20]/10 bg-[#fffdf6] px-6 py-4">
+            <div className="flex items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
               <button
-                className="inline-flex h-10 cursor-pointer items-center rounded-xl border border-[#cec7aa] bg-white px-4 text-xs font-semibold uppercase tracking-[0.08em] text-[#1e1c10] transition hover:bg-[#f6f1da] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={submitting}
                 onClick={() => setIsOpen(false)}
                 type="button"
@@ -1028,7 +1025,7 @@ export function VendorCreateLauncher() {
                 Cancelar
               </button>
               <button
-                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#231f20] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-[#ffe500] transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={submitting}
                 type="submit"
               >
