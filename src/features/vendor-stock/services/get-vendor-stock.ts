@@ -43,6 +43,8 @@ export async function getVendorStock(filters: {
 
   const result = await wpRest<WpStockResponse>(`/papelito/v1/vendor/me/stock?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 30,
+    tags: ["vendor-stock"],
   });
 
   if (!result.ok) {

@@ -36,6 +36,8 @@ export async function getVendorCoverage(): Promise<VendorCoverageSnapshot> {
 
   const result = await wpRest<WpCoverageResponse>("/papelito/v1/vendor/me/coverage-ranges", {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 300,
+    tags: ["vendor-coverage"],
   });
 
   return {

@@ -165,6 +165,8 @@ export async function getAdminVendorsSnapshot(
 
   const result = await wpRest<RawSnapshot>(`/papelito/v1/admin/vendors?${query.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 60,
+    tags: ["admin-vendors"],
   });
 
   if (!result.ok) {

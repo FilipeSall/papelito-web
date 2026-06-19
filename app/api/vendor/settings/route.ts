@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
@@ -31,6 +31,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ message: result.error.message, code: result.error.code }, { status: result.status || 502 });
   }
 
+  revalidateTag("vendor-settings", "max");
   revalidatePath("/vendor/configuracoes");
   revalidatePath("/perfil/configuracoes");
   return NextResponse.json(result.data);

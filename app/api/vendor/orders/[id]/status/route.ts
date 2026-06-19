@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
@@ -45,6 +45,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ message: result.error.message, code: result.error.code }, { status: result.status || 502 });
   }
 
+  revalidateTag("vendor-orders", "max");
+  revalidateTag("vendor-kpis", "max");
   revalidatePath(`/vendor/pedidos/${id}`);
   revalidatePath("/vendor/pedidos");
   revalidatePath("/vendor/dashboard");

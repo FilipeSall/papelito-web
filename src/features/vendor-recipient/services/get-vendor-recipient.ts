@@ -34,6 +34,8 @@ export async function getVendorRecipient(): Promise<VendorRecipient> {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    revalidate: 300,
+    tags: ["vendor-recipient"],
   });
 
   if (!result.ok) {
