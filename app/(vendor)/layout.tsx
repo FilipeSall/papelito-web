@@ -34,7 +34,7 @@ export default async function VendorLayout({ children }: Readonly<{ children: Re
   }
 
   return (
-    <section className={`${vendorDisplay.variable} ${vendorBody.variable} ${vendorMono.variable} font-[var(--font-admin-body)]`}>
+    <section className={`${vendorDisplay.variable} ${vendorBody.variable} ${vendorMono.variable} h-screen overflow-hidden font-(--font-admin-body)`}>
       <VendorShell>{children}</VendorShell>
     </section>
   );

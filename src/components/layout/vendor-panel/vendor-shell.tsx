@@ -24,7 +24,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
   const title = getVendorPageTitle(pathname);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#ede9df] text-brand-dark">
+    <div className="relative h-screen overflow-hidden bg-[#ede9df] text-brand-dark">
       <VendorPendingRegistrationModalHost />
       <div
         aria-hidden
@@ -35,15 +35,15 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
           backgroundSize: "28px 28px",
         }}
       />
-      <div className="relative flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-brand-dark text-white lg:flex lg:flex-col">
+      <div className="relative flex h-full">
+        <aside className="hidden h-full w-72 shrink-0 flex-col border-r border-white/10 bg-brand-dark text-white lg:flex">
           <Link className="border-b border-white/10 px-6 py-7" href="/vendor/dashboard">
             <Image alt="Papelito" height={34} priority src="/images/logo2.svg" width={114} />
             <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-yellow/76">
               Area do vendor
             </p>
           </Link>
-          <nav aria-label="Navegacao do vendor" className="flex-1 space-y-1.5 px-4 py-5">
+          <nav aria-label="Navegacao do vendor" className="flex-1 space-y-1.5 overflow-y-auto px-4 py-5">
             {VENDOR_NAV_ITEMS.map((item) => {
               const active = pathname.startsWith(item.href);
               const Icon = item.icon;
@@ -78,7 +78,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <header className="sticky top-0 z-30 border-b-2 border-brand-dark bg-[#efe9dd]/95 backdrop-blur">
             <div className="flex min-h-18 items-center justify-between gap-4 px-4 py-3 md:px-7">
               <div className="flex items-center gap-4">

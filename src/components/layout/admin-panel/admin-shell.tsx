@@ -39,7 +39,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const currentItem = getCurrentNavItem(pathname);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#ede9df] text-[#231f20]">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[#ede9df] text-[#231f20]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"
@@ -53,9 +53,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      <div className="relative flex min-h-screen">
-        <aside className="hidden w-73 shrink-0 border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex lg:flex-col">
-          <nav className="flex-1 space-y-1.5 px-4 py-5">
+      <div className="relative flex min-h-0 flex-1">
+        <aside className="hidden h-full w-73 shrink-0 flex-col border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex">
+          <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-5">
             {ADMIN_NAV_ITEMS.map((item) => {
               const active = item.href === currentItem.href;
               const Icon = item.icon;
@@ -95,22 +95,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="border-t border-white/10 px-4 py-5">
-            <Link
-              className="block rounded-[18px] border border-white/12 bg-white/5 p-4 transition hover:border-white/24 hover:bg-white/8"
-              href="/"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/46">
-                Voltar para o site
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/72">
-                Sair do painel e abrir a navegacao publica do Papelito.
-              </p>
-            </Link>
-          </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <div className="sticky top-0 z-30 border-b-2 border-[#231f20] bg-[#efe9dd]/95 backdrop-blur lg:hidden">
             <div className="px-4 py-4">
               <div>

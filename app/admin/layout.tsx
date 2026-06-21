@@ -47,10 +47,10 @@ export default async function AdminLayout({
 
   return (
     <section
-      className={`${adminDisplay.variable} ${adminBody.variable} ${adminMono.variable} flex min-h-screen flex-col bg-bg-light`}
+      className={`${adminDisplay.variable} ${adminBody.variable} ${adminMono.variable} flex h-screen flex-col overflow-hidden bg-bg-light`}
     >
       <PrivateHeader />
-      <main className="flex-1">
+      <main className="min-h-0 flex-1 overflow-hidden">
         <AdminShell>{children}</AdminShell>
       </main>
     </section>
