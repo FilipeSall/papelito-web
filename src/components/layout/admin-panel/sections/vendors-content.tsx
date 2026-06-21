@@ -1,11 +1,13 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { getAdminUserDetail } from "@/lib/server/admin-users";
 import { getAdminVendorsSnapshot } from "@/lib/server/admin-vendors";
 import type { AdminVendorsPageSearchParams } from "@/lib/server/admin-vendors-filters";
 import {
   parseAdminVendorsFilters,
 } from "@/lib/server/admin-vendors-filters";
+import { firstParam } from "@/lib/search-params";
 
 import { VendorCreateLauncher, VendorsList, VendorsMetrics, VendorsTabs } from "./vendors";
 
@@ -17,10 +19,40 @@ export async function VendorsContent({
   const session = await getServerSession(authOptions);
   const filters = parseAdminVendorsFilters(searchParams);
   const snapshot = await getAdminVendorsSnapshot(session?.accessToken, filters);
+  const shouldOpenCreate = firstParam(searchParams?.create) === "1";
+  const sourceUserId = Number.parseInt(firstParam(searchParams?.sourceUserId) ?? "", 10);
+  const sourceUser =
+    shouldOpenCreate && Number.isFinite(sourceUserId) && sourceUserId > 0
+      ? await getAdminUserDetail(session?.accessToken, sourceUserId)
+      : null;
 
   return (
     <div className="space-y-5">
-      <VendorCreateLauncher />
+      <VendorCreateLauncher
+        initialOpen={shouldOpenCreate}
+        sourceUser={
+          sourceUser
+            ? {
+                cep: sourceUser.cep,
+                city: sourceUser.city,
+                cnpj: sourceUser.cnpj,
+                complement: sourceUser.complement,
+                email: sourceUser.email,
+                firstName: sourceUser.firstName,
+                id: sourceUser.id,
+                instagram: sourceUser.instagram,
+                lastName: sourceUser.lastName,
+                name: sourceUser.name,
+                neighborhood: sourceUser.neighborhood,
+                number: sourceUser.number,
+                phoneNumber: sourceUser.phoneNumber,
+                state: sourceUser.state,
+                storeName: sourceUser.storeName,
+                street: sourceUser.street,
+              }
+            : null
+        }
+      />
       <VendorsMetrics summary={snapshot.summary} totalRows={snapshot.totalRows} />
       <VendorsTabs filters={filters} summary={snapshot.summary} totalRows={snapshot.totalRows} />
       <VendorsList filters={filters} snapshot={snapshot} />

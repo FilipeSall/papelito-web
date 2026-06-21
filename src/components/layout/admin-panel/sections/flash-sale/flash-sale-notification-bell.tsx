@@ -74,7 +74,7 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
             ? "Nenhuma notificação"
             : `${count} notificaç${count === 1 ? "ão" : "ões"}`
         }
-        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#cec7aa] bg-white text-[#4b4731] transition hover:border-[#6a5f00] hover:text-[#1e1c10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6a5f00]/40"
+        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
@@ -82,7 +82,7 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
         {count > 0 ? (
           <span
             aria-hidden
-            className={`absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#fff9ea] ${TONE_DOT[tone]}`}
+            className={`absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center px-1 text-[10px] font-black leading-none text-white ring-2 ring-[#faf8f2] ${TONE_DOT[tone]}`}
           >
             {count > 9 ? "9+" : count}
           </span>
@@ -91,14 +91,14 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
 
       {open ? (
         <div
-          className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-[#cec7aa] bg-white p-3 shadow-[0_8px_24px_rgba(30,28,16,0.08)]"
+          className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] border-2 border-[#1a1a1a] bg-[#faf8f2] p-3 shadow-[8px_8px_0px_#1a1a1a]"
           role="dialog"
         >
-          <p className="mb-2 text-[12px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#4b4731]">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a1a]">
             Notificações {count > 0 ? `(${count})` : ""}
           </p>
           {count === 0 ? (
-            <p className="px-1 py-2 text-[13px] leading-[18px] text-[#4b4731]">
+            <p className="px-1 py-2 text-[13px] leading-4.5 text-text-secondary">
               Sem alertas no momento.
             </p>
           ) : (
@@ -106,17 +106,17 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
               {notifications.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-start gap-2 rounded-xl border border-[#cec7aa] bg-[#fff9ea] p-2 text-[13px] leading-[18px] text-[#1e1c10]"
+                  className="flex items-start gap-2 border-2 border-[#1a1a1a] bg-white p-2 text-[13px] leading-4.5 text-[#1a1a1a]"
                 >
                   <span
                     aria-hidden
-                    className={`mt-1.5 inline-flex h-2 w-2 shrink-0 rounded-full ${TONE_DOT[item.tone]}`}
+                    className={`mt-1.5 inline-flex h-2 w-2 shrink-0 ${TONE_DOT[item.tone]}`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#4b4731]">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#1a1a1a]/60">
                       {TONE_LABEL[item.tone]}
                     </p>
-                    <p className="mt-0.5 text-[13px] text-[#1e1c10]">{item.message}</p>
+                    <p className="mt-0.5 text-[13px] text-[#1a1a1a]">{item.message}</p>
                   </div>
                 </li>
               ))}

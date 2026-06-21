@@ -7,6 +7,7 @@ import {
   Settings,
   Store,
   TrendingUp,
+  Users,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ export type AdminSectionKey =
   | "products"
   | "flash-sale"
   | "vendors"
+  | "users"
   | "suporte"
   | "coupons"
   | "reports"
@@ -95,6 +97,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Suporte",
     shortLabel: "Suporte",
     description: "Conversas escaladas",
+  },
+  {
+    key: "users",
+    href: "/admin/users",
+    icon: Users,
+    label: "Usuarios",
+    shortLabel: "Usuarios",
+    description: "Contas, roles e historico",
   },
   {
     key: "config",

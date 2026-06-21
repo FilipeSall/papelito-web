@@ -46,34 +46,115 @@ type CreatedVendor = {
   storeName?: string;
 };
 
-const INITIAL_FORM: VendorCreateForm = {
-  email: "",
-  storeName: "",
-  firstName: "",
-  lastName: "",
-  phoneNumber: "",
-  cnpj: "",
-  state: "",
-  city: "",
-  cep: "",
-  street: "",
-  number: "",
-  complement: "",
-  neighborhood: "",
-  coverageRanges: [{ minCep: "", maxCep: "" }],
-  bankAccount: {
-    holderName: "",
-    holderType: "company",
-    holderDocument: "",
-    bankCode: "",
-    branchNumber: "",
-    branchCheckDigit: "",
-    accountNumber: "",
-    accountCheckDigit: "",
-    type: "checking",
-  },
-  pagarmeDraft: createEmptyStep3Data(),
+export type VendorCreateSourceUser = {
+  cep: string;
+  city: string;
+  cnpj: string;
+  complement: string;
+  email: string;
+  firstName: string;
+  id: number;
+  instagram: string;
+  lastName: string;
+  name: string;
+  neighborhood: string;
+  number: string;
+  phoneNumber: string;
+  state: string;
+  storeName: string;
+  street: string;
 };
+
+function createInitialForm(): VendorCreateForm {
+  return {
+    email: "",
+    storeName: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    cnpj: "",
+    instagram: "",
+    state: "",
+    city: "",
+    cep: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    discoveryChannel: "",
+    hasSoldPapelito: "",
+    coverageRanges: [{ minCep: "", maxCep: "" }],
+    bankAccount: {
+      holderName: "",
+      holderType: "company",
+      holderDocument: "",
+      bankCode: "",
+      branchNumber: "",
+      branchCheckDigit: "",
+      accountNumber: "",
+      accountCheckDigit: "",
+      type: "checking",
+    },
+    pagarmeDraft: createEmptyStep3Data(),
+  };
+}
+
+function createFormFromSourceUser(sourceUser?: VendorCreateSourceUser | null): VendorCreateForm {
+  const form = createInitialForm();
+
+  if (!sourceUser) {
+    return form;
+  }
+
+  const fullName = `${sourceUser.firstName} ${sourceUser.lastName}`.trim() || sourceUser.name.trim();
+  const storeName = sourceUser.storeName.trim() || fullName;
+  const partner = form.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+
+  return {
+    ...form,
+    email: sourceUser.email.trim(),
+    storeName,
+    firstName: sourceUser.firstName.trim(),
+    lastName: sourceUser.lastName.trim(),
+    phoneNumber: sourceUser.phoneNumber.trim(),
+    cnpj: sourceUser.cnpj.trim(),
+    instagram: sourceUser.instagram.trim(),
+    state: sourceUser.state.trim(),
+    city: sourceUser.city.trim(),
+    cep: sourceUser.cep.trim(),
+    street: sourceUser.street.trim(),
+    number: sourceUser.number.trim(),
+    complement: sourceUser.complement.trim(),
+    neighborhood: sourceUser.neighborhood.trim(),
+    bankAccount: {
+      ...form.bankAccount,
+      holderDocument: sourceUser.cnpj.trim(),
+      holderName: storeName || fullName,
+    },
+    pagarmeDraft: {
+      ...form.pagarmeDraft,
+      companyName: storeName,
+      tradingName: storeName,
+      managingPartners: [
+        {
+          ...partner,
+          email: sourceUser.email.trim(),
+          name: fullName,
+          address: {
+            ...partner.address,
+            city: sourceUser.city.trim(),
+            complement: sourceUser.complement.trim(),
+            neighborhood: sourceUser.neighborhood.trim(),
+            state: sourceUser.state.trim(),
+            street: sourceUser.street.trim(),
+            streetNumber: sourceUser.number.trim(),
+            zipCode: sourceUser.cep.trim(),
+          },
+        },
+      ],
+    },
+  };
+}
 
 function digits(value: string, max?: number) {
   const clean = value.replace(/\D/g, "");
@@ -243,20 +324,30 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
   };
 }
 
-export function VendorCreateLauncher() {
+export function VendorCreateLauncher({
+  initialOpen = false,
+  sourceUser = null,
+}: {
+  initialOpen?: boolean;
+  sourceUser?: VendorCreateSourceUser | null;
+}) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState<VendorCreateForm>(INITIAL_FORM);
+  const [form, setForm] = useState<VendorCreateForm>(() => createFormFromSourceUser(sourceUser));
   const [useCustomBankCode, setUseCustomBankCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdVendor, setCreatedVendor] = useState<CreatedVendor | null>(null);
+  const [prefillSource, setPrefillSource] = useState<VendorCreateSourceUser | null>(
+    initialOpen ? sourceUser : null,
+  );
   const [cepStatus, setCepStatus] = useState<{
     tone: "error" | "info";
     message: string;
   } | null>(null);
   const [isCepLookingUp, setIsCepLookingUp] = useState(false);
   const cepLookupRequestIdRef = useRef(0);
+  const autoOpenedRef = useRef(false);
   const bankCode = form.bankAccount.bankCode.trim();
   const selectedBankOption = findBankOptionByCode(bankCode);
   const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : (selectedBankOption?.value ?? "");
@@ -277,6 +368,23 @@ export function VendorCreateLauncher() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [isOpen, submitting]);
+
+  useEffect(() => {
+    if (!initialOpen || autoOpenedRef.current) {
+      return;
+    }
+
+    autoOpenedRef.current = true;
+    setError(null);
+    setCreatedVendor(null);
+    setCepStatus(null);
+    setIsCepLookingUp(false);
+    setUseCustomBankCode(false);
+    setPrefillSource(sourceUser ?? null);
+    setForm(createFormFromSourceUser(sourceUser));
+    setIsOpen(true);
+    router.replace("/admin/vendors", { scroll: false });
+  }, [initialOpen, router, sourceUser]);
 
   function update<K extends keyof VendorCreateForm>(key: K, value: VendorCreateForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -449,7 +557,7 @@ export function VendorCreateLauncher() {
         return;
       }
 
-      setForm(INITIAL_FORM);
+      setForm(createInitialForm());
       setUseCustomBankCode(false);
       setCreatedVendor(data?.vendor ?? null);
       setIsOpen(false);
@@ -476,6 +584,8 @@ export function VendorCreateLauncher() {
             setCepStatus(null);
             setIsCepLookingUp(false);
             setUseCustomBankCode(false);
+            setPrefillSource(null);
+            setForm(createInitialForm());
             setIsOpen(true);
           }}
           type="button"
@@ -533,6 +643,18 @@ export function VendorCreateLauncher() {
             </div>
 
             <div className="space-y-6 px-6 py-5">
+              {prefillSource ? (
+                <div className="border-2 border-[#1a1a1a] bg-brand-yellow/40 px-4 py-3 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
+                  <p className="font-black uppercase tracking-[0.16em]">
+                    Dados importados do usuario #{prefillSource.id}
+                  </p>
+                  <p className="mt-2 leading-6">
+                    Nome, email, contato e endereco vieram da conta selecionada no painel de
+                    usuarios. Ajuste o que faltar antes de criar o vendor.
+                  </p>
+                </div>
+              ) : null}
+
               <div className="border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
                 <p className="font-black uppercase tracking-[0.16em]">Preenchimento minimo do admin</p>
                 <p className="mt-2 leading-6">

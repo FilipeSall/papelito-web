@@ -6,4 +6,5 @@ export { ProductsContent } from "./products-content";
 export { ReportsContent } from "./reports-content";
 export { SalesContent } from "./sales/sales-content";
 export { SupportContent } from "./support-content";
+export { UsersContent } from "./users-content";
 export { VendorsContent } from "./vendors-content";

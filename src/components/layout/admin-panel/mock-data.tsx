@@ -22,6 +22,11 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "aprovacao media", value: "6h" },
     { label: "faixas cep", value: "31" },
   ],
+  users: [
+    { label: "admins", value: "04" },
+    { label: "sellers", value: "32" },
+    { label: "tickets brutos", value: "17" },
+  ],
   suporte: [
     { label: "escaladas", value: "-" },
     { label: "nao lidas", value: "-" },
@@ -90,6 +95,14 @@ export const SECTION_META: Record<
     railLabel: "backlog",
     railValue: "19 entries",
     signalTone: "warning",
+  },
+  users: {
+    eyebrow: "Contas e roles",
+    description:
+      "Leitura administrativa de usuarios, pedidos, vendas e transicoes de role, mantendo favoritos e tickets apenas como contadores brutos.",
+    railLabel: "recorte",
+    railValue: "multi-role",
+    signalTone: "default",
   },
   suporte: {
     eyebrow: "Atendimento escalado",
