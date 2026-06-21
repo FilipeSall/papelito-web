@@ -53,16 +53,16 @@ export function ProfileFormField({
   onChange,
 }: ProfileFormFieldProps) {
   return (
-    <div className="flex flex-col gap-2.5">
-      <label className="text-[11px] font-black uppercase tracking-[0.22em] text-brand-dark/70">
+    <div className="flex flex-col gap-2">
+      <label className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
         {label}
       </label>
       <input
         autoComplete={autoComplete}
-        className={`h-13 w-full rounded-[18px] border px-4 py-3 text-[15px] font-medium text-brand-dark outline-none transition-[border-color,box-shadow,background-color,color] placeholder:text-brand-dark/35 focus:bg-white disabled:cursor-not-allowed disabled:bg-[#F4F1EA] disabled:text-text-muted ${
+        className={`h-11 w-full rounded-none border-2 bg-white px-3 text-sm font-medium text-[#1a1a1a] outline-none transition-[border-color] placeholder:font-normal placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:bg-[#faf8f2] disabled:text-[#1a1a1a]/40 ${
           errorMessage
-            ? "border-red-300 bg-red-50/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            : "border-[#D8D1C2] bg-[#FFFDF8] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(35,31,32,0.03)] focus:border-brand-yellow focus:ring-4 focus:ring-[#FFF1A6]"
+            ? "border-[#c0392b] focus:border-[#c0392b]"
+            : "border-[#1a1a1a] focus:border-[#1a1a1a]"
         }`}
         disabled={disabled}
         inputMode={inputMode}
@@ -73,8 +73,8 @@ export function ProfileFormField({
         value={value}
       />
       {errorMessage ? (
-        <p className="px-1 text-[11px] font-medium tracking-[0.01em] text-red-500">
-          {errorMessage}
+        <p className="text-[11px] font-semibold text-[#c0392b]">
+          ⚠ {errorMessage}
         </p>
       ) : null}
     </div>

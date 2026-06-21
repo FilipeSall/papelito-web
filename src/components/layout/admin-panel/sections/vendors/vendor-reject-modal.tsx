@@ -53,7 +53,7 @@ export function VendorRejectModal({
     <div
       aria-modal="true"
       aria-labelledby="vendor-reject-title"
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-8"
+      className="fixed inset-0 z-60 flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-8"
       role="dialog"
       onClick={() => !loading && onCancel()}
     >

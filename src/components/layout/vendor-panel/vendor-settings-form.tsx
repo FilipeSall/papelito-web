@@ -53,7 +53,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
             Defina quantos dias uteis sua loja precisa para preparar pedidos. Este prazo aparece
             para clientes ao escolherem seu vendor.
           </p>
-          <div className="mt-6 max-w-sm rounded-[20px] border border-brand-dark/12 bg-[#fbf7ef] p-5">
+          <div className="mt-6 max-w-sm border-2 border-[#1a1a1a] bg-white p-5 shadow-[4px_4px_0px_#1a1a1a]">
             <ProfileFormField
               errorMessage={days ? error : ""}
               inputMode="numeric"

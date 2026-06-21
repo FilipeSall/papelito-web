@@ -7,7 +7,7 @@ import { unstable_cache } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
 import { getAccountCoverageCepTag } from "@/lib/server/account-cache-tags";
-import { normalizeUserCep } from "../constants/user-cep";
+import { resolveCustomerCep } from "@/features/profile/utils/resolve-customer-cep";
 
 export interface AccountCoverageCepContext {
   isAuthenticated: boolean;
@@ -21,16 +21,28 @@ type GraphqlEnvelope<T> = {
 
 type CoverageCepQueryResponse = {
   customer?: {
+    billing?: {
+      postcode?: string | null;
+    } | null;
     metaData?: Array<{ key?: string | null; value?: unknown }> | null;
+    shipping?: {
+      postcode?: string | null;
+    } | null;
   } | null;
 };
 
 const CUSTOMER_COVERAGE_CEP_QUERY = `
   query CustomerCoverageCep {
     customer {
+      billing {
+        postcode
+      }
       metaData(keysIn: ["cep"]) {
         key
         value
+      }
+      shipping {
+        postcode
       }
     }
   }
@@ -70,7 +82,17 @@ async function fetchCustomerCoverageCep(accessToken: string) {
   const metaData = payload.data?.customer?.metaData ?? [];
   const cepValue = metaData.find((item) => item?.key === "cep")?.value;
 
-  return normalizeUserCep(typeof cepValue === "string" ? cepValue : null);
+  return resolveCustomerCep({
+    billing: {
+      postcode: payload.data?.customer?.billing?.postcode,
+    },
+    meta: {
+      cep: typeof cepValue === "string" ? cepValue : null,
+    },
+    shipping: {
+      postcode: payload.data?.customer?.shipping?.postcode,
+    },
+  });
 }
 
 function getCachedCustomerCoverageCep(accountId: string, accessToken: string) {

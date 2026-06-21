@@ -167,6 +167,7 @@ export async function fetchProfileCustomer(accessToken?: string): Promise<Profil
 
     if (metaResult?.customer?.metaData) {
       customer.meta = normalizeMeta(metaResult.customer.metaData);
+      customer.preferences = normalizePreferences(metaResult.customer.metaData);
     }
 
     return customer;

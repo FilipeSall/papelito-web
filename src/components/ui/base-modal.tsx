@@ -47,7 +47,7 @@ export function BaseModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-80 flex items-center justify-center px-4 py-6">
       <button
         aria-label="Fechar modal"
         className="absolute inset-0 bg-brand-dark/70"
@@ -59,7 +59,7 @@ export function BaseModal({
         aria-describedby={ariaDescribedBy}
         aria-labelledby={ariaLabelledBy}
         aria-modal="true"
-        className={`relative z-[1] w-full ${contentClassName}`.trim()}
+        className={`relative z-1 w-full ${contentClassName}`.trim()}
         role="dialog"
       >
         {children}

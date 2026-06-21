@@ -75,6 +75,33 @@ describe("MissingCepModalHost", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("does not open when the customer only has the CEP on the saved address", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        customer: {
+          billing: {
+            postcode: "",
+          },
+          meta: {
+            cep: "",
+          },
+          shipping: {
+            postcode: "01310-930",
+          },
+        },
+      }),
+    });
+
+    render(<MissingCepModalHost />);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("ignores unauthenticated users and non-customer roles", () => {
     authState = {
       role: undefined,

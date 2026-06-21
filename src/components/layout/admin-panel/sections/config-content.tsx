@@ -96,7 +96,7 @@ export function ConfigContent() {
 
   return (
     <Panel className="max-w-3xl">
-      <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-[#ffe500] md:px-6">
+      <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">
           Seguranca da conta
         </p>
@@ -114,17 +114,15 @@ export function ConfigContent() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[26px] border border-[#231f20]/12 bg-[#fbf7ef] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] md:p-6">
-          <div className="mb-5 border-b border-[#D8D1C2] pb-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#231f20]/55">
+        <div className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[4px_4px_0px_#1a1a1a] md:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+            <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
               Atualizacao segura
-            </p>
-            <p className="mt-1 text-sm text-[#231f20]/65">
-              Escolha uma senha nova e confirme abaixo para concluir a troca.
-            </p>
+            </h4>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <ProfileFormField
               autoComplete="new-password"
               errorMessage={fieldErrors.password}
@@ -148,24 +146,25 @@ export function ConfigContent() {
 
         {feedback ? (
           <div
-            className={`mt-5 rounded-2xl px-4 py-3 text-sm ${
+            className={`mt-5 px-4 py-3 text-sm font-bold ${
               feedback.type === "error"
-                ? "bg-red-50 text-red-600"
-                : "bg-emerald-50 text-emerald-700"
+                ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
+                : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
             }`}
             role={feedback.type === "error" ? "alert" : "status"}
           >
+            {feedback.type === "error" ? "⚠ " : "✓ "}
             {feedback.message}
           </div>
         ) : null}
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-[#231f20]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 border-t-2 border-[#231f20]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-[#231f20]/60">
             Esta acao atualiza a senha da sua conta de administrador.
           </p>
 
           <button
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#231f20] px-6 text-sm font-black uppercase tracking-[0.28px] text-[#ffe500] transition hover:bg-[#0e0d0d] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             type="submit"
           >

@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { normalizeUserCep } from "@/features/catalog/constants/user-cep";
 import type { ProfileCustomer } from "@/features/profile/types/profile-customer";
+import { resolveCustomerCep } from "@/features/profile/utils/resolve-customer-cep";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 import { MissingCepModal } from "./missing-cep-modal";
@@ -12,7 +12,7 @@ import { MissingCepModal } from "./missing-cep-modal";
 const STORAGE_KEY_PREFIX = "papelito:missing-cep-modal:dismissed:";
 
 type ProfileAccountResponse = {
-  customer?: Pick<ProfileCustomer, "meta">;
+  customer?: Pick<ProfileCustomer, "billing" | "meta" | "shipping">;
 };
 
 function resolveAccountKey(session: ReturnType<typeof useAuthSession>["session"]) {
@@ -71,7 +71,7 @@ export function MissingCepModalHost() {
         }
 
         const payload = (await response.json()) as ProfileAccountResponse;
-        const cep = normalizeUserCep(payload.customer?.meta?.cep);
+        const cep = resolveCustomerCep(payload.customer);
 
         if (!cep && window.sessionStorage.getItem(dismissedKey) !== "1") {
           setVisibleAccountKey(accountKey);

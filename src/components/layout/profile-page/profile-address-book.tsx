@@ -176,48 +176,47 @@ export function ProfileAddressBook({
 
       {isEditorOpen ? (
         <form
-          className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-sm"
+          className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
           onSubmit={handleSubmit}
         >
-          <div className="h-1.5 bg-brand-yellow" />
+          <div className="h-2 w-full bg-brand-yellow" />
 
-          <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <h3 className="text-lg font-black uppercase tracking-[-0.32px] text-brand-dark">
-                  {addresses.length > 0 ? "Editar endereco principal" : "Adicionar endereco"}
-                </h3>
-                <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
-                  Digite o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
-                </p>
-              </div>
-
-              <button
-                className="text-sm font-bold text-brand-dark/60 transition hover:text-brand-dark"
-                onClick={() => setIsEditorOpen(false)}
-                type="button"
-              >
-                Fechar
-              </button>
+          <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] px-6 py-5 sm:px-8">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black uppercase tracking-tight text-[#1a1a1a]">
+                {addresses.length > 0 ? "Editar endereco principal" : "Adicionar endereco"}
+              </h3>
+              <p className="max-w-2xl text-sm leading-6 text-[#1a1a1a]/70">
+                Digite o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
+              </p>
             </div>
 
-            <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
-              <div className="mb-5 flex flex-col gap-3 border-b border-[#E9E1D0] pb-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
+            <button
+              aria-label="Fechar editor"
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center border-2 border-transparent px-2 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+              onClick={() => setIsEditorOpen(false)}
+              type="button"
+            >
+              Fechar
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
+            <div>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
                     Endereco principal
-                  </p>
-                  <p className="mt-1 text-sm text-brand-dark/65">
-                    Use o CEP para preencher o restante automaticamente.
-                  </p>
+                  </h4>
                 </div>
 
-                <div className="rounded-2xl border border-[#E7DFA9] bg-[#FFF7CC] px-4 py-3 text-sm text-brand-dark/75">
+                <div className="border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-2 text-xs font-bold text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
                   O CEP busca cidade, estado e bairro para acelerar o cadastro.
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <ProfileFormField
                     errorMessage={fieldErrors.zipCode || cepError || undefined}
@@ -268,40 +267,41 @@ export function ProfileAddressBook({
                 <CheckoutCustomSelect
                   errorMessage={fieldErrors.state}
                   label="Estado"
-                  labelClassName="text-[11px] font-black uppercase tracking-[0.22em] text-brand-dark/70"
+                  labelClassName="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]"
                   onChange={(value) => updateField("state", value)}
                   options={BRAZIL_STATES}
                   placeholder="Selecione"
-                  triggerClassName="h-13 rounded-[18px] border-[#D8D1C2] bg-[#FFFDF8] px-4 text-[15px] font-medium text-brand-dark shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(35,31,32,0.03)] focus:ring-4 focus:ring-[#FFF1A6]"
+                  triggerClassName="h-11 rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm font-medium text-[#1a1a1a] focus:border-[#1a1a1a]"
                   value={form.state}
                 />
               </div>
             </div>
 
             {cepLoading ? (
-              <p className="text-sm text-text-tertiary">Buscando endereco pelo CEP...</p>
+              <p className="text-sm font-semibold text-[#1a1a1a]/60">Buscando endereco pelo CEP...</p>
             ) : null}
 
             {feedback ? (
               <div
-                className={`rounded-2xl px-4 py-3 text-sm ${
+                className={`px-4 py-3 text-sm font-bold ${
                   feedback.type === "error"
-                    ? "bg-red-50 text-red-600"
-                    : "bg-emerald-50 text-emerald-700"
+                    ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
+                    : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
                 }`}
                 role={feedback.type === "error" ? "alert" : "status"}
               >
+                {feedback.type === "error" ? "⚠ " : "✓ "}
                 {feedback.message}
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm leading-6 text-text-tertiary">
+            <div className="flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-6 text-[#1a1a1a]/70">
                 O endereco salvo sera usado como base para entrega e cobranca.
               </p>
 
               <button
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand-dark px-6 text-sm font-black uppercase tracking-[0.28px] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isPending}
                 type="submit"
               >

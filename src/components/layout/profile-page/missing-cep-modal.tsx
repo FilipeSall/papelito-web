@@ -28,35 +28,36 @@ export function MissingCepModal({
       onClose={onClose}
       open={open}
     >
-      <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_24px_80px_rgba(35,31,32,0.28)]">
-        <div className="h-1.5 bg-brand-yellow" />
+      <div className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+        <div className="h-2 w-full bg-brand-yellow" />
 
-        <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-7">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
-                Cadastro incompleto
-              </p>
-              <h2
-                className="text-2xl font-black tracking-[-0.03em] text-brand-dark sm:text-[2rem]"
-                id={TITLE_ID}
-              >
-                Ops, precisamos do seu CEP
-              </h2>
-            </div>
-
-            <button
-              aria-label="Fechar modal"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-brand-dark/10 text-brand-dark/60 transition hover:bg-brand-dark/5 hover:text-brand-dark"
-              onClick={onClose}
-              type="button"
+        <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
+          <div>
+            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
+              <span aria-hidden className="inline-block h-2.5 w-2.5 rotate-45 bg-brand-yellow" />
+              Cadastro incompleto
+            </p>
+            <h2
+              className="mt-1 text-2xl font-black uppercase tracking-tight text-[#1a1a1a]"
+              id={TITLE_ID}
             >
-              <X className="h-5 w-5" />
-            </button>
+              Ops, precisamos do seu CEP
+            </h2>
           </div>
 
-          <div className="flex flex-col gap-5 rounded-[28px] border border-[#E9E1D0] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-5 sm:flex-row sm:items-center sm:gap-6">
-            <div className="relative h-28 w-full overflow-hidden rounded-[24px] bg-[#F6F1E6] sm:h-32 sm:w-32 sm:shrink-0">
+          <button
+            aria-label="Fechar modal"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-5 w-5" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="space-y-6 px-6 py-5">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+            <div className="relative h-28 w-full overflow-hidden border-2 border-[#1a1a1a] bg-white sm:h-32 sm:w-32 sm:shrink-0">
               <Image
                 alt=""
                 aria-hidden
@@ -67,36 +68,38 @@ export function MissingCepModal({
               />
             </div>
 
-            <div className="space-y-3">
-              <p
-                className="text-sm leading-6 text-text-tertiary sm:text-[15px]"
-                id={DESCRIPTION_ID}
-              >
-                Para mostrar informações corretas para a sua região, cadastre seu CEP.
-                Você pode fazer isso agora ou continuar navegando e preencher depois.
-              </p>
-              <div className="rounded-2xl border border-[#E7DFA9] bg-[#FFF7CC] px-4 py-3 text-sm leading-5 text-brand-dark/80">
-                Com o CEP salvo, a plataforma consegue exibir disponibilidade regional com mais precisão.
-              </div>
-            </div>
+            <p
+              className="text-sm leading-6 text-[#1a1a1a]/80 sm:text-[15px]"
+              id={DESCRIPTION_ID}
+            >
+              Para mostrar informações corretas para a sua região, cadastre seu CEP.
+              Você pode fazer isso agora ou continuar navegando e preencher depois.
+            </p>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <button
-              className="inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-black uppercase tracking-[0.18em] text-brand-dark/65 transition hover:bg-brand-dark/5 hover:text-brand-dark"
-              onClick={onClose}
-              type="button"
-            >
-              Agora não
-            </button>
-            <button
-              className="inline-flex h-12 items-center justify-center rounded-full bg-brand-dark px-6 text-sm font-black uppercase tracking-[0.18em] text-brand-yellow transition hover:opacity-90"
-              onClick={onConfirm}
-              type="button"
-            >
-              Cadastrar CEP
-            </button>
+          <div className="border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
+            <p className="font-black uppercase tracking-[0.16em]">Por que pedimos o CEP</p>
+            <p className="mt-2 leading-6">
+              Com o CEP salvo, a plataforma consegue exibir disponibilidade regional com mais precisão.
+            </p>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
+          <button
+            className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+            onClick={onClose}
+            type="button"
+          >
+            Agora não
+          </button>
+          <button
+            className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+            onClick={onConfirm}
+            type="button"
+          >
+            Cadastrar CEP
+          </button>
         </div>
       </div>
     </BaseModal>

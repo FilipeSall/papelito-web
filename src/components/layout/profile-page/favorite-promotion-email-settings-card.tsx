@@ -73,17 +73,20 @@ export function FavoritePromotionEmailSettingsCard({
   }
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-sm">
-      <div className="h-1.5 bg-brand-yellow" />
+    <section className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+      <div className="h-2 w-full bg-brand-yellow" />
 
       <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
-        <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
-          <div className="flex flex-col gap-4 border-b border-[#E9E1D0] pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-col gap-4 border-b-2 border-[#1a1a1a]/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-xl">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
-                Alertas por e-mail
-              </p>
-              <p className="mt-1 text-sm leading-6 text-brand-dark/65">
+              <div className="mb-2 flex items-center gap-2">
+                <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+                <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
+                  Alertas por e-mail
+                </h4>
+              </div>
+              <p className="text-sm leading-6 text-[#1a1a1a]/70">
                 Receber e-mails quando produtos dos meus favoritos entrarem em promocao.
               </p>
             </div>
@@ -91,10 +94,8 @@ export function FavoritePromotionEmailSettingsCard({
             <button
               aria-checked={isEnabled}
               className={[
-                "relative inline-flex h-11 w-20 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/25 disabled:cursor-not-allowed disabled:opacity-60",
-                isEnabled
-                  ? "border-brand-dark bg-brand-dark"
-                  : "border-[#D8D1BA] bg-[#F3EEE2]",
+                "relative inline-flex h-11 w-20 shrink-0 items-center border-2 border-[#1a1a1a] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60",
+                isEnabled ? "bg-[#1a1a1a]" : "bg-white",
               ].join(" ")}
               disabled={isPending}
               onClick={handleToggle}
@@ -103,10 +104,10 @@ export function FavoritePromotionEmailSettingsCard({
             >
               <span
                 className={[
-                  "absolute left-1 top-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-[10px] font-black uppercase tracking-[0.12em] transition",
+                  "absolute left-0.5 top-0.5 inline-flex h-8.5 w-9 items-center justify-center text-[10px] font-black uppercase tracking-[0.12em] transition",
                   isEnabled
-                    ? "translate-x-9 bg-brand-yellow text-brand-dark"
-                    : "translate-x-0 bg-white text-[#6E6657]",
+                    ? "translate-x-9 bg-brand-yellow text-[#1a1a1a]"
+                    : "translate-x-0 bg-[#1a1a1a] text-brand-yellow",
                 ].join(" ")}
               >
                 {isEnabled ? "ON" : "OFF"}
@@ -114,20 +115,21 @@ export function FavoritePromotionEmailSettingsCard({
             </button>
           </div>
 
-          <p className="pt-4 text-sm leading-6 text-text-tertiary">
+          <p className="pt-4 text-sm leading-6 text-[#1a1a1a]/60">
             A notificacao dentro do app continua ativa mesmo quando o e-mail estiver desligado.
           </p>
         </div>
 
         {feedback ? (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm ${
+            className={`px-4 py-3 text-sm font-bold ${
               feedback.type === "error"
-                ? "bg-red-50 text-red-600"
-                : "bg-emerald-50 text-emerald-700"
+                ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
+                : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
             }`}
             role={feedback.type === "error" ? "alert" : "status"}
           >
+            {feedback.type === "error" ? "⚠ " : "✓ "}
             {feedback.message}
           </div>
         ) : null}

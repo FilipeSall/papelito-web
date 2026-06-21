@@ -19,17 +19,17 @@ type AddAddressCardProps = {
 export function AddAddressCard({ onClick }: AddAddressCardProps) {
   return (
     <button
-      className="flex min-h-53 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50"
+      className="group flex min-h-53 cursor-pointer flex-col items-center justify-center gap-3 rounded-none border-2 border-dashed border-[#1a1a1a] bg-white p-6 transition-colors hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
       onClick={onClick}
       type="button"
     >
       {/* Icone de adicao */}
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-        <span className="text-2xl font-medium text-text-muted">+</span>
+      <div className="flex h-10 w-10 items-center justify-center border-2 border-[#1a1a1a] bg-brand-yellow group-hover:bg-white">
+        <span className="text-2xl font-black leading-none text-[#1a1a1a]">+</span>
       </div>
 
       {/* Texto */}
-      <span className="text-sm font-medium text-text-muted">
+      <span className="text-xs font-black uppercase tracking-widest text-[#1a1a1a]">
         Adicionar endereco
       </span>
     </button>

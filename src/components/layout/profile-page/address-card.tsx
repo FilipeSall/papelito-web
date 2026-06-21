@@ -78,48 +78,48 @@ function LocationIcon({ className }: { className?: string }) {
  * ```
  */
 export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
-  const borderClass = address.isDefault
-    ? "border-2 border-brand-yellow"
-    : "border-2 border-gray-200";
+  const shadowClass = address.isDefault
+    ? "shadow-[8px_8px_0px_#ffe500]"
+    : "shadow-[8px_8px_0px_#1a1a1a]";
 
   return (
     <div
-      className={`relative rounded-2xl bg-white p-6 shadow-sm ${borderClass}`}
+      className={`relative rounded-none border-2 border-[#1a1a1a] bg-white p-6 ${shadowClass}`}
     >
       {/* Badge Principal */}
       {address.isDefault && (
-        <span className="absolute right-4 top-4 rounded-full bg-brand-yellow px-2 py-1 text-xs font-black text-brand-dark">
+        <span className="absolute right-4 top-4 border-2 border-[#1a1a1a] bg-brand-yellow px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
           Principal
         </span>
       )}
 
       {/* Icone */}
-      <LocationIcon className="mb-4 h-5 w-5 text-brand-dark" />
+      <LocationIcon className="mb-4 h-5 w-5 text-[#1a1a1a]" />
 
       {/* Nome do endereco */}
-      <h3 className="mb-2 text-base font-black tracking-tight text-brand-dark">
+      <h3 className="mb-2 text-base font-black uppercase tracking-tight text-[#1a1a1a]">
         {address.name}
       </h3>
 
       {/* Detalhes do endereco */}
-      <div className="mb-4 space-y-0.5 text-sm text-text-tertiary">
+      <div className="mb-4 space-y-0.5 text-sm text-[#1a1a1a]/70">
         <p>{address.street}</p>
         <p>{address.neighborhood}</p>
         <p>CEP: {address.zipCode}</p>
       </div>
 
       {/* Acoes */}
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
         <button
-          className="font-medium text-text-muted hover:text-text-secondary transition-colors"
+          className="text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
           onClick={() => onEdit?.(address.id)}
           type="button"
         >
           Editar
         </button>
-        <span className="text-gray-200">|</span>
+        <span className="text-[#1a1a1a]/20">|</span>
         <button
-          className="font-medium text-red-400 hover:text-red-500 transition-colors"
+          className="text-[#c0392b] transition-colors hover:text-[#c0392b]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
           onClick={() => onRemove?.(address.id)}
           type="button"
         >

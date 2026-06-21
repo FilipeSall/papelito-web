@@ -107,24 +107,22 @@ export function PasswordSettingsCard({
       className={
         isEmbedded
           ? "flex flex-1 flex-col px-5 py-6 md:px-6"
-          : "overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-sm"
+          : "border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
       }
       onSubmit={handleSubmit}
     >
-      {!isEmbedded ? <div className="h-1.5 bg-brand-yellow" /> : null}
+      {!isEmbedded ? <div className="h-2 w-full bg-brand-yellow" /> : null}
 
       <div className={isEmbedded ? "flex flex-1 flex-col gap-6" : "flex flex-col gap-6 px-6 py-6 sm:px-8"}>
-        <div className="rounded-[26px] border border-[#E7E0D3] bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF8F0_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-5">
-          <div className="mb-5 border-b border-[#E9E1D0] pb-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-brand-dark/55">
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+            <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
               Atualizacao segura
-            </p>
-            <p className="mt-1 text-sm text-brand-dark/65">
-              Escolha uma senha nova e confirme abaixo para concluir a troca.
-            </p>
+            </h4>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <ProfileFormField
               autoComplete="new-password"
               errorMessage={fieldErrors.password}
@@ -148,24 +146,25 @@ export function PasswordSettingsCard({
 
         {feedback ? (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm ${
+            className={`px-4 py-3 text-sm font-bold ${
               feedback.type === "error"
-                ? "bg-red-50 text-red-600"
-                : "bg-emerald-50 text-emerald-700"
+                ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
+                : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
             }`}
             role={feedback.type === "error" ? "alert" : "status"}
           >
+            {feedback.type === "error" ? "⚠ " : "✓ "}
             {feedback.message}
           </div>
         ) : null}
 
-        <div className="mt-auto flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-text-tertiary">
+        <div className="mt-auto flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-[#1a1a1a]/70">
             Esta acao atualiza a senha diretamente na conta autenticada.
           </p>
 
           <button
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-brand-dark px-6 text-sm font-black uppercase tracking-[0.28px] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             type="submit"
           >
