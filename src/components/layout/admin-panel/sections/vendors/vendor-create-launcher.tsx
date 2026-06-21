@@ -133,8 +133,6 @@ function createFormFromSourceUser(sourceUser?: VendorCreateSourceUser | null): V
     },
     pagarmeDraft: {
       ...form.pagarmeDraft,
-      companyName: storeName,
-      tradingName: storeName,
       managingPartners: [
         {
           ...partner,
@@ -265,8 +263,8 @@ function buildAdminPagarmeDraft(form: VendorCreateForm): VendorRegistrationStep3
 
   return {
     ...form.pagarmeDraft,
-    companyName: form.pagarmeDraft.companyName.trim() || form.storeName?.trim() || "",
-    tradingName: form.pagarmeDraft.tradingName.trim() || form.storeName?.trim() || "",
+    companyName: form.pagarmeDraft.companyName.trim(),
+    tradingName: form.pagarmeDraft.tradingName.trim(),
     bankAccount: {
       ...form.bankAccount,
       branchCheckDigit: form.bankAccount.branchCheckDigit ?? "",
@@ -693,8 +691,6 @@ export function VendorCreateLauncher({
                     onChange={(value) => {
                       update("storeName", value);
                       if (!form.bankAccount.holderName.trim()) updateBank("holderName", value);
-                      if (!form.pagarmeDraft.companyName.trim()) updatePagarmeDraft("companyName", value);
-                      if (!form.pagarmeDraft.tradingName.trim()) updatePagarmeDraft("tradingName", value);
                     }}
                     required
                     value={form.storeName ?? ""}
