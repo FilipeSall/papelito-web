@@ -34,6 +34,8 @@ export async function getVendorOrders(filters: {
 
   const result = await wpRest<WpVendorOrdersList>(`/papelito/v1/vendor/me/orders?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 30,
+    tags: ["vendor-orders"],
   });
 
   return result.ok ? mapVendorOrdersSnapshot(result.data) : empty;
@@ -48,6 +50,8 @@ export async function getVendorOrderDetail(orderId: string): Promise<VendorOrder
 
   const result = await wpRest<WpVendorOrder>(`/papelito/v1/vendor/me/orders/${orderId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 30,
+    tags: ["vendor-orders"],
   });
 
   return result.ok ? mapVendorOrderDetail(result.data) : null;

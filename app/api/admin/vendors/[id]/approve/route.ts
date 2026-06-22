@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -43,5 +44,6 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
     );
   }
 
+  revalidateTag("admin-vendors", "max");
   return NextResponse.json({ vendor: result.data });
 }

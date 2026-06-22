@@ -18,6 +18,8 @@ export async function getVendorSettings(): Promise<VendorSettings> {
 
   const result = await wpRest<WpVendorSettings>("/papelito/v1/vendor/me/settings", {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 120,
+    tags: ["vendor-settings"],
   });
 
   return {

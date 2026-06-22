@@ -48,6 +48,8 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
   });
   const result = await wpRest<WpVendorKpis>(`/papelito/v1/vendor/me/kpis?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 60,
+    tags: ["vendor-kpis"],
   });
 
   if (!result.ok) {

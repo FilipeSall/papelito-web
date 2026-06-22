@@ -42,7 +42,7 @@ export async function getMessageThreads({
 
   const result = await wpRest<WpMessageThreadsSnapshot>(
     `/papelito/v1/messages/threads?${params.toString()}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    { headers: { Authorization: `Bearer ${accessToken}` }, revalidate: 15, tags: ["vendor-messages"] },
   );
 
   return result.ok ? mapMessageThreadsSnapshot(result.data) : empty;
