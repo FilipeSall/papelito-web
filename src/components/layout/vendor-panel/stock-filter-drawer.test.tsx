@@ -35,7 +35,8 @@ describe("StockFilterDrawer", () => {
     render(<StockFilterDrawer filters={filters} onClose={() => {}} open taxonomies={taxonomies} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Combo" }));
-    fireEvent.change(screen.getByLabelText(/categoria/i), { target: { value: "7" } });
+    fireEvent.click(screen.getByRole("button", { name: /todas/i }));
+    fireEvent.click(screen.getByRole("button", { name: /sedas/i }));
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith("/vendor/estoque?filter=all&category=7&tags=12");

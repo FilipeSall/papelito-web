@@ -28,7 +28,6 @@ function renderRow(item: VendorStockItem) {
           item={item}
           onQtyChange={() => {}}
           qty={String(item.qty)}
-          save={async () => {}}
           saving={false}
         />
       </tbody>

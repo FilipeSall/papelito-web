@@ -1,12 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
 import type {
   VendorStockFilters,
-  VendorStockItem,
   VendorStockSnapshot,
   VendorStockTaxonomies,
 } from "@/features/vendor-stock/types/vendor-stock";
@@ -30,55 +29,48 @@ export function VendorStockManager({
   taxonomies: VendorStockTaxonomies;
 }) {
   const router = useRouter();
+  const AUTOSAVE_DELAY = 800;
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [quantities, setQuantities] = useState(() =>
     Object.fromEntries(snapshot.items.map((item) => [item.productId, String(item.qty)])),
   );
   const [savingIds, setSavingIds] = useState<Set<number>>(() => new Set());
-  const [savingAll, setSavingAll] = useState(false);
   const focusedInPage = snapshot.items.some((item) => item.productId === focusProductId);
   const totalPages = Math.max(1, Math.ceil(snapshot.total / snapshot.perPage));
-  const changedItems = snapshot.items.filter(
-    (item) => (quantities[item.productId] ?? String(item.qty)) !== String(item.qty),
-  );
-  const hasInvalidChangedQty = changedItems.some((item) => {
-    const nextQty = Number(quantities[item.productId] ?? "");
 
-    return !Number.isInteger(nextQty) || nextQty < 0;
-  });
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const savedQty = useRef<Map<number, number>>(
+    new Map(snapshot.items.map((item) => [item.productId, item.qty])),
+  );
 
   useEffect(() => {
     setQuantities(Object.fromEntries(snapshot.items.map((item) => [item.productId, String(item.qty)])));
+    savedQty.current = new Map(snapshot.items.map((item) => [item.productId, item.qty]));
   }, [snapshot.items]);
 
-  function handleQtyChange(productId: number, qty: string) {
-    setQuantities((current) => ({ ...current, [productId]: qty }));
-  }
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach((timer) => clearTimeout(timer));
+      pending.clear();
+    };
+  }, []);
 
-  async function persistStock(item: VendorStockItem) {
-    const nextQty = Number(quantities[item.productId] ?? item.qty);
-    if (!Number.isInteger(nextQty) || nextQty < 0) {
-      throw new Error("Informe uma quantidade inteira maior ou igual a zero.");
-    }
-
-    const response = await fetch("/api/vendor/stock", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ product_id: item.productId, qty: nextQty }),
-    });
-    const data = (await response.json().catch(() => null)) as { message?: string } | null;
-
-    if (!response.ok) {
-      throw new Error(data?.message ?? "Nao foi possivel atualizar o estoque.");
-    }
-
-    return nextQty;
-  }
-
-  async function saveOne(item: VendorStockItem) {
-    setSavingIds((current) => new Set(current).add(item.productId));
+  async function persistStock(productId: number, nextQty: number) {
+    setSavingIds((current) => new Set(current).add(productId));
     try {
-      const nextQty = await persistStock(item);
+      const response = await fetch("/api/vendor/stock", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, qty: nextQty }),
+      });
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(data?.message ?? "Nao foi possivel atualizar o estoque.");
+      }
+
+      savedQty.current.set(productId, nextQty);
       setFeedback({
         error: false,
         message: nextQty === 0 ? "Estoque zerado. A notificacao foi registrada." : "Estoque atualizado.",
@@ -92,45 +84,31 @@ export function VendorStockManager({
     } finally {
       setSavingIds((current) => {
         const next = new Set(current);
-        next.delete(item.productId);
+        next.delete(productId);
         return next;
       });
     }
   }
 
-  async function saveAll() {
-    if (changedItems.length === 0) {
+  function handleQtyChange(productId: number, qty: string) {
+    setQuantities((current) => ({ ...current, [productId]: qty }));
+
+    const existing = timers.current.get(productId);
+    if (existing) clearTimeout(existing);
+
+    const nextQty = Number(qty);
+    if (qty.trim() === "" || !Number.isInteger(nextQty) || nextQty < 0) {
+      return;
+    }
+    if (savedQty.current.get(productId) === nextQty) {
       return;
     }
 
-    if (hasInvalidChangedQty) {
-      setFeedback({ error: true, message: "Informe quantidades inteiras maiores ou iguais a zero." });
-      return;
-    }
-
-    setSavingAll(true);
-    setSavingIds(new Set(changedItems.map((item) => item.productId)));
-    try {
-      const results = await Promise.allSettled(changedItems.map((item) => persistStock(item)));
-      const failures = results.filter((result) => result.status === "rejected");
-
-      if (failures.length > 0) {
-        setFeedback({
-          error: true,
-          message: `${failures.length} ajuste(s) nao foram salvos. Revise as linhas alteradas.`,
-        });
-        return;
-      }
-
-      setFeedback({
-        error: false,
-        message: `${changedItems.length} ajuste(s) de estoque salvos.`,
-      });
-      router.refresh();
-    } finally {
-      setSavingAll(false);
-      setSavingIds(new Set());
-    }
+    const timer = setTimeout(() => {
+      timers.current.delete(productId);
+      void persistStock(productId, nextQty);
+    }, AUTOSAVE_DELAY);
+    timers.current.set(productId, timer);
   }
 
   return (
@@ -156,7 +134,7 @@ export function VendorStockManager({
                 <tr>
                   {tableHeaders.map((header) => (
                     <th
-                      className="border-b-2 border-[#1a1a1a] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/58 last:text-right"
+                      className="border-b border-brand-dark/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/58 last:text-right"
                       key={header}
                     >
                       {header}
@@ -172,27 +150,11 @@ export function VendorStockManager({
                     key={item.productId}
                     onQtyChange={handleQtyChange}
                     qty={quantities[item.productId] ?? String(item.qty)}
-                    save={saveOne}
                     saving={savingIds.has(item.productId)}
                   />
                 ))}
               </tbody>
             </table>
-            <div className="flex flex-col items-end gap-2 border-t-2 border-[#1a1a1a] bg-white/65 px-4 py-5 sm:flex-row sm:justify-end">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/58">
-                {changedItems.length === 0
-                  ? "Nenhuma alteração pendente nesta página."
-                  : `${changedItems.length} alteração(ões) pendente(s) nesta página.`}
-              </p>
-              <button
-                className="inline-flex h-11 items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                disabled={savingAll || changedItems.length === 0 || hasInvalidChangedQty}
-                onClick={() => void saveAll()}
-                type="button"
-              >
-                {savingAll ? "Salvando todos" : "Salvar todos"}
-              </button>
-            </div>
           </div>
         )}
         <StockPagination
