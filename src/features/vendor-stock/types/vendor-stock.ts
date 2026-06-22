@@ -16,8 +16,10 @@ export type VendorStockTerm = {
 export type VendorStockItem = {
   categories: VendorStockTerm[];
   imageUrl: string;
+  isPubliclyViewable: boolean;
   isZeroed: boolean;
   productId: number;
+  publicProductId: number;
   productName: string;
   qty: number;
   sku: string;

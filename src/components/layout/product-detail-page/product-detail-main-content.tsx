@@ -80,6 +80,7 @@ export function ProductDetailMainContent({
       ? Math.max(0, Math.floor(selectedVendorStockQty))
       : null;
   const isOutOfStock = availableStock !== null && availableStock <= 0;
+  const shouldShowActiveVendorSummary = Boolean(activeVendor) && isOutOfStock;
   const isQuantityAtMax = availableStock !== null && quantity >= availableStock;
 
   const selectedThumb = useMemo(
@@ -532,7 +533,7 @@ export function ProductDetailMainContent({
             </button>
           </div>
 
-          {activeVendor ? (
+          {shouldShowActiveVendorSummary && activeVendor ? (
             <div className="mt-4">
               <ActiveVendorSummary
                 vendor={activeVendor}

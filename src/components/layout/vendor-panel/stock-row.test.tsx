@@ -7,8 +7,10 @@ import type { VendorStockItem } from "@/features/vendor-stock/types/vendor-stock
 const baseItem: VendorStockItem = {
   categories: [{ id: 1, name: "Sedas", slug: "sedas" }],
   imageUrl: "",
+  isPubliclyViewable: true,
   isZeroed: false,
   productId: 10,
+  publicProductId: 8,
   productName: "Seda King Size",
   qty: 5,
   sku: "SK-1",
@@ -46,5 +48,24 @@ describe("StockRow chips", () => {
   it("renders no chip container when there are no terms", () => {
     renderRow({ ...baseItem, categories: [], tags: [] });
     expect(screen.queryByTestId("stock-row-terms")).not.toBeInTheDocument();
+  });
+
+  it("links to the public product id when it differs from the stock id", () => {
+    renderRow(baseItem);
+    expect(screen.getAllByRole("link", { name: /seda king size/i })[0]).toHaveAttribute(
+      "href",
+      "/produtos/8",
+    );
+  });
+
+  it("does not link a product that is not publicly viewable", () => {
+    renderRow({ ...baseItem, isPubliclyViewable: false });
+    expect(screen.queryByRole("link", { name: /seda king size/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Seda King Size")).toBeInTheDocument();
+  });
+
+  it("warns the vendor to configure the weight when not publicly viewable", () => {
+    renderRow({ ...baseItem, isPubliclyViewable: false });
+    expect(screen.getByTestId("stock-row-unpublishable")).toHaveTextContent(/peso/i);
   });
 });

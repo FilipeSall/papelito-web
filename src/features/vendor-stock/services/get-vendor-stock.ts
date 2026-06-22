@@ -14,9 +14,11 @@ type WpTerm = { id?: number; name?: string; slug?: string };
 type WpStockResponse = {
   items?: Array<{
     categories?: WpTerm[];
+    is_publicly_viewable?: boolean;
     is_zeroed?: boolean;
     image_url?: string;
     product_id?: number;
+    public_product_id?: number;
     product_name?: string;
     qty?: number;
     sku?: string;
@@ -70,8 +72,10 @@ export async function getVendorStock(
     items: (result.data.items ?? []).map((item) => ({
       categories: mapTerms(item.categories),
       imageUrl: item.image_url ?? "",
+      isPubliclyViewable: item.is_publicly_viewable !== false,
       isZeroed: Boolean(item.is_zeroed),
       productId: Number(item.product_id) || 0,
+      publicProductId: Number(item.public_product_id) || Number(item.product_id) || 0,
       productName: item.product_name ?? "Produto",
       qty: Number(item.qty) || 0,
       sku: item.sku ?? "",

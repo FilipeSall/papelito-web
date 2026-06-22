@@ -302,12 +302,24 @@ export async function fetchWpProductByDatabaseId(id: string) {
     return null;
   }
 
-  const data = await wpGraphqlRequest<{
+  let data: {
     product?: WpProductNode | null;
-  }>(print(PRODUCT_QUERY), { id: parsedId }, {
-    revalidate: 300,
-    tags: ["wp:products", `wp:product:${parsedId}`],
-  });
+  };
+
+  try {
+    data = await wpGraphqlRequest<{
+      product?: WpProductNode | null;
+    }>(print(PRODUCT_QUERY), { id: parsedId }, {
+      revalidate: 300,
+      tags: ["wp:products", `wp:product:${parsedId}`],
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes(`No product exists with the database_id: ${parsedId}`)) {
+      return null;
+    }
+    throw error;
+  }
 
   const product = data.product ?? null;
 

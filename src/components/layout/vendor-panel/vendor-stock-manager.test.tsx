@@ -25,8 +25,10 @@ const snapshot: VendorStockSnapshot = {
     {
       categories: [],
       imageUrl: "",
+      isPubliclyViewable: true,
       isZeroed: false,
       productId: 10,
+      publicProductId: 10,
       productName: "Seda King Size",
       qty: 5,
       sku: "SK-1",
