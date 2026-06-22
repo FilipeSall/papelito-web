@@ -1,19 +1,17 @@
 import Link from "next/link";
 
-import type { VendorStockFilter } from "@/features/vendor-stock/types/vendor-stock";
+import type { VendorStockFilters } from "@/features/vendor-stock/types/vendor-stock";
 
 import { buildStockHref } from "./stock-href";
 
 export function StockPagination({
-  filter,
+  filters,
   page,
-  search,
   total,
   totalPages,
 }: {
-  filter: VendorStockFilter;
+  filters: VendorStockFilters;
   page: number;
-  search: string;
   total: number;
   totalPages: number;
 }) {
@@ -24,7 +22,7 @@ export function StockPagination({
         {page > 1 ? (
           <Link
             className="inline-flex h-10 min-w-10 items-center justify-center border-2 border-[#1a1a1a] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
-            href={buildStockHref(filter, search, page - 1)}
+            href={buildStockHref(filters, page - 1)}
           >
             Anterior
           </Link>
@@ -35,7 +33,7 @@ export function StockPagination({
         {page < totalPages ? (
           <Link
             className="inline-flex h-10 min-w-10 items-center justify-center border-2 border-[#1a1a1a] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
-            href={buildStockHref(filter, search, page + 1)}
+            href={buildStockHref(filters, page + 1)}
           >
             Proxima
           </Link>

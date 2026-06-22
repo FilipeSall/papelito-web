@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
 import type {
-  VendorStockFilter,
+  VendorStockFilters,
   VendorStockItem,
   VendorStockSnapshot,
+  VendorStockTaxonomies,
 } from "@/features/vendor-stock/types/vendor-stock";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
@@ -18,15 +19,15 @@ import { StockToolbar } from "./stock-toolbar";
 const tableHeaders = ["Produto", "Ultimo ajuste", "Status", "Quantidade"];
 
 export function VendorStockManager({
-  filter,
+  filters,
   focusProductId,
-  search,
   snapshot,
+  taxonomies,
 }: {
-  filter: VendorStockFilter;
+  filters: VendorStockFilters;
   focusProductId?: number;
-  search: string;
   snapshot: VendorStockSnapshot;
+  taxonomies: VendorStockTaxonomies;
 }) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
@@ -135,7 +136,7 @@ export function VendorStockManager({
   return (
     <div className="space-y-4">
       <Panel className="overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-        <StockToolbar filter={filter} search={search} />
+        <StockToolbar filters={filters} taxonomies={taxonomies} />
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
         {focusProductId && !focusedInPage ? (
           <p className="mx-5 mt-4 border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm font-medium text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
@@ -195,9 +196,8 @@ export function VendorStockManager({
           </div>
         )}
         <StockPagination
-          filter={filter}
+          filters={filters}
           page={snapshot.page}
-          search={search}
           total={snapshot.total}
           totalPages={totalPages}
         />
