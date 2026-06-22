@@ -61,6 +61,18 @@ export function StockRow({
             <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
               {item.sku || "Sem SKU"}
             </p>
+            {item.categories.length > 0 || item.tags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5" data-testid="stock-row-terms">
+                {[...item.categories, ...item.tags].map((term) => (
+                  <span
+                    className="inline-flex items-center border-2 border-[#1a1a1a] bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#1a1a1a]/72"
+                    key={`${term.slug}-${term.id}`}
+                  >
+                    {term.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </td>
