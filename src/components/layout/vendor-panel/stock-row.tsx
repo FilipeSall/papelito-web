@@ -91,9 +91,11 @@ export function StockRow({
       </td>
       <td className="border-b border-brand-dark/15 px-4 py-3">
         <div className="flex items-center justify-end gap-2">
-          {saving ? (
-            <Loader2 aria-label="Salvando" className="h-4 w-4 animate-spin text-[#1a1a1a]/60" strokeWidth={2} />
-          ) : null}
+          <span aria-hidden={!saving} className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {saving ? (
+              <Loader2 aria-label="Salvando" className="h-4 w-4 animate-spin text-[#1a1a1a]/60" strokeWidth={2} />
+            ) : null}
+          </span>
           <input
             aria-label={`Quantidade de ${item.productName}`}
             className="h-10 w-20 rounded-[10px] border border-brand-dark/15 bg-white px-3 text-right text-sm text-brand-dark outline-none focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
