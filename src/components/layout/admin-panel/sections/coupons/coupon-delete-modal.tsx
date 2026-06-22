@@ -1,9 +1,9 @@
 "use client";
 
 import { AlertTriangle, Loader2, X } from "lucide-react";
-import { useEffect } from "react";
 
 import type { Coupon } from "@/features/coupons/types/coupon";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type CouponDeleteModalProps = {
   coupon: Coupon;
@@ -20,14 +20,7 @@ export function CouponDeleteModal({
   onCancel,
   onConfirm,
 }: CouponDeleteModalProps) {
-  useEffect(() => {
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !deleting) onCancel();
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [deleting, onCancel]);
+  useEscapeKey(onCancel, { enabled: !deleting });
 
   return (
     <div

@@ -31,6 +31,11 @@ export function VendorsTabs({
       count: filters.status === "all" ? totalRows : undefined,
     },
     { key: "pending", label: "Pendentes", count: summary.pendingApplications },
+    {
+      key: "incomplete",
+      label: "Cadastro incompleto",
+      count: summary.incompleteApplications,
+    },
     { key: "approved", label: "Aprovados", count: summary.approvedSellers },
     { key: "rejected", label: "Rejeitados" },
   ];

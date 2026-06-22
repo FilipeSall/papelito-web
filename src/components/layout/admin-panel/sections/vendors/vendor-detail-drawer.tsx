@@ -26,7 +26,7 @@ function formatCep(value: string) {
 }
 
 function normalizeStatus(value: string): AdminVendorRowStatus {
-  if (value === "pending" || value === "approved" || value === "rejected") {
+  if (value === "pending" || value === "incomplete" || value === "approved" || value === "rejected") {
     return value;
   }
   return "none";

@@ -94,18 +94,24 @@ export function RevendedorHeroSection({
             <div className="rounded-2xl bg-white p-6 shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] lg:px-8 lg:py-8">
               <div>
                 <h2 className="text-xl font-black uppercase tracking-[-0.4492px] text-brand-dark">
-                  {application.status === "pending" || application.status === "approved"
+                  {application.status === "pending" ||
+                  application.status === "incomplete" ||
+                  application.status === "approved"
                     ? "Triagem recebida"
                     : "Envie sua triagem"}
                 </h2>
                 <p className="mt-0.5 text-xs text-text-muted">
-                  {application.status === "pending" || application.status === "approved"
+                  {application.status === "pending" ||
+                  application.status === "incomplete" ||
+                  application.status === "approved"
                     ? "Seu pedido de entrada no PDV Perfeito está em análise."
                     : "Preencha os dados iniciais para começar sua candidatura no programa."}
                 </p>
               </div>
 
-              {application.status === "pending" || application.status === "approved" ? (
+              {application.status === "pending" ||
+              application.status === "incomplete" ||
+              application.status === "approved" ? (
                 <RevendedorApplicationPendingSummary application={application} />
               ) : !hasHydrated ? (
                 <div className="mt-6 rounded-3.5 border border-[#E5E7EB] bg-[#FFFDF8] p-5 text-brand-dark">

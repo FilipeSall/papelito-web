@@ -38,7 +38,7 @@ export function AdminSelectField({
         optionClassName="tracking-normal"
         options={options}
         placeholder={placeholder}
-        triggerClassName="mt-2 h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a] focus:border-[#1a1a1a]"
+        triggerClassName="h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a] focus:border-[#1a1a1a]"
         value={value}
       />
     );

@@ -8,7 +8,6 @@ import { PrivateHeaderLogoutButton } from "@/components/layout/private-header/lo
 import { NotificationBell } from "@/components/layout/site-header";
 
 import { getVendorPageTitle, VENDOR_NAV_ITEMS } from "./vendor-config";
-import { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";
 
 function navClassName(active: boolean) {
   return [
@@ -25,7 +24,6 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative h-screen overflow-hidden bg-[#ede9df] text-brand-dark">
-      <VendorPendingRegistrationModalHost />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"

@@ -16,21 +16,28 @@ export function VendorPageHeader({
   title: string;
 }) {
   return (
-    <Panel className="animate-admin-panel-enter overflow-hidden">
-      <div className="border-b border-brand-dark/10 bg-brand-dark px-5 py-3 text-brand-yellow">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.26em]">{eyebrow}</p>
+    <Panel className="animate-admin-panel-enter overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+      <div className="border-b-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-brand-yellow md:px-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.26em]">{eyebrow}</p>
       </div>
-      <div className="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-end md:justify-between md:px-6">
+      <div className="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-end md:justify-between md:px-6 md:py-6">
         <div className="max-w-3xl">
           <h2
-            className="text-2xl font-semibold uppercase tracking-[0.1em] md:text-3xl"
+            className="text-2xl font-black uppercase tracking-[0.1em] md:text-3xl"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
             {title}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-brand-dark/68">{description}</p>
+          <p className="mt-3 text-sm leading-6 text-[#1a1a1a]/68">{description}</p>
         </div>
-        {action ?? (signal ? <StatusBadge label={signal} /> : null)}
+        {action ?? (
+          signal ? (
+            <StatusBadge
+              className="rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-3 py-1 text-[10px] font-black tracking-[0.18em] text-brand-yellow"
+              label={signal}
+            />
+          ) : null
+        )}
       </div>
     </Panel>
   );

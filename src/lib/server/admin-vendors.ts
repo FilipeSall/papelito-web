@@ -4,7 +4,7 @@ import { wpRest } from "@/lib/server/wp-rest";
 
 import type { AdminVendorsFilters } from "@/lib/server/admin-vendors-filters";
 
-export type AdminVendorRowStatus = "pending" | "approved" | "rejected" | "none";
+export type AdminVendorRowStatus = "pending" | "incomplete" | "approved" | "rejected" | "none";
 
 export type AdminVendorRow = {
   applicationStatus: AdminVendorRowStatus;
@@ -25,6 +25,7 @@ export type AdminVendorRow = {
 export type AdminVendorsSummary = {
   approvedSellers: number;
   filteredUsers: number;
+  incompleteApplications: number;
   pendingApplications: number;
   usersWithCoverage: number;
 };
@@ -100,12 +101,18 @@ type RawSnapshot = {
 const EMPTY_SUMMARY: AdminVendorsSummary = {
   approvedSellers: 0,
   filteredUsers: 0,
+  incompleteApplications: 0,
   pendingApplications: 0,
   usersWithCoverage: 0,
 };
 
 function normalizeStatus(value: unknown): AdminVendorRow["applicationStatus"] {
-  if (value === "pending" || value === "approved" || value === "rejected") {
+  if (
+    value === "pending" ||
+    value === "incomplete" ||
+    value === "approved" ||
+    value === "rejected"
+  ) {
     return value;
   }
   return "none";
@@ -181,6 +188,7 @@ export async function getAdminVendorsSnapshot(
   const summary: AdminVendorsSummary = {
     approvedSellers: Number(result.data.summary?.approvedSellers ?? 0),
     filteredUsers: Number(result.data.summary?.filteredUsers ?? 0),
+    incompleteApplications: Number(result.data.summary?.incompleteApplications ?? 0),
     pendingApplications: Number(result.data.summary?.pendingApplications ?? 0),
     usersWithCoverage: Number(result.data.summary?.usersWithCoverage ?? 0),
   };

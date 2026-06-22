@@ -134,16 +134,20 @@ export function VendorStockManager({
 
   return (
     <div className="space-y-4">
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
         <StockToolbar filter={filter} search={search} />
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
         {focusProductId && !focusedInPage ? (
-          <p className="mx-5 mt-4 rounded-[12px] bg-brand-yellow/22 px-4 py-3 text-sm text-brand-dark">
+          <p className="mx-5 mt-4 border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm font-medium text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
             O produto indicado pela notificacao nao esta nesta pagina ou nao corresponde aos filtros atuais.
           </p>
         ) : null}
         {snapshot.items.length === 0 ? (
-          <p className="px-5 py-10 text-sm text-brand-dark/64">Nenhum produto encontrado para este filtro.</p>
+          <div className="px-5 py-10">
+            <div className="border-2 border-dashed border-[#1a1a1a] bg-white px-5 py-8 text-center text-sm font-medium text-[#1a1a1a]/72">
+              Nenhum produto encontrado para este filtro.
+            </div>
+          </div>
         ) : (
           <div className="overflow-x-auto px-2 pt-3">
             <table className="min-w-full border-separate border-spacing-0 text-left">
@@ -151,7 +155,7 @@ export function VendorStockManager({
                 <tr>
                   {tableHeaders.map((header) => (
                     <th
-                      className="border-b border-brand-dark/12 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48 last:text-right"
+                      className="border-b-2 border-[#1a1a1a] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/58 last:text-right"
                       key={header}
                     >
                       {header}
@@ -173,14 +177,14 @@ export function VendorStockManager({
                 ))}
               </tbody>
             </table>
-            <div className="flex flex-col items-end gap-2 border-t border-brand-dark/12 px-4 py-5 sm:flex-row sm:justify-end">
-              <p className="text-xs font-medium text-brand-dark/58">
+            <div className="flex flex-col items-end gap-2 border-t-2 border-[#1a1a1a] bg-white/65 px-4 py-5 sm:flex-row sm:justify-end">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/58">
                 {changedItems.length === 0
                   ? "Nenhuma alteração pendente nesta página."
                   : `${changedItems.length} alteração(ões) pendente(s) nesta página.`}
               </p>
               <button
-                className="h-11 rounded-[12px] bg-brand-yellow px-5 text-xs font-black uppercase tracking-[0.18em] text-brand-dark shadow-[4px_4px_0_rgba(35,31,32,0.14)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                className="inline-flex h-11 items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={savingAll || changedItems.length === 0 || hasInvalidChangedQty}
                 onClick={() => void saveAll()}
                 type="button"

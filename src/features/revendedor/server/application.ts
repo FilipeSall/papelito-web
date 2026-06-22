@@ -70,6 +70,7 @@ export async function submitRevendedorApplication(
     application: normalizeRevendedorApplication({
       status:
         result.data.status === "pending" ||
+        result.data.status === "incomplete" ||
         result.data.status === "approved" ||
         result.data.status === "rejected"
           ? result.data.status

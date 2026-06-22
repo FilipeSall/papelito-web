@@ -29,6 +29,7 @@ import {
   formatCpf,
 } from "@/features/revendedor/utils/revendedor-registration";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 import { AdminSelectField } from "../products/components/admin-select-field";
 import { InfoTooltip } from "../products/components/form-fields";
 
@@ -356,16 +357,7 @@ export function VendorCreateLauncher({
     }
   }, [bankCode, selectedBankOption]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !submitting) setIsOpen(false);
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, submitting]);
+  useEscapeKey(() => setIsOpen(false), { enabled: isOpen && !submitting });
 
   useEffect(() => {
     if (!initialOpen || autoOpenedRef.current) {

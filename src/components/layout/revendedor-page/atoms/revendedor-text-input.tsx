@@ -16,6 +16,9 @@ export const RevendedorTextInput = forwardRef<
   { className = "", error, prefixContent, tone = "light", ...props },
   ref,
 ) {
+  const disabledClass = props.disabled
+    ? "cursor-not-allowed opacity-50"
+    : "";
   const borderClass =
     tone === "dark"
       ? error
@@ -39,14 +42,14 @@ export const RevendedorTextInput = forwardRef<
 
   return (
     <div
-      className={`flex h-12 items-center rounded-xl border px-4 transition ${containerClass} ${borderClass} ${className}`.trim()}
+      className={`flex h-12 items-center rounded-xl border px-4 transition ${containerClass} ${borderClass} ${disabledClass} ${className}`.trim()}
     >
       {prefixContent ? (
         <span className={`mr-2 text-sm ${prefixClass}`}>{prefixContent}</span>
       ) : null}
       <input
         ref={ref}
-        className={`w-full border-0 bg-transparent text-sm tracking-[-0.1504px] outline-none ${inputClass}`}
+        className={`w-full border-0 bg-transparent text-sm tracking-[-0.1504px] outline-none disabled:cursor-not-allowed ${inputClass}`}
         {...props}
       />
     </div>

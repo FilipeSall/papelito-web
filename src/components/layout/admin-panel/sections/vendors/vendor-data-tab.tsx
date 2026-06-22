@@ -7,7 +7,7 @@ export function VendorDataTab({
   status,
   vendor,
 }: {
-  status: "pending" | "approved" | "rejected" | "none";
+  status: "pending" | "incomplete" | "approved" | "rejected" | "none";
   vendor: AdminVendorDetail;
 }) {
   const fullName = `${vendor.firstName} ${vendor.lastName}`.trim() || vendor.name;
@@ -56,6 +56,17 @@ export function VendorDataTab({
           value={vendor.reviewedAt ? formatVendorDateTime(vendor.reviewedAt) : ""}
         />
         <DetailRow label="Decidida por" value={vendor.reviewedBy?.name} />
+        {status === "incomplete" ? (
+          <div className="sm:col-span-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
+              Regra de venda
+            </span>
+            <p className="mt-2 rounded-xl border border-[#d6b06b] bg-[#fff8ea] px-3 py-2 text-sm leading-6 text-[#7a4d12]">
+              Este vendor pode acessar o painel para concluir o cadastro, mas permanece bloqueado
+              para vender ate preencher todos os campos obrigatorios.
+            </p>
+          </div>
+        ) : null}
         {status === "rejected" && vendor.rejectionReason ? (
           <div className="sm:col-span-2">
             <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">

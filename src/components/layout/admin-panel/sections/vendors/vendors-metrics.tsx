@@ -10,11 +10,12 @@ export function VendorsMetrics({
   totalRows: number;
 }) {
   const pending = summary.pendingApplications;
+  const incomplete = summary.incompleteApplications;
   const approved = summary.approvedSellers;
   const coverage = summary.usersWithCoverage;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <MetricCard
         label="Triagens pendentes"
         value={String(pending).padStart(2, "0")}
@@ -24,6 +25,12 @@ export function VendorsMetrics({
             : "Nenhuma triagem aguardando"
         }
         tone={pending > 0 ? "warning" : "default"}
+      />
+      <MetricCard
+        label="Cadastros incompletos"
+        value={String(incomplete).padStart(2, "0")}
+        detail="Entram no painel, mas nao podem vender"
+        tone={incomplete > 0 ? "warning" : "default"}
       />
       <MetricCard
         label="Vendors aprovados"

@@ -1,13 +1,14 @@
 "use client";
 
 import { AlertTriangle, Loader2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   VENDOR_REJECTION_REASON_LENGTH_MESSAGE,
   VENDOR_REJECTION_REASON_MAX_LENGTH,
   VENDOR_REJECTION_REASON_MIN_LENGTH,
 } from "@/lib/admin-vendors-constants";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type VendorRejectModalProps = {
   errorMessage: string | null;
@@ -34,14 +35,7 @@ export function VendorRejectModal({
 }: VendorRejectModalProps) {
   const [reason, setReason] = useState("");
 
-  useEffect(() => {
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !loading) onCancel();
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [loading, onCancel]);
+  useEscapeKey(onCancel, { enabled: !loading });
 
   const sanitizedReason = sanitizeReasonForValidation(reason);
   const isLengthValid =

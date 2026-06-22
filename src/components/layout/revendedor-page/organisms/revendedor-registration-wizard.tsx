@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCepLookup } from "@/features/checkout";
 import {
   ADMIN_BANK_OPTIONS,
+  bankHasBranchCheckDigit,
   findBankOptionByCode,
   OTHER_BANK_OPTION_VALUE,
 } from "@/features/revendedor/constants/bank-codes";
@@ -96,7 +97,9 @@ export function RevendedorRegistrationWizard({
   const [useCustomBankCode, setUseCustomBankCode] = useState(false);
   const isPagarmeEditMode =
     editMode === "pagarme" &&
-    (application.status === "pending" || application.status === "approved");
+    (application.status === "pending" ||
+      application.status === "incomplete" ||
+      application.status === "approved");
   const visibleStep: 1 | 2 | 3 = isPagarmeEditMode ? 3 : draft.currentStep;
   const editCallbackUrl = returnTo
     ? `/revendedor/cadastro?edit=pagarme&returnTo=${encodeURIComponent(returnTo)}`
@@ -252,6 +255,18 @@ export function RevendedorRegistrationWizard({
     }
   }, [draft.step3.bankAccount.bankCode]);
 
+  useEffect(() => {
+    const bankCode = draft.step3.bankAccount.bankCode.trim();
+    if (
+      bankCode &&
+      !bankHasBranchCheckDigit(bankCode) &&
+      draft.step3.bankAccount.branchCheckDigit
+    ) {
+      handleBankAccountChange("branchCheckDigit", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.step3.bankAccount.bankCode]);
+
   if (!hasHydrated) {
     return (
       <div className="flex min-h-screen">
@@ -266,7 +281,9 @@ export function RevendedorRegistrationWizard({
   }
 
   if (
-    (application.status === "pending" || application.status === "approved") &&
+    (application.status === "pending" ||
+      application.status === "incomplete" ||
+      application.status === "approved") &&
     !isPagarmeEditMode
   ) {
     return (
@@ -293,9 +310,8 @@ export function RevendedorRegistrationWizard({
   const partner = draft.step3.managingPartners[0];
   const partnerSectionTitle =
     draft.step3.hasManagingPartner === "yes" ? "Sócio administrador" : "Responsável legal";
-  const combinedBranchValue = formatBankFieldWithDigit(
-    draft.step3.bankAccount.branchNumber,
-    draft.step3.bankAccount.branchCheckDigit,
+  const branchHasCheckDigit = bankHasBranchCheckDigit(
+    draft.step3.bankAccount.bankCode.trim(),
   );
   const combinedAccountValue = formatBankFieldWithDigit(
     draft.step3.bankAccount.accountNumber,
@@ -397,16 +413,12 @@ export function RevendedorRegistrationWizard({
     }));
   }
 
-  function handleCombinedAgencyChange(rawValue: string) {
-    const sanitized = rawValue.replace(/[^0-9A-Za-z]/g, "");
-    const branchNumber = sanitized.length > 1 ? sanitized.slice(0, -1) : sanitized;
-    const branchCheckDigit = sanitized.length > 1 ? sanitized.slice(-1) : "";
-
+  function handleBranchNumberChange(rawValue: string) {
+    const branchNumber = rawValue.replace(/[^0-9A-Za-z]/g, "");
     patchStep3({
       bankAccount: {
         ...draft.step3.bankAccount,
         branchNumber,
-        branchCheckDigit,
       },
     });
     setStep3Errors((current) => ({
@@ -414,6 +426,22 @@ export function RevendedorRegistrationWizard({
       bankAccount: {
         ...current.bankAccount,
         branchNumber: undefined,
+      },
+    }));
+  }
+
+  function handleBranchCheckDigitChange(rawValue: string) {
+    const branchCheckDigit = rawValue.replace(/[^0-9A-Za-z]/g, "").slice(0, 2);
+    patchStep3({
+      bankAccount: {
+        ...draft.step3.bankAccount,
+        branchCheckDigit,
+      },
+    });
+    setStep3Errors((current) => ({
+      ...current,
+      bankAccount: {
+        ...current.bankAccount,
         branchCheckDigit: undefined,
       },
     }));
@@ -1309,20 +1337,43 @@ export function RevendedorRegistrationWizard({
 
                     <RevendedorFormRow>
                       <RevendedorFormField
-                        error={
-                          step3Errors.bankAccount?.branchNumber ||
-                          step3Errors.bankAccount?.branchCheckDigit
-                        }
-                        id="branchCombined"
+                        error={step3Errors.bankAccount?.branchNumber}
+                        id="branchNumber"
                         inputMode="numeric"
-                        label="Agência com dígito *"
+                        label="Agência *"
                         maxLength={8}
-                        name="branchCombined"
-                        onChange={(event) => handleCombinedAgencyChange(event.target.value)}
-                        placeholder="0001-9"
+                        name="branchNumber"
+                        onChange={(event) => handleBranchNumberChange(event.target.value)}
+                        placeholder="0001"
                         tone="dark"
-                        value={combinedBranchValue}
+                        value={draft.step3.bankAccount.branchNumber}
                       />
+                      <RevendedorFormField
+                        disabled={!branchHasCheckDigit}
+                        error={step3Errors.bankAccount?.branchCheckDigit}
+                        id="branchCheckDigit"
+                        inputMode="numeric"
+                        label={
+                          branchHasCheckDigit
+                            ? "Dígito da agência"
+                            : "Dígito da agência (este banco não usa)"
+                        }
+                        maxLength={2}
+                        name="branchCheckDigit"
+                        onChange={(event) =>
+                          handleBranchCheckDigitChange(event.target.value)
+                        }
+                        placeholder={branchHasCheckDigit ? "9" : "—"}
+                        tone="dark"
+                        value={
+                          branchHasCheckDigit
+                            ? draft.step3.bankAccount.branchCheckDigit
+                            : ""
+                        }
+                      />
+                    </RevendedorFormRow>
+
+                    <RevendedorFormRow>
                       <RevendedorFormField
                         error={
                           step3Errors.bankAccount?.accountNumber ||

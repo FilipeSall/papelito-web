@@ -1,7 +1,9 @@
 "use client";
 
 import { Loader2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type VendorStockEditModalProps = {
   errorMessage: string | null;
@@ -23,14 +25,7 @@ export function VendorStockEditModal({
   const [qty, setQty] = useState(String(initialQty));
   const [reason, setReason] = useState("");
 
-  useEffect(() => {
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !loading) onCancel();
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [loading, onCancel]);
+  useEscapeKey(onCancel, { enabled: !loading });
 
   const parsedQty = Number(qty);
   const cleanReason = reason.trim();

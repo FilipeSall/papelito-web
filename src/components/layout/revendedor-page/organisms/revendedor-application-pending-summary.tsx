@@ -13,18 +13,28 @@ export function RevendedorApplicationPendingSummary({
             Status atual
           </p>
           <h3 className="mt-2 text-lg font-black uppercase">
-            {application.status === "approved" ? "Aprovado" : "Em análise"}
+            {application.status === "approved"
+              ? "Aprovado"
+              : application.status === "incomplete"
+                ? "Cadastro incompleto"
+                : "Em análise"}
           </h3>
         </div>
         <span className="rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-brand-dark">
-          {application.status === "approved" ? "Liberado" : "Pendente"}
+          {application.status === "approved"
+            ? "Liberado"
+            : application.status === "incomplete"
+              ? "Bloqueado para vender"
+              : "Pendente"}
         </span>
       </div>
 
       <p className="mt-4 text-sm leading-6 text-text-muted">
         {application.status === "approved"
           ? "Seu cadastro no programa já foi aprovado pelo nosso time."
-          : "Recebemos sua triagem. O time comercial da Papelito vai revisar seus dados e retornar por e-mail."}
+          : application.status === "incomplete"
+            ? "Seu cadastro foi criado, mas ainda existem dados obrigatorios pendentes. Conclua as informacoes para liberar suas vendas."
+            : "Recebemos sua triagem. O time comercial da Papelito vai revisar seus dados e retornar por e-mail."}
       </p>
 
       <div className="mt-5 rounded-3xl bg-brand-yellow/25 p-4">

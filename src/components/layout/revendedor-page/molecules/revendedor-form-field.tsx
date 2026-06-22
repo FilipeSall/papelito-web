@@ -3,6 +3,7 @@ import { RevendedorTextInput } from "../atoms/revendedor-text-input";
 
 type RevendedorFormFieldProps = {
   autoComplete?: string;
+  disabled?: boolean;
   error?: string;
   id: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
@@ -22,6 +23,7 @@ type RevendedorFormFieldProps = {
  */
 export function RevendedorFormField({
   autoComplete,
+  disabled,
   error,
   id,
   inputMode,
@@ -44,6 +46,7 @@ export function RevendedorFormField({
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={Boolean(error)}
         autoComplete={autoComplete}
+        disabled={disabled}
         error={error}
         id={id}
         inputMode={inputMode}

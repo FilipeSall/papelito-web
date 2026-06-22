@@ -156,6 +156,7 @@ export function normalizeRevendedorApplication(
     pendingFields,
     status:
       payload.status === "pending" ||
+      payload.status === "incomplete" ||
       payload.status === "approved" ||
       payload.status === "rejected"
         ? payload.status

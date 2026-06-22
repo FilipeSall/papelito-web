@@ -1,7 +1,12 @@
 import type { RevendedorSoldOption } from "./revendedor";
 import type { VendorPendingFieldKey } from "../constants/pending-registration";
 
-export type RevendedorApplicationStatus = "none" | "pending" | "approved" | "rejected";
+export type RevendedorApplicationStatus =
+  | "none"
+  | "pending"
+  | "incomplete"
+  | "approved"
+  | "rejected";
 
 export type VendorRegistrationStep1Data = {
   storeName: string;
@@ -33,6 +38,11 @@ export type VendorRegistrationStep2Data = {
   neighborhood: string;
   city: string;
   state: string;
+  minCep: string;
+  maxCep: string;
+};
+
+export type VendorCoverageRange = {
   minCep: string;
   maxCep: string;
 };
@@ -121,9 +131,23 @@ export type SubmitRevendedorApplicationInput = {
 };
 
 export type VendorPendingRegistrationResponse = {
+  application?: {
+    step1: VendorRegistrationStep1Data;
+    step2: VendorRegistrationStep2Data;
+    coverageRanges?: VendorCoverageRange[] | null;
+  };
   draft: VendorRegistrationStep3Data | null;
   pendingFields: string[];
   updatedAt?: string;
+};
+
+export type UpdateVendorPendingRegistrationInput = {
+  application: {
+    step1: VendorRegistrationStep1Data;
+    step2: VendorRegistrationStep2Data;
+    coverageRanges: VendorCoverageRange[];
+  };
+  draft: VendorRegistrationStep3Data;
 };
 
 export type RevendedorStep1Errors = Partial<Record<keyof VendorRegistrationStep1Data, string>>;

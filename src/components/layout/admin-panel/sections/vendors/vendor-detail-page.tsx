@@ -27,8 +27,13 @@ import { VendorOrdersTab } from "./vendor-orders-tab";
 import { VendorStatusBadge } from "./vendor-status";
 import { VendorStockTab } from "./vendor-stock-tab";
 
-function normalizeStatus(value: string): "pending" | "approved" | "rejected" | "none" {
-  if (value === "pending" || value === "approved" || value === "rejected") {
+function normalizeStatus(value: string): "pending" | "incomplete" | "approved" | "rejected" | "none" {
+  if (
+    value === "pending" ||
+    value === "incomplete" ||
+    value === "approved" ||
+    value === "rejected"
+  ) {
     return value;
   }
   return "none";

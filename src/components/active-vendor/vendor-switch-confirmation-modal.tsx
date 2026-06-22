@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 interface VendorSwitchConfirmationModalProps {
   open: boolean;
@@ -21,16 +21,7 @@ export function VendorSwitchConfirmationModal({
   onCancel,
   onConfirm,
 }: VendorSwitchConfirmationModalProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isSubmitting) onCancel();
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [open, isSubmitting, onCancel]);
+  useEscapeKey(onCancel, { enabled: open && !isSubmitting });
 
   if (!open) return null;
 

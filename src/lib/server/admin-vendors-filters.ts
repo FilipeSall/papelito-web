@@ -4,7 +4,13 @@ import { firstParam } from "@/lib/search-params";
 
 export type AdminVendorsPageSearchParams = Record<string, string | string[] | undefined>;
 
-export const VENDOR_APPLICATION_STATUSES = ["pending", "approved", "rejected", "all"] as const;
+export const VENDOR_APPLICATION_STATUSES = [
+  "pending",
+  "incomplete",
+  "approved",
+  "rejected",
+  "all",
+] as const;
 
 export type AdminVendorApplicationStatus = (typeof VENDOR_APPLICATION_STATUSES)[number];
 

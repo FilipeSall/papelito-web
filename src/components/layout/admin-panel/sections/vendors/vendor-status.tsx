@@ -4,6 +4,7 @@ type VendorStatus = AdminVendorRowStatus;
 
 const LABELS: Record<VendorStatus, string> = {
   pending: "Pendente",
+  incomplete: "Cadastro incompleto",
   approved: "Aprovado",
   rejected: "Rejeitado",
   none: "Sem triagem",
@@ -11,6 +12,7 @@ const LABELS: Record<VendorStatus, string> = {
 
 const TONE_CLASSES: Record<VendorStatus, string> = {
   pending: "border-[#d7c98f] bg-[#f4edd3] text-[#5d4d1b]",
+  incomplete: "border-[#d6b06b] bg-[#fff1d6] text-[#7a4d12]",
   approved: "border-[#97b38e] bg-[#e4efe0] text-[#28422d]",
   rejected: "border-[#d7b0aa] bg-[#f3e3df] text-[#7a3428]",
   none: "border-[#231f20]/14 bg-[#231f20] text-[#ffe500]",
