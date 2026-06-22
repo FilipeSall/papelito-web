@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -64,5 +64,50 @@ describe("BaseModal", () => {
 
     await user.click(screen.getByTestId("base-modal-overlay"));
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("BaseModal focus management", () => {
+  it("moves focus into the dialog on open", () => {
+    render(
+      <BaseModal ariaLabelledBy="t" onClose={() => {}} open>
+        <h2 id="t">Title</h2>
+        <button type="button">Inside</button>
+      </BaseModal>,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+
+  it("returns focus to the previously focused element on close", () => {
+    const trigger = document.createElement("button");
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const { rerender } = render(
+      <BaseModal ariaLabelledBy="t" onClose={() => {}} open>
+        <h2 id="t">Title</h2>
+        <button type="button">Inside</button>
+      </BaseModal>,
+    );
+    rerender(
+      <BaseModal ariaLabelledBy="t" onClose={() => {}} open={false}>
+        <h2 id="t">Title</h2>
+        <button type="button">Inside</button>
+      </BaseModal>,
+    );
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+  });
+
+  it("calls onClose on Escape", () => {
+    const onClose = vi.fn();
+    render(
+      <BaseModal ariaLabelledBy="t" onClose={onClose} open>
+        <h2 id="t">Title</h2>
+      </BaseModal>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
