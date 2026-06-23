@@ -5,6 +5,7 @@ export { VendorOrderStatusBadge, vendorStatusLabel } from "./vendor-order-status
 export { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
 export { VendorOrdersTable } from "./vendor-orders-table";
 export { VendorCoverageManager } from "./vendor-coverage-manager";
+export { VendorOnboardingRequiredNotice } from "./vendor-onboarding-required-notice";
 export { VendorPageHeader } from "./vendor-page-header";
 export { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";
 export { VendorPeriodFilters } from "./vendor-period-filters";

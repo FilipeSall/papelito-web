@@ -93,6 +93,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
   const [recipient, setRecipient] = useState(initialRecipient);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [pending, startTransition] = useTransition();
+  const isActive = recipient.status === "active";
 
   function syncRecipient(refreshKyc: boolean) {
     setFeedback(null);
@@ -200,21 +201,23 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
           >
             {pending ? "Sincronizando..." : "Sincronizar"}
           </button>
-          <button
-            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={pending}
-            onClick={() => syncRecipient(true)}
-            type="button"
-          >
-            Atualizar KYC
-          </button>
+          {!isActive ? (
+            <button
+              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={pending}
+              onClick={() => syncRecipient(true)}
+              type="button"
+            >
+              Atualizar KYC
+            </button>
+          ) : null}
           <a
             className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             href={EDIT_FINANCIAL_DATA_HREF}
           >
             Editar dados financeiros
           </a>
-          {recipient.kycUrl ? (
+          {!isActive && recipient.kycUrl ? (
             <a
               className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
               href={recipient.kycUrl}

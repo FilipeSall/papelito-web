@@ -1,5 +1,10 @@
-import { VendorPageHeader, VendorStockManager } from "@/components/layout/vendor-panel";
-import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
+import {
+  VendorOnboardingRequiredNotice,
+  VendorPageHeader,
+  VendorStockManager,
+} from "@/components/layout/vendor-panel";
+import { getVendorPendingRegistrationState } from "@/features/revendedor/server/vendor-onboarding";
+import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import {
   getVendorStock,
   getVendorStockTaxonomies,
@@ -15,7 +20,25 @@ export default async function VendorStockPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await redirectIfVendorOnboardingPending("/vendor/estoque");
+  const pendingState = await getVendorPendingRegistrationState();
+
+  if (pendingState.pendingFields.length > 0) {
+    return (
+      <div className="space-y-4 md:space-y-5">
+        <VendorPageHeader
+          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, voce recebe uma notificacao operacional."
+          eyebrow="Catalogo regional"
+          signal="cadastro pendente"
+          title="Estoque"
+        />
+        <VendorOnboardingRequiredNotice
+          body="Para visualizar e gerenciar seus produtos, complete o cadastro do vendor. Assim que os dados pendentes forem preenchidos, seu estoque fica disponivel aqui."
+          href={buildVendorOnboardingHref("/vendor/estoque")}
+          title="Complete o cadastro para ver seus produtos"
+        />
+      </div>
+    );
+  }
 
   const params = searchParams ? await searchParams : {};
 

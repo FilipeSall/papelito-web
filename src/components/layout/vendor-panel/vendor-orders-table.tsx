@@ -146,13 +146,13 @@ export function VendorOrdersTable({
       <div className="flex flex-col gap-4 border-b border-brand-dark/10 px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
         <form className="flex gap-2" method="get" onSubmit={handleSubmit}>
           <input
-            className="h-11 w-full rounded-[12px] border border-brand-dark/16 bg-white px-4 text-sm outline-none transition focus:border-brand-dark xl:w-64"
+            className="h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow xl:w-64"
             defaultValue={filters.search}
             key={`${filters.status}:${filters.page}:${filters.search}`}
             name="search"
             placeholder="Pedido ou cliente"
           />
-          <button className="cursor-pointer rounded-[12px] bg-brand-dark px-5 text-sm font-semibold text-brand-yellow transition hover:opacity-90">
+          <button className="cursor-pointer rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none">
             Buscar
           </button>
         </form>
@@ -160,10 +160,10 @@ export function VendorOrdersTable({
           {statusFilters.map(([key, label]) => (
             <button
               aria-pressed={filters.status === key}
-              className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition ${
+              className={`cursor-pointer rounded-none border-2 px-3 py-2 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow ${
                 filters.status === key
-                  ? "border-brand-dark bg-brand-dark text-brand-yellow"
-                  : "border-brand-dark/15 bg-white text-brand-dark/70 hover:border-brand-dark/40 hover:text-brand-dark"
+                  ? "border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow"
+                  : "border-[#1a1a1a] bg-white text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white"
               }`}
               key={key}
               onClick={() => handleStatusChange(key)}
