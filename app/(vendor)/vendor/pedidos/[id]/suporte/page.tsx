@@ -3,10 +3,14 @@ import { notFound } from "next/navigation";
 
 import { VendorPageHeader } from "@/components/layout/vendor-panel";
 import { MessageThreadPanel, getOrderSupportThread } from "@/features/messages";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
 
 export default async function VendorOrderSupportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  await redirectIfVendorOnboardingPending(`/vendor/pedidos/${id}/suporte`);
+
   const [order, thread] = await Promise.all([getVendorOrderDetail(id), getOrderSupportThread(id)]);
 
   if (!order) notFound();

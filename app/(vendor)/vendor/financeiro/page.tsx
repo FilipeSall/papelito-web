@@ -1,5 +1,6 @@
 import { MetricCard, SalesLineChart } from "@/components/layout/operational-panel";
 import { VendorPageHeader, VendorPeriodFilters, VendorRecipientPanel } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorKpis } from "@/features/vendor-dashboard/server";
 import { getVendorRecipient } from "@/features/vendor-recipient/services/get-vendor-recipient";
 import { formatBRLIntl } from "@/lib/format-currency";
@@ -10,6 +11,8 @@ export default async function VendorFinancePage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await redirectIfVendorOnboardingPending("/vendor/financeiro");
+
   const filters = parseAdminSalesFilters(searchParams ? await searchParams : {});
   const [snapshot, recipient] = await Promise.all([
     getVendorKpis(filters),

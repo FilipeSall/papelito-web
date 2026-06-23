@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
+import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import type { VendorRecipient } from "@/features/vendor-recipient/types/vendor-recipient";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
@@ -17,7 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
   inactive: "Inativo",
 };
 
-const EDIT_FINANCIAL_DATA_HREF = "/revendedor/cadastro?edit=pagarme&returnTo=%2Fvendor%2Ffinanceiro";
+const EDIT_FINANCIAL_DATA_HREF = buildVendorOnboardingHref("/vendor/financeiro");
 
 function formatStatus(value: string) {
   return STATUS_LABELS[value] || "Nao iniciado";

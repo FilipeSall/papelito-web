@@ -10,6 +10,7 @@ import {
   VendorOrderStatusStepper,
   VendorPageHeader,
 } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
 import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-orders";
 import { formatBRLIntl } from "@/lib/format-currency";
@@ -30,6 +31,9 @@ function address(order: VendorOrderDetail) {
 
 export default async function VendorOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  await redirectIfVendorOnboardingPending(`/vendor/pedidos/${id}`);
+
   const order = await getVendorOrderDetail(id);
 
   if (!order) notFound();

@@ -1,5 +1,6 @@
 import { VendorPageHeader } from "@/components/layout/vendor-panel";
 import { MessageThreadsList, getMessageThreads } from "@/features/messages";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { firstParam } from "@/lib/search-params";
 
 export default async function VendorMessagesPage({
@@ -7,6 +8,8 @@ export default async function VendorMessagesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await redirectIfVendorOnboardingPending("/vendor/mensagens");
+
   const params = searchParams ? await searchParams : {};
   const search = firstParam(params.search)?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(firstParam(params.page) ?? "", 10) || 1);

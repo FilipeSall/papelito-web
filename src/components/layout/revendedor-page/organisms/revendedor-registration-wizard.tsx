@@ -110,13 +110,13 @@ export function RevendedorRegistrationWizard({
       return;
     }
 
-    if (draft.updatedAt) {
+    if (!isAuthenticated && draft.updatedAt) {
       mergeDraft(initialDraft);
     } else {
       replaceDraft(initialDraft);
     }
     bootstrappedRef.current = true;
-  }, [draft.updatedAt, hasHydrated, initialDraft, mergeDraft, replaceDraft]);
+  }, [draft.updatedAt, hasHydrated, initialDraft, isAuthenticated, mergeDraft, replaceDraft]);
 
   useEffect(() => {
     if (!hasHydrated || !bootstrappedRef.current) {

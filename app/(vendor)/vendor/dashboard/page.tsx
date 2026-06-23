@@ -7,6 +7,7 @@ import {
   VendorPageHeader,
   VendorPeriodFilters,
 } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorKpis } from "@/features/vendor-dashboard/server";
 import { formatBRLIntl } from "@/lib/format-currency";
 import { parseAdminSalesFilters } from "@/lib/server/admin-sales-filters";
@@ -16,6 +17,8 @@ export default async function VendorDashboardPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await redirectIfVendorOnboardingPending("/vendor/dashboard");
+
   const filters = parseAdminSalesFilters(searchParams ? await searchParams : {});
   const snapshot = await getVendorKpis(filters);
   const topRows = snapshot.topProducts.map((product) => [

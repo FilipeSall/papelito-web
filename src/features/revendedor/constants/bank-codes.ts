@@ -13,7 +13,7 @@ export const PRIMARY_BANK_OPTIONS: readonly BankOption[] = [
   { label: "341 - Itau Unibanco", value: "341" },
   { label: "033 - Santander", value: "033" },
   { label: "260 - Nubank", value: "260", hasBranchCheckDigit: false },
-  { label: "077 - Banco Inter", value: "077" },
+  { label: "077 - Banco Inter", value: "077", hasBranchCheckDigit: false },
   { label: "208 - BTG Pactual", value: "208" },
   { label: "212 - Banco Original", value: "212" },
   { label: "336 - C6 Bank", value: "336", hasBranchCheckDigit: false },
@@ -39,11 +39,11 @@ export function findBankOptionByCode(bankCode: string): BankOption | undefined {
 /**
  * Indica se a agencia do banco tem digito verificador.
  *
- * Bancos digitais como Nubank (260) e C6 (336) usam agencia fixa 0001 sem DV; a
+ * Bancos digitais como Nubank (260), Inter (077) e C6 (336) usam agencia fixa
+ * sem DV neste fluxo; a
  * Pagar.me rejeita a string vazia em `branch_check_digit`, entao o campo deve
- * ficar desabilitado e vazio no formulario. Atencao: o Inter (077) usa 0001-9,
- * ou seja, TEM DV. Para bancos desconhecidos ou nao mapeados, assume-se que ha
- * digito (comportamento padrao seguro).
+ * ficar desabilitado e vazio no formulario. Para bancos desconhecidos ou nao
+ * mapeados, assume-se que ha digito (comportamento padrao seguro).
  */
 export function bankHasBranchCheckDigit(bankCode: string): boolean {
   const option = findBankOptionByCode(bankCode);

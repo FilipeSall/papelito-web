@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { VendorPageHeader } from "@/components/layout/vendor-panel";
 import { MessageThreadPanel, getMessageThread } from "@/features/messages";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 
 export default async function VendorMessageThreadPage({
   params,
@@ -10,6 +11,9 @@ export default async function VendorMessageThreadPage({
   params: Promise<{ threadId: string }>;
 }) {
   const { threadId } = await params;
+
+  await redirectIfVendorOnboardingPending(`/vendor/mensagens/${threadId}`);
+
   const thread = await getMessageThread(threadId);
 
   if (!thread) notFound();

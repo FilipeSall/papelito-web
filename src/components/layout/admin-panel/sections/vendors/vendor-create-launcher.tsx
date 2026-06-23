@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ADMIN_BANK_OPTIONS,
   OTHER_BANK_OPTION_VALUE,
+  bankHasBranchCheckDigit,
   findBankOptionByCode,
 } from "@/features/revendedor/constants/bank-codes";
 import {
@@ -170,6 +171,7 @@ function fieldClass(hasError = false) {
 
 function Field({
   autoComplete,
+  disabled = false,
   error,
   helpText,
   helperText,
@@ -182,6 +184,7 @@ function Field({
   value,
 }: {
   autoComplete?: string;
+  disabled?: boolean;
   error?: string;
   helpText?: string;
   helperText?: string;
@@ -205,6 +208,7 @@ function Field({
       <input
         autoComplete={autoComplete}
         className={fieldClass(Boolean(error))}
+        disabled={disabled}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -348,6 +352,7 @@ export function VendorCreateLauncher({
   const cepLookupRequestIdRef = useRef(0);
   const autoOpenedRef = useRef(false);
   const bankCode = form.bankAccount.bankCode.trim();
+  const branchHasCheckDigit = bankHasBranchCheckDigit(bankCode);
   const selectedBankOption = findBankOptionByCode(bankCode);
   const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : (selectedBankOption?.value ?? "");
 
@@ -356,6 +361,14 @@ export function VendorCreateLauncher({
       setUseCustomBankCode(true);
     }
   }, [bankCode, selectedBankOption]);
+
+  useEffect(() => {
+    if (branchHasCheckDigit || !form.bankAccount.branchCheckDigit) {
+      return;
+    }
+
+    updateBank("branchCheckDigit", "");
+  }, [branchHasCheckDigit, form.bankAccount.branchCheckDigit]);
 
   useEscapeKey(() => setIsOpen(false), { enabled: isOpen && !submitting });
 
@@ -1077,9 +1090,11 @@ export function VendorCreateLauncher({
                     value={form.bankAccount.branchNumber}
                   />
                   <Field
+                    disabled={!branchHasCheckDigit}
                     label="Digito agencia"
+                    placeholder={branchHasCheckDigit ? undefined : "Nao se aplica"}
                     onChange={(value) => updateBank("branchCheckDigit", value.replace(/[^0-9A-Za-z]/g, "").slice(0, 2))}
-                    value={form.bankAccount.branchCheckDigit ?? ""}
+                    value={branchHasCheckDigit ? (form.bankAccount.branchCheckDigit ?? "") : ""}
                   />
                   <Field
                     inputMode="numeric"

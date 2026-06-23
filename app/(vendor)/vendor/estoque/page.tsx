@@ -1,4 +1,5 @@
 import { VendorPageHeader, VendorStockManager } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import {
   getVendorStock,
   getVendorStockTaxonomies,
@@ -14,6 +15,8 @@ export default async function VendorStockPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await redirectIfVendorOnboardingPending("/vendor/estoque");
+
   const params = searchParams ? await searchParams : {};
 
   const rawFilter = firstParam(params.filter);

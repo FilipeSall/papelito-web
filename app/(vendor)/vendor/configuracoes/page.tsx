@@ -1,7 +1,10 @@
 import { VendorPageHeader, VendorSettingsForm } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorSettings } from "@/features/vendor-settings/server";
 
 export default async function VendorSettingsPage() {
+  await redirectIfVendorOnboardingPending("/vendor/configuracoes");
+
   const settings = await getVendorSettings();
 
   return (

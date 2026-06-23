@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   ADMIN_BANK_OPTIONS,
   OTHER_BANK_OPTION_VALUE,
+  bankHasBranchCheckDigit,
   findBankOptionByCode,
 } from "@/features/revendedor/constants/bank-codes";
 import {
@@ -77,6 +78,12 @@ type PendingState = {
   pendingFields: VendorPendingFieldKey[];
 };
 
+type VendorPendingRegistrationModalHostProps = {
+  dismissible?: boolean;
+  mode?: "modal" | "page";
+  returnTo?: string;
+};
+
 function digits(value: string, max?: number) {
   const clean = value.replace(/\D/g, "");
   return typeof max === "number" ? clean.slice(0, max) : clean;
@@ -92,6 +99,7 @@ function fieldClass(hasError = false) {
 
 function Field({
   autoComplete,
+  disabled = false,
   error,
   helpText,
   helperText,
@@ -104,6 +112,7 @@ function Field({
   value,
 }: {
   autoComplete?: string;
+  disabled?: boolean;
   error?: string;
   helpText?: string;
   helperText?: string;
@@ -127,6 +136,7 @@ function Field({
       <input
         autoComplete={autoComplete}
         className={fieldClass(Boolean(error))}
+        disabled={disabled}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -269,7 +279,11 @@ function buildPayload(form: PendingForm): UpdateVendorPendingRegistrationInput {
   };
 }
 
-export function VendorPendingRegistrationModalHost() {
+export function VendorPendingRegistrationModalHost({
+  dismissible = true,
+  mode = "modal",
+  returnTo,
+}: VendorPendingRegistrationModalHostProps = {}) {
   const router = useRouter();
   const { isAuthenticated, isLoading: isSessionLoading, isSeller, session } = useAuthSession();
   const [state, setState] = useState<PendingState | null>(null);
@@ -286,6 +300,7 @@ export function VendorPendingRegistrationModalHost() {
   } | null>(null);
   const [isCepLookingUp, setIsCepLookingUp] = useState(false);
   const cepLookupRequestIdRef = useRef(0);
+  const isPageMode = mode === "page";
 
   useEffect(() => {
     setDismissed(false);
@@ -324,10 +339,7 @@ export function VendorPendingRegistrationModalHost() {
         const payload = (await response.json()) as VendorPendingRegistrationResponse;
         const pendingFields = toPendingFieldKeyList(payload.pendingFields);
 
-        if (cancelled || pendingFields.length === 0) {
-          if (!cancelled) {
-            setState(null);
-          }
+        if (cancelled) {
           return;
         }
 
@@ -335,7 +347,11 @@ export function VendorPendingRegistrationModalHost() {
         const bankCode = form.bankAccount.bankCode.trim();
 
         setUseCustomBankCode(Boolean(bankCode) && !findBankOptionByCode(bankCode));
-        setState({ form, pendingFields });
+        setState(
+          isPageMode || pendingFields.length > 0
+            ? { form, pendingFields }
+            : null,
+        );
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -346,9 +362,59 @@ export function VendorPendingRegistrationModalHost() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isSeller, isSessionLoading, session?.accessToken]);
+  }, [isAuthenticated, isPageMode, isSeller, isSessionLoading, session?.accessToken]);
 
-  if (loading || !state || dismissed || state.pendingFields.length === 0) {
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    const currentBankCode = state.form.bankAccount.bankCode.trim();
+    if (
+      bankHasBranchCheckDigit(currentBankCode) ||
+      !state.form.bankAccount.branchCheckDigit
+    ) {
+      return;
+    }
+
+    setState((current) =>
+      current
+        ? {
+            ...current,
+            form: {
+              ...current.form,
+              bankAccount: {
+                ...current.form.bankAccount,
+                branchCheckDigit: "",
+              },
+              pagarmeDraft: {
+                ...current.form.pagarmeDraft,
+                bankAccount: {
+                  ...current.form.pagarmeDraft.bankAccount,
+                  branchCheckDigit: "",
+                },
+              },
+            },
+          }
+        : current,
+    );
+  }, [state]);
+
+  if (loading) {
+    if (!isPageMode) {
+      return null;
+    }
+
+    return (
+      <div className="px-6 py-8">
+        <div className="border-2 border-[#1a1a1a] bg-[#faf8f2] px-5 py-4 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
+          Carregando cadastro complementar...
+        </div>
+      </div>
+    );
+  }
+
+  if (!state || dismissed || (!isPageMode && state.pendingFields.length === 0)) {
     return null;
   }
 
@@ -356,6 +422,7 @@ export function VendorPendingRegistrationModalHost() {
   const form = currentState.form;
   const partner = form.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
   const bankCode = form.bankAccount.bankCode.trim();
+  const branchHasCheckDigit = bankHasBranchCheckDigit(bankCode);
   const selectedBankOption = findBankOptionByCode(bankCode);
   const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : (selectedBankOption?.value ?? "");
 
@@ -598,6 +665,10 @@ export function VendorPendingRegistrationModalHost() {
       if (!body || !("draft" in body) || !body.draft) {
         setMessageTone("success");
         setMessage("Cadastro salvo.");
+        if (returnTo) {
+          router.push(returnTo);
+          router.refresh();
+        }
         return;
       }
 
@@ -610,7 +681,12 @@ export function VendorPendingRegistrationModalHost() {
       if (nextPendingFields.length === 0) {
         setMessageTone("success");
         setMessage("Cadastro complementar concluido. Sua conta foi liberada para vender.");
-        setState(null);
+        setState(isPageMode ? { form: nextForm, pendingFields: [] } : null);
+        if (returnTo) {
+          router.push(returnTo);
+          router.refresh();
+          return;
+        }
         router.refresh();
         return;
       }
@@ -630,8 +706,20 @@ export function VendorPendingRegistrationModalHost() {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8">
-      <div className="relative w-full max-w-5xl border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+    <div
+      className={
+        isPageMode
+          ? "space-y-4 md:space-y-5"
+          : "fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8"
+      }
+    >
+      <div
+        className={`relative w-full border-2 border-[#1a1a1a] bg-[#faf8f2] ${
+          isPageMode
+            ? "shadow-[8px_8px_0px_rgba(35,31,32,0.08)]"
+            : "max-w-5xl shadow-[8px_8px_0px_#1a1a1a]"
+        }`}
+      >
         <div className="h-2 w-full bg-brand-yellow" />
 
         <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
@@ -643,38 +731,51 @@ export function VendorPendingRegistrationModalHost() {
               Complete ou ajuste seus dados
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#1a1a1a]/70">
-              Seu cadastro foi iniciado pelo time Papelito. Revise os dados preenchidos, ajuste o
-              que for necessario e complete as pendencias obrigatorias para liberar suas vendas no
-              marketplace.
+              {currentState.pendingFields.length > 0
+                ? "Seu cadastro foi iniciado pelo time Papelito. Revise os dados preenchidos, ajuste o que for necessario e complete as pendencias obrigatorias para liberar suas vendas no marketplace."
+                : "Revise os dados cadastrais e financeiros usados no onboarding do recebedor antes de voltar ao painel."}
             </p>
           </div>
-          <button
-            aria-label="Fechar"
-            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow"
-            onClick={() => setDismissed(true)}
-            type="button"
-          >
-            <X className="h-5 w-5" strokeWidth={2.5} />
-          </button>
+          {dismissible ? (
+            <button
+              aria-label="Fechar"
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow"
+              onClick={() => setDismissed(true)}
+              type="button"
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          ) : returnTo && currentState.pendingFields.length === 0 ? (
+            <button
+              className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white"
+              onClick={() => router.push(returnTo)}
+              type="button"
+            >
+              Voltar
+            </button>
+          ) : null}
         </div>
 
         <div className="space-y-6 px-6 py-5">
           <div className="border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
             <p className="font-black uppercase tracking-[0.16em]">Campos pendentes agora</p>
             <p className="mt-2 leading-6 text-[#1a1a1a]/80">
-              Enquanto este cadastro permanecer incompleto, sua conta continua bloqueada para
-              receber pedidos e vender.
+              {currentState.pendingFields.length > 0
+                ? "Enquanto este cadastro permanecer incompleto, sua conta continua bloqueada para receber pedidos e vender."
+                : "Seu cadastro esta completo. Qualquer ajuste salvo aqui passa a ser a fonte de verdade do onboarding do vendor."}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {currentState.pendingFields.map((field) => (
-                <span
-                  className="border-2 border-[#1a1a1a] bg-white px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#1a1a1a]"
-                  key={field}
-                >
-                  {VENDOR_PENDING_FIELD_LABELS[field]}
-                </span>
-              ))}
-            </div>
+            {currentState.pendingFields.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {currentState.pendingFields.map((field) => (
+                  <span
+                    className="border-2 border-[#1a1a1a] bg-white px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#1a1a1a]"
+                    key={field}
+                  >
+                    {VENDOR_PENDING_FIELD_LABELS[field]}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <Section title="Conta">
@@ -1112,11 +1213,13 @@ export function VendorPendingRegistrationModalHost() {
                 value={form.bankAccount.branchNumber}
               />
               <Field
+                disabled={!branchHasCheckDigit}
                 label="Digito agencia"
+                placeholder={branchHasCheckDigit ? undefined : "Nao se aplica"}
                 onChange={(value) =>
                   updateBank("branchCheckDigit", value.replace(/[^0-9A-Za-z]/g, "").slice(0, 2))
                 }
-                value={form.bankAccount.branchCheckDigit}
+                value={branchHasCheckDigit ? form.bankAccount.branchCheckDigit : ""}
               />
               <Field
                 error={isPendingField("bankAccount.accountNumber")}
@@ -1167,14 +1270,25 @@ export function VendorPendingRegistrationModalHost() {
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
-          <button
-            className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving}
-            onClick={() => setDismissed(true)}
-            type="button"
-          >
-            Pular por agora
-          </button>
+          {dismissible ? (
+            <button
+              className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={saving}
+              onClick={() => setDismissed(true)}
+              type="button"
+            >
+              Pular por agora
+            </button>
+          ) : returnTo && currentState.pendingFields.length === 0 ? (
+            <button
+              className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={saving}
+              onClick={() => router.push(returnTo)}
+              type="button"
+            >
+              Voltar ao painel
+            </button>
+          ) : null}
           <button
             className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={saving}

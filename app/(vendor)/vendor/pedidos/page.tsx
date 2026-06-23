@@ -1,4 +1,5 @@
 import { VendorOrdersTable, VendorPageHeader } from "@/components/layout/vendor-panel";
+import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrders } from "@/features/vendor-orders/server";
 import type { VendorOrdersFilters } from "@/features/vendor-orders/types/vendor-orders";
 import {
@@ -13,6 +14,8 @@ export default async function VendorOrdersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await redirectIfVendorOnboardingPending("/vendor/pedidos");
+
   const params = searchParams ? await searchParams : {};
   const initialFilters: VendorOrdersFilters = {
     page: parseVendorOrdersPage(firstParam(params.page)),

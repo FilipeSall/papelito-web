@@ -78,6 +78,7 @@ type WpCustomerRoleResponse = {
 type WpAuthIdentityResponse = {
   user?: {
     role?: string | null;
+    profileComplete?: boolean | null;
   } | null;
 };
 
@@ -258,7 +259,10 @@ async function wpFetchGraphqlCustomerRole(accessToken: string): Promise<string |
   }
 }
 
-async function wpFetchAuthenticatedRole(accessToken: string): Promise<string | undefined> {
+async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<{
+  profileComplete?: boolean;
+  role?: string;
+}> {
   try {
     const identity = await wpRest<WpAuthIdentityResponse>("/papelito/v1/auth/me", {
       headers: {
@@ -267,13 +271,25 @@ async function wpFetchAuthenticatedRole(accessToken: string): Promise<string | u
     });
 
     if (identity.ok) {
-      return normalizeRole(identity.data.user?.role);
+      return {
+        role: normalizeRole(identity.data.user?.role),
+        profileComplete:
+          typeof identity.data.user?.profileComplete === "boolean"
+            ? identity.data.user.profileComplete
+            : undefined,
+      };
     }
   } catch {
     // Falls back to the existing GraphQL lookup while the custom identity route is unavailable.
   }
 
-  return wpFetchGraphqlCustomerRole(accessToken);
+  return {
+    role: await wpFetchGraphqlCustomerRole(accessToken),
+  };
+}
+
+async function wpFetchAuthenticatedRole(accessToken: string): Promise<string | undefined> {
+  return (await wpFetchAuthenticatedIdentity(accessToken)).role;
 }
 
 function getAccessTokenExpiresAt(accessToken?: string) {
@@ -338,7 +354,7 @@ providers.push(
         throw new Error("papelito_invalid_credentials");
       }
 
-      const role = await wpFetchAuthenticatedRole(login.authToken);
+      const identity = await wpFetchAuthenticatedIdentity(login.authToken);
 
       return {
         id: String(login.user.databaseId),
@@ -347,8 +363,8 @@ providers.push(
         accessToken: login.authToken,
         accessTokenExpires: getAccessTokenExpiresAt(login.authToken),
         refreshToken: login.refreshToken,
-        profileComplete: true,
-        role,
+        profileComplete: identity.profileComplete,
+        role: identity.role,
       };
     },
   }),
