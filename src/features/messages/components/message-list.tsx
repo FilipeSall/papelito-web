@@ -18,8 +18,8 @@ export function MessageList({
 }) {
   if (errored) {
     return (
-      <div className="max-h-[480px] min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
-        <p className="rounded-xl bg-white p-4 text-sm text-red-700">
+      <div className="max-h-120 min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
+        <p className="rounded-[12px] border-2 border-[#c0392b] bg-[#c0392b]/10 p-4 text-sm font-semibold text-[#c0392b]">
           Nao foi possivel atualizar a conversa.
         </p>
       </div>
@@ -28,7 +28,7 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="max-h-[480px] min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
+      <div className="max-h-120 min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
         <div className="flex min-h-52 flex-col items-center justify-center text-center">
           <MessageSquareMore className="h-9 w-9 text-brand-dark/30" />
           <p className="mt-3 text-sm font-semibold text-brand-dark">Nenhuma mensagem enviada</p>
@@ -41,13 +41,13 @@ export function MessageList({
   }
 
   return (
-    <div className="max-h-[480px] min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
+    <div className="max-h-120 min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
       {messages.map((message) => (
         <article
-          className={`max-w-[84%] rounded-2xl px-4 py-3 ${
+          className={`max-w-[84%] rounded-xl px-4 py-3 ${
             message.isMine
               ? "ml-auto bg-brand-dark text-white"
-              : "border border-brand-dark/8 bg-white text-brand-dark"
+              : "border border-brand-dark/12 bg-white text-brand-dark"
           }`}
           key={message.id}
         >

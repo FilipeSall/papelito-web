@@ -21,12 +21,15 @@ export function MessageThreadsList({
       {context === "vendor" ? (
         <form action="/vendor/mensagens" className="flex gap-2">
           <input
-            className="min-w-0 flex-1 rounded-xl border border-brand-dark/15 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-dark"
+            className="h-11 min-w-0 flex-1 rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             defaultValue={search}
             name="search"
             placeholder="Buscar por numero do pedido ou cliente"
           />
-          <button className="rounded-xl bg-brand-dark px-4 text-sm font-semibold text-brand-yellow" type="submit">
+          <button
+            className="cursor-pointer rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
+            type="submit"
+          >
             Buscar
           </button>
         </form>
@@ -41,10 +44,10 @@ export function MessageThreadsList({
           const active = thread.threadId === selectedThreadId;
           return (
             <Link
-              className={`block rounded-[16px] border p-4 transition ${
+              className={`block rounded-xl border p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark ${
                 active
                   ? "border-brand-dark bg-brand-yellow/45"
-                  : "border-brand-dark/10 bg-white hover:border-brand-dark/30"
+                  : "border-brand-dark/12 bg-white hover:border-brand-dark/30 hover:bg-brand-dark/2"
               }`}
               href={href}
               key={thread.threadId}
@@ -71,7 +74,7 @@ export function MessageThreadsList({
           );
         })
       ) : (
-        <div className="rounded-[16px] border border-dashed border-brand-dark/15 bg-white/70 p-6 text-center text-sm text-brand-dark/55">
+        <div className="rounded-xl border border-dashed border-brand-dark/16 bg-white/70 p-6 text-center text-sm text-brand-dark/55">
           Nenhuma conversa encontrada.
         </div>
       )}

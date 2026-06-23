@@ -111,17 +111,17 @@ export function MessageThreadPanel({
 
   if (!thread && !canStart) {
     return (
-      <div className="rounded-[20px] border border-brand-dark/10 bg-white p-8 text-center">
+      <div className="rounded-[20px] border-2 border-[#231f20] bg-[#fbf7ef] p-8 text-center shadow-[8px_8px_0_rgba(35,31,32,0.08)]">
         <p className="text-sm text-brand-dark/62">Conversa indisponivel.</p>
       </div>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-[20px] border border-brand-dark/10 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-[20px] border-2 border-[#231f20] bg-[#fbf7ef] shadow-[8px_8px_0_rgba(35,31,32,0.08)]">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-brand-dark/10 px-5 py-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-dark/48">Atendimento</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Atendimento</p>
           <h2 className="mt-1 text-base font-semibold text-brand-dark">{title}</h2>
         </div>
         {thread?.escalatedAt ? (
@@ -134,14 +134,18 @@ export function MessageThreadPanel({
 
       <MessageList errored={Boolean(error)} messages={thread?.messages ?? []} />
 
-      {notice ? <p className="mx-5 mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{notice}</p> : null}
+      {notice ? (
+        <p className="mx-5 mt-4 rounded-[12px] border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-semibold text-[#c0392b]">
+          {notice}
+        </p>
+      ) : null}
 
       <form className="space-y-3 border-t border-brand-dark/10 px-4 py-4 md:px-5" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="message-body">
           Mensagem
         </label>
         <textarea
-          className="min-h-24 w-full resize-y rounded-xl border border-brand-dark/15 bg-white px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-dark"
+          className="min-h-24 w-full resize-y rounded-[12px] border border-brand-dark/16 bg-white px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark"
           id="message-body"
           maxLength={MESSAGE_BODY_MAX_LENGTH}
           onChange={(event) => setBody(event.target.value)}
@@ -162,7 +166,7 @@ export function MessageThreadPanel({
             <span />
           )}
           <button
-            className="inline-flex items-center gap-2 rounded-full bg-brand-dark px-5 py-2.5 text-sm font-semibold text-brand-yellow transition hover:opacity-90 disabled:opacity-45"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-[12px] bg-brand-dark px-5 py-2.5 text-sm font-semibold text-brand-yellow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
             disabled={isSending || !body.trim() || (!threadId && (!canStart || !orderId))}
             type="submit"
           >

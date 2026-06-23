@@ -161,11 +161,14 @@ function digits(value: string, max?: number) {
   return typeof max === "number" ? clean.slice(0, max) : clean;
 }
 
-function fieldClass(hasError = false) {
+function fieldClass(hasError = false, disabled = false) {
   return [
-    "mt-2 h-11 w-full rounded-none border-2 bg-white px-3 text-sm text-[#1a1a1a] outline-none transition",
-    "placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a] focus:ring-0",
-    hasError ? "border-[#c0392b]" : "border-[#1a1a1a]",
+    "mt-2 h-11 w-full rounded-none border-2 px-3 text-sm outline-none transition",
+    "focus:ring-0",
+    disabled
+      ? "cursor-not-allowed border-dashed border-[#1a1a1a]/25 bg-[#1a1a1a]/5 text-[#1a1a1a]/40 placeholder:text-[#1a1a1a]/30"
+      : "bg-white text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a]",
+    disabled ? "" : hasError ? "border-[#c0392b]" : "border-[#1a1a1a]",
   ].join(" ");
 }
 
@@ -207,7 +210,7 @@ function Field({
       </span>
       <input
         autoComplete={autoComplete}
-        className={fieldClass(Boolean(error))}
+        className={fieldClass(Boolean(error), disabled)}
         disabled={disabled}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}

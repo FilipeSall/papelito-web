@@ -97,7 +97,7 @@ export function VendorCancelShipmentModal({
         />
         {validationError ? (
           <p
-            className="mt-2 text-sm text-red-700"
+            className="mt-2 text-sm font-semibold text-[#c0392b]"
             id={`${titleId}-error`}
             role="alert"
           >
@@ -105,7 +105,7 @@ export function VendorCancelShipmentModal({
           </p>
         ) : null}
         {errorMessage ? (
-          <p className="mt-3 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          <p className="mt-3 rounded-[12px] border border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-semibold text-[#c0392b]" role="alert">
             {errorMessage}
           </p>
         ) : null}
@@ -120,7 +120,7 @@ export function VendorCancelShipmentModal({
             Voltar
           </button>
           <button
-            className="cursor-pointer rounded-full border border-red-300 bg-red-600 px-5 py-2.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full border border-[#c0392b] bg-[#c0392b] px-5 py-2.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-[#a5301f] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSubmitting}
             onClick={handleConfirm}
             type="button"

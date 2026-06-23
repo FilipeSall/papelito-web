@@ -72,10 +72,10 @@ export function VendorOrderActions({ orderId, status }: { orderId: number; statu
     <div className="mt-5 border-t border-brand-dark/10 pt-5">
       {feedback ? (
         <p
-          className={`mb-3 rounded-[10px] px-4 py-3 text-sm ${
+          className={`mb-3 rounded-[10px] border px-4 py-3 text-sm font-semibold ${
             feedback.tone === "success"
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-red-50 text-red-700"
+              ? "border-[#97b38e] bg-[#e4efe0] text-[#28422d]"
+              : "border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
           }`}
           role="alert"
         >
@@ -95,7 +95,7 @@ export function VendorOrderActions({ orderId, status }: { orderId: number; statu
         ) : null}
         {canCancel ? (
           <button
-            className="cursor-pointer rounded-full border border-red-300 bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-[#c0392b] bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#c0392b] transition hover:bg-[#c0392b]/10 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isPending}
             onClick={() => {
               setCancelError(null);

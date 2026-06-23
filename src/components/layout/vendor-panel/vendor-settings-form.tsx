@@ -41,7 +41,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
   }
 
   return (
-    <div className="grid max-w-6xl gap-4 xl:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] xl:items-stretch">
+    <div className="grid gap-4 xl:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] xl:items-stretch">
       <Panel className="flex h-full flex-col overflow-hidden">
         <div className="bg-brand-yellow px-5 py-3 text-brand-dark">
           <p className="text-[10px] font-black uppercase tracking-[0.25em]">

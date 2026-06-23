@@ -1,11 +1,15 @@
-import { VendorPageHeader, VendorSettingsForm } from "@/components/layout/vendor-panel";
+import { VendorPageHeader, VendorRecipientPanel, VendorSettingsForm } from "@/components/layout/vendor-panel";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
+import { getVendorRecipient } from "@/features/vendor-recipient/services/get-vendor-recipient";
 import { getVendorSettings } from "@/features/vendor-settings/server";
 
 export default async function VendorSettingsPage() {
   await redirectIfVendorOnboardingPending("/vendor/configuracoes");
 
-  const settings = await getVendorSettings();
+  const [settings, recipient] = await Promise.all([
+    getVendorSettings(),
+    getVendorRecipient(),
+  ]);
 
   return (
     <div className="space-y-4 md:space-y-5">
@@ -16,6 +20,7 @@ export default async function VendorSettingsPage() {
         title="Configuracoes"
       />
       <VendorSettingsForm initialLeadTimeDays={settings.shippingLeadTimeDays} />
+      <VendorRecipientPanel initialRecipient={recipient} />
     </div>
   );
 }

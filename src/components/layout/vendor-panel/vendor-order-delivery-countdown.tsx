@@ -67,8 +67,8 @@ export function computeDeliveryCountdown({
 
 const toneClassName: Record<CountdownTone, string> = {
   neutral: "text-brand-dark",
-  warning: "text-amber-500",
-  critical: "text-red-600",
+  warning: "text-[#5d4d1b]",
+  critical: "text-[#c0392b]",
 };
 
 export function VendorOrderDeliveryCountdown({
@@ -90,9 +90,9 @@ export function VendorOrderDeliveryCountdown({
     countdown.kind === "pending_payment"
       ? "text-brand-dark/62"
       : countdown.kind === "done"
-      ? "text-emerald-600"
+      ? "text-[#28422d]"
       : countdown.kind === "overdue"
-        ? "text-red-600"
+        ? "text-[#c0392b]"
         : toneClassName[countdown.tone];
 
   const title = countdown.kind === "pending_payment" ? "Pagamento" : "Tempo para entregar";

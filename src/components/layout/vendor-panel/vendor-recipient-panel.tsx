@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
   inactive: "Inativo",
 };
 
-const EDIT_FINANCIAL_DATA_HREF = buildVendorOnboardingHref("/vendor/financeiro");
+const EDIT_FINANCIAL_DATA_HREF = buildVendorOnboardingHref("/vendor/configuracoes");
 
 function formatStatus(value: string) {
   return STATUS_LABELS[value] || "Nao iniciado";

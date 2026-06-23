@@ -23,7 +23,7 @@ export function VendorPageHeader({
       <div className="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-end md:justify-between md:px-6 md:py-6">
         <div className="max-w-3xl">
           <h2
-            className="text-2xl font-black uppercase tracking-[0.1em] md:text-3xl"
+            className="text-2xl font-black uppercase tracking-widest md:text-3xl"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
             {title}
