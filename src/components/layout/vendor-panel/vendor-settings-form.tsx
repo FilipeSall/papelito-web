@@ -66,7 +66,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
           <div className="mt-auto pt-6">
             <FeedbackBanner className="mt-5" feedback={feedback} />
             <button
-              className="mt-6 inline-flex w-fit whitespace-nowrap rounded-full bg-brand-dark px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-brand-yellow disabled:opacity-50"
+              className="mt-6 inline-flex h-11 w-fit shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
               disabled={pending || Boolean(error)}
               type="submit"
             >

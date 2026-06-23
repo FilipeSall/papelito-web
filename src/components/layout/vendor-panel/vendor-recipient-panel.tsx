@@ -193,7 +193,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
 
         <div className="flex flex-wrap gap-3">
           <button
-            className="rounded-full bg-brand-dark px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-yellow disabled:opacity-50"
+            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={pending}
             onClick={() => syncRecipient(false)}
             type="button"
@@ -201,7 +201,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             {pending ? "Sincronizando..." : "Sincronizar"}
           </button>
           <button
-            className="rounded-full border border-brand-dark px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-dark disabled:opacity-50"
+            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={pending}
             onClick={() => syncRecipient(true)}
             type="button"
@@ -209,14 +209,14 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             Atualizar KYC
           </button>
           <a
-            className="rounded-full border border-brand-dark px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-dark"
+            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             href={EDIT_FINANCIAL_DATA_HREF}
           >
             Editar dados financeiros
           </a>
           {recipient.kycUrl ? (
             <a
-              className="rounded-full border border-brand-dark/20 px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-brand-dark"
+              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
               href={recipient.kycUrl}
               rel="noreferrer"
               target="_blank"
