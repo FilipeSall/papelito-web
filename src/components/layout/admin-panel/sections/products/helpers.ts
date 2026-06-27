@@ -9,6 +9,7 @@ import {
   PUBLISHED_PRODUCT_STATUS,
 } from "@/constants/admin-products";
 import type { ProductDraft } from "@/types/admin-products-manager";
+import { hasPositiveWeight } from "@/utils/weight";
 import { parseMoney } from "@/utils/money";
 import { normalizeKey } from "@/utils/normalize-key";
 
@@ -118,6 +119,24 @@ export function getFrontendProductHref(product: AdminProduct | null) {
 
 export function canViewProduct(product: AdminProduct | null) {
   return product?.status === PUBLISHED_PRODUCT_STATUS;
+}
+
+export function shouldHighlightWeightField({
+  forceHighlight = false,
+  selectedProduct,
+  selectedProductId,
+  weight,
+}: {
+  forceHighlight?: boolean;
+  selectedProduct: AdminProduct | null;
+  selectedProductId: number | "new";
+  weight: string;
+}) {
+  if (selectedProductId === "new" || hasPositiveWeight(weight)) {
+    return false;
+  }
+
+  return forceHighlight || selectedProduct?.status === PUBLISHED_PRODUCT_STATUS;
 }
 
 export function findPromotionTag(tags: AdminProductTaxonomyTerm[]) {

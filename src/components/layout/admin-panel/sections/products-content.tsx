@@ -21,7 +21,9 @@ export async function ProductsContent({
     perPage: "20",
   });
   const focusParam = firstString(searchParams?.focus);
+  const issueParam = firstString(searchParams?.issue);
   const initialFocusProductId = Number.parseInt(focusParam ?? "", 10);
+  const initialIssue = issueParam === "missing-weight" ? issueParam : null;
 
   return (
     <ProductsManager
@@ -30,6 +32,7 @@ export async function ProductsContent({
           ? initialFocusProductId
           : null
       }
+      initialIssue={initialIssue}
       snapshot={snapshot}
     />
   );

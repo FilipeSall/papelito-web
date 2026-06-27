@@ -13,6 +13,7 @@ import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
 } from "../utils/resolve-product-image";
+import { hasPositiveWeight } from "@/utils/weight";
 
 interface WpProductCategoryNode {
   id?: string | null;
@@ -208,16 +209,6 @@ function resolveImage(product: WpProductNode) {
   return resolveProductImage({
     productImageUrl: product.image?.sourceUrl ?? undefined,
   });
-}
-
-function hasPositiveWeight(weight: string | null | undefined) {
-  if (!weight) {
-    return false;
-  }
-
-  const normalized = weight.replace(",", ".").trim();
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) && parsed > 0;
 }
 
 function hasValidWeight(product: WpProductNode) {

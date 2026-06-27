@@ -55,6 +55,7 @@ export function InfoTooltip({ text }: { text: string }) {
 }
 
 export function TextField({
+  error = false,
   helpText,
   inputMode,
   label,
@@ -63,6 +64,7 @@ export function TextField({
   type = "text",
   value,
 }: {
+  error?: boolean;
   helpText?: string;
   inputMode?: "decimal" | "numeric";
   label: string;
@@ -75,7 +77,13 @@ export function TextField({
     <label className="grid min-w-0 gap-2">
       <FieldLabel helpText={helpText} label={label} />
       <input
-        className="min-h-12 w-full min-w-0 border border-[#c9bd96] bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
+        aria-invalid={error || undefined}
+        className={[
+          "min-h-12 w-full min-w-0 border bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:ring-1",
+          error
+            ? "border-[#c0392b] focus:border-[#c0392b] focus:ring-[#c0392b]"
+            : "border-[#c9bd96] focus:border-[#231f20] focus:ring-[#231f20]",
+        ].join(" ")}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

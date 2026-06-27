@@ -40,7 +40,7 @@ describe("formatNotification", () => {
     expect(formatted.icon).toBe("package");
     expect(formatted.title).toBe("Produto sem peso");
     expect(formatted.body).toContain("Tubelito Tradicional");
-    expect(formatted.href).toBe("/admin/products?focus=321");
+    expect(formatted.href).toBe("/admin/products?focus=321&issue=missing-weight");
   });
 
   it("links a new purchase to the vendor order detail and shows the total", () => {

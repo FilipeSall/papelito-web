@@ -10,7 +10,11 @@ import type {
   ProductDraft,
 } from "@/types/admin-products-manager";
 
-import { canViewProduct, getFrontendProductHref } from "../helpers";
+import {
+  canViewProduct,
+  getFrontendProductHref,
+  shouldHighlightWeightField,
+} from "../helpers";
 import { AdminSelectField } from "./admin-select-field";
 import {
   FieldLabel,
@@ -45,12 +49,14 @@ type ProductEditorModalProps = Pick<
   | "togglePromotion"
   | "updateDraft"
 > & {
+  forceWeightErrorHighlight?: boolean;
   onClose: () => void;
 };
 
 export function ProductEditorModal({
   categories,
   draft,
+  forceWeightErrorHighlight = false,
   handleCreateTag,
   handleSave,
   handleUpload,
@@ -80,6 +86,13 @@ export function ProductEditorModal({
       void handleUpload(file, target);
     }
   }
+
+  const shouldHighlightWeight = shouldHighlightWeightField({
+    forceHighlight: forceWeightErrorHighlight,
+    selectedProduct,
+    selectedProductId,
+    weight: draft.weight,
+  });
 
   return (
     <div
@@ -126,7 +139,11 @@ export function ProductEditorModal({
                 onTogglePromotion={togglePromotion}
                 updateDraft={updateDraft}
               />
-              <DimensionsSection draft={draft} updateDraft={updateDraft} />
+              <DimensionsSection
+                draft={draft}
+                highlightWeightError={shouldHighlightWeight}
+                updateDraft={updateDraft}
+              />
               <DescriptionsSection draft={draft} updateDraft={updateDraft} />
             </div>
 
@@ -310,15 +327,18 @@ function PricingSection({
 
 function DimensionsSection({
   draft,
+  highlightWeightError = false,
   updateDraft,
 }: {
   draft: ProductDraft;
+  highlightWeightError?: boolean;
   updateDraft: DraftUpdater;
 }) {
   return (
     <ModalSection title="Dimensoes & Logistica">
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
+          error={highlightWeightError}
           helpText="Informe o peso em quilos. Exemplo: 400g deve ser preenchido como 0.4, nao como 400."
           inputMode="decimal"
           label="Peso (kg)"

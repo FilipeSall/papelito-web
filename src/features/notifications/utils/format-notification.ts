@@ -136,7 +136,7 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       const productId = numberValue(payload, "product_id");
       const href =
         Number.isInteger(productId) && productId > 0
-          ? `/admin/products?focus=${productId}`
+          ? `/admin/products?focus=${productId}&issue=missing-weight`
           : "/admin/products";
 
       return {

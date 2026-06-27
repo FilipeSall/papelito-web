@@ -19,9 +19,11 @@ type ToastState = {
 } | null;
 
 export function ProductsManager({
+  initialIssue = null,
   snapshot,
   initialFocusProductId = null,
 }: {
+  initialIssue?: "missing-weight" | null;
   snapshot: AdminProductsSnapshot;
   initialFocusProductId?: number | null;
 }) {
@@ -155,6 +157,11 @@ export function ProductsManager({
         <ProductEditorModal
           categories={manager.categories}
           draft={manager.draft}
+          forceWeightErrorHighlight={
+            initialIssue === "missing-weight" &&
+            typeof initialFocusProductId === "number" &&
+            manager.selectedProductId === initialFocusProductId
+          }
           handleCreateTag={manager.handleCreateTag}
           handleSave={handleProductSave}
           handleUpload={manager.handleUpload}
