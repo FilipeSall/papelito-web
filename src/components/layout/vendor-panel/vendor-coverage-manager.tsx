@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
+import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
+import {
+  type CoverageRangeValue,
+  normalizeCoverageRanges,
+  validateCoverageRanges,
+} from "@/features/vendor-coverage/coverage-presets";
 import type {
   VendorCoverageRange,
   VendorCoverageSnapshot,
 } from "@/features/vendor-coverage/types/vendor-coverage";
+import { normalizeCep } from "@/features/revendedor/utils/revendedor-formatters";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
-
-type DraftRange = {
-  maxCep: string;
-  minCep: string;
-};
 
 type ApiCoverageResponse = {
   items?: Array<{
@@ -27,21 +29,6 @@ type ApiCoverageResponse = {
   }>;
   message?: string;
 };
-
-function normalizeCep(value: string) {
-  const digits = value.replace(/\D+/g, "");
-  return digits.length === 8 ? digits : "";
-}
-
-function formatCep(value: string) {
-  const digits = value.replace(/\D+/g, "").slice(0, 8);
-
-  if (digits.length <= 5) {
-    return digits;
-  }
-
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-}
 
 function mapApiRanges(data: ApiCoverageResponse | null): VendorCoverageRange[] | null {
   if (!Array.isArray(data?.items)) {
@@ -59,38 +46,29 @@ function mapApiRanges(data: ApiCoverageResponse | null): VendorCoverageRange[] |
     .filter((item) => item.id > 0);
 }
 
-function validationMessage(draft: DraftRange) {
-  const minCep = normalizeCep(draft.minCep);
-  const maxCep = normalizeCep(draft.maxCep);
+function rangeOverlaps(
+  items: VendorCoverageRange[],
+  draftRanges: CoverageRangeValue[],
+  editingId: number | null,
+) {
+  return normalizeCoverageRanges(draftRanges).some((draftRange) => {
+    const minCep = Number(normalizeCep(draftRange.minCep));
+    const maxCep = Number(normalizeCep(draftRange.maxCep));
 
-  if (!minCep || !maxCep) {
-    return "Informe CEP inicial e final com 8 digitos.";
-  }
+    return items.some((item) => {
+      if (editingId && item.id === editingId) {
+        return false;
+      }
 
-  if (Number(minCep) > Number(maxCep)) {
-    return "O CEP final precisa ser maior ou igual ao inicial.";
-  }
-
-  return "";
-}
-
-function rangeOverlaps(items: VendorCoverageRange[], draft: DraftRange, editingId: number | null) {
-  const minCep = Number(normalizeCep(draft.minCep));
-  const maxCep = Number(normalizeCep(draft.maxCep));
-
-  return items.some((item) => {
-    if (editingId && item.id === editingId) {
-      return false;
-    }
-
-    return minCep <= Number(item.maxCep) && maxCep >= Number(item.minCep);
+      return minCep <= Number(item.maxCep) && maxCep >= Number(item.minCep);
+    });
   });
 }
 
 export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSnapshot }) {
   const router = useRouter();
   const [items, setItems] = useState(snapshot.items);
-  const [draft, setDraft] = useState<DraftRange>({ maxCep: "", minCep: "" });
+  const [draftRanges, setDraftRanges] = useState<CoverageRangeValue[]>([{ maxCep: "", minCep: "" }]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -98,21 +76,23 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
     () => items.find((item) => item.id === editingId) ?? null,
     [editingId, items],
   );
-  const draftError = validationMessage(draft);
+  const normalizedDraftRanges = normalizeCoverageRanges(draftRanges).filter(
+    (range) => range.minCep || range.maxCep,
+  );
+  const draftError =
+    editingRange && normalizedDraftRanges.length > 1
+      ? "Para aplicar uma regiao com mais de uma faixa, remova esta faixa e crie uma nova cobertura."
+      : validateCoverageRanges(draftRanges, { requireAtLeastOne: true });
 
   function beginEdit(item: VendorCoverageRange) {
     setEditingId(item.id);
-    setDraft({ maxCep: item.maxCepFormatted, minCep: item.minCepFormatted });
+    setDraftRanges([{ maxCep: item.maxCepFormatted, minCep: item.minCepFormatted }]);
     setFeedback(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setDraft({ maxCep: "", minCep: "" });
-  }
-
-  function updateDraft(key: keyof DraftRange, value: string) {
-    setDraft((current) => ({ ...current, [key]: formatCep(value) }));
+    setDraftRanges([{ maxCep: "", minCep: "" }]);
   }
 
   async function persistRange() {
@@ -121,29 +101,20 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
       return;
     }
 
-    if (rangeOverlaps(items, draft, editingId)) {
+    if (rangeOverlaps(items, draftRanges, editingId)) {
       setFeedback({ error: true, message: "Esta faixa se sobrepoe a uma faixa ja cadastrada." });
       return;
     }
 
     setPendingAction(editingId ? `edit:${editingId}` : "create");
     try {
-      const response = await fetch(
-        editingId ? `/api/vendor/coverage-ranges/${editingId}` : "/api/vendor/coverage-ranges",
-        {
-          method: editingId ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            maxCep: normalizeCep(draft.maxCep),
-            minCep: normalizeCep(draft.minCep),
-          }),
-        },
-      );
-      const data = (await response.json().catch(() => null)) as ApiCoverageResponse | null;
-      const nextItems = mapApiRanges(data);
+      const nextItems = await persistDraftRanges({
+        draftRanges: normalizedDraftRanges,
+        editingId,
+      });
 
-      if (!response.ok || !nextItems) {
-        throw new Error(data?.message ?? "Nao foi possivel salvar a faixa.");
+      if (!nextItems) {
+        throw new Error("Nao foi possivel salvar a faixa.");
       }
 
       setItems(nextItems);
@@ -158,6 +129,56 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
     } finally {
       setPendingAction(null);
     }
+  }
+
+  async function persistDraftRanges({
+    draftRanges: rangesToPersist,
+    editingId: currentEditingId,
+  }: {
+    draftRanges: CoverageRangeValue[];
+    editingId: number | null;
+  }) {
+    if (currentEditingId) {
+      const response = await fetch(`/api/vendor/coverage-ranges/${currentEditingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maxCep: normalizeCep(rangesToPersist[0]?.maxCep ?? ""),
+          minCep: normalizeCep(rangesToPersist[0]?.minCep ?? ""),
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as ApiCoverageResponse | null;
+      const nextItems = mapApiRanges(data);
+
+      if (!response.ok || !nextItems) {
+        throw new Error(data?.message ?? "Nao foi possivel salvar a faixa.");
+      }
+
+      return nextItems;
+    }
+
+    let nextItems: VendorCoverageRange[] | null = null;
+
+    for (const range of rangesToPersist) {
+      const response = await fetch("/api/vendor/coverage-ranges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maxCep: normalizeCep(range.maxCep),
+          minCep: normalizeCep(range.minCep),
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as ApiCoverageResponse | null;
+      const mappedItems = mapApiRanges(data);
+
+      if (!response.ok || !mappedItems) {
+        throw new Error(data?.message ?? "Nao foi possivel salvar a faixa.");
+      }
+
+      nextItems = mappedItems;
+    }
+
+    return nextItems;
   }
 
   async function removeRange(item: VendorCoverageRange) {
@@ -279,31 +300,14 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
           </p>
         </div>
         <div className="space-y-4 px-5 py-5">
-          <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-dark/50">
-              CEP inicial
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-[12px] border border-brand-dark/12 bg-[#fbf7ef] px-4 text-sm font-semibold text-brand-dark outline-none transition focus:border-brand-dark"
-              inputMode="numeric"
-              onChange={(event) => updateDraft("minCep", event.target.value)}
-              placeholder="70000-000"
-              value={draft.minCep}
-            />
-          </label>
-          <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-dark/50">
-              CEP final
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-[12px] border border-brand-dark/12 bg-[#fbf7ef] px-4 text-sm font-semibold text-brand-dark outline-none transition focus:border-brand-dark"
-              inputMode="numeric"
-              onChange={(event) => updateDraft("maxCep", event.target.value)}
-              placeholder="73699-999"
-              value={draft.maxCep}
-            />
-          </label>
-          {draftError && (draft.minCep || draft.maxCep) ? (
+          <VendorCoverageRangesField
+            mode="single"
+            onChangeRanges={setDraftRanges}
+            ranges={draftRanges}
+            required
+            variant="vendor-panel"
+          />
+          {draftError && normalizedDraftRanges.length > 0 ? (
             <p className="rounded-[10px] bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
               {draftError}
             </p>

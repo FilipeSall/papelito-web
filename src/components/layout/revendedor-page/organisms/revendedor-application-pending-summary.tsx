@@ -1,4 +1,5 @@
 import type { RevendedorApplication } from "@/features/revendedor";
+import { formatCoverageRangesSummary } from "@/features/vendor-coverage/coverage-presets";
 
 export function RevendedorApplicationPendingSummary({
   application,
@@ -78,11 +79,7 @@ export function RevendedorApplicationPendingSummary({
           </div>
           <div>
             <dt className="font-black">Faixa atendida</dt>
-            <dd>
-              {application.step2.minCep || application.step2.maxCep
-                ? `${application.step2.minCep || "-"} a ${application.step2.maxCep || "-"}`
-                : "-"}
-            </dd>
+            <dd>{formatCoverageRangesSummary(application.step2.coverageRanges)}</dd>
           </div>
           <div>
             <dt className="font-black">Origem do contato</dt>

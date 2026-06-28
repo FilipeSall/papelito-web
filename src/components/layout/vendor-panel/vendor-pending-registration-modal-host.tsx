@@ -1,9 +1,10 @@
 "use client";
 
-import { Plus, Trash2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
 import {
   ADMIN_BANK_OPTIONS,
   OTHER_BANK_OPTION_VALUE,
@@ -46,6 +47,7 @@ import {
   isValidCnpj,
   isValidEmail,
 } from "@/features/revendedor/utils/revendedor-formatters";
+import { validateCoverageRanges } from "@/features/vendor-coverage/coverage-presets";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { AdminSelectField } from "@/components/layout/admin-panel/sections/products/components/admin-select-field";
@@ -216,15 +218,8 @@ function validateForm(form: PendingForm): string | null {
   if (!form.city.trim()) return "Informe a cidade da loja.";
   if (!form.state.trim()) return "Informe o estado da loja.";
 
-  if (form.coverageRanges.length === 0) return "Informe ao menos uma faixa de CEP.";
-  for (const [index, range] of form.coverageRanges.entries()) {
-    if (!isValidCep(range.minCep) || !isValidCep(range.maxCep)) {
-      return `Informe CEP inicial e final validos na faixa ${index + 1}.`;
-    }
-    if (Number(digits(range.minCep)) > Number(digits(range.maxCep))) {
-      return `O CEP final precisa ser maior ou igual ao inicial na faixa ${index + 1}.`;
-    }
-  }
+  const coverageError = validateCoverageRanges(form.coverageRanges);
+  if (coverageError) return coverageError;
 
   return null;
 }
@@ -437,24 +432,6 @@ export function VendorPendingRegistrationModalHost({
 
   function update<K extends keyof PendingForm>(key: K, value: PendingForm[K]) {
     setState((current) => (current ? { ...current, form: { ...current.form, [key]: value } } : current));
-    setFormError(null);
-    setMessage(null);
-  }
-
-  function updateCoverage(index: number, key: keyof VendorCoverageRange, value: string) {
-    setState((current) =>
-      current
-        ? {
-            ...current,
-            form: {
-              ...current.form,
-              coverageRanges: current.form.coverageRanges.map((range, currentIndex) =>
-                currentIndex === index ? { ...range, [key]: value } : range,
-              ),
-            },
-          }
-        : current,
-    );
     setFormError(null);
     setMessage(null);
   }
@@ -907,49 +884,13 @@ export function VendorPendingRegistrationModalHost({
               />
             </div>
 
-            <div className="mt-4 space-y-3">
-              {form.coverageRanges.map((range, index) => (
-                <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]" key={`coverage-${index}`}>
-                  <Field
-                    inputMode="numeric"
-                    label={`CEP inicial ${index + 1}`}
-                    onChange={(value) => updateCoverage(index, "minCep", formatCep(value))}
-                    required={index === 0}
-                    value={range.minCep}
-                  />
-                  <Field
-                    inputMode="numeric"
-                    label={`CEP final ${index + 1}`}
-                    onChange={(value) => updateCoverage(index, "maxCep", formatCep(value))}
-                    required={index === 0}
-                    value={range.maxCep}
-                  />
-                  <button
-                    aria-label="Remover faixa"
-                    className="mt-7 inline-flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={form.coverageRanges.length === 1}
-                    onClick={() =>
-                      update(
-                        "coverageRanges",
-                        form.coverageRanges.filter((_, currentIndex) => currentIndex !== index),
-                      )
-                    }
-                    type="button"
-                  >
-                    <Trash2 className="h-4 w-4" strokeWidth={2} />
-                  </button>
-                </div>
-              ))}
-              <button
-                className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-dashed border-[#1a1a1a] bg-white px-3 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow"
-                onClick={() =>
-                  update("coverageRanges", [...form.coverageRanges, { minCep: "", maxCep: "" }])
-                }
-                type="button"
-              >
-                <Plus className="h-4 w-4" strokeWidth={2} />
-                Faixa de CEP
-              </button>
+            <div className="mt-4">
+              <VendorCoverageRangesField
+                onChangeRanges={(coverageRanges) => update("coverageRanges", coverageRanges)}
+                ranges={form.coverageRanges}
+                required
+                variant="vendor-create"
+              />
             </div>
           </Section>
 

@@ -40,6 +40,7 @@ export type VendorRegistrationStep2Data = {
   state: string;
   minCep: string;
   maxCep: string;
+  coverageRanges: VendorCoverageRange[];
 };
 
 export type VendorCoverageRange = {

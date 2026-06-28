@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useCepLookup } from "@/features/checkout";
+import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
 import {
   ADMIN_BANK_OPTIONS,
   bankHasBranchCheckDigit,
@@ -27,6 +28,7 @@ import {
   buildRevendedorSubmitPayload,
   formatCpf,
   hasStep1Data,
+  normalizeStep2Data,
   patchBankAccountField,
   patchManagingPartnerAddressField,
   patchManagingPartnerField,
@@ -333,7 +335,7 @@ export function RevendedorRegistrationWizard({
     setSubmitMessage(null);
   }
 
-  function handleStep2Change<Key extends keyof VendorRegistrationDraft["step2"]>(
+  function handleStep2Change<Key extends keyof Omit<VendorRegistrationDraft["step2"], "coverageRanges">>(
     key: Key,
     value: VendorRegistrationDraft["step2"][Key],
   ) {
@@ -341,6 +343,21 @@ export function RevendedorRegistrationWizard({
       [key]: patchStep2Field(draft.step2, key, String(value))[key],
     });
     setStep2Errors((current) => ({ ...current, [key]: "" }));
+    setSubmitMessage(null);
+  }
+
+  function handleCoverageRangesChange(ranges: VendorRegistrationDraft["step2"]["coverageRanges"]) {
+    const nextStep2 = normalizeStep2Data({
+      ...draft.step2,
+      coverageRanges: ranges,
+    });
+
+    patchStep2(nextStep2);
+    setStep2Errors((current) => ({
+      ...current,
+      minCep: "",
+      maxCep: "",
+    }));
     setSubmitMessage(null);
   }
 
@@ -815,32 +832,15 @@ export function RevendedorRegistrationWizard({
                   value={draft.step2.state}
                 />
 
-                <RevendedorFormRow>
-                  <RevendedorFormField
-                    error={step2Errors.minCep}
-                    id="minCep"
-                    inputMode="numeric"
-                    label="CEP inicial da região atendida *"
-                    maxLength={9}
-                    name="minCep"
-                    onChange={(event) => handleStep2Change("minCep", event.target.value)}
-                    placeholder="00000-000"
-                    tone="dark"
-                    value={draft.step2.minCep}
-                  />
-                  <RevendedorFormField
-                    error={step2Errors.maxCep}
-                    id="maxCep"
-                    inputMode="numeric"
-                    label="CEP final da região atendida *"
-                    maxLength={9}
-                    name="maxCep"
-                    onChange={(event) => handleStep2Change("maxCep", event.target.value)}
-                    placeholder="99999-999"
-                    tone="dark"
-                    value={draft.step2.maxCep}
-                  />
-                </RevendedorFormRow>
+                <VendorCoverageRangesField
+                  maxError={step2Errors.maxCep}
+                  minError={step2Errors.minCep}
+                  mode="single"
+                  onChangeRanges={handleCoverageRangesChange}
+                  ranges={draft.step2.coverageRanges}
+                  required
+                  variant="revendedor-dark"
+                />
               </div>
             ) : null}
 

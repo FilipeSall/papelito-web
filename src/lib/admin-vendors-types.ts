@@ -2,6 +2,7 @@ import type { VendorRegistrationStep3Data } from "@/features/revendedor/types/re
 
 export type AdminVendorCreatePayload = {
   email: string;
+  temporaryPassword: string;
   storeName?: string;
   firstName?: string;
   lastName?: string;

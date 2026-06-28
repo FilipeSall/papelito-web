@@ -1,4 +1,9 @@
 import type { ProfileCustomer } from "@/features/profile/types/profile-customer";
+import {
+  getLegacyCoverageRange,
+  normalizeCoverageRange,
+  normalizeCoverageRanges,
+} from "@/features/vendor-coverage/coverage-presets";
 import type {
   RevendedorApplication,
   RevendedorStep1Errors,
@@ -93,6 +98,7 @@ export function createEmptyStep2Data(): VendorRegistrationStep2Data {
     state: "",
     minCep: "",
     maxCep: "",
+    coverageRanges: [],
   };
 }
 
@@ -273,7 +279,13 @@ export function mergeVendorDraft(
     ...current,
     currentStep: current.currentStep,
     step1: mergeStringRecord(current.step1, next.step1),
-    step2: mergeStringRecord(current.step2, next.step2),
+    step2: {
+      ...mergeStringRecord(current.step2, next.step2),
+      coverageRanges:
+        current.step2.coverageRanges.length > 0
+          ? current.step2.coverageRanges
+          : next.step2.coverageRanges,
+    },
     step3: {
       ...current.step3,
       companyName: current.step3.companyName || next.step3.companyName,
@@ -317,6 +329,20 @@ export function normalizeStep1Data(value?: Partial<VendorRegistrationStep1Data> 
 
 export function normalizeStep2Data(value?: Partial<VendorRegistrationStep2Data> | null): VendorRegistrationStep2Data {
   const base = createEmptyStep2Data();
+  const normalizedCoverageRanges = normalizeCoverageRanges(value?.coverageRanges).filter(
+    (range) => range.minCep || range.maxCep,
+  );
+  const legacyRange = normalizeCoverageRange({
+    minCep: value?.minCep,
+    maxCep: value?.maxCep,
+  });
+  const coverageRanges =
+    normalizedCoverageRanges.length > 0
+      ? normalizedCoverageRanges
+      : legacyRange.minCep || legacyRange.maxCep
+        ? [legacyRange]
+        : base.coverageRanges;
+  const primaryRange = getLegacyCoverageRange(coverageRanges);
 
   return {
     cep: formatCep(sanitizeText(value?.cep)),
@@ -326,8 +352,9 @@ export function normalizeStep2Data(value?: Partial<VendorRegistrationStep2Data> 
     neighborhood: sanitizeText(value?.neighborhood) || base.neighborhood,
     city: sanitizeText(value?.city) || base.city,
     state: sanitizeText(value?.state).toUpperCase(),
-    minCep: formatCep(sanitizeText(value?.minCep)),
-    maxCep: formatCep(sanitizeText(value?.maxCep)),
+    minCep: primaryRange.minCep,
+    maxCep: primaryRange.maxCep,
+    coverageRanges,
   };
 }
 
@@ -378,7 +405,7 @@ export function patchStep1Field(
 
 export function patchStep2Field(
   current: VendorRegistrationStep2Data,
-  key: keyof VendorRegistrationStep2Data,
+  key: keyof Omit<VendorRegistrationStep2Data, "coverageRanges">,
   rawValue: string,
 ): VendorRegistrationStep2Data {
   return normalizeStep2Data({
@@ -487,6 +514,13 @@ export function validateStep1(values: VendorRegistrationStep1Data): RevendedorSt
 
 export function validateStep2(values: VendorRegistrationStep2Data): RevendedorStep2Errors {
   const errors: RevendedorStep2Errors = {};
+  const primaryCoverageRange =
+    values.coverageRanges.length > 0
+      ? getLegacyCoverageRange(values.coverageRanges)
+      : normalizeCoverageRange({
+          minCep: values.minCep,
+          maxCep: values.maxCep,
+        });
 
   if (!isValidCep(values.cep)) errors.cep = "Informe um CEP de operação válido.";
   if (!values.street.trim()) errors.street = "Informe o logradouro.";
@@ -494,13 +528,14 @@ export function validateStep2(values: VendorRegistrationStep2Data): RevendedorSt
   if (!values.neighborhood.trim()) errors.neighborhood = "Informe o bairro.";
   if (!values.city.trim()) errors.city = "Informe a cidade.";
   if (!values.state.trim()) errors.state = "Selecione o estado.";
-  if (!isValidCep(values.minCep)) errors.minCep = "Informe um CEP inicial válido.";
-  if (!isValidCep(values.maxCep)) errors.maxCep = "Informe um CEP final válido.";
+  if (!isValidCep(primaryCoverageRange.minCep)) errors.minCep = "Informe um CEP inicial válido.";
+  if (!isValidCep(primaryCoverageRange.maxCep)) errors.maxCep = "Informe um CEP final válido.";
 
   if (
     !errors.minCep &&
     !errors.maxCep &&
-    Number(normalizeCep(values.minCep)) > Number(normalizeCep(values.maxCep))
+    Number(normalizeCep(primaryCoverageRange.minCep)) >
+      Number(normalizeCep(primaryCoverageRange.maxCep))
   ) {
     errors.maxCep = "O CEP final precisa ser maior ou igual ao CEP inicial.";
   }

@@ -1,10 +1,11 @@
 "use client";
 
-import { Loader2, Plus, Trash2, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
 import {
   ADMIN_BANK_OPTIONS,
   OTHER_BANK_OPTION_VALUE,
@@ -25,6 +26,7 @@ import {
   isValidCnpj,
   isValidEmail,
 } from "@/features/revendedor/utils/revendedor-formatters";
+import { validateCoverageRanges } from "@/features/vendor-coverage/coverage-presets";
 import {
   createEmptyStep3Data,
   formatCpf,
@@ -70,6 +72,7 @@ export type VendorCreateSourceUser = {
 function createInitialForm(): VendorCreateForm {
   return {
     email: "",
+    temporaryPassword: "",
     storeName: "",
     firstName: "",
     lastName: "",
@@ -201,7 +204,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
+      <span className="flex h-4 items-center gap-1.5 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]">
         <span>
           {label}
           {required ? " *" : ""}
@@ -242,6 +245,7 @@ function Section({ children, title }: { children: React.ReactNode; title: string
 
 function validateForm(form: VendorCreateForm): string | null {
   if (!isValidEmail(form.email)) return "Informe um e-mail valido.";
+  if (!form.temporaryPassword.trim()) return "Informe uma senha temporaria para o vendor.";
   if (!form.storeName?.trim()) return "Informe o nome da loja.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ valido.";
   if (!isValidCep(form.cep ?? "")) return "Informe um CEP valido para a loja.";
@@ -251,15 +255,8 @@ function validateForm(form: VendorCreateForm): string | null {
   if (!form.city?.trim()) return "Informe a cidade da loja.";
   if (!form.state?.trim()) return "Informe o estado da loja.";
 
-  if (form.coverageRanges.length === 0) return "Informe ao menos uma faixa de CEP.";
-  for (const [index, range] of form.coverageRanges.entries()) {
-    if (!isValidCep(range.minCep) || !isValidCep(range.maxCep)) {
-      return `Informe CEP inicial e final validos na faixa ${index + 1}.`;
-    }
-    if (Number(digits(range.minCep)) > Number(digits(range.maxCep))) {
-      return `O CEP final precisa ser maior ou igual ao inicial na faixa ${index + 1}.`;
-    }
-  }
+  const coverageError = validateCoverageRanges(form.coverageRanges);
+  if (coverageError) return coverageError;
 
   return null;
 }
@@ -301,6 +298,7 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
   return {
     ...form,
     email: form.email.trim(),
+    temporaryPassword: form.temporaryPassword,
     storeName: form.storeName?.trim(),
     firstName: form.firstName?.trim(),
     lastName: form.lastName?.trim(),
@@ -463,15 +461,6 @@ export function VendorCreateLauncher({
         },
       };
     });
-  }
-
-  function updateCoverage(index: number, key: keyof CoverageRange, value: string) {
-    setForm((prev) => ({
-      ...prev,
-      coverageRanges: prev.coverageRanges.map((range, currentIndex) =>
-        currentIndex === index ? { ...range, [key]: value } : range,
-      ),
-    }));
   }
 
   async function handleStoreCepChange(rawValue: string) {
@@ -689,6 +678,15 @@ export function VendorCreateLauncher({
                     onChange={(value) => update("lastName", value)}
                     value={form.lastName ?? ""}
                   />
+                  <Field
+                    autoComplete="off"
+                    helpText="Informe uma senha temporaria para o primeiro acesso do vendor. Essa senha deve ser comunicada ao vendor e alterada por ele apos o login."
+                    label="Senha temporaria"
+                    onChange={(value) => update("temporaryPassword", value)}
+                    required
+                    type="text"
+                    value={form.temporaryPassword}
+                  />
                 </div>
               </Section>
 
@@ -796,52 +794,13 @@ export function VendorCreateLauncher({
                   />
                 </div>
 
-                <div className="mt-4 space-y-3">
-                  {form.coverageRanges.map((range, index) => (
-                    <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]" key={`coverage-${index}`}>
-                      <Field
-                        inputMode="numeric"
-                        label={`CEP inicial ${index + 1}`}
-                        onChange={(value) => updateCoverage(index, "minCep", formatCep(value))}
-                        required={index === 0}
-                        value={range.minCep}
-                      />
-                      <Field
-                        inputMode="numeric"
-                        label={`CEP final ${index + 1}`}
-                        onChange={(value) => updateCoverage(index, "maxCep", formatCep(value))}
-                        required={index === 0}
-                        value={range.maxCep}
-                      />
-                      <button
-                        aria-label="Remover faixa"
-                        className="mt-7 inline-flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                        disabled={form.coverageRanges.length === 1}
-                        onClick={() =>
-                          setForm((prev) => ({
-                            ...prev,
-                            coverageRanges: prev.coverageRanges.filter((_, currentIndex) => currentIndex !== index),
-                          }))
-                        }
-                        type="button"
-                      >
-                        <Trash2 className="h-4 w-4" strokeWidth={2} />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-dashed border-[#1a1a1a] bg-white px-3 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        coverageRanges: [...prev.coverageRanges, { minCep: "", maxCep: "" }],
-                      }))
-                    }
-                    type="button"
-                  >
-                    <Plus className="h-4 w-4" strokeWidth={2} />
-                    Faixa de CEP
-                  </button>
+                <div className="mt-4">
+                  <VendorCoverageRangesField
+                    onChangeRanges={(coverageRanges) => update("coverageRanges", coverageRanges)}
+                    ranges={form.coverageRanges}
+                    required
+                    variant="vendor-create"
+                  />
                 </div>
               </Section>
 

@@ -33,6 +33,7 @@ describe("revendedor-registration", () => {
         city: "",
         minCep: "01001000",
         maxCep: "02020000",
+        coverageRanges: [{ minCep: "01001000", maxCep: "02020000" }],
         state: "sp",
       },
     });

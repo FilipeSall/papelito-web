@@ -26,19 +26,21 @@ export function AdminSelectField({
   if (variant === "vendor-create") {
     return (
       <CheckoutCustomSelect
+        iconClassName="text-[#1a1a1a]"
         label={
-          <span className="flex items-center gap-1.5">
-            <span className="leading-none">{label}</span>
+          <span className="flex h-4 items-center gap-1.5">
+            <span>{label}</span>
             {helpText ? <InfoTooltip text={helpText} /> : null}
           </span>
         }
-        labelClassName="text-[10px] font-black uppercase tracking-[0.18em] leading-none text-[#1a1a1a]"
+        labelClassName="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
         listClassName="z-[90] border-2 border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
         onChange={onChange}
         optionClassName="tracking-normal"
         options={options}
         placeholder={placeholder}
-        triggerClassName="h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a] focus:border-[#1a1a1a]"
+        selectedValueClassName="text-[#1a1a1a]"
+        triggerClassName="h-11 w-full rounded-none !border-2 !border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a] focus:!border-[#1a1a1a]"
         value={value}
       />
     );
