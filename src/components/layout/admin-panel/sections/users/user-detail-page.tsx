@@ -425,6 +425,7 @@ export function UserDetailPage({
             {sectionTitle("Transicoes de role")}
             <UserRoleActions
               availableActions={user.availableActions}
+              emailVerificationStatus={user.emailVerificationStatus}
               userId={user.id}
               userName={fullName}
             />
