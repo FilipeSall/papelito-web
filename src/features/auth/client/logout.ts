@@ -86,3 +86,11 @@ export async function signOutAndClearSession({
     void clearSessionClientState();
   });
 }
+
+export async function clearPreviousSessionBeforeSignIn() {
+  await clearSessionClientState();
+
+  return signOut({ redirect: false }).finally(() => {
+    void clearSessionClientState();
+  });
+}

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { startTransition, useState } from "react";
 
+import { clearPreviousSessionBeforeSignIn } from "@/features/auth/client/logout";
+
 import { ArrowRightIcon } from "../atoms/auth-icons";
 import { AuthSocialButton } from "../atoms/auth-social-button";
 import { AuthSubmitButton } from "../atoms/auth-submit-button";
@@ -38,6 +40,14 @@ export function AuthLoginForm() {
     setPendingVerificationEmail(null);
 
     startTransition(async () => {
+      try {
+        await clearPreviousSessionBeforeSignIn();
+      } catch {
+        setIsSubmitting(false);
+        setErrorMessage("Não foi possível limpar a sessão anterior. Tente novamente.");
+        return;
+      }
+
       const result = await signIn("credentials", {
         redirect: false,
         username,

@@ -12,7 +12,5 @@ export async function getSellerAccessToken() {
     return null;
   }
 
-  return (await isCurrentUserSeller(session.accessToken, session.role))
-    ? session.accessToken
-    : null;
+  return (await isCurrentUserSeller(session.accessToken)) ? session.accessToken : null;
 }

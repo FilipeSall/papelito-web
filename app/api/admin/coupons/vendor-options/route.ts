@@ -1,22 +1,13 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { authOptions } from "@/lib/auth";
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import { wpRest } from "@/lib/server/wp-rest";
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const auth = await getAdminApiSession();
 
-  if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
-  }
-
-  if (normalizeRole(session.role) !== "administrator") {
-    return NextResponse.json({ message: "Acesso administrativo necessario." }, { status: 403 });
+  if ("error" in auth) {
+    return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
 
   const url = new URL(request.url);
@@ -27,7 +18,7 @@ export async function GET(request: Request) {
   const result = await wpRest<{ items: unknown[] }>(
     `/papelito/v1/admin/coupons/vendor-options${params.toString() ? `?${params.toString()}` : ""}`,
     {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
       cache: "no-store",
     } as Parameters<typeof wpRest>[1],
   );

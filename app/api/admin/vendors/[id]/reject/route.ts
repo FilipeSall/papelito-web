@@ -1,5 +1,4 @@
 import { revalidateTag } from "next/cache";
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 import {
@@ -7,7 +6,7 @@ import {
   VENDOR_REJECTION_REASON_MAX_LENGTH,
   VENDOR_REJECTION_REASON_MIN_LENGTH,
 } from "@/lib/admin-vendors-constants";
-import { authOptions } from "@/lib/auth";
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import type { AdminVendorDetail } from "@/lib/server/admin-vendors";
 import { wpRest } from "@/lib/server/wp-rest";
 
@@ -15,19 +14,11 @@ type RejectPayload = {
   reason?: string;
 };
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const auth = await getAdminApiSession();
 
-  if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
-  }
-
-  if (normalizeRole(session.role) !== "administrator") {
-    return NextResponse.json({ message: "Acesso negado." }, { status: 403 });
+  if ("error" in auth) {
+    return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
 
   const { id } = await context.params;
@@ -54,7 +45,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     `/papelito/v1/admin/vendors/${vendorId}/reject`,
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
       json: { reason },
     },
   );

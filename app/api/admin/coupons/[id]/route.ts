@@ -1,30 +1,12 @@
 import { revalidateTag } from "next/cache";
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { authOptions } from "@/lib/auth";
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+
 import { deleteCoupon, DeleteCouponError } from "@/features/coupons/services/delete-coupon";
 import { getAdminCoupon } from "@/features/coupons/services/get-admin-coupon";
 import { updateCoupon } from "@/features/coupons/services/update-coupon";
 import type { CouponInput } from "@/features/coupons/types/coupon";
-
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
-async function getAdminAccessToken() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || !session.accessToken) {
-    return { error: "Nao autenticado.", status: 401 as const };
-  }
-
-  if (normalizeRole(session.role) !== "administrator") {
-    return { error: "Acesso administrativo necessario.", status: 403 as const };
-  }
-
-  return { accessToken: session.accessToken };
-}
 
 async function resolveId(params: Promise<{ id: string }>) {
   const { id } = await params;
@@ -36,7 +18,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getAdminAccessToken();
+  const auth = await getAdminApiSession();
   if ("error" in auth) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
@@ -57,7 +39,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getAdminAccessToken();
+  const auth = await getAdminApiSession();
   if ("error" in auth) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
@@ -86,7 +68,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getAdminAccessToken();
+  const auth = await getAdminApiSession();
   if ("error" in auth) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });
   }

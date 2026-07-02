@@ -35,14 +35,14 @@ export function AdminToast({ description, title, visible }: AdminToastProps) {
       }`}
       role="status"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-[#ffe500]/40 bg-[#231f20] p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[#ffe500]" />
+      <div className="relative overflow-hidden rounded-2xl border border-brand-yellow/40 bg-[#231f20] p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand-yellow" />
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ffe500] text-[#231f20]">
+          <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-[#231f20]">
             <CheckIcon />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.55px] text-[#ffe500]">
+            <p className="text-xs font-black uppercase tracking-[0.55px] text-brand-yellow">
               Painel admin
             </p>
             <p className="mt-1 text-sm font-black leading-5 text-white">{title}</p>

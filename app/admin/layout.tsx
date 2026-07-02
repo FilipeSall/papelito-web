@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/layout/admin-panel";
 import { PrivateHeader } from "@/components/layout/private-header";
 import { authOptions } from "@/lib/auth";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 
 const adminDisplay = Chakra_Petch({
   subsets: ["latin"],
@@ -24,10 +25,6 @@ const adminMono = IBM_Plex_Mono({
   weight: ["500", "600"],
 });
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
 export default async function AdminLayout({
   children,
 }: Readonly<{
@@ -39,9 +36,7 @@ export default async function AdminLayout({
     redirect("/entrar");
   }
 
-  const role = normalizeRole(session.role);
-
-  if (role !== "administrator") {
+  if (!session.accessToken || (await fetchCurrentUserRole(session.accessToken)) !== "administrator") {
     redirect("/perfil");
   }
 

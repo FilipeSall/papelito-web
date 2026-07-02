@@ -10,7 +10,7 @@ export async function requireVendorAccessToken() {
     return { error: "Nao autenticado.", status: 401 as const };
   }
 
-  if (!(await isCurrentUserSeller(session.accessToken, session.role))) {
+  if (!(await isCurrentUserSeller(session.accessToken))) {
     return { error: "Acesso restrito a vendors.", status: 403 as const };
   }
 

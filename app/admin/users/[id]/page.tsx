@@ -5,7 +5,7 @@ import { UserDetailPage, type UserDetailOrigin, type UserDetailTabKey } from "@/
 import { authOptions } from "@/lib/auth";
 import { getAdminUserDetail } from "@/lib/server/admin-users";
 import type { AdminUserFilterRole } from "@/lib/server/admin-users-filters";
-import { normalizeAdminRole } from "@/lib/server/admin-vendor-filters";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import { firstParam } from "@/lib/search-params";
 
 function parseTab(value: string | undefined): UserDetailTabKey {
@@ -26,9 +26,12 @@ export default async function AdminUserDetailRoute({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await getServerSession(authOptions);
-  const role = normalizeAdminRole(session?.role);
 
-  if (!session?.user || !session.accessToken || role !== "administrator") {
+  if (
+    !session?.user ||
+    !session.accessToken ||
+    (await fetchCurrentUserRole(session.accessToken)) !== "administrator"
+  ) {
     notFound();
   }
 

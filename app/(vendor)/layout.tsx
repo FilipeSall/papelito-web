@@ -29,7 +29,7 @@ export default async function VendorLayout({ children }: Readonly<{ children: Re
     redirect("/entrar");
   }
 
-  if (!session.accessToken || !(await isCurrentUserSeller(session.accessToken, session.role))) {
+  if (!session.accessToken || !(await isCurrentUserSeller(session.accessToken))) {
     redirect("/");
   }
 

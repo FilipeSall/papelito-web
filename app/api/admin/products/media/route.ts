@@ -1,29 +1,11 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { authOptions } from "@/lib/auth";
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+
 import { uploadAdminProductMedia } from "@/lib/server/admin-products";
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
-async function getAdminAccessToken() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || !session.accessToken) {
-    return { error: "Nao autenticado.", status: 401 as const };
-  }
-
-  if (normalizeRole(session.role) !== "administrator") {
-    return { error: "Acesso administrativo necessario.", status: 403 as const };
-  }
-
-  return { accessToken: session.accessToken };
-}
-
 export async function POST(request: Request) {
-  const auth = await getAdminAccessToken();
+  const auth = await getAdminApiSession();
 
   if ("error" in auth) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });

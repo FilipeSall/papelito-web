@@ -1,24 +1,15 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 import type { AdminVendorCreatePayload } from "@/lib/admin-vendors-types";
-import { authOptions } from "@/lib/auth";
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import type { AdminVendorDetail } from "@/lib/server/admin-vendors";
 import { wpRest } from "@/lib/server/wp-rest";
 
-function normalizeRole(role: unknown) {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const auth = await getAdminApiSession();
 
-  if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
-  }
-
-  if (normalizeRole(session.role) !== "administrator") {
-    return NextResponse.json({ message: "Acesso negado." }, { status: 403 });
+  if ("error" in auth) {
+    return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
 
   const payload = (await request.json().catch(() => null)) as AdminVendorCreatePayload | null;
@@ -29,7 +20,7 @@ export async function POST(request: Request) {
 
   const result = await wpRest<AdminVendorDetail>("/papelito/v1/admin/vendors", {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.accessToken}` },
+    headers: { Authorization: `Bearer ${auth.accessToken}` },
     json: payload,
   });
 
@@ -42,4 +33,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ vendor: result.data }, { status: 201 });
 }
-

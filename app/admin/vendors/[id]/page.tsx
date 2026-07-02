@@ -9,11 +9,11 @@ import {
   getAdminVendorStock,
 } from "@/lib/server/admin-vendor-operations";
 import {
-  normalizeAdminRole,
   parseStockFilter,
   parseVendorOrderStatus,
 } from "@/lib/server/admin-vendor-filters";
 import { getAdminVendorDetail } from "@/lib/server/admin-vendors";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import { firstParam } from "@/lib/search-params";
 
 function parseTab(value: string | undefined): DetailTabKey {
@@ -30,9 +30,12 @@ export default async function AdminVendorDetailRoute({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await getServerSession(authOptions);
-  const role = normalizeAdminRole(session?.role);
 
-  if (!session?.user || !session.accessToken || role !== "administrator") {
+  if (
+    !session?.user ||
+    !session.accessToken ||
+    (await fetchCurrentUserRole(session.accessToken)) !== "administrator"
+  ) {
     notFound();
   }
 

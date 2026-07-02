@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 
-import { normalizeAdminRole } from "./admin-vendor-filters";
+import { fetchCurrentUserRole } from "./current-user-role";
 
 export type AdminApiSession =
   | { accessToken: string }
@@ -17,7 +17,7 @@ export async function getAdminApiSession(): Promise<AdminApiSession> {
     return { error: "Nao autenticado.", status: 401 };
   }
 
-  if (normalizeAdminRole(session.role) !== "administrator") {
+  if ((await fetchCurrentUserRole(session.accessToken)) !== "administrator") {
     return { error: "Acesso negado.", status: 403 };
   }
 

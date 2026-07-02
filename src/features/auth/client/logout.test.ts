@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearSessionClientState, signOutAndClearSession } from "./logout";
+import {
+  clearPreviousSessionBeforeSignIn,
+  clearSessionClientState,
+  signOutAndClearSession,
+} from "./logout";
 
 const mocks = vi.hoisted(() => ({
   clearStore: vi.fn(),
@@ -82,6 +86,17 @@ describe("logout client cleanup", () => {
       callbackUrl: "/entrar",
       redirect: false,
     });
+    expect(mocks.clearStore).toHaveBeenCalled();
+    expect(mocks.mutate).toHaveBeenCalled();
+  });
+
+  it("clears the previous NextAuth session before sign-in attempts", async () => {
+    window.localStorage.setItem("papelito-checkout-store", "checkout");
+
+    await clearPreviousSessionBeforeSignIn();
+
+    expect(mocks.signOut).toHaveBeenCalledWith({ redirect: false });
+    expect(window.localStorage.getItem("papelito-checkout-store")).toBeNull();
     expect(mocks.clearStore).toHaveBeenCalled();
     expect(mocks.mutate).toHaveBeenCalled();
   });

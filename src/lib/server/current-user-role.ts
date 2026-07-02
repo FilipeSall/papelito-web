@@ -26,13 +26,6 @@ export async function fetchCurrentUserRole(accessToken: string): Promise<string 
   return normalizeCurrentUserRole(identity.data.user?.role);
 }
 
-export async function isCurrentUserSeller(
-  accessToken: string,
-  sessionRole?: unknown,
-): Promise<boolean> {
-  if (normalizeCurrentUserRole(sessionRole) === "seller") {
-    return true;
-  }
-
+export async function isCurrentUserSeller(accessToken: string): Promise<boolean> {
   return (await fetchCurrentUserRole(accessToken)) === "seller";
 }
