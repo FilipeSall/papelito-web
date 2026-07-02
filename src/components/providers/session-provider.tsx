@@ -1,8 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, SessionProvider as NextAuthSessionProvider, useSession } from "next-auth/react";
+import { SessionProvider as NextAuthSessionProvider, useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
+
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 
 function isProtectedPath(pathname: string | null) {
   if (!pathname) {
@@ -37,7 +39,7 @@ function InvalidSessionCleanup() {
 
     cleanupStartedRef.current = true;
 
-    void signOut({ redirect: false, callbackUrl: "/" })
+    void signOutAndClearSession({ redirect: false, callbackUrl: "/" })
       .catch(() => undefined)
       .finally(() => {
         if (isProtectedPath(pathname)) {

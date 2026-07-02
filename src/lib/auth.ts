@@ -414,6 +414,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
         token.accessToken = (user as { accessToken?: string }).accessToken;
         token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;

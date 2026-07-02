@@ -1,8 +1,8 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useState, useTransition } from "react";
 
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { Panel } from "../primitives";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 
@@ -68,7 +68,7 @@ export function ConfigContent() {
           | null;
 
         if (response.status === 401) {
-          await signOut({ callbackUrl: "/entrar" });
+          await signOutAndClearSession({ callbackUrl: "/entrar" });
           return;
         }
 

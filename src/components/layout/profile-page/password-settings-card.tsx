@@ -1,8 +1,8 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useState, useTransition } from "react";
 
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import type { ProfilePasswordFormValues } from "@/features/profile/types/profile-customer";
 import { ArrowRightIcon } from "@/components/ui/icons";
 
@@ -74,7 +74,7 @@ export function PasswordSettingsCard({
           | null;
 
         if (response.status === 401) {
-          await signOut({ callbackUrl: "/entrar" });
+          await signOutAndClearSession({ callbackUrl: "/entrar" });
           return;
         }
 

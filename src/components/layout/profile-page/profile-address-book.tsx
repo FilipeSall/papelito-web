@@ -1,9 +1,9 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { useCepLookup } from "@/features/checkout";
 import { formatZipCode } from "@/features/checkout/utils/format-checkout-fields";
 import type {
@@ -135,7 +135,7 @@ export function ProfileAddressBook({
           | null;
 
         if (response.status === 401) {
-          await signOut({ callbackUrl: "/entrar" });
+          await signOutAndClearSession({ callbackUrl: "/entrar" });
           return;
         }
 

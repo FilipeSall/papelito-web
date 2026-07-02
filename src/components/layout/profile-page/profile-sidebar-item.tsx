@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ReactNode } from "react";
-import { signOut } from "next-auth/react";
+
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 
 type ProfileSidebarItemProps = {
   href: string;
@@ -48,7 +49,9 @@ export function ProfileSidebarItem({
     return (
       <button
         className={baseClasses}
-        onClick={() => signOut({ callbackUrl: "/" })}
+        onClick={() => {
+          void signOutAndClearSession({ callbackUrl: "/" });
+        }}
         type="button"
       >
         <div className="flex items-center gap-3">

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { useState } from "react";
 
 import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import {
   FavoritesAuthError,
   removeFavoriteClient,
@@ -33,7 +33,7 @@ export function ProfileWishlist({ initialItems = [] }: ProfileWishlistProps) {
       setItems((current) => current.filter((item) => item.productId !== productId));
     } catch (error) {
       if (error instanceof FavoritesAuthError) {
-        await signOut({ callbackUrl: "/entrar" });
+        await signOutAndClearSession({ callbackUrl: "/entrar" });
         return;
       }
 

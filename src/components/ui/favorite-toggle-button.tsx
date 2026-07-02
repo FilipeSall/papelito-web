@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import {
   addFavoriteClient,
   FavoritesAuthError,
@@ -46,7 +47,7 @@ export function FavoriteToggleButton({
       setIsFavorite(result.isFavorite);
     } catch (error) {
       if (error instanceof FavoritesAuthError) {
-        await signOut({ callbackUrl: "/entrar" });
+        await signOutAndClearSession({ callbackUrl: "/entrar" });
         return;
       }
 
