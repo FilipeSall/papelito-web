@@ -14,8 +14,8 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("next-auth/react", () => ({
-  signOut: vi.fn(),
+vi.mock("@/features/auth/client/logout", () => ({
+  signOutAndClearSession: vi.fn(),
 }));
 
 vi.mock("@/features/checkout", () => ({

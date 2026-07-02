@@ -11,18 +11,21 @@ function makeJwt(exp: number) {
   return `${header}.${payload}.signature`;
 }
 
-async function runJwtCallback(token: Record<string, unknown>) {
+async function runJwtCallback(
+  token: Record<string, unknown>,
+  user?: Record<string, unknown>,
+) {
   if (!authOptions.callbacks?.jwt) {
     throw new Error("JWT callback is not configured.");
   }
 
   return authOptions.callbacks.jwt({
     token,
-    trigger: "update",
+    trigger: user ? "signIn" : "update",
     session: undefined,
     account: null,
     profile: undefined,
-    user: undefined,
+    user,
     isNewUser: false,
   } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.jwt>>[0]);
 }
@@ -58,6 +61,40 @@ describe("authOptions callbacks", () => {
     expect(result.accessToken).not.toBe(accessToken);
     expect(result.accessTokenExpires).toBeGreaterThan(Date.now());
     expect(result.authError).toBeUndefined();
+  });
+
+  it("overwrites stale identity fields when another user signs in", async () => {
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback(
+      {
+        id: "1",
+        name: "Conta Antiga",
+        email: "antiga@example.com",
+        picture: "old-avatar.png",
+        accessToken: "old-token",
+        refreshToken: "old-refresh",
+      },
+      {
+        id: "2",
+        name: "Conta Nova",
+        email: "nova@example.com",
+        image: "new-avatar.png",
+        accessToken,
+        refreshToken: "new-refresh",
+        role: "customer",
+      },
+    );
+
+    expect(result).toMatchObject({
+      id: "2",
+      name: "Conta Nova",
+      email: "nova@example.com",
+      picture: "new-avatar.png",
+      accessToken,
+      refreshToken: "new-refresh",
+      role: "customer",
+    });
   });
 
   it("clears token state when refresh token is missing", async () => {

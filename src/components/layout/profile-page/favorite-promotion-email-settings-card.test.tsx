@@ -5,16 +5,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FavoritePromotionEmailSettingsCard } from "./favorite-promotion-email-settings-card";
 
 const fetchMock = vi.fn();
-const signOutMock = vi.fn();
+const signOutAndClearSessionMock = vi.fn();
 
-vi.mock("next-auth/react", () => ({
-  signOut: (...args: unknown[]) => signOutMock(...args),
+vi.mock("@/features/auth/client/logout", () => ({
+  signOutAndClearSession: (...args: unknown[]) => signOutAndClearSessionMock(...args),
 }));
 
 describe("FavoritePromotionEmailSettingsCard", () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    signOutMock.mockReset();
+    signOutAndClearSessionMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
   });
 
@@ -91,7 +91,7 @@ describe("FavoritePromotionEmailSettingsCard", () => {
     await user.click(screen.getByRole("switch"));
 
     await waitFor(() => {
-      expect(signOutMock).toHaveBeenCalledWith({ callbackUrl: "/entrar" });
+      expect(signOutAndClearSessionMock).toHaveBeenCalledWith({ callbackUrl: "/entrar" });
     });
   });
 });
