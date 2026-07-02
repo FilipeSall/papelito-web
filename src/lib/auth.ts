@@ -29,14 +29,6 @@ const WP_REFRESH_TOKEN_MUTATION = `
   }
 `;
 
-const WP_CUSTOMER_ROLE_QUERY = `
-  query CurrentCustomerRole {
-    customer {
-      role
-    }
-  }
-`;
-
 type WpAuthResponse = {
   authToken: string;
   refreshToken: string;
@@ -69,12 +61,6 @@ type RefreshAuthTokenResult =
   | { ok: true; accessToken: string }
   | { ok: false; error: RefreshAuthTokenError };
 
-type WpCustomerRoleResponse = {
-  customer?: {
-    role?: string | null;
-  } | null;
-};
-
 type WpAuthIdentityResponse = {
   user?: {
     role?: string | null;
@@ -100,8 +86,28 @@ type WpLoginResult = {
   errorMessage?: string;
 };
 
+const ROLE_REVALIDATE_INTERVAL_MS = 5 * 60 * 1000;
+
 function normalizeRole(role: unknown): string | undefined {
   return typeof role === "string" ? role.trim().toLowerCase() : undefined;
+}
+
+function shouldRevalidateRole(token: {
+  role?: unknown;
+  roleCheckedAt?: unknown;
+}): boolean {
+  if (!token.role) {
+    return true;
+  }
+
+  const checkedAt =
+    typeof token.roleCheckedAt === "number" ? token.roleCheckedAt : undefined;
+
+  if (checkedAt === undefined) {
+    return true;
+  }
+
+  return Date.now() - checkedAt >= ROLE_REVALIDATE_INTERVAL_MS;
 }
 
 async function wpLogin(username: string, password: string): Promise<WpLoginResult> {
@@ -164,7 +170,9 @@ function clearInvalidAuthState(
     accessTokenExpires?: number;
     refreshToken?: string;
     authError?: string;
+    authIdentityError?: boolean;
     role?: string;
+    roleCheckedAt?: number;
   },
   authError: RefreshAuthTokenError,
 ) {
@@ -172,6 +180,8 @@ function clearInvalidAuthState(
   delete token.accessTokenExpires;
   delete token.refreshToken;
   delete token.role;
+  delete token.roleCheckedAt;
+  delete token.authIdentityError;
   token.authError = authError;
 }
 
@@ -230,39 +240,13 @@ async function wpRefreshAuthToken(refreshToken: string): Promise<RefreshAuthToke
   }
 }
 
-async function wpFetchGraphqlCustomerRole(accessToken: string): Promise<string | undefined> {
-  try {
-    const response = await fetch(getWpGraphqlEndpoint(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        query: WP_CUSTOMER_ROLE_QUERY,
-      }),
-      cache: "no-store",
-    });
-
-    const json = (await response.json()) as {
-      data?: WpCustomerRoleResponse;
-      errors?: Array<{ message?: string }>;
-    };
-
-    if (!response.ok || json.errors?.length) {
-      return undefined;
-    }
-
-    return normalizeRole(json.data?.customer?.role);
-  } catch {
-    return undefined;
-  }
-}
-
-async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<{
+type WpAuthenticatedIdentity = {
+  ok: boolean;
   profileComplete?: boolean;
   role?: string;
-}> {
+};
+
+async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<WpAuthenticatedIdentity> {
   try {
     const identity = await wpRest<WpAuthIdentityResponse>("/papelito/v1/auth/me", {
       headers: {
@@ -272,6 +256,7 @@ async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<{
 
     if (identity.ok) {
       return {
+        ok: true,
         role: normalizeRole(identity.data.user?.role),
         profileComplete:
           typeof identity.data.user?.profileComplete === "boolean"
@@ -279,17 +264,14 @@ async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<{
             : undefined,
       };
     }
-  } catch {
-    // Falls back to the existing GraphQL lookup while the custom identity route is unavailable.
+
+    console.error("[auth] identity lookup /auth/me failed", identity.status, identity.error);
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    console.error("[auth] identity lookup /auth/me threw", message);
   }
 
-  return {
-    role: await wpFetchGraphqlCustomerRole(accessToken),
-  };
-}
-
-async function wpFetchAuthenticatedRole(accessToken: string): Promise<string | undefined> {
-  return (await wpFetchAuthenticatedIdentity(accessToken)).role;
+  return { ok: false, role: undefined };
 }
 
 function getAccessTokenExpiresAt(accessToken?: string) {
@@ -407,7 +389,7 @@ export const authOptions: NextAuthOptions = {
       userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpAuth.authToken);
       userWithTokens.refreshToken = wpAuth.refreshToken;
       userWithTokens.profileComplete = wpAuth.profileComplete;
-      userWithTokens.role = await wpFetchAuthenticatedRole(wpAuth.authToken);
+      userWithTokens.role = (await wpFetchAuthenticatedIdentity(wpAuth.authToken)).role;
 
       return true;
     },
@@ -421,16 +403,26 @@ export const authOptions: NextAuthOptions = {
         token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
         token.refreshToken = (user as { refreshToken?: string }).refreshToken;
         delete token.authError;
+        delete token.authIdentityError;
         token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
         token.role = (user as { role?: string }).role;
+        token.roleCheckedAt = Date.now();
       }
 
       if (typeof token.authError === "string" && !token.accessToken) {
         return token;
       }
 
-      if (!token.role && typeof token.accessToken === "string") {
-        token.role = await wpFetchAuthenticatedRole(token.accessToken);
+      if (typeof token.accessToken === "string" && shouldRevalidateRole(token)) {
+        const identity = await wpFetchAuthenticatedIdentity(token.accessToken);
+
+        if (identity.ok) {
+          token.role = identity.role;
+          token.roleCheckedAt = Date.now();
+          delete token.authIdentityError;
+        } else {
+          token.authIdentityError = true;
+        }
       }
 
       const accessTokenExpires =
@@ -457,7 +449,14 @@ export const authOptions: NextAuthOptions = {
 
       token.accessToken = refreshedToken.accessToken;
       token.accessTokenExpires = getAccessTokenExpiresAt(refreshedToken.accessToken);
-      token.role = (await wpFetchAuthenticatedRole(refreshedToken.accessToken)) ?? token.role;
+      const refreshedIdentity = await wpFetchAuthenticatedIdentity(refreshedToken.accessToken);
+      if (refreshedIdentity.ok) {
+        token.role = refreshedIdentity.role;
+        token.roleCheckedAt = Date.now();
+        delete token.authIdentityError;
+      } else {
+        token.authIdentityError = true;
+      }
       delete token.authError;
 
       return token;
@@ -474,6 +473,7 @@ export const authOptions: NextAuthOptions = {
       session.refreshToken =
         typeof token.refreshToken === "string" ? token.refreshToken : undefined;
       session.authError = typeof token.authError === "string" ? token.authError : undefined;
+      session.authIdentityError = token.authIdentityError === true ? true : undefined;
       session.profileComplete =
         typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
       session.role = typeof token.role === "string" ? token.role : undefined;

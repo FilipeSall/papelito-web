@@ -5,6 +5,7 @@ import { SessionProvider as NextAuthSessionProvider, useSession } from "next-aut
 import { useEffect, useRef } from "react";
 
 import { signOutAndClearSession } from "@/features/auth/client/logout";
+import { AuthErrorToastHost } from "./auth-error-toast-host";
 
 function isProtectedPath(pathname: string | null) {
   if (!pathname) {
@@ -58,6 +59,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextAuthSessionProvider>
       <InvalidSessionCleanup />
+      <AuthErrorToastHost />
       {children}
     </NextAuthSessionProvider>
   );

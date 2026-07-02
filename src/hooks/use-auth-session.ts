@@ -11,6 +11,7 @@ export function useAuthSession() {
   const { data: session, status } = useSession();
   const role = useMemo(() => normalizeRole(session?.role), [session?.role]);
   const authError = typeof session?.authError === "string" ? session.authError : undefined;
+  const authIdentityError = session?.authIdentityError === true;
   const hasAccessToken =
     status === "authenticated" &&
     typeof session?.accessToken === "string" &&
@@ -22,6 +23,7 @@ export function useAuthSession() {
     status,
     role,
     authError,
+    authIdentityError,
     hasSession: status === "authenticated",
     isAuthenticated: hasAccessToken,
     hasAccessToken,

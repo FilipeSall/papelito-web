@@ -62,16 +62,6 @@ export const authHandlers = [
       });
     }
 
-    if (body.query?.includes("query CurrentCustomerRole")) {
-      return HttpResponse.json({
-        data: {
-          customer: {
-            role: "customer",
-          },
-        },
-      });
-    }
-
     return HttpResponse.json({ data: {} });
   }),
   http.post("http://localhost:8080/wp-json/papelito/v1/auth/google", async () =>

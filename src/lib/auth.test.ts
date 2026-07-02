@@ -1,6 +1,10 @@
+import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { server } from "../../test/msw/server";
 import { authOptions } from "./auth";
+
+const AUTH_ME_URL = "http://localhost:8080/wp-json/papelito/v1/auth/me";
 
 function makeJwt(exp: number) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString(
@@ -47,6 +51,133 @@ describe("authOptions callbacks", () => {
     expect(result.accessTokenExpires).toBeGreaterThan(Date.now());
     expect(result.role).toBe("customer");
     expect(result.authError).toBeUndefined();
+  });
+
+  it("never downgrades the role to customer when /auth/me fails", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 500 })),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+    });
+
+    expect(result.role).toBeUndefined();
+  });
+
+  it("logs an error when the /auth/me identity lookup fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    server.use(
+      http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 401 })),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+    });
+
+    expect(errorSpy).toHaveBeenCalled();
+    expect(errorSpy.mock.calls[0]?.[0]).toContain("[auth]");
+  });
+
+  it("flags authIdentityError when /auth/me fails, without wiping the session", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 500 })),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+    });
+
+    expect(result.authIdentityError).toBe(true);
+    expect(result.accessToken).toBe(accessToken);
+    expect(result.authError).toBeUndefined();
+  });
+
+  it("clears authIdentityError once /auth/me succeeds again", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () =>
+        HttpResponse.json({ user: { role: "administrator" } }),
+      ),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+      authIdentityError: true,
+    });
+
+    expect(result.authIdentityError).toBeUndefined();
+    expect(result.role).toBe("administrator");
+  });
+
+  it("derives the administrator role from a successful /auth/me lookup", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () =>
+        HttpResponse.json({ user: { role: "administrator" } }),
+      ),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+    });
+
+    expect(result.role).toBe("administrator");
+  });
+
+  it("re-validates a stale role so a WP role change propagates without logout", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () =>
+        HttpResponse.json({ user: { role: "administrator" } }),
+      ),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+      role: "customer",
+      roleCheckedAt: Date.now() - 10 * 60 * 1000,
+    });
+
+    expect(result.role).toBe("administrator");
+  });
+
+  it("keeps a freshly-checked role without re-fetching /auth/me", async () => {
+    let calls = 0;
+    server.use(
+      http.get(AUTH_ME_URL, () => {
+        calls += 1;
+        return HttpResponse.json({ user: { role: "administrator" } });
+      }),
+    );
+
+    const accessToken = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+
+    const result = await runJwtCallback({
+      accessToken,
+      refreshToken: "refresh-token",
+      role: "customer",
+      roleCheckedAt: Date.now() - 1_000,
+    });
+
+    expect(result.role).toBe("customer");
+    expect(calls).toBe(0);
   });
 
   it("refreshes an expired token when a refresh token exists", async () => {

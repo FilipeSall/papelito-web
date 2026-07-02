@@ -7,6 +7,7 @@ declare module "next-auth" {
     accessTokenExpires?: number;
     refreshToken?: string;
     authError?: string;
+    authIdentityError?: boolean;
     profileComplete?: boolean;
     role?: string;
     user?: {
@@ -34,7 +35,9 @@ declare module "next-auth/jwt" {
     accessTokenExpires?: number;
     refreshToken?: string;
     authError?: string;
+    authIdentityError?: boolean;
     profileComplete?: boolean;
     role?: string;
+    roleCheckedAt?: number;
   }
 }
