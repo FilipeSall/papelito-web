@@ -50,20 +50,22 @@ function clearBrowserStorage() {
   try {
     removeStorageEntries(window.localStorage, LOCAL_STORAGE_KEYS, LOCAL_STORAGE_PREFIXES);
   } catch {
-    return;
   }
 
   try {
     removeStorageEntries(window.sessionStorage, SESSION_STORAGE_KEYS, SESSION_STORAGE_PREFIXES);
   } catch {
-    return;
   }
 }
 
 export async function clearSessionClientState() {
   clearBrowserStorage();
-  useCheckoutStore.getState().resetCheckout();
-  useCheckoutStore.persist.clearStorage();
+
+  try {
+    useCheckoutStore.getState().resetCheckout();
+    useCheckoutStore.persist.clearStorage();
+  } catch {
+  }
 
   await Promise.all([
     apolloClient.clearStore().catch(() => undefined),

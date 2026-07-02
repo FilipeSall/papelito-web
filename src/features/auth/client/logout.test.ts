@@ -35,10 +35,13 @@ vi.mock("next-auth/react", () => ({
 
 describe("logout client cleanup", () => {
   beforeEach(() => {
-    clearStoreMock.mockResolvedValue(undefined);
-    mutateMock.mockResolvedValue(undefined);
+    clearStoreMock.mockReset();
+    mutateMock.mockReset();
     resetCheckoutMock.mockReset();
     clearCheckoutStorageMock.mockReset();
+    signOutMock.mockReset();
+    clearStoreMock.mockResolvedValue(undefined);
+    mutateMock.mockResolvedValue(undefined);
     signOutMock.mockResolvedValue(undefined);
     window.localStorage.clear();
     window.sessionStorage.clear();
