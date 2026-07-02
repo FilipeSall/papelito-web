@@ -50,11 +50,13 @@ function clearBrowserStorage() {
   try {
     removeStorageEntries(window.localStorage, LOCAL_STORAGE_KEYS, LOCAL_STORAGE_PREFIXES);
   } catch {
+    // Storage access can be blocked, but logout must still continue.
   }
 
   try {
     removeStorageEntries(window.sessionStorage, SESSION_STORAGE_KEYS, SESSION_STORAGE_PREFIXES);
   } catch {
+    // Storage access can be blocked, but logout must still continue.
   }
 }
 
@@ -65,6 +67,7 @@ export async function clearSessionClientState() {
     useCheckoutStore.getState().resetCheckout();
     useCheckoutStore.persist.clearStorage();
   } catch {
+    // Persisted store cleanup is best-effort during logout.
   }
 
   await Promise.all([

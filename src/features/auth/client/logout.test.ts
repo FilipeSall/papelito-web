@@ -2,47 +2,49 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearSessionClientState, signOutAndClearSession } from "./logout";
 
-const clearStoreMock = vi.fn();
-const mutateMock = vi.fn();
-const resetCheckoutMock = vi.fn();
-const clearCheckoutStorageMock = vi.fn();
-const signOutMock = vi.fn();
+const mocks = vi.hoisted(() => ({
+  clearStore: vi.fn(),
+  mutate: vi.fn(),
+  resetCheckout: vi.fn(),
+  clearCheckoutStorage: vi.fn(),
+  signOut: vi.fn(),
+}));
 
 vi.mock("@/lib/apollo/client", () => ({
   apolloClient: {
-    clearStore: () => clearStoreMock(),
+    clearStore: () => mocks.clearStore(),
   },
 }));
 
 vi.mock("swr", () => ({
-  mutate: (...args: unknown[]) => mutateMock(...args),
+  mutate: (...args: unknown[]) => mocks.mutate(...args),
 }));
 
 vi.mock("@/features/checkout/store/use-checkout-store", () => ({
   useCheckoutStore: {
     getState: () => ({
-      resetCheckout: resetCheckoutMock,
+      resetCheckout: mocks.resetCheckout,
     }),
     persist: {
-      clearStorage: clearCheckoutStorageMock,
+      clearStorage: mocks.clearCheckoutStorage,
     },
   },
 }));
 
 vi.mock("next-auth/react", () => ({
-  signOut: (...args: unknown[]) => signOutMock(...args),
+  signOut: (...args: unknown[]) => mocks.signOut(...args),
 }));
 
 describe("logout client cleanup", () => {
   beforeEach(() => {
-    clearStoreMock.mockReset();
-    mutateMock.mockReset();
-    resetCheckoutMock.mockReset();
-    clearCheckoutStorageMock.mockReset();
-    signOutMock.mockReset();
-    clearStoreMock.mockResolvedValue(undefined);
-    mutateMock.mockResolvedValue(undefined);
-    signOutMock.mockResolvedValue(undefined);
+    mocks.clearStore.mockReset();
+    mocks.mutate.mockReset();
+    mocks.resetCheckout.mockReset();
+    mocks.clearCheckoutStorage.mockReset();
+    mocks.signOut.mockReset();
+    mocks.clearStore.mockResolvedValue(undefined);
+    mocks.mutate.mockResolvedValue(undefined);
+    mocks.signOut.mockResolvedValue(undefined);
     window.localStorage.clear();
     window.sessionStorage.clear();
   });
@@ -65,10 +67,10 @@ describe("logout client cleanup", () => {
     expect(window.sessionStorage.getItem("papelito:coverage-warning-shown")).toBeNull();
     expect(window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42")).toBeNull();
     expect(window.sessionStorage.getItem("papelito:cadastro:step1")).toBe("draft");
-    expect(resetCheckoutMock).toHaveBeenCalledOnce();
-    expect(clearCheckoutStorageMock).toHaveBeenCalledOnce();
-    expect(clearStoreMock).toHaveBeenCalledOnce();
-    expect(mutateMock).toHaveBeenCalledWith(expect.any(Function), undefined, {
+    expect(mocks.resetCheckout).toHaveBeenCalledOnce();
+    expect(mocks.clearCheckoutStorage).toHaveBeenCalledOnce();
+    expect(mocks.clearStore).toHaveBeenCalledOnce();
+    expect(mocks.mutate).toHaveBeenCalledWith(expect.any(Function), undefined, {
       revalidate: false,
     });
   });
@@ -76,11 +78,11 @@ describe("logout client cleanup", () => {
   it("clears client state before signing out", async () => {
     await signOutAndClearSession({ callbackUrl: "/entrar", redirect: false });
 
-    expect(signOutMock).toHaveBeenCalledWith({
+    expect(mocks.signOut).toHaveBeenCalledWith({
       callbackUrl: "/entrar",
       redirect: false,
     });
-    expect(clearStoreMock).toHaveBeenCalled();
-    expect(mutateMock).toHaveBeenCalled();
+    expect(mocks.clearStore).toHaveBeenCalled();
+    expect(mocks.mutate).toHaveBeenCalled();
   });
 });
