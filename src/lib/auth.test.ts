@@ -293,4 +293,29 @@ describe("authOptions callbacks", () => {
       role: "seller",
     });
   });
+
+  it("does not expose a stale role when the identity lookup failed", async () => {
+    if (!authOptions.callbacks?.session) {
+      throw new Error("Session callback is not configured.");
+    }
+
+    const session = await authOptions.callbacks.session({
+      session: {
+        expires: "2099-01-01T00:00:00.000Z",
+        user: {},
+      },
+      token: {
+        sub: "2158",
+        accessToken: "seller-token",
+        authIdentityError: true,
+        role: "administrator",
+      },
+      user: undefined,
+      newSession: undefined,
+      trigger: "update",
+    } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.session>>[0]);
+
+    expect(session.authIdentityError).toBe(true);
+    expect(session.role).toBeUndefined();
+  });
 });

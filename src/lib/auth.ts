@@ -476,7 +476,12 @@ export const authOptions: NextAuthOptions = {
       session.authIdentityError = token.authIdentityError === true ? true : undefined;
       session.profileComplete =
         typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
-      session.role = typeof token.role === "string" ? token.role : undefined;
+      session.role =
+        token.authIdentityError === true
+          ? undefined
+          : typeof token.role === "string"
+            ? token.role
+            : undefined;
 
       return session;
     },

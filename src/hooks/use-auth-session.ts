@@ -9,9 +9,12 @@ function normalizeRole(role: unknown) {
 
 export function useAuthSession() {
   const { data: session, status } = useSession();
-  const role = useMemo(() => normalizeRole(session?.role), [session?.role]);
   const authError = typeof session?.authError === "string" ? session.authError : undefined;
   const authIdentityError = session?.authIdentityError === true;
+  const role = useMemo(
+    () => (authIdentityError ? undefined : normalizeRole(session?.role)),
+    [authIdentityError, session?.role],
+  );
   const hasAccessToken =
     status === "authenticated" &&
     typeof session?.accessToken === "string" &&
@@ -29,7 +32,7 @@ export function useAuthSession() {
     hasAccessToken,
     isApiAuthenticated: hasAccessToken,
     isLoading: status === "loading",
-    isRoleLoading: hasAccessToken && role === undefined,
+    isRoleLoading: hasAccessToken && role === undefined && !authIdentityError,
     requiresReauth: status === "authenticated" && !hasAccessToken,
     isAdministrator: role === "administrator",
     isSeller: role === "seller",

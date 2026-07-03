@@ -69,4 +69,18 @@ describe("useAuthSession", () => {
     const adminHook = renderHook(() => useAuthSession());
     expect(adminHook.result.current.isAdministrator).toBe(true);
   });
+
+  it("does not expose privileged roles when identity validation failed", () => {
+    useSessionMock.mockReturnValue({
+      data: buildSession({ authIdentityError: true, role: "administrator" }),
+      status: "authenticated",
+    });
+
+    const { result } = renderHook(() => useAuthSession());
+
+    expect(result.current.authIdentityError).toBe(true);
+    expect(result.current.role).toBeUndefined();
+    expect(result.current.isAdministrator).toBe(false);
+    expect(result.current.isRoleLoading).toBe(false);
+  });
 });
