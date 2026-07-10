@@ -136,6 +136,7 @@ Plano completo em [../pagarme-integration-plan.MD](../pagarme-integration-plan.M
 | `GOOGLE_CLIENT_SECRET` | opcional | Par com o id acima |
 | `USE_MOCK_DATA` | opcional | `true` força mocks (`mock/`) sem chamar WP |
 | `NEXT_PUBLIC_PAGARME_PUBLIC_KEY` | quando pagamento ligado | `pk_test`/`pk_live` — só tokeniza cartão no browser (`/tokens`); nunca envia PAN ao backend |
+| `PAPELITO_FRONT_PROXY_TOKEN` | recomendado em prod | Segredo server-side compartilhado com o WordPress para chamadas internas do proxy Next; permite rate limit de frete por comprador sem expor confiança em headers públicos |
 
 ## Convenções
 

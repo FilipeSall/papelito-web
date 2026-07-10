@@ -431,7 +431,7 @@ export function RevendedorRegistrationWizard({
   }
 
   function handleBranchNumberChange(rawValue: string) {
-    const branchNumber = rawValue.replace(/[^0-9A-Za-z]/g, "");
+    const branchNumber = rawValue.replace(/\D/g, "").slice(0, 4);
     patchStep3({
       bankAccount: {
         ...draft.step3.bankAccount,

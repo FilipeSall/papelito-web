@@ -13,7 +13,7 @@ import type {
 import {
   canViewProduct,
   getFrontendProductHref,
-  shouldHighlightWeightField,
+  shouldHighlightShippingField,
 } from "../helpers";
 import { AdminSelectField } from "./admin-select-field";
 import {
@@ -87,12 +87,36 @@ export function ProductEditorModal({
     }
   }
 
-  const shouldHighlightWeight = shouldHighlightWeightField({
-    forceHighlight: forceWeightErrorHighlight,
-    selectedProduct,
-    selectedProductId,
-    weight: draft.weight,
-  });
+  const shippingFieldHighlights = {
+    weight: shouldHighlightShippingField({
+      field: "weight",
+      forceHighlight: forceWeightErrorHighlight,
+      selectedProduct,
+      selectedProductId,
+      value: draft.weight,
+    }),
+    length: shouldHighlightShippingField({
+      field: "length",
+      forceHighlight: forceWeightErrorHighlight,
+      selectedProduct,
+      selectedProductId,
+      value: draft.length,
+    }),
+    width: shouldHighlightShippingField({
+      field: "width",
+      forceHighlight: forceWeightErrorHighlight,
+      selectedProduct,
+      selectedProductId,
+      value: draft.width,
+    }),
+    height: shouldHighlightShippingField({
+      field: "height",
+      forceHighlight: forceWeightErrorHighlight,
+      selectedProduct,
+      selectedProductId,
+      value: draft.height,
+    }),
+  };
 
   return (
     <div
@@ -141,7 +165,7 @@ export function ProductEditorModal({
               />
               <DimensionsSection
                 draft={draft}
-                highlightWeightError={shouldHighlightWeight}
+                highlights={shippingFieldHighlights}
                 updateDraft={updateDraft}
               />
               <DescriptionsSection draft={draft} updateDraft={updateDraft} />
@@ -327,18 +351,32 @@ function PricingSection({
 
 function DimensionsSection({
   draft,
-  highlightWeightError = false,
+  highlights = { weight: false, length: false, width: false, height: false },
   updateDraft,
 }: {
   draft: ProductDraft;
-  highlightWeightError?: boolean;
+  highlights?: {
+    weight: boolean;
+    length: boolean;
+    width: boolean;
+    height: boolean;
+  };
   updateDraft: DraftUpdater;
 }) {
+  const anyMissing =
+    highlights.weight || highlights.length || highlights.width || highlights.height;
+
   return (
     <ModalSection title="Dimensoes & Logistica">
+      {anyMissing ? (
+        <p className="text-xs font-medium text-[#b42318]">
+          Peso e dimensoes (comprimento, largura e altura) sao obrigatorios para calcular o frete
+          dos Correios. Produtos sem esses dados nao aparecem no catalogo nem podem ser comprados.
+        </p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
-          error={highlightWeightError}
+          error={highlights.weight}
           helpText="Informe o peso em quilos. Exemplo: 400g deve ser preenchido como 0.4, nao como 400."
           inputMode="decimal"
           label="Peso (kg)"
@@ -349,18 +387,21 @@ function DimensionsSection({
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <TextField
+          error={highlights.length}
           inputMode="decimal"
           label="Comprimento (cm)"
           onChange={(value) => updateDraft("length", value)}
           value={draft.length}
         />
         <TextField
+          error={highlights.width}
           inputMode="decimal"
           label="Largura (cm)"
           onChange={(value) => updateDraft("width", value)}
           value={draft.width}
         />
         <TextField
+          error={highlights.height}
           inputMode="decimal"
           label="Altura (cm)"
           onChange={(value) => updateDraft("height", value)}

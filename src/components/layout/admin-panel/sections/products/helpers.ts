@@ -9,7 +9,7 @@ import {
   PUBLISHED_PRODUCT_STATUS,
 } from "@/constants/admin-products";
 import type { ProductDraft } from "@/types/admin-products-manager";
-import { hasPositiveWeight } from "@/utils/weight";
+import { hasPositiveDimension, hasPositiveWeight } from "@/utils/weight";
 import { parseMoney } from "@/utils/money";
 import { normalizeKey } from "@/utils/normalize-key";
 
@@ -121,22 +121,45 @@ export function canViewProduct(product: AdminProduct | null) {
   return product?.status === PUBLISHED_PRODUCT_STATUS;
 }
 
-export function shouldHighlightWeightField({
+export type ShippingField = "weight" | "length" | "width" | "height";
+
+function hasPositiveShippingValue(field: ShippingField, value: string) {
+  return field === "weight" ? hasPositiveWeight(value) : hasPositiveDimension(value);
+}
+
+export function shouldHighlightShippingField({
+  field,
   forceHighlight = false,
   selectedProduct,
   selectedProductId,
-  weight,
+  value,
 }: {
+  field: ShippingField;
+  forceHighlight?: boolean;
+  selectedProduct: AdminProduct | null;
+  selectedProductId: number | "new";
+  value: string;
+}) {
+  if (selectedProductId === "new" || hasPositiveShippingValue(field, value)) {
+    return false;
+  }
+
+  return forceHighlight || selectedProduct?.status === PUBLISHED_PRODUCT_STATUS;
+}
+
+export function shouldHighlightWeightField(params: {
   forceHighlight?: boolean;
   selectedProduct: AdminProduct | null;
   selectedProductId: number | "new";
   weight: string;
 }) {
-  if (selectedProductId === "new" || hasPositiveWeight(weight)) {
-    return false;
-  }
-
-  return forceHighlight || selectedProduct?.status === PUBLISHED_PRODUCT_STATUS;
+  return shouldHighlightShippingField({
+    field: "weight",
+    forceHighlight: params.forceHighlight,
+    selectedProduct: params.selectedProduct,
+    selectedProductId: params.selectedProductId,
+    value: params.weight,
+  });
 }
 
 export function findPromotionTag(tags: AdminProductTaxonomyTerm[]) {

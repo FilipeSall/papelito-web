@@ -29,10 +29,6 @@ export type GetShippingQuoteInput = {
   items: Array<{ productId: number; qty: number }>;
 };
 
-function getWpRestBase() {
-  return process.env.NEXT_PUBLIC_WP_REST_BASE || "http://localhost:8080/wp-json";
-}
-
 function toNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : Number(value);
 }
@@ -90,6 +86,10 @@ function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
     return "Nao foi possivel cotar o frete.";
   }
 
+  if (payload.code === "papelito_shipping_product_dimensions_missing") {
+    return "Um produto do carrinho ainda nao tem peso e dimensoes cadastrados para cotar frete. Remova o item ou escolha outro produto.";
+  }
+
   const data =
     payload.data && typeof payload.data === "object"
       ? (payload.data as ShippingQuoteApiErrorData)
@@ -117,7 +117,7 @@ function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
 export async function getShippingQuote(
   input: GetShippingQuoteInput,
 ): Promise<ShippingQuoteResult> {
-  const response = await fetch(`${getWpRestBase()}/papelito/v1/shipping/quote`, {
+  const response = await fetch("/api/checkout/shipping-quote", {
     method: "POST",
     headers: {
       Accept: "application/json",

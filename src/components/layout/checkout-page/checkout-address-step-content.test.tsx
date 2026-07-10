@@ -20,7 +20,7 @@ vi.mock("next/image", () => ({
   default: () => null,
 }));
 
-const shippingQuoteUrl = "http://localhost:8080/wp-json/papelito/v1/shipping/quote";
+const shippingQuoteUrl = "/api/checkout/shipping-quote";
 
 function seedCheckoutState() {
   useCartStore.setState({

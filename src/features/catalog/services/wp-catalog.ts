@@ -13,7 +13,7 @@ import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
 } from "../utils/resolve-product-image";
-import { hasPositiveWeight } from "@/utils/weight";
+import { hasPositiveDimension, hasPositiveWeight } from "@/utils/weight";
 
 interface WpProductCategoryNode {
   id?: string | null;
@@ -47,9 +47,15 @@ interface WpProductNode {
   regularPrice?: string | null;
   salePrice?: string | null;
   weight?: string | null;
+  length?: string | null;
+  width?: string | null;
+  height?: string | null;
   variations?: {
     nodes?: Array<{
       weight?: string | null;
+      length?: string | null;
+      width?: string | null;
+      height?: string | null;
     } | null> | null;
   } | null;
 }
@@ -211,13 +217,29 @@ function resolveImage(product: WpProductNode) {
   });
 }
 
-function hasValidWeight(product: WpProductNode) {
-  if (hasPositiveWeight(product.weight)) {
+interface ShippingMeasures {
+  weight?: string | null;
+  length?: string | null;
+  width?: string | null;
+  height?: string | null;
+}
+
+function hasCompleteShippingMeasures(measures: ShippingMeasures | null | undefined) {
+  return (
+    hasPositiveWeight(measures?.weight) &&
+    hasPositiveDimension(measures?.length) &&
+    hasPositiveDimension(measures?.width) &&
+    hasPositiveDimension(measures?.height)
+  );
+}
+
+function hasValidShippingData(product: WpProductNode) {
+  if (hasCompleteShippingMeasures(product)) {
     return true;
   }
 
   return (product.variations?.nodes ?? []).some((variation) =>
-    hasPositiveWeight(variation?.weight),
+    hasCompleteShippingMeasures(variation),
   );
 }
 
@@ -266,7 +288,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     tags: ["wp:products"],
   });
 
-  return (data.products?.nodes ?? []).filter(hasValidWeight);
+  return (data.products?.nodes ?? []).filter(hasValidShippingData);
 }
 
 export async function fetchWpProductsSafe(
@@ -314,7 +336,7 @@ export async function fetchWpProductByDatabaseId(id: string) {
 
   const product = data.product ?? null;
 
-  if (!product || !hasValidWeight(product)) {
+  if (!product || !hasValidShippingData(product)) {
     return null;
   }
 

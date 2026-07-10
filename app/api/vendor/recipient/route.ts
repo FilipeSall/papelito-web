@@ -4,6 +4,29 @@ import { wpRest } from "@/lib/server/wp-rest";
 
 import { requireVendorAccessToken } from "../_lib/require-vendor-session";
 
+type VendorRecipientResponse = {
+  recipient_id?: string;
+  status?: string;
+  last_sync_at?: string;
+  kyc_url?: string;
+  last_error?: string;
+};
+
+function mapVendorRecipientResponse(payload: unknown) {
+  const body =
+    payload && typeof payload === "object"
+      ? (payload as VendorRecipientResponse)
+      : {};
+
+  return {
+    recipient_id: body.recipient_id || "",
+    status: body.status || "",
+    last_sync_at: body.last_sync_at || "",
+    kyc_url: body.kyc_url || "",
+    last_error: body.last_error || "",
+  };
+}
+
 export async function POST(request: Request) {
   const auth = await requireVendorAccessToken();
 
@@ -26,17 +49,14 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    const pagarmeErrors = result.error.data?.pagarme_errors;
-
     return NextResponse.json(
       {
         message: result.error.message,
         code: result.error.code,
-        ...(Array.isArray(pagarmeErrors) ? { pagarme_errors: pagarmeErrors } : {}),
       },
       { status: result.status || 500 },
     );
   }
 
-  return NextResponse.json(result.data);
+  return NextResponse.json(mapVendorRecipientResponse(result.data));
 }

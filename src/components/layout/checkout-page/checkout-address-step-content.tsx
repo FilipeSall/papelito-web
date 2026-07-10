@@ -161,6 +161,7 @@ export function CheckoutAddressStepContent({
         setSelectedShippingQuote(matchedOption);
       },
       revalidateOnFocus: false,
+      shouldRetryOnError: false,
     },
   );
   const shippingOptions = currentShippingQuote?.options ?? [];

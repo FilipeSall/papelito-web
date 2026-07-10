@@ -26,7 +26,6 @@ function formatStatus(value: string) {
 
 function buildRecipientErrorFeedback(body: {
   code?: string;
-  details?: string[];
   message?: string;
 }): FeedbackState {
   switch (body.code) {
@@ -66,24 +65,31 @@ function buildRecipientErrorFeedback(body: {
         message: "Os dados financeiros do recebedor ainda nao foram preenchidos.",
         title: "Dados financeiros pendentes",
       };
+    case "papelito_pagarme_invalid_company_name":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar razao social",
+        error: true,
+        hint: "Informe a razao social completa da empresa (minimo de 5 caracteres).",
+        message: "A razao social informada e muito curta para a Pagar.me.",
+        title: "Razao social invalida",
+      };
     case "papelito_pagarme_request_failed":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar dados enviados",
-        details: body.details,
         error: true,
-        hint: "A Pagar.me recusou os dados enviados. Revise empresa, responsavel legal e conta bancaria.",
-        message: body.message || "A Pagar.me recusou a sincronizacao do recebedor.",
+        hint: "A Pagar.me recusou os dados enviados. Revise razao social, responsavel legal, endereco e conta bancaria (agencia e conta).",
+        message: "Nao foi possivel validar seus dados junto a Pagar.me.",
         title: "Validacao recusada pela Pagar.me",
       };
     default:
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Editar dados financeiros",
-        details: body.details,
         error: true,
         hint: "Se o erro persistir, revise os dados financeiros do recebedor antes de tentar novamente.",
-        message: body.message || "Nao foi possivel sincronizar o recebedor.",
+        message: "Nao foi possivel sincronizar o recebedor.",
         title: "Falha na sincronizacao",
       };
   }
@@ -116,7 +122,6 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             kyc_url?: string;
             last_error?: string;
             message?: string;
-            pagarme_errors?: string[];
           }
         | null;
 
@@ -124,7 +129,6 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
         setFeedback(
           buildRecipientErrorFeedback({
             code: body?.code,
-            details: Array.isArray(body?.pagarme_errors) ? body.pagarme_errors : undefined,
             message: body?.message,
           }),
         );
@@ -188,7 +192,11 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-dark/55">
               Ultimo erro
             </p>
-            <p className="mt-1 text-sm text-brand-dark">{recipient.lastError || "Nenhum"}</p>
+            <p className="mt-1 text-sm text-brand-dark">
+              {recipient.lastError
+                ? "A ultima sincronizacao falhou. Revise os dados financeiros (razao social, endereco e conta bancaria) e sincronize novamente."
+                : "Nenhum"}
+            </p>
           </div>
         </div>
 

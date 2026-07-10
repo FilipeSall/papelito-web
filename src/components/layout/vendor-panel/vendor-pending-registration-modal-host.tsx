@@ -1153,7 +1153,7 @@ export function VendorPendingRegistrationModalHost({
                 error={isPendingField("bankAccount.branchNumber")}
                 inputMode="numeric"
                 label="Agencia"
-                onChange={(value) => updateBank("branchNumber", digits(value))}
+                onChange={(value) => updateBank("branchNumber", digits(value, 4))}
                 value={form.bankAccount.branchNumber}
               />
               <Field
