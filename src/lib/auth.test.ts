@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import type { Session } from "next-auth";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "../../test/msw/server";
@@ -299,7 +300,7 @@ describe("authOptions callbacks", () => {
       throw new Error("Session callback is not configured.");
     }
 
-    const session = await authOptions.callbacks.session({
+    const session = (await authOptions.callbacks.session({
       session: {
         expires: "2099-01-01T00:00:00.000Z",
         user: {},
@@ -313,7 +314,7 @@ describe("authOptions callbacks", () => {
       user: undefined,
       newSession: undefined,
       trigger: "update",
-    } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.session>>[0]);
+    } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.session>>[0])) as Session;
 
     expect(session.authIdentityError).toBe(true);
     expect(session.role).toBeUndefined();
