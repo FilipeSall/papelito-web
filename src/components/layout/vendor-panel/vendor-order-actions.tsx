@@ -9,30 +9,33 @@ import { VendorCancelShipmentModal } from "./vendor-cancel-shipment-modal";
 
 const nextStatus: Partial<Record<VendorOrderStatus, VendorOrderStatus>> = {
   aguardando_envio: "em_separacao",
-  em_separacao: "enviado",
-  enviado: "entregue",
 };
 
 const nextStatusLabel: Partial<Record<VendorOrderStatus, string>> = {
   aguardando_envio: "Marcar como separado",
-  em_separacao: "Marcar como enviado",
-  enviado: "Marcar como entregue",
 };
 
 const nextStatusPending: Partial<Record<VendorOrderStatus, string>> = {
   aguardando_envio: "Separando...",
-  em_separacao: "Enviando...",
-  enviado: "Concluindo...",
 };
 
-export function VendorOrderActions({ orderId, status }: { orderId: number; status: VendorOrderStatus }) {
+export function VendorOrderActions({
+  hasShipment,
+  orderId,
+  status,
+}: {
+  hasShipment: boolean;
+  orderId: number;
+  status: VendorOrderStatus;
+}) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<{ tone: "error" | "success"; message: string } | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const next = nextStatus[status];
-  const canCancel = status === "aguardando_envio" || status === "em_separacao";
+  const canCancel = !hasShipment && (status === "aguardando_envio" || status === "em_separacao");
+  const canGenerateShipment = status === "em_separacao" && !hasShipment;
 
   function update(target: VendorOrderStatus, reason?: string) {
     setFeedback(null);
@@ -64,7 +67,26 @@ export function VendorOrderActions({ orderId, status }: { orderId: number; statu
     });
   }
 
-  if (!next && !canCancel) {
+  function generateShipment() {
+    setFeedback(null);
+    startTransition(async () => {
+      const response = await fetch(`/api/vendor/orders/${orderId}/shipments`, { method: "POST" });
+      const body = (await response.json().catch(() => null)) as { message?: string } | null;
+
+      if (!response.ok) {
+        setFeedback({
+          tone: "error",
+          message: body?.message ?? "Nao foi possivel gerar a etiqueta dos Correios.",
+        });
+        return;
+      }
+
+      setFeedback({ tone: "success", message: "Etiqueta gerada e rastreamento iniciado." });
+      router.refresh();
+    });
+  }
+
+  if (!next && !canCancel && !canGenerateShipment) {
     return null;
   }
 
@@ -91,6 +113,16 @@ export function VendorOrderActions({ orderId, status }: { orderId: number; statu
             type="button"
           >
             {isPending ? nextStatusPending[status] ?? "Atualizando..." : nextStatusLabel[status]}
+          </button>
+        ) : null}
+        {canGenerateShipment ? (
+          <button
+            className="cursor-pointer rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-brand-yellow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isPending}
+            onClick={generateShipment}
+            type="button"
+          >
+            {isPending ? "Gerando etiqueta..." : "Gerar etiqueta dos Correios"}
           </button>
         ) : null}
         {canCancel ? (

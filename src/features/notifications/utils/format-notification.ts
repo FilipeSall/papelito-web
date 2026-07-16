@@ -47,6 +47,13 @@ function supportHref(payload: NotificationPayload) {
     : "/perfil";
 }
 
+function logisticsHref(payload: NotificationPayload) {
+  const orderId = numberValue(payload, "order_id");
+  const seller = stringValue(payload, "recipient_role") === "seller";
+  if (!Number.isInteger(orderId) || orderId <= 0) return seller ? "/vendor/pedidos" : "/perfil";
+  return seller ? `/vendor/pedidos/${orderId}` : `/perfil/pedidos/${orderId}`;
+}
+
 export function formatNotification(notification: NotificationItem): FormattedNotification {
   const { payload } = notification;
 
@@ -216,6 +223,55 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         href: "/vendor/dashboard",
       };
     }
+    case "shipment_posted":
+      return {
+        icon: "package",
+        title: "Objeto postado",
+        body: "Os Correios confirmaram a postagem do objeto.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_out_for_delivery":
+      return {
+        icon: "package",
+        title: "Saiu para entrega",
+        body: "Os Correios informaram que o objeto esta em rota de entrega.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_delivered":
+      return {
+        icon: "check",
+        title: "Entrega confirmada",
+        body: "A entrega foi confirmada pela API Rastro dos Correios.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_delivery_failed":
+      return {
+        icon: "package",
+        title: "Tentativa sem sucesso",
+        body: "A entrega nao foi concluida. Consulte as orientacoes dos Correios.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_pickup_available":
+      return {
+        icon: "package",
+        title: "Disponivel para retirada",
+        body: "O objeto aguarda retirada na unidade indicada pelos Correios.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_returned":
+      return {
+        icon: "package",
+        title: "Objeto devolvido",
+        body: "Os Correios confirmaram a devolucao do objeto ao remetente.",
+        href: logisticsHref(payload),
+      };
+    case "shipment_exception":
+      return {
+        icon: "package",
+        title: "Ocorrencia no envio",
+        body: "O envio exige acompanhamento da Papelito e do vendor.",
+        href: logisticsHref(payload),
+      };
     default:
       return {
         icon: "megaphone",

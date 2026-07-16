@@ -14,6 +14,42 @@ export type VendorOrderItem = {
   total: number;
 };
 
+export type ShipmentLogisticsStatus =
+  | "tracking_pending"
+  | "preposted"
+  | "posted"
+  | "in_transit"
+  | "out_for_delivery"
+  | "pickup_available"
+  | "delivery_failed"
+  | "returning"
+  | "returned"
+  | "lost"
+  | "delivered";
+
+export type VendorOrderShipment = {
+  deliveredAt: string;
+  hasError: boolean;
+  id: number;
+  lastEventAt: string;
+  lastEventCode: string;
+  lastEventDescription: string;
+  lastEventLocation: string;
+  lastEventType: string;
+  serviceCode: string;
+  status: ShipmentLogisticsStatus;
+  trackingCode: string;
+};
+
+export type VendorOrderLogistics = {
+  allPackagesDone: boolean;
+  lastEventAt: string;
+  packagesDelivered: number;
+  packagesTotal: number;
+  shipments: VendorOrderShipment[];
+  status: ShipmentLogisticsStatus | "not_started";
+};
+
 export type VendorOrderSummary = {
   createdAt: string;
   customerName: string;
@@ -47,6 +83,7 @@ export type VendorOrderDetail = VendorOrderSummary & {
   shippingTotal: number;
   subtotal: number;
   trackingCode: string | null;
+  logistics: VendorOrderLogistics;
 };
 
 export type VendorOrdersSnapshot = {

@@ -9,7 +9,14 @@ export type NotificationType =
   | "support_escalated"
   | "new_purchase"
   | "vendor_processing_overdue"
-  | "vendor_registration_pending";
+  | "vendor_registration_pending"
+  | "shipment_posted"
+  | "shipment_out_for_delivery"
+  | "shipment_delivered"
+  | "shipment_delivery_failed"
+  | "shipment_pickup_available"
+  | "shipment_returned"
+  | "shipment_exception";
 
 export type NotificationPayload = Record<string, unknown>;
 

@@ -12,6 +12,7 @@ import {
   OrderStatusBadge,
   OrderTrackingCopyButton,
 } from "@/components/layout/profile-page";
+import { OrderStatusAutoRefresh } from "@/components/layout/order-status-auto-refresh";
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -50,6 +51,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   return (
     <section className="bg-bg-light">
+      <OrderStatusAutoRefresh />
       <div className="bg-brand-dark">
         <div className="mx-auto w-full max-w-391 px-8 py-5">
           <Link
@@ -144,6 +146,26 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 Previsão de entrega:
                 <span className="font-bold text-brand-dark">{order.tracking.estimatedDeliveryLabel}</span>
               </p> : null}
+
+              {order.shipments.length > 1 ? (
+                <div className="mt-4 space-y-2" aria-label="Pacotes deste pedido">
+                  {order.shipments.map((shipment, index) => (
+                    <div className="rounded-[14px] border border-gray-100 px-4 py-3" key={shipment.id}>
+                      <p className="text-xs font-black text-brand-dark">Pacote {index + 1}</p>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <code className="font-mono text-xs font-bold tracking-[1px] text-brand-dark">{shipment.code}</code>
+                        <OrderTrackingCopyButton code={shipment.code} />
+                      </div>
+                      {shipment.lastEventDescription ? (
+                        <p className="mt-2 text-xs text-gray-500">
+                          {shipment.lastEventDescription}
+                          {shipment.lastEventLocation ? ` · ${shipment.lastEventLocation}` : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </article>
 
             <article className="rounded-2xl bg-white p-6 shadow-sm">
@@ -159,7 +181,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     const isCurrent = event.state === "current";
 
                     return (
-                      <div className="relative flex gap-4" key={event.id}>
+                      <div
+                        aria-current={isCurrent ? "step" : undefined}
+                        className="relative flex gap-4"
+                        key={event.id}
+                      >
                         <span
                           className={`relative z-10 mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full ${
                             isDone

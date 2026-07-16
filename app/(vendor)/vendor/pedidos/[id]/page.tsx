@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Panel } from "@/components/layout/operational-panel";
+import { OrderStatusAutoRefresh } from "@/components/layout/order-status-auto-refresh";
 import {
   VendorContactCustomerButton,
   VendorOrderActions,
@@ -29,6 +30,29 @@ function address(order: VendorOrderDetail) {
   ].filter(Boolean).join(", ") || "Endereco nao informado.";
 }
 
+const logisticsLabels = {
+  not_started: "Aguardando geracao da etiqueta",
+  tracking_pending: "Aguardando eventos dos Correios",
+  preposted: "Etiqueta gerada; aguardando postagem",
+  posted: "Objeto postado",
+  in_transit: "Objeto em transito",
+  out_for_delivery: "Objeto saiu para entrega",
+  pickup_available: "Objeto disponivel para retirada",
+  delivery_failed: "Tentativa de entrega sem sucesso",
+  returning: "Objeto em devolucao",
+  returned: "Objeto devolvido ao remetente",
+  lost: "Ocorrencia logistica; acompanhamento necessario",
+  delivered: "Entrega confirmada pelos Correios",
+} as const;
+
+function formatLogisticsDate(value: string) {
+  if (!value) return "";
+  const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+}
+
 export default async function VendorOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -42,6 +66,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
 
   return (
     <div className="space-y-4 md:space-y-5">
+      <OrderStatusAutoRefresh />
       <VendorPageHeader
         action={
           <VendorOrderDeliveryCountdown
@@ -66,6 +91,17 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         <div className="mt-5">
           <VendorOrderStatusStepper status={order.status} />
         </div>
+        <div className="mt-5 rounded-xl bg-brand-dark/3 px-4 py-3" aria-live="polite">
+          <p className="text-sm font-semibold text-brand-dark">
+            {logisticsLabels[order.logistics.status]}
+          </p>
+          {order.logistics.packagesTotal > 0 ? (
+            <p className="mt-1 text-xs text-brand-dark/60">
+              {order.logistics.packagesDelivered} de {order.logistics.packagesTotal} pacote(s) entregue(s)
+              {order.logistics.lastEventAt ? ` · ${formatLogisticsDate(order.logistics.lastEventAt)}` : ""}
+            </p>
+          ) : null}
+        </div>
       </Panel>
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Panel className="p-5 md:p-6">
@@ -85,7 +121,31 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
               {order.deliveryTimeDays > 0 ? ` - prazo estimado ${order.deliveryTimeDays} dias uteis` : ""}
             </p>
           </div>
-          <VendorOrderActions orderId={order.id} status={order.status} />
+          {order.logistics.shipments.length > 0 ? (
+            <div className="mt-5 space-y-3" aria-label="Pacotes dos Correios">
+              {order.logistics.shipments.map((shipment, index) => (
+                <div className="rounded-xl border border-brand-dark/10 p-4" key={shipment.id}>
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-brand-dark/50">
+                    Pacote {index + 1}
+                  </p>
+                  <p className="mt-2 font-mono text-sm font-bold tracking-[0.1em]">{shipment.trackingCode}</p>
+                  <p className="mt-2 text-sm font-semibold">{logisticsLabels[shipment.status]}</p>
+                  {shipment.lastEventDescription ? (
+                    <p className="mt-1 text-xs text-brand-dark/60">
+                      {shipment.lastEventDescription}
+                      {shipment.lastEventLocation ? ` · ${shipment.lastEventLocation}` : ""}
+                      {shipment.lastEventAt ? ` · ${formatLogisticsDate(shipment.lastEventAt)}` : ""}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <VendorOrderActions
+            hasShipment={order.logistics.shipments.length > 0}
+            orderId={order.id}
+            status={order.status}
+          />
         </Panel>
         <Panel className="overflow-hidden">
           <div className="border-b border-brand-dark/10 px-5 py-4">

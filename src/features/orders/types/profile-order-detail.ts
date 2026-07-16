@@ -31,6 +31,16 @@ export interface ProfileOrderTrackingInfo {
   estimatedDeliveryLabel: string;
 }
 
+export interface ProfileOrderShipment {
+  code: string;
+  deliveredAt: string;
+  id: number;
+  lastEventAt: string;
+  lastEventDescription: string;
+  lastEventLocation: string;
+  status: string;
+}
+
 /**
  * Forma de pagamento usada no pedido.
  */
@@ -61,6 +71,7 @@ export interface ProfileOrderDetail {
   dateLabel: string;
   storeLabel: string;
   tracking: ProfileOrderTrackingInfo | null;
+  shipments: ProfileOrderShipment[];
   timeline: ProfileOrderTimelineEvent[];
   deliveryAddress: string;
   items: ProfileOrderItem[];

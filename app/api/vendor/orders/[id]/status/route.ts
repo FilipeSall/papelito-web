@@ -8,8 +8,6 @@ import { requireVendorAccessToken } from "../../../_lib/require-vendor-session";
 
 const allowedStatuses = new Set<VendorOrderStatus>([
   "em_separacao",
-  "enviado",
-  "entregue",
   "cancelado",
 ]);
 

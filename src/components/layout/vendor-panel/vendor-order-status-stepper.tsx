@@ -63,7 +63,11 @@ export function VendorOrderStatusStepper({
         const connectorFilled = index < currentIndex;
 
         return (
-          <li className="flex flex-1 gap-3 pt-7 md:flex-col md:items-center md:gap-0" key={step.status}>
+          <li
+            aria-current={state === "active" ? "step" : undefined}
+            className="flex flex-1 gap-3 pt-7 md:flex-col md:items-center md:gap-0"
+            key={step.status}
+          >
             <div className="relative flex flex-col items-center md:w-full">
               {state === "active" ? (
                 <span className="absolute -top-7 left-4.5 z-20 inline-flex -translate-x-1/2 rounded-full bg-brand-yellow px-2 py-0.5 text-[11px] font-black text-brand-dark md:left-1/2">

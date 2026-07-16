@@ -31,6 +31,22 @@ type WpProfileOrder = {
   subtotal?: number;
   total?: number;
   tracking_code?: string | null;
+  logistics?: {
+    status?: string;
+    all_packages_done?: boolean;
+    packages_total?: number;
+    packages_delivered?: number;
+    last_event_at?: string;
+    shipments?: Array<{
+      id?: number;
+      tracking_code?: string;
+      status?: string;
+      last_event_at?: string;
+      last_event_description?: string;
+      last_event_location?: string;
+      delivered_at?: string;
+    }>;
+  };
   vendor_name?: string;
   vendor_status?: string;
   phone?: string;
@@ -124,7 +140,15 @@ function formatDate(value: string | undefined) {
     : new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(date);
 }
 
-function buildTimeline(status: OrderStatus): ProfileOrderTimelineEvent[] {
+function formatDateTime(value: string | undefined) {
+  if (!value) return undefined;
+  const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+}
+
+function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrderTimelineEvent[] {
   if (status === "expired") {
     return [
       {
@@ -177,22 +201,43 @@ function buildTimeline(status: OrderStatus): ProfileOrderTimelineEvent[] {
   }
 
   const stages: Array<{ id: string; title: string; description: string }> = [
+    { id: "payment", title: "Pagamento", description: "Pagamento confirmado." },
     { id: "awaiting", title: "Aguardando envio", description: "Pedido recebido pelo vendor." },
     { id: "picking", title: "Em separacao", description: "Itens sendo preparados para envio." },
-    { id: "shipped", title: "Enviado", description: "Pedido liberado para entrega." },
-    { id: "delivered", title: "Entregue", description: "Atendimento finalizado." },
+    { id: "shipped", title: "Enviado", description: "Postagem confirmada pelos Correios." },
+    { id: "delivered", title: "Entregue", description: "Entrega confirmada pelos Correios." },
   ];
   const currentIndex = {
-    awaiting_shipment: 0,
-    picking: 1,
-    shipped: 2,
-    delivered: 3,
+    awaiting_shipment: 1,
+    picking: 2,
+    shipped: 3,
+    delivered: 4,
   }[status];
 
-  return stages.map((stage, index) => ({
-    ...stage,
-    state: index < currentIndex ? "done" : index === currentIndex ? "current" : "pending",
-  }));
+  const logisticsMessages: Record<string, { title: string; description: string }> = {
+    preposted: { title: "Etiqueta gerada", description: "Aguardando a postagem do objeto nos Correios." },
+    in_transit: { title: "Em transito", description: "O objeto esta em deslocamento pela rede dos Correios." },
+    out_for_delivery: { title: "Saiu para entrega", description: "O objeto esta em rota de entrega." },
+    pickup_available: { title: "Disponivel para retirada", description: "Retire o objeto na unidade indicada pelos Correios." },
+    delivery_failed: { title: "Tentativa sem sucesso", description: "A entrega nao foi concluida; acompanhe a proxima orientacao." },
+    returning: { title: "Em devolucao", description: "O objeto esta retornando ao remetente." },
+    returned: { title: "Devolvido", description: "O objeto foi devolvido ao remetente." },
+    lost: { title: "Ocorrencia no envio", description: "O envio exige acompanhamento do vendor e da Papelito." },
+  };
+  const logistics = logisticsMessages[order.logistics?.status ?? ""];
+
+  return stages.map((stage, index) => {
+    const isLogisticsStage = index === currentIndex && index >= 3 && logistics;
+    const showTimestamp = index === currentIndex && index >= 3;
+    return {
+      ...stage,
+      ...(isLogisticsStage ? logistics : {}),
+      timestampLabel: showTimestamp
+        ? formatDateTime(order.logistics?.last_event_at)
+        : undefined,
+      state: index < currentIndex ? "done" : index === currentIndex ? "current" : "pending",
+    };
+  });
 }
 
 function formatAddress(order: WpProfileOrder) {
@@ -236,7 +281,16 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
               : "Prazo nao informado",
         }
       : null,
-    timeline: buildTimeline(status),
+    timeline: buildTimeline(status, order),
+    shipments: (order.logistics?.shipments ?? []).map((shipment) => ({
+      code: shipment.tracking_code ?? "",
+      deliveredAt: shipment.delivered_at ?? "",
+      id: Number(shipment.id) || 0,
+      lastEventAt: shipment.last_event_at ?? "",
+      lastEventDescription: shipment.last_event_description ?? "",
+      lastEventLocation: shipment.last_event_location ?? "",
+      status: shipment.status ?? "tracking_pending",
+    })),
     deliveryAddress: formatAddress(order),
     items: (order.items ?? []).map((item) => {
       const quantity = Number(item.qty) || 0;
