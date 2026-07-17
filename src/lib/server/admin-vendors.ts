@@ -4,11 +4,7 @@ import { wpRest } from "@/lib/server/wp-rest";
 
 import type { AdminVendorsFilters } from "@/lib/server/admin-vendors-filters";
 
-export type AdminVendorRowStatus = "pending" | "incomplete" | "approved" | "rejected" | "none";
-
 export type AdminVendorRow = {
-  applicationStatus: AdminVendorRowStatus;
-  applicationStatusLabel: string;
   city: string;
   cnpj: string;
   coverageSummary: string;
@@ -23,10 +19,8 @@ export type AdminVendorRow = {
 };
 
 export type AdminVendorsSummary = {
-  approvedSellers: number;
   filteredUsers: number;
-  incompleteApplications: number;
-  pendingApplications: number;
+  totalVendors: number;
   usersWithCoverage: number;
 };
 
@@ -77,13 +71,8 @@ export type AdminVendorDetail = {
   name: string;
   phoneNumber: string;
   registeredAt: string;
-  rejectionReason: string;
-  reviewedAt: string;
-  reviewedBy: AdminVendorReviewer | null;
   state: string;
-  status: string;
   storeName: string;
-  submittedAt: string;
 };
 
 type RawSnapshotRow = Partial<AdminVendorRow> & { id?: number };
@@ -99,24 +88,10 @@ type RawSnapshot = {
 };
 
 const EMPTY_SUMMARY: AdminVendorsSummary = {
-  approvedSellers: 0,
   filteredUsers: 0,
-  incompleteApplications: 0,
-  pendingApplications: 0,
+  totalVendors: 0,
   usersWithCoverage: 0,
 };
-
-function normalizeStatus(value: unknown): AdminVendorRow["applicationStatus"] {
-  if (
-    value === "pending" ||
-    value === "incomplete" ||
-    value === "approved" ||
-    value === "rejected"
-  ) {
-    return value;
-  }
-  return "none";
-}
 
 function mapRow(raw: RawSnapshotRow): AdminVendorRow | null {
   const id = Number(raw.id ?? 0);
@@ -125,8 +100,6 @@ function mapRow(raw: RawSnapshotRow): AdminVendorRow | null {
   }
 
   return {
-    applicationStatus: normalizeStatus(raw.applicationStatus),
-    applicationStatusLabel: String(raw.applicationStatusLabel ?? ""),
     city: String(raw.city ?? ""),
     cnpj: String(raw.cnpj ?? ""),
     coverageSummary: String(raw.coverageSummary ?? ""),
@@ -163,7 +136,6 @@ export async function getAdminVendorsSnapshot(
   }
 
   const query = new URLSearchParams();
-  query.set("status", filters.status);
   query.set("page", String(filters.page));
   query.set("perPage", String(filters.perPage));
   if (filters.search) {
@@ -188,10 +160,8 @@ export async function getAdminVendorsSnapshot(
     .filter((row): row is AdminVendorRow => row !== null);
 
   const summary: AdminVendorsSummary = {
-    approvedSellers: Number(result.data.summary?.approvedSellers ?? 0),
     filteredUsers: Number(result.data.summary?.filteredUsers ?? 0),
-    incompleteApplications: Number(result.data.summary?.incompleteApplications ?? 0),
-    pendingApplications: Number(result.data.summary?.pendingApplications ?? 0),
+    totalVendors: Number(result.data.summary?.totalVendors ?? 0),
     usersWithCoverage: Number(result.data.summary?.usersWithCoverage ?? 0),
   };
 

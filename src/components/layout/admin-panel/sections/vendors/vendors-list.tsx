@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import { CompactTable, EmptyStateCard, Panel } from "../../primitives";
 
-import { VendorStatusBadge } from "./vendor-status";
-
 import type { AdminVendorsFilters } from "@/lib/server/admin-vendors-filters";
 import { buildAdminVendorsQuery } from "@/lib/server/admin-vendors-filters";
 import type { AdminVendorRow, AdminVendorsSnapshot } from "@/lib/server/admin-vendors";
@@ -81,17 +79,13 @@ export function VendorsList({
   snapshot: AdminVendorsSnapshot;
 }) {
   if (snapshot.rows.length === 0) {
-    const empty = filters.status === "pending"
-      ? {
-          label: "Sem fila",
-          title: "Nenhuma triagem aguardando",
-          body: "Quando um lojista solicitar entrar no programa de revendedores, ele aparece aqui para sua analise.",
-        }
-      : {
-          label: "Sem dados",
-          title: "Nenhum vendor encontrado",
-          body: "Ajuste o filtro de status acima para encontrar outros registros.",
-        };
+    const empty = {
+      label: "Sem dados",
+      title: "Nenhum vendor encontrado",
+      body: filters.search
+        ? "Tente outro termo de busca."
+        : "Use Novo vendor para criar uma conta ou promover um customer.",
+    };
 
     if (snapshot.issues.length > 0) {
       return (
@@ -106,9 +100,6 @@ export function VendorsList({
 
   const rows = snapshot.rows.map((row) => {
     const params = new URLSearchParams();
-    if (filters.status !== "pending") {
-      params.set("originStatus", filters.status);
-    }
     if (filters.page > 1) {
       params.set("originPage", String(filters.page));
     }
@@ -133,7 +124,9 @@ export function VendorsList({
       <span key={`cnpj-${row.id}`} className="font-mono text-xs text-[#231f20]/68">
         {row.cnpj || "—"}
       </span>,
-      <VendorStatusBadge key={`status-${row.id}`} status={row.applicationStatus} />,
+      <span key={`coverage-${row.id}`} className="text-xs text-[#231f20]/68">
+        {row.coverageSummary || "Sem cobertura"}
+      </span>,
       <span key={`time-${row.id}`} className="text-xs uppercase tracking-[0.12em] text-[#231f20]/56">
         {formatRegisteredAgo(row.registeredAt)}
       </span>,
@@ -142,7 +135,7 @@ export function VendorsList({
         href={detailHref}
         className="inline-flex items-center rounded-full border border-[#231f20]/24 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20] transition hover:border-[#231f20]"
       >
-        Analisar
+        Abrir
       </Link>,
     ];
   });
@@ -152,11 +145,11 @@ export function VendorsList({
       <Panel className="overflow-hidden">
         <div className="border-b border-[#231f20]/10 px-5 py-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-            triagem de vendors
+            vendors cadastrados
           </p>
         </div>
         <CompactTable
-          headers={["vendor", "cidade", "cnpj", "status", "registro", ""]}
+          headers={["vendor", "cidade", "cnpj", "cobertura", "registro", ""]}
           rows={rows}
         />
       </Panel>

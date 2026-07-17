@@ -216,6 +216,7 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
 
   const logisticsMessages: Record<string, { title: string; description: string }> = {
     preposted: { title: "Etiqueta gerada", description: "Aguardando a postagem do objeto nos Correios." },
+    posted: { title: "Postado", description: "O objeto foi postado e recebido pelos Correios." },
     in_transit: { title: "Em transito", description: "O objeto esta em deslocamento pela rede dos Correios." },
     out_for_delivery: { title: "Saiu para entrega", description: "O objeto esta em rota de entrega." },
     pickup_available: { title: "Disponivel para retirada", description: "Retire o objeto na unidade indicada pelos Correios." },

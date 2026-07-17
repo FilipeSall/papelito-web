@@ -3,26 +3,43 @@ import { getServerSession } from "next-auth";
 import { RevendedorPage } from "@/components/layout/revendedor-page";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import { fetchProfileCustomer } from "@/features/profile/server/customer";
-import { fetchRevendedorApplication } from "@/features/revendedor/server/application";
-import { buildDraftFromSources } from "@/features/revendedor/utils/revendedor-registration";
+import { fetchVendorInterest } from "@/features/revendedor/server/vendor-interest";
+import { normalizeStep1Data } from "@/features/revendedor/utils/revendedor-registration";
 import { authOptions } from "@/lib/auth";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 
 export default async function RevendedorRoutePage() {
   const session = await getServerSession(authOptions);
   const isAuthenticated = Boolean(session?.user && session.accessToken);
 
-  const [customer, application, images] = await Promise.all([
+  const [customer, interest, images, role] = await Promise.all([
     isAuthenticated ? fetchProfileCustomer(session?.accessToken) : null,
-    fetchRevendedorApplication(session?.accessToken),
+    fetchVendorInterest(session?.accessToken),
     getSiteImageAssets(),
+    session?.accessToken ? fetchCurrentUserRole(session.accessToken) : undefined,
   ]);
+
+  const initialValues = normalizeStep1Data(
+    customer
+      ? {
+          storeName: customer.meta.storeName || customer.billing.company,
+          firstName: customer.firstName || customer.billing.firstName,
+          lastName: customer.lastName || customer.billing.lastName,
+          cnpj: customer.meta.cnpj,
+          phone: customer.meta.phoneNumber || customer.billing.phone,
+          email: customer.email || customer.billing.email,
+          instagram: customer.meta.instagram,
+        }
+      : undefined,
+  );
 
   return (
     <RevendedorPage
-      application={application}
+      interest={interest}
       images={images}
-      initialDraft={buildDraftFromSources(customer, application)}
+      initialValues={initialValues}
       isAuthenticated={isAuthenticated}
+      role={role}
     />
   );
 }

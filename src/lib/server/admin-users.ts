@@ -102,7 +102,6 @@ export type AdminUserDetail = {
   storeName: string;
   street: string;
   supportTicketsCount?: number;
-  vendorApplicationStatus: string;
   vendorData: {
     bankAccount: {
       accountCheckDigit: string;

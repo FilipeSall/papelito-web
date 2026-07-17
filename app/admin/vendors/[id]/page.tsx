@@ -51,10 +51,8 @@ export default async function AdminVendorDetailRoute({
   }
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const isApproved = vendor.status === "approved";
   const requestedTab = parseTab(firstParam(resolvedSearchParams.tab));
-  const activeTab =
-    !isApproved && (requestedTab === "stock" || requestedTab === "orders") ? "data" : requestedTab;
+  const activeTab = requestedTab;
 
   const stockFilters = {
     filter: parseStockFilter(firstParam(resolvedSearchParams.stockFilter)),
@@ -69,11 +67,11 @@ export default async function AdminVendorDetailRoute({
   const origin = {
     page: Math.max(1, Number.parseInt(firstParam(resolvedSearchParams.originPage) ?? "", 10) || 1),
     search: firstParam(resolvedSearchParams.originSearch)?.trim() ?? "",
-    status: firstParam(resolvedSearchParams.originStatus)?.trim() || "pending",
+    status: "all",
   };
 
   const stockSnapshot =
-    isApproved && activeTab === "stock"
+    activeTab === "stock"
       ? await getAdminVendorStock(session.accessToken, vendorId, {
           filter: stockFilters.filter,
           page: stockFilters.page,
@@ -83,7 +81,7 @@ export default async function AdminVendorDetailRoute({
       : null;
 
   const ordersSnapshot =
-    isApproved && activeTab === "orders"
+    activeTab === "orders"
       ? await getAdminVendorOrders(session.accessToken, vendorId, {
           page: orderFilters.page,
           perPage: 20,

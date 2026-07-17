@@ -1,6 +1,7 @@
 import type { VendorRegistrationStep3Data } from "@/features/revendedor/types/revendedor-application";
 
 export type AdminVendorCreatePayload = {
+  sourceUserId?: number;
   email: string;
   temporaryPassword: string;
   storeName?: string;

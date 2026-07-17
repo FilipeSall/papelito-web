@@ -71,6 +71,7 @@ export type VendorCreateSourceUser = {
 
 function createInitialForm(): VendorCreateForm {
   return {
+    sourceUserId: undefined,
     email: "",
     temporaryPassword: "",
     storeName: "",
@@ -117,6 +118,7 @@ function createFormFromSourceUser(sourceUser?: VendorCreateSourceUser | null): V
 
   return {
     ...form,
+    sourceUserId: sourceUser.id,
     email: sourceUser.email.trim(),
     storeName,
     firstName: sourceUser.firstName.trim(),
@@ -245,7 +247,9 @@ function Section({ children, title }: { children: React.ReactNode; title: string
 
 function validateForm(form: VendorCreateForm): string | null {
   if (!isValidEmail(form.email)) return "Informe um e-mail valido.";
-  if (!form.temporaryPassword.trim()) return "Informe uma senha temporaria para o vendor.";
+  if (!form.sourceUserId && !form.temporaryPassword.trim()) {
+    return "Informe uma senha temporaria para o vendor.";
+  }
   if (!form.storeName?.trim()) return "Informe o nome da loja.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ valido.";
   if (!isValidCep(form.cep ?? "")) return "Informe um CEP valido para a loja.";
@@ -297,6 +301,7 @@ function buildAdminPagarmeDraft(form: VendorCreateForm): VendorRegistrationStep3
 function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
   return {
     ...form,
+    sourceUserId: form.sourceUserId,
     email: form.email.trim(),
     temporaryPassword: form.temporaryPassword,
     storeName: form.storeName?.trim(),
@@ -678,15 +683,22 @@ export function VendorCreateLauncher({
                     onChange={(value) => update("lastName", value)}
                     value={form.lastName ?? ""}
                   />
-                  <Field
-                    autoComplete="off"
-                    helpText="Informe uma senha temporaria para o primeiro acesso do vendor. Essa senha deve ser comunicada ao vendor e alterada por ele apos o login."
-                    label="Senha temporaria"
-                    onChange={(value) => update("temporaryPassword", value)}
-                    required
-                    type="text"
-                    value={form.temporaryPassword}
-                  />
+                  {prefillSource ? (
+                    <div className="border-2 border-dashed border-[#1a1a1a]/25 bg-white/60 px-3 py-2 text-xs leading-5 text-[#1a1a1a]/62">
+                      A senha atual do customer será preservada. Nenhuma credencial nova será
+                      gerada durante a promoção.
+                    </div>
+                  ) : (
+                    <Field
+                      autoComplete="new-password"
+                      helpText="Informe uma senha temporaria para o primeiro acesso do vendor. Essa senha deve ser comunicada ao vendor e alterada por ele apos o login."
+                      label="Senha temporaria"
+                      onChange={(value) => update("temporaryPassword", value)}
+                      required
+                      type="password"
+                      value={form.temporaryPassword}
+                    />
+                  )}
                 </div>
               </Section>
 

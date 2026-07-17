@@ -312,12 +312,8 @@ export function UserDetailPage({
                   <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Email</dt>
                   <dd>{user.emailVerificationStatus || "legacy/verified"}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-3 border-b border-[#1a1a1a]/12 pb-3">
-                  <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Vendor</dt>
-                  <dd>{user.vendorApplicationStatus || "none"}</dd>
-                </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Historico vendor</dt>
+                  <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">É vendor</dt>
                   <dd>{user.isVendor ? "sim" : "nao"}</dd>
                 </div>
               </dl>

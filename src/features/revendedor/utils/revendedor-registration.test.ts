@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ProfileCustomer } from "@/features/profile/types/profile-customer";
 import {
-  buildDraftFromSources,
   buildRevendedorSubmitPayload,
   createEmptyVendorRegistrationDraft,
   normalizeDraft,
@@ -44,62 +42,6 @@ describe("revendedor-registration", () => {
     expect(draft.step1.instagram).toBe("papelito");
     expect(draft.step2.cep).toBe("01310-930");
     expect(draft.step2.state).toBe("SP");
-  });
-
-  it("builds a draft from customer and application defaults", () => {
-    const customer: ProfileCustomer = {
-      firstName: "Maria",
-      lastName: "Silva",
-      email: "maria@papelito.com",
-      displayName: "Maria Silva",
-      role: "customer",
-      meta: {
-        storeName: "Loja Maria",
-        phoneNumber: "11987654321",
-        cnpj: "12345678000195",
-        cpf: "",
-        instagram: "@lojadamaria",
-        state: "SP",
-        city: "Sao Paulo",
-        cep: "01310930",
-      },
-      preferences: {
-        favoritePromotionEmailEnabled: false,
-      },
-      billing: {
-        firstName: "Maria",
-        lastName: "Silva",
-        company: "",
-        address1: "",
-        address2: "",
-        city: "",
-        state: "",
-        postcode: "",
-        country: "BR",
-        email: "maria@papelito.com",
-        phone: "11987654321",
-      },
-      shipping: {
-        firstName: "",
-        lastName: "",
-        company: "",
-        address1: "",
-        address2: "",
-        city: "",
-        state: "",
-        postcode: "",
-        country: "BR",
-        email: "",
-        phone: "",
-      },
-    };
-
-    const draft = buildDraftFromSources(customer, null);
-
-    expect(draft.step1.storeName).toBe("Loja Maria");
-    expect(draft.step2.cep).toBe("01310-930");
-    expect(draft.step3.companyName).toBe("Loja Maria");
-    expect(draft.step3.bankAccount.holderDocument).toBe("12.345.678/0001-95");
   });
 
   it("validates min and max cep ranges", () => {

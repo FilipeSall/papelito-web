@@ -1,16 +1,13 @@
-import type { ProfileCustomer } from "@/features/profile/types/profile-customer";
 import {
   getLegacyCoverageRange,
   normalizeCoverageRange,
   normalizeCoverageRanges,
 } from "@/features/vendor-coverage/coverage-presets";
 import type {
-  RevendedorApplication,
   RevendedorStep1Errors,
   RevendedorStep2Errors,
   RevendedorStep3Errors,
   SubmitRevendedorApplicationInput,
-  VendorApplicationResponse,
   VendorBankAccount,
   VendorManagingPartner,
   VendorRegistrationAddress,
@@ -19,7 +16,6 @@ import type {
   VendorRegistrationStep2Data,
   VendorRegistrationStep3Data,
 } from "../types/revendedor-application";
-import { isVendorPendingFieldKey } from "../constants/pending-registration";
 import {
   formatCep,
   formatCnpj,
@@ -30,8 +26,6 @@ import {
   normalizeCep,
   sanitizeInstagramHandle,
 } from "./revendedor-formatters";
-
-export const REVENDEDOR_REGISTRATION_STORAGE_KEY = "papelito:revendedor:cadastro-draft";
 
 export function createEmptyVendorRegistrationAddress(): VendorRegistrationAddress {
   return {
@@ -132,126 +126,6 @@ export function createEmptyVendorRegistrationDraft(
     step3: createEmptyStep3Data(),
     updatedAt: "",
   };
-}
-
-export function createEmptyRevendedorApplication(): RevendedorApplication {
-  return {
-    pendingFields: [],
-    status: "none",
-    submittedAt: "",
-    step1: createEmptyStep1Data(),
-    step2: createEmptyStep2Data(),
-    pagarmeDraft: null,
-  };
-}
-
-export function normalizeRevendedorApplication(
-  payload?: VendorApplicationResponse | null,
-): RevendedorApplication {
-  if (!payload) {
-    return createEmptyRevendedorApplication();
-  }
-
-  const pendingFields = Array.isArray(payload.pendingFields)
-    ? payload.pendingFields
-        .map(normalizePendingField)
-        .filter((field): field is NonNullable<ReturnType<typeof normalizePendingField>> => field !== null)
-    : [];
-
-  return {
-    pendingFields,
-    status:
-      payload.status === "pending" ||
-      payload.status === "incomplete" ||
-      payload.status === "approved" ||
-      payload.status === "rejected"
-        ? payload.status
-        : "none",
-    submittedAt: payload.submittedAt ?? "",
-    step1: normalizeStep1Data(payload.application?.step1),
-    step2: normalizeStep2Data(payload.application?.step2),
-    pagarmeDraft: payload.pagarmeDraft
-      ? normalizeStep3Data(payload.pagarmeDraft)
-      : null,
-  };
-}
-
-function normalizePendingField(value: unknown) {
-  return typeof value === "string" && isVendorPendingFieldKey(value) ? value : null;
-}
-
-export function buildDraftFromSources(
-  customer?: ProfileCustomer | null,
-  application?: RevendedorApplication | null,
-): VendorRegistrationDraft {
-  const draft = createEmptyVendorRegistrationDraft(application?.status === "none" ? 2 : 1);
-
-  if (customer) {
-    draft.step1 = {
-      ...draft.step1,
-      storeName: customer.meta.storeName || customer.billing.company,
-      firstName: customer.firstName || customer.billing.firstName,
-      lastName: customer.lastName || customer.billing.lastName,
-      cnpj: customer.meta.cnpj,
-      phone: customer.meta.phoneNumber || customer.billing.phone,
-      email: customer.email || customer.billing.email,
-      instagram: customer.meta.instagram,
-    };
-
-    draft.step2 = {
-      ...draft.step2,
-      cep: customer.meta.cep || customer.shipping.postcode || customer.billing.postcode,
-      city: customer.meta.city || customer.shipping.city || customer.billing.city,
-      state: customer.meta.state || customer.shipping.state || customer.billing.state,
-    };
-  }
-
-  if (application && application.status !== "none") {
-    draft.step1 = {
-      ...draft.step1,
-      ...application.step1,
-    };
-    draft.step2 = {
-      ...draft.step2,
-      ...application.step2,
-    };
-    draft.step3 = application.pagarmeDraft
-      ? normalizeStep3Data(application.pagarmeDraft)
-      : draft.step3;
-  }
-
-  draft.step3.companyName = draft.step3.companyName || draft.step1.storeName;
-  draft.step3.tradingName = draft.step3.tradingName || draft.step1.storeName;
-
-  if (!draft.step3.bankAccount.holderDocument) {
-    draft.step3.bankAccount.holderDocument = draft.step1.cnpj;
-  }
-
-  if (!draft.step3.bankAccount.holderName) {
-    draft.step3.bankAccount.holderName = draft.step1.storeName;
-  }
-
-  const partner = draft.step3.managingPartners[0] ?? createEmptyVendorManagingPartner();
-  draft.step3.managingPartners = [
-    {
-      ...partner,
-      name: partner.name || `${draft.step1.firstName} ${draft.step1.lastName}`.trim(),
-      email: partner.email || draft.step1.email,
-      address: {
-        ...createEmptyVendorRegistrationAddress(),
-        ...partner.address,
-        zipCode: partner.address.zipCode || draft.step2.cep,
-        street: partner.address.street || draft.step2.street,
-        streetNumber: partner.address.streetNumber || draft.step2.number,
-        complement: partner.address.complement || draft.step2.complement,
-        neighborhood: partner.address.neighborhood || draft.step2.neighborhood,
-        city: partner.address.city || draft.step2.city,
-        state: partner.address.state || draft.step2.state,
-      },
-    },
-  ];
-
-  return normalizeDraft(draft);
 }
 
 export function normalizeDraft(value?: Partial<VendorRegistrationDraft> | null): VendorRegistrationDraft {

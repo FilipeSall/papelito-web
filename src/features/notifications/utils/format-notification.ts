@@ -60,15 +60,16 @@ export function formatNotification(notification: NotificationItem): FormattedNot
   switch (notification.type) {
     case "new_vendor_application": {
       const storeName = stringValue(payload, "store_name") || "novo revendedor";
-      const city = stringValue(payload, "city");
-      const state = stringValue(payload, "state");
-      const place = [city, state].filter(Boolean).join(" - ");
+      const interestId = numberValue(payload, "interest_id");
 
       return {
         icon: "badge",
-        title: "Nova candidatura de vendor",
-        body: place ? `${storeName} enviou candidatura em ${place}.` : `${storeName} enviou candidatura.`,
-        href: "/admin/vendors?status=pending",
+        title: "Novo interesse em ser vendor",
+        body: `${storeName} enviou os dados da loja para contato.`,
+        href:
+          Number.isInteger(interestId) && interestId > 0
+            ? `/admin/vendor-interests/${interestId}`
+            : "/admin/vendor-interests",
       };
     }
     case "favorite_on_promo": {

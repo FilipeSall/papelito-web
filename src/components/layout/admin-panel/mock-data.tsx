@@ -18,9 +18,14 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "produtos no slot", value: "08" },
   ],
   vendors: [
-    { label: "triagens", value: "19" },
-    { label: "aprovacao media", value: "6h" },
+    { label: "vendors", value: "32" },
+    { label: "com cobertura", value: "31" },
     { label: "faixas cep", value: "31" },
+  ],
+  "vendor-interests": [
+    { label: "manifestações", value: "—" },
+    { label: "customers", value: "—" },
+    { label: "contato", value: "direto" },
   ],
   users: [
     { label: "admins", value: "04" },
@@ -89,12 +94,20 @@ export const SECTION_META: Record<
     signalTone: "default",
   },
   vendors: {
-    eyebrow: "Triagem e cobertura",
+    eyebrow: "Contas e cobertura",
     description:
-      "Leitura de fila, aprovacoes e blocos de cobertura por CEP para operar sellers sem misturar a linguagem do site publico.",
-    railLabel: "backlog",
-    railValue: "19 entries",
-    signalTone: "warning",
+      "Gestão dos vendors efetivamente cadastrados, suas faixas de cobertura, estoque e operação.",
+    railLabel: "papel",
+    railValue: "seller",
+    signalTone: "default",
+  },
+  "vendor-interests": {
+    eyebrow: "Relacionamento",
+    description:
+      "Manifestações enviadas por customers para análise e contato da equipe administrativa.",
+    railLabel: "fluxo",
+    railValue: "contato",
+    signalTone: "default",
   },
   users: {
     eyebrow: "Contas e roles",
@@ -177,7 +190,7 @@ export const REPORT_ROWS = [
   ["Usuarios cadastrados v3", "Clientes", "XLSX", badge("ready"), "2 colunas chave"],
   ["Receita por janela", "Financeiro", "CSV + chart", badge("live"), "Padrao board"],
   ["Pedidos por CEP", "Logistica", "XLSX", badge("queued"), "Aguardando build"],
-  ["Vendors aprovados", "Operacao", "XLSX", badge("draft"), "Em revisao"],
+  ["Vendors cadastrados", "Operacao", "XLSX", badge("ready"), "Disponivel"],
 ];
 
 export const ASSET_ROWS = [

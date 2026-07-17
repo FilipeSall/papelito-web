@@ -1,8 +1,6 @@
 import { useCartStore } from "@/features/cart";
 import { useCheckoutStore } from "@/features/checkout/store/use-checkout-store";
 import { useNotificationsStore } from "@/features/notifications/store/use-notifications-store";
-import { useRevendedorRegistrationDraftStore } from "@/features/revendedor/store/use-revendedor-registration-draft-store";
-import { createEmptyVendorRegistrationDraft } from "@/features/revendedor/utils/revendedor-registration";
 
 export function resetAllStores() {
   useCartStore.setState({ items: [], coupon: null });
@@ -36,10 +34,4 @@ export function resetAllStores() {
     unreadCount: 0,
     items: [],
   });
-
-  useRevendedorRegistrationDraftStore.setState({
-    draft: createEmptyVendorRegistrationDraft(),
-    hasHydrated: false,
-  });
-  useRevendedorRegistrationDraftStore.persist.clearStorage();
 }

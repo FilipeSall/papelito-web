@@ -1,88 +1,81 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import type {
-  RevendedorApplication,
   RevendedorStep1Errors,
-  VendorRegistrationDraft,
+  VendorRegistrationStep1Data,
 } from "@/features/revendedor";
-import { useRevendedorRegistrationDraftStore } from "@/features/revendedor";
+import type { VendorInterest } from "@/features/revendedor/types/vendor-interest";
 import {
-  hasStep1Data,
   patchStep1Field,
   validateStep1,
 } from "@/features/revendedor/utils/revendedor-registration";
 import { RevendedorCtaButton } from "../atoms/revendedor-cta-button";
 import { RevendedorHeroIllustration } from "../atoms/revendedor-hero-illustration";
-import { RevendedorApplicationPendingSummary } from "./revendedor-application-pending-summary";
+import { RevendedorInterestConfirmation } from "./revendedor-interest-confirmation";
 import { RevendedorStep1Fields } from "./revendedor-step1-fields";
 
 type RevendedorHeroSectionProps = {
-  application: RevendedorApplication;
-  initialDraft: VendorRegistrationDraft;
+  interest: VendorInterest | null;
+  initialValues: VendorRegistrationStep1Data;
   isAuthenticated: boolean;
+  role?: string;
 };
 
 export function RevendedorHeroSection({
-  application,
-  initialDraft,
+  interest,
+  initialValues,
   isAuthenticated,
+  role,
 }: RevendedorHeroSectionProps) {
-  const router = useRouter();
-  const { draft, hasHydrated, mergeDraft, replaceDraft, setCurrentStep, patchStep1 } =
-    useRevendedorRegistrationDraftStore((state) => state);
-  const bootstrappedRef = useRef(false);
-  const [step1Errors, setStep1Errors] = useState<RevendedorStep1Errors>({});
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState<RevendedorStep1Errors>({});
+  const [requestError, setRequestError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [wasSubmitted, setWasSubmitted] = useState(Boolean(interest));
 
-  useEffect(() => {
-    if (!hasHydrated || bootstrappedRef.current) {
-      return;
-    }
-
-    if (draft.updatedAt || hasStep1Data(draft.step1)) {
-      mergeDraft(initialDraft);
-    } else {
-      replaceDraft(initialDraft);
-    }
-    bootstrappedRef.current = true;
-  }, [
-    draft.step1,
-    draft.updatedAt,
-    hasHydrated,
-    initialDraft,
-    mergeDraft,
-    replaceDraft,
-  ]);
-
-  function handleStep1Change<Key extends keyof VendorRegistrationDraft["step1"]>(
+  function handleChange<Key extends keyof VendorRegistrationStep1Data>(
     key: Key,
-    value: VendorRegistrationDraft["step1"][Key],
+    value: VendorRegistrationStep1Data[Key],
   ) {
-    patchStep1({
-      [key]: patchStep1Field(draft.step1, key, String(value))[key],
-    });
-    setStep1Errors((current) => ({ ...current, [key]: "" }));
+    setValues((current) => patchStep1Field(current, key, String(value)));
+    setErrors((current) => ({ ...current, [key]: "" }));
+    setRequestError("");
   }
 
-  function continueToWizard() {
-    const nextErrors = validateStep1(draft.step1);
-    setStep1Errors(nextErrors);
+  async function submitInterest() {
+    const nextErrors = validateStep1(values);
+    setErrors(nextErrors);
+    setRequestError("");
 
-    if (Object.keys(nextErrors).length > 0) {
-      return;
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/revendedor/interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { code?: string; message?: string }
+        | null;
+
+      if (response.ok || response.status === 409) {
+        setWasSubmitted(true);
+        return;
+      }
+
+      setRequestError(payload?.message ?? "Não foi possível registrar seu interesse.");
+    } catch {
+      setRequestError("Não foi possível conectar ao serviço. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setCurrentStep(2);
-
-    if (isAuthenticated) {
-      router.push("/revendedor/cadastro");
-      return;
-    }
-
-    router.push("/entrar?callbackUrl=%2Frevendedor%2Fcadastro");
   }
+
+  const isCustomer = role === "customer";
 
   return (
     <section className="bg-brand-dark">
@@ -94,50 +87,53 @@ export function RevendedorHeroSection({
             <div className="rounded-2xl bg-white p-6 shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] lg:px-8 lg:py-8">
               <div>
                 <h2 className="text-xl font-black uppercase tracking-[-0.4492px] text-brand-dark">
-                  {application.status === "pending" ||
-                  application.status === "incomplete" ||
-                  application.status === "approved"
-                    ? "Triagem recebida"
-                    : "Envie sua triagem"}
+                  {wasSubmitted ? "Triagem recebida" : "Envie sua triagem"}
                 </h2>
-                <p className="mt-0.5 text-xs text-text-muted">
-                  {application.status === "pending" ||
-                  application.status === "incomplete" ||
-                  application.status === "approved"
-                    ? "Seu pedido de entrada no PDV Perfeito está em análise."
-                    : "Preencha os dados iniciais para começar sua candidatura no programa."}
-                </p>
+                {!wasSubmitted ? (
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    Conte um pouco sobre sua loja para que nossa equipe possa entrar em contato.
+                  </p>
+                ) : null}
               </div>
 
-              {application.status === "pending" ||
-              application.status === "incomplete" ||
-              application.status === "approved" ? (
-                <RevendedorApplicationPendingSummary application={application} />
-              ) : !hasHydrated ? (
-                <div className="mt-6 rounded-3.5 border border-[#E5E7EB] bg-[#FFFDF8] p-5 text-brand-dark">
+              {wasSubmitted ? (
+                <RevendedorInterestConfirmation />
+              ) : !isAuthenticated ? (
+                <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-[#FFFDF8] p-5">
                   <p className="text-sm leading-6 text-text-muted">
-                    Restaurando seu rascunho...
+                    Entre na sua conta de customer para enviar o interesse da sua loja. Usaremos a
+                    conta para garantir um único pedido por cliente.
+                  </p>
+                  <RevendedorCtaButton
+                    className="mt-5 w-full rounded-3.5"
+                    href="/entrar?callbackUrl=%2Frevendedor"
+                  >
+                    Entrar para enviar
+                  </RevendedorCtaButton>
+                </div>
+              ) : !isCustomer ? (
+                <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-[#FFFDF8] p-5">
+                  <p className="text-sm leading-6 text-text-muted">
+                    Esta manifestação está disponível somente para contas de customer.
                   </p>
                 </div>
               ) : (
                 <div className="mt-6 flex flex-col gap-4">
-                  <RevendedorStep1Fields
-                    errors={step1Errors}
-                    onChange={handleStep1Change}
-                    values={draft.step1}
-                  />
+                  <RevendedorStep1Fields errors={errors} onChange={handleChange} values={values} />
 
-                  <RevendedorCtaButton className="w-full rounded-3.5" onClick={continueToWizard}>
-                    Continuar cadastro
-                  </RevendedorCtaButton>
-
-                  {!isAuthenticated ? (
-                    <p className="text-sm leading-6 text-text-muted">
-                      Você pode começar agora. Antes do envio final, vamos pedir login para concluir
-                      a candidatura.
+                  {requestError ? (
+                    <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                      {requestError}
                     </p>
                   ) : null}
 
+                  <RevendedorCtaButton
+                    className="w-full rounded-3.5"
+                    disabled={isSubmitting}
+                    onClick={submitInterest}
+                  >
+                    {isSubmitting ? "Enviando..." : "Enviar interesse"}
+                  </RevendedorCtaButton>
                 </div>
               )}
             </div>
@@ -149,3 +145,4 @@ export function RevendedorHeroSection({
     </section>
   );
 }
+
