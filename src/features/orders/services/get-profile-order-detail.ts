@@ -11,6 +11,16 @@ import type { ProfileOrderDetail, ProfileOrderTimelineEvent } from "../types/pro
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
 
+type WpProfileShipment = {
+  id?: number;
+  tracking_code?: string;
+  status?: string;
+  last_event_at?: string;
+  last_event_description?: string;
+  last_event_location?: string;
+  delivered_at?: string;
+};
+
 type WpProfileOrder = {
   created_at?: string;
   delivery_time_days?: number;
@@ -37,15 +47,7 @@ type WpProfileOrder = {
     packages_total?: number;
     packages_delivered?: number;
     last_event_at?: string;
-    shipments?: Array<{
-      id?: number;
-      tracking_code?: string;
-      status?: string;
-      last_event_at?: string;
-      last_event_description?: string;
-      last_event_location?: string;
-      delivered_at?: string;
-    }>;
+    shipments?: WpProfileShipment[];
   };
   vendor_name?: string;
   vendor_status?: string;
@@ -226,19 +228,43 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
     lost: { title: "Ocorrencia no envio", description: "O envio exige acompanhamento do vendor e da Papelito." },
   };
   const logistics = logisticsMessages[order.logistics?.status ?? ""];
+  const leadShipment = pickLeadShipment(order.logistics?.shipments);
+  const deliveredAt = leadShipment?.delivered_at || undefined;
+  const lastEventLocation = leadShipment?.last_event_location || undefined;
 
   return stages.map((stage, index) => {
-    const isLogisticsStage = index === currentIndex && index >= 3 && logistics;
-    const showTimestamp = index === currentIndex && index >= 3;
+    const isCurrent = index === currentIndex;
+    const isLogisticsStage = isCurrent && index >= 3 && logistics;
+    const isDelivered = isCurrent && index === 4;
+    const timestampSource = isDelivered ? deliveredAt ?? order.logistics?.last_event_at : order.logistics?.last_event_at;
     return {
       ...stage,
       ...(isLogisticsStage ? logistics : {}),
-      timestampLabel: showTimestamp
-        ? formatDateTime(order.logistics?.last_event_at)
-        : undefined,
+      timestampLabel: isCurrent && index >= 3 ? formatDateTime(timestampSource) : undefined,
+      locationLabel: isLogisticsStage ? lastEventLocation : undefined,
       state: index < currentIndex ? "done" : index === currentIndex ? "current" : "pending",
     };
   });
+}
+
+function pickLeadShipment(shipments: WpProfileShipment[] | undefined): WpProfileShipment | undefined {
+  const list = shipments ?? [];
+  const rank: Record<string, number> = {
+    preposted: 10,
+    posted: 30,
+    in_transit: 40,
+    out_for_delivery: 50,
+    pickup_available: 55,
+    delivery_failed: 55,
+    returning: 60,
+    returned: 65,
+    lost: 65,
+    delivered: 100,
+  };
+  return list.reduce<WpProfileShipment | undefined>((lead, shipment) => {
+    if (!lead) return shipment;
+    return (rank[shipment.status ?? ""] ?? 0) > (rank[lead.status ?? ""] ?? 0) ? shipment : lead;
+  }, undefined);
 }
 
 function formatAddress(order: WpProfileOrder) {

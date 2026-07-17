@@ -18,6 +18,7 @@ export interface ProfileOrderTimelineEvent {
   title: string;
   description: string;
   timestampLabel?: string;
+  locationLabel?: string;
   state: "done" | "current" | "pending";
   expectedLabel?: string;
 }

@@ -259,6 +259,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                               }`}
                             >
                               {event.timestampLabel}
+                              {event.locationLabel ? ` · ${event.locationLabel}` : ""}
                             </p>
                           ) : null}
                           {event.expectedLabel && (
