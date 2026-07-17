@@ -1,7 +1,6 @@
 import {
   BadgePercent,
   FileText,
-  FileUser,
   Image,
   MessageSquare,
   Package,
@@ -18,7 +17,6 @@ export type AdminSectionKey =
   | "products"
   | "flash-sale"
   | "vendors"
-  | "vendor-interests"
   | "users"
   | "suporte"
   | "coupons"
@@ -59,14 +57,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Oferta Relampago",
     shortLabel: "Oferta",
     description: "Campanha e janela ativa",
-  },
-  {
-    key: "vendor-interests",
-    href: "/admin/vendor-interests",
-    icon: FileUser,
-    label: "Interesse em ser vendor",
-    shortLabel: "Interesses",
-    description: "Triagens e contato",
   },
   {
     key: "vendors",

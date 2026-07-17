@@ -19,4 +19,3 @@ export default async function AdminVendorInterestDetailRoute({
 
   return <VendorInterestDetailPage interest={interest} />;
 }
-

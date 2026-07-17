@@ -10,9 +10,11 @@ import {
 } from "@/lib/server/admin-vendors-filters";
 import { firstParam } from "@/lib/search-params";
 
+import { VendorInterestsContent } from "./vendor-interests-content";
 import { VendorCreateLauncher, VendorsList, VendorsMetrics } from "./vendors";
+import { VendorsTabs, type VendorsTab } from "./vendors/vendors-tabs";
 
-export async function VendorsContent({
+async function RegisteredVendorsContent({
   searchParams,
 }: {
   searchParams?: AdminVendorsPageSearchParams;
@@ -68,6 +70,26 @@ export async function VendorsContent({
           {snapshot.issues.join(" • ")}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+export function VendorsContent({
+  searchParams,
+}: {
+  searchParams?: AdminVendorsPageSearchParams;
+}) {
+  const activeTab: VendorsTab =
+    firstParam(searchParams?.tab) === "interesses" ? "interesses" : "vendors";
+
+  return (
+    <div className="space-y-5">
+      <VendorsTabs activeTab={activeTab} />
+      {activeTab === "interesses" ? (
+        <VendorInterestsContent searchParams={searchParams} />
+      ) : (
+        <RegisteredVendorsContent searchParams={searchParams} />
+      )}
     </div>
   );
 }

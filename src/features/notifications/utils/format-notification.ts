@@ -68,8 +68,8 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         body: `${storeName} enviou os dados da loja para contato.`,
         href:
           Number.isInteger(interestId) && interestId > 0
-            ? `/admin/vendor-interests/${interestId}`
-            : "/admin/vendor-interests",
+            ? `/admin/vendors/interesses/${interestId}`
+            : "/admin/vendors?tab=interesses",
       };
     }
     case "favorite_on_promo": {

@@ -22,11 +22,6 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "com cobertura", value: "31" },
     { label: "faixas cep", value: "31" },
   ],
-  "vendor-interests": [
-    { label: "manifestações", value: "—" },
-    { label: "customers", value: "—" },
-    { label: "contato", value: "direto" },
-  ],
   users: [
     { label: "admins", value: "04" },
     { label: "sellers", value: "32" },
@@ -99,14 +94,6 @@ export const SECTION_META: Record<
       "Gestão dos vendors efetivamente cadastrados, suas faixas de cobertura, estoque e operação.",
     railLabel: "papel",
     railValue: "seller",
-    signalTone: "default",
-  },
-  "vendor-interests": {
-    eyebrow: "Relacionamento",
-    description:
-      "Manifestações enviadas por customers para análise e contato da equipe administrativa.",
-    railLabel: "fluxo",
-    railValue: "contato",
     signalTone: "default",
   },
   users: {

@@ -31,7 +31,7 @@ export async function VendorInterestsContent({
   const rows = snapshot.items.map((item) => [
     <Link
       className="font-semibold text-[#231f20] hover:underline"
-      href={`/admin/vendor-interests/${item.id}`}
+      href={`/admin/vendors/interesses/${item.id}`}
       key={`store-${item.id}`}
     >
       {item.storeName || `Manifestação #${item.id}`}
@@ -47,7 +47,7 @@ export async function VendorInterestsContent({
     </span>,
     <Link
       className="inline-flex rounded-full border border-[#231f20]/24 bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition hover:border-[#231f20]"
-      href={`/admin/vendor-interests/${item.id}`}
+      href={`/admin/vendors/interesses/${item.id}`}
       key={`open-${item.id}`}
     >
       Ver detalhes
@@ -56,10 +56,10 @@ export async function VendorInterestsContent({
 
   const pageHref = (targetPage: number) => {
     const query = new URLSearchParams();
+    query.set("tab", "interesses");
     if (search) query.set("search", search);
     if (targetPage > 1) query.set("page", String(targetPage));
-    const suffix = query.toString();
-    return suffix ? `/admin/vendor-interests?${suffix}` : "/admin/vendor-interests";
+    return `/admin/vendors?${query.toString()}`;
   };
 
   return (
@@ -79,6 +79,7 @@ export async function VendorInterestsContent({
 
         <form className="flex w-full max-w-md gap-2" method="get">
           <label className="sr-only" htmlFor="vendor-interest-search">Buscar manifestações</label>
+          <input name="tab" type="hidden" value="interesses" />
           <input
             className="h-10 min-w-0 flex-1 rounded-xl border border-[#231f20]/16 bg-white px-3 text-sm outline-none focus:border-[#231f20]/50"
             defaultValue={search}
@@ -126,4 +127,3 @@ export async function VendorInterestsContent({
     </div>
   );
 }
-

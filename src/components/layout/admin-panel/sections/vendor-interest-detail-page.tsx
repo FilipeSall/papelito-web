@@ -54,7 +54,7 @@ export function VendorInterestDetailPage({ interest }: { interest: AdminVendorIn
 
   return (
     <div className="space-y-5">
-      <Link className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#231f20]/64 hover:text-[#231f20]" href="/admin/vendor-interests">
+      <Link className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#231f20]/64 hover:text-[#231f20]" href="/admin/vendors?tab=interesses">
         <ArrowLeft className="size-4" /> Voltar às manifestações
       </Link>
 
