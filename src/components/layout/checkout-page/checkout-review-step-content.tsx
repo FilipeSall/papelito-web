@@ -37,6 +37,8 @@ export function CheckoutReviewStepContent() {
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
+  const checkoutAttemptId = useCheckoutStore((state) => state.checkoutAttemptId);
+  const rotateCheckoutAttempt = useCheckoutStore((state) => state.rotateCheckoutAttempt);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const stockValidation = useCartStockValidation();
   const [checkoutError, setCheckoutError] = useState("");
@@ -134,6 +136,7 @@ export function CheckoutReviewStepContent() {
     startTransition(async () => {
       try {
         const result = await placeOrder({
+          checkoutAttemptId,
           items: placeOrderItems,
           address: addressForm,
           shipping: {
@@ -173,6 +176,7 @@ export function CheckoutReviewStepContent() {
           setCheckoutError(outcome.message);
           setIsSubmitting(false);
           submissionRef.current = false;
+          rotateCheckoutAttempt();
           return;
         }
 
@@ -184,6 +188,7 @@ export function CheckoutReviewStepContent() {
           return;
         }
 
+        clearCart();
         resetCheckout();
         submissionRef.current = false;
         router.push(`/checkout/pagamento/${outcome.orderId}`);

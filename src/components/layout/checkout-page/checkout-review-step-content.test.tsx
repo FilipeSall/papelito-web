@@ -82,7 +82,7 @@ describe("CheckoutReviewStepContent", () => {
     seedCheckoutState();
   });
 
-  it("keeps a loading state instead of showing local validation errors while redirecting to PIX", async () => {
+  it("clears the cart and keeps a loading state while redirecting to PIX", async () => {
     server.use(
       http.post("/api/checkout/place-order", () =>
         HttpResponse.json({
@@ -105,6 +105,9 @@ describe("CheckoutReviewStepContent", () => {
 
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/checkout/pagamento/11883");
+    });
+    await waitFor(() => {
+      expect(useCartStore.getState().items).toEqual([]);
     });
     await waitFor(() => {
       expect(useCheckoutStore.getState().addressForm.street).toBe("");
@@ -160,5 +163,59 @@ describe("CheckoutReviewStepContent", () => {
     ).toBeInTheDocument();
     expect(placeOrderCalls).toBe(0);
     expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("preserves the cart when order placement fails before a consistent charge", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json(
+          {
+            code: "papelito_checkout_payment_unavailable",
+            message: "Gateway indisponivel.",
+          },
+          { status: 502 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />);
+
+    await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
+
+    expect(await screen.findByText("Gateway indisponivel.")).toBeInTheDocument();
+    expect(useCartStore.getState().items).toHaveLength(1);
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("submits only once when the finish button is clicked repeatedly", async () => {
+    let placeOrderCalls = 0;
+    server.use(
+      http.post("/api/checkout/place-order", async () => {
+        placeOrderCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+
+        return HttpResponse.json({
+          orderId: 11883,
+          orderNumber: "11883",
+          status: "pending",
+          payment: {
+            method: "pix",
+            state: "waiting_payment",
+          },
+        });
+      }),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />);
+
+    const button = screen.getByRole("button", { name: /finalizar pedido/i });
+    await user.dblClick(button);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/checkout/pagamento/11883");
+    });
+    expect(placeOrderCalls).toBe(1);
   });
 });

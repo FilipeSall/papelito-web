@@ -33,6 +33,7 @@ interface CheckoutState {
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
   shippingQuote: CheckoutShippingQuoteState;
+  checkoutAttemptId: string;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
@@ -41,6 +42,7 @@ interface CheckoutState {
   setShippingQuote: (quote: ShippingQuoteResult | null) => void;
   setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
   clearShippingQuote: () => void;
+  rotateCheckoutAttempt: () => void;
   resetCheckout: () => void;
 }
 
@@ -49,6 +51,14 @@ const INITIAL_SHIPPING_QUOTE: CheckoutShippingQuoteState = {
   selectedOption: null,
 };
 
+function createCheckoutAttemptId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
     (set) => ({
@@ -56,6 +66,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       paymentMethod: "credit_card",
       paymentForm: INITIAL_PAYMENT_FORM,
       shippingQuote: INITIAL_SHIPPING_QUOTE,
+      checkoutAttemptId: createCheckoutAttemptId(),
       setAddressField: (field, value) =>
         set((state) => ({
           addressForm: {
@@ -102,12 +113,15 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
         })),
       clearShippingQuote: () => set({ shippingQuote: INITIAL_SHIPPING_QUOTE }),
+      rotateCheckoutAttempt: () =>
+        set({ checkoutAttemptId: createCheckoutAttemptId() }),
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
           paymentMethod: "credit_card",
           paymentForm: INITIAL_PAYMENT_FORM,
           shippingQuote: INITIAL_SHIPPING_QUOTE,
+          checkoutAttemptId: createCheckoutAttemptId(),
         }),
     }),
     {
@@ -126,6 +140,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           selectedShippingQuote?: ShippingQuoteOption | null;
           shippingQuote?: CheckoutShippingQuoteState;
           paymentForm?: Partial<PaymentForm>;
+          checkoutAttemptId?: string;
         };
 
         const safePaymentForm: PaymentForm = {
@@ -151,6 +166,11 @@ export const useCheckoutStore = create<CheckoutState>()(
           return {
             ...state,
             paymentForm: safePaymentForm,
+            checkoutAttemptId:
+              typeof state.checkoutAttemptId === "string" &&
+              state.checkoutAttemptId.trim()
+                ? state.checkoutAttemptId
+                : createCheckoutAttemptId(),
           };
         }
 
@@ -161,6 +181,11 @@ export const useCheckoutStore = create<CheckoutState>()(
             quote: null,
             selectedOption: state.selectedShippingQuote ?? null,
           },
+          checkoutAttemptId:
+            typeof state.checkoutAttemptId === "string" &&
+            state.checkoutAttemptId.trim()
+              ? state.checkoutAttemptId
+              : createCheckoutAttemptId(),
         };
       },
       partialize: (state) => ({
@@ -168,6 +193,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         paymentMethod: state.paymentMethod,
         paymentForm: state.paymentForm,
         shippingQuote: state.shippingQuote,
+        checkoutAttemptId: state.checkoutAttemptId,
       }),
     },
   ),

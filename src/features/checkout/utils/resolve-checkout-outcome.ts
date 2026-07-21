@@ -9,9 +9,9 @@ const PAID_STATES = new Set(["paid", "captured"]);
 
 /**
  * Decide o que fazer apos o place-order. Invariante de negocio:
- * o carrinho so deve ser limpo (kind "confirmed") quando o pagamento
- * estiver realmente aprovado. Cartao recusado vira erro; PIX/boleto sem
- * confirmacao ficam "pending" (carrinho preservado, pagina de pagamento).
+ * quando o pedido e a cobranca foram criados, o checkout encerra. Cartao
+ * recusado vira erro; PIX/boleto sem confirmacao seguem para a pagina de
+ * pagamento pendente com o carrinho ja limpo.
  */
 export function resolveCheckoutOutcome(result: {
   orderId: string | number;

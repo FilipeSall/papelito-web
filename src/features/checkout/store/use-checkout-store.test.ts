@@ -57,6 +57,7 @@ describe("useCheckoutStore", () => {
   });
 
   it("resets checkout state to defaults", () => {
+    const initialAttemptId = useCheckoutStore.getState().checkoutAttemptId;
     useCheckoutStore.getState().setAddressField("city", "Campinas");
     useCheckoutStore.getState().setPaymentMethod("pix");
     useCheckoutStore.getState().setPaymentField("holderName", "Maria");
@@ -81,6 +82,19 @@ describe("useCheckoutStore", () => {
         cardLast4: "",
       },
     });
+    expect(useCheckoutStore.getState().checkoutAttemptId).toBeTruthy();
+    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(initialAttemptId);
+  });
+
+  it("rotates the checkout attempt id without clearing the cart form", () => {
+    useCheckoutStore.getState().setAddressField("city", "Campinas");
+    const initialAttemptId = useCheckoutStore.getState().checkoutAttemptId;
+
+    useCheckoutStore.getState().rotateCheckoutAttempt();
+
+    expect(useCheckoutStore.getState().checkoutAttemptId).toBeTruthy();
+    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(initialAttemptId);
+    expect(useCheckoutStore.getState().addressForm.city).toBe("Campinas");
   });
 
   it("persists only non-sensitive payment fields", async () => {
@@ -96,6 +110,7 @@ describe("useCheckoutStore", () => {
     const raw = window.localStorage.getItem("papelito-checkout-store") || "";
 
     expect(raw).toContain("tok_live");
+    expect(raw).toContain("checkoutAttemptId");
     expect(raw).not.toContain("4111111111111111");
     expect(raw).not.toContain("\"cvv\"");
   });

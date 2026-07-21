@@ -17,13 +17,13 @@ describe("resolveCheckoutOutcome", () => {
     expect(outcome.kind).toBe("error");
   });
 
-  it("stays pending (does NOT clear cart) for an unconfirmed PIX charge", () => {
+  it("continues to the pending payment page for an unconfirmed PIX charge", () => {
     expect(
       resolveCheckoutOutcome({ orderId: 11879, payment: { method: "pix", state: "waiting_payment" } }),
     ).toEqual({ kind: "pending", orderId: 11879 });
   });
 
-  it("stays pending (does NOT clear cart) for an unconfirmed boleto", () => {
+  it("continues to the pending payment page for an unconfirmed boleto", () => {
     expect(
       resolveCheckoutOutcome({ orderId: 7, payment: { method: "boleto", state: "pending" } }),
     ).toEqual({ kind: "pending", orderId: 7 });

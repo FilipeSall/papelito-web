@@ -37,6 +37,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     "O carrinho excedeu o limite de itens permitido.",
   papelito_checkout_duplicate_item:
     "O carrinho possui produtos duplicados. Atualize a página e tente novamente.",
+  papelito_checkout_attempt_in_progress:
+    "Seu pedido ja esta sendo processado. Aguarde alguns instantes.",
   papelito_checkout_gateway_amount_rejected:
     "O Pagar.me rejeitou o valor da cobranca. Revise o total e as parcelas.",
   papelito_checkout_total_mismatch:
@@ -79,6 +81,7 @@ export async function placeOrder(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        checkout_attempt_id: input.checkoutAttemptId,
         items: input.items.map((item) => ({
           product_id: item.productId,
           qty: item.qty,

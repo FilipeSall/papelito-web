@@ -10,8 +10,68 @@ type TokenizeCreditCardSuccess = {
   last4: string;
 };
 
+type PagarmeTokenErrorPayload = {
+  message?: unknown;
+  errors?: unknown;
+};
+
 function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
+}
+
+function collectTokenizationErrorDetails(errors: unknown): string[] {
+  if (!errors || typeof errors !== "object") {
+    return [];
+  }
+
+  const details: string[] = [];
+
+  for (const [field, value] of Object.entries(errors)) {
+    let message = "";
+
+    if (Array.isArray(value)) {
+      message = value.find((item): item is string => typeof item === "string") ?? "";
+    } else if (typeof value === "string") {
+      message = value;
+    } else if (value && typeof value === "object") {
+      const record = value as { message?: unknown; description?: unknown };
+      message =
+        typeof record.message === "string"
+          ? record.message
+          : typeof record.description === "string"
+            ? record.description
+            : "";
+    }
+
+    if (message) {
+      details.push(`${field}: ${message}`);
+    }
+
+    if (details.length >= 2) {
+      break;
+    }
+  }
+
+  return details;
+}
+
+function tokenizationErrorMessage(payload: PagarmeTokenErrorPayload | null) {
+  const message = typeof payload?.message === "string" ? payload.message.trim() : "";
+  const details = collectTokenizationErrorDetails(payload?.errors);
+
+  if (message && details.length > 0) {
+    return `${message} (${details.join("; ")})`;
+  }
+
+  if (message) {
+    return message;
+  }
+
+  if (details.length > 0) {
+    return details.join("; ");
+  }
+
+  return "Nao foi possivel tokenizar o cartao.";
 }
 
 export async function tokenizeCreditCard(
@@ -33,7 +93,6 @@ export async function tokenizeCreditCard(
   const response = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${encodeURIComponent(publicKey)}`, {
     method: "POST",
     headers: {
-      Accept: "application/json",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -49,11 +108,11 @@ export async function tokenizeCreditCard(
   });
 
   const payload = (await response.json().catch(() => null)) as
-    | { id?: string; card?: { last_four_digits?: string }; message?: string }
+    | ({ id?: string; card?: { last_four_digits?: string } } & PagarmeTokenErrorPayload)
     | null;
 
   if (!response.ok || !payload?.id) {
-    throw new Error(payload?.message || "Nao foi possivel tokenizar o cartao.");
+    throw new Error(tokenizationErrorMessage(payload));
   }
 
   return {
