@@ -8,6 +8,7 @@ interface ProductCardInfoProps {
   stockLabel: string;
   originalPrice: number;
   price: number;
+  promotionContext?: string;
   disabledReason?: string;
 }
 
@@ -19,6 +20,7 @@ export function ProductCardInfo({
   stockLabel,
   originalPrice,
   price,
+  promotionContext,
   disabledReason,
 }: ProductCardInfoProps) {
   return (
@@ -40,6 +42,7 @@ export function ProductCardInfo({
             image,
             price,
             originalPrice,
+            promotionContext,
           }}
         />
       </div>

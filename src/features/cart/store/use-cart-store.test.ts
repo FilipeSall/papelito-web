@@ -18,13 +18,27 @@ describe("useCartStore", () => {
     ]);
   });
 
-  it("removes an item when quantity becomes zero or less", () => {
+  it("removes an item when its quantity is decreased from one", () => {
     const product = buildResolvedCartProduct({ id: "1" });
 
     useCartStore.getState().addItem(product, 1);
-    useCartStore.getState().setItemQuantity("1", 0);
+    useCartStore.getState().decreaseItem("1");
 
     expect(useCartStore.getState().items).toEqual([]);
+  });
+
+  it("only applies a validated quantity when the current quantity did not change", () => {
+    const product = buildResolvedCartProduct({ id: "1" });
+
+    useCartStore.getState().addItem(product, 2);
+
+    expect(
+      useCartStore.getState().setItemQuantityIfCurrent("1", 2, 3),
+    ).toBe(true);
+    expect(
+      useCartStore.getState().setItemQuantityIfCurrent("1", 2, 4),
+    ).toBe(false);
+    expect(useCartStore.getState().items[0].quantity).toBe(3);
   });
 
   it("normalizes persisted state on rehydrate", async () => {

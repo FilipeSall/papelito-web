@@ -193,11 +193,11 @@ describe("CheckoutAddressStepContent", () => {
 
     expect(advanceButton).toBeEnabled();
     expect(screen.getAllByText("R$ 15,88").length).toBeGreaterThan(0);
-    expect(screen.getByText("R$ 65,38")).toBeInTheDocument();
+    expect(await screen.findByText("R$ 65,38")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /SEDEX.*R\$ 22,30/i }));
 
     expect(screen.getAllByText("R$ 22,30").length).toBeGreaterThan(0);
-    expect(screen.getByText("R$ 71,80")).toBeInTheDocument();
+    expect(await screen.findByText("R$ 71,80")).toBeInTheDocument();
   });
 });

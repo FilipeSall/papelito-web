@@ -48,7 +48,7 @@ type FlashSaleManagerProps = {
 };
 
 const FLASH_SALE_API = "/api/admin/flash-sale";
-const PRODUCTS_API = "/api/admin/products";
+const PRODUCTS_API = "/api/admin/flash-sale/products";
 const FEEDBACK_TTL_MS = 6000;
 
 function logFlashSaleDebug(event: string, payload?: Record<string, unknown>) {
@@ -67,14 +67,13 @@ type ToastState = {
 };
 
 type ProductsApiResponse = {
-  categories?: AdminProductTaxonomyTerm[];
-  currentPage?: number;
+  page?: number;
   issues?: string[];
+  items?: AdminProduct[];
   message?: string;
   perPage?: number;
-  products?: AdminProduct[];
+  total?: number;
   totalPages?: number;
-  totalProducts?: number;
 };
 
 export function FlashSaleManager({
@@ -92,7 +91,7 @@ export function FlashSaleManager({
     snapshot.selectedProducts,
   );
   const [candidates, setCandidates] = useState<AdminProduct[]>(initialCandidates);
-  const [categories, setCategories] = useState<AdminProductTaxonomyTerm[]>(initialCategories);
+  const [categories] = useState<AdminProductTaxonomyTerm[]>(initialCategories);
   const [pickerFilters, setPickerFilters] = useState<ProductPickerFilters>({
     category: "",
     search: "",
@@ -160,7 +159,6 @@ export function FlashSaleManager({
         const params = new URLSearchParams({
           page: String(nextPage),
           perPage: String(perPage),
-          status: "publish",
         });
 
         if (filters.search.trim()) {
@@ -181,22 +179,19 @@ export function FlashSaleManager({
         }
 
         logFlashSaleDebug("fetch:success", {
-          currentPage: json.currentPage ?? nextPage,
+          currentPage: json.page ?? nextPage,
           filters,
           nextPage,
-          productIds: Array.isArray(json.products) ? json.products.slice(0, 10).map((product) => product.id) : [],
-          productsCount: Array.isArray(json.products) ? json.products.length : 0,
+          productIds: Array.isArray(json.items) ? json.items.slice(0, 10).map((product) => product.id) : [],
+          productsCount: Array.isArray(json.items) ? json.items.length : 0,
           totalPages: json.totalPages ?? 1,
-          totalProducts: json.totalProducts ?? 0,
+          totalProducts: json.total ?? 0,
         });
 
-        setCandidates(Array.isArray(json.products) ? json.products : []);
-        if (Array.isArray(json.categories)) {
-          setCategories(json.categories);
-        }
-        setCurrentPage(typeof json.currentPage === "number" ? json.currentPage : nextPage);
+        setCandidates(Array.isArray(json.items) ? json.items : []);
+        setCurrentPage(typeof json.page === "number" ? json.page : nextPage);
         setTotalPages(typeof json.totalPages === "number" && json.totalPages > 0 ? json.totalPages : 1);
-        setTotalProducts(typeof json.totalProducts === "number" ? json.totalProducts : 0);
+        setTotalProducts(typeof json.total === "number" ? json.total : 0);
         if (Array.isArray(json.issues)) {
           setServerIssues(json.issues);
         }

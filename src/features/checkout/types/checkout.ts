@@ -65,6 +65,7 @@ export type PlaceOrderInput = {
     qty: number;
     vendorId: number;
     vendorName: string;
+    promotionContext?: string;
   }>;
   address: CheckoutAddressForm;
   shipping: {
@@ -101,6 +102,13 @@ export type PlaceOrderResult = {
   orderNumber: string;
   status: string;
   payment: PlaceOrderPaymentResult;
+  totals?: {
+    subtotalCents: number;
+    discountCents: number;
+    itemsCents: number;
+    shippingCents: number;
+    totalCents: number;
+  };
 };
 
 export type PlaceOrderError = {

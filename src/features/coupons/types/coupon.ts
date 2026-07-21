@@ -53,6 +53,7 @@ export type CouponApplyCartItem = {
   vendorId: number;
   qty: number;
   price: number;
+  promotionContext?: string;
 };
 
 export type CouponApplyRequest = {
@@ -66,6 +67,8 @@ export type CouponApplySuccess = {
   discountType: CouponDiscountType;
   discountValue: number;
   appliedProductIds: number[];
+  applied?: boolean;
+  message?: string;
 };
 
 export type CouponApplyFailure = {

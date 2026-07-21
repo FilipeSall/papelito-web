@@ -54,6 +54,7 @@ export function ProductCard({
     price,
     image,
     featured,
+    promotionContext,
   } = product;
 
   return (
@@ -91,6 +92,7 @@ export function ProductCard({
           stockLabel={stockLabel}
           originalPrice={originalPrice}
           price={price}
+          promotionContext={promotionContext}
           disabledReason={disabledReason}
         />
       </div>

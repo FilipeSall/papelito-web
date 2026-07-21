@@ -10,6 +10,7 @@ type WpApplyResponse = {
   discount_type?: CouponDiscountType | string;
   discount_value?: number;
   applied_product_ids?: number[];
+  applied?: boolean;
   message?: string;
 };
 
@@ -46,6 +47,7 @@ export async function applyCouponClient(
       vendor_id: item.vendorId,
       qty: item.qty,
       price: item.price,
+      promotion_context: item.promotionContext,
     })),
   };
 
@@ -95,7 +97,7 @@ export async function applyCouponClient(
 
   const discountType = parsed.discount_type === "fixed_cart" ? "fixed_cart" : "percent";
 
-  return {
+  const result: CouponApplyResult = {
     ok: true,
     code: typeof parsed.code === "string" ? parsed.code : code.toUpperCase(),
     discountType,
@@ -104,4 +106,11 @@ export async function applyCouponClient(
       ? parsed.applied_product_ids.filter((id): id is number => Number.isInteger(id) && id > 0)
       : [],
   };
+
+  if (typeof parsed.applied === "boolean") result.applied = parsed.applied;
+  if (typeof parsed.message === "string" && parsed.message.length > 0) {
+    result.message = parsed.message;
+  }
+
+  return result;
 }

@@ -15,6 +15,11 @@ import { PaymentMethodOption } from "./payment-method-option";
 export function CheckoutPaymentStepContent() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const pricing = useCartStore((state) => state.pricing);
+  const pricingError = useCartStore((state) => state.pricingError);
+  const pricingRequiresConfirmation = useCartStore(
+    (state) => state.pricingRequiresConfirmation,
+  );
   const [paymentError, setPaymentError] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -30,6 +35,19 @@ export function CheckoutPaymentStepContent() {
     handleCvvChange,
     prepareCardToken,
   } = useCheckoutPaymentForm();
+
+  const restrictions = pricing?.paymentRestrictions;
+  const totalCents = pricing?.totals.totalCents ?? 0;
+  const methodMinimum =
+    method === "credit_card"
+      ? restrictions?.creditCardMinimumCents ?? 100
+      : method === "pix"
+        ? restrictions?.pixMinimumCents ?? 1
+        : restrictions?.boletoMinimumCents ?? 1;
+  const amountAllowed = !pricing || totalCents >= methodMinimum;
+  const installmentCount = Number.parseInt(form.installments, 10) || 1;
+  const maxInstallments = restrictions?.maxInstallments ?? 6;
+  const installmentAllowed = method !== "credit_card" || installmentCount <= maxInstallments;
 
   if (items.length === 0) return <CheckoutEmptyCart />;
 
@@ -79,6 +97,7 @@ export function CheckoutPaymentStepContent() {
                 expiryDate={draft.expiryDate}
                 cvv={draft.cvv}
                 installments={form.installments}
+                maxInstallments={maxInstallments}
                 onHolderNameChange={(value) => updateField("holderName", value)}
                 onCardNumberChange={handleCardNumberChange}
                 onExpiryDateChange={handleExpiryDateChange}
@@ -93,6 +112,18 @@ export function CheckoutPaymentStepContent() {
               </p>
             ) : null}
 
+            {!amountAllowed ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                O total mínimo para esta forma de pagamento é {methodMinimum / 100 >= 1 ? `R$ ${(methodMinimum / 100).toFixed(2).replace(".", ",")}` : "R$ 0,01"}.
+              </p>
+            ) : null}
+
+            {!installmentAllowed ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                Escolha no máximo {maxInstallments}x para respeitar o valor mínimo por parcela.
+              </p>
+            ) : null}
+
             {method === "credit_card" && form.cardTokenId && !draft.cardNumber ? (
               <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
                 Cartao tokenizado com final {form.cardLast4 || "----"}.
@@ -102,7 +133,14 @@ export function CheckoutPaymentStepContent() {
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canContinue || pending}
+              disabled={
+                !canContinue ||
+                pending ||
+                !amountAllowed ||
+                !installmentAllowed ||
+                Boolean(pricingError) ||
+                pricingRequiresConfirmation
+              }
               onClick={goToReview}
             >
               {pending ? "Preparando pagamento..." : "Proximo: Revisao"}

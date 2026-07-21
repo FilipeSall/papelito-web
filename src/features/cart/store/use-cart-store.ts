@@ -7,6 +7,7 @@ import type { CouponApplyResult } from "@/features/coupons/types/coupon";
 import type {
   CartCoupon,
   CartItem,
+  CartPricingQuote,
   CartVendor,
   ResolvedCartProductInput,
 } from "../types/cart";
@@ -21,16 +22,25 @@ export interface CartCouponRevalidationResult {
 interface CartState {
   items: CartItem[];
   coupon: CartCoupon | null;
+  pricing: CartPricingQuote | null;
+  pricingError: string | null;
+  pricingRequiresConfirmation: boolean;
   addItem: (product: ResolvedCartProductInput, quantity?: number) => void;
   applyVendorToCart: (vendor: CartVendor) => void;
   decreaseItem: (productId: string) => void;
-  increaseItem: (productId: string) => void;
-  setItemQuantity: (productId: string, quantity: number) => void;
+  setItemQuantityIfCurrent: (
+    productId: string,
+    expectedQuantity: number,
+    quantity: number,
+  ) => boolean;
   removeItem: (productId: string) => void;
   clearCart: () => void;
   applyCoupon: (code: string) => Promise<CouponApplyResult>;
   revalidateCoupon: () => Promise<CartCouponRevalidationResult>;
   removeCoupon: () => void;
+  applyPricingQuote: (quote: CartPricingQuote) => void;
+  setPricingError: (message: string | null) => void;
+  confirmPricingAdjustments: () => void;
 }
 
 function upsertItem(
@@ -114,6 +124,10 @@ function normalizePersistedItem(value: unknown): CartItem | null {
       typeof value.leadTimeDays === "number" && Number.isFinite(value.leadTimeDays)
         ? value.leadTimeDays
         : undefined,
+    promotionContext:
+      typeof value.promotionContext === "string" && value.promotionContext.length > 0
+        ? value.promotionContext
+        : undefined,
   };
 }
 
@@ -135,7 +149,17 @@ function normalizePersistedCoupon(value: unknown): CartCoupon | null {
     return null;
   }
 
-  return { code, discountValue, discountType, appliedProductIds };
+  const coupon: CartCoupon = {
+    code,
+    discountValue,
+    discountType,
+    appliedProductIds,
+  };
+
+  if (typeof value.applied === "boolean") coupon.applied = value.applied;
+  if (typeof value.message === "string") coupon.message = value.message;
+
+  return coupon;
 }
 
 function normalizePersistedState(value: unknown): Partial<CartState> {
@@ -163,6 +187,7 @@ function buildCartItemsPayload(items: CartItem[]) {
         vendorId: item.vendorId,
         qty: item.quantity,
         price: item.price,
+        promotionContext: item.promotionContext,
       };
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
@@ -173,6 +198,9 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       coupon: null,
+      pricing: null,
+      pricingError: null,
+      pricingRequiresConfirmation: false,
       addItem: (product, quantity = 1) => {
         const normalizedProduct = {
           ...product,
@@ -181,6 +209,7 @@ export const useCartStore = create<CartState>()(
 
         set((state) => ({
           items: upsertItem(state.items, normalizedProduct, quantity),
+          pricing: null,
         }));
       },
       applyVendorToCart: (vendor) => {
@@ -189,6 +218,7 @@ export const useCartStore = create<CartState>()(
             ...item,
             ...vendor,
           })),
+          pricing: null,
         }));
       },
       decreaseItem: (productId) => {
@@ -200,37 +230,42 @@ export const useCartStore = create<CartState>()(
                 : item,
             )
             .filter((item) => item.quantity > 0),
+          pricing: null,
         }));
       },
-      increaseItem: (productId) => {
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.id === productId
-              ? { ...item, quantity: item.quantity + 1 }
-              : item,
-          ),
-        }));
-      },
-      setItemQuantity: (productId, quantity) => {
+      setItemQuantityIfCurrent: (productId, expectedQuantity, quantity) => {
+        const item = get().items.find((currentItem) => currentItem.id === productId);
         const safeQuantity = Math.floor(quantity);
+
+        if (!item || item.quantity !== expectedQuantity || safeQuantity <= 0) {
+          return false;
+        }
+
         set((state) => ({
-          items:
-            safeQuantity <= 0
-              ? state.items.filter((item) => item.id !== productId)
-              : state.items.map((item) =>
-                  item.id === productId
-                    ? { ...item, quantity: safeQuantity }
-                    : item,
-                ),
+          items: state.items.map((currentItem) =>
+            currentItem.id === productId
+              ? { ...currentItem, quantity: safeQuantity }
+              : currentItem,
+          ),
+          pricing: null,
         }));
+
+        return true;
       },
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((item) => item.id !== productId),
+          pricing: null,
         }));
       },
       clearCart: () => {
-        set({ items: [], coupon: null });
+        set({
+          items: [],
+          coupon: null,
+          pricing: null,
+          pricingError: null,
+          pricingRequiresConfirmation: false,
+        });
       },
       applyCoupon: async (code) => {
         const trimmed = code.trim();
@@ -253,7 +288,10 @@ export const useCartStore = create<CartState>()(
               discountValue: result.discountValue,
               discountType: result.discountType,
               appliedProductIds: result.appliedProductIds,
+              applied: result.applied ?? (result.discountValue > 0),
+              message: result.message,
             },
+            pricing: null,
           });
         } else {
           set({ coupon: null });
@@ -282,7 +320,10 @@ export const useCartStore = create<CartState>()(
               discountValue: result.discountValue,
               discountType: result.discountType,
               appliedProductIds: result.appliedProductIds,
+              applied: result.applied ?? (result.discountValue > 0),
+              message: result.message,
             },
+            pricing: null,
           });
           return { revalidated: true, removed: false };
         }
@@ -291,12 +332,53 @@ export const useCartStore = create<CartState>()(
         return { revalidated: true, removed: true, reason: result.errorCode };
       },
       removeCoupon: () => {
-        set({ coupon: null });
+        set({ coupon: null, pricing: null });
+      },
+      applyPricingQuote: (quote) => {
+        const linesByProductId = new Map(
+          quote.lines.map((line) => [String(line.productId), line]),
+        );
+        const requiresConfirmation = quote.adjustments.some(
+          (adjustment) => adjustment.type === "promotion_removed",
+        );
+
+        set((state) => ({
+          items: state.items.map((item) => {
+            const line = linesByProductId.get(item.id);
+            if (!line) return item;
+            return {
+              ...item,
+              price: line.totalCents / Math.max(1, line.qty) / 100,
+              originalPrice: line.subtotalCents / Math.max(1, line.qty) / 100,
+              promotionContext: line.promotionContext || undefined,
+            };
+          }),
+          coupon: quote.coupon
+            ? {
+                code: quote.coupon.code,
+                discountValue: quote.coupon.discountValueCents / 100,
+                discountType: quote.coupon.discountType,
+                appliedProductIds: quote.coupon.appliedProductIds,
+                applied: quote.coupon.applied,
+                message: quote.coupon.message,
+              }
+            : null,
+          pricing: quote,
+          pricingError: null,
+          pricingRequiresConfirmation:
+            state.pricingRequiresConfirmation || requiresConfirmation,
+        }));
+      },
+      setPricingError: (message) => {
+        set({ pricingError: message });
+      },
+      confirmPricingAdjustments: () => {
+        set({ pricingRequiresConfirmation: false });
       },
     }),
     {
       name: "papelito-cart-store",
-      version: 3,
+      version: 4,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)

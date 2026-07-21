@@ -8,6 +8,7 @@ interface CreditCardFormFieldsProps {
   expiryDate: string;
   cvv: string;
   installments: string;
+  maxInstallments?: number;
   onHolderNameChange: (value: string) => void;
   onCardNumberChange: (value: string) => void;
   onExpiryDateChange: (value: string) => void;
@@ -21,6 +22,7 @@ export function CreditCardFormFields({
   expiryDate,
   cvv,
   installments,
+  maxInstallments = 6,
   onHolderNameChange,
   onCardNumberChange,
   onExpiryDateChange,
@@ -70,7 +72,7 @@ export function CreditCardFormFields({
       <div className="md:col-span-2">
         <CheckoutCustomSelect
           label="Parcelamento"
-          options={INSTALLMENT_OPTIONS}
+          options={INSTALLMENT_OPTIONS.slice(0, Math.max(0, maxInstallments))}
           placeholder="Selecione as parcelas"
           value={installments}
           onChange={onInstallmentsChange}

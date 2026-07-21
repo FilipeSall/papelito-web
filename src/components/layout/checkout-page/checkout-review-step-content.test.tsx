@@ -132,4 +132,33 @@ describe("CheckoutReviewStepContent", () => {
       ),
     ).not.toBeInTheDocument();
   });
+
+  it("does not place the order when fresh stock is unavailable", async () => {
+    let placeOrderCalls = 0;
+    server.use(
+      http.post("/api/cart/stock", () =>
+        HttpResponse.json({
+          status: "ok",
+          products: {
+            "11883": { available: false, stockQty: 0 },
+          },
+        }),
+      ),
+      http.post("/api/checkout/place-order", () => {
+        placeOrderCalls += 1;
+        return HttpResponse.json({});
+      }),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />);
+
+    await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
+
+    expect(
+      await screen.findByText(/volte ao carrinho para revisar/i),
+    ).toBeInTheDocument();
+    expect(placeOrderCalls).toBe(0);
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });

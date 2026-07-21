@@ -71,18 +71,24 @@ export function ProductSearchPicker({
           </span>
         </header>
 
-        <div className="space-y-2">
+        <form
+          className="space-y-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onApply();
+          }}
+        >
           <div className="relative">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a1a1a]/40"
               strokeWidth={2}
             />
             <input
-              aria-label="Buscar produtos por nome ou SKU"
+              aria-label="Buscar produtos por nome, SKU ou ID"
               className="h-11 w-full border-2 border-[#1a1a1a] bg-white pl-10 pr-4 text-sm leading-5 text-[#1a1a1a] outline-none transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSearching}
               onChange={(event) => onFiltersChange({ search: event.target.value })}
-              placeholder={isSearching ? "Buscando..." : "Buscar por nome ou SKU..."}
+              placeholder={isSearching ? "Buscando..." : "Buscar por nome, SKU ou ID..."}
               type="search"
               value={filters.search}
             />
@@ -102,13 +108,43 @@ export function ProductSearchPicker({
             <button
               className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-1 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.1em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSearching}
-              onClick={onApply}
-              type="button"
+              type="submit"
             >
               {isSearching ? "Filtrando..." : "Aplicar Filtros"}
             </button>
           </div>
-        </div>
+        </form>
+
+        {totalPages > 1 ? (
+          <nav
+            aria-label="Paginação de produtos"
+            className="mt-3 flex items-center justify-between gap-2 border-2 border-[#1a1a1a] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#1a1a1a]"
+          >
+            <span>
+              Página {safeCurrentPage} de {safeTotalPages}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                aria-label="Página anterior"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition-colors hover:bg-[#1a1a1a] hover:text-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={isSearching || safeCurrentPage <= 1}
+                onClick={() => onPageChange(safeCurrentPage - 1)}
+                type="button"
+              >
+                <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+              </button>
+              <button
+                aria-label="Próxima página"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition-colors hover:bg-[#1a1a1a] hover:text-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={isSearching || safeCurrentPage >= safeTotalPages}
+                onClick={() => onPageChange(safeCurrentPage + 1)}
+                type="button"
+              >
+                <ChevronRight className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
+          </nav>
+        ) : null}
 
         <div className="mt-3 overflow-hidden border-2 border-[#1a1a1a] bg-white">
           {candidates.length === 0 ? (
@@ -169,36 +205,6 @@ export function ProductSearchPicker({
           )}
         </div>
 
-        {totalPages > 1 ? (
-          <nav
-            aria-label="Paginação de produtos"
-            className="mt-3 flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#1a1a1a]"
-          >
-            <span>
-              Página {safeCurrentPage} de {safeTotalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                aria-label="Página anterior"
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition-colors hover:bg-[#1a1a1a] hover:text-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={isSearching || safeCurrentPage <= 1}
-                onClick={() => onPageChange(safeCurrentPage - 1)}
-                type="button"
-              >
-                <ChevronLeft className="h-4 w-4" strokeWidth={2} />
-              </button>
-              <button
-                aria-label="Próxima página"
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition-colors hover:bg-[#1a1a1a] hover:text-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={isSearching || safeCurrentPage >= safeTotalPages}
-                onClick={() => onPageChange(safeCurrentPage + 1)}
-                type="button"
-              >
-                <ChevronRight className="h-4 w-4" strokeWidth={2} />
-              </button>
-            </div>
-          </nav>
-        ) : null}
       </div>
     </section>
   );

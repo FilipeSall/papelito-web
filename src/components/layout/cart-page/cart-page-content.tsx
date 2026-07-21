@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
   normalizeProductImage,
   useCartCouponRevalidator,
+  useCartPricing,
+  useCartStockValidation,
   useCartStore,
   useCartSummary,
 } from "@/features/cart";
@@ -85,20 +88,30 @@ function TrashIcon() {
 }
 
 export function CartPageContent() {
+  const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const increaseItem = useCartStore((state) => state.increaseItem);
   const decreaseItem = useCartStore((state) => state.decreaseItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
   const applyCoupon = useCartStore((state) => state.applyCoupon);
   const removeCoupon = useCartStore((state) => state.removeCoupon);
   const summary = useCartSummary();
+  const pricingError = useCartStore((state) => state.pricingError);
+  const pricingRequiresConfirmation = useCartStore(
+    (state) => state.pricingRequiresConfirmation,
+  );
+  const confirmPricingAdjustments = useCartStore(
+    (state) => state.confirmPricingAdjustments,
+  );
+  const { isPricing } = useCartPricing();
+  const stockValidation = useCartStockValidation({ validateOnMount: true });
 
   const [couponInput, setCouponInput] = useState("");
   const [couponStatus, setCouponStatus] = useState<"idle" | "applying" | "applied" | "invalid">(
     "idle",
   );
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
 
   const handleCouponRevalidation = useCallback(
     ({ removed, code }: { removed: boolean; reason?: string; code: string | null }) => {
@@ -126,7 +139,7 @@ export function CartPageContent() {
 
     if (result.ok) {
       setCouponStatus("applied");
-      setCouponMessage(null);
+      setCouponMessage(result.message ?? null);
       setCouponInput("");
     } else {
       setCouponStatus("invalid");
@@ -139,6 +152,34 @@ export function CartPageContent() {
     setCouponStatus("idle");
     setCouponMessage(null);
     setCouponInput("");
+  }
+
+  async function handleCheckout() {
+    if (stockValidation.isValidating || isPricing) return;
+
+    if (pricingRequiresConfirmation) {
+      setCheckoutMessage("Confirme os preços recalculados antes de continuar.");
+      return;
+    }
+
+    if (pricingError) {
+      setCheckoutMessage(pricingError);
+      return;
+    }
+
+    setCheckoutMessage(null);
+    const outcome = await stockValidation.validateStock();
+
+    if (outcome.status === "valid") {
+      router.push("/checkout");
+      return;
+    }
+
+    setCheckoutMessage(
+      outcome.status === "changed"
+        ? "O estoque mudou. Revise as quantidades atualizadas antes de continuar."
+        : outcome.message,
+    );
   }
 
   if (items.length === 0) {
@@ -202,7 +243,13 @@ export function CartPageContent() {
               </div>
 
               <ul className="divide-y divide-[#F3F4F6]">
-                {items.map((item) => (
+                {items.map((item) => {
+                  const stockQty = stockValidation.products[item.id]?.stockQty;
+                  const stockOutOfStock = stockQty === 0;
+                  const stockLimitReached =
+                    stockQty !== undefined && item.quantity >= stockQty;
+
+                  return (
                   <li key={item.id} className="flex flex-wrap items-center gap-4 px-5 py-4 md:flex-nowrap">
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[14px] bg-bg-light p-2">
                       {normalizeProductImage(item.image, item.name) ? (
@@ -231,11 +278,36 @@ export function CartPageContent() {
                       </p>
                     </div>
 
-                    <CartQuantityControl
-                      quantity={item.quantity}
-                      onDecrease={() => decreaseItem(item.id)}
-                      onIncrease={() => increaseItem(item.id)}
-                    />
+                    <div className="flex flex-col items-center gap-1">
+                      <CartQuantityControl
+                        quantity={item.quantity}
+                        loading={stockValidation.isItemPending(item.id)}
+                        increaseDisabled={
+                          stockValidation.isItemPending(item.id) ||
+                          stockValidation.isValidating ||
+                          stockOutOfStock ||
+                          stockLimitReached
+                        }
+                        increaseDisabledReason={
+                          stockOutOfStock || stockLimitReached
+                            ? "Não há mais unidades disponíveis"
+                            : undefined
+                        }
+                        onDecrease={() => {
+                          decreaseItem(item.id);
+                          stockValidation.clearIssue(item.id);
+                        }}
+                        onIncrease={() => void stockValidation.increaseItem(item.id)}
+                      />
+                      {stockValidation.issues[item.id] ? (
+                        <p
+                          className="max-w-52 text-center text-[11px] leading-4 text-[#B42318]"
+                          role="alert"
+                        >
+                          {stockValidation.issues[item.id].message}
+                        </p>
+                      ) : null}
+                    </div>
 
                     <p className="w-22 text-right text-base font-black tracking-[-0.3125px] text-brand-dark">
                       {formatBRL(item.price * item.quantity)}
@@ -250,7 +322,8 @@ export function CartPageContent() {
                       <TrashIcon />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </div>
 
@@ -279,7 +352,9 @@ export function CartPageContent() {
                       {summary.coupon.code}
                     </p>
                     <p className="text-xs text-[#047857]/80">
-                      -{formatBRL(summary.coupon.discountValue)} aplicado
+                      {summary.coupon.applied === false
+                        ? "Sem desconto adicional"
+                        : `-${formatBRL(summary.coupon.discountValue)} aplicado`}
                     </p>
                   </div>
                   <button
@@ -314,6 +389,9 @@ export function CartPageContent() {
               {couponStatus === "invalid" && couponMessage ? (
                 <p className="mt-2 text-xs text-[#FF6467]">{couponMessage}</p>
               ) : null}
+              {couponStatus === "applied" && couponMessage ? (
+                <p className="mt-2 text-xs text-[#92400E]">{couponMessage}</p>
+              ) : null}
             </div>
 
             <div className="mt-6 space-y-3">
@@ -347,13 +425,44 @@ export function CartPageContent() {
               </div>
             </div>
 
-            <Link
-              className="mt-6 inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:brightness-95"
-              href="/checkout"
+            {pricingRequiresConfirmation ? (
+              <div className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-3 text-xs text-[#92400E]" role="alert">
+                <p>A campanha mudou ou expirou. O preço normal foi restaurado.</p>
+                <button
+                  className="mt-2 cursor-pointer font-black uppercase underline"
+                  onClick={() => {
+                    confirmPricingAdjustments();
+                    setCheckoutMessage(null);
+                  }}
+                  type="button"
+                >
+                  Confirmar novos preços
+                </button>
+              </div>
+            ) : null}
+
+            {stockValidation.globalError || checkoutMessage || pricingError ? (
+              <p
+                className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]"
+                role="alert"
+              >
+                {checkoutMessage ?? pricingError ?? stockValidation.globalError}
+              </p>
+            ) : null}
+
+            <button
+              type="button"
+              className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={stockValidation.isValidating || isPricing || pricingRequiresConfirmation}
+              onClick={() => void handleCheckout()}
             >
-              Finalizar Compra
+              {stockValidation.isValidating
+                ? "Validando estoque..."
+                : isPricing
+                  ? "Recalculando..."
+                  : "Finalizar Compra"}
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
-            </Link>
+            </button>
 
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <CartPaymentChip label="Visa" />

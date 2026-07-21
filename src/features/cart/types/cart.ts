@@ -5,6 +5,7 @@ export interface CartProductInput {
   image?: string;
   price: number;
   originalPrice?: number;
+  promotionContext?: string;
 }
 
 export interface CartVendor {
@@ -34,6 +35,54 @@ export interface CartCoupon {
   discountValue: number;
   discountType: "percent" | "fixed_cart";
   appliedProductIds: number[];
+  applied?: boolean;
+  message?: string;
+}
+
+export interface CartPricingLine {
+  productId: number;
+  vendorId: number;
+  qty: number;
+  normalUnitCents: number;
+  subtotalCents: number;
+  discountCents: number;
+  totalCents: number;
+  discountSource: "none" | "coupon" | "flash_sale";
+  promotionContext: string;
+}
+
+export interface CartPricingAdjustment {
+  type: string;
+  productId?: number;
+  code?: string;
+  message: string;
+}
+
+export interface CartPricingQuote {
+  lines: CartPricingLine[];
+  coupon: {
+    code: string;
+    discountType: "percent" | "fixed_cart";
+    discountValueCents: number;
+    appliedProductIds: number[];
+    applied: boolean;
+    message?: string;
+  } | null;
+  adjustments: CartPricingAdjustment[];
+  totals: {
+    subtotalCents: number;
+    discountCents: number;
+    itemsCents: number;
+    shippingCents: number;
+    totalCents: number;
+  };
+  paymentRestrictions: {
+    creditCardMinimumCents: number;
+    pixMinimumCents: number;
+    boletoMinimumCents: number;
+    installmentMinimumCents: number;
+    maxInstallments: number;
+  };
 }
 
 export interface CartSummary {

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
-import { useCartStore } from "@/features/cart";
+import { useCartStockValidation, useCartStore } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { formatBRL } from "@/lib/format-currency";
@@ -24,15 +24,21 @@ export function CheckoutReviewStepContent() {
   const items = useCartStore((state) => state.items);
   const couponCode = useCartStore((state) => state.coupon?.code ?? null);
   const clearCart = useCartStore((state) => state.clearCart);
+  const pricingError = useCartStore((state) => state.pricingError);
+  const pricingRequiresConfirmation = useCartStore(
+    (state) => state.pricingRequiresConfirmation,
+  );
   const addressForm = useCheckoutStore((state) => state.addressForm);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
+  const stockValidation = useCartStockValidation();
   const [checkoutError, setCheckoutError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pending, startTransition] = useTransition();
-  const isProcessing = isSubmitting || pending;
+  const submissionRef = useRef(false);
+  const isProcessing = isSubmitting || pending || stockValidation.isValidating;
 
   if (items.length === 0 && !isProcessing) return <CheckoutEmptyCart />;
 
@@ -72,12 +78,17 @@ export function CheckoutReviewStepContent() {
         qty: item.quantity,
         vendorId: item.vendorId,
         vendorName: item.vendorName,
+        promotionContext: item.promotionContext,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
   const hasInvalidCartItems = placeOrderItems.length !== items.length;
   const canSubmitOrder =
-    canFinishOrder && isShippingValid && !hasInvalidCartItems;
+    canFinishOrder &&
+    isShippingValid &&
+    !hasInvalidCartItems &&
+    !pricingError &&
+    !pricingRequiresConfirmation;
 
   const cartLines = items.map((item) => ({
     id: item.id,
@@ -90,13 +101,30 @@ export function CheckoutReviewStepContent() {
     ? `•••• •••• •••• ${paymentForm.cardLast4}`
     : "Nao informado";
 
-  function submitOrder() {
-    if (!selectedShippingQuote || isProcessing) {
+  async function submitOrder() {
+    if (
+      !selectedShippingQuote ||
+      isProcessing ||
+      submissionRef.current ||
+      pricingError ||
+      pricingRequiresConfirmation
+    ) {
       return;
     }
 
+    submissionRef.current = true;
     setCheckoutError("");
     setIsSubmitting(true);
+
+    const stockOutcome = await stockValidation.validateStock();
+    if (stockOutcome.status !== "valid") {
+      setCheckoutError(
+        "O estoque de um ou mais itens mudou. Volte ao carrinho para revisar os produtos e recalcular o frete.",
+      );
+      setIsSubmitting(false);
+      submissionRef.current = false;
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -130,6 +158,7 @@ export function CheckoutReviewStepContent() {
         if (!result.ok) {
           setCheckoutError(result.error.message);
           setIsSubmitting(false);
+          submissionRef.current = false;
           return;
         }
 
@@ -138,6 +167,7 @@ export function CheckoutReviewStepContent() {
         if (outcome.kind === "error") {
           setCheckoutError(outcome.message);
           setIsSubmitting(false);
+          submissionRef.current = false;
           return;
         }
 
@@ -153,6 +183,7 @@ export function CheckoutReviewStepContent() {
       } catch {
         setCheckoutError("Nao foi possivel concluir o pedido.");
         setIsSubmitting(false);
+        submissionRef.current = false;
         return;
       }
     });
@@ -307,6 +338,18 @@ export function CheckoutReviewStepContent() {
                   </p>
                 ) : null}
 
+                {pricingError ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
+                    {pricingError}
+                  </p>
+                ) : null}
+
+                {pricingRequiresConfirmation ? (
+                  <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                    Confirme os preços recalculados no resumo antes de finalizar.
+                  </p>
+                ) : null}
+
                 {checkoutError ? (
                   <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">
                     {checkoutError}
@@ -317,7 +360,7 @@ export function CheckoutReviewStepContent() {
                   type="button"
                   className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={!canSubmitOrder}
-                  onClick={submitOrder}
+                  onClick={() => void submitOrder()}
                 >
                   Finalizar pedido
                   <ArrowRightIcon

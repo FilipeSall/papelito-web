@@ -25,6 +25,14 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Algum item ficou sem estoque suficiente para concluir o pedido.",
   papelito_checkout_payment_unavailable:
     "Checkout indisponivel ate a integracao com o Pagar.me.",
+  papelito_checkout_amount_below_minimum:
+    "O total ficou abaixo do minimo aceito para esta forma de pagamento.",
+  papelito_checkout_installment_below_minimum:
+    "Reduza as parcelas; cada parcela precisa ser de pelo menos R$ 1,00.",
+  papelito_checkout_gateway_amount_rejected:
+    "O Pagar.me rejeitou o valor da cobranca. Revise o total e as parcelas.",
+  papelito_checkout_total_mismatch:
+    "Os valores do pedido mudaram. Atualize o carrinho e tente novamente.",
   papelito_coupon_not_found: "Cupom invalido ou inexistente.",
   papelito_coupon_expired: "Este cupom expirou.",
   papelito_coupon_vendor_restricted:
@@ -68,6 +76,7 @@ export async function placeOrder(
           qty: item.qty,
           vendor_id: item.vendorId,
           vendor_name: item.vendorName,
+          promotion_context: item.promotionContext,
         })),
         address: {
           zip_code: input.address.zipCode,

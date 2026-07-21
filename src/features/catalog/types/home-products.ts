@@ -9,6 +9,7 @@ export interface HomeProductCard {
   rating: number;
   reviews: number;
   image: string;
+  promotionContext?: string;
   featured?: boolean;
 }
 

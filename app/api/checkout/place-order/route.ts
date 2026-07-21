@@ -23,6 +23,13 @@ type PlaceOrderApiResponse = {
       expires_at?: string;
     };
   };
+  totals?: {
+    subtotalCents?: number;
+    discountCents?: number;
+    itemsCents?: number;
+    shippingCents?: number;
+    totalCents?: number;
+  };
 };
 
 export async function POST(request: Request) {
@@ -78,5 +85,6 @@ export async function POST(request: Request) {
     orderNumber: result.data.order_number,
     status: result.data.status,
     payment: result.data.payment,
+    totals: result.data.totals,
   });
 }

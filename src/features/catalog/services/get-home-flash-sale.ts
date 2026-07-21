@@ -25,6 +25,7 @@ type WpHomeFlashSaleProduct = {
   rating?: number;
   reviews?: number;
   image?: string;
+  promotionContext?: string;
 };
 
 type WpHomeFlashSaleResponse = {
@@ -58,6 +59,7 @@ function mapProduct(product: WpHomeFlashSaleProduct): HomeProductCard | null {
     rating: toNumber(product.rating),
     reviews: toNumber(product.reviews),
     image: cleanText(product.image),
+    promotionContext: cleanText(product.promotionContext) || undefined,
   };
 }
 

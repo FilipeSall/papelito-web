@@ -2,7 +2,7 @@ import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
 
-import type { AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
+import type { AdminProduct, AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
 
 type WcProductTerm = {
   id?: number;
@@ -47,6 +47,32 @@ type WpAdminFlashSaleSnapshot = {
   issues?: string[];
 };
 
+type WpFlashSaleCandidate = {
+  id?: number;
+  name?: string;
+  sku?: string;
+  status?: string;
+  type?: string;
+  price?: string;
+  regularPrice?: string;
+  permalink?: string;
+  weight?: string;
+  stockStatus?: string;
+  stockQuantity?: number | null;
+  dateModified?: string;
+  images?: Array<{ id?: number; src?: string; alt?: string; position?: number }>;
+  categories?: WcProductTerm[];
+  tags?: WcProductTerm[];
+};
+
+type WpFlashSaleProductsSnapshot = {
+  items?: WpFlashSaleCandidate[];
+  page?: number;
+  perPage?: number;
+  total?: number;
+  totalPages?: number;
+};
+
 export type AdminFlashSaleCampaign = {
   title: string;
   slug: string;
@@ -87,6 +113,22 @@ export type AdminFlashSalePayload = {
   endsAt: string;
   productIds: number[];
   discountPercent: number;
+};
+
+export type AdminFlashSaleProductsSnapshot = {
+  items: AdminProduct[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+  issues: string[];
+};
+
+export type AdminFlashSaleProductsFilters = {
+  category?: string;
+  page?: string;
+  perPage?: string;
+  search?: string;
 };
 
 function cleanText(value: unknown) {
@@ -156,6 +198,59 @@ function mapProduct(product: WpFlashSaleProduct): AdminFlashSaleProduct | null {
     hasImage: typeof product.hasImage === "boolean" ? product.hasImage : image.length > 0,
     permalink: cleanText(product.permalink),
     status: cleanText(product.status) || "draft",
+  };
+}
+
+function mapCandidateTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
+  const id = toNumber(term.id);
+  if (id <= 0) return null;
+  return {
+    id,
+    name: cleanText(term.name),
+    parent: toNumber(term.parent),
+    slug: cleanText(term.slug),
+  };
+}
+
+function mapCandidate(product: WpFlashSaleCandidate): AdminProduct | null {
+  const id = toNumber(product.id);
+  if (id <= 0) return null;
+
+  return {
+    categories: (product.categories ?? [])
+      .map(mapCandidateTerm)
+      .filter((term): term is AdminProductTaxonomyTerm => term !== null),
+    dateModified: cleanText(product.dateModified),
+    dateOnSaleFrom: "",
+    dateOnSaleTo: "",
+    description: "",
+    dimensions: { height: "", length: "", width: "" },
+    id,
+    images: (product.images ?? [])
+      .map((image, position) => ({
+        alt: cleanText(image.alt),
+        id: toNumber(image.id),
+        position: typeof image.position === "number" ? image.position : position,
+        src: cleanText(image.src),
+      }))
+      .filter((image) => image.id > 0 || image.src.length > 0),
+    manageStock: typeof product.stockQuantity === "number",
+    name: cleanText(product.name) || "Produto sem nome",
+    permalink: cleanText(product.permalink),
+    price: cleanText(product.price),
+    regularPrice: cleanText(product.regularPrice),
+    salePrice: "",
+    shortDescription: "",
+    sku: cleanText(product.sku),
+    slug: "",
+    status: cleanText(product.status) || "publish",
+    stockQuantity: typeof product.stockQuantity === "number" ? product.stockQuantity : null,
+    stockStatus: cleanText(product.stockStatus) || "instock",
+    tags: (product.tags ?? [])
+      .map(mapCandidateTerm)
+      .filter((term): term is AdminProductTaxonomyTerm => term !== null),
+    type: cleanText(product.type) || "simple",
+    weight: cleanText(product.weight),
   };
 }
 
@@ -248,6 +343,61 @@ export async function getFlashSaleProductCategories(
     })
     .filter((term): term is AdminProductTaxonomyTerm => term !== null)
     .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
+}
+
+export async function getAdminFlashSaleProducts(
+  accessToken: string | undefined,
+  filters: AdminFlashSaleProductsFilters = {},
+): Promise<AdminFlashSaleProductsSnapshot> {
+  const page = Math.max(1, Number.parseInt(filters.page ?? "1", 10) || 1);
+  const perPage = Math.min(100, Math.max(1, Number.parseInt(filters.perPage ?? "24", 10) || 24));
+
+  if (!accessToken) {
+    return {
+      items: [],
+      page,
+      perPage,
+      total: 0,
+      totalPages: 1,
+      issues: ["Sessao sem access token para consultar produtos elegiveis."],
+    };
+  }
+
+  const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  const search = cleanText(filters.search);
+  const category = cleanText(filters.category);
+  if (search) params.set("search", search);
+  if (category) params.set("category", category);
+
+  const result = await wpRest<WpFlashSaleProductsSnapshot>(
+    `/papelito/v1/admin/flash-sale/products?${params.toString()}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      revalidate: 0,
+    },
+  );
+
+  if (!result.ok) {
+    return {
+      items: [],
+      page,
+      perPage,
+      total: 0,
+      totalPages: 1,
+      issues: [result.error.message],
+    };
+  }
+
+  return {
+    items: (result.data.items ?? [])
+      .map(mapCandidate)
+      .filter((item): item is AdminProduct => item !== null),
+    page: toNumber(result.data.page) || page,
+    perPage: toNumber(result.data.perPage) || perPage,
+    total: toNumber(result.data.total),
+    totalPages: Math.max(1, toNumber(result.data.totalPages)),
+    issues: [],
+  };
 }
 
 export async function deleteAdminFlashSale(accessToken: string) {
