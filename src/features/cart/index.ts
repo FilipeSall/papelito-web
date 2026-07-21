@@ -20,6 +20,7 @@ export {
   getCartSummary,
 } from "./utils/get-cart-summary";
 export { normalizeProductImage } from "./utils/normalize-product-image";
+export { getCartLineTotal } from "./utils/get-cart-line-total";
 export type {
   CartCoupon,
   CartItem,

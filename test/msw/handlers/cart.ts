@@ -5,29 +5,27 @@ export const cartHandlers = [
     const body = (await request.json()) as {
       items?: Array<{
         product_id?: number;
-        quantity?: number;
+        qty?: number;
         vendor_id?: number;
         promotion_context?: string;
       }>;
       shipping?: { destination_cep?: string; selected_code?: string };
     };
     const lines = (body.items ?? []).map((item) => {
-      const quantity = Math.max(1, item.quantity ?? 1);
+      const quantity = Math.max(1, item.qty ?? 1);
       const unitCents = item.product_id === 11883 ? 9000 : 4950;
       const totalCents = unitCents * quantity;
 
       return {
         productId: item.product_id,
-        quantity,
+        qty: quantity,
         vendorId: item.vendor_id ?? 101,
         normalUnitCents: unitCents,
-        referenceUnitCents: unitCents,
-        effectiveUnitCents: unitCents,
         subtotalCents: totalCents,
         discountCents: 0,
         totalCents,
-        source: "normal",
-        promotionContext: item.promotion_context,
+        discountSource: "none",
+        promotionContext: item.promotion_context ?? "",
       };
     });
     const subtotalCents = lines.reduce(

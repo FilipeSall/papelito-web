@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
-import { useCartStockValidation, useCartStore } from "@/features/cart";
+import {
+  getCartLineTotal,
+  useCartStockValidation,
+  useCartStore,
+} from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { formatBRL } from "@/lib/format-currency";
@@ -25,6 +29,7 @@ export function CheckoutReviewStepContent() {
   const couponCode = useCartStore((state) => state.coupon?.code ?? null);
   const clearCart = useCartStore((state) => state.clearCart);
   const pricingError = useCartStore((state) => state.pricingError);
+  const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(
     (state) => state.pricingRequiresConfirmation,
   );
@@ -94,7 +99,7 @@ export function CheckoutReviewStepContent() {
     id: item.id,
     name: item.name,
     quantity: item.quantity,
-    total: formatBRL(item.quantity * item.price),
+    total: formatBRL(getCartLineTotal(item, pricing)),
   }));
 
   const maskedCard = paymentForm.cardLast4
@@ -174,11 +179,13 @@ export function CheckoutReviewStepContent() {
         if (outcome.kind === "confirmed") {
           clearCart();
           resetCheckout();
+          submissionRef.current = false;
           router.push(`/checkout/sucesso/${outcome.orderId}`);
           return;
         }
 
         resetCheckout();
+        submissionRef.current = false;
         router.push(`/checkout/pagamento/${outcome.orderId}`);
       } catch {
         setCheckoutError("Nao foi possivel concluir o pedido.");

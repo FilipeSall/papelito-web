@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 
 import { server } from "../../../../test/msw/server";
@@ -17,7 +17,27 @@ const item: CartItem = {
 };
 
 describe("getCartPricing", () => {
-  afterEach(() => server.resetHandlers());
+  it("rejects non-numeric product IDs before calling the API", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await getCartPricing(
+      [{ ...item, id: "produto-invalido" }],
+      null,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      code: "papelito_checkout_invalid_items",
+      message: "O carrinho contem um produto invalido.",
+      status: 422,
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  afterEach(() => {
+    server.resetHandlers();
+    vi.restoreAllMocks();
+  });
 
   it("sends promotion context and accepts integer-cent authoritative totals", async () => {
     server.use(
@@ -91,6 +111,47 @@ describe("getCartPricing", () => {
       code: "papelito_checkout_insufficient_stock",
       message: "Estoque alterado.",
       status: 409,
+    });
+  });
+
+  it("rejects a pricing response whose line contract is incomplete", async () => {
+    server.use(
+      http.post("/api/cart/pricing", () =>
+        HttpResponse.json({
+          lines: [
+            {
+              productId: 11776,
+              vendorId: 101,
+              quantity: 1,
+              totalCents: 121,
+              source: "normal",
+            },
+          ],
+          coupon: null,
+          adjustments: [],
+          totals: {
+            subtotalCents: 121,
+            discountCents: 0,
+            itemsCents: 121,
+            shippingCents: 0,
+            totalCents: 121,
+          },
+          paymentRestrictions: {
+            creditCardMinimumCents: 100,
+            pixMinimumCents: 1,
+            boletoMinimumCents: 1,
+            installmentMinimumCents: 100,
+            maxInstallments: 1,
+          },
+        }),
+      ),
+    );
+
+    await expect(getCartPricing([item], null)).resolves.toEqual({
+      ok: false,
+      code: "papelito_invalid_response",
+      message: "Resposta invalida ao recalcular o carrinho.",
+      status: 200,
     });
   });
 });

@@ -112,4 +112,100 @@ describe("POST /api/cart/stock", () => {
       },
     });
   });
+
+  it("requires an authenticated customer session", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productId: 1, vendorId: 101 }] }),
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(wpRestMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-customer roles", async () => {
+    getServerSessionMock.mockResolvedValue({
+      user: { id: "42" },
+      accessToken: "token",
+      role: "seller",
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productId: 1, vendorId: 101 }] }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(wpRestMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid or oversized item payloads", async () => {
+    const { POST } = await import("./route");
+    const invalid = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productId: 0, vendorId: 101 }] }),
+      }),
+    );
+    const oversized = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({
+          items: Array.from({ length: 121 }, (_, index) => ({
+            productId: index + 1,
+            vendorId: 101,
+          })),
+        }),
+      }),
+    );
+
+    expect(invalid.status).toBe(422);
+    expect(oversized.status).toBe(422);
+    expect(wpRestMock).not.toHaveBeenCalled();
+  });
+
+  it("requires the account CEP", async () => {
+    getAccountCoverageCepContextMock.mockResolvedValue({ cep: null });
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productId: 1, vendorId: 101 }] }),
+      }),
+    );
+
+    expect(response.status).toBe(422);
+    expect(wpRestMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when WordPress stock validation is unavailable", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: false,
+      status: 503,
+      error: { code: "unavailable", message: "WP unavailable" },
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/cart/stock", {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productId: 1, vendorId: 101 }] }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      status: "unavailable",
+      message: "Nao foi possivel validar o estoque agora. Tente novamente.",
+    });
+  });
 });

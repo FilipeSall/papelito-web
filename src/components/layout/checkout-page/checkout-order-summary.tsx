@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { useCartPricing, useCartStore, useCartSummary } from "@/features/cart";
+import {
+  getCartLineTotal,
+  useCartPricing,
+  useCartStore,
+  useCartSummary,
+} from "@/features/cart";
 import { formatBRL } from "@/lib/format-currency";
 import { SecurityLockIcon } from "./checkout-icons";
 
@@ -9,6 +14,7 @@ export function CheckoutOrderSummary() {
   const items = useCartStore((state) => state.items);
   const summary = useCartSummary();
   const pricingError = useCartStore((state) => state.pricingError);
+  const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(
     (state) => state.pricingRequiresConfirmation,
   );
@@ -22,9 +28,9 @@ export function CheckoutOrderSummary() {
       items.map((item) => ({
         id: item.id,
         label: `${item.name} x${item.quantity}`,
-        total: formatBRL(item.price * item.quantity),
+        total: formatBRL(getCartLineTotal(item, pricing)),
       })),
-    [items],
+    [items, pricing],
   );
 
   return (

@@ -14,6 +14,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   papelito_checkout_invalid_items: "Os itens do carrinho ficaram invalidos.",
   papelito_checkout_invalid_address: "Revise os dados do endereco de entrega.",
   papelito_checkout_invalid_shipping: "Selecione uma opcao de frete valida.",
+  papelito_checkout_coverage_unavailable:
+    "Nao foi possivel validar a cobertura de entrega. Tente novamente.",
   papelito_checkout_shipping_stale:
     "A cotacao de frete mudou. Escolha novamente a entrega.",
   papelito_checkout_invalid_payment: "Selecione uma forma de pagamento valida.",
@@ -29,6 +31,12 @@ const ERROR_MESSAGES: Record<string, string> = {
     "O total ficou abaixo do minimo aceito para esta forma de pagamento.",
   papelito_checkout_installment_below_minimum:
     "Reduza as parcelas; cada parcela precisa ser de pelo menos R$ 1,00.",
+  papelito_checkout_installments_exceeded:
+    "A quantidade de parcelas excedeu o limite permitido.",
+  papelito_checkout_too_many_items:
+    "O carrinho excedeu o limite de itens permitido.",
+  papelito_checkout_duplicate_item:
+    "O carrinho possui produtos duplicados. Atualize a página e tente novamente.",
   papelito_checkout_gateway_amount_rejected:
     "O Pagar.me rejeitou o valor da cobranca. Revise o total e as parcelas.",
   papelito_checkout_total_mismatch:

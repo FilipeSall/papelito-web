@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
   normalizeProductImage,
+  getCartLineTotal,
   useCartCouponRevalidator,
   useCartPricing,
   useCartStockValidation,
@@ -97,6 +98,7 @@ export function CartPageContent() {
   const removeCoupon = useCartStore((state) => state.removeCoupon);
   const summary = useCartSummary();
   const pricingError = useCartStore((state) => state.pricingError);
+  const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(
     (state) => state.pricingRequiresConfirmation,
   );
@@ -310,7 +312,7 @@ export function CartPageContent() {
                     </div>
 
                     <p className="w-22 text-right text-base font-black tracking-[-0.3125px] text-brand-dark">
-                      {formatBRL(item.price * item.quantity)}
+                      {formatBRL(getCartLineTotal(item, pricing))}
                     </p>
 
                     <button
