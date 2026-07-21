@@ -25,27 +25,45 @@ export type ShipmentLogisticsStatus =
   | "returning"
   | "returned"
   | "lost"
+  | "cancelled"
+  | "expired"
   | "delivered";
+
+export type ShipmentGenerationStatus =
+  | "not_started"
+  | "generating"
+  | "generated"
+  | "failed"
+  | "uncertain";
 
 export type VendorOrderShipment = {
   deliveredAt: string;
   hasError: boolean;
   id: number;
+  generationStatus: ShipmentGenerationStatus;
+  labelAvailable: boolean;
   lastEventAt: string;
   lastEventCode: string;
   lastEventDescription: string;
   lastEventLocation: string;
   lastEventType: string;
   serviceCode: string;
+  provider: "correios" | "manual" | "mock" | string;
+  isTest: boolean;
   status: ShipmentLogisticsStatus;
   trackingCode: string;
 };
 
 export type VendorOrderLogistics = {
+  automaticGenerationEnabled: boolean;
   allPackagesDone: boolean;
+  generationStatus: ShipmentGenerationStatus;
   lastEventAt: string;
   packagesDelivered: number;
   packagesTotal: number;
+  manualRegistrationEnabled: boolean;
+  manualFallbackAvailable: boolean;
+  generationErrorCode: string;
   shipments: VendorOrderShipment[];
   status: ShipmentLogisticsStatus | "not_started";
 };

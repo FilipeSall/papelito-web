@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isVendorOrderStatus, mapVendorOrderStatus, mapVendorOrderSummary } from "./vendor-order-mappers";
+import {
+  isVendorOrderStatus,
+  mapVendorOrderDetail,
+  mapVendorOrderStatus,
+  mapVendorOrderSummary,
+} from "./vendor-order-mappers";
 
 describe("isVendorOrderStatus", () => {
   it("accepts aguardando_pagamento so its filter is recognized (regression)", () => {
@@ -63,5 +68,55 @@ describe("mapVendorOrderSummary", () => {
 
     expect(summary.status).toBe("aguardando_pagamento");
     expect(summary.id).toBe(11879);
+  });
+});
+
+describe("mapVendorOrderDetail logistics", () => {
+  it("maps generation/provider/label capabilities without exposing storage details", () => {
+    const order = mapVendorOrderDetail({
+      id: 11887,
+      logistics: {
+        automatic_generation_enabled: true,
+        generation_status: "generated",
+        generation_error_code: "",
+        manual_fallback_available: false,
+        manual_registration_enabled: false,
+        status: "preposted",
+        shipments: [
+          {
+            generation_status: "generated",
+            id: 91,
+            label_available: true,
+            provider: "mock",
+            is_test: true,
+            status: "preposted",
+            tracking_code: "MOCK-11887-ABCDEF12",
+          },
+        ],
+      },
+    });
+
+    expect(order.logistics.automaticGenerationEnabled).toBe(true);
+    expect(order.logistics.generationStatus).toBe("generated");
+    expect(order.logistics.manualRegistrationEnabled).toBe(false);
+    expect(order.logistics.manualFallbackAvailable).toBe(false);
+    expect(order.logistics.shipments[0]).toMatchObject({
+      generationStatus: "generated",
+      labelAvailable: true,
+      provider: "mock",
+      isTest: true,
+      trackingCode: "MOCK-11887-ABCDEF12",
+    });
+  });
+
+  it("keeps old backend shipments compatible by inferring generated", () => {
+    const order = mapVendorOrderDetail({
+      logistics: {
+        shipments: [{ id: 2, status: "preposted", tracking_code: "AA123456789BR" }],
+      },
+    });
+
+    expect(order.logistics.generationStatus).toBe("generated");
+    expect(order.logistics.shipments[0].generationStatus).toBe("generated");
   });
 });

@@ -2,6 +2,7 @@ import type {
   VendorOrderDetail,
   VendorOrderStatus,
   ShipmentLogisticsStatus,
+  ShipmentGenerationStatus,
   VendorOrdersSnapshot,
   VendorOrderSummary,
 } from "../types/vendor-orders";
@@ -31,21 +32,30 @@ export type WpVendorOrder = {
   tracking_code?: string | null;
   vendor_status?: string;
   logistics?: {
+    automatic_generation_enabled?: boolean;
     all_packages_done?: boolean;
+    generation_status?: string;
     last_event_at?: string;
     packages_delivered?: number;
     packages_total?: number;
+    manual_registration_enabled?: boolean;
+    manual_fallback_available?: boolean;
+    generation_error_code?: string;
     status?: string;
     shipments?: Array<{
       delivered_at?: string;
       has_error?: boolean;
       id?: number;
+      generation_status?: string;
+      label_available?: boolean;
       last_event_at?: string;
       last_event_code?: string;
       last_event_description?: string;
       last_event_location?: string;
       last_event_type?: string;
       service_code?: string;
+      provider?: string;
+      is_test?: boolean;
       status?: string;
       tracking_code?: string;
     }>;
@@ -93,22 +103,39 @@ export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary 
 export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
   const logisticsStatuses = new Set<ShipmentLogisticsStatus>([
     "tracking_pending", "preposted", "posted", "in_transit", "out_for_delivery",
-    "pickup_available", "delivery_failed", "returning", "returned", "lost", "delivered",
+    "pickup_available", "delivery_failed", "returning", "returned", "lost", "cancelled", "expired", "delivered",
   ]);
   const mapLogisticsStatus = (value: string | undefined): ShipmentLogisticsStatus =>
     value && logisticsStatuses.has(value as ShipmentLogisticsStatus)
       ? (value as ShipmentLogisticsStatus)
       : "tracking_pending";
+  const generationStatuses = new Set<ShipmentGenerationStatus>([
+    "not_started", "generating", "generated", "failed", "uncertain",
+  ]);
+  const mapGenerationStatus = (
+    value: string | undefined,
+    fallback: ShipmentGenerationStatus = "not_started",
+  ): ShipmentGenerationStatus =>
+    value && generationStatuses.has(value as ShipmentGenerationStatus)
+      ? (value as ShipmentGenerationStatus)
+      : fallback;
   const shipments = (order.logistics?.shipments ?? []).map((shipment) => ({
     deliveredAt: shipment.delivered_at ?? "",
     hasError: Boolean(shipment.has_error),
     id: Number(shipment.id) || 0,
+    generationStatus: mapGenerationStatus(
+      shipment.generation_status,
+      shipment.tracking_code ? "generated" : "generating",
+    ),
+    labelAvailable: Boolean(shipment.label_available),
     lastEventAt: shipment.last_event_at ?? "",
     lastEventCode: shipment.last_event_code ?? "",
     lastEventDescription: shipment.last_event_description ?? "",
     lastEventLocation: shipment.last_event_location ?? "",
     lastEventType: shipment.last_event_type ?? "",
     serviceCode: shipment.service_code ?? "",
+    provider: shipment.provider ?? "correios",
+    isTest: Boolean(shipment.is_test),
     status: mapLogisticsStatus(shipment.status),
     trackingCode: shipment.tracking_code ?? "",
   }));
@@ -136,10 +163,18 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
     subtotal: Number(order.subtotal) || 0,
     trackingCode: typeof order.tracking_code === "string" ? order.tracking_code : null,
     logistics: {
+      automaticGenerationEnabled: Boolean(order.logistics?.automatic_generation_enabled),
       allPackagesDone: Boolean(order.logistics?.all_packages_done),
+      generationStatus: mapGenerationStatus(
+        order.logistics?.generation_status,
+        shipments.length > 0 ? "generated" : "not_started",
+      ),
       lastEventAt: order.logistics?.last_event_at ?? "",
       packagesDelivered: Number(order.logistics?.packages_delivered) || 0,
       packagesTotal: Number(order.logistics?.packages_total) || 0,
+      manualRegistrationEnabled: Boolean(order.logistics?.manual_registration_enabled),
+      manualFallbackAvailable: Boolean(order.logistics?.manual_fallback_available),
+      generationErrorCode: order.logistics?.generation_error_code ?? "",
       shipments,
       status: order.logistics?.status === "not_started"
         ? "not_started"

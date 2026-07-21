@@ -42,7 +42,17 @@ const logisticsLabels = {
   returning: "Objeto em devolucao",
   returned: "Objeto devolvido ao remetente",
   lost: "Ocorrencia logistica; acompanhamento necessario",
+  cancelled: "Pre-postagem cancelada",
+  expired: "Pre-postagem expirada",
   delivered: "Entrega confirmada pelos Correios",
+} as const;
+
+const generationLabels = {
+  failed: "Nao foi possivel gerar a etiqueta",
+  generated: "Etiqueta gerada",
+  generating: "Geracao da etiqueta em andamento",
+  not_started: "Aguardando geracao da etiqueta",
+  uncertain: "Geracao com resultado incerto; revisao do suporte necessaria",
 } as const;
 
 function formatLogisticsDate(value: string) {
@@ -93,7 +103,9 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         </div>
         <div className="mt-5 rounded-xl bg-brand-dark/3 px-4 py-3" aria-live="polite">
           <p className="text-sm font-semibold text-brand-dark">
-            {logisticsLabels[order.logistics.status]}
+            {order.logistics.generationStatus === "generated"
+              ? logisticsLabels[order.logistics.status]
+              : generationLabels[order.logistics.generationStatus]}
           </p>
           {order.logistics.packagesTotal > 0 ? (
             <p className="mt-1 text-xs text-brand-dark/60">
@@ -128,8 +140,20 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
                   <p className="text-xs font-black uppercase tracking-[0.12em] text-brand-dark/50">
                     Pacote {index + 1}
                   </p>
-                  <p className="mt-2 font-mono text-sm font-bold tracking-[0.1em]">{shipment.trackingCode}</p>
+                  <p className="mt-2 font-mono text-sm font-bold tracking-widest">
+                    {shipment.trackingCode || generationLabels[shipment.generationStatus]}
+                  </p>
                   <p className="mt-2 text-sm font-semibold">{logisticsLabels[shipment.status]}</p>
+                  {shipment.labelAvailable ? (
+                    <a
+                      className="mt-3 inline-flex rounded-full border border-brand-dark px-4 py-2 text-xs font-semibold uppercase tracking-widest transition hover:bg-brand-dark/5"
+                      href={`/api/vendor/orders/${order.id}/shipments/${shipment.id}/label`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Baixar ou reimprimir etiqueta
+                    </a>
+                  ) : null}
                   {shipment.lastEventDescription ? (
                     <p className="mt-1 text-xs text-brand-dark/60">
                       {shipment.lastEventDescription}
@@ -142,7 +166,11 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             </div>
           ) : null}
           <VendorOrderActions
+            generationStatus={order.logistics.generationStatus}
+            generationErrorCode={order.logistics.generationErrorCode}
             hasShipment={order.logistics.shipments.length > 0}
+            manualFallbackAvailable={order.logistics.manualFallbackAvailable}
+            manualRegistrationEnabled={order.logistics.manualRegistrationEnabled}
             orderId={order.id}
             status={order.status}
           />
