@@ -1,32 +1,30 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
 import { NextResponse } from "next/server";
+
+import { resolveCatalogPdf } from "@/lib/server/catalog-pdf";
 
 export const dynamic = "force-dynamic";
 
-const LOCAL_CATALOG_PATH = path.join(
-  process.env.HOME ?? "/home/sea",
-  "Downloads",
-  "Catálogo de produtos - Papelito.pdf",
-);
+export async function GET(request: Request) {
+  const catalog = await resolveCatalogPdf(request.url);
 
-export async function GET() {
-  try {
-    const pdfBuffer = await readFile(LOCAL_CATALOG_PATH);
-
-    return new NextResponse(pdfBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": 'inline; filename="catalogo-papelito.pdf"',
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
-  } catch {
+  if (!catalog.ok) {
+    console.error("[api/catalog] catalog_not_found");
     return NextResponse.json(
-      { code: "catalog_not_found", message: "Catálogo não disponível." },
-      { status: 404 },
+      { code: catalog.code, message: catalog.message },
+      { status: 503 },
     );
   }
+
+  const body = new ArrayBuffer(catalog.bytes.byteLength);
+  new Uint8Array(body).set(catalog.bytes);
+
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      "Cache-Control": "public, max-age=3600",
+      "Content-Disposition": `inline; filename="${catalog.filename}"`,
+      "Content-Type": "application/pdf",
+      "X-Papelito-Catalog-Source": catalog.source,
+    },
+  });
 }
