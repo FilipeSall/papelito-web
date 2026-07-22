@@ -47,9 +47,11 @@ export type ResolvedCatalogPdf =
 type CatalogPdfResolverDeps = {
   fallbackPath?: string;
   fetchImpl?: typeof fetch;
-  readFileImpl?: typeof readFile;
+  readFileImpl?: ReadFileImpl;
   wpRestBase?: string;
 };
+
+type ReadFileImpl = (path: string) => Promise<Uint8Array>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -115,7 +117,7 @@ async function fetchCatalogSnapshot(
 
 async function readFallbackCatalog(
   fallbackPath: string,
-  readFileImpl: typeof readFile,
+  readFileImpl: ReadFileImpl,
 ): Promise<ResolvedCatalogPdf> {
   const bytes = Buffer.from(await readFileImpl(fallbackPath));
 
@@ -184,7 +186,7 @@ export async function resolveCatalogPdf(
   deps: CatalogPdfResolverDeps = {},
 ): Promise<ResolvedCatalogPdf> {
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const readFileImpl = deps.readFileImpl ?? readFile;
+  const readFileImpl: ReadFileImpl = deps.readFileImpl ?? (async (fallbackPath) => readFile(fallbackPath));
   const fallbackPath = deps.fallbackPath ?? FALLBACK_CATALOG_FILE_PATH;
   const wpRestBase = deps.wpRestBase ?? getWpRestBase();
   const snapshot = await fetchCatalogSnapshot(fetchImpl, wpRestBase);

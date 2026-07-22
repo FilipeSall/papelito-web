@@ -4,6 +4,10 @@ import { http, HttpResponse } from "msw";
 import { server } from "../../../../test/msw/server";
 import { placeOrder } from "./place-order";
 
+type PlaceOrderRequestPayload = {
+  checkout_attempt_id?: string;
+};
+
 const baseInput = {
   checkoutAttemptId: "attempt-123",
   items: [{ productId: 1, qty: 2, vendorId: 10, vendorName: "Vendor Centro" }],
@@ -46,10 +50,10 @@ describe("placeOrder", () => {
   });
 
   it("sends the stable checkout attempt id to the backend", async () => {
-    let payload: Record<string, unknown> | null = null;
+    let payload: PlaceOrderRequestPayload | null = null;
     server.use(
       http.post("/api/checkout/place-order", async ({ request }) => {
-        payload = (await request.json()) as Record<string, unknown>;
+        payload = (await request.json()) as PlaceOrderRequestPayload;
 
         return HttpResponse.json({
           orderId: 321,
@@ -65,7 +69,9 @@ describe("placeOrder", () => {
 
     await placeOrder(baseInput);
 
-    expect(payload?.checkout_attempt_id).toBe("attempt-123");
+    expect(payload).toMatchObject({
+      checkout_attempt_id: "attempt-123",
+    });
   });
 
   it("prefers the backend message over the friendly fallback map", async () => {
