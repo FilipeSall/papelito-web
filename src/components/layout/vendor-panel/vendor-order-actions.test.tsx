@@ -16,7 +16,9 @@ const defaultProps = {
   manualFallbackAvailable: false,
   manualRegistrationEnabled: true,
   orderId: 11887,
+  shippingService: "PAC CONTRATO AG",
   status: "em_separacao" as const,
+  supportReviewRequired: false,
 };
 
 describe("VendorOrderActions manual fallback", () => {
@@ -37,12 +39,13 @@ describe("VendorOrderActions manual fallback", () => {
     render(<VendorOrderActions {...defaultProps} />);
 
     expect(screen.getByRole("button", { name: /gerar etiqueta dos correios/i })).toBeInTheDocument();
+    expect(screen.getByText(/antes de gerar a etiqueta/i)).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /gerar etiqueta dos correios/i }));
 
     expect(await screen.findByRole("textbox", { name: /codigo de rastreamento/i })).toBeInTheDocument();
-    expect(screen.getByText(/gere a etiqueta no portal dos correios/i)).toBeInTheDocument();
+    expect(screen.getByText(/gere a postagem no portal dos correios/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /gerar etiqueta dos correios/i })).not.toBeInTheDocument();
   });
 
@@ -62,6 +65,20 @@ describe("VendorOrderActions manual fallback", () => {
     expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
   });
 
+  it("explains an uncertain persisted generation without exposing manual input", () => {
+    render(
+      <VendorOrderActions
+        {...defaultProps}
+        generationStatus="uncertain"
+        hasShipment
+      />,
+    );
+
+    expect(screen.getByText(/verificando a solicitacao enviada/i)).toBeInTheDocument();
+    expect(screen.getByText(/temporariamente bloqueada para evitar etiquetas duplicadas/i)).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
+  });
+
   it("restores a persisted safe fallback after refresh", () => {
     render(
       <VendorOrderActions
@@ -74,7 +91,7 @@ describe("VendorOrderActions manual fallback", () => {
 
     expect(screen.getByRole("textbox", { name: /codigo de rastreamento/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /tentar geracao simulada novamente/i })).toBeInTheDocument();
-    expect(screen.getByText(/esse codigo ficara marcado como teste/i)).toBeInTheDocument();
-    expect(screen.queryByText(/leve o pacote e os documentos a uma agencia/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/cadastro manual liberado/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/observacao/i)).toBeInTheDocument();
   });
 });

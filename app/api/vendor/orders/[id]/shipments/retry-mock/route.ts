@@ -26,9 +26,14 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       {
         category: typeof data.category === "string" ? data.category : "unknown",
         code: result.error.code,
+        creation_outcome: typeof data.creation_outcome === "string" ? data.creation_outcome : "uncertain",
         manual_fallback_available: Boolean(data.manual_fallback_available),
         message: result.error.message,
+        next_reconciliation_at: typeof data.next_reconciliation_at === "string" ? data.next_reconciliation_at : "",
+        reconciliation_attempts: Number(data.reconciliation_attempts) || 0,
+        reconciliation_status: typeof data.reconciliation_status === "string" ? data.reconciliation_status : "none",
         retryable: Boolean(data.retryable),
+        support_review_required: Boolean(data.support_review_required),
       },
       { status: result.status || 502 },
     );

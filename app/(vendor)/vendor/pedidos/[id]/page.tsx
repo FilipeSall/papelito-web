@@ -76,7 +76,10 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
 
   return (
     <div className="space-y-4 md:space-y-5">
-      <OrderStatusAutoRefresh />
+      <OrderStatusAutoRefresh
+        active={order.logistics.generationStatus === "generating" || order.logistics.generationStatus === "uncertain"}
+        intervalMs={15_000}
+      />
       <VendorPageHeader
         action={
           <VendorOrderDeliveryCountdown
@@ -172,7 +175,9 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             manualFallbackAvailable={order.logistics.manualFallbackAvailable}
             manualRegistrationEnabled={order.logistics.manualRegistrationEnabled}
             orderId={order.id}
+            shippingService={order.shippingService}
             status={order.status}
+            supportReviewRequired={order.logistics.supportReviewRequired}
           />
         </Panel>
         <Panel className="overflow-hidden">

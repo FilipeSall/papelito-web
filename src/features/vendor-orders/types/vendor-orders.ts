@@ -37,6 +37,7 @@ export type ShipmentGenerationStatus =
   | "uncertain";
 
 export type VendorOrderShipment = {
+  creationOutcome: string;
   deliveredAt: string;
   hasError: boolean;
   id: number;
@@ -47,16 +48,21 @@ export type VendorOrderShipment = {
   lastEventDescription: string;
   lastEventLocation: string;
   lastEventType: string;
+  nextReconciliationAt: string;
   serviceCode: string;
   provider: "correios" | "manual" | "mock" | string;
+  reconciliationAttempts: number;
+  reconciliationStatus: string;
   isTest: boolean;
   status: ShipmentLogisticsStatus;
+  supportReviewRequired: boolean;
   trackingCode: string;
 };
 
 export type VendorOrderLogistics = {
   automaticGenerationEnabled: boolean;
   allPackagesDone: boolean;
+  creationOutcome: string;
   generationStatus: ShipmentGenerationStatus;
   lastEventAt: string;
   packagesDelivered: number;
@@ -64,8 +70,12 @@ export type VendorOrderLogistics = {
   manualRegistrationEnabled: boolean;
   manualFallbackAvailable: boolean;
   generationErrorCode: string;
+  nextReconciliationAt: string;
+  reconciliationAttempts: number;
+  reconciliationStatus: string;
   shipments: VendorOrderShipment[];
   status: ShipmentLogisticsStatus | "not_started";
+  supportReviewRequired: boolean;
 };
 
 export type VendorOrderSummary = {

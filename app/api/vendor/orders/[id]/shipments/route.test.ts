@@ -22,7 +22,16 @@ describe("POST /api/vendor/orders/:id/shipments", () => {
     wpRestMock.mockResolvedValue({
       error: {
         code: "papelito_correios_service_not_contracted",
-        data: { category: "not_contracted", manual_fallback_available: true, retryable: false },
+        data: {
+          category: "not_contracted",
+          creation_outcome: "not_created",
+          manual_fallback_available: true,
+          next_reconciliation_at: "",
+          reconciliation_attempts: 0,
+          reconciliation_status: "not_needed",
+          retryable: false,
+          support_review_required: false,
+        },
         message: "A API de Pre-Postagem nao esta disponivel para este contrato ou cartao.",
       },
       ok: false,
@@ -38,9 +47,14 @@ describe("POST /api/vendor/orders/:id/shipments", () => {
     expect(await response.json()).toEqual({
       category: "not_contracted",
       code: "papelito_correios_service_not_contracted",
+      creation_outcome: "not_created",
       message: "A API de Pre-Postagem nao esta disponivel para este contrato ou cartao.",
       manual_fallback_available: true,
+      next_reconciliation_at: "",
+      reconciliation_attempts: 0,
+      reconciliation_status: "not_needed",
       retryable: false,
+      support_review_required: false,
     });
   });
 

@@ -77,17 +77,23 @@ describe("mapVendorOrderDetail logistics", () => {
       id: 11887,
       logistics: {
         automatic_generation_enabled: true,
+        creation_outcome: "created",
         generation_status: "generated",
         generation_error_code: "",
         manual_fallback_available: false,
         manual_registration_enabled: false,
+        reconciliation_attempts: 1,
+        reconciliation_status: "resolved_created",
         status: "preposted",
+        support_review_required: false,
         shipments: [
           {
+            creation_outcome: "created",
             generation_status: "generated",
             id: 91,
             label_available: true,
             provider: "mock",
+            reconciliation_status: "resolved_created",
             is_test: true,
             status: "preposted",
             tracking_code: "MOCK-11887-ABCDEF12",
@@ -98,12 +104,16 @@ describe("mapVendorOrderDetail logistics", () => {
 
     expect(order.logistics.automaticGenerationEnabled).toBe(true);
     expect(order.logistics.generationStatus).toBe("generated");
+    expect(order.logistics.creationOutcome).toBe("created");
+    expect(order.logistics.reconciliationStatus).toBe("resolved_created");
     expect(order.logistics.manualRegistrationEnabled).toBe(false);
     expect(order.logistics.manualFallbackAvailable).toBe(false);
     expect(order.logistics.shipments[0]).toMatchObject({
       generationStatus: "generated",
+      creationOutcome: "created",
       labelAvailable: true,
       provider: "mock",
+      reconciliationStatus: "resolved_created",
       isTest: true,
       trackingCode: "MOCK-11887-ABCDEF12",
     });

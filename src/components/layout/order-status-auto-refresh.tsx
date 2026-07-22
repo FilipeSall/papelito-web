@@ -3,16 +3,40 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export function OrderStatusAutoRefresh({ intervalMs = 60_000 }: { intervalMs?: number }) {
+export function OrderStatusAutoRefresh({
+  active = true,
+  intervalMs = 60_000,
+  maxAttempts = 8,
+}: {
+  active?: boolean;
+  intervalMs?: number;
+  maxAttempts?: number;
+}) {
   const router = useRouter();
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") router.refresh();
-    }, Math.max(30_000, intervalMs));
+    if (!active) return undefined;
 
-    return () => window.clearInterval(timer);
-  }, [intervalMs, router]);
+    let attempt = 0;
+    let timer: number | undefined;
+
+    function schedule() {
+      const baseDelay = Math.max(10_000, intervalMs);
+      const delay = Math.min(120_000, baseDelay * 2 ** Math.max(0, attempt - 1));
+      const jitter = Math.round(delay * (Math.random() * 0.2 - 0.1));
+      timer = window.setTimeout(() => {
+        if (document.visibilityState === "visible") router.refresh();
+        attempt += 1;
+        if (attempt < maxAttempts) schedule();
+      }, delay + jitter);
+    }
+
+    schedule();
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [active, intervalMs, maxAttempts, router]);
 
   return null;
 }

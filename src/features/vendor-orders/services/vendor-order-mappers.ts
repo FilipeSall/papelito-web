@@ -35,14 +35,20 @@ export type WpVendorOrder = {
     automatic_generation_enabled?: boolean;
     all_packages_done?: boolean;
     generation_status?: string;
+    creation_outcome?: string;
     last_event_at?: string;
     packages_delivered?: number;
     packages_total?: number;
     manual_registration_enabled?: boolean;
     manual_fallback_available?: boolean;
     generation_error_code?: string;
+    next_reconciliation_at?: string;
+    reconciliation_attempts?: number;
+    reconciliation_status?: string;
     status?: string;
+    support_review_required?: boolean;
     shipments?: Array<{
+      creation_outcome?: string;
       delivered_at?: string;
       has_error?: boolean;
       id?: number;
@@ -53,10 +59,14 @@ export type WpVendorOrder = {
       last_event_description?: string;
       last_event_location?: string;
       last_event_type?: string;
+      next_reconciliation_at?: string;
+      reconciliation_attempts?: number;
+      reconciliation_status?: string;
       service_code?: string;
       provider?: string;
       is_test?: boolean;
       status?: string;
+      support_review_required?: boolean;
       tracking_code?: string;
     }>;
   };
@@ -120,6 +130,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       ? (value as ShipmentGenerationStatus)
       : fallback;
   const shipments = (order.logistics?.shipments ?? []).map((shipment) => ({
+    creationOutcome: shipment.creation_outcome ?? "created",
     deliveredAt: shipment.delivered_at ?? "",
     hasError: Boolean(shipment.has_error),
     id: Number(shipment.id) || 0,
@@ -133,10 +144,14 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
     lastEventDescription: shipment.last_event_description ?? "",
     lastEventLocation: shipment.last_event_location ?? "",
     lastEventType: shipment.last_event_type ?? "",
+    nextReconciliationAt: shipment.next_reconciliation_at ?? "",
     serviceCode: shipment.service_code ?? "",
     provider: shipment.provider ?? "correios",
+    reconciliationAttempts: Number(shipment.reconciliation_attempts) || 0,
+    reconciliationStatus: shipment.reconciliation_status ?? "none",
     isTest: Boolean(shipment.is_test),
     status: mapLogisticsStatus(shipment.status),
+    supportReviewRequired: Boolean(shipment.support_review_required),
     trackingCode: shipment.tracking_code ?? "",
   }));
   return {
@@ -165,6 +180,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
     logistics: {
       automaticGenerationEnabled: Boolean(order.logistics?.automatic_generation_enabled),
       allPackagesDone: Boolean(order.logistics?.all_packages_done),
+      creationOutcome: order.logistics?.creation_outcome ?? "not_created",
       generationStatus: mapGenerationStatus(
         order.logistics?.generation_status,
         shipments.length > 0 ? "generated" : "not_started",
@@ -175,10 +191,14 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       manualRegistrationEnabled: Boolean(order.logistics?.manual_registration_enabled),
       manualFallbackAvailable: Boolean(order.logistics?.manual_fallback_available),
       generationErrorCode: order.logistics?.generation_error_code ?? "",
+      nextReconciliationAt: order.logistics?.next_reconciliation_at ?? "",
+      reconciliationAttempts: Number(order.logistics?.reconciliation_attempts) || 0,
+      reconciliationStatus: order.logistics?.reconciliation_status ?? "none",
       shipments,
       status: order.logistics?.status === "not_started"
         ? "not_started"
         : mapLogisticsStatus(order.logistics?.status),
+      supportReviewRequired: Boolean(order.logistics?.support_review_required),
     },
   };
 }
