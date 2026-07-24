@@ -30,9 +30,7 @@ export async function proxyCompanyRequest(
 
   if (IDEMPOTENT_METHODS.has(method)) {
     const key = request.headers.get("Idempotency-Key");
-    // Gera uma chave estável do lado do servidor quando o cliente não enviar — mutações sempre
-    // exigem Idempotency-Key no backend.
-    headers["Idempotency-Key"] = key ?? crypto.randomUUID();
+    if (key) headers["Idempotency-Key"] = key;
   }
 
   let json: unknown;

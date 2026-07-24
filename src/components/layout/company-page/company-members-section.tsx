@@ -141,6 +141,32 @@ export function CompanyMembersSection({ viewerRole, onChanged }: CompanyMembersS
                       ))}
                     </select>
 
+                    {!isOwner ? (
+                      <>
+                        <label className="sr-only" htmlFor={`expires-${member.memberId}`}>
+                          Expiração do acesso de {member.email}
+                        </label>
+                        <input
+                          id={`expires-${member.memberId}`}
+                          type="date"
+                          disabled={busy}
+                          defaultValue={member.expiresAt ? member.expiresAt.slice(0, 10) : ""}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            void run(member.memberId, () =>
+                              patchMember(member.memberId, {
+                                expiresAt: value ? new Date(`${value}T23:59:59Z`).toISOString() : null,
+                              }),
+                            );
+                          }}
+                          className="h-9 border-2 border-[#1a1a1a] px-2 text-[12px]"
+                        />
+                        {member.expiresAt ? (
+                          <MemberActionButton busy={busy} label="Sem expiração" onClick={() => run(member.memberId, () => patchMember(member.memberId, { expiresAt: null }))} />
+                        ) : null}
+                      </>
+                    ) : null}
+
                     {member.status === "active" ? (
                       <MemberActionButton
                         busy={busy}

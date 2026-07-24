@@ -2,6 +2,7 @@
 
 import type {
   CompanyAccessRequest,
+  CompanyAuditEvent,
   CompanyContext,
   CompanyInvitation,
   CompanyMember,
@@ -21,7 +22,7 @@ async function call<T>(
     ...(headers as Record<string, string> | undefined),
   };
   // Mutações levam Idempotency-Key durável, seguro contra duplo-clique/retry.
-  if (idempotent) {
+  if (idempotent && !finalHeaders["Idempotency-Key"]) {
     finalHeaders["Idempotency-Key"] = crypto.randomUUID();
   }
 
@@ -50,6 +51,10 @@ async function call<T>(
   }
 
   return { ok: true, data: body as T };
+}
+
+function idempotencyKey() {
+  return crypto.randomUUID();
 }
 
 export function fetchCompanyContext() {
@@ -99,6 +104,14 @@ export function patchMember(
     idempotent: true,
     body: JSON.stringify(payload),
   });
+}
+
+export function updateCompanyDetails(payload: { billingEmail?: string; phone?: string }, key = idempotencyKey()) {
+  return call<CompanyContext>("/api/company/current", { method: "PATCH", idempotent: true, headers: { "Idempotency-Key": key }, body: JSON.stringify(payload) });
+}
+
+export function listCompanyAudit(page = 1) {
+  return call<{ items: CompanyAuditEvent[]; page: number; perPage: number }>(`/api/company/current/audit?page=${page}`);
 }
 
 export function removeMember(memberId: number) {

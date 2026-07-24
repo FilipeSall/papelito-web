@@ -29,7 +29,26 @@ export type CompanyContext = {
   availableCompanies: AvailableCompany[];
   canPurchase: boolean;
   membershipExpiresAt?: string | null;
+  company?: CompanyDetails;
 };
+
+export type CompanyDetails = {
+  legalName: string;
+  tradeName: string | null;
+  cnpj: string;
+  registryStatus: string;
+  ownershipStatus: string;
+  status: string;
+  fiscalAddress: Record<string, string> | null;
+  providerSource: string | null;
+  providerCheckedAt: string | null;
+  billingEmail: string | null;
+  pendingBillingEmail?: string | null;
+  billingEmailStatus: "unverified" | "pending" | "verified";
+  phone: string | null;
+};
+
+export type CompanyAuditEvent = { action: string; createdAt: string; actor: { displayName: string; role: CompanyRole | null } | null; target: { displayName: string; role: CompanyRole | null } | null };
 
 export type AvailableCompany = {
   companyId: number;

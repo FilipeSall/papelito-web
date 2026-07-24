@@ -14,6 +14,8 @@ import { CompanyMembersSection } from "./company-members-section";
 import { CompanyRequestAccessForm } from "./company-request-access-form";
 import { CompanyOnboardingForm } from "./company-onboarding-form";
 import { CompanySelector } from "./company-selector";
+import { CompanyDetailsSection } from "./company-details-section";
+import { CompanyAuditSection } from "./company-audit-section";
 
 type CompanyDashboardProps = {
   initialContext: CompanyContext;
@@ -88,9 +90,11 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
 
       {hasCompany ? (
         <>
+          <CompanyDetailsSection context={context} onChanged={refresh} />
           <CompanyAccessRequestsSection viewerRole={context.membershipRole} onChanged={refresh} />
           <CompanyMembersSection viewerRole={context.membershipRole} onChanged={refresh} />
           <CompanyInvitationsSection viewerRole={context.membershipRole} />
+          <CompanyAuditSection role={context.membershipRole} />
         </>
       ) : null}
     </div>
