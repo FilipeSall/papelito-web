@@ -17,6 +17,7 @@ export type OnboardingStatus =
   | "incomplete";
 
 export type CompanyContext = {
+	isB2bCohort?: boolean;
   identityStatus: string;
   companyId: number | null;
   companyStatus: string | null;
@@ -28,6 +29,7 @@ export type CompanyContext = {
   companySelectionRequired: boolean;
   availableCompanies: AvailableCompany[];
   canPurchase: boolean;
+	purchaseBlockReason?: string | null;
   membershipExpiresAt?: string | null;
   company?: CompanyDetails;
 };

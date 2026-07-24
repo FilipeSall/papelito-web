@@ -6,6 +6,7 @@ import { placeOrder } from "./place-order";
 
 type PlaceOrderRequestPayload = {
   checkout_attempt_id?: string;
+	expected_company_id?: number;
 };
 
 const baseInput = {
@@ -72,6 +73,18 @@ describe("placeOrder", () => {
     expect(payload).toMatchObject({
       checkout_attempt_id: "attempt-123",
     });
+  });
+
+  it("sends expectedCompanyId only when the B2B checkout supplies it", async () => {
+    let payload: PlaceOrderRequestPayload | null = null;
+    server.use(
+      http.post("/api/checkout/place-order", async ({ request }) => {
+        payload = (await request.json()) as PlaceOrderRequestPayload;
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+      }),
+    );
+    await placeOrder({ ...baseInput, expectedCompanyId: 44 });
+    expect(payload).toMatchObject({ expected_company_id: 44 });
   });
 
   it("prefers the backend message over the friendly fallback map", async () => {

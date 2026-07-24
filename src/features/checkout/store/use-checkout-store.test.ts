@@ -83,7 +83,9 @@ describe("useCheckoutStore", () => {
       },
     });
     expect(useCheckoutStore.getState().checkoutAttemptId).toBeTruthy();
-    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(initialAttemptId);
+    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(
+      initialAttemptId,
+    );
   });
 
   it("rotates the checkout attempt id without clearing the cart form", () => {
@@ -93,8 +95,24 @@ describe("useCheckoutStore", () => {
     useCheckoutStore.getState().rotateCheckoutAttempt();
 
     expect(useCheckoutStore.getState().checkoutAttemptId).toBeTruthy();
-    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(initialAttemptId);
+    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(
+      initialAttemptId,
+    );
     expect(useCheckoutStore.getState().addressForm.city).toBe("Campinas");
+  });
+
+  it("keeps a card billing address independent from the delivery address", () => {
+    useCheckoutStore.getState().setAddressField("city", "Sao Paulo");
+    useCheckoutStore.getState().setUseDeliveryAddressForBilling(false);
+    useCheckoutStore.getState().setBillingAddressField("city", "Campinas");
+
+    expect(useCheckoutStore.getState().addressForm.city).toBe("Sao Paulo");
+    expect(useCheckoutStore.getState().billingAddressForm.city).toBe(
+      "Campinas",
+    );
+    expect(useCheckoutStore.getState().useDeliveryAddressForBilling).toBe(
+      false,
+    );
   });
 
   it("persists only non-sensitive payment fields", async () => {
@@ -112,6 +130,6 @@ describe("useCheckoutStore", () => {
     expect(raw).toContain("tok_live");
     expect(raw).toContain("checkoutAttemptId");
     expect(raw).not.toContain("4111111111111111");
-    expect(raw).not.toContain("\"cvv\"");
+    expect(raw).not.toContain('"cvv"');
   });
 });

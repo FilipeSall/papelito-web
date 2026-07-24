@@ -15,6 +15,7 @@ import {
 } from "@/features/cart";
 import { formatBRL } from "@/lib/format-currency";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   CartPaymentChip,
   CartQuantityControl,
@@ -107,6 +108,7 @@ export function CartPageContent() {
   );
   const { isPricing } = useCartPricing();
   const stockValidation = useCartStockValidation({ validateOnMount: true });
+	const { isB2bPurchaseBlocked } = useAuthSession();
 
   const [couponInput, setCouponInput] = useState("");
   const [couponStatus, setCouponStatus] = useState<"idle" | "applying" | "applied" | "invalid">(
@@ -157,6 +159,10 @@ export function CartPageContent() {
   }
 
   async function handleCheckout() {
+		if (isB2bPurchaseBlocked) {
+			setCheckoutMessage("Sua empresa ainda não está apta para comprar. Revise o cadastro empresarial.");
+			return;
+		}
     if (stockValidation.isValidating || isPricing) return;
 
     if (pricingRequiresConfirmation) {
@@ -455,7 +461,7 @@ export function CartPageContent() {
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={stockValidation.isValidating || isPricing || pricingRequiresConfirmation}
+				disabled={stockValidation.isValidating || isPricing || pricingRequiresConfirmation || isB2bPurchaseBlocked}
               onClick={() => void handleCheckout()}
             >
               {stockValidation.isValidating

@@ -43,6 +43,8 @@ function shouldShowShippingName(service: string, name: string) {
 
 type CheckoutAddressStepContentProps = {
   initialDocument?: string;
+	company?: { legalName: string; cnpj: string } | null;
+	isB2b?: boolean;
 };
 
 function isValidDocument(document: string) {
@@ -54,6 +56,8 @@ function isValidDocument(document: string) {
 
 export function CheckoutAddressStepContent({
   initialDocument = "",
+	company = null,
+	isB2b = false,
 }: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
@@ -192,6 +196,10 @@ export function CheckoutAddressStepContent({
   const showShippingLoadingFeedback = shouldQuoteShipping && shippingStatus === "loading";
 
   async function handleAdvance() {
+		if (isB2b) {
+			router.push("/checkout/pagamento");
+			return;
+		}
     setDocumentTouched(true);
 
     if (!isDocumentValid) return;
@@ -248,7 +256,7 @@ export function CheckoutAddressStepContent({
                 onChange={handleZipCodeChange}
               />
 
-              <CheckoutField
+				{!isB2b ? <CheckoutField
                 label="CPF / CNPJ"
                 placeholder="000.000.000-00"
                 value={document}
@@ -260,7 +268,7 @@ export function CheckoutAddressStepContent({
                   setDocumentSaveError(null);
                   setDocument(formatDocument(value));
                 }}
-              />
+				/> : <div className="rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-sm md:col-span-2"><p className="font-black uppercase text-brand-dark">Comprando em nome de</p><p className="mt-2 font-medium">{company?.legalName}</p><p>CNPJ: {company?.cnpj}</p></div>}
 
               <div className="md:col-span-2">
                 <CheckoutField
@@ -386,7 +394,7 @@ export function CheckoutAddressStepContent({
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!isFormValid || shouldBlockForShipping || !isDocumentValid || isSavingDocument}
+				disabled={!isFormValid || shouldBlockForShipping || (!isB2b && !isDocumentValid) || isSavingDocument}
               onClick={handleAdvance}
             >
               {isSavingDocument ? "Salvando..." : "Proximo: Pagamento"}

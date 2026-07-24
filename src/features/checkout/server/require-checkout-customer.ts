@@ -16,5 +16,9 @@ export async function requireCheckoutCustomer(callbackPath: string) {
     redirect("/");
   }
 
+	if (session.b2b?.isB2bCohort === true && session.b2b.canPurchase !== true) {
+		redirect("/perfil/empresa");
+	}
+
   return session;
 }

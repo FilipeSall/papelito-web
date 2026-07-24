@@ -30,12 +30,19 @@ const INITIAL_PAYMENT_FORM: PaymentForm = {
 
 interface CheckoutState {
   addressForm: CheckoutAddressForm;
+  billingAddressForm: CheckoutAddressForm;
+  useDeliveryAddressForBilling: boolean;
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
   shippingQuote: CheckoutShippingQuoteState;
   checkoutAttemptId: string;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
+  setBillingAddressField: (
+    field: keyof CheckoutAddressForm,
+    value: string,
+  ) => void;
+  setUseDeliveryAddressForBilling: (value: boolean) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
   setPaymentField: (field: keyof PaymentForm, value: string) => void;
   patchPaymentForm: (values: Partial<PaymentForm>) => void;
@@ -52,7 +59,10 @@ const INITIAL_SHIPPING_QUOTE: CheckoutShippingQuoteState = {
 };
 
 function createCheckoutAttemptId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
 
@@ -63,6 +73,8 @@ export const useCheckoutStore = create<CheckoutState>()(
   persist(
     (set) => ({
       addressForm: INITIAL_ADDRESS_FORM,
+      billingAddressForm: INITIAL_ADDRESS_FORM,
+      useDeliveryAddressForBilling: true,
       paymentMethod: "credit_card",
       paymentForm: INITIAL_PAYMENT_FORM,
       shippingQuote: INITIAL_SHIPPING_QUOTE,
@@ -81,6 +93,15 @@ export const useCheckoutStore = create<CheckoutState>()(
             ...values,
           },
         })),
+      setBillingAddressField: (field, value) =>
+        set((state) => ({
+          billingAddressForm: {
+            ...state.billingAddressForm,
+            [field]: value,
+          },
+        })),
+      setUseDeliveryAddressForBilling: (value) =>
+        set({ useDeliveryAddressForBilling: value }),
       setPaymentMethod: (method) => set({ paymentMethod: method }),
       setPaymentField: (field, value) =>
         set((state) => ({
@@ -100,9 +121,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         set((state) => ({
           shippingQuote: {
             quote,
-            selectedOption: quote
-              ? state.shippingQuote.selectedOption
-              : null,
+            selectedOption: quote ? state.shippingQuote.selectedOption : null,
           },
         })),
       setSelectedShippingQuote: (quote) =>
@@ -118,6 +137,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
+          billingAddressForm: INITIAL_ADDRESS_FORM,
+          useDeliveryAddressForBilling: true,
           paymentMethod: "credit_card",
           paymentForm: INITIAL_PAYMENT_FORM,
           shippingQuote: INITIAL_SHIPPING_QUOTE,
@@ -126,7 +147,7 @@ export const useCheckoutStore = create<CheckoutState>()(
     }),
     {
       name: "papelito-checkout-store",
-      version: 3,
+      version: 4,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
@@ -140,6 +161,8 @@ export const useCheckoutStore = create<CheckoutState>()(
           selectedShippingQuote?: ShippingQuoteOption | null;
           shippingQuote?: CheckoutShippingQuoteState;
           paymentForm?: Partial<PaymentForm>;
+          billingAddressForm?: CheckoutAddressForm;
+          useDeliveryAddressForBilling?: boolean;
           checkoutAttemptId?: string;
         };
 
@@ -166,6 +189,10 @@ export const useCheckoutStore = create<CheckoutState>()(
           return {
             ...state,
             paymentForm: safePaymentForm,
+            billingAddressForm:
+              state.billingAddressForm ?? INITIAL_ADDRESS_FORM,
+            useDeliveryAddressForBilling:
+              state.useDeliveryAddressForBilling !== false,
             checkoutAttemptId:
               typeof state.checkoutAttemptId === "string" &&
               state.checkoutAttemptId.trim()
@@ -177,6 +204,9 @@ export const useCheckoutStore = create<CheckoutState>()(
         return {
           ...state,
           paymentForm: safePaymentForm,
+          billingAddressForm: state.billingAddressForm ?? INITIAL_ADDRESS_FORM,
+          useDeliveryAddressForBilling:
+            state.useDeliveryAddressForBilling !== false,
           shippingQuote: {
             quote: null,
             selectedOption: state.selectedShippingQuote ?? null,
@@ -190,6 +220,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       },
       partialize: (state) => ({
         addressForm: state.addressForm,
+        billingAddressForm: state.billingAddressForm,
+        useDeliveryAddressForBilling: state.useDeliveryAddressForBilling,
         paymentMethod: state.paymentMethod,
         paymentForm: state.paymentForm,
         shippingQuote: state.shippingQuote,

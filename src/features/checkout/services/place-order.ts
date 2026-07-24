@@ -39,6 +39,14 @@ const ERROR_MESSAGES: Record<string, string> = {
     "O carrinho possui produtos duplicados. Atualize a página e tente novamente.",
   papelito_checkout_attempt_in_progress:
     "Seu pedido ja esta sendo processado. Aguarde alguns instantes.",
+	papelito_checkout_company_context_changed:
+		"A empresa ativa mudou. Revise o checkout antes de finalizar.",
+	papelito_checkout_attempt_payload_conflict:
+		"Esta tentativa de checkout foi reutilizada com dados diferentes. Atualize a página.",
+	papelito_b2b_purchase_not_allowed:
+		"Sua empresa ainda não está apta para realizar compras.",
+	papelito_b2b_cnpj_alphanumeric_payment_unsupported:
+		"O pagamento para CNPJ alfanumérico ainda não está disponível.",
   papelito_checkout_gateway_amount_rejected:
     "O Pagar.me rejeitou o valor da cobranca. Revise o total e as parcelas.",
   papelito_checkout_total_mismatch:
@@ -82,6 +90,7 @@ export async function placeOrder(
       },
       body: JSON.stringify({
         checkout_attempt_id: input.checkoutAttemptId,
+		expected_company_id: input.expectedCompanyId,
         items: input.items.map((item) => ({
           product_id: item.productId,
           qty: item.qty,

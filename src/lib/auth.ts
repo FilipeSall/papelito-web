@@ -67,7 +67,9 @@ type WpAuthIdentityResponse = {
     profileComplete?: boolean | null;
   } | null;
   b2b?: {
+		isB2bCohort?: boolean;
     canPurchase?: boolean;
+		purchaseBlockReason?: string | null;
     companyId?: number | null;
     companyOwnershipStatus?: string | null;
     companyRegistryStatus?: string | null;

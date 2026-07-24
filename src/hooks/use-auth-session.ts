@@ -36,5 +36,8 @@ export function useAuthSession() {
     requiresReauth: status === "authenticated" && !hasAccessToken,
     isAdministrator: role === "administrator",
     isSeller: role === "seller",
+		b2b: session?.b2b,
+		isB2bPurchaseBlocked:
+			session?.b2b?.isB2bCohort === true && session.b2b.canPurchase !== true,
   };
 }

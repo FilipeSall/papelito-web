@@ -61,6 +61,7 @@ export type CheckoutShippingQuoteState = {
 
 export type PlaceOrderInput = {
   checkoutAttemptId: string;
+	expectedCompanyId?: number;
   items: Array<{
     productId: number;
     qty: number;

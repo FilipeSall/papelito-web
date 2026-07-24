@@ -13,6 +13,7 @@ import {
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { formatBRL } from "@/lib/format-currency";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
@@ -34,13 +35,24 @@ export function CheckoutReviewStepContent() {
     (state) => state.pricingRequiresConfirmation,
   );
   const addressForm = useCheckoutStore((state) => state.addressForm);
+  const billingAddressForm = useCheckoutStore(
+    (state) => state.billingAddressForm,
+  );
+  const useDeliveryAddressForBilling = useCheckoutStore(
+    (state) => state.useDeliveryAddressForBilling,
+  );
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
-  const checkoutAttemptId = useCheckoutStore((state) => state.checkoutAttemptId);
-  const rotateCheckoutAttempt = useCheckoutStore((state) => state.rotateCheckoutAttempt);
+  const checkoutAttemptId = useCheckoutStore(
+    (state) => state.checkoutAttemptId,
+  );
+  const rotateCheckoutAttempt = useCheckoutStore(
+    (state) => state.rotateCheckoutAttempt,
+  );
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const stockValidation = useCartStockValidation();
+  const { b2b } = useAuthSession();
   const [checkoutError, setCheckoutError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -64,7 +76,19 @@ export function CheckoutReviewStepContent() {
         Boolean(paymentForm.cardTokenId)
       : true;
 
-  const canFinishOrder = isAddressValid && isPaymentValid;
+  const activeBillingAddress = useDeliveryAddressForBilling
+    ? addressForm
+    : billingAddressForm;
+  const isBillingAddressValid =
+    paymentMethod !== "credit_card" ||
+    (activeBillingAddress.zipCode.replace(/\D/g, "").length === 8 &&
+      Boolean(activeBillingAddress.street.trim()) &&
+      Boolean(activeBillingAddress.number.trim()) &&
+      Boolean(activeBillingAddress.neighborhood.trim()) &&
+      Boolean(activeBillingAddress.city.trim()) &&
+      Boolean(activeBillingAddress.state.trim()));
+  const canFinishOrder =
+    isAddressValid && isBillingAddressValid && isPaymentValid;
   const selectedShippingQuote = shippingQuote.selectedOption;
   const currentShippingQuote = shippingQuote.quote;
   const isShippingValid =
@@ -137,6 +161,9 @@ export function CheckoutReviewStepContent() {
       try {
         const result = await placeOrder({
           checkoutAttemptId,
+          expectedCompanyId: b2b?.isB2bCohort
+            ? (b2b.companyId ?? undefined)
+            : undefined,
           items: placeOrderItems,
           address: addressForm,
           shipping: {
@@ -158,7 +185,9 @@ export function CheckoutReviewStepContent() {
                 ? paymentForm.holderName
                 : undefined,
             billingAddress:
-              paymentMethod === "credit_card" ? addressForm : undefined,
+              paymentMethod === "credit_card"
+                ? activeBillingAddress
+                : undefined,
           },
           couponCode,
         });
@@ -358,7 +387,8 @@ export function CheckoutReviewStepContent() {
 
                 {pricingRequiresConfirmation ? (
                   <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                    Confirme os preços recalculados no resumo antes de finalizar.
+                    Confirme os preços recalculados no resumo antes de
+                    finalizar.
                   </p>
                 ) : null}
 

@@ -3,7 +3,9 @@ import "next-auth/jwt";
 
 declare module "next-auth" {
   type B2bContext = {
+		isB2bCohort?: boolean;
     canPurchase?: boolean;
+		purchaseBlockReason?: string | null;
     companyId?: number | null;
     companyOwnershipStatus?: string | null;
     companyRegistryStatus?: string | null;

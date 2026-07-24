@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/features/cart";
-import { useCheckoutPaymentForm } from "@/features/checkout";
-import { PAYMENT_METHOD_OPTIONS } from "./checkout-constants";
+import { useCheckoutPaymentForm, useCheckoutStore } from "@/features/checkout";
+import { BRAZIL_STATES, PAYMENT_METHOD_OPTIONS } from "./checkout-constants";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
+import { CheckoutCustomSelect } from "./checkout-custom-select";
+import { CheckoutField } from "./checkout-field";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
 import { CreditCardFormFields } from "./credit-card-form-fields";
 import { PaymentMethodOption } from "./payment-method-option";
@@ -22,6 +24,16 @@ export function CheckoutPaymentStepContent() {
   );
   const [paymentError, setPaymentError] = useState("");
   const [pending, startTransition] = useTransition();
+  const useDeliveryAddressForBilling = useCheckoutStore(
+    (state) => state.useDeliveryAddressForBilling,
+  );
+  const billingAddress = useCheckoutStore((state) => state.billingAddressForm);
+  const setBillingAddressField = useCheckoutStore(
+    (state) => state.setBillingAddressField,
+  );
+  const setUseDeliveryAddressForBilling = useCheckoutStore(
+    (state) => state.setUseDeliveryAddressForBilling,
+  );
 
   const {
     method,
@@ -40,14 +52,15 @@ export function CheckoutPaymentStepContent() {
   const totalCents = pricing?.totals.totalCents ?? 0;
   const methodMinimum =
     method === "credit_card"
-      ? restrictions?.creditCardMinimumCents ?? 100
+      ? (restrictions?.creditCardMinimumCents ?? 100)
       : method === "pix"
-        ? restrictions?.pixMinimumCents ?? 1
-        : restrictions?.boletoMinimumCents ?? 1;
+        ? (restrictions?.pixMinimumCents ?? 1)
+        : (restrictions?.boletoMinimumCents ?? 1);
   const amountAllowed = !pricing || totalCents >= methodMinimum;
   const installmentCount = Number.parseInt(form.installments, 10) || 1;
   const maxInstallments = restrictions?.maxInstallments ?? 6;
-  const installmentAllowed = method !== "credit_card" || installmentCount <= maxInstallments;
+  const installmentAllowed =
+    method !== "credit_card" || installmentCount <= maxInstallments;
 
   if (items.length === 0) return <CheckoutEmptyCart />;
 
@@ -60,7 +73,9 @@ export function CheckoutPaymentStepContent() {
         router.push("/checkout/revisao");
       } catch (error) {
         setPaymentError(
-          error instanceof Error ? error.message : "Nao foi possivel preparar o pagamento.",
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel preparar o pagamento.",
         );
       }
     });
@@ -68,7 +83,11 @@ export function CheckoutPaymentStepContent() {
 
   return (
     <main className="bg-bg-light">
-      <CheckoutHeader backHref="/checkout" backLabel="Voltar para endereco" currentStep={2} />
+      <CheckoutHeader
+        backHref="/checkout"
+        backLabel="Voltar para endereco"
+        currentStep={2}
+      />
 
       <section className="mx-auto w-full max-w-391 px-6 pb-16 pt-6 md:px-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,299px)]">
@@ -91,19 +110,103 @@ export function CheckoutPaymentStepContent() {
             </div>
 
             {method === "credit_card" && (
-              <CreditCardFormFields
-                holderName={form.holderName}
-                cardNumber={draft.cardNumber}
-                expiryDate={draft.expiryDate}
-                cvv={draft.cvv}
-                installments={form.installments}
-                maxInstallments={maxInstallments}
-                onHolderNameChange={(value) => updateField("holderName", value)}
-                onCardNumberChange={handleCardNumberChange}
-                onExpiryDateChange={handleExpiryDateChange}
-                onCvvChange={handleCvvChange}
-                onInstallmentsChange={(value) => updateField("installments", value)}
-              />
+              <>
+                <CreditCardFormFields
+                  holderName={form.holderName}
+                  cardNumber={draft.cardNumber}
+                  expiryDate={draft.expiryDate}
+                  cvv={draft.cvv}
+                  installments={form.installments}
+                  maxInstallments={maxInstallments}
+                  onHolderNameChange={(value) =>
+                    updateField("holderName", value)
+                  }
+                  onCardNumberChange={handleCardNumberChange}
+                  onExpiryDateChange={handleExpiryDateChange}
+                  onCvvChange={handleCvvChange}
+                  onInstallmentsChange={(value) =>
+                    updateField("installments", value)
+                  }
+                />
+
+                <fieldset className="mt-6 border-t border-[#E5E7EB] pt-5">
+                  <legend className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
+                    Endereco de cobranca do cartao
+                  </legend>
+                  <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
+                    <input
+                      checked={useDeliveryAddressForBilling}
+                      type="checkbox"
+                      onChange={(event) =>
+                        setUseDeliveryAddressForBilling(event.target.checked)
+                      }
+                    />
+                    Usar o endereco de entrega
+                  </label>
+
+                  {!useDeliveryAddressForBilling ? (
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <CheckoutField
+                        label="CEP"
+                        placeholder="00000-000"
+                        value={billingAddress.zipCode}
+                        onChange={(value) =>
+                          setBillingAddressField("zipCode", value)
+                        }
+                      />
+                      <CheckoutField
+                        label="Rua / Logradouro"
+                        placeholder="Nome da rua"
+                        value={billingAddress.street}
+                        onChange={(value) =>
+                          setBillingAddressField("street", value)
+                        }
+                      />
+                      <CheckoutField
+                        label="Numero"
+                        placeholder="Ex: 123"
+                        value={billingAddress.number}
+                        onChange={(value) =>
+                          setBillingAddressField("number", value)
+                        }
+                      />
+                      <CheckoutField
+                        label="Complemento"
+                        placeholder="Apto, bloco... (opcional)"
+                        value={billingAddress.complement}
+                        onChange={(value) =>
+                          setBillingAddressField("complement", value)
+                        }
+                      />
+                      <CheckoutField
+                        label="Bairro"
+                        placeholder="Nome do bairro"
+                        value={billingAddress.neighborhood}
+                        onChange={(value) =>
+                          setBillingAddressField("neighborhood", value)
+                        }
+                      />
+                      <CheckoutField
+                        label="Cidade"
+                        placeholder="Nome da cidade"
+                        value={billingAddress.city}
+                        onChange={(value) =>
+                          setBillingAddressField("city", value)
+                        }
+                      />
+                      <CheckoutCustomSelect
+                        label="Estado"
+                        options={BRAZIL_STATES}
+                        placeholder="Selecione"
+                        value={billingAddress.state}
+                        onChange={(value) =>
+                          setBillingAddressField("state", value)
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </fieldset>
+              </>
             )}
 
             {paymentError ? (
@@ -114,17 +217,24 @@ export function CheckoutPaymentStepContent() {
 
             {!amountAllowed ? (
               <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                O total mínimo para esta forma de pagamento é {methodMinimum / 100 >= 1 ? `R$ ${(methodMinimum / 100).toFixed(2).replace(".", ",")}` : "R$ 0,01"}.
+                O total mínimo para esta forma de pagamento é{" "}
+                {methodMinimum / 100 >= 1
+                  ? `R$ ${(methodMinimum / 100).toFixed(2).replace(".", ",")}`
+                  : "R$ 0,01"}
+                .
               </p>
             ) : null}
 
             {!installmentAllowed ? (
               <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                Escolha no máximo {maxInstallments}x para respeitar o valor mínimo por parcela.
+                Escolha no máximo {maxInstallments}x para respeitar o valor
+                mínimo por parcela.
               </p>
             ) : null}
 
-            {method === "credit_card" && form.cardTokenId && !draft.cardNumber ? (
+            {method === "credit_card" &&
+            form.cardTokenId &&
+            !draft.cardNumber ? (
               <p className="mt-4 rounded-[12px] border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
                 Cartao tokenizado com final {form.cardLast4 || "----"}.
               </p>
@@ -144,7 +254,11 @@ export function CheckoutPaymentStepContent() {
               onClick={goToReview}
             >
               {pending ? "Preparando pagamento..." : "Proximo: Revisao"}
-              <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
+              <ArrowRightIcon
+                className="h-4.5 w-4.5"
+                size={18}
+                strokeWidth={1.8}
+              />
             </button>
           </form>
 

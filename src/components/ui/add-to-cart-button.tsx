@@ -41,19 +41,22 @@ export function AddToCartButton({
   const addItem = useCartStore((state) => state.addItem);
   const applyVendorToCart = useCartStore((state) => state.applyVendorToCart);
   const items = useCartStore((state) => state.items);
-  const { isAuthenticated, isAdministrator, isSeller, isLoading, isRoleLoading } =
+  const { isAuthenticated, isAdministrator, isSeller, isLoading, isRoleLoading, isB2bPurchaseBlocked } =
     useAuthSession();
   const [isResolving, setIsResolving] = useState(false);
   const adminBlockedMessage = "Admins nao compram pela plataforma.";
   const sellerBlockedMessage = "Vendors nao compram pela plataforma.";
   const roleBlockedMessage = isSeller ? sellerBlockedMessage : undefined;
-  const blockedMessage = disabledReason ?? (isAdministrator ? undefined : roleBlockedMessage);
-  const isPurchaseBlockedByRole = isAdministrator || isSeller;
+	const b2bBlockedMessage = "Sua empresa ainda não está apta para comprar. Revise o cadastro empresarial.";
+  const blockedMessage = disabledReason ?? (isB2bPurchaseBlocked ? b2bBlockedMessage : (isAdministrator ? undefined : roleBlockedMessage));
+  const isPurchaseBlockedByRole = isAdministrator || isSeller || isB2bPurchaseBlocked;
   const isDisabled =
     isResolving || isLoading || isRoleLoading || isPurchaseBlockedByRole || Boolean(disabledReason);
   const roleTooltipMessage = disabledReason
     ? undefined
-    : isAdministrator
+		: isB2bPurchaseBlocked
+			? b2bBlockedMessage
+			: isAdministrator
       ? adminBlockedMessage
       : roleBlockedMessage;
 
