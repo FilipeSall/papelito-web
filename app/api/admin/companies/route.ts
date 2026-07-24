@@ -1,0 +1,12 @@
+import { NextResponse } from "next/server";
+
+import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { wpRest } from "@/lib/server/wp-rest";
+
+export async function GET(request: Request) {
+  const auth = await getAdminApiSession();
+  if ("error" in auth) return NextResponse.json({ message: auth.error }, { status: auth.status });
+  const query = new URL(request.url).searchParams.toString();
+  const result = await wpRest(`/papelito/v1/admin/companies${query ? `?${query}` : ""}`, { headers: { Authorization: `Bearer ${auth.accessToken}` } });
+  return result.ok ? NextResponse.json(result.data) : NextResponse.json(result.error, { status: result.status });
+}

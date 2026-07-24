@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -11,8 +12,9 @@ import {
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
+import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
 
-import { CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "./shared";
+import { CADASTRO_STORAGE_KEY, type CadastroIntent, type CadastroStep1Data } from "./shared";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -25,19 +27,30 @@ export default function CadastroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const initialIntent: CadastroIntent =
+    searchParams.get("intent") === "join" ? "join_company" : "create_company";
+  const [intent, setIntent] = useState<CadastroIntent>(initialIntent);
+  const joining = intent === "join_company";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
+    const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
     const payload: CadastroStep1Data = {
+      birthDate: String(formData.get("birthDate") ?? ""),
+      cnpj,
+      cpf,
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
-      ...(cpf ? { cpf } : {}),
+      intent,
     };
 
-    if (!payload.name || !payload.email || !payload.phone) return;
+    // No fluxo de titular, o CNPJ é obrigatório e válido. No fluxo "entrar em uma empresa", o
+    // usuário só cria a conta e solicita acesso depois em /perfil/empresa.
+    if (!payload.name || !payload.email || !payload.phone || !payload.birthDate || !isValidCpf(cpf)) return;
+    if (!isValidCnpj(cnpj)) return;
 
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
     router.push(
@@ -109,7 +122,39 @@ export default function CadastroPage() {
             </Link>
           </p>
 
-          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+          <div className="mt-8 grid grid-cols-2 gap-2" role="group" aria-label="Tipo de cadastro B2B">
+            <button
+              type="button"
+              aria-pressed={!joining}
+              onClick={() => setIntent("create_company")}
+              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
+                !joining
+                  ? "bg-brand-yellow text-brand-dark"
+                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Cadastrar minha empresa
+            </button>
+            <button
+              type="button"
+              aria-pressed={joining}
+              onClick={() => setIntent("join_company")}
+              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
+                joining
+                  ? "bg-brand-yellow text-brand-dark"
+                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Entrar em uma empresa
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-white/50">
+            {joining
+              ? "Crie sua conta e, em seguida, solicite acesso a uma empresa existente pelo CNPJ."
+              : "Você será o titular da empresa cadastrada e poderá convidar sua equipe."}
+          </p>
+
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <AuthTextField
               id="name"
               name="name"
@@ -142,10 +187,29 @@ export default function CadastroPage() {
             <AuthTextField
               id="cpf"
               name="cpf"
-              label="CPF (opcional)"
+              label="CPF"
               inputMode="numeric"
               placeholder="123.456.789-00"
               autoComplete="off"
+              required
+            />
+
+            <AuthTextField
+              id="birthDate"
+              name="birthDate"
+              label="Data de nascimento"
+              type="date"
+              placeholder="AAAA-MM-DD"
+              required
+            />
+
+            <AuthTextField
+              id="cnpj"
+              name="cnpj"
+              label="CNPJ da empresa"
+              placeholder="00.000.000/0000-00"
+              autoComplete="off"
+              required
             />
 
             <div className="pt-2">

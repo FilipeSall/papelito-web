@@ -16,6 +16,7 @@ import { useProfileShell } from "./profile-shell-provider";
 const menuItems = [
   { href: "/perfil", label: "Meus Pedidos", icon: OrdersIcon },
   { href: "/perfil/dados", label: "Meus Dados", icon: UserDataIcon },
+  { href: "/perfil/empresa", label: "Minha Empresa", icon: UserDataIcon },
   { href: "/perfil/enderecos", label: "Endereços", icon: AddressIcon },
   { href: "/perfil/favoritos", label: "Favoritos", icon: FavoritesIcon },
   { href: "/perfil/configuracoes", label: "Configurações", icon: SettingsIcon },

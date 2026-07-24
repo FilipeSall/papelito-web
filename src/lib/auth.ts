@@ -66,6 +66,17 @@ type WpAuthIdentityResponse = {
     role?: string | null;
     profileComplete?: boolean | null;
   } | null;
+  b2b?: {
+    canPurchase?: boolean;
+    companyId?: number | null;
+    companyOwnershipStatus?: string | null;
+    companyRegistryStatus?: string | null;
+    companyStatus?: string | null;
+    identityStatus?: string;
+    membershipRole?: string | null;
+    membershipStatus?: string | null;
+    onboardingStatus?: string;
+  } | null;
 };
 
 type WpGraphqlError = {
@@ -244,6 +255,7 @@ type WpAuthenticatedIdentity = {
   ok: boolean;
   profileComplete?: boolean;
   role?: string;
+  b2b?: NonNullable<WpAuthIdentityResponse["b2b"]>;
 };
 
 async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<WpAuthenticatedIdentity> {
@@ -262,6 +274,7 @@ async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<WpAuth
           typeof identity.data.user?.profileComplete === "boolean"
             ? identity.data.user.profileComplete
             : undefined,
+        b2b: identity.data.b2b ?? undefined,
       };
     }
 
@@ -271,7 +284,7 @@ async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<WpAuth
     console.error("[auth] identity lookup /auth/me threw", message);
   }
 
-  return { ok: false, role: undefined };
+  return { ok: false, role: undefined, b2b: undefined };
 }
 
 function getAccessTokenExpiresAt(accessToken?: string) {
@@ -347,6 +360,7 @@ providers.push(
         refreshToken: login.refreshToken,
         profileComplete: identity.profileComplete,
         role: identity.role,
+        b2b: identity.b2b,
       };
     },
   }),
@@ -382,6 +396,7 @@ export const authOptions: NextAuthOptions = {
         profileComplete?: boolean;
         id?: string;
         role?: string;
+        b2b?: NonNullable<WpAuthIdentityResponse["b2b"]>;
       };
 
       userWithTokens.id = String(wpAuth.user.databaseId);
@@ -390,10 +405,11 @@ export const authOptions: NextAuthOptions = {
       userWithTokens.refreshToken = wpAuth.refreshToken;
       userWithTokens.profileComplete = wpAuth.profileComplete;
       userWithTokens.role = (await wpFetchAuthenticatedIdentity(wpAuth.authToken)).role;
+      userWithTokens.b2b = (await wpFetchAuthenticatedIdentity(wpAuth.authToken)).b2b;
 
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -406,6 +422,7 @@ export const authOptions: NextAuthOptions = {
         delete token.authIdentityError;
         token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
         token.role = (user as { role?: string }).role;
+        token.b2b = (user as { b2b?: NonNullable<WpAuthIdentityResponse["b2b"]> }).b2b;
         token.roleCheckedAt = Date.now();
       }
 
@@ -413,11 +430,32 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
+      // update({ refreshB2b: true }) no cliente força refresh imediato do contexto B2B (aceite de
+      // convite, troca de empresa, mudança de papel, aprovação/suspensão) — a sessão não pode ficar
+      // stale. Só dispara com o flag explícito, para não re-buscar /auth/me a cada update().
+      if (
+        trigger === "update" &&
+        (session as { refreshB2b?: boolean } | undefined)?.refreshB2b === true &&
+        typeof token.accessToken === "string"
+      ) {
+        const identity = await wpFetchAuthenticatedIdentity(token.accessToken);
+        if (identity.ok) {
+          token.role = identity.role;
+          token.b2b = identity.b2b;
+          if (typeof identity.profileComplete === "boolean") {
+            token.profileComplete = identity.profileComplete;
+          }
+          token.roleCheckedAt = Date.now();
+          delete token.authIdentityError;
+        }
+      }
+
       if (typeof token.accessToken === "string" && shouldRevalidateRole(token)) {
         const identity = await wpFetchAuthenticatedIdentity(token.accessToken);
 
         if (identity.ok) {
           token.role = identity.role;
+          token.b2b = identity.b2b;
           token.roleCheckedAt = Date.now();
           delete token.authIdentityError;
         } else {
@@ -452,6 +490,7 @@ export const authOptions: NextAuthOptions = {
       const refreshedIdentity = await wpFetchAuthenticatedIdentity(refreshedToken.accessToken);
       if (refreshedIdentity.ok) {
         token.role = refreshedIdentity.role;
+        token.b2b = refreshedIdentity.b2b;
         token.roleCheckedAt = Date.now();
         delete token.authIdentityError;
       } else {
@@ -482,6 +521,7 @@ export const authOptions: NextAuthOptions = {
           : typeof token.role === "string"
             ? token.role
             : undefined;
+      session.b2b = token.authIdentityError === true ? undefined : (token.b2b as typeof session.b2b | undefined);
 
       return session;
     },

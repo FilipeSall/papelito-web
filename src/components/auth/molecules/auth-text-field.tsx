@@ -5,7 +5,7 @@ interface AuthTextFieldProps {
   id: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "password" | "tel";
+  type?: "text" | "email" | "password" | "tel" | "date";
   placeholder: string;
   autoComplete?: string;
   defaultValue?: string;

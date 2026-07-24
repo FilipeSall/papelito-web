@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+
+import { wpRest } from "@/lib/server/wp-rest";
+
+const INVITE_COOKIE = "papelito_invite_token";
+
+type Ctx = { params: Promise<{ token: string }> };
+
+/**
+ * Valida o token de convite no backend ANTES de revelar qualquer dado. Em caso de sucesso,
+ * move o token para um cookie HttpOnly/Secure/SameSite=Lax e devolve apenas o preview neutro
+ * (nome da empresa, papel, e-mail convidado, se trava CPF) — nunca CNPJ, membros ou dados fiscais.
+ * O token nunca é persistido no cliente (localStorage) nem exposto na resposta.
+ */
+export async function GET(_request: Request, { params }: Ctx) {
+  const { token } = await params;
+
+  const result = await wpRest<{
+    invitationId: number;
+    companyName: string;
+    invitedRole: string;
+    invitedEmail: string;
+    cpfLocked: boolean;
+  }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);
+
+  if (!result.ok) {
+    return NextResponse.json(result.error, { status: result.status || 404 });
+  }
+
+  const response = NextResponse.json(result.data);
+  response.cookies.set(INVITE_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+  return response;
+}

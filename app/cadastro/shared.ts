@@ -1,10 +1,20 @@
 export const CADASTRO_STORAGE_KEY = "papelito:cadastro:step1";
 
+/**
+ * Intenção de onboarding B2B:
+ * - "create_company": o usuário é o titular e cadastra a própria empresa (fluxo com CNPJ).
+ * - "join_company": o usuário cria a conta e depois solicita acesso a uma empresa existente.
+ */
+export type CadastroIntent = "create_company" | "join_company";
+
 export type CadastroStep1Data = {
+  birthDate: string;
+  cnpj: string;
+  cpf: string;
   name: string;
   email: string;
   phone: string;
-  cpf?: string;
+  intent: CadastroIntent;
 };
 
 export const BRAZILIAN_STATES: Array<{ value: string; label: string }> = [

@@ -140,6 +140,24 @@ describe("authOptions callbacks", () => {
     expect(result.role).toBe("administrator");
   });
 
+  it("propagates incomplete Google B2B onboarding from /auth/me", async () => {
+    server.use(
+      http.get(AUTH_ME_URL, () =>
+        HttpResponse.json({
+          user: { role: "customer", profileComplete: false },
+          b2b: { onboardingStatus: "incomplete", canPurchase: false },
+        }),
+      ),
+    );
+
+    const result = await runJwtCallback({
+      accessToken: makeJwt(Math.floor(Date.now() / 1000) + 3600),
+      refreshToken: "refresh-token",
+    });
+
+    expect(result.b2b).toMatchObject({ onboardingStatus: "incomplete", canPurchase: false });
+  });
+
   it("re-validates a stale role so a WP role change propagates without logout", async () => {
     server.use(
       http.get(AUTH_ME_URL, () =>

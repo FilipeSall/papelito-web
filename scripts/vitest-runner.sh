@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-if [ "${npm_execpath:-}" = "${BUN_INSTALL:-}/bin/bun" ]; then
+if command -v bun >/dev/null 2>&1; then
   exec bunx --bun vitest "$@"
 fi
 

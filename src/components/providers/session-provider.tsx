@@ -55,10 +55,26 @@ function InvalidSessionCleanup() {
   return null;
 }
 
+function B2bOnboardingRedirect() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status !== "authenticated" || pathname.startsWith("/perfil/empresa")) return;
+    if (session?.b2b?.onboardingStatus === "incomplete" || session?.profileComplete === false) {
+      router.replace("/perfil/empresa");
+    }
+  }, [pathname, router, session?.b2b?.onboardingStatus, session?.profileComplete, status]);
+
+  return null;
+}
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextAuthSessionProvider>
       <InvalidSessionCleanup />
+      <B2bOnboardingRedirect />
       <AuthErrorToastHost />
       {children}
     </NextAuthSessionProvider>

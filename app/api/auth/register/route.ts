@@ -11,10 +11,12 @@ type RegisterPayload = {
   phone_number: string;
   cnpj: string;
   cpf?: string;
+  birth_date?: string;
   cep: string;
   state: string;
   city: string;
   instagram?: string;
+  intent?: "create_company" | "join_company";
 };
 
 type WpRegisterResponse = {
