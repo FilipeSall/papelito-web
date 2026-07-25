@@ -91,6 +91,18 @@ export function requestCompanyAccess(cnpj: string) {
   });
 }
 
+export function startLegacyMigration(payload: {
+  intent: "create_company" | "join_company";
+  cpf: string;
+  birthDate: string;
+  cnpj: string;
+}) {
+  return call<CompanyContext>("/api/legacy-migration/start", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function listMembers() {
   return call<{ items: CompanyMember[] }>("/api/company/current/members");
 }

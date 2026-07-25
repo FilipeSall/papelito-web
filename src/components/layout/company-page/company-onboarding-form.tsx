@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 
-import { createCompany, requestCompanyAccess, saveCustomerProfile } from "@/features/company/client/company-client";
+import {
+  createCompany,
+  requestCompanyAccess,
+  saveCustomerProfile,
+  startLegacyMigration,
+} from "@/features/company/client/company-client";
 
-type Props = { onComplete: () => Promise<void> };
+type Props = { isLegacyMigration?: boolean; onComplete: () => Promise<void> };
 
-export function CompanyOnboardingForm({ onComplete }: Props) {
+export function CompanyOnboardingForm({ isLegacyMigration = false, onComplete }: Props) {
   const [mode, setMode] = useState<"create" | "join">("create");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -25,9 +30,16 @@ export function CompanyOnboardingForm({ onComplete }: Props) {
       setBusy(false);
       return;
     }
-    const result = mode === "create"
-      ? await createCompany({ cpf, birth_date: birthDate, cnpj })
-      : await requestCompanyAccess(cnpj);
+    const result = isLegacyMigration
+      ? await startLegacyMigration({
+          intent: mode === "create" ? "create_company" : "join_company",
+          cpf,
+          birthDate,
+          cnpj,
+        })
+      : mode === "create"
+        ? await createCompany({ cpf, birth_date: birthDate, cnpj })
+        : await requestCompanyAccess(cnpj);
     if (!result.ok) {
       setMessage(result.message);
       setBusy(false);
@@ -41,8 +53,14 @@ export function CompanyOnboardingForm({ onComplete }: Props) {
   return (
     <form onSubmit={submit} className="space-y-4 border-2 border-[#1a1a1a] bg-white p-6 shadow-[6px_6px_0px_#1a1a1a]">
       <div>
-        <h3 className="text-lg font-black uppercase">Complete seu onboarding B2B</h3>
-        <p className="mt-1 text-sm text-[#231f20]/70">Precisamos destes dados para liberar seu vínculo empresarial.</p>
+        <h3 className="text-lg font-black uppercase">
+          {isLegacyMigration ? "Atualize seu cadastro empresarial" : "Complete seu onboarding B2B"}
+        </h3>
+        <p className="mt-1 text-sm text-[#231f20]/70">
+          {isLegacyMigration
+            ? "Você pode iniciar a migração e seguir comprando pelo fluxo atual enquanto a análise estiver pendente."
+            : "Precisamos destes dados para liberar seu vínculo empresarial."}
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setMode("create")} aria-pressed={mode === "create"} className="border-2 border-[#1a1a1a] px-3 py-2 text-xs font-black uppercase">Cadastrar empresa</button>

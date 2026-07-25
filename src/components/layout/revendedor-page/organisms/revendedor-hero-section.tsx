@@ -98,20 +98,7 @@ export function RevendedorHeroSection({
 
               {wasSubmitted ? (
                 <RevendedorInterestConfirmation />
-              ) : !isAuthenticated ? (
-                <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-[#FFFDF8] p-5">
-                  <p className="text-sm leading-6 text-text-muted">
-                    Entre na sua conta de customer para enviar o interesse da sua loja. Usaremos a
-                    conta para garantir um único pedido por cliente.
-                  </p>
-                  <RevendedorCtaButton
-                    className="mt-5 w-full rounded-3.5"
-                    href="/entrar?callbackUrl=%2Frevendedor"
-                  >
-                    Entrar para enviar
-                  </RevendedorCtaButton>
-                </div>
-              ) : !isCustomer ? (
+              ) : isAuthenticated && !isCustomer ? (
                 <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-[#FFFDF8] p-5">
                   <p className="text-sm leading-6 text-text-muted">
                     Esta manifestação está disponível somente para contas de customer.
@@ -145,4 +132,3 @@ export function RevendedorHeroSection({
     </section>
   );
 }
-

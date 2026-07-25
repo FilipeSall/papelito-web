@@ -33,12 +33,13 @@ export async function fetchVendorInterest(
 }
 
 export async function createVendorInterest(
-  accessToken: string,
+  accessToken: string | null,
   input: CreateVendorInterestInput,
 ): Promise<VendorInterest> {
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
   const result = await wpRest<{ interest: VendorInterest }>(VENDOR_INTERESTS_PATH, {
     method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
+    ...(headers ? { headers } : {}),
     json: input,
   });
 

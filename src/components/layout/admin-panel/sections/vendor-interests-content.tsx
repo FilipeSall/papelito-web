@@ -73,7 +73,7 @@ export async function VendorInterestsContent({
             Interesse em ser vendor
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-[#231f20]/62">
-            Lojas que enviaram a triagem e continuam com uma conta de customer.
+            Lojas que enviaram a triagem, com ou sem conta de customer.
           </p>
         </div>
 

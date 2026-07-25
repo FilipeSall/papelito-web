@@ -12,15 +12,14 @@ import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ code: "not_authenticated", message: "Não autenticado." }, { status: 401 });
-  }
-
-  if ((await fetchCurrentUserRole(session.accessToken)) !== "customer") {
-    return NextResponse.json(
-      { code: "customer_only", message: "Apenas customers podem registrar interesse." },
-      { status: 403 },
-    );
+  if (session?.user && session.accessToken) {
+    const role = await fetchCurrentUserRole(session.accessToken).catch(() => undefined);
+    if (role !== undefined && role !== "customer") {
+      return NextResponse.json(
+        { code: "customer_only", message: "Apenas customers podem registrar interesse." },
+        { status: 403 },
+      );
+    }
   }
 
   const payload = (await request.json().catch(() => null)) as CreateVendorInterestInput | null;
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const interest = await createVendorInterest(session.accessToken, payload);
+    const interest = await createVendorInterest(session?.accessToken ?? null, payload);
     return NextResponse.json({ interest }, { status: 201 });
   } catch (error) {
     if (error instanceof VendorInterestRequestError) {

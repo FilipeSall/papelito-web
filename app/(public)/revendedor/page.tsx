@@ -13,7 +13,7 @@ export default async function RevendedorRoutePage() {
   const isAuthenticated = Boolean(session?.user && session.accessToken);
 
   const [customer, interest, images, role] = await Promise.all([
-    isAuthenticated ? fetchProfileCustomer(session?.accessToken) : null,
+    session?.accessToken ? fetchProfileCustomer(session.accessToken) : null,
     fetchVendorInterest(session?.accessToken),
     getSiteImageAssets(),
     session?.accessToken ? fetchCurrentUserRole(session.accessToken) : undefined,

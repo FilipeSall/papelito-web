@@ -47,6 +47,12 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
   const selectionRequired = context.onboardingStatus === "company_selection_required";
   const hasNoCompany = context.onboardingStatus === "none";
   const needsIdentity = context.identityStatus !== "verified";
+  const legacyNeedsMigration =
+    context.isLegacyCohort === true &&
+    context.isB2bCohort !== true &&
+    !["migrated", "exempt", "pending_company_review", "pending_membership_approval"].includes(
+      context.legacyMigrationStatus ?? "",
+    );
 
   return (
     <div className="space-y-8" aria-busy={refreshing}>
@@ -76,7 +82,12 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
         />
       ) : null}
 
-      {needsIdentity ? <CompanyOnboardingForm onComplete={refresh} /> : null}
+      {needsIdentity || legacyNeedsMigration ? (
+        <CompanyOnboardingForm
+          isLegacyMigration={legacyNeedsMigration}
+          onComplete={refresh}
+        />
+      ) : null}
 
       {(selectionRequired || context.availableCompanies.length > 1) && (
         <CompanySelector

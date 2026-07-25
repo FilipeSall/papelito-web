@@ -74,6 +74,12 @@ type WpAuthIdentityResponse = {
     companyOwnershipStatus?: string | null;
     companyRegistryStatus?: string | null;
     companyStatus?: string | null;
+    purchaseMode?: "legacy" | "b2b" | "blocked";
+    isLegacyCohort?: boolean;
+    legacyMigrationStatus?: string | null;
+    legacyGraceEndsAt?: string | null;
+    legacyWarningLevel?: "none" | "info" | "warning" | "urgent";
+    legacyCanPurchaseDuringGrace?: boolean;
     identityStatus?: string;
     membershipRole?: string | null;
     membershipStatus?: string | null;

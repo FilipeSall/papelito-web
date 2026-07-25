@@ -23,6 +23,12 @@ export type CompanyContext = {
   companyStatus: string | null;
   companyRegistryStatus: string | null;
   companyOwnershipStatus: string | null;
+  purchaseMode?: "legacy" | "b2b" | "blocked";
+  isLegacyCohort?: boolean;
+  legacyMigrationStatus?: string | null;
+  legacyGraceEndsAt?: string | null;
+  legacyWarningLevel?: "none" | "info" | "warning" | "urgent";
+  legacyCanPurchaseDuringGrace?: boolean;
   membershipRole: CompanyRole | null;
   membershipStatus: MemberStatus | null;
   onboardingStatus: OnboardingStatus;

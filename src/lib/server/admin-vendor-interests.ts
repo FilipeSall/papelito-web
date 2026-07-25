@@ -4,7 +4,8 @@ import { wpRest } from "./wp-rest";
 
 export type AdminVendorInterest = {
   id: number;
-  customerUserId: number;
+  customerUserId: number | null;
+  visibility?: "customer" | "public";
   storeName: string;
   firstName: string;
   lastName: string;

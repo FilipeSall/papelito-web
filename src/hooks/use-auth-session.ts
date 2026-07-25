@@ -37,6 +37,11 @@ export function useAuthSession() {
     isAdministrator: role === "administrator",
     isSeller: role === "seller",
 		b2b: session?.b2b,
+    isLegacyMigrationVisible:
+      session?.b2b?.isLegacyCohort === true &&
+      session.b2b.isB2bCohort !== true &&
+      session.b2b.legacyMigrationStatus !== "migrated" &&
+      session.b2b.legacyMigrationStatus !== "exempt",
 		isB2bPurchaseBlocked:
 			session?.b2b?.isB2bCohort === true && session.b2b.canPurchase !== true,
   };

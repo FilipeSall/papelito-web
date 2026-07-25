@@ -51,6 +51,8 @@ export function VendorInterestDetailPage({ interest }: { interest: AdminVendorIn
         new Date(interest.createdAt.replace(" ", "T") + "Z"),
       )
     : "Não informado";
+  const hasCustomer = Boolean(interest.customer);
+  const isPublic = interest.visibility === "public" || !hasCustomer;
 
   return (
     <div className="space-y-5">
@@ -63,13 +65,27 @@ export function VendorInterestDetailPage({ interest }: { interest: AdminVendorIn
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#231f20]/48">manifestação #{interest.id}</p>
           <h1 className="mt-1 text-3xl font-black uppercase tracking-tight text-[#1a1a1a]">{interest.storeName || "Loja sem nome"}</h1>
           <p className="mt-2 text-sm text-[#231f20]/60">Enviada em {sentAt}</p>
+          {isPublic ? (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#231f20]/48">
+              Manifestação pública (sem conta de customer)
+            </p>
+          ) : null}
         </div>
-        <Link
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-xs font-black uppercase tracking-[0.12em] text-brand-dark transition hover:brightness-95"
-          href={`/admin/vendors?create=1&sourceUserId=${interest.customerUserId}&sourceInterestId=${interest.id}`}
-        >
-          <Store className="size-4" /> Novo vendor
-        </Link>
+        {hasCustomer ? (
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-xs font-black uppercase tracking-[0.12em] text-brand-dark transition hover:brightness-95"
+            href={`/admin/vendors?create=1&sourceUserId=${interest.customerUserId}&sourceInterestId=${interest.id}`}
+          >
+            <Store className="size-4" /> Novo vendor
+          </Link>
+        ) : (
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-xs font-black uppercase tracking-[0.12em] text-brand-dark transition hover:brightness-95"
+            href={`/admin/vendors?create=1&sourceInterestId=${interest.id}`}
+          >
+            <Store className="size-4" /> Novo vendor
+          </Link>
+        )}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -80,7 +96,7 @@ export function VendorInterestDetailPage({ interest }: { interest: AdminVendorIn
               <DetailField label="Nome da loja" value={interest.storeName} />
               <DetailField label="CNPJ" value={interest.cnpj} />
               <DetailField label="Responsável" value={[interest.firstName, interest.lastName].filter(Boolean).join(" ")} />
-              <DetailField label="Customer relacionado" value={interest.customer ? `${interest.customer.displayName || interest.customer.email} (#${interest.customer.id})` : undefined} />
+              <DetailField label="Customer relacionado" value={hasCustomer ? `${interest.customer?.displayName || interest.customer?.email} (#${interest.customer?.id})` : "Sem conta vinculada (manifestação pública)"} />
               <DetailField label="Já vende Papelito" value={interest.hasSoldPapelito === "sim" ? "Sim" : interest.hasSoldPapelito === "nao" ? "Não" : undefined} />
               <DetailField label="Como conheceu a Papelito" value={interest.discoveryChannel} />
             </dl>
