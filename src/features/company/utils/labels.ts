@@ -34,7 +34,34 @@ export function blockMessageFor(context: {
   companyStatus: string | null;
   membershipStatus: MemberStatus | null;
   canPurchase: boolean;
+	purchaseMode?: "b2b" | "not_buyer" | "blocked";
+	purchaseBlockReason?: string | null;
 }): { title: string; body: string } | null {
+	if (context.purchaseMode === "not_buyer") return null;
+	const reasonMessages: Record<string, { title: string; body: string }> = {
+		identity_incomplete: { title: "Perfil incompleto", body: "Complete a verificação do seu perfil para comprar em nome de uma empresa." },
+		identity_rejected: { title: "Perfil não aprovado", body: "Seu perfil pessoal não está apto para realizar compras." },
+		company_missing: { title: "Empresa necessária", body: "Cadastre sua empresa ou solicite acesso a uma empresa existente para comprar." },
+		company_selection_required: { title: "Selecione a empresa ativa", body: "Escolha a empresa com a qual deseja operar antes de comprar." },
+		company_pending_review: { title: "Cadastro em análise", body: "A empresa ainda aguarda aprovação para realizar compras." },
+		company_rejected: { title: "Empresa não aprovada", body: "A empresa não está apta para realizar compras." },
+		company_suspended: { title: "Empresa suspensa", body: "A empresa está suspensa para compras." },
+		company_registry_inactive: { title: "Cadastro empresarial inativo", body: "A situação cadastral da empresa não permite compras." },
+		company_registry_unavailable: { title: "Consulta empresarial indisponível", body: "Não foi possível confirmar o cadastro da empresa agora." },
+		company_provider_conflict: { title: "Cadastro empresarial em revisão", body: "As fontes de consulta da empresa divergem e exigem revisão." },
+		membership_missing: { title: "Vínculo necessário", body: "Você não possui um vínculo ativo com a empresa selecionada." },
+		membership_pending: { title: "Vínculo em análise", body: "Seu vínculo empresarial ainda não foi aprovado." },
+		membership_suspended: { title: "Acesso suspenso", body: "Seu vínculo empresarial está suspenso." },
+		membership_expired: { title: "Vínculo expirado", body: "Seu vínculo empresarial expirou." },
+		role_cannot_purchase: { title: "Sem permissão de compra", body: "Seu papel empresarial não permite realizar compras." },
+		billing_email_unverified: { title: "E-mail de faturamento pendente", body: "Confirme o e-mail de faturamento da empresa para comprar." },
+		fiscal_address_incomplete: { title: "Endereço fiscal incompleto", body: "Complete o endereço fiscal da empresa para comprar." },
+		payment_profile_incomplete: { title: "Dados de pagamento incompletos", body: "Revise os dados empresariais necessários para o pagamento." },
+		alphanumeric_cnpj_payment_disabled: { title: "Pagamento indisponível", body: "O pagamento para CNPJ alfanumérico ainda não está disponível." },
+	};
+	if (context.purchaseBlockReason && reasonMessages[context.purchaseBlockReason]) {
+		return reasonMessages[context.purchaseBlockReason];
+	}
   if (context.onboardingStatus === "none") {
     return {
       title: "Você ainda não faz parte de uma empresa",

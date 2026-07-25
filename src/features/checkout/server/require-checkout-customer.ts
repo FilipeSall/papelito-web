@@ -12,12 +12,9 @@ export async function requireCheckoutCustomer(callbackPath: string) {
     redirect(`/entrar?callbackUrl=${encodeURIComponent(callbackPath)}`);
   }
 
-  if (session.role !== "customer") {
-    redirect("/");
-  }
 
-	if (session.b2b?.isB2bCohort === true && session.b2b.canPurchase !== true) {
-		redirect("/perfil/empresa");
+	if (session.b2b?.canPurchase !== true) {
+		redirect(session.b2b?.requiresB2bOnboarding ? "/perfil/empresa" : "/perfil");
 	}
 
   return session;

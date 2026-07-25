@@ -119,7 +119,9 @@ export function CheckoutReviewStepContent() {
     isShippingValid &&
     !hasInvalidCartItems &&
     !pricingError &&
-    !pricingRequiresConfirmation;
+    !pricingRequiresConfirmation &&
+    b2b?.canPurchase === true &&
+    typeof b2b.companyId === "number";
 
   const cartLines = items.map((item) => ({
     id: item.id,
@@ -161,9 +163,7 @@ export function CheckoutReviewStepContent() {
       try {
         const result = await placeOrder({
           checkoutAttemptId,
-          expectedCompanyId: b2b?.isB2bCohort
-            ? (b2b.companyId ?? undefined)
-            : undefined,
+			expectedCompanyId: b2b?.companyId ?? undefined,
           items: placeOrderItems,
           address: addressForm,
           shipping: {
@@ -391,6 +391,12 @@ export function CheckoutReviewStepContent() {
                     finalizar.
                   </p>
                 ) : null}
+
+				{b2b?.canPurchase !== true ? (
+					<p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+						Sua empresa não está apta para finalizar a compra. Revise o cadastro empresarial.
+					</p>
+				) : null}
 
                 {checkoutError ? (
                   <p className="mt-4 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]">

@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { useCartStore } from "@/features/cart";
 import { getShippingQuote, useCheckoutAddressForm, useCheckoutStore } from "@/features/checkout";
-import { formatDocument } from "@/features/checkout/utils/format-checkout-fields";
-import { isValidCnpj } from "@/features/revendedor/utils/revendedor-formatters";
-import { isValidCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatBRL } from "@/lib/format-currency";
 import { BRAZIL_STATES } from "./checkout-constants";
 import { CheckoutCustomSelect } from "./checkout-custom-select";
@@ -42,36 +39,14 @@ function shouldShowShippingName(service: string, name: string) {
 }
 
 type CheckoutAddressStepContentProps = {
-  initialDocument?: string;
 	company?: { legalName: string; cnpj: string } | null;
-	isB2b?: boolean;
 };
 
-function isValidDocument(document: string) {
-  const digits = document.replace(/\D/g, "");
-  if (digits.length === 11) return isValidCpf(digits);
-  if (digits.length === 14) return isValidCnpj(digits);
-  return false;
-}
-
 export function CheckoutAddressStepContent({
-  initialDocument = "",
 	company = null,
-	isB2b = false,
 }: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const [document, setDocument] = useState(() => formatDocument(initialDocument));
-  const [documentTouched, setDocumentTouched] = useState(false);
-  const [isSavingDocument, setIsSavingDocument] = useState(false);
-  const [documentSaveError, setDocumentSaveError] = useState<string | null>(null);
-  const initialDocumentDigits = initialDocument.replace(/\D/g, "");
-  const documentDigits = document.replace(/\D/g, "");
-  const isDocumentValid = isValidDocument(document);
-  const documentError =
-    documentTouched && !isDocumentValid
-      ? "Informe um CPF ou CNPJ valido para concluir o pagamento."
-      : documentSaveError;
   const shippingQuoteState = useCheckoutStore((state) => state.shippingQuote);
   const selectedShippingQuote = shippingQuoteState.selectedOption;
   const currentShippingQuote = shippingQuoteState.quote;
@@ -196,40 +171,6 @@ export function CheckoutAddressStepContent({
   const showShippingLoadingFeedback = shouldQuoteShipping && shippingStatus === "loading";
 
   async function handleAdvance() {
-		if (isB2b) {
-			router.push("/checkout/pagamento");
-			return;
-		}
-    setDocumentTouched(true);
-
-    if (!isDocumentValid) return;
-
-    if (documentDigits !== initialDocumentDigits) {
-      setIsSavingDocument(true);
-      setDocumentSaveError(null);
-
-      try {
-        const response = await fetch("/api/profile/document", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ document: documentDigits }),
-        });
-
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { message?: string } | null;
-          setDocumentSaveError(body?.message ?? "Nao foi possivel salvar o documento.");
-          setIsSavingDocument(false);
-          return;
-        }
-      } catch {
-        setDocumentSaveError("Falha de rede ao salvar o documento.");
-        setIsSavingDocument(false);
-        return;
-      }
-
-      setIsSavingDocument(false);
-    }
-
     router.push("/checkout/pagamento");
   }
 
@@ -256,19 +197,7 @@ export function CheckoutAddressStepContent({
                 onChange={handleZipCodeChange}
               />
 
-				{!isB2b ? <CheckoutField
-                label="CPF / CNPJ"
-                placeholder="000.000.000-00"
-                value={document}
-                inputMode="numeric"
-                isLoading={isSavingDocument}
-                errorMessage={documentError}
-                onChange={(value) => {
-                  setDocumentTouched(true);
-                  setDocumentSaveError(null);
-                  setDocument(formatDocument(value));
-                }}
-				/> : <div className="rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-sm md:col-span-2"><p className="font-black uppercase text-brand-dark">Comprando em nome de</p><p className="mt-2 font-medium">{company?.legalName}</p><p>CNPJ: {company?.cnpj}</p></div>}
+				<div className="rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-sm md:col-span-2"><p className="font-black uppercase text-brand-dark">Comprando em nome de</p><p className="mt-2 font-medium">{company?.legalName}</p><p>CNPJ: {company?.cnpj}</p></div>
 
               <div className="md:col-span-2">
                 <CheckoutField
@@ -394,10 +323,10 @@ export function CheckoutAddressStepContent({
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-				disabled={!isFormValid || shouldBlockForShipping || (!isB2b && !isDocumentValid) || isSavingDocument}
+				disabled={!isFormValid || shouldBlockForShipping}
               onClick={handleAdvance}
             >
-              {isSavingDocument ? "Salvando..." : "Proximo: Pagamento"}
+					Proximo: Pagamento
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </form>

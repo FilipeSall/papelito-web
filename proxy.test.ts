@@ -32,13 +32,14 @@ function buildRequest(pathname: string, role?: string) {
 }
 
 describe("proxy", () => {
-  it("redirects sellers away from checkout routes", async () => {
+  it("allows sellers through to the authoritative checkout policy", async () => {
     const response = (await proxy(
       buildRequest("/checkout", "seller") as never,
       {} as never,
     )) as Response;
 
-    expect(response.headers.get("location")).toBe("http://localhost/perfil");
+		expect(response.headers.get("location")).toBeNull();
+		expect(response.status).toBe(200);
   });
 
   it("allows administrators into admin routes", async () => {

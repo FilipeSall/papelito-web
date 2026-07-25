@@ -70,11 +70,16 @@ type WpAuthIdentityResponse = {
 		isB2bCohort?: boolean;
     canPurchase?: boolean;
 		purchaseBlockReason?: string | null;
+		requiresB2bOnboarding?: boolean;
+		userContextType?: "internal_admin" | "vendor" | "customer" | "hybrid";
+		isInternalAdmin?: boolean;
+		isVendor?: boolean;
+		hasCustomerContext?: boolean;
     companyId?: number | null;
     companyOwnershipStatus?: string | null;
     companyRegistryStatus?: string | null;
     companyStatus?: string | null;
-    purchaseMode?: "legacy" | "b2b" | "blocked";
+    purchaseMode?: "b2b" | "not_buyer" | "blocked";
     isLegacyCohort?: boolean;
     legacyMigrationStatus?: string | null;
     legacyGraceEndsAt?: string | null;

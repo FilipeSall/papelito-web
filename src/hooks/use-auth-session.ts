@@ -34,8 +34,8 @@ export function useAuthSession() {
     isLoading: status === "loading",
     isRoleLoading: hasAccessToken && role === undefined && !authIdentityError,
     requiresReauth: status === "authenticated" && !hasAccessToken,
-    isAdministrator: role === "administrator",
-    isSeller: role === "seller",
+		isAdministrator: session?.b2b?.isInternalAdmin === true || role === "administrator",
+		isSeller: session?.b2b?.isVendor === true || role === "seller",
 		b2b: session?.b2b,
     isLegacyMigrationVisible:
       session?.b2b?.isLegacyCohort === true &&
@@ -43,6 +43,7 @@ export function useAuthSession() {
       session.b2b.legacyMigrationStatus !== "migrated" &&
       session.b2b.legacyMigrationStatus !== "exempt",
 		isB2bPurchaseBlocked:
-			session?.b2b?.isB2bCohort === true && session.b2b.canPurchase !== true,
+			session?.b2b?.hasCustomerContext === true && session.b2b.canPurchase !== true,
+		isNotBuyer: session?.b2b?.purchaseMode === "not_buyer",
   };
 }

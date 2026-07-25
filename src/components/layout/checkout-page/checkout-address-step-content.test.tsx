@@ -179,7 +179,7 @@ describe("CheckoutAddressStepContent", () => {
       ),
     );
 
-    renderWithProviders(<CheckoutAddressStepContent initialDocument="52998224725" />);
+    renderWithProviders(<CheckoutAddressStepContent />);
 
     await waitFor(() => {
       expect(screen.getByText("PAC Contrato")).toBeInTheDocument();

@@ -24,6 +24,8 @@ let authState = {
   isSeller: false,
   isLoading: false,
   isRoleLoading: false,
+	isB2bPurchaseBlocked: false,
+	isNotBuyer: false,
 };
 
 vi.mock("next/navigation", () => ({
@@ -53,6 +55,8 @@ describe("AddToCartButton", () => {
       isSeller: false,
       isLoading: false,
       isRoleLoading: false,
+		isB2bPurchaseBlocked: false,
+		isNotBuyer: false,
     };
     pushMock.mockReset();
     resolveCartVendorMock.mockReset();
@@ -83,17 +87,26 @@ describe("AddToCartButton", () => {
     expect(screen.getByText("Indisponível")).toBeInTheDocument();
   });
 
-  it("blocks sellers from purchasing", () => {
+  it("blocks pure vendors from purchasing", () => {
     authState.isSeller = true;
+		authState.isNotBuyer = true;
 
     render(<AddToCartButton label="Comprar" product={buildProduct()} />);
 
     expect(screen.getByRole("button", { name: /adicionar ao carrinho/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /adicionar ao carrinho/i })).toHaveAttribute(
       "title",
-      "Vendors nao compram pela plataforma.",
+			"Esta conta não possui um contexto de customer habilitado para compra.",
     );
   });
+
+	it("allows a hybrid vendor with an eligible customer context", () => {
+		authState.isSeller = true;
+
+		render(<AddToCartButton label="Comprar" product={buildProduct()} />);
+
+		expect(screen.getByRole("button", { name: /adicionar ao carrinho/i })).not.toBeDisabled();
+	});
 
   it("adds the resolved product to the cart and emits the success event", async () => {
     const user = userEvent.setup();

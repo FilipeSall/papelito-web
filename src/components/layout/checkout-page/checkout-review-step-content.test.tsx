@@ -11,6 +11,11 @@ import { renderWithProviders } from "../../../../test/utils/render-with-provider
 import { CheckoutReviewStepContent } from "./checkout-review-step-content";
 
 const pushMock = vi.fn();
+const eligibleB2bSession = {
+	user: { id: "3" },
+	expires: "2099-01-01T00:00:00.000Z",
+	b2b: { canPurchase: true, companyId: 10, purchaseMode: "b2b" as const },
+};
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
@@ -99,7 +104,7 @@ describe("CheckoutReviewStepContent", () => {
 
     const user = userEvent.setup();
 
-    renderWithProviders(<CheckoutReviewStepContent />);
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
 
     await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
 
@@ -154,7 +159,7 @@ describe("CheckoutReviewStepContent", () => {
     );
     const user = userEvent.setup();
 
-    renderWithProviders(<CheckoutReviewStepContent />);
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
 
     await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
 
@@ -179,7 +184,7 @@ describe("CheckoutReviewStepContent", () => {
     );
     const user = userEvent.setup();
 
-    renderWithProviders(<CheckoutReviewStepContent />);
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
 
     await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
 
@@ -208,7 +213,7 @@ describe("CheckoutReviewStepContent", () => {
     );
     const user = userEvent.setup();
 
-    renderWithProviders(<CheckoutReviewStepContent />);
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
 
     const button = screen.getByRole("button", { name: /finalizar pedido/i });
     await user.dblClick(button);
