@@ -141,25 +141,23 @@ export function CompletarCadastroForm({
     setIsSubmitting(true);
 
     startTransition(async () => {
-      if (joining) {
-        const profile = await saveCustomerProfile({
-          cpf,
-          birth_date: birthDate,
-          cep,
-          street,
-          number,
-          complement,
-          neighborhood,
-          city,
-          state,
-        });
-        if (!profile.ok) {
-          setErrorMessage(
-            isRolloutDisabled(profile.status) ? ROLLOUT_DISABLED_MESSAGE : profile.message,
-          );
-          setIsSubmitting(false);
-          return;
-        }
+      const profile = await saveCustomerProfile({
+        cpf,
+        birth_date: birthDate,
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+      });
+      if (!profile.ok) {
+        setErrorMessage(
+          isRolloutDisabled(profile.status) ? ROLLOUT_DISABLED_MESSAGE : profile.message,
+        );
+        setIsSubmitting(false);
+        return;
       }
 
       const result = joining
