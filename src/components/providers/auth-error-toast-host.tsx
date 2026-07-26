@@ -33,8 +33,6 @@ export function AuthErrorToastHost() {
   useEffect(() => {
     if (!authIdentityError) {
       dismissedRef.current = false;
-      setVisible(false);
-      setMounted(false);
       return;
     }
 
@@ -65,6 +63,9 @@ export function AuthErrorToastHost() {
       if (enterAnimationFrameRef.current) {
         cancelAnimationFrame(enterAnimationFrameRef.current);
       }
+
+      setVisible(false);
+      setMounted(false);
     };
   }, [authIdentityError]);
 
