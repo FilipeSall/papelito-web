@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MapPinOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ADD_TO_CART_EVENT_NAME,
@@ -14,6 +15,7 @@ import { CartIcon } from "@/components/ui/icons";
 import { resolveCartVendor, useCartStore, type ResolveCartVendorResult } from "@/features/cart";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
+import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { formatBRL } from "@/lib/format-currency";
 
@@ -23,6 +25,7 @@ interface ProductDetailMainContentProps {
   initialIsFavorite?: boolean;
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
+  regionBlock?: RegionBlock | null;
 }
 
 const EMPTY_GALLERY: ProductDetailItem["galleryImages"] = [];
@@ -39,6 +42,7 @@ export function ProductDetailMainContent({
   initialIsFavorite = false,
   activeVendor = null,
   selectedVendorStockQty = null,
+  regionBlock = null,
 }: ProductDetailMainContentProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
@@ -80,6 +84,9 @@ export function ProductDetailMainContent({
       ? Math.max(0, Math.floor(selectedVendorStockQty))
       : null;
   const isOutOfStock = availableStock !== null && availableStock <= 0;
+  const isRegionBlocked = regionBlock !== null;
+  const isMissingCepBlock = regionBlock?.kind === "missing_cep";
+  const isPurchaseDisabled = isOutOfStock || isRegionBlocked;
   const shouldShowActiveVendorSummary = Boolean(activeVendor) && isOutOfStock;
   const isQuantityAtMax = availableStock !== null && quantity >= availableStock;
 
@@ -158,6 +165,15 @@ export function ProductDetailMainContent({
     }
 
     if (isAddingToCart) {
+      return false;
+    }
+
+    if (isRegionBlocked) {
+      dispatchCartEvent({
+        title: "Indisponivel na sua regiao",
+        message: regionBlock?.message ?? "Nenhum vendor atende sua região no momento.",
+        tone: "warning",
+      });
       return false;
     }
 
@@ -407,7 +423,7 @@ export function ProductDetailMainContent({
                 type="button"
                 aria-label="Diminuir quantidade"
                 className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
-                disabled={isOutOfStock || quantity <= 1}
+                disabled={isPurchaseDisabled || quantity <= 1}
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
               >
                 <span className="text-sm leading-none">−</span>
@@ -419,7 +435,7 @@ export function ProductDetailMainContent({
                 type="button"
                 aria-label="Aumentar quantidade"
                 className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#6A7282] transition hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
-                disabled={isOutOfStock || isQuantityAtMax}
+                disabled={isPurchaseDisabled || isQuantityAtMax}
                 onClick={() =>
                   setQuantity((prev) =>
                     availableStock === null ? prev + 1 : Math.min(availableStock, prev + 1),
@@ -430,6 +446,33 @@ export function ProductDetailMainContent({
               </button>
             </div>
           </div>
+
+          {isRegionBlocked ? (
+            <div
+              role="status"
+              className="mt-6 border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-4 text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
+            >
+              <div className="flex items-start gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center border-2 border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow">
+                  <MapPinOff aria-hidden className="h-4.5 w-4.5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black uppercase tracking-[0.18em]">
+                    Indisponível na sua região
+                  </p>
+                  <p className="mt-1 text-sm leading-5 text-[#1a1a1a]/80">{regionBlock?.message}</p>
+                  {isMissingCepBlock ? (
+                    <Link
+                      href="/perfil/enderecos"
+                      className="mt-3 inline-flex items-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 py-2 text-xs font-black uppercase tracking-widest text-brand-yellow transition hover:shadow-[1px_1px_0px_#ffe500] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+                    >
+                      Cadastrar CEP
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 max-[319px]:grid max-[319px]:grid-cols-2">
             <div className="group/role-tooltip relative min-w-0 flex-1 max-[319px]:col-span-2">
@@ -444,7 +487,7 @@ export function ProductDetailMainContent({
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={isAddingToCart || isOutOfStock || isPurchaseBlockedByRole}
+                disabled={isAddingToCart || isPurchaseDisabled || isPurchaseBlockedByRole}
                 title={roleBlockedMessage}
                 className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-center text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 max-[425px]:h-auto max-[425px]:min-h-14 max-[425px]:px-4 max-[425px]:py-3 max-[425px]:text-sm max-[425px]:leading-4"
               >
@@ -525,7 +568,7 @@ export function ProductDetailMainContent({
             <button
               type="button"
               onClick={handleBuyNow}
-              disabled={isAddingToCart || isOutOfStock || isPurchaseBlockedByRole}
+              disabled={isAddingToCart || isPurchaseDisabled || isPurchaseBlockedByRole}
               title={roleBlockedMessage}
               className="h-14 w-full cursor-pointer rounded-full bg-brand-dark text-base font-black uppercase tracking-[-0.3125px] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >

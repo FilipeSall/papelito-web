@@ -15,6 +15,7 @@ import type {
   ProductAvailabilityResponse,
   ProductAvailabilityStatus,
 } from "../types/product-availability";
+import { REGION_BLOCK_MESSAGES } from "../types/region-block";
 
 const STORAGE_PREFIX = "papelito:catalog-availability:v3:";
 const STORAGE_TTL_MS = 5 * 60 * 1000;
@@ -163,7 +164,15 @@ export function ProductAvailabilityProvider({
 export function useProductAvailability(productId: string) {
   const context = useContext(ProductAvailabilityContext);
   const entry = context.products[productId];
-  const isUnavailable = context.status === "ok" && entry?.available === false;
+  const regionBlockReason =
+    context.status === "no_vendor"
+      ? REGION_BLOCK_MESSAGES.no_vendor
+      : context.status === "missing_cep"
+        ? REGION_BLOCK_MESSAGES.missing_cep
+        : undefined;
+  const isRegionBlocked = regionBlockReason !== undefined;
+  const isUnavailable =
+    isRegionBlocked || (context.status === "ok" && entry?.available === false);
   const stockQty =
     typeof entry?.stockQty === "number" && Number.isFinite(entry.stockQty)
       ? Math.max(0, Math.floor(entry.stockQty))
@@ -182,8 +191,10 @@ export function useProductAvailability(productId: string) {
     stockQty,
     stockLabel,
     isUnavailable,
-    disabledReason: isUnavailable
-      ? "O vendor da sua região não tem esse produto."
-      : undefined,
+    isRegionBlocked,
+    regionBlockReason,
+    disabledReason:
+      regionBlockReason ??
+      (isUnavailable ? "O vendor da sua região não tem esse produto." : undefined),
   };
 }

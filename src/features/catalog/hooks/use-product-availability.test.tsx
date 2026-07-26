@@ -17,7 +17,8 @@ vi.mock("@/hooks/use-auth-session", () => ({
 }));
 
 function Consumer({ productId }: { productId: string }) {
-  const { status, isUnavailable, disabledReason, stockLabel } = useProductAvailability(productId);
+  const { status, isUnavailable, disabledReason, stockLabel, isRegionBlocked, regionBlockReason } =
+    useProductAvailability(productId);
 
   return (
     <div>
@@ -25,6 +26,8 @@ function Consumer({ productId }: { productId: string }) {
       <span>{stockLabel}</span>
       <span>{isUnavailable ? "unavailable" : "available"}</span>
       <span>{disabledReason ?? "no-reason"}</span>
+      <span>{isRegionBlocked ? "region-blocked" : "region-open"}</span>
+      <span data-testid="region-reason">{regionBlockReason ?? "no-region-reason"}</span>
     </div>
   );
 }
@@ -74,6 +77,68 @@ describe("useProductAvailability", () => {
       expect(screen.getByText("unavailable")).toBeInTheDocument();
       expect(screen.getByText("Estoque por região")).toBeInTheDocument();
     });
+  });
+
+  it("blocks the region when no vendor covers the account CEP", async () => {
+    server.use(
+      http.get("/api/catalog/availability", () =>
+        HttpResponse.json({
+          status: "no_vendor",
+          products: { "2": { available: false, stockQty: 0 } },
+        }),
+      ),
+    );
+
+    renderWithProviders(<Consumer productId="2" />, { productIds: ["2"] });
+
+    await waitFor(() => {
+      expect(screen.getByText("region-blocked")).toBeInTheDocument();
+      expect(screen.getByTestId("region-reason")).toHaveTextContent(
+        "Nenhum vendor atende sua região no momento.",
+      );
+    });
+
+    expect(screen.getByText("unavailable")).toBeInTheDocument();
+  });
+
+  it("blocks the region when the logged customer has no CEP", async () => {
+    server.use(
+      http.get("/api/catalog/availability", () =>
+        HttpResponse.json({ status: "missing_cep", products: {} }),
+      ),
+    );
+
+    renderWithProviders(<Consumer productId="2" />, { productIds: ["2"] });
+
+    await waitFor(() => {
+      expect(screen.getByText("region-blocked")).toBeInTheDocument();
+      expect(screen.getByTestId("region-reason")).toHaveTextContent(
+        "Cadastre um CEP para verificar os vendors da sua região.",
+      );
+    });
+  });
+
+  it("keeps the region open for anonymous visitors", () => {
+    authState.isAuthenticated = false;
+
+    renderWithProviders(<Consumer productId="2" />, { productIds: ["2"] });
+
+    expect(screen.getByText("not_applicable")).toBeInTheDocument();
+    expect(screen.getByText("region-open")).toBeInTheDocument();
+  });
+
+  it("keeps the region open when the availability lookup fails", async () => {
+    server.use(
+      http.get("/api/catalog/availability", () => HttpResponse.json({}, { status: 500 })),
+    );
+
+    renderWithProviders(<Consumer productId="2" />, { productIds: ["2"] });
+
+    await waitFor(() => {
+      expect(screen.getByText("unavailable")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("region-open")).toBeInTheDocument();
   });
 
   it("writes successful responses to local storage cache", async () => {

@@ -3,6 +3,8 @@ export type ProductAvailabilityStatus =
   | "loading"
   | "ok"
   | "not_applicable"
+  | "missing_cep"
+  | "no_vendor"
   | "unavailable";
 
 export interface ProductAvailabilityEntry {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
+import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { ProductDetailMainContent } from "./product-detail-main-content";
 
 interface ProductDetailMainSectionProps {
@@ -9,6 +10,7 @@ interface ProductDetailMainSectionProps {
   initialIsFavorite?: boolean;
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
+  regionBlock?: RegionBlock | null;
 }
 
 /**
@@ -21,6 +23,7 @@ export function ProductDetailMainSection({
   initialIsFavorite = false,
   activeVendor = null,
   selectedVendorStockQty = null,
+  regionBlock = null,
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -55,6 +58,7 @@ export function ProductDetailMainSection({
             initialIsFavorite={initialIsFavorite}
             activeVendor={activeVendor}
             selectedVendorStockQty={selectedVendorStockQty}
+            regionBlock={regionBlock}
           />
         </div>
       </div>

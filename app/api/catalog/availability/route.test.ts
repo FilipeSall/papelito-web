@@ -64,11 +64,37 @@ describe("GET /api/catalog/availability", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      status: "ok",
+      status: "no_vendor",
       products: {
         "11760": { available: false, stockQty: 0 },
         "11762": { available: false, stockQty: 0 },
       },
+    });
+    expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
+  it("reports missing_cep when the logged customer has no CEP on the account", async () => {
+    getAccountCoverageCepContextMock.mockResolvedValue({
+      isAuthenticated: true,
+      cep: null,
+    });
+    getActiveVendorMock.mockResolvedValue({
+      ok: false,
+      error: {
+        reason: "missing_cep",
+        message: "Cadastre um CEP na sua conta para escolher um vendor.",
+      },
+    });
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost:3000/api/catalog/availability?productIds=11760"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "missing_cep",
+      products: {},
     });
     expect(getCoverageMock).not.toHaveBeenCalled();
   });

@@ -56,10 +56,17 @@ function notApplicable(): ProductAvailabilityResponse {
 
 function noVendorAvailability(productIds: string[]): ProductAvailabilityResponse {
   return {
-    status: "ok",
+    status: "no_vendor",
     products: Object.fromEntries(
       productIds.map((productId) => [productId, { available: false, stockQty: 0 }]),
     ),
+  };
+}
+
+function missingCepAvailability(): ProductAvailabilityResponse {
+  return {
+    status: "missing_cep",
+    products: {},
   };
 }
 
@@ -112,7 +119,7 @@ export async function GET(request: Request) {
   ]);
 
   if (!coverageContext.cep) {
-    return NextResponse.json(notApplicable());
+    return NextResponse.json(missingCepAvailability());
   }
 
   if (!activeVendorResult.ok) {

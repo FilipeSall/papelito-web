@@ -9,6 +9,10 @@ import { fetchProductFavoriteStatus } from "@/features/favorites";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getCoverage } from "@/features/catalog/services/get-coverage";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
+import {
+  createRegionBlock,
+  type RegionBlock,
+} from "@/features/catalog/types/region-block";
 import { getActiveVendor } from "@/features/active-vendor/server";
 import { authOptions } from "@/lib/auth";
 
@@ -42,6 +46,15 @@ export default async function ProdutoDetalhePage({
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
   let selectedVendorStockQty: number | null = null;
+  let regionBlock: RegionBlock | null = null;
+
+  if (activeVendorResult && !activeVendorResult.ok) {
+    if (activeVendorResult.error.reason === "no_vendor_available") {
+      regionBlock = createRegionBlock("no_vendor");
+    } else if (activeVendorResult.error.reason === "missing_cep") {
+      regionBlock = createRegionBlock("missing_cep");
+    }
+  }
 
   if (activeVendor) {
     const { cep } = await getAccountCoverageCepContext();
@@ -51,6 +64,12 @@ export default async function ProdutoDetalhePage({
         () => null,
       );
       selectedVendorStockQty = coverage?.[product.id]?.bestVendor?.qty ?? null;
+
+      if (coverage && coverage[product.id]?.hasCoverage === false) {
+        regionBlock = createRegionBlock("no_product_coverage");
+      }
+    } else {
+      regionBlock = createRegionBlock("missing_cep");
     }
   }
 
@@ -62,6 +81,7 @@ export default async function ProdutoDetalhePage({
         initialIsFavorite={initialIsFavorite}
         activeVendor={activeVendor}
         selectedVendorStockQty={selectedVendorStockQty}
+        regionBlock={regionBlock}
       />
       <AddToCartToastHost />
     </main>
