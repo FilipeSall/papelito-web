@@ -362,10 +362,6 @@ function buildProductsQuery(filters: AdminProductsFilters) {
   return params;
 }
 
-function logAdminProductsDebug(event: string, payload: Record<string, unknown>) {
-  console.info(`[admin-products] ${event}`, payload);
-}
-
 function buildWooProductPayload(payload: AdminProductPayload) {
   const body: Record<string, unknown> = {};
 
@@ -444,12 +440,6 @@ export async function getAdminProductsSnapshot(
 
   const productQuery = buildProductsQuery(filters);
   const headers = { Authorization: `Bearer ${accessToken}` };
-  logAdminProductsDebug("snapshot:start", {
-    filters,
-    page,
-    perPage,
-    wpQuery: productQuery.toString(),
-  });
   const [productsResult, categoriesResult, tagsResult] = await Promise.all([
     wpRest<WcProduct[]>(`/wc/v3/products?${productQuery.toString()}`, {
       headers,
@@ -487,7 +477,6 @@ export async function getAdminProductsSnapshot(
   const tags = tagsDedupe.terms;
 
   if (productsResult.ok) {
-    const rawProductCount = Array.isArray(productsResult.data) ? productsResult.data.length : 0;
     products = productsResult.data
       .map(mapProduct)
       .filter((product) => product.id > 0)
@@ -497,58 +486,19 @@ export async function getAdminProductsSnapshot(
           "tags",
           tagsDedupe.idMap,
         ),
-      );
+    );
     totalProducts = Number.parseInt(productsResult.headers.get("X-WP-Total") ?? "0", 10) || products.length;
     totalPages = Number.parseInt(productsResult.headers.get("X-WP-TotalPages") ?? "0", 10) || 1;
-    logAdminProductsDebug("snapshot:products-success", {
-      filters,
-      mappedProductCount: products.length,
-      productIds: products.slice(0, 10).map((product) => product.id),
-      rawProductCount,
-      totalPages,
-      totalProducts,
-      wpQuery: productQuery.toString(),
-      xWpTotal: productsResult.headers.get("X-WP-Total"),
-      xWpTotalPages: productsResult.headers.get("X-WP-TotalPages"),
-    });
   } else {
-    logAdminProductsDebug("snapshot:products-error", {
-      error: productsResult.error,
-      filters,
-      status: productsResult.status,
-      wpQuery: productQuery.toString(),
-    });
     issues.push(`[woo] products -> ${productsResult.error.message}`);
   }
 
   if (!categoriesResult.ok) {
-    logAdminProductsDebug("snapshot:categories-error", {
-      error: categoriesResult.error,
-      filters,
-      status: categoriesResult.status,
-    });
     issues.push(`[woo] categories -> ${categoriesResult.error.message}`);
   }
   if (!tagsResult.ok) {
-    logAdminProductsDebug("snapshot:tags-error", {
-      error: tagsResult.error,
-      filters,
-      status: tagsResult.status,
-    });
     issues.push(`[woo] tags -> ${tagsResult.error.message}`);
   }
-
-  logAdminProductsDebug("snapshot:done", {
-    categoryCount: categories.length,
-    currentPage: page,
-    filters,
-    issueCount: issues.length,
-    perPage,
-    productsCount: products.length,
-    tagCount: tags.length,
-    totalPages,
-    totalProducts,
-  });
 
   return {
     categories,
