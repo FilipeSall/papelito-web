@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -12,9 +12,15 @@ import {
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
-import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
+import { isValidCpf } from "@/lib/validation/brazilian-documents";
 
-import { CADASTRO_STORAGE_KEY, type CadastroIntent, type CadastroStep1Data } from "./shared";
+import {
+  CADASTRO_STEP1_DRAFT_KEY,
+  CADASTRO_STORAGE_KEY,
+  type CadastroIntent,
+  type CadastroStep1Data,
+  type CadastroStep1Draft,
+} from "./shared";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -27,19 +33,81 @@ export default function CadastroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const intentParam = searchParams.get("intent");
+
+  const submittedRef = useRef(false);
+  const [draft] = useState<CadastroStep1Draft>(() => {
+    if (typeof window === "undefined") return {};
+    const saved = window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY);
+    if (!saved) return {};
+    try {
+      return JSON.parse(saved) as CadastroStep1Draft;
+    } catch {
+      return {};
+    }
+  });
+
   const initialIntent: CadastroIntent =
-    searchParams.get("intent") === "join" ? "join_company" : "create_company";
+    intentParam === "join" ? "join_company" : (draft.intent ?? "create_company");
   const [intent, setIntent] = useState<CadastroIntent>(initialIntent);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const joining = intent === "join_company";
+
+  const intentRef = useRef(intent);
+
+  useEffect(() => {
+    intentRef.current = intent;
+  }, [intent]);
+
+  const valuesRef = useRef<Record<string, string>>({
+    birthDate: draft.birthDate ?? "",
+    cpf: draft.cpf ?? "",
+    name: draft.name ?? "",
+    email: draft.email ?? "",
+    phone: draft.phone ?? "",
+  });
+
+  function handleFormChange(event: React.ChangeEvent<HTMLFormElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || !target.name) return;
+    valuesRef.current = { ...valuesRef.current, [target.name]: target.value };
+  }
+
+  useEffect(() => {
+    function persistDraft() {
+      if (submittedRef.current) return;
+      const entry: CadastroStep1Draft = {
+        ...valuesRef.current,
+        intent: intentRef.current,
+      };
+      const hasContent = Object.entries(entry).some(
+        ([key, value]) => key !== "intent" && value !== "",
+      );
+      if (!hasContent) {
+        window.sessionStorage.removeItem(CADASTRO_STEP1_DRAFT_KEY);
+        return;
+      }
+      window.sessionStorage.setItem(CADASTRO_STEP1_DRAFT_KEY, JSON.stringify(entry));
+    }
+
+    window.addEventListener("pagehide", persistDraft);
+    return () => {
+      window.removeEventListener("pagehide", persistDraft);
+      persistDraft();
+    };
+  }, []);
+
+  function handleCpfChange(event: React.ChangeEvent<HTMLInputElement>) {
+    event.currentTarget.value = formatCpf(event.currentTarget.value);
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setErrorMessage(null);
     const formData = new FormData(event.currentTarget);
     const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
-    const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
     const payload: CadastroStep1Data = {
       birthDate: String(formData.get("birthDate") ?? ""),
-      cnpj,
       cpf,
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
@@ -47,12 +115,19 @@ export default function CadastroPage() {
       intent,
     };
 
-    // No fluxo de titular, o CNPJ é obrigatório e válido. No fluxo "entrar em uma empresa", o
-    // usuário só cria a conta e solicita acesso depois em /perfil/empresa.
-    if (!payload.name || !payload.email || !payload.phone || !payload.birthDate || !isValidCpf(cpf)) return;
-    if (!isValidCnpj(cnpj)) return;
+    if (!payload.name || !payload.email || !payload.phone || !payload.birthDate) {
+      setErrorMessage("Preencha todos os campos para continuar.");
+      return;
+    }
 
+    if (!isValidCpf(cpf)) {
+      setErrorMessage("Informe um CPF válido.");
+      return;
+    }
+
+    submittedRef.current = true;
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
+    window.sessionStorage.removeItem(CADASTRO_STEP1_DRAFT_KEY);
     router.push(
       callbackUrl
         ? `/cadastro/etapa-2?callbackUrl=${encodeURIComponent(callbackUrl)}`
@@ -64,14 +139,19 @@ export default function CadastroPage() {
     <div className="flex min-h-screen">
       <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:h-screen lg:w-1/2 lg:sticky lg:top-0">
         <div className="flex flex-col items-center text-center px-12">
-          <Image
-            src="/images/auth/logo-with-flag.svg"
-            alt="Marketplace Papelito"
-            width={304}
-            height={182}
-            className="mb-8"
-            priority
-          />
+          <Link
+            href="/"
+            aria-label="Ir para a página inicial"
+            className="mb-8 rounded-md transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-dark"
+          >
+            <Image
+              src="/images/auth/logo-with-flag.svg"
+              alt="Marketplace Papelito"
+              width={304}
+              height={182}
+              priority
+            />
+          </Link>
           <h1 className="text-2xl font-semibold text-brand-dark tracking-tight">
             SEJA NOSSO CLIENTE
           </h1>
@@ -154,13 +234,14 @@ export default function CadastroPage() {
               : "Você será o titular da empresa cadastrada e poderá convidar sua equipe."}
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit} onChange={handleFormChange}>
             <AuthTextField
               id="name"
               name="name"
               label="Nome Completo"
               placeholder="Seu nome completo"
               autoComplete="name"
+              defaultValue={draft.name}
               required
             />
 
@@ -171,6 +252,7 @@ export default function CadastroPage() {
               type="email"
               placeholder="seu@email.com"
               autoComplete="email"
+              defaultValue={draft.email}
               required
             />
 
@@ -181,6 +263,7 @@ export default function CadastroPage() {
               type="tel"
               placeholder="(11) 99999-9999"
               autoComplete="tel"
+              defaultValue={draft.phone}
               required
             />
 
@@ -191,6 +274,9 @@ export default function CadastroPage() {
               inputMode="numeric"
               placeholder="123.456.789-00"
               autoComplete="off"
+              maxLength={14}
+              onChange={handleCpfChange}
+              defaultValue={draft.cpf}
               required
             />
 
@@ -200,17 +286,15 @@ export default function CadastroPage() {
               label="Data de nascimento"
               type="date"
               placeholder="AAAA-MM-DD"
+              defaultValue={draft.birthDate}
               required
             />
 
-            <AuthTextField
-              id="cnpj"
-              name="cnpj"
-              label="CNPJ da empresa"
-              placeholder="00.000.000/0000-00"
-              autoComplete="off"
-              required
-            />
+            {errorMessage ? (
+              <p className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
+                {errorMessage}
+              </p>
+            ) : null}
 
             <div className="pt-2">
               <AuthSubmitButton icon={<ArrowRightIcon className="w-5 h-5" />}>
@@ -226,7 +310,7 @@ export default function CadastroPage() {
             iconAlt="Google"
             iconSrc="/images/auth/google-icon.svg"
             provider="google"
-            callbackUrl={callbackUrl ?? "/produtos"}
+            callbackUrl={callbackUrl ?? undefined}
           />
         </div>
       </div>

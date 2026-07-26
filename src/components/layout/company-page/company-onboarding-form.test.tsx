@@ -28,14 +28,21 @@ describe("CompanyOnboardingForm", () => {
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/company");
   });
 
-  it("salva identidade e solicita acesso", async () => {
+  it("não renderiza mais o seletor cadastrar empresa / solicitar acesso", () => {
+    render(<CompanyOnboardingForm onComplete={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: "Solicitar acesso" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cadastrar empresa" })).toBeNull();
+    expect(document.querySelector("[aria-pressed]")).toBeNull();
+  });
+
+  it("sempre cadastra a própria empresa, sem ramo de solicitação de acesso", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(response({ identityStatus: "verified" }))
-      .mockResolvedValueOnce(response({ status: "received" }));
+      .mockResolvedValueOnce(response({ companyId: 10 }));
     const onComplete = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
     render(<CompanyOnboardingForm onComplete={onComplete} />);
-    fireEvent.click(screen.getByRole("button", { name: "Solicitar acesso" }));
     fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "52998224725" } });
     fireEvent.change(screen.getByLabelText("Data de nascimento"), { target: { value: "1990-01-01" } });
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "01310000" } });
@@ -43,6 +50,7 @@ describe("CompanyOnboardingForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Continuar" }).closest("form")!);
 
     await waitFor(() => expect(onComplete).toHaveBeenCalled());
-    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/company/request-access");
+    const requestedPaths = fetchMock.mock.calls.map((call) => call[0]);
+    expect(requestedPaths).not.toContain("/api/company/request-access");
   });
 });

@@ -25,6 +25,14 @@ declare module "next-auth" {
     membershipRole?: string | null;
     membershipStatus?: string | null;
     onboardingStatus?: string;
+    /** Estado retomável, presente só quando onboardingStatus === "incomplete". Sem PII em claro. */
+    onboarding?: {
+      type?: string;
+      targetCnpj?: string | null;
+      cpfLast4?: string | null;
+      hasBirthDate?: boolean;
+      expiresAt?: string | null;
+    };
   };
   interface Session {
     accessToken?: string;

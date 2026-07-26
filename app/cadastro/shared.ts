@@ -1,6 +1,23 @@
 export const CADASTRO_STORAGE_KEY = "papelito:cadastro:step1";
 
 /**
+ * Rascunho parcial da etapa 1, salvo quando o usuário sai da página sem enviar (ex.: clicando no
+ * logo). Key separada de CADASTRO_STORAGE_KEY de propósito: aquela é o contrato de "etapa 1
+ * concluída e validada" que libera a etapa 2, e um rascunho incompleto não pode satisfazer esse
+ * guard.
+ */
+export const CADASTRO_STEP1_DRAFT_KEY = "papelito:cadastro:step1:draft";
+
+export type CadastroStep1Draft = Partial<Omit<CadastroStep1Data, "intent">> & {
+  intent?: CadastroIntent;
+};
+
+export {
+  DEFAULT_POST_ONBOARDING_PATH,
+  ONBOARDING_PATH,
+} from "@/features/company/onboarding";
+
+/**
  * Intenção de onboarding B2B:
  * - "create_company": o usuário é o titular e cadastra a própria empresa (fluxo com CNPJ).
  * - "join_company": o usuário cria a conta e depois solicita acesso a uma empresa existente.
@@ -9,11 +26,28 @@ export type CadastroIntent = "create_company" | "join_company";
 
 export type CadastroStep1Data = {
   birthDate: string;
-  cnpj: string;
   cpf: string;
   name: string;
   email: string;
   phone: string;
+  intent: CadastroIntent;
+};
+
+/**
+ * Dados já conhecidos ao abrir /cadastro/completar: identidade vinda do provedor OAuth e o que
+ * o usuário salvou antes de abandonar. CPF e data de nascimento não voltam em claro por design.
+ */
+export type CadastroPrefill = {
+  email: string;
+  name: string;
+  cep: string;
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cnpj: string;
+  cpfLast4: string | null;
+  hasBirthDate: boolean;
   intent: CadastroIntent;
 };
 

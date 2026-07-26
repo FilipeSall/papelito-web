@@ -16,6 +16,8 @@ import {
 } from "@/features/company/types/company";
 import { memberStatusLabel, roleLabel } from "@/features/company/utils/labels";
 
+import { ASSIGNABLE_ROLE_OPTIONS, CompanySelect, StatusBadge } from "./atoms";
+
 type CompanyMembersSectionProps = {
   viewerRole: CompanyRole | null;
   onChanged: () => void;
@@ -108,38 +110,31 @@ export function CompanyMembersSection({ viewerRole, onChanged }: CompanyMembersS
                     </p>
                     <p className="text-[12px] font-medium text-[#231f20]">{member.email}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em]">
-                    <span className="border-2 border-[#1a1a1a] px-2 py-1 text-[#1a1a1a]">
+                  <div className="flex items-center gap-2">
+                    <span className="border-2 border-[#1a1a1a] px-2 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
                       {roleLabel(member.role)}
                     </span>
-                    <span className="text-[#231f20]">{memberStatusLabel(member.status)}</span>
+                    <StatusBadge
+                      status={member.status}
+                      label={memberStatusLabel(member.status)}
+                    />
                   </div>
                 </div>
 
                 {viewerRole === "owner" || (viewerRole === "admin" && !isOwner) ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <label className="sr-only" htmlFor={`role-${member.memberId}`}>
-                      Alterar papel de {member.email}
-                    </label>
-                    <select
+                    <CompanySelect
                       id={`role-${member.memberId}`}
+                      size="sm"
+                      aria-label={`Alterar papel de ${member.email}`}
                       disabled={busy || isOwner}
-                      defaultValue={ASSIGNABLE_ROLES.includes(member.role) ? member.role : "buyer"}
-                      onChange={(event) =>
-                        run(member.memberId, () =>
-                          patchMember(member.memberId, {
-                            role: event.target.value as CompanyRole,
-                          }),
-                        )
+                      value={ASSIGNABLE_ROLES.includes(member.role) ? member.role : "buyer"}
+                      options={ASSIGNABLE_ROLE_OPTIONS}
+                      onChange={(role) =>
+                        run(member.memberId, () => patchMember(member.memberId, { role }))
                       }
-                      className="h-9 border-2 border-[#1a1a1a] bg-white px-2 text-[12px] font-bold uppercase tracking-[0.08em] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
-                    >
-                      {ASSIGNABLE_ROLES.map((role) => (
-                        <option key={role} value={role}>
-                          {roleLabel(role)}
-                        </option>
-                      ))}
-                    </select>
+                      className="w-40"
+                    />
 
                     {!isOwner ? (
                       <>
@@ -242,7 +237,7 @@ function MemberActionButton({
       type="button"
       disabled={busy || disabled}
       onClick={onClick}
-      className={`h-9 border-2 px-3 text-[11px] font-black uppercase tracking-[0.14em] transition-shadow focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40 ${
+      className={`h-9 cursor-pointer border-2 px-3 text-[11px] font-black uppercase tracking-[0.14em] transition-shadow focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40 ${
         danger
           ? "border-[#c0392b] bg-white text-[#c0392b] hover:shadow-[3px_3px_0px_#c0392b]"
           : "border-[#1a1a1a] bg-white text-[#1a1a1a] hover:shadow-[3px_3px_0px_#1a1a1a]"

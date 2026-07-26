@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { startTransition, useState } from "react";
 
 import { clearPreviousSessionBeforeSignIn } from "@/features/auth/client/logout";
+import { buildPostAuthUrl } from "@/features/company/onboarding";
 
 import { ArrowRightIcon } from "../atoms/auth-icons";
 import { AuthSocialButton } from "../atoms/auth-social-button";
@@ -21,7 +22,8 @@ export function AuthLoginForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const callbackUrl = searchParams.get("callbackUrl") || "/produtos";
+  const callbackUrl = searchParams.get("callbackUrl");
+  const postAuthUrl = buildPostAuthUrl(callbackUrl);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +54,7 @@ export function AuthLoginForm() {
         redirect: false,
         username,
         password,
-        callbackUrl,
+        callbackUrl: postAuthUrl,
       });
 
       if (!result || result.error) {
@@ -68,7 +70,7 @@ export function AuthLoginForm() {
         return;
       }
 
-      router.push(result.url ?? callbackUrl);
+      router.push(result.url ?? postAuthUrl);
       router.refresh();
     });
   }
@@ -136,6 +138,7 @@ export function AuthLoginForm() {
           iconSrc="/images/auth/google-icon.svg"
           iconAlt="Google"
           provider="google"
+          callbackUrl={callbackUrl ?? undefined}
         />
       </div>
     </div>

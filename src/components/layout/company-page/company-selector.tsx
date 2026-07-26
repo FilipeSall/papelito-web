@@ -52,10 +52,10 @@ export function CompanySelector({ companies, activeCompanyId, onSelected }: Comp
                 disabled={pendingId !== null}
                 aria-pressed={active}
                 onClick={() => handleSelect(company.companyId)}
-                className={`flex w-full items-center justify-between border-2 border-[#1a1a1a] px-4 py-3 text-left transition-shadow focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow ${
+                className={`flex w-full cursor-pointer items-center justify-between border-2 px-4 py-3 text-left transition-shadow focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60 ${
                   active
-                    ? "bg-brand-yellow shadow-[3px_3px_0px_#1a1a1a]"
-                    : "bg-white hover:shadow-[3px_3px_0px_#1a1a1a]"
+                    ? "border-[#1a7f37] bg-[#e8f5ec] shadow-[3px_3px_0px_#1a7f37]"
+                    : "border-[#1a1a1a] bg-white hover:shadow-[3px_3px_0px_#1a1a1a]"
                 }`}
               >
                 <span>
@@ -66,7 +66,11 @@ export function CompanySelector({ companies, activeCompanyId, onSelected }: Comp
                     {roleLabel(company.role)}
                   </span>
                 </span>
-                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
+                <span
+                  className={`text-[11px] font-black uppercase tracking-[0.18em] ${
+                    active ? "text-[#1a7f37]" : "text-[#1a1a1a]"
+                  }`}
+                >
                   {pendingId === company.companyId ? "..." : active ? "Ativa" : "Selecionar"}
                 </span>
               </button>

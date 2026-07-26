@@ -60,14 +60,14 @@ export function CompanyRequestAccessForm({ onRequested }: CompanyRequestAccessFo
         required
         inputMode="numeric"
         placeholder="00.000.000/0000-00"
-        className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow sm:w-80"
+        className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow sm:w-80"
       />
       {error ? <p className="text-sm font-bold text-[#c0392b]">{error}</p> : null}
       {feedback ? <p className="text-sm font-bold text-[#1a7f37]">{feedback}</p> : null}
       <button
         type="submit"
         disabled={submitting}
-        className="bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
+        className="cursor-pointer bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? "Enviando..." : "Solicitar acesso"}
       </button>

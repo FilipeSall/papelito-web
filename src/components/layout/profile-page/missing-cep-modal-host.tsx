@@ -35,7 +35,11 @@ export function MissingCepModalHost() {
   const [visibleAccountKey, setVisibleAccountKey] = useState<string | null>(null);
   const checkedAccountKeysRef = useRef(new Set<string>());
   const accountKey = useMemo(() => resolveAccountKey(session), [session]);
-  const isEligibleAccount = status === "authenticated" && role === "customer" && Boolean(accountKey);
+  // Durante o onboarding B2B o CEP é campo do formulário em /cadastro/completar; abrir o modal
+  // isolado por cima duplicaria a pergunta.
+  const isOnboardingIncomplete = session?.b2b?.onboardingStatus === "incomplete";
+  const isEligibleAccount =
+    status === "authenticated" && role === "customer" && Boolean(accountKey) && !isOnboardingIncomplete;
 
   useEffect(() => {
     if (!isEligibleAccount || !accountKey || typeof window === "undefined") {

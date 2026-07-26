@@ -16,6 +16,18 @@ export type OnboardingStatus =
   | "complete"
   | "incomplete";
 
+/**
+ * Estado retomável do onboarding, presente só quando `onboardingStatus === "incomplete"`.
+ * CPF e data de nascimento ficam cifrados no WP e não voltam em claro — daí `cpfLast4`/`hasBirthDate`.
+ */
+export type OnboardingResumeState = {
+  type?: string;
+  targetCnpj?: string | null;
+  cpfLast4?: string | null;
+  hasBirthDate?: boolean;
+  expiresAt?: string | null;
+};
+
 export type CompanyContext = {
 	isB2bCohort?: boolean;
   identityStatus: string;
@@ -37,6 +49,7 @@ export type CompanyContext = {
   membershipRole: CompanyRole | null;
   membershipStatus: MemberStatus | null;
   onboardingStatus: OnboardingStatus;
+  onboarding?: OnboardingResumeState;
   companySelectionRequired: boolean;
   availableCompanies: AvailableCompany[];
   canPurchase: boolean;

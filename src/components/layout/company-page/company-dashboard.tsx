@@ -60,7 +60,7 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#231f20]/70">
           Minha empresa
         </p>
-        <h2 className="text-2xl font-black uppercase tracking-[0.02em] text-[#1a1a1a]">
+        <h2 className="text-2xl font-black uppercase -tracking-tight text-[#1a1a1a]">
           {hasCompany
             ? context.availableCompanies.find((c) => c.companyId === context.companyId)?.legalName ??
               "Empresa"

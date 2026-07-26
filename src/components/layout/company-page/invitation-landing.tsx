@@ -91,7 +91,7 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
             </p>
             <Link
               href="/"
-              className="inline-flex bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+              className="inline-flex bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
             >
               Voltar ao início
             </Link>
@@ -118,7 +118,7 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
                 type="button"
                 disabled={phase === "accepting"}
                 onClick={handleAccept}
-                className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
+                className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
               >
                 {phase === "accepting" ? "Aceitando..." : "Aceitar convite"}
               </button>
@@ -130,13 +130,13 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
                 <button
                   type="button"
                   onClick={() => signIn(undefined, { callbackUrl: "/convite" })}
-                  className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+                  className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
                 >
                   Entrar
                 </button>
                 <Link
                   href={`/cadastro?next=${encodeURIComponent("/convite")}`}
-                  className="block w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+                  className="block w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
                 >
                   Criar conta
                 </Link>

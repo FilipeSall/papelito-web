@@ -9,3 +9,4 @@ export { CompanyOnboardingForm } from "./company-onboarding-form";
 export { InvitationLanding } from "./invitation-landing";
 export { CompanyDetailsSection } from "./company-details-section";
 export { CompanyAuditSection } from "./company-audit-section";
+export { CompanySelect, type CompanySelectOption, ASSIGNABLE_ROLE_OPTIONS } from "./atoms";

@@ -24,7 +24,7 @@ app/                       App Router. Cada rota = pasta com page.tsx
   cadastro/                Fluxo público de cadastro (etapa-1 + etapa-2)
   entrar/                  Login
   perfil/                  Área autenticada
-middleware.ts              Auth + guard de profileComplete
+proxy.ts                   Middleware (Next 16): auth + gate de onboarding B2B + guard de admin
 src/
   components/              UI (atoms / molecules / organisms / pages-layout)
     auth/                  Atomic design para auth/cadastro
@@ -98,7 +98,26 @@ Por convenção, componentes específicos de uma página vivem em `layout/<nome-
 
 Token e refresh do WP ficam na sessão JWT do NextAuth (`session.accessToken`, `session.refreshToken`). Apollo lê `session.accessToken` automaticamente.
 
-`session.profileComplete = false` indica usuário Google sem perfil preenchido (CNPJ/CEP/etc. faltando) — middleware redireciona para `/perfil/completar` em rotas protegidas.
+### Gate de onboarding B2B
+
+**Invariante: a autoridade sobre "cadastro incompleto" é `session.b2b.onboardingStatus`, nunca `profileComplete`.**
+`papelito_profile_complete` é usermeta com dois escritores e vira `'1'` no verify-email mesmo quando
+o onboarding B2B falhou; usá-lo para rotear quica usuários legados já completos.
+
+O gate vive **exclusivamente** em [proxy.ts](proxy.ts): quando `token.b2b.onboardingStatus === "incomplete"`,
+as rotas do matcher redirecionam para `/cadastro/completar?callbackUrl=<destino>`. A própria rota de
+onboarding é isenta (quebra-loop) e entra no matcher só para o `authorized` do `withAuth` mandar
+anônimo para `/entrar`. Sem contexto B2B o gate abre (fail-open) — a compra segue barrada em
+[require-checkout-customer.ts](src/features/checkout/server/require-checkout-customer.ts).
+
+Não reintroduza um efeito de cliente para isso: o antigo `B2bOnboardingRedirect` rodava depois do
+render, em todas as rotas (inclusive públicas), mandava para `/perfil/empresa` e era burlável.
+
+A tela é [app/cadastro/completar](app/cadastro/completar) — reusa os componentes de `auth/`, recebe
+e-mail/nome do Google (e-mail `readOnly`) e coleta telefone, CPF, nascimento, CEP e CNPJ. CPF e data
+de nascimento ficam cifrados no WP e **não** voltam em claro: o contexto expõe só `cpfLast4` e
+`hasBirthDate` para retomar o preenchimento. Concluir chama `update({ refreshB2b: true })` para o
+token sair de `incomplete`; cancelar encerra a sessão sem marcar o cadastro como concluído.
 
 Login por credenciais pode retornar `papelito_email_not_verified`; a UI deve orientar reenvio para `/confirmar-email?email=...`.
 

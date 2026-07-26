@@ -22,7 +22,33 @@ export function buildSession(
     authError: undefined,
     profileComplete: true,
     role: "customer",
+    b2b: { onboardingStatus: "complete", canPurchase: true },
     ...sessionOverrides,
     user,
   };
+}
+
+/**
+ * Usuário autenticado cujo onboarding B2B ainda não terminou — o cohort que o gate de proxy.ts
+ * manda para /cadastro/completar.
+ */
+export function buildIncompleteB2bSession(
+  overrides: Parameters<typeof buildSession>[0] = {},
+): Session {
+  return buildSession({
+    profileComplete: false,
+    b2b: {
+      onboardingStatus: "incomplete",
+      canPurchase: false,
+      requiresB2bOnboarding: true,
+      identityStatus: "incomplete",
+      onboarding: {
+        type: "google_onboarding",
+        targetCnpj: null,
+        cpfLast4: null,
+        hasBirthDate: false,
+      },
+    },
+    ...overrides,
+  });
 }

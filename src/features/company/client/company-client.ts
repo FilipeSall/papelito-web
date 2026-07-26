@@ -61,14 +61,37 @@ export function fetchCompanyContext() {
   return call<CompanyContext>("/api/company/current");
 }
 
-export function saveCustomerProfile(payload: { cpf: string; birth_date: string; cep: string }) {
+export function saveCustomerProfile(payload: {
+  cpf: string;
+  birth_date: string;
+  cep: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}) {
   return call<CompanyContext>("/api/company/onboarding/customer-profile", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export function createCompany(payload: { cpf: string; birth_date: string; cnpj: string }) {
+export function createCompany(payload: {
+  cpf: string;
+  birth_date: string;
+  cnpj: string;
+  full_name?: string;
+  phone?: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}) {
   return call<CompanyContext>("/api/company", {
     method: "POST",
     idempotent: true,
@@ -135,6 +158,12 @@ export function removeMember(memberId: number) {
 
 export function listInvitations() {
   return call<{ items: CompanyInvitation[] }>("/api/company/current/invitations");
+}
+
+export function checkInvitationEligibility(email: string) {
+  return call<{ invitable: boolean }>(
+    `/api/company/current/invitations/eligibility?email=${encodeURIComponent(email)}`,
+  );
 }
 
 export function createInvitation(payload: {

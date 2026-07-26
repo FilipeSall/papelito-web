@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { AuthErrorToastHost } from "./auth-error-toast-host";
 import { LegacyMigrationNotice } from "./legacy-migration-notice";
+import { OnboardingSuccessToastHost } from "./onboarding-success-toast-host";
 
 function isProtectedPath(pathname: string | null) {
   if (!pathname) {
@@ -56,27 +57,15 @@ function InvalidSessionCleanup() {
   return null;
 }
 
-function B2bOnboardingRedirect() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    if (status !== "authenticated" || pathname.startsWith("/perfil/empresa")) return;
-    if (session?.b2b?.onboardingStatus === "incomplete" || session?.profileComplete === false) {
-      router.replace("/perfil/empresa");
-    }
-  }, [pathname, router, session?.b2b?.onboardingStatus, session?.profileComplete, status]);
-
-  return null;
-}
-
+// O redirecionamento de onboarding B2B vive no gate server-side de proxy.ts. Não reintroduza um
+// efeito de cliente aqui: ele rodava depois do render, em todas as rotas (inclusive públicas), e
+// era burlável.
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextAuthSessionProvider>
       <InvalidSessionCleanup />
-      <B2bOnboardingRedirect />
       <AuthErrorToastHost />
+      <OnboardingSuccessToastHost />
       <LegacyMigrationNotice />
       {children}
     </NextAuthSessionProvider>

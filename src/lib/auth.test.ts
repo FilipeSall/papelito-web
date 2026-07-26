@@ -337,4 +337,65 @@ describe("authOptions callbacks", () => {
     expect(session.authIdentityError).toBe(true);
     expect(session.role).toBeUndefined();
   });
+
+  describe("Google sign-in", () => {
+    async function runSignIn(user: Record<string, unknown> = {}) {
+      if (!authOptions.callbacks?.signIn) {
+        throw new Error("signIn callback is not configured.");
+      }
+
+      return authOptions.callbacks.signIn({
+        user,
+        account: { provider: "google", id_token: "google-id-token", type: "oauth" },
+        profile: undefined,
+        email: undefined,
+        credentials: undefined,
+      } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.signIn>>[0]);
+    }
+
+    it("consulta /auth/me uma única vez por login", async () => {
+      let calls = 0;
+      server.use(
+        http.get(AUTH_ME_URL, () => {
+          calls += 1;
+          return HttpResponse.json({
+            user: { role: "customer", profileComplete: false },
+            b2b: { onboardingStatus: "incomplete", canPurchase: false },
+          });
+        }),
+      );
+
+      await expect(runSignIn()).resolves.toBe(true);
+      expect(calls).toBe(1);
+    });
+
+    it("carrega o contexto B2B no usuário para o gate de proxy.ts poder decidir", async () => {
+      server.use(
+        http.get(AUTH_ME_URL, () =>
+          HttpResponse.json({
+            user: { role: "customer", profileComplete: false },
+            b2b: { onboardingStatus: "incomplete", canPurchase: false },
+          }),
+        ),
+      );
+
+      const user: Record<string, unknown> = {};
+      await runSignIn(user);
+
+      expect(user.b2b).toMatchObject({ onboardingStatus: "incomplete" });
+      expect(user.profileComplete).toBe(false);
+    });
+
+    it("reaproveita o mesmo usuário do WordPress ao reautenticar com o mesmo e-mail", async () => {
+      const first: Record<string, unknown> = {};
+      const second: Record<string, unknown> = {};
+
+      await runSignIn(first);
+      await runSignIn(second);
+
+      // O WordPress resolve a identidade por email_exists(); o front nunca cria conta.
+      expect(first.id).toBe("42");
+      expect(second.id).toBe(first.id);
+    });
+  });
 });

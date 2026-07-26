@@ -8,12 +8,12 @@ import {
   rejectAccessRequest,
 } from "@/features/company/client/company-client";
 import {
-  ASSIGNABLE_ROLES,
   canManageMembers,
   type CompanyAccessRequest,
   type CompanyRole,
 } from "@/features/company/types/company";
-import { roleLabel } from "@/features/company/utils/labels";
+
+import { ASSIGNABLE_ROLE_OPTIONS, CompanySelect } from "./atoms";
 
 type CompanyAccessRequestsSectionProps = {
   viewerRole: CompanyRole | null;
@@ -32,6 +32,7 @@ export function CompanyAccessRequestsSection({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [roleByMember, setRoleByMember] = useState<Record<number, CompanyRole>>({});
 
   const canManage = canManageMembers(viewerRole);
 
@@ -104,32 +105,26 @@ export function CompanyAccessRequestsSection({
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <label className="sr-only" htmlFor={`approve-role-${request.memberId}`}>
-                    Papel ao aprovar
-                  </label>
-                  <select
+                  <CompanySelect
                     id={`approve-role-${request.memberId}`}
+                    size="sm"
+                    aria-label={`Papel ao aprovar ${request.email}`}
                     disabled={busy}
-                    defaultValue="buyer"
-                    className="h-9 border-2 border-[#1a1a1a] bg-white px-2 text-[12px] font-bold uppercase tracking-[0.08em] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
-                  >
-                    {ASSIGNABLE_ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {roleLabel(role)}
-                      </option>
-                    ))}
-                  </select>
+                    value={roleByMember[request.memberId] ?? "buyer"}
+                    options={ASSIGNABLE_ROLE_OPTIONS}
+                    onChange={(role) =>
+                      setRoleByMember((current) => ({ ...current, [request.memberId]: role }))
+                    }
+                    className="w-40"
+                  />
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => {
-                      const select = document.getElementById(
-                        `approve-role-${request.memberId}`,
-                      ) as HTMLSelectElement | null;
-                      const role = (select?.value ?? "buyer") as CompanyRole;
+                      const role = roleByMember[request.memberId] ?? "buyer";
                       void run(request.memberId, () => approveAccessRequest(request.memberId, role));
                     }}
-                    className="h-9 bg-[#1a1a1a] px-4 text-[11px] font-black uppercase tracking-[0.14em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
+                    className="h-9 cursor-pointer bg-[#1a1a1a] px-4 text-[11px] font-black uppercase tracking-[0.14em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
                   >
                     {busy ? "..." : "Aprovar"}
                   </button>
@@ -144,7 +139,7 @@ export function CompanyAccessRequestsSection({
                         );
                       }
                     }}
-                    className="h-9 border-2 border-[#c0392b] bg-white px-4 text-[11px] font-black uppercase tracking-[0.14em] text-[#c0392b] transition-shadow hover:shadow-[3px_3px_0px_#c0392b] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
+                    className="h-9 cursor-pointer border-2 border-[#c0392b] bg-white px-4 text-[11px] font-black uppercase tracking-[0.14em] text-[#c0392b] transition-shadow hover:shadow-[3px_3px_0px_#c0392b] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
                   >
                     {busy ? "..." : "Rejeitar"}
                   </button>

@@ -1,6 +1,8 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
+import { ONBOARDING_PATH, requiresB2bOnboarding } from "./src/features/company/onboarding";
+
 function normalizeRole(role: unknown) {
   return typeof role === "string" ? role.trim().toLowerCase() : undefined;
 }
@@ -22,9 +24,26 @@ function hasAuthenticatedAccessToken(token: {
 
 export default withAuth(
   function proxy(request) {
+    const { pathname } = request.nextUrl;
+
+    // Quebra-loop: a própria tela de onboarding nunca pode ser gateada por si mesma.
+    if (pathname === ONBOARDING_PATH) {
+      return NextResponse.next();
+    }
+
+    // Sem contexto B2B (falha transitória do /auth/me) o gate abre: a compra segue barrada
+    // server-side em require-checkout-customer, e fechar aqui trancaria todos numa queda do WP.
+    if (requiresB2bOnboarding(request.nextauth.token?.b2b)) {
+      const onboardingUrl = request.nextUrl.clone();
+      onboardingUrl.pathname = ONBOARDING_PATH;
+      onboardingUrl.search = `?callbackUrl=${encodeURIComponent(`${pathname}${request.nextUrl.search}`)}`;
+
+      return NextResponse.redirect(onboardingUrl);
+    }
+
     const role = normalizeRole(request.nextauth.token?.role);
 
-    if (!isAdminPath(request.nextUrl.pathname)) {
+    if (!isAdminPath(pathname)) {
       return NextResponse.next();
     }
 
@@ -48,6 +67,17 @@ export default withAuth(
   },
 );
 
+// O matcher é extraído estaticamente no build: precisa ser literal, sem referenciar ONBOARDING_PATH.
+// proxy.test.ts garante que "/cadastro/completar" continue igual à constante.
 export const config = {
-  matcher: ["/perfil/:path*", "/carrinho", "/checkout", "/checkout/:path*", "/admin/:path*"],
+  matcher: [
+    "/perfil/:path*",
+    "/carrinho",
+    "/checkout",
+    "/checkout/:path*",
+    "/admin/:path*",
+    "/vendor/:path*",
+    // Presente para que o `authorized` do withAuth mande anônimo para /entrar; o gate acima isenta.
+    "/cadastro/completar",
+  ],
 };

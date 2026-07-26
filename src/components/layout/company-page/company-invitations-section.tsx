@@ -1,36 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 
 import {
+  checkInvitationEligibility,
   createInvitation,
   listInvitations,
   resendInvitation,
   revokeInvitation,
 } from "@/features/company/client/company-client";
 import {
-  ASSIGNABLE_ROLES,
   canManageMembers,
   type CompanyInvitation,
   type CompanyRole,
 } from "@/features/company/types/company";
 import { roleLabel } from "@/features/company/utils/labels";
+import { statusLabel } from "@/features/company/utils/status-tone";
+
+import { ASSIGNABLE_ROLE_OPTIONS, CompanySelect, StatusBadge } from "./atoms";
 
 type CompanyInvitationsSectionProps = {
   viewerRole: CompanyRole | null;
 };
+
+type InvitationEligibility = "idle" | "checking" | "available" | "registered";
 
 /**
  * Convites: criar (e-mail + papel + CPF opcional), reenviar (invalida o token anterior) e revogar.
  * Convite nunca concede titular. Só titular/admin veem esta seção.
  */
 export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSectionProps) {
+  const { data: session } = useSession();
   const [invitations, setInvitations] = useState<CompanyInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [inviteRole, setInviteRole] = useState<CompanyRole>("buyer");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEligibility, setInviteEligibility] = useState<InvitationEligibility>("idle");
+  const eligibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eligibilityRequestRef = useRef(0);
 
   const canManage = canManageMembers(viewerRole);
 
@@ -53,12 +65,52 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [canManage]);
 
+  useEffect(() => {
+    return () => {
+      if (eligibilityTimeoutRef.current) {
+        clearTimeout(eligibilityTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function handleInviteEmailChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const email = event.currentTarget.value;
+    const normalizedEmail = email.trim().toLowerCase();
+    const ownEmail = session?.user?.email?.trim().toLowerCase() ?? "";
+
+    setInviteEmail(email);
+    eligibilityRequestRef.current += 1;
+    if (eligibilityTimeoutRef.current) {
+      clearTimeout(eligibilityTimeoutRef.current);
+    }
+    if (!normalizedEmail || !/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      setInviteEligibility("idle");
+      return;
+    }
+    if (normalizedEmail === ownEmail) {
+      setInviteEligibility("registered");
+      return;
+    }
+
+    const requestId = eligibilityRequestRef.current;
+    setInviteEligibility("checking");
+    eligibilityTimeoutRef.current = setTimeout(() => {
+      void checkInvitationEligibility(normalizedEmail).then((result) => {
+        if (requestId !== eligibilityRequestRef.current) {
+          return;
+        }
+        setInviteEligibility(result.ok && result.data.invitable ? "available" : result.ok ? "registered" : "idle");
+      });
+    }, 300);
+  }
+
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting) return;
-    const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "").trim();
-    const role = String(form.get("role") ?? "buyer") as CompanyRole;
+    if (submitting || inviteEligibility === "checking" || inviteEligibility === "registered") return;
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const email = inviteEmail.trim();
+    const role = inviteRole;
     const cpf = String(form.get("cpf") ?? "").trim();
 
     setSubmitting(true);
@@ -75,7 +127,10 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
       return;
     }
     setFeedback(`✓ Convite enviado para ${email}.`);
-    event.currentTarget.reset();
+    formElement.reset();
+    setInviteRole("buyer");
+    setInviteEmail("");
+    setInviteEligibility("idle");
     await reload();
   }
 
@@ -95,6 +150,9 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
   if (!canManage) {
     return null;
   }
+
+  const invitationBlocked = inviteEligibility === "registered";
+  const invitationChecking = inviteEligibility === "checking";
 
   return (
     <section className="space-y-4">
@@ -121,7 +179,9 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
             name="email"
             type="email"
             required
-            className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+            value={inviteEmail}
+            onChange={handleInviteEmailChange}
+            className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
           />
         </div>
         <div>
@@ -131,26 +191,26 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
           >
             Papel
           </label>
-          <select
+          <CompanySelect
             id="invite-role"
             name="role"
-            defaultValue="buyer"
-            className="h-11 border-2 border-[#1a1a1a] bg-white px-2 text-sm font-bold uppercase tracking-[0.06em] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
-          >
-            {ASSIGNABLE_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {roleLabel(role)}
-              </option>
-            ))}
-          </select>
+            value={inviteRole}
+            options={ASSIGNABLE_ROLE_OPTIONS}
+            onChange={setInviteRole}
+            className="sm:w-48"
+          />
         </div>
-        <div className="flex items-end">
+        <div
+          className="flex items-end"
+          title={invitationBlocked ? "Este e-mail já está cadastrado na Papelito." : undefined}
+        >
           <button
             type="submit"
-            disabled={submitting}
-            className="h-11 bg-[#1a1a1a] px-5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
+            disabled={submitting || invitationChecking || invitationBlocked}
+            aria-describedby={invitationBlocked ? "invite-email-registered" : undefined}
+            className="h-11 cursor-pointer bg-[#1a1a1a] px-5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
           >
-            {submitting ? "Enviando..." : "Convidar"}
+            {submitting ? "Enviando..." : invitationChecking ? "Verificando..." : "Convidar"}
           </button>
         </div>
         <div className="sm:col-span-3">
@@ -164,10 +224,16 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
             id="invite-cpf"
             name="cpf"
             inputMode="numeric"
-            className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow sm:w-64"
+            className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow sm:w-64"
           />
         </div>
       </form>
+
+      {invitationBlocked ? (
+        <p id="invite-email-registered" className="text-sm font-bold text-[#c0392b]">
+          Este e-mail já está cadastrado na Papelito.
+        </p>
+      ) : null}
 
       {error ? <p className="text-sm font-bold text-[#c0392b]">{error}</p> : null}
       {feedback ? <p className="text-sm font-bold text-[#1a7f37]">{feedback}</p> : null}
@@ -190,10 +256,20 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
                   <p className="text-sm font-black uppercase tracking-[0.04em] text-[#1a1a1a]">
                     {invitation.email}
                   </p>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#231f20]">
-                    {roleLabel(invitation.role)} · {invitation.status}
-                    {invitation.cpfLocked ? " · CPF travado" : ""}
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#231f20]">
+                      {roleLabel(invitation.role)}
+                    </span>
+                    <StatusBadge
+                      status={invitation.status}
+                      label={statusLabel(invitation.status)}
+                    />
+                    {invitation.cpfLocked ? (
+                      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#231f20]">
+                        CPF travado
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 {isPending ? (
                   <div className="flex items-center gap-2">
@@ -203,7 +279,7 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
                       onClick={() =>
                         run(invitation.invitationId, () => resendInvitation(invitation.invitationId))
                       }
-                      className="h-9 border-2 border-[#1a1a1a] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
+                      className="h-9 cursor-pointer border-2 border-[#1a1a1a] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
                     >
                       {busy ? "..." : "Reenviar"}
                     </button>
@@ -213,7 +289,7 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
                       onClick={() =>
                         run(invitation.invitationId, () => revokeInvitation(invitation.invitationId))
                       }
-                      className="h-9 border-2 border-[#c0392b] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#c0392b] transition-shadow hover:shadow-[3px_3px_0px_#c0392b] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
+                      className="h-9 cursor-pointer border-2 border-[#c0392b] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#c0392b] transition-shadow hover:shadow-[3px_3px_0px_#c0392b] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-40"
                     >
                       {busy ? "..." : "Revogar"}
                     </button>

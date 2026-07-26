@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildSession } from "../../../../test/factories/session";
+import { buildIncompleteB2bSession, buildSession } from "../../../../test/factories/session";
 import { MissingCepModalHost } from "./missing-cep-modal-host";
 
 const pushMock = vi.fn();
@@ -177,6 +177,19 @@ describe("MissingCepModalHost", () => {
 
     expect(pushMock).toHaveBeenCalledWith("/perfil/enderecos?openEditor=1");
     expect(window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42")).toBe("1");
+  });
+
+  it("stays out of the way during B2B onboarding, where CEP is a form field", () => {
+    authState = {
+      role: "customer",
+      session: buildIncompleteB2bSession(),
+      status: "authenticated",
+    };
+
+    render(<MissingCepModalHost />);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("aborts when the session does not expose a stable account key", () => {

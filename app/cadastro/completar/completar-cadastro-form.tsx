@@ -2,24 +2,31 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { startTransition, useState } from "react";
 
-import {
-  ArrowRightIcon,
-  AuthSubmitButton,
-} from "@/components/auth/atoms";
-import { AuthPasswordField, AuthSelectField, AuthTextField } from "@/components/auth/molecules";
-import { queueOnboardingSuccessToast } from "@/components/providers/onboarding-success-toast-host";
+import { ArrowRightIcon, AuthSubmitButton } from "@/components/auth/atoms";
+import { AuthSelectField, AuthTextField } from "@/components/auth/molecules";
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
+import {
+  createCompany,
+  requestCompanyAccess,
+  saveCustomerProfile,
+} from "@/features/company/client/company-client";
+import { queueOnboardingSuccessToast } from "@/components/providers/onboarding-success-toast-host";
+import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import {
   formatCep,
   formatCnpj,
   isValidCep,
   isValidCnpj,
+  isValidCpf,
 } from "@/lib/validation/brazilian-documents";
 
-import { BRAZILIAN_STATES, CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "../shared";
+import { BRAZILIAN_STATES, type CadastroIntent, type CadastroPrefill } from "../shared";
+import { CancelOnboardingModal } from "./cancel-onboarding-modal";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -28,45 +35,38 @@ const benefits = [
   "Programa de pontos e recompensas",
 ];
 
-function splitName(fullName: string): { first: string; last: string } {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 0) return { first: "", last: "" };
-  if (parts.length === 1) return { first: parts[0], last: "" };
-  return { first: parts[0], last: parts.slice(1).join(" ") };
+const ROLLOUT_DISABLED_MESSAGE =
+  "O cadastro empresarial está temporariamente indisponível. Tente novamente em alguns minutos.";
+
+function isRolloutDisabled(status: number) {
+  return status === 503;
 }
 
-export default function CadastroEtapa2Page() {
+export function CompletarCadastroForm({
+  prefill,
+  callbackUrl,
+}: {
+  prefill: CadastroPrefill;
+  callbackUrl: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [step1, setStep1] = useState<CadastroStep1Data | null>(null);
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  const { update } = useSession();
+  const [intent, setIntent] = useState<CadastroIntent>(prefill.intent);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [address, setAddress] = useState({
-    street: "",
-    neighborhood: "",
-    city: "",
-    state: "",
+    street: prefill.street,
+    neighborhood: prefill.neighborhood,
+    city: prefill.city,
+    state: prefill.state,
   });
   const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "error">("idle");
-  const callbackUrl = searchParams.get("callbackUrl");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = window.sessionStorage.getItem(CADASTRO_STORAGE_KEY);
-    if (!saved) {
-      router.replace("/cadastro");
-      return;
-    }
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration from sessionStorage on mount
-      setStep1(JSON.parse(saved) as CadastroStep1Data);
-    } catch {
-      router.replace("/cadastro");
-    }
-  }, [router]);
+  const joining = intent === "join_company";
 
   async function handleCepChange(event: React.ChangeEvent<HTMLInputElement>) {
+    // currentTarget é anulado após o await, então o valor é lido antes de qualquer suspensão.
     event.currentTarget.value = formatCep(event.currentTarget.value);
     const digits = event.currentTarget.value.replace(/\D/g, "");
 
@@ -79,6 +79,7 @@ export default function CadastroEtapa2Page() {
     const result = await lookupCepDetailed(digits);
 
     if (result.status !== "ok") {
+      // CEP não encontrado não bloqueia: os campos ficam editáveis para preenchimento manual.
       setCepStatus("error");
       return;
     }
@@ -96,11 +97,11 @@ export default function CadastroEtapa2Page() {
     event.preventDefault();
     setErrorMessage(null);
 
-    if (!step1) return;
-
     const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
+    const birthDate = String(formData.get("birthDate") ?? "");
     const cep = String(formData.get("cep") ?? "").trim();
     const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
     const street = String(formData.get("street") ?? "").trim();
@@ -110,18 +111,13 @@ export default function CadastroEtapa2Page() {
     const city = String(formData.get("city") ?? "").trim();
     const state = String(formData.get("state") ?? "").trim().toUpperCase();
 
-    if (!isValidCnpj(cnpj)) {
-      setErrorMessage("Informe um CNPJ válido.");
+    if (!name || !phone || !birthDate) {
+      setErrorMessage("Preencha todos os campos para continuar.");
       return;
     }
 
-    if (password.length < 8) {
-      setErrorMessage("A senha precisa ter pelo menos 8 caracteres.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage("As senhas não coincidem.");
+    if (!isValidCpf(cpf)) {
+      setErrorMessage("Informe um CPF válido.");
       return;
     }
 
@@ -137,24 +133,43 @@ export default function CadastroEtapa2Page() {
       return;
     }
 
+    if (!isValidCnpj(cnpj)) {
+      setErrorMessage("Informe um CNPJ válido.");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const { first, last } = splitName(step1.name);
-
     startTransition(async () => {
-      try {
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: step1.email,
-            password,
-            first_name: first,
-            last_name: last,
-            phone_number: step1.phone,
-            cpf: step1.cpf,
-            birth_date: step1.birthDate,
+      if (joining) {
+        const profile = await saveCustomerProfile({
+          cpf,
+          birth_date: birthDate,
+          cep,
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          state,
+        });
+        if (!profile.ok) {
+          setErrorMessage(
+            isRolloutDisabled(profile.status) ? ROLLOUT_DISABLED_MESSAGE : profile.message,
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const result = joining
+        ? await requestCompanyAccess(cnpj)
+        : await createCompany({
+            cpf,
+            birth_date: birthDate,
             cnpj,
+            full_name: name,
+            phone,
             cep,
             street,
             number,
@@ -162,44 +177,30 @@ export default function CadastroEtapa2Page() {
             neighborhood,
             city,
             state,
-            intent: step1.intent,
-          }),
-        });
+          });
 
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as
-            | { code?: string; message?: string; data?: { errors?: Record<string, string[]> } }
-            | null;
-
-          if (response.status === 409) {
-            setErrorMessage("Já existe uma conta com este e-mail.");
-          } else if (response.status === 422) {
-            const messages = Object.values(body?.data?.errors ?? {})
-              .flat()
-              .filter(Boolean);
-            setErrorMessage(messages[0] ?? "Verifique os dados informados.");
-          } else {
-            setErrorMessage(body?.message ?? "Não foi possível criar a conta. Tente novamente.");
-          }
-          setIsSubmitting(false);
-          return;
-        }
-
-        const body = (await response.json()) as
-          | { ok?: boolean; requiresEmailVerification?: boolean; email?: string }
-          | null;
-
-        window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
-        queueOnboardingSuccessToast(first);
-        router.push(
-          `/confirmar-email?email=${encodeURIComponent(body?.email ?? step1.email)}`,
+      if (!result.ok) {
+        setErrorMessage(
+          isRolloutDisabled(result.status) ? ROLLOUT_DISABLED_MESSAGE : result.message,
         );
-        router.refresh();
-      } catch {
-        setErrorMessage("Erro de rede. Tente novamente.");
         setIsSubmitting(false);
+        return;
       }
+
+      // Sem isto o token guarda onboardingStatus "incomplete" e o gate devolveria o usuário
+      // para cá logo após concluir.
+      await update({ refreshB2b: true });
+      if (!joining) {
+        queueOnboardingSuccessToast(name);
+      }
+      router.replace(callbackUrl);
+      router.refresh();
     });
+  }
+
+  async function handleConfirmCancel() {
+    setIsLeaving(true);
+    await signOutAndClearSession({ callbackUrl: "/", redirect: true });
   }
 
   return (
@@ -232,9 +233,7 @@ export default function CadastroEtapa2Page() {
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark">
                   <CheckIcon className="h-3 w-3 text-brand-yellow" />
                 </span>
-                <span className="text-sm font-medium text-brand-dark">
-                  {benefit}
-                </span>
+                <span className="text-sm font-medium text-brand-dark">{benefit}</span>
               </li>
             ))}
           </ul>
@@ -244,40 +243,126 @@ export default function CadastroEtapa2Page() {
       <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow">
-                <CheckIcon className="h-3.5 w-3.5 text-brand-dark" />
-              </span>
-              <div className="h-px w-6 bg-brand-yellow" />
-            </div>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow">
+              <CheckIcon className="h-3.5 w-3.5 text-brand-dark" />
+            </span>
+            <div className="h-px w-6 bg-brand-yellow" />
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark">
               2
             </span>
-            <span className="ml-2 text-xs text-white/40">Etapa 2 de 2</span>
+            <span className="ml-2 text-xs text-white/40">Conclusão do cadastro</span>
           </div>
 
           <h2 className="text-3xl font-black uppercase tracking-wide text-white">
-            Finalizar Cadastro
+            Complete seu cadastro
           </h2>
           <p className="mt-2 text-sm text-white/50">
-            Já tem uma conta?{" "}
-            <Link
-              href={callbackUrl ? `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/entrar"}
-              className="font-medium text-brand-yellow hover:underline"
-            >
-              Entrar
-            </Link>
+            Sua conta já está autenticada. Faltam os dados da empresa para você comprar no
+            marketplace.
           </p>
 
-          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+          <div className="mt-8 grid grid-cols-2 gap-2" role="group" aria-label="Tipo de cadastro B2B">
+            <button
+              type="button"
+              aria-pressed={!joining}
+              onClick={() => setIntent("create_company")}
+              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
+                !joining
+                  ? "bg-brand-yellow text-brand-dark"
+                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Cadastrar minha empresa
+            </button>
+            <button
+              type="button"
+              aria-pressed={joining}
+              onClick={() => setIntent("join_company")}
+              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
+                joining
+                  ? "bg-brand-yellow text-brand-dark"
+                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Entrar em uma empresa
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-white/50">
+            {joining
+              ? "Solicite acesso a uma empresa já cadastrada pelo CNPJ. Um responsável precisa aprovar."
+              : "Você será o titular da empresa cadastrada e poderá convidar sua equipe."}
+          </p>
+
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <fieldset className="space-y-5" disabled={isSubmitting}>
+              <AuthTextField
+                id="email"
+                name="email"
+                label="E-mail"
+                type="email"
+                placeholder="seu@email.com"
+                defaultValue={prefill.email}
+                readOnly
+                hint="Confirmado pela sua conta Google."
+              />
+
+              <AuthTextField
+                id="name"
+                name="name"
+                label="Nome Completo"
+                placeholder="Seu nome completo"
+                autoComplete="name"
+                defaultValue={prefill.name}
+                required
+              />
+
+              <AuthTextField
+                id="phone"
+                name="phone"
+                label="Telefone"
+                type="tel"
+                placeholder="(11) 99999-9999"
+                autoComplete="tel"
+                required
+              />
+
+              <AuthTextField
+                id="cpf"
+                name="cpf"
+                label="CPF do responsável"
+                inputMode="numeric"
+                placeholder="123.456.789-00"
+                autoComplete="off"
+                maxLength={14}
+                onChange={(event) => {
+                  event.currentTarget.value = formatCpf(event.currentTarget.value);
+                }}
+                hint={
+                  prefill.cpfLast4
+                    ? `Já temos um CPF salvo terminando em ${prefill.cpfLast4}. Digite novamente para confirmar.`
+                    : undefined
+                }
+                required
+              />
+
+              <AuthTextField
+                id="birthDate"
+                name="birthDate"
+                label="Data de nascimento"
+                type="date"
+                placeholder="AAAA-MM-DD"
+                hint={prefill.hasBirthDate ? "Já preenchida. Digite novamente para confirmar." : undefined}
+                required
+              />
+
               <AuthTextField
                 id="cep"
                 name="cep"
                 label="CEP"
-                placeholder="01.310-000"
                 inputMode="numeric"
+                placeholder="01310-000"
                 autoComplete="postal-code"
+                defaultValue={prefill.cep}
                 maxLength={9}
                 onChange={(event) => {
                   void handleCepChange(event);
@@ -377,87 +462,36 @@ export default function CadastroEtapa2Page() {
                 label="CNPJ da empresa"
                 placeholder="00.000.000/0000-00"
                 autoComplete="off"
+                defaultValue={prefill.cnpj}
                 onChange={(event) => {
                   event.currentTarget.value = formatCnpj(event.currentTarget.value);
                 }}
                 required
               />
 
-              <AuthPasswordField
-                id="password"
-                name="password"
-                label="Senha"
-                placeholder="Crie uma senha forte (mín. 8)"
-                autoComplete="new-password"
-                required
-                minLength={8}
-              />
-
-              <AuthPasswordField
-                id="confirmPassword"
-                name="confirmPassword"
-                label="Confirmar Senha"
-                placeholder="Repita a senha"
-                autoComplete="new-password"
-                required
-              />
-
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAcceptTerms(!acceptTerms)}
-                  className={`mt-0.5 flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border transition ${
-                    acceptTerms
-                      ? "border-brand-yellow bg-brand-yellow"
-                      : "border-white/30 bg-transparent"
-                  }`}
-                  aria-label="Aceitar termos"
-                  aria-pressed={acceptTerms}
-                >
-                  {acceptTerms ? <CheckIcon className="h-2.5 w-2.5 text-brand-dark" /> : null}
-                </button>
-                <p className="text-xs font-medium leading-relaxed text-white/60">
-                  Confirmo que tenho 18 anos ou mais e concordo com os{" "}
-                  <Link
-                    href="/termos"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-brand-yellow hover:underline"
-                  >
-                    Termos de Uso
-                  </Link>{" "}
-                  e{" "}
-                  <Link
-                    href="/privacidade"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-brand-yellow hover:underline"
-                  >
-                    Política de Privacidade
-                  </Link>
-                  .
-                </p>
-              </div>
-
               {errorMessage ? (
-                <p className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
+                <p
+                  className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300"
+                  role="alert"
+                >
                   {errorMessage}
                 </p>
               ) : null}
 
               <div className="flex gap-3 pt-2">
-                <Link
-                  href="/cadastro"
-                  className="flex h-14 flex-1 items-center justify-center rounded-full border border-white/20 font-black uppercase tracking-wide text-white transition hover:bg-white/5"
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(true)}
+                  className="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-full border border-white/20 font-black uppercase tracking-wide text-white transition hover:bg-white/5"
                 >
-                  Voltar
-                </Link>
+                  Cancelar
+                </button>
                 <div className="flex-1">
                   <AuthSubmitButton
                     icon={!isSubmitting ? <ArrowRightIcon className="h-4 w-4" /> : undefined}
-                    disabled={!acceptTerms || isSubmitting || !step1}
+                    disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Criando..." : "Criar Conta"}
+                    {isSubmitting ? "Enviando..." : "Concluir"}
                   </AuthSubmitButton>
                 </div>
               </div>
@@ -465,6 +499,15 @@ export default function CadastroEtapa2Page() {
           </form>
         </div>
       </div>
+
+      <CancelOnboardingModal
+        open={cancelOpen}
+        isLeaving={isLeaving}
+        onKeepEditing={() => setCancelOpen(false)}
+        onConfirm={() => {
+          void handleConfirmCancel();
+        }}
+      />
     </div>
   );
 }

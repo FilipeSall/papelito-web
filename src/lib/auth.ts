@@ -417,8 +417,10 @@ export const authOptions: NextAuthOptions = {
       userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpAuth.authToken);
       userWithTokens.refreshToken = wpAuth.refreshToken;
       userWithTokens.profileComplete = wpAuth.profileComplete;
-      userWithTokens.role = (await wpFetchAuthenticatedIdentity(wpAuth.authToken)).role;
-      userWithTokens.b2b = (await wpFetchAuthenticatedIdentity(wpAuth.authToken)).b2b;
+
+      const identity = await wpFetchAuthenticatedIdentity(wpAuth.authToken);
+      userWithTokens.role = identity.role;
+      userWithTokens.b2b = identity.b2b;
 
       return true;
     },

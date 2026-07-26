@@ -4,6 +4,7 @@ import Image from "next/image";
 import { signIn } from "next-auth/react";
 
 import { clearPreviousSessionBeforeSignIn } from "@/features/auth/client/logout";
+import { buildPostAuthUrl } from "@/features/company/onboarding";
 
 interface AuthSocialButtonProps {
   label: string;
@@ -18,11 +19,13 @@ export function AuthSocialButton({
   iconSrc,
   iconAlt,
   provider,
-  callbackUrl = "/produtos",
+  callbackUrl,
 }: AuthSocialButtonProps) {
   async function handleSignIn() {
     await clearPreviousSessionBeforeSignIn();
-    await signIn(provider, { callbackUrl });
+    // Sempre pela landing de pós-login: quem tem cadastro incompleto vai direto para o onboarding,
+    // em vez de cair no catálogo e só ser barrado na próxima rota protegida.
+    await signIn(provider, { callbackUrl: buildPostAuthUrl(callbackUrl) });
   }
 
   return (

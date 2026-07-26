@@ -9,8 +9,14 @@ interface AuthTextFieldProps {
   placeholder: string;
   autoComplete?: string;
   defaultValue?: string;
+  value?: string;
   required?: boolean;
+  readOnly?: boolean;
+  maxLength?: number;
+  max?: string;
+  hint?: React.ReactNode;
   inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 export function AuthTextField({
@@ -21,8 +27,14 @@ export function AuthTextField({
   placeholder,
   autoComplete,
   defaultValue,
+  value,
   required,
+  readOnly,
+  maxLength,
+  max,
+  hint,
   inputMode,
+  onChange,
 }: AuthTextFieldProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -34,9 +46,21 @@ export function AuthTextField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         defaultValue={defaultValue}
+        value={value}
         required={required}
+        readOnly={readOnly}
+        maxLength={maxLength}
+        max={max}
         inputMode={inputMode}
+        onChange={onChange}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+        className={readOnly ? "cursor-not-allowed opacity-70" : undefined}
       />
+      {hint ? (
+        <p id={`${id}-hint`} className="text-xs text-white/40">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }

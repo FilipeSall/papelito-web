@@ -25,7 +25,7 @@ export function CompanyBlockMessage({ title, body, cta }: CompanyBlockMessagePro
       {cta ? (
         <Link
           href={cta.href}
-          className="mt-4 inline-flex items-center bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+          className="mt-4 inline-flex items-center bg-[#1a1a1a] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
         >
           {cta.label}
         </Link>

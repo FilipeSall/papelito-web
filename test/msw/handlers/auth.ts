@@ -88,6 +88,19 @@ export const authHandlers = [
       return HttpResponse.json({ user: { role: "administrator" } });
     }
 
+    if (authHeader?.includes("incomplete-token")) {
+      return HttpResponse.json({
+        user: { role: "customer", profileComplete: false },
+        b2b: {
+          onboardingStatus: "incomplete",
+          canPurchase: false,
+          requiresB2bOnboarding: true,
+          identityStatus: "incomplete",
+          onboarding: { type: "google_onboarding", targetCnpj: null, cpfLast4: null, hasBirthDate: false },
+        },
+      });
+    }
+
     return HttpResponse.json({ user: { role: "customer" } });
   }),
 ];

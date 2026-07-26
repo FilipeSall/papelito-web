@@ -8,6 +8,8 @@ interface AuthSelectFieldProps {
   name: string;
   label: string;
   defaultValue?: string;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
   required?: boolean;
   children: ReactNode;
 }
@@ -17,13 +19,22 @@ export function AuthSelectField({
   name,
   label,
   defaultValue,
+  value,
+  onChange,
   required,
   children,
 }: AuthSelectFieldProps) {
   return (
     <div className="flex flex-col gap-2">
       <AuthFieldLabel htmlFor={id}>{label}</AuthFieldLabel>
-      <AuthSelect id={id} name={name} defaultValue={defaultValue} required={required}>
+      <AuthSelect
+        id={id}
+        name={name}
+        defaultValue={defaultValue}
+        value={value}
+        onChange={onChange}
+        required={required}
+      >
         {children}
       </AuthSelect>
     </div>
