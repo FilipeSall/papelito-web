@@ -149,6 +149,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <span className="font-bold text-brand-dark">{order.tracking.estimatedDeliveryLabel}</span>
               </p> : null}
 
+              {order.tracking ? <a
+                className="mt-4 inline-flex h-10 items-center rounded-full bg-brand-dark px-4 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:opacity-90"
+                href={`https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(order.tracking.code)}`}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Acompanhar nos Correios
+              </a> : null}
+
               {order.shipments.length > 1 ? (
                 <div className="mt-4 space-y-2" aria-label="Pacotes deste pedido">
                   {order.shipments.map((shipment, index) => (
@@ -158,6 +167,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         <code className="font-mono text-xs font-bold tracking-[1px] text-brand-dark">{shipment.code}</code>
                         <OrderTrackingCopyButton code={shipment.code} />
                       </div>
+                      <a className="mt-2 inline-flex text-xs font-bold text-brand-dark underline" href={`https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(shipment.code)}`} rel="noreferrer" target="_blank">Acompanhar pacote nos Correios</a>
                       {shipment.lastEventDescription ? (
                         <p className="mt-2 text-xs text-gray-500">
                           {shipment.lastEventDescription}

@@ -60,6 +60,7 @@ export type WpVendorOrder = {
       last_event_location?: string;
       last_event_type?: string;
       next_reconciliation_at?: string;
+      posted_at?: string;
       reconciliation_attempts?: number;
       reconciliation_status?: string;
       service_code?: string;
@@ -145,6 +146,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
     lastEventLocation: shipment.last_event_location ?? "",
     lastEventType: shipment.last_event_type ?? "",
     nextReconciliationAt: shipment.next_reconciliation_at ?? "",
+    postedAt: shipment.posted_at ?? "",
     serviceCode: shipment.service_code ?? "",
     provider: shipment.provider ?? "correios",
     reconciliationAttempts: Number(shipment.reconciliation_attempts) || 0,

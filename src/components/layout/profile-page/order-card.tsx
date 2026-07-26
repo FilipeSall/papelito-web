@@ -8,6 +8,7 @@ export type Order = {
   status: OrderStatus;
   date: string;
   itemsCount: number;
+  trackingCode?: string | null;
   total: number;
 };
 
@@ -42,6 +43,7 @@ export function OrderCard({ order }: OrderCardProps) {
         <span className="text-sm font-normal tracking-[-0.15px] text-gray-500">
           {order.itemsCount} {itemsLabel}
         </span>
+        {order.trackingCode ? <code className="text-xs font-bold tracking-[0.08em] text-brand-dark">Rastreio: {order.trackingCode}</code> : null}
       </div>
 
       <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">

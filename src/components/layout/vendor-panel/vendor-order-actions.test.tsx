@@ -4,94 +4,65 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VendorOrderActions } from "./vendor-order-actions";
 
 const refreshMock = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: refreshMock }),
-}));
-
-const defaultProps = {
-  generationErrorCode: "",
-  generationStatus: "not_started" as const,
-  hasShipment: false,
-  manualFallbackAvailable: false,
+const props = {
   manualRegistrationEnabled: true,
   orderId: 11887,
-  shippingService: "PAC CONTRATO AG",
+  shipments: [],
+  shippingService: "PAC",
   status: "em_separacao" as const,
-  supportReviewRequired: false,
 };
 
-describe("VendorOrderActions manual fallback", () => {
-  beforeEach(() => {
-    refreshMock.mockReset();
-    vi.unstubAllGlobals();
+describe("VendorOrderActions manual shipping", () => {
+  beforeEach(() => { refreshMock.mockReset(); vi.unstubAllGlobals(); });
+
+  it("shows manual shipping without automatic label generation", () => {
+    render(<VendorOrderActions {...props} />);
+    expect(screen.getByText(/enviar pelos correios/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /código de rastreamento/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /gerar etiqueta/i })).not.toBeInTheDocument();
   });
 
-  it("starts with only automatic generation and reveals manual input after a safe failure", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({
-        code: "papelito_correios_service_not_contracted",
-        manual_fallback_available: true,
-        message: "Contrato sem Pre-Postagem.",
-      }),
-      ok: false,
-    }));
-    render(<VendorOrderActions {...defaultProps} />);
-
-    expect(screen.getByRole("button", { name: /gerar etiqueta dos correios/i })).toBeInTheDocument();
-    expect(screen.getByText(/antes de gerar a etiqueta/i)).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /gerar etiqueta dos correios/i }));
-
-    expect(await screen.findByRole("textbox", { name: /codigo de rastreamento/i })).toBeInTheDocument();
-    expect(screen.getByText(/gere a postagem no portal dos correios/i)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /gerar etiqueta dos correios/i })).not.toBeInTheDocument();
+  it("rejects an empty or invalid tracking code before requesting the API", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorOrderActions {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /revisar envio/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/código s10 válido/i);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("does not reveal manual input for an uncertain creation result", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      json: () => Promise.resolve({
-        code: "papelito_correios_generation_uncertain",
-        manual_fallback_available: false,
-      }),
-      ok: false,
-    }));
-    render(<VendorOrderActions {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /gerar etiqueta dos correios/i }));
-
-    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
-    expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
+  it("requires a review before confirming the shipment", () => {
+    render(<VendorOrderActions {...props} />);
+    fireEvent.change(screen.getByRole("textbox", { name: /código de rastreamento/i }), { target: { value: "AA123456789BR" } });
+    fireEvent.click(screen.getByRole("button", { name: /revisar envio/i }));
+    expect(screen.getByRole("button", { name: /confirmar envio/i })).toBeInTheDocument();
   });
 
-  it("explains an uncertain persisted generation without exposing manual input", () => {
-    render(
-      <VendorOrderActions
-        {...defaultProps}
-        generationStatus="uncertain"
-        hasShipment
-      />,
-    );
-
-    expect(screen.getByText(/verificando a solicitacao enviada/i)).toBeInTheDocument();
-    expect(screen.getByText(/temporariamente bloqueada para evitar etiquetas duplicadas/i)).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /codigo de rastreamento/i })).not.toBeInTheDocument();
+  it("confirms a valid code through the manual endpoint only once", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorOrderActions {...props} />);
+    fireEvent.change(screen.getByRole("textbox", { name: /código de rastreamento/i }), { target: { value: "AA123456789BR" } });
+    fireEvent.click(screen.getByRole("button", { name: /revisar envio/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirmar envio/i }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/vendor/orders/11887/shipments/manual");
   });
 
-  it("restores a persisted safe fallback after refresh", () => {
-    render(
-      <VendorOrderActions
-        {...defaultProps}
-        generationErrorCode="papelito_correios_dev_health_unhealthy"
-        generationStatus="failed"
-        manualFallbackAvailable
-      />,
-    );
-
-    expect(screen.getByRole("textbox", { name: /codigo de rastreamento/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /tentar geracao simulada novamente/i })).toBeInTheDocument();
-    expect(screen.getByText(/cadastro manual liberado/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/observacao/i)).toBeInTheDocument();
+  it("preserves the shipment posting date while correcting its code", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorOrderActions {...props} shipments={[{
+      creationOutcome: "created", deliveredAt: "", generationStatus: "generated", hasError: false, id: 4,
+      isTest: false, labelAvailable: false, lastEventAt: "", lastEventCode: "", lastEventDescription: "", lastEventLocation: "", lastEventType: "",
+      nextReconciliationAt: "", postedAt: "2026-07-10", provider: "manual", reconciliationAttempts: 0, reconciliationStatus: "none", serviceCode: "PAC", status: "posted", supportReviewRequired: false, trackingCode: "AA123456789BR",
+    }]} status="enviado" />);
+    fireEvent.click(screen.getByRole("button", { name: /corrigir código/i }));
+    fireEvent.change(screen.getByDisplayValue("AA123456789BR"), { target: { value: "BB123456789BR" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar correção/i }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0][1].body).toContain("2026-07-10");
   });
 });

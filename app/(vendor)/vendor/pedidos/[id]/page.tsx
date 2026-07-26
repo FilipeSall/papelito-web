@@ -169,15 +169,11 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             </div>
           ) : null}
           <VendorOrderActions
-            generationStatus={order.logistics.generationStatus}
-            generationErrorCode={order.logistics.generationErrorCode}
-            hasShipment={order.logistics.shipments.length > 0}
-            manualFallbackAvailable={order.logistics.manualFallbackAvailable}
             manualRegistrationEnabled={order.logistics.manualRegistrationEnabled}
             orderId={order.id}
+            shipments={order.logistics.shipments}
             shippingService={order.shippingService}
             status={order.status}
-            supportReviewRequired={order.logistics.supportReviewRequired}
           />
         </Panel>
         <Panel className="overflow-hidden">

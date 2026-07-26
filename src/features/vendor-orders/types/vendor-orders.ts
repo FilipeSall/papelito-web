@@ -49,6 +49,7 @@ export type VendorOrderShipment = {
   lastEventLocation: string;
   lastEventType: string;
   nextReconciliationAt: string;
+  postedAt: string;
   serviceCode: string;
   provider: "correios" | "manual" | "mock" | string;
   reconciliationAttempts: number;

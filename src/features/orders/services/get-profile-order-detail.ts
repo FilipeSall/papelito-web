@@ -284,6 +284,7 @@ function mapSummary(order: WpProfileOrder): Order {
     status: resolveStatus(order),
     date: formatDate(order.created_at),
     itemsCount: Number(order.items_count) || 0,
+    trackingCode: typeof order.tracking_code === "string" && order.tracking_code ? order.tracking_code : null,
     total: Number(order.total) || 0,
   };
 }
