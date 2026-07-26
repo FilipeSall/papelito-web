@@ -35,6 +35,7 @@ export function useNotificationsPoll() {
   const count = useSWR(countKey, getUnreadNotificationCount, {
     refreshInterval: isVisible ? 60_000 : 0,
     revalidateOnFocus: true,
+    dedupingInterval: 30_000,
   });
 
   const list = useSWR(listKey, () => getNotifications({ page: 1, perPage: 20 }), {
@@ -48,7 +49,7 @@ export function useNotificationsPoll() {
 
     setUnreadCount(count.data.count);
 
-    if (previousCountRef.current !== null && previousCountRef.current !== count.data.count) {
+    if (previousCountRef.current !== null && count.data.count > previousCountRef.current) {
       void list.mutate();
     }
 

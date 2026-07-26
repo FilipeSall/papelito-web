@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { AuthErrorToastHost } from "./auth-error-toast-host";
 import { LegacyMigrationNotice } from "./legacy-migration-notice";
+import { NewNotificationToastHost } from "./new-notification-toast-host";
 import { OnboardingSuccessToastHost } from "./onboarding-success-toast-host";
 
 function isProtectedPath(pathname: string | null) {
@@ -66,6 +67,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       <InvalidSessionCleanup />
       <AuthErrorToastHost />
       <OnboardingSuccessToastHost />
+      <NewNotificationToastHost />
       <LegacyMigrationNotice />
       {children}
     </NextAuthSessionProvider>

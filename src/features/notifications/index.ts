@@ -22,3 +22,9 @@ export {
   formatRelativeTime,
   type FormattedNotification,
 } from "./utils/format-notification";
+export {
+  clearLastSeenNotificationId,
+  getLastSeenNotificationId,
+  pickNewestUnreadId,
+  setLastSeenNotificationId,
+} from "./utils/notification-seen-store";

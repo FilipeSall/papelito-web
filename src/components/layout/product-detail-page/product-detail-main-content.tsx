@@ -492,7 +492,7 @@ export function ProductDetailMainContent({
                 className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-center text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 max-[425px]:h-auto max-[425px]:min-h-14 max-[425px]:px-4 max-[425px]:py-3 max-[425px]:text-sm max-[425px]:leading-4"
               >
                 <CartIcon className="size-4.5 max-[425px]:size-5.5" />
-                <span className="min-w-0 whitespace-normal break-words">
+                <span className="min-w-0 whitespace-normal wrap-break-word">
                   {isAddingToCart ? "VALIDANDO" : (
                     <>
                       <span className="inline min-[426px]:hidden">ADICIONAR</span>

@@ -124,6 +124,71 @@ describe("useNotificationsPoll", () => {
     expect(getNotificationsMock).toHaveBeenCalledTimes(2);
   });
 
+  it("stops polling after the component unmounts", async () => {
+    vi.useFakeTimers();
+
+    const { unmount } = renderHook(() => useNotificationsPoll(), {
+      wrapper: createTestWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getUnreadNotificationCountMock).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(180_000);
+    });
+
+    expect(getUnreadNotificationCountMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not revalidate the list when the unread count drops", async () => {
+    vi.useFakeTimers();
+    getUnreadNotificationCountMock
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce({ count: 1 });
+
+    renderHook(() => useNotificationsPoll(), {
+      wrapper: createTestWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getNotificationsMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(useNotificationsStore.getState().unreadCount).toBe(1);
+    expect(getNotificationsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces endpoint errors without breaking the UI", async () => {
+    getUnreadNotificationCountMock.mockRejectedValue(new Error("boom"));
+
+    const { result } = renderHook(() => useNotificationsPoll(), {
+      wrapper: createTestWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(useNotificationsStore.getState().unreadCount).toBe(0);
+    expect(useNotificationsStore.getState().items).toHaveLength(1);
+  });
+
   it("clears notifications when the user logs out", async () => {
     const { rerender } = renderHook(() => useNotificationsPoll(), {
       wrapper: createTestWrapper(),
