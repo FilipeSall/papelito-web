@@ -54,6 +54,15 @@ function notApplicable(): ProductAvailabilityResponse {
   };
 }
 
+function noVendorAvailability(productIds: string[]): ProductAvailabilityResponse {
+  return {
+    status: "ok",
+    products: Object.fromEntries(
+      productIds.map((productId) => [productId, { available: false, stockQty: 0 }]),
+    ),
+  };
+}
+
 function getCachedAvailability(input: {
   accountId: string;
   cep: string;
@@ -102,8 +111,19 @@ export async function GET(request: Request) {
     getActiveVendor(),
   ]);
 
-  if (!coverageContext.cep || !activeVendorResult.ok) {
+  if (!coverageContext.cep) {
     return NextResponse.json(notApplicable());
+  }
+
+  if (!activeVendorResult.ok) {
+    if (activeVendorResult.error.reason === "no_vendor_available") {
+      return NextResponse.json(noVendorAvailability(productIds));
+    }
+
+    return NextResponse.json<ProductAvailabilityResponse>({
+      status: "unavailable",
+      products: {},
+    });
   }
 
   try {
