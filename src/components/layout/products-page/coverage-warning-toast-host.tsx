@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CoverageWarningToast } from "./coverage-warning-toast";
 
 const SESSION_FLAG_KEY = "papelito:coverage-warning-shown";
@@ -17,6 +17,20 @@ export function CoverageWarningToastHost({
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterAnimationFrameRef = useRef<number | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    if (removeTimeoutRef.current) {
+      clearTimeout(removeTimeoutRef.current);
+    }
+
+    setVisible(false);
+    removeTimeoutRef.current = setTimeout(() => {
+      setMounted(false);
+    }, 250);
+  }, []);
 
   useEffect(() => {
     if (!shouldShow) {
@@ -61,5 +75,5 @@ export function CoverageWarningToastHost({
     return null;
   }
 
-  return <CoverageWarningToast visible={visible} />;
+  return <CoverageWarningToast onClose={handleClose} visible={visible} />;
 }

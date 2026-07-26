@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ADD_TO_CART_EVENT_NAME,
   type AddToCartEventDetail,
@@ -13,6 +13,20 @@ export function AddToCartToastHost() {
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterAnimationFrameRef = useRef<number | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    if (removeTimeoutRef.current) {
+      clearTimeout(removeTimeoutRef.current);
+    }
+
+    setToastVisible(false);
+    removeTimeoutRef.current = setTimeout(() => {
+      setToastDetail(null);
+    }, 250);
+  }, []);
 
   useEffect(() => {
     function handleAddToCart(event: Event) {
@@ -68,5 +82,5 @@ export function AddToCartToastHost() {
     return null;
   }
 
-  return <AddToCartToast detail={toastDetail} visible={toastVisible} />;
+  return <AddToCartToast detail={toastDetail} onClose={handleClose} visible={toastVisible} />;
 }

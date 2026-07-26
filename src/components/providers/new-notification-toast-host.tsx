@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { NewNotificationToast } from "./new-notification-toast";
 import {
@@ -22,6 +22,14 @@ export function NewNotificationToastHost() {
   const enterAnimationFrameRef = useRef<number | null>(null);
   const notifiedIdRef = useRef<number | null>(null);
   const seededUserRef = useRef<string | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+
+    setVisible(false);
+  }, []);
 
   useEffect(() => {
     if (!isApiAuthenticated || !userId) {
@@ -102,5 +110,5 @@ export function NewNotificationToastHost() {
     return null;
   }
 
-  return <NewNotificationToast visible={visible} />;
+  return <NewNotificationToast onClose={handleClose} visible={visible} />;
 }

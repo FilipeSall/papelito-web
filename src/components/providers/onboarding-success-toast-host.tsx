@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { OnboardingSuccessToast } from "./onboarding-success-toast";
@@ -32,6 +32,18 @@ export function OnboardingSuccessToastHost() {
   const [visible, setVisible] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterAnimationFrameRef = useRef<number | null>(null);
+  const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+
+    setVisible(false);
+    removeTimeoutRef.current = setTimeout(() => {
+      setFirstName(null);
+    }, 250);
+  }, []);
 
   useEffect(() => {
     const storedFirstName = window.sessionStorage.getItem(ONBOARDING_SUCCESS_TOAST_KEY);
@@ -54,6 +66,9 @@ export function OnboardingSuccessToastHost() {
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
       }
+      if (removeTimeoutRef.current) {
+        clearTimeout(removeTimeoutRef.current);
+      }
       if (enterAnimationFrameRef.current) {
         cancelAnimationFrame(enterAnimationFrameRef.current);
       }
@@ -64,5 +79,7 @@ export function OnboardingSuccessToastHost() {
     return null;
   }
 
-  return <OnboardingSuccessToast firstName={firstName} visible={visible} />;
+  return (
+    <OnboardingSuccessToast firstName={firstName} onClose={handleClose} visible={visible} />
+  );
 }

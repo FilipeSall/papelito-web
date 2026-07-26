@@ -295,6 +295,20 @@ export function FlashSaleManager({
     }, 2900);
   }, []);
 
+  const dismissToast = useCallback(() => {
+    if (toastHideTimerRef.current) {
+      clearTimeout(toastHideTimerRef.current);
+    }
+    if (toastRemoveTimerRef.current) {
+      clearTimeout(toastRemoveTimerRef.current);
+    }
+
+    setToastVisible(false);
+    toastRemoveTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 300);
+  }, []);
+
   const notifications = useMemo<FlashSaleNotification[]>(() => {
     const issueEntries: FlashSaleNotification[] = [];
     const merged = new Set([...serverIssues, ...localWarnings]);
@@ -469,6 +483,7 @@ export function FlashSaleManager({
       {toast ? (
         <FlashSaleToast
           description={toast.description}
+          onClose={dismissToast}
           title={toast.title}
           visible={toastVisible}
         />

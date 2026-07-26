@@ -1,5 +1,8 @@
+import { ToastCloseButton } from "@/components/ui/toast-close-button";
+
 interface OnboardingSuccessToastProps {
   firstName: string;
+  onClose: () => void;
   visible: boolean;
 }
 
@@ -23,7 +26,11 @@ function WelcomeIcon() {
   );
 }
 
-export function OnboardingSuccessToast({ firstName, visible }: OnboardingSuccessToastProps) {
+export function OnboardingSuccessToast({
+  firstName,
+  onClose,
+  visible,
+}: OnboardingSuccessToastProps) {
   return (
     <div
       aria-live="polite"
@@ -32,7 +39,11 @@ export function OnboardingSuccessToast({ firstName, visible }: OnboardingSuccess
       }`}
       role="status"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-brand-yellow/60 bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-brand-yellow/60 bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)] ${
+          visible ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand-yellow" />
         <div className="flex items-start gap-3">
           <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-brand-dark">
@@ -47,6 +58,7 @@ export function OnboardingSuccessToast({ firstName, visible }: OnboardingSuccess
               em ótimas compras.
             </p>
           </div>
+          <ToastCloseButton onClose={onClose} />
         </div>
       </div>
     </div>

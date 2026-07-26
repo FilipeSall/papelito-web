@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { AuthErrorToast } from "./auth-error-toast";
@@ -12,9 +12,33 @@ export function AuthErrorToastHost() {
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterAnimationFrameRef = useRef<number | null>(null);
+  const dismissedRef = useRef(false);
+
+  const handleClose = useCallback(() => {
+    dismissedRef.current = true;
+
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    if (removeTimeoutRef.current) {
+      clearTimeout(removeTimeoutRef.current);
+    }
+
+    setVisible(false);
+    removeTimeoutRef.current = setTimeout(() => {
+      setMounted(false);
+    }, 250);
+  }, []);
 
   useEffect(() => {
     if (!authIdentityError) {
+      dismissedRef.current = false;
+      setVisible(false);
+      setMounted(false);
+      return;
+    }
+
+    if (dismissedRef.current) {
       return;
     }
 
@@ -48,5 +72,5 @@ export function AuthErrorToastHost() {
     return null;
   }
 
-  return <AuthErrorToast visible={visible} />;
+  return <AuthErrorToast onClose={handleClose} visible={visible} />;
 }

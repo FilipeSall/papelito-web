@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { AddToCartEventDetail } from "@/components/ui/add-to-cart-button";
+import { ToastCloseButton } from "@/components/ui/toast-close-button";
 
 interface AddToCartToastProps {
   detail: AddToCartEventDetail;
+  onClose: () => void;
   visible: boolean;
   placement?: "fixed-top-right" | "anchor-top";
   className?: string;
@@ -74,6 +76,7 @@ const TONE_STYLES = {
 
 export function AddToCartToast({
   detail,
+  onClose,
   visible,
   placement = "fixed-top-right",
   className = "",
@@ -105,7 +108,11 @@ export function AddToCartToast({
       className={`pointer-events-none ${placementClassName} ${className}`.trim()}
       role="status"
     >
-      <div className={`relative overflow-hidden rounded-2xl border ${styles.border} bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]`}>
+      <div
+        className={`relative overflow-hidden rounded-2xl border ${styles.border} bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)] ${
+          visible ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
         <div className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
         <div className="flex items-start gap-3">
           <div className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${styles.icon}`}>
@@ -134,6 +141,7 @@ export function AddToCartToast({
               </Link>
             ) : null}
           </div>
+          <ToastCloseButton onClose={onClose} tone={tone === "error" ? "danger" : "yellow"} />
         </div>
       </div>
     </div>

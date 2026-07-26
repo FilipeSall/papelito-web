@@ -118,6 +118,20 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
     }, TOAST_REMOVE_DELAY_MS);
   }, []);
 
+  const dismissToast = useCallback(() => {
+    if (toastHideTimerRef.current) {
+      clearTimeout(toastHideTimerRef.current);
+    }
+    if (toastRemoveTimerRef.current) {
+      clearTimeout(toastRemoveTimerRef.current);
+    }
+
+    setToastVisible(false);
+    toastRemoveTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, TOAST_REMOVE_DELAY_MS - TOAST_HIDE_DELAY_MS);
+  }, []);
+
   function openCreate() {
     setModalCoupon(null);
     setModalOpen(true);
@@ -332,6 +346,7 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
       {toast ? (
         <AdminToast
           description={toast.description}
+          onClose={dismissToast}
           title={toast.title}
           visible={toastVisible}
         />

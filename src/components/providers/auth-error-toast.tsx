@@ -1,4 +1,7 @@
+import { ToastCloseButton } from "@/components/ui/toast-close-button";
+
 interface AuthErrorToastProps {
+  onClose: () => void;
   visible: boolean;
 }
 
@@ -22,7 +25,7 @@ function AlertIcon() {
   );
 }
 
-export function AuthErrorToast({ visible }: AuthErrorToastProps) {
+export function AuthErrorToast({ onClose, visible }: AuthErrorToastProps) {
   return (
     <div
       aria-live="assertive"
@@ -31,7 +34,11 @@ export function AuthErrorToast({ visible }: AuthErrorToastProps) {
       }`}
       role="alert"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-red-300/60 bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-red-300/60 bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)] ${
+          visible ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-red-400" />
         <div className="flex items-start gap-3">
           <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-400 text-brand-dark">
@@ -46,6 +53,7 @@ export function AuthErrorToast({ visible }: AuthErrorToastProps) {
               novo.
             </p>
           </div>
+          <ToastCloseButton onClose={onClose} tone="danger" />
         </div>
       </div>
     </div>

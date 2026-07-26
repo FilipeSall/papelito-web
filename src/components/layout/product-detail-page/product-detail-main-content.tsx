@@ -285,6 +285,20 @@ export function ProductDetailMainContent({
     }, 2050);
   }
 
+  function dismissShareToast() {
+    if (shareToastHideTimeoutRef.current) {
+      clearTimeout(shareToastHideTimeoutRef.current);
+    }
+    if (shareToastRemoveTimeoutRef.current) {
+      clearTimeout(shareToastRemoveTimeoutRef.current);
+    }
+
+    setShareToastVisible(false);
+    shareToastRemoveTimeoutRef.current = setTimeout(() => {
+      setShareToast(null);
+    }, 250);
+  }
+
   async function handleShareProduct() {
     const productUrl = window.location.href;
     const shareData = {
@@ -512,6 +526,7 @@ export function ProductDetailMainContent({
               {shareToast ? (
                 <AddToCartToast
                   detail={shareToast}
+                  onClose={dismissShareToast}
                   visible={shareToastVisible}
                   placement="anchor-top"
                 />

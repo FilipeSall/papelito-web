@@ -1,7 +1,10 @@
 "use client";
 
+import { ToastCloseButton } from "@/components/ui/toast-close-button";
+
 type AdminToastProps = {
   description: string;
+  onClose: () => void;
   title: string;
   visible: boolean;
 };
@@ -26,7 +29,7 @@ function CheckIcon() {
   );
 }
 
-export function AdminToast({ description, title, visible }: AdminToastProps) {
+export function AdminToast({ description, onClose, title, visible }: AdminToastProps) {
   return (
     <div
       aria-live="polite"
@@ -35,7 +38,11 @@ export function AdminToast({ description, title, visible }: AdminToastProps) {
       }`}
       role="status"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-brand-yellow/40 bg-[#231f20] p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-brand-yellow/40 bg-[#231f20] p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)] ${
+          visible ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand-yellow" />
         <div className="flex items-start gap-3">
           <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-[#231f20]">
@@ -48,6 +55,7 @@ export function AdminToast({ description, title, visible }: AdminToastProps) {
             <p className="mt-1 text-sm font-black leading-5 text-white">{title}</p>
             <p className="mt-1 text-sm leading-5 text-white/84">{description}</p>
           </div>
+          <ToastCloseButton onClose={onClose} />
         </div>
       </div>
     </div>
