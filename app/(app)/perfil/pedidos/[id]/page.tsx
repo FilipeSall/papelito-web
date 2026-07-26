@@ -12,6 +12,7 @@ import {
   OrderStatusBadge,
   OrderTrackingCopyButton,
 } from "@/components/layout/profile-page";
+import { OrderReceiptActions } from "@/components/layout/profile-page/order-receipt-actions";
 import { OrderStatusAutoRefresh } from "@/components/layout/order-status-auto-refresh";
 
 type OrderDetailPageProps = {
@@ -45,6 +46,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   const awaitingPayment = order.status === "awaiting_payment";
   const expiredPayment = order.status === "expired";
+  const paymentConfirmed = order.payment.state === "paid" || order.payment.state === "captured";
   const paymentDeadline = awaitingPayment
     ? formatPaymentDeadline(getPaymentExpiresAt(order.payment), currentTimestamp())
     : null;
@@ -384,6 +386,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   )}
                 </div>
               ) : null}
+
+              {paymentConfirmed ? <OrderReceiptActions orderId={order.id} /> : null}
             </article>
 
             <article className="rounded-2xl bg-brand-yellow p-5">

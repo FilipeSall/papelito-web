@@ -180,7 +180,7 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
       ) : null}
 
       {isRedirecting ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-brand-dark/15 backdrop-blur-[2px]">
+        <div className="fixed inset-0 z-120 flex items-center justify-center bg-brand-dark/15 backdrop-blur-[2px]">
           <LogoSpinnerLoader
             className="min-h-[70vh] w-[min(32rem,calc(100vw-2rem))] p-6"
             label=""

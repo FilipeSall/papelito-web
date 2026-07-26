@@ -43,11 +43,16 @@ export default async function CheckoutSuccessPage({
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-text-secondary">
-            Seu pedido foi criado com sucesso no checkout headless da Papelito.
-            O pagamento foi confirmado e o pedido ja seguiu para processamento.
+            Seu pagamento foi confirmado e o pedido ja seguiu para processamento.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a
+              className="inline-flex h-12 items-center justify-center rounded-full border border-brand-dark px-6 text-sm font-black uppercase tracking-[-0.1504px] text-brand-dark transition hover:bg-brand-dark hover:text-white"
+              href={`/api/profile/orders/${order.id}/receipt`}
+            >
+              Baixar recibo
+            </a>
             <Link
               className="inline-flex h-12 items-center justify-center rounded-full bg-brand-yellow px-6 text-sm font-black uppercase tracking-[-0.1504px] text-brand-dark transition hover:brightness-95"
               href="/produtos"
