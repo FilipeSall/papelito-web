@@ -156,6 +156,115 @@ describe("NewNotificationToastHost", () => {
     expect(isToastShown()).toBe(false);
   });
 
+  it("toasts the first notification a brand new account ever receives", async () => {
+    render(<NewNotificationToastHost />);
+
+    await flushAnimationFrames();
+    expect(isToastShown()).toBe(false);
+
+    setItems([buildNotification({ id: 1 })]);
+
+    await flushAnimationFrames();
+    expect(isToastShown()).toBe(true);
+
+    expect(window.localStorage.getItem("papelito:notifications:last-seen-id:42")).toBe("1");
+  });
+
+  it("still toasts when localStorage is unavailable", async () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    try {
+      useNotificationsStore.setState({ items: [buildNotification({ id: 7 })] });
+
+      render(<NewNotificationToastHost />);
+      await flushAnimationFrames();
+      expect(isToastShown()).toBe(false);
+
+      setItems([buildNotification({ id: 8 })]);
+
+      await flushAnimationFrames();
+      expect(isToastShown()).toBe(true);
+
+      expect(screen.getAllByText(TOAST_TEXT)).toHaveLength(1);
+    } finally {
+      getItemSpy.mockRestore();
+      setItemSpy.mockRestore();
+    }
+  });
+
+  it("does not repeat the toast on a remount when localStorage is unavailable", async () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    try {
+      useNotificationsStore.setState({ items: [buildNotification({ id: 7 })] });
+
+      const first = render(<NewNotificationToastHost />);
+      await flushAnimationFrames();
+
+      setItems([buildNotification({ id: 8 })]);
+      await flushAnimationFrames();
+      expect(isToastShown()).toBe(true);
+
+      first.unmount();
+
+      render(<NewNotificationToastHost />);
+
+      await flushAnimationFrames();
+      expect(isToastShown()).toBe(false);
+    } finally {
+      getItemSpy.mockRestore();
+      setItemSpy.mockRestore();
+    }
+  });
+
+  it("keeps toasting later notifications after the first one", async () => {
+    render(<NewNotificationToastHost />);
+    await flushAnimationFrames();
+
+    setItems([buildNotification({ id: 1 })]);
+    await waitFor(() => {
+      expect(isToastShown()).toBe(true);
+    });
+
+    setItems([buildNotification({ id: 2 }), buildNotification({ id: 1 })]);
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem("papelito:notifications:last-seen-id:42")).toBe("2");
+    });
+
+    expect(isToastShown()).toBe(true);
+  });
+
+  it("does not toast the first notification of a different account on the same browser", async () => {
+    useNotificationsStore.setState({ items: [buildNotification({ id: 100 })] });
+
+    const first = render(<NewNotificationToastHost />);
+    await flushAnimationFrames();
+    first.unmount();
+
+    authState = {
+      isApiAuthenticated: true,
+      session: { user: { id: "99" } },
+    };
+    useNotificationsStore.setState({ items: [buildNotification({ id: 5 })] });
+
+    render(<NewNotificationToastHost />);
+
+    await flushAnimationFrames();
+    expect(isToastShown()).toBe(false);
+    expect(window.localStorage.getItem("papelito:notifications:last-seen-id:99")).toBe("5");
+  });
+
   it("renders nothing for unauthenticated users", async () => {
     authState = {
       isApiAuthenticated: false,
