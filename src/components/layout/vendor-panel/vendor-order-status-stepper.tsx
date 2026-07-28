@@ -6,7 +6,7 @@ type StepState = "completed" | "active" | "upcoming";
 const steps: Array<{ label: string; status: StepStatus }> = [
   { status: "aguardando_pagamento", label: "Pagamento" },
   { status: "aguardando_envio", label: "Aguardando envio" },
-  { status: "em_separacao", label: "Separacao" },
+  { status: "em_separacao", label: "Separação" },
   { status: "enviado", label: "Enviado" },
   { status: "entregue", label: "Entregue" },
 ];
@@ -34,7 +34,7 @@ function CancelledState({ reason }: { reason?: string }) {
       <div>
         <p className="text-sm font-black uppercase tracking-[0.12em] text-[#7a3428]">Pedido cancelado</p>
         <p className="mt-1 text-sm text-[#7a3428]/80">
-          {reason || "Este pedido foi cancelado e nao avancara na esteira de envio."}
+          {reason || "Este pedido foi cancelado e não avancara na esteira de envio."}
         </p>
       </div>
     </div>

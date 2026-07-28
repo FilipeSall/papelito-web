@@ -23,7 +23,7 @@ export function TermChecklist({
       <div className="max-h-52 space-y-2 overflow-auto">
         {terms.length === 0 ? (
           <p className="px-2 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#231f20]/42">
-            sem opcoes
+            sem opções
           </p>
         ) : (
           terms.map((term) => {

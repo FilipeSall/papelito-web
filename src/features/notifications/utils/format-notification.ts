@@ -181,7 +181,7 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       return {
         icon: "package",
         title: "Nova compra",
-        body: `${orderLabel}${totalLabel} aguardando separacao. Prepare o envio.`,
+        body: `${orderLabel}${totalLabel} aguardando separação. Prepare o envio.`,
         href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
       };
     }
@@ -198,7 +198,7 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       return {
         icon: "package",
         title: "Pedido atrasado",
-        body: `${orderLabel} passou do prazo de separacao${daysLabel}. Separe com urgencia.`,
+        body: `${orderLabel} passou do prazo de separação${daysLabel}. Separe com urgência.`,
         href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
       };
     }
@@ -214,13 +214,13 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       const extraCount = Math.max(0, pendingFields.length - firstFields.length);
       const fieldsLabel =
         firstFields.length === 0
-          ? "Existem dados obrigatorios pendentes no seu cadastro."
+          ? "Existem dados obrigatórios pendentes no seu cadastro."
           : `${firstFields.join(", ")}${extraCount > 0 ? ` e mais ${extraCount}` : ""}.`;
 
       return {
         icon: "message",
         title: "Cadastro incompleto",
-        body: `Complete os dados pendentes para concluir sua operacao: ${fieldsLabel}`,
+        body: `Complete os dados pendentes para concluir sua operação: ${fieldsLabel}`,
         href: "/vendor/dashboard",
       };
     }
@@ -235,7 +235,7 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       return {
         icon: "package",
         title: "Saiu para entrega",
-        body: "Os Correios informaram que o objeto esta em rota de entrega.",
+        body: "Os Correios informaram que o objeto está em rota de entrega.",
         href: logisticsHref(payload),
       };
     case "shipment_delivered":
@@ -249,13 +249,13 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       return {
         icon: "package",
         title: "Tentativa sem sucesso",
-        body: "A entrega nao foi concluida. Consulte as orientacoes dos Correios.",
+        body: "A entrega não foi concluida. Consulte as orientacoes dos Correios.",
         href: logisticsHref(payload),
       };
     case "shipment_pickup_available":
       return {
         icon: "package",
-        title: "Disponivel para retirada",
+        title: "Disponível para retirada",
         body: "O objeto aguarda retirada na unidade indicada pelos Correios.",
         href: logisticsHref(payload),
       };
@@ -263,13 +263,13 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       return {
         icon: "package",
         title: "Objeto devolvido",
-        body: "Os Correios confirmaram a devolucao do objeto ao remetente.",
+        body: "Os Correios confirmaram a devolução do objeto ao remetente.",
         href: logisticsHref(payload),
       };
     case "shipment_exception":
       return {
         icon: "package",
-        title: "Ocorrencia no envio",
+        title: "Ocorrência no envio",
         body: "O envio exige acompanhamento da Papelito e do vendor.",
         href: logisticsHref(payload),
       };

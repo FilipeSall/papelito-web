@@ -15,14 +15,14 @@ export async function PUT(_request: Request, { params }: NotificationReadRoutePr
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const { id } = await params;
   const notificationId = Number(id);
 
   if (!Number.isInteger(notificationId) || notificationId <= 0) {
-    return NextResponse.json({ message: "Notificacao invalida." }, { status: 422 });
+    return NextResponse.json({ message: "Notificação inválida." }, { status: 422 });
   }
 
   const result = await wpRest<MarkNotificationReadResponse>(

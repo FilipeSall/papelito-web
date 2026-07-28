@@ -186,7 +186,7 @@ describe("CartPageContent stock validation", () => {
     renderWithProviders(<CartPageContent />);
 
     expect(
-      await screen.findByText("Este produto esta sem estoque no momento."),
+      await screen.findByText("Este produto está sem estoque no momento."),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Aumentar quantidade" }),
@@ -195,7 +195,7 @@ describe("CartPageContent stock validation", () => {
     await user.click(screen.getByRole("button", { name: "Diminuir quantidade" }));
     expect(useCartStore.getState().items[0].quantity).toBe(1);
     expect(
-      screen.getByText("Este produto esta sem estoque no momento."),
+      screen.getByText("Este produto está sem estoque no momento."),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Diminuir quantidade" }));
@@ -258,7 +258,7 @@ describe("CartPageContent stock validation", () => {
 
     expect(
       await screen.findByText(
-        "Nao foi possivel validar o estoque agora. Tente novamente.",
+        "Não foi possível validar o estoque agora. Tente novamente.",
       ),
     ).toBeInTheDocument();
 

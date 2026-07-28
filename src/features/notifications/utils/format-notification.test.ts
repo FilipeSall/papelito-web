@@ -10,7 +10,7 @@ describe("formatNotification", () => {
         payload: {
           product_id: 321,
           product_name: "Tubelito Tradicional",
-          promo_label: "Oferta Relampago",
+          promo_label: "Oferta Relâmpago",
           discount_percent: 25,
           regular_price: 19.9,
           sale_price: 14.9,
@@ -80,7 +80,7 @@ describe("formatNotification", () => {
     expect(formatted.icon).toBe("package");
     expect(formatted.title).toBe("Nova compra");
     expect(formatted.body).toContain("#11884");
-    expect(formatted.body).toContain("separacao");
+    expect(formatted.body).toContain("separação");
     expect(formatted.href).toBe("/vendor/pedidos/11884");
   });
 
@@ -108,7 +108,7 @@ describe("formatNotification", () => {
     expect(formatted.title).toBe("Pedido atrasado");
     expect(formatted.body).toContain("#11880");
     expect(formatted.body).toContain("2 dia(s)");
-    expect(formatted.body).toContain("urgencia");
+    expect(formatted.body).toContain("urgência");
     expect(formatted.href).toBe("/vendor/pedidos/11880");
   });
 });

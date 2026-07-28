@@ -101,11 +101,11 @@ describe("UserRoleActions - manual email activation", () => {
       expect(refresh).toHaveBeenCalled();
     });
     expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/usuario ativado/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/usuário ativado/i);
   });
 
   it("shows the error message when activation fails", async () => {
-    postJson.mockRejectedValue(new Error("Conta nao esta com e-mail pendente."));
+    postJson.mockRejectedValue(new Error("Conta não esta com e-mail pendente."));
     const user = userEvent.setup();
     renderActions("pending");
 
@@ -113,7 +113,7 @@ describe("UserRoleActions - manual email activation", () => {
     await user.click(screen.getByRole("button", { name: /confirmar ativacao/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Conta nao esta com e-mail pendente.")).toBeInTheDocument();
+      expect(screen.getByText("Conta não esta com e-mail pendente.")).toBeInTheDocument();
     });
   });
 });

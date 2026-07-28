@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   const items = normalizeItems(payload?.items);
 
   if (!items) {
-    return unavailable("Itens invalidos para validar o estoque.", 422);
+    return unavailable("Itens inválidos para validar o estoque.", 422);
   }
 
   const coverageContext = await getAccountCoverageCepContext();
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
   for (const { vendorId, productIds, result } of results) {
     if (!result.ok) {
-      return unavailable("Nao foi possivel validar o estoque agora. Tente novamente.");
+      return unavailable("Não foi possível validar o estoque agora. Tente novamente.");
     }
 
     for (const productId of productIds) {

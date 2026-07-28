@@ -98,7 +98,7 @@ function detailRows(detail: AdminUserDetail) {
     ["Cidade", [detail.city, detail.state].filter(Boolean).join(" / ") || "—"],
     ["CEP", detail.cep || "—"],
     [
-      "Endereco",
+      "Endereço",
       [detail.street, detail.number, detail.complement, detail.neighborhood].filter(Boolean).join(", ") || "—",
     ],
   ];
@@ -113,7 +113,7 @@ function orderStatusLabel(order: AdminUserRelatedOrder) {
     return order.vendorStatus.replaceAll("_", " ");
   }
 
-  return order.status.replaceAll("_", " ") || "Em analise";
+  return order.status.replaceAll("_", " ") || "Em análise";
 }
 
 function ordersTableRows({
@@ -172,12 +172,12 @@ export function UserDetailPage({
     `${user.firstName} ${user.lastName}`.trim() ||
     user.storeName ||
     user.email ||
-    `Usuario #${user.id}`;
+    `Usuário #${user.id}`;
   const tabs: Array<{ key: UserDetailTabKey; label: string }> = [
-    { key: "overview", label: "Visao geral" },
+    { key: "overview", label: "Visão geral" },
     { key: "orders", label: "Pedidos" },
     { key: "sales", label: "Vendas" },
-    { key: "role", label: "Role / acoes" },
+    { key: "role", label: "Role / ações" },
   ];
 
   return (
@@ -188,12 +188,12 @@ export function UserDetailPage({
             className="inline-flex text-xs font-semibold uppercase tracking-[0.16em] text-[#231f20]/62 underline"
             href={buildBackHref(origin)}
           >
-            Voltar para usuarios
+            Voltar para usuários
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-              Usuario #{user.id}
+              Usuário #{user.id}
             </p>
             <UserRoleBadge label={user.roleLabel || "Outro"} />
             <UserStatusBadge label={user.accountStatusLabel || "Ativa"} />
@@ -229,7 +229,7 @@ export function UserDetailPage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard
-          detail="Pedidos/compras do usuario como customer"
+          detail="Pedidos/compras do usuário como customer"
           label="Pedidos"
           value={String(user.metrics.ordersCount).padStart(2, "0")}
         />
@@ -249,14 +249,14 @@ export function UserDetailPage({
           value={String(user.metrics.supportTicketsCount).padStart(2, "0")}
         />
         <MetricCard
-          detail="Pedidos ja cancelados operacionalmente"
+          detail="Pedidos já cancelados operacionalmente"
           label="Cancelados"
           tone={user.metrics.cancelledOrdersCount > 0 ? "warning" : "default"}
           value={String(user.metrics.cancelledOrdersCount).padStart(2, "0")}
         />
       </div>
 
-      <nav aria-label="Abas do usuario" className="-mx-1 flex flex-wrap items-center gap-1">
+      <nav aria-label="Abas do usuário" className="-mx-1 flex flex-wrap items-center gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
@@ -294,7 +294,7 @@ export function UserDetailPage({
 
           <div className="space-y-5">
             <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
-              {sectionTitle("Permissoes e flags")}
+              {sectionTitle("Permissões e flags")}
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-3 border-b border-[#1a1a1a]/12 pb-3">
                   <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Role atual</dt>
@@ -336,7 +336,7 @@ export function UserDetailPage({
                     <dd>{user.vendorData.minCepRanges.length}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Ultima revisao</dt>
+                    <dt className="font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">Última revisão</dt>
                     <dd>{formatDateTime(user.vendorData.reviewedAt)}</dd>
                   </div>
                 </dl>
@@ -354,7 +354,7 @@ export function UserDetailPage({
                 {sectionTitle("Pedidos como customer")}
               </div>
               <CompactTable
-                headers={["pedido", "contexto", "status", "total", "acao"]}
+                headers={["pedido", "contexto", "status", "total", "ação"]}
                 rows={ordersTableRows({ orders: user.recentPurchases, user })}
               />
             </Panel>
@@ -402,13 +402,13 @@ export function UserDetailPage({
               {sectionTitle("Vendas como vendor")}
             </div>
             <CompactTable
-              headers={["pedido", "contexto", "status", "total", "acao"]}
+              headers={["pedido", "contexto", "status", "total", "ação"]}
               rows={ordersTableRows({ orders: user.recentSales, user })}
             />
           </Panel>
         ) : (
           <EmptyStateCard
-            body="Esta conta ainda nao possui vendas recentes no fluxo operacional do marketplace."
+            body="Esta conta ainda não possui vendas recentes no fluxo operacional do marketplace."
             label="Vendas"
             title="Sem vendas recentes"
           />
@@ -431,11 +431,11 @@ export function UserDetailPage({
             {sectionTitle("Notas operacionais")}
             <div className="space-y-3 text-sm leading-6 text-[#231f20]/72">
               <p>
-                Cancelamentos nesta area usam somente o fluxo operacional ja existente: status do
+                Cancelamentos nesta área usam somente o fluxo operacional já existente: status do
                 vendor como <strong>cancelado</strong> com justificativa.
               </p>
               <p>
-                Nao ha refund financeiro WooCommerce/Pagar.me nesta v1. O foco aqui e leitura
+                Não ha refund financeiro WooCommerce/Pagar.me nesta v1. O foco aqui e leitura
                 administrativa, triagem e transicoes coerentes de role.
               </p>
               <p>

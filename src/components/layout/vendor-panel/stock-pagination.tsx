@@ -28,14 +28,14 @@ export function StockPagination({
           </Link>
         ) : null}
         <span className="text-xs font-semibold text-[#1a1a1a]">
-          Pagina {page} de {totalPages}
+          Página {page} de {totalPages}
         </span>
         {page < totalPages ? (
           <Link
             className="inline-flex h-10 min-w-10 items-center justify-center border-2 border-[#1a1a1a] bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
             href={buildStockHref(filters, page + 1)}
           >
-            Proxima
+            Próxima
           </Link>
         ) : null}
       </div>

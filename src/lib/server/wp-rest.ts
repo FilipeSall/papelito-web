@@ -86,7 +86,7 @@ export async function wpRest<T>(
         status,
         error: buildError(
           "papelito_invalid_json",
-          `Resposta nao-JSON do WordPress (status ${status}).`,
+          `Resposta não-JSON do WordPress (status ${status}).`,
           status,
         ),
         headers: response.headers,

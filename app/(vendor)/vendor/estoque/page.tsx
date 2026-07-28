@@ -26,13 +26,13 @@ export default async function VendorStockPage({
     return (
       <div className="space-y-4 md:space-y-5">
         <VendorPageHeader
-          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, voce recebe uma notificacao operacional."
-          eyebrow="Catalogo regional"
+          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+          eyebrow="Catálogo regional"
           signal="cadastro pendente"
           title="Estoque"
         />
         <VendorOnboardingRequiredNotice
-          body="Para visualizar e gerenciar seus produtos, complete o cadastro do vendor. Assim que os dados pendentes forem preenchidos, seu estoque fica disponivel aqui."
+          body="Para visualizar e gerenciar seus produtos, complete o cadastro do vendor. Assim que os dados pendentes forem preenchidos, seu estoque fica disponível aqui."
           href={buildVendorOnboardingHref("/vendor/estoque")}
           title="Complete o cadastro para ver seus produtos"
         />
@@ -73,8 +73,8 @@ export default async function VendorStockPage({
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, voce recebe uma notificacao operacional."
-        eyebrow="Catalogo regional"
+        description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+        eyebrow="Catálogo regional"
         signal="controle direto"
         title="Estoque"
       />

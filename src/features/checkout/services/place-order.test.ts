@@ -109,7 +109,7 @@ describe("placeOrder", () => {
       ok: false,
       error: {
         code: "papelito_checkout_vendor_not_approved",
-        message: "O vendor selecionado nao esta apto para receber pedidos.",
+        message: "O vendor selecionado não esta apto para receber pedidos.",
         status: 422,
       },
     });
@@ -126,7 +126,7 @@ describe("placeOrder", () => {
       ok: false,
       error: {
         code: "papelito_invalid_response",
-        message: "Resposta invalida ao concluir o pedido.",
+        message: "Resposta inválida ao concluir o pedido.",
         status: 200,
       },
     });

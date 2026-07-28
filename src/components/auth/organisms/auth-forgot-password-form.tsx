@@ -12,7 +12,7 @@ type ForgotPasswordApiResponse = {
 };
 
 const GENERIC_SUCCESS_MESSAGE =
-  "Se o e-mail informado estiver cadastrado, voce recebera as instrucoes para redefinir sua senha.";
+  "Se o e-mail informado estiver cadastrado, você receberá as instrucoes para redefinir sua senha.";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -37,7 +37,7 @@ export function AuthForgotPasswordForm() {
 
     if (!isValidEmail(email)) {
       setSuccessMessage(null);
-      setErrorMessage("Informe um e-mail valido.");
+      setErrorMessage("Informe um e-mail válido.");
       return;
     }
 
@@ -59,7 +59,7 @@ export function AuthForgotPasswordForm() {
 
         if (!response.ok) {
           setErrorMessage(
-            body?.message ?? "Nao foi possivel enviar as instrucoes agora. Tente novamente.",
+            body?.message ?? "Não foi possível enviar as instrucoes agora. Tente novamente.",
           );
           return;
         }
@@ -81,7 +81,7 @@ export function AuthForgotPasswordForm() {
           Recuperar senha
         </h1>
         <p className="mt-4 text-sm leading-6 text-white/60">
-          Informe o e-mail cadastrado na sua conta. Enviaremos as instrucoes para voce criar
+          Informe o e-mail cadastrado na sua conta. Enviaremos as instrucoes para você criar
           uma nova senha.
         </p>
 

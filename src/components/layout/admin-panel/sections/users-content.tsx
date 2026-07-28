@@ -37,13 +37,13 @@ export async function UsersContent({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/52">
-                Operacao
+                Operação
               </p>
               <h2 className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a]">
-                Usuarios
+                Usuários
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#1a1a1a]/68">
-                Leitura administrativa de contas, roles, pedidos, vendas e metricas brutas sem
+                Leitura administrativa de contas, roles, pedidos, vendas e métricas brutas sem
                 expor conversas de suporte nesta v1.
               </p>
             </div>
@@ -55,7 +55,7 @@ export async function UsersContent({
                 {String(snapshot.totalRows).padStart(2, "0")}
               </p>
               <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[#1a1a1a]/64">
-                usuarios encontrados
+                usuários encontrados
               </p>
             </div>
           </div>

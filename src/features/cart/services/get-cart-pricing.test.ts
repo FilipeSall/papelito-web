@@ -28,7 +28,7 @@ describe("getCartPricing", () => {
     expect(result).toEqual({
       ok: false,
       code: "papelito_checkout_invalid_items",
-      message: "O carrinho contem um produto invalido.",
+      message: "O carrinho contém um produto inválido.",
       status: 422,
     });
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -150,7 +150,7 @@ describe("getCartPricing", () => {
     await expect(getCartPricing([item], null)).resolves.toEqual({
       ok: false,
       code: "papelito_invalid_response",
-      message: "Resposta invalida ao recalcular o carrinho.",
+      message: "Resposta inválida ao recalcular o carrinho.",
       status: 200,
     });
   });

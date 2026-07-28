@@ -79,7 +79,7 @@ export const cartHandlers = [
     };
 
     if (body.product?.id === "401") {
-      return HttpResponse.json({ message: "Nao autorizado." }, { status: 401 });
+      return HttpResponse.json({ message: "Não autorizado." }, { status: 401 });
     }
 
     if (body.product?.id === "409") {

@@ -21,7 +21,7 @@ export function toDateTimeLocal(value: string) {
 
 export function formatMoney(value: string) {
   const parsed = parseMoney(value);
-  return parsed > 0 ? formatCurrency(parsed) : "Sem preco";
+  return parsed > 0 ? formatCurrency(parsed) : "Sem preço";
 }
 
 export function productToDraft(product: AdminProduct): ProductDraft {

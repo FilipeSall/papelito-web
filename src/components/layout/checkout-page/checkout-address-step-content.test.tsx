@@ -77,10 +77,10 @@ describe("CheckoutAddressStepContent", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Carregando opcoes de entrega...", { selector: "p" }),
+        screen.getByText("Carregando opções de entrega...", { selector: "p" }),
       ).toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: /proximo: pagamento/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /próximo: pagamento/i })).toBeDisabled();
 
     resolveQuote(
       HttpResponse.json({
@@ -101,7 +101,7 @@ describe("CheckoutAddressStepContent", () => {
 
     await waitFor(() => {
       expect(
-        screen.queryByText("Carregando opcoes de entrega...", { selector: "p" }),
+        screen.queryByText("Carregando opções de entrega...", { selector: "p" }),
       ).not.toBeInTheDocument();
     });
 
@@ -127,28 +127,28 @@ describe("CheckoutAddressStepContent", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Carregando opcoes de entrega...", { selector: "p" }),
+        screen.getByText("Carregando opções de entrega...", { selector: "p" }),
       ).toBeInTheDocument();
     });
 
     resolveQuote(
       HttpResponse.json(
         {
-          message: "Nao foi possivel cotar o frete.",
+          message: "Não foi possível cotar o frete.",
         },
         { status: 502 },
       ),
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Nao foi possivel cotar o frete.")).toBeInTheDocument();
+      expect(screen.getByText("Não foi possível cotar o frete.")).toBeInTheDocument();
     });
 
     expect(
-      screen.queryByText("Carregando opcoes de entrega...", { selector: "p" }),
+      screen.queryByText("Carregando opções de entrega...", { selector: "p" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /proximo: pagamento/i }),
+      screen.getByRole("button", { name: /próximo: pagamento/i }),
     ).toBeDisabled();
   });
 
@@ -186,7 +186,7 @@ describe("CheckoutAddressStepContent", () => {
       expect(screen.getByText("SEDEX Contrato")).toBeInTheDocument();
     });
 
-    const advanceButton = screen.getByRole("button", { name: /proximo: pagamento/i });
+    const advanceButton = screen.getByRole("button", { name: /próximo: pagamento/i });
     expect(advanceButton).toBeDisabled();
 
     await userEvent.click(screen.getByRole("button", { name: /PAC.*R\$ 15,88/i }));

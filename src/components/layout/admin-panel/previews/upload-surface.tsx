@@ -20,11 +20,11 @@ export function UploadSurface() {
           </p>
           <p className="mt-3 text-sm leading-6 text-[#231f20]/68">
             Slot preparado para upload de hero desktop, mobile e assets de campanha com preview
-            imediato antes da integracao real com `wp/v2/media`.
+            imediato antes da integração real com `wp/v2/media`.
           </p>
           <div className="mt-5 space-y-3">
             <div className="rounded-[14px] border border-[#231f20]/12 bg-white/82 px-4 py-3 text-sm text-[#231f20]/48">
-              Dropzone / progress / validacao
+              Dropzone / progress / validação
             </div>
             <div className="rounded-[14px] border border-[#231f20]/12 bg-white/82 px-4 py-3 text-sm text-[#231f20]/48">
               Href de destino / alt / ordem / status
@@ -49,7 +49,7 @@ export function UploadSurface() {
               asset fallback
             </div>
             <Image
-              alt="Preview do asset secundario"
+              alt="Preview do asset secundário"
               className="h-44 w-full object-cover"
               height={320}
               src="/images/products/product-placeholder.png"

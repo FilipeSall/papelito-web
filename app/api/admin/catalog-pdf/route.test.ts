@@ -75,6 +75,6 @@ describe("/api/admin/catalog-pdf", () => {
     const body = await response.json();
 
     expect(response.status).toBe(422);
-    expect(body).toEqual({ message: "Arquivo PDF obrigatorio." });
+    expect(body).toEqual({ message: "Arquivo PDF obrigatório." });
   });
 });

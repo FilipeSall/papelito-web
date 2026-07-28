@@ -161,7 +161,7 @@ export function useAdminProductsManager(
         setIsEditorOpen(true);
       } catch (error) {
         if (!cancelled) {
-          setNotice(messageFromError(error, "Nao foi possivel abrir o produto da notificacao."));
+          setNotice(messageFromError(error, "Não foi possível abrir o produto da notificação."));
         }
       } finally {
         if (!cancelled) {

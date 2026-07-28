@@ -30,7 +30,7 @@ export async function PUT(request: Request) {
   const payload = (await request.json().catch(() => null)) as { images?: SiteImageAssets } | null;
 
   if (!payload?.images) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
     revalidatePath("/revendedor");
     return NextResponse.json(snapshot);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel salvar as imagens.";
+    const message = error instanceof Error ? error.message : "Não foi possível salvar as imagens.";
     const status =
       typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
         ? error.status

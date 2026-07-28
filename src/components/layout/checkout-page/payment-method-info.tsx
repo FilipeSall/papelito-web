@@ -1,8 +1,8 @@
 import type { PaymentMethod } from "@/features/checkout";
 
 const INFO: Record<Exclude<PaymentMethod, "credit_card">, string> = {
-  pix: "O QR Code do Pix sera gerado na proxima etapa para pagamento imediato.",
-  boleto: "O boleto bancario sera gerado na revisao final. Compensacao em ate 3 dias uteis.",
+  pix: "O QR Code do Pix será gerado na próxima etapa para pagamento imediato.",
+  boleto: "O boleto bancário será gerado na revisão final. Compensacao em até 3 dias úteis.",
 };
 
 export function PaymentMethodInfo({ method }: { method: Exclude<PaymentMethod, "credit_card"> }) {

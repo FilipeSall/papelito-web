@@ -21,7 +21,7 @@ import { CheckoutOrderSummary } from "./checkout-order-summary";
 function getPaymentLabel(method: "credit_card" | "pix" | "boleto") {
   if (method === "credit_card") return "Cartao de credito";
   if (method === "pix") return "Pix";
-  return "Boleto bancario";
+  return "Boleto bancário";
 }
 
 export function CheckoutReviewStepContent() {
@@ -132,7 +132,7 @@ export function CheckoutReviewStepContent() {
 
   const maskedCard = paymentForm.cardLast4
     ? `•••• •••• •••• ${paymentForm.cardLast4}`
-    : "Nao informado";
+    : "Não informado";
 
   async function submitOrder() {
     if (
@@ -222,7 +222,7 @@ export function CheckoutReviewStepContent() {
         submissionRef.current = false;
         router.push(`/checkout/pagamento/${outcome.orderId}`);
       } catch {
-        setCheckoutError("Nao foi possivel concluir o pedido.");
+        setCheckoutError("Não foi possível concluir o pedido.");
         setIsSubmitting(false);
         submissionRef.current = false;
         return;
@@ -242,21 +242,21 @@ export function CheckoutReviewStepContent() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,299px)]">
           <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
             <h2 className="text-[20px] font-black uppercase tracking-[-0.4492px] text-brand-dark">
-              Revisao do pedido
+              Revisão do pedido
             </h2>
 
             {isProcessing ? (
               <LogoSpinnerLoader
                 className="min-h-80"
                 label="Processando pagamento"
-                message="Aguarde enquanto preparamos a proxima etapa..."
+                message="Aguarde enquanto preparamos a próxima etapa..."
               />
             ) : (
               <>
                 <section className="mt-6 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                      Endereco de entrega
+                      Endereço de entrega
                     </h3>
                     <Link
                       className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
@@ -268,18 +268,18 @@ export function CheckoutReviewStepContent() {
 
                   <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
                     <p>
-                      {addressForm.street || "Rua nao informada"},{" "}
+                      {addressForm.street || "Rua não informada"},{" "}
                       {addressForm.number || "s/n"}
                     </p>
                     {addressForm.complement ? (
                       <p>{addressForm.complement}</p>
                     ) : null}
                     <p>
-                      {addressForm.neighborhood || "Bairro nao informado"} -{" "}
-                      {addressForm.city || "Cidade nao informada"} /{" "}
+                      {addressForm.neighborhood || "Bairro não informado"} -{" "}
+                      {addressForm.city || "Cidade não informada"} /{" "}
                       {addressForm.state || "--"}
                     </p>
-                    <p>CEP: {addressForm.zipCode || "Nao informado"}</p>
+                    <p>CEP: {addressForm.zipCode || "Não informado"}</p>
                   </div>
                 </section>
 
@@ -302,11 +302,11 @@ export function CheckoutReviewStepContent() {
                       <>
                         <p>{maskedCard}</p>
                         <p>
-                          {paymentForm.holderName || "Titular nao informado"}
+                          {paymentForm.holderName || "Titular não informado"}
                         </p>
                         <p>
                           {paymentForm.installments ||
-                            "Parcelamento nao informado"}
+                            "Parcelamento não informado"}
                         </p>
                       </>
                     ) : null}
@@ -348,33 +348,33 @@ export function CheckoutReviewStepContent() {
                       <p>{formatBRL(selectedShippingQuote.price)}</p>
                       <p>
                         {selectedShippingQuote.deliveryTime
-                          ? `${selectedShippingQuote.deliveryTime} dias uteis`
+                          ? `${selectedShippingQuote.deliveryTime} dias úteis`
                           : "Prazo sob consulta"}
                       </p>
                     </div>
                   ) : (
                     <p className="mt-3 text-sm tracking-[-0.1504px] text-[#B42318]">
-                      Selecione uma opcao de frete valida antes de finalizar.
+                      Selecione uma opção de frete válida antes de finalizar.
                     </p>
                   )}
                 </section>
 
                 {!canFinishOrder ? (
                   <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                    Complete os dados de endereco e pagamento para finalizar o
+                    Complete os dados de endereço e pagamento para finalizar o
                     pedido.
                   </p>
                 ) : null}
 
                 {canFinishOrder && !isShippingValid ? (
                   <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                    Revise a cotacao de frete antes de concluir o pedido.
+                    Revise a cotação de frete antes de concluir o pedido.
                   </p>
                 ) : null}
 
                 {hasInvalidCartItems ? (
                   <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-                    Seu carrinho contem um item invalido para fechamento do
+                    Seu carrinho contém um item inválido para fechamento do
                     pedido.
                   </p>
                 ) : null}

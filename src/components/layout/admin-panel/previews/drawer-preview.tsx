@@ -18,7 +18,7 @@ export function DrawerPreview() {
               SKU / slug / estoque
             </div>
             <div className="h-28 rounded-[18px] border border-[#231f20]/12 bg-white/82 px-4 py-3 text-sm text-[#231f20]/44">
-              Descricao compacta e campos da campanha
+              Descrição compacta e campos da campanha
             </div>
           </div>
         </div>
@@ -41,7 +41,7 @@ export function DrawerPreview() {
               resumo lateral
             </div>
             <div className="rounded-[14px] border border-white/12 bg-white/6 px-4 py-3 text-sm text-white/84">
-              historico rapido
+              histórico rápido
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as AdminProductTagPayload | null;
 
   if (!payload?.name?.trim()) {
-    return NextResponse.json({ message: "Nome da tag e obrigatorio." }, { status: 422 });
+    return NextResponse.json({ message: "Nome da tag e obrigatório." }, { status: 422 });
   }
 
   try {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     revalidateTag("admin-product-taxonomies", "max");
     return NextResponse.json({ tag }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel criar a tag.";
+    const message = error instanceof Error ? error.message : "Não foi possível criar a tag.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

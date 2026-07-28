@@ -101,7 +101,7 @@ export function mapVendorOrderStatus(value: unknown): VendorOrderStatus {
 export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary {
   return {
     createdAt: order.created_at ?? "",
-    customerName: order.customer_name?.trim() || "Cliente nao identificado",
+    customerName: order.customer_name?.trim() || "Cliente não identificado",
     id: Number(order.id) || 0,
     itemsCount: Number(order.items_count) || 0,
     itemsLabel: order.items_label?.trim() || "Sem itens",

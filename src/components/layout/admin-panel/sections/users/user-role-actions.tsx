@@ -54,7 +54,7 @@ export function UserRoleActions({
         text:
           nextRole === "administrator"
             ? "Role atualizada para administrador."
-            : "Usuario movido para customer.",
+            : "Usuário movido para customer.",
       });
       startTransition(() => router.refresh());
     } catch (error) {
@@ -74,12 +74,12 @@ export function UserRoleActions({
     try {
       await postJson(`/api/admin/users/${userId}/activate-email`);
       setActivateModalOpen(false);
-      setFeedback({ tone: "success", text: "Usuario ativado. Login por senha liberado." });
+      setFeedback({ tone: "success", text: "Usuário ativado. Login por senha liberado." });
       startTransition(() => router.refresh());
     } catch (error) {
       setFeedback({
         tone: "error",
-        text: error instanceof Error ? error.message : "Falha ao ativar usuario.",
+        text: error instanceof Error ? error.message : "Falha ao ativar usuário.",
       });
       startTransition(() => router.refresh());
     } finally {
@@ -113,7 +113,7 @@ export function UserRoleActions({
             onClick={() =>
               handleRoleChange(
                 "administrator",
-                `Confirmar promocao de ${userName} para administrator?`,
+                `Confirmar promoção de ${userName} para administrator?`,
               )
             }
             type="button"
@@ -134,7 +134,7 @@ export function UserRoleActions({
             onClick={() =>
               handleRoleChange(
                 "customer",
-                `Remover ${userName} da operacao ativa de vendor e voltar para customer?`,
+                `Remover ${userName} da operação ativa de vendor e voltar para customer?`,
               )
             }
             type="button"
@@ -194,8 +194,8 @@ export function UserRoleActions({
 
       <div className="space-y-2 text-sm leading-6 text-[#231f20]/70">
         <p>
-          Esta tela opera em role unica do projeto. Fluxos para vendor sempre passam pela criacao
-          indireta de vendor quando nao existe transicao direta permitida.
+          Esta tela opera em role única do projeto. Fluxos para vendor sempre passam pela criacao
+          indireta de vendor quando não existe transicao direta permitida.
         </p>
         {availableActions.isSelf ? (
           <p className="font-semibold text-[#7a3428]">
@@ -218,16 +218,16 @@ export function UserRoleActions({
             </span>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Confirmacao
+                Confirmação
               </p>
               <h3 id="activate-email-title" className="text-lg font-semibold text-[#1e1c10]">
-                Ativar usuario sem confirmacao de e-mail
+                Ativar usuário sem confirmação de e-mail
               </h3>
             </div>
           </div>
 
           <p className="text-sm leading-6 text-[#4b4731]" id="activate-email-body">
-            Esta e uma acao administrativa. O usuario{" "}
+            Esta é uma ação administrativa. O usuário{" "}
             <span className="font-semibold text-[#1e1c10]">{userName}</span> sera ativado{" "}
             <strong>sem confirmar o e-mail</strong>, impactando diretamente o login e o acesso a
             conta.

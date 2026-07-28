@@ -48,17 +48,17 @@ export function ReportsContent({
             <span aria-hidden className="text-[#b2aa98]">/</span>
             <span>Admin</span>
             <span aria-hidden className="text-[#b2aa98]">/</span>
-            <span className="font-semibold text-[#231f20]">Relatorios</span>
+            <span className="font-semibold text-[#231f20]">Relatórios</span>
           </div>
           <h2
             className="mt-3 text-[2.35rem] font-semibold leading-none tracking-[-0.04em] text-[#231f20]"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
-            Relatorios
+            Relatórios
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5e574c]">
-            Area simplificada para dois exports diretos de usuarios e vendas. O recorte principal
-            e por data, com formato selecionavel entre XLSX e CSV.
+            Área simplificada para dois exports diretos de usuários e vendas. O recorte principal
+            é por data, com formato selecionável entre XLSX e CSV.
           </p>
         </div>
       </section>

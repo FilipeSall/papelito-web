@@ -74,10 +74,10 @@ export function AddToCartButton({
     dispatchCartEvent({
       title:
         result.status === "missing_cep"
-          ? "CEP necessario"
+          ? "CEP necessário"
           : result.status === "vendor_conflict"
-            ? "Vendor indisponivel"
-            : "Disponibilidade indisponivel",
+            ? "Vendor indisponível"
+            : "Disponibilidade indisponível",
       message: result.message,
       tone: result.status === "vendor_conflict" ? "warning" : "error",
       href: result.href,
@@ -130,8 +130,8 @@ export function AddToCartButton({
         onAdded?.();
       } catch {
         dispatchCartEvent({
-          title: "Disponibilidade indisponivel",
-          message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+          title: "Disponibilidade indisponível",
+          message: "Não foi possível validar a disponibilidade por CEP agora.",
           tone: "error",
         });
         return;

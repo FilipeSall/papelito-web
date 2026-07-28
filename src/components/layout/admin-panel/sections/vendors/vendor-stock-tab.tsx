@@ -91,7 +91,7 @@ export function VendorStockTab({
                 </Link>
               ) : null}
               <span>
-                Pagina {snapshot.page} de {snapshot.totalPages}
+                Página {snapshot.page} de {snapshot.totalPages}
               </span>
               {snapshot.page < snapshot.totalPages ? (
                 <Link
@@ -101,7 +101,7 @@ export function VendorStockTab({
                     stockFilters: { page: snapshot.page + 1 },
                   })}
                 >
-                  Proxima
+                  Próxima
                 </Link>
               ) : null}
             </div>

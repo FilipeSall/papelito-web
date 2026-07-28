@@ -24,7 +24,7 @@ export function MessageThreadsList({
             className="h-11 min-w-0 flex-1 rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             defaultValue={search}
             name="search"
-            placeholder="Buscar por numero do pedido ou cliente"
+            placeholder="Buscar por número do pedido ou cliente"
           />
           <button
             className="cursor-pointer rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"

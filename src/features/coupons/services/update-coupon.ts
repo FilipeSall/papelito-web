@@ -28,7 +28,7 @@ export async function updateCoupon(
 
   const mapped = mapWpCoupon(result.data);
   if (!mapped) {
-    throw new Error("Cupom invalido retornado apos atualizacao.");
+    throw new Error("Cupom inválido retornado após atualização.");
   }
 
   return mapped;

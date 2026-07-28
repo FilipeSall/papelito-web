@@ -16,7 +16,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
   }
 
   if (!/^\d+$/.test(id)) {
-    return NextResponse.json({ message: "Pedido invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
   const response = await fetch(`${getWpRestBase()}/papelito/v1/profile/me/orders/${id}/receipt/email`, {

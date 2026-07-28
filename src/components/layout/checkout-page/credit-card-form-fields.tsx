@@ -42,7 +42,7 @@ export function CreditCardFormFields({
 
       <div className="md:col-span-2">
         <CheckoutField
-          label="Numero do cartao"
+          label="Número do cartao"
           placeholder="0000 0000 0000 0000"
           inputMode="numeric"
           maxLength={19}

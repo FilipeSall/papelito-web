@@ -9,26 +9,26 @@ const ERROR_MESSAGES: Record<string, string> = {
   papelito_checkout_auth_required: "Faca login para concluir o pedido.",
   papelito_checkout_customer_only:
     "Somente consumidores finais podem concluir o checkout.",
-  papelito_checkout_seller_blocked: "Vendors nao compram pela plataforma.",
-  papelito_checkout_empty_items: "Seu carrinho esta vazio.",
-  papelito_checkout_invalid_items: "Os itens do carrinho ficaram invalidos.",
-  papelito_checkout_invalid_address: "Revise os dados do endereco de entrega.",
-  papelito_checkout_invalid_shipping: "Selecione uma opcao de frete valida.",
+  papelito_checkout_seller_blocked: "Vendors não compram pela plataforma.",
+  papelito_checkout_empty_items: "Seu carrinho está vazio.",
+  papelito_checkout_invalid_items: "Os itens do carrinho ficaram inválidos.",
+  papelito_checkout_invalid_address: "Revise os dados do endereço de entrega.",
+  papelito_checkout_invalid_shipping: "Selecione uma opção de frete válida.",
   papelito_checkout_coverage_unavailable:
-    "Nao foi possivel validar a cobertura de entrega. Tente novamente.",
+    "Não foi possível validar a cobertura de entrega. Tente novamente.",
   papelito_checkout_shipping_stale:
-    "A cotacao de frete mudou. Escolha novamente a entrega.",
-  papelito_checkout_invalid_payment: "Selecione uma forma de pagamento valida.",
+    "A cotação de frete mudou. Escolha novamente a entrega.",
+  papelito_checkout_invalid_payment: "Selecione uma forma de pagamento válida.",
   papelito_checkout_mixed_vendor_not_supported:
     "O checkout atual suporta apenas um vendor por pedido.",
   papelito_checkout_vendor_not_approved:
-    "O vendor selecionado nao esta apto para receber pedidos.",
+    "O vendor selecionado não esta apto para receber pedidos.",
   papelito_checkout_insufficient_stock:
     "Algum item ficou sem estoque suficiente para concluir o pedido.",
   papelito_checkout_payment_unavailable:
-    "Checkout indisponivel ate a integracao com o Pagar.me.",
+    "Checkout indisponível até a integração com o Pagar.me.",
   papelito_checkout_amount_below_minimum:
-    "O total ficou abaixo do minimo aceito para esta forma de pagamento.",
+    "O total ficou abaixo do mínimo aceito para esta forma de pagamento.",
   papelito_checkout_installment_below_minimum:
     "Reduza as parcelas; cada parcela precisa ser de pelo menos R$ 1,00.",
   papelito_checkout_installments_exceeded:
@@ -38,7 +38,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   papelito_checkout_duplicate_item:
     "O carrinho possui produtos duplicados. Atualize a página e tente novamente.",
   papelito_checkout_attempt_in_progress:
-    "Seu pedido ja esta sendo processado. Aguarde alguns instantes.",
+    "Seu pedido já esta sendo processado. Aguarde alguns instantes.",
 	papelito_checkout_company_context_changed:
 		"A empresa ativa mudou. Revise o checkout antes de finalizar.",
 	papelito_checkout_attempt_payload_conflict:
@@ -48,21 +48,21 @@ const ERROR_MESSAGES: Record<string, string> = {
 	papelito_b2b_cnpj_alphanumeric_payment_unsupported:
 		"O pagamento para CNPJ alfanumérico ainda não está disponível.",
   papelito_checkout_gateway_amount_rejected:
-    "O Pagar.me rejeitou o valor da cobranca. Revise o total e as parcelas.",
+    "O Pagar.me rejeitou o valor da cobrança. Revise o total e as parcelas.",
   papelito_checkout_total_mismatch:
     "Os valores do pedido mudaram. Atualize o carrinho e tente novamente.",
-  papelito_coupon_not_found: "Cupom invalido ou inexistente.",
+  papelito_coupon_not_found: "Cupom inválido ou inexistente.",
   papelito_coupon_expired: "Este cupom expirou.",
   papelito_coupon_vendor_restricted:
-    "Este cupom nao pode ser aplicado aos itens atuais.",
+    "Este cupom não pode ser aplicado aos itens atuais.",
   papelito_coupon_product_restricted:
-    "Este cupom nao pode ser aplicado aos itens atuais.",
-  papelito_coupon_minimum_not_met: "Subtotal minimo nao atingido para este cupom.",
+    "Este cupom não pode ser aplicado aos itens atuais.",
+  papelito_coupon_minimum_not_met: "Subtotal mínimo não atingido para este cupom.",
 };
 
 function friendlyMessage(error: PlaceOrderError | null) {
   if (!error) {
-    return "Nao foi possivel concluir o pedido.";
+    return "Não foi possível concluir o pedido.";
   }
 
   if (error.message) {
@@ -73,7 +73,7 @@ function friendlyMessage(error: PlaceOrderError | null) {
     return ERROR_MESSAGES[error.code];
   }
 
-  return "Nao foi possivel concluir o pedido.";
+  return "Não foi possível concluir o pedido.";
 }
 
 export async function placeOrder(
@@ -177,7 +177,7 @@ export async function placeOrder(
       ok: false,
       error: {
         code: "papelito_invalid_response",
-        message: "Resposta invalida ao concluir o pedido.",
+        message: "Resposta inválida ao concluir o pedido.",
         status: response.status,
       },
     };

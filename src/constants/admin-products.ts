@@ -35,20 +35,20 @@ export const ADMIN_PRODUCTS_API = {
 export const FRONTEND_PRODUCT_PATH = "/produtos";
 
 export const PRODUCT_ERROR_MESSAGES = {
-  load: "Nao foi possivel carregar produtos.",
-  save: "Nao foi possivel salvar o produto.",
-  upload: "Nao foi possivel enviar imagem.",
-  createTag: "Nao foi possivel criar a tag.",
+  load: "Não foi possível carregar produtos.",
+  save: "Não foi possível salvar o produto.",
+  upload: "Não foi possível enviar imagem.",
+  createTag: "Não foi possível criar a tag.",
   missingName: "Informe o nome do produto.",
   missingTagName: "Informe o nome da tag.",
   promotionTagMissing:
-    "Tag de promocao nao encontrada. Crie ou mantenha uma tag chamada Promocoes.",
+    "Tag de promoção não encontrada. Crie ou mantenha uma tag chamada Promoções.",
 } as const;
 
 export const PRODUCT_NOTICES = {
   saved: "Produto salvo.",
   coverUpdated: "Imagem principal atualizada.",
-  secondaryAdded: "Foto secundaria adicionada.",
-  tagApplied: "Tag ja existente aplicada ao produto.",
+  secondaryAdded: "Foto secundária adicionada.",
+  tagApplied: "Tag já existente aplicada ao produto.",
   tagCreated: "Tag criada.",
 } as const;

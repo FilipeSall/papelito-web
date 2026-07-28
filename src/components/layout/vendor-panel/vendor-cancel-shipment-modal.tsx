@@ -71,8 +71,8 @@ export function VendorCancelShipmentModal({
           Cancelar envio do pedido
         </h2>
         <p className="mt-3 text-sm leading-5 text-text-secondary" id={descriptionId}>
-          O cancelamento e definitivo e a justificativa abaixo sera registrada no
-          historico do pedido. O cliente vera esta atualizacao.
+          O cancelamento e definitivo e a justificativa abaixo será registrada no
+          histórico do pedido. O cliente vera esta atualização.
         </p>
 
         <label

@@ -126,7 +126,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </div>
               ) : (
                 <p className="mt-4 rounded-[14px] bg-bg-light px-4 py-3 text-sm text-gray-500">
-                  Codigo de rastreamento ainda nao informado.
+                  Código de rastreamento ainda não informado.
                 </p>
               )}
 
@@ -402,7 +402,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
             <article className="rounded-2xl bg-brand-yellow p-5">
               <p className="text-base font-black text-brand-dark">{order.storeLabel}</p>
-              <p className="mt-1 text-xs text-brand-dark/80">Duvidas sobre o pedido?</p>
+              <p className="mt-1 text-xs text-brand-dark/80">Dúvidas sobre o pedido?</p>
               <Link
                 className="mt-4 inline-flex h-9 items-center rounded-full bg-brand-dark px-5 text-sm font-black text-white"
                 href={`/perfil/pedidos/${order.id}/suporte`}

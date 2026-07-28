@@ -216,7 +216,7 @@ export async function getAdminUsersSnapshot(
   if (!accessToken) {
     return {
       ...empty,
-      issues: ["Sessao sem access token para consultar usuarios."],
+      issues: ["Sessão sem access token para consultar usuários."],
     };
   }
 

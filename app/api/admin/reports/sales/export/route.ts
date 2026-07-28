@@ -43,13 +43,13 @@ export async function GET(request: Request) {
     if (contentType.includes("application/json")) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       return NextResponse.json(
-        { message: payload?.message ?? "Nao foi possivel exportar vendas." },
+        { message: payload?.message ?? "Não foi possível exportar vendas." },
         { status: response.status },
       );
     }
 
     return NextResponse.json(
-      { message: "Nao foi possivel exportar vendas." },
+      { message: "Não foi possível exportar vendas." },
       { status: response.status || 500 },
     );
   }

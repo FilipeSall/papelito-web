@@ -37,14 +37,14 @@ export type VendorPendingFieldKey = (typeof VENDOR_PENDING_FIELD_KEYS)[number];
 
 export const VENDOR_PENDING_SECTION_LABELS: Record<VendorPendingSectionKey, string> = {
   company: "KYC da empresa",
-  partner: "Socio administrador / responsavel legal",
-  bank: "Dados bancarios",
+  partner: "Socio administrador / responsável legal",
+  bank: "Dados bancários",
 };
 
 export const VENDOR_PENDING_FIELD_LABELS: Record<VendorPendingFieldKey, string> = {
   companyName: "Razao social",
   tradingName: "Nome fantasia",
-  corporationType: "Natureza juridica",
+  corporationType: "Natureza jurídica",
   foundingDate: "Data de fundacao",
   annualRevenue: "Faturamento anual",
   "partner.name": "Nome do socio administrador",
@@ -56,14 +56,14 @@ export const VENDOR_PENDING_FIELD_LABELS: Record<VendorPendingFieldKey, string> 
   "partner.professionalOccupation": "Ocupacao profissional do socio administrador",
   "partner.address.zipCode": "CEP do socio administrador",
   "partner.address.street": "Logradouro do socio administrador",
-  "partner.address.streetNumber": "Numero do endereco do socio administrador",
+  "partner.address.streetNumber": "Número do endereço do socio administrador",
   "partner.address.neighborhood": "Bairro do socio administrador",
   "partner.address.city": "Cidade do socio administrador",
   "partner.address.state": "Estado do socio administrador",
   "bankAccount.holderName": "Titular da conta",
   "bankAccount.holderDocument": "Documento do titular",
-  "bankAccount.bankCode": "Codigo do banco",
-  "bankAccount.branchNumber": "Agencia",
+  "bankAccount.bankCode": "Código do banco",
+  "bankAccount.branchNumber": "Agência",
   "bankAccount.accountNumber": "Conta",
   "bankAccount.accountCheckDigit": "Digito da conta",
 };

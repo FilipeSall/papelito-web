@@ -76,7 +76,7 @@ export function ConfigContent() {
         if (!response.ok) {
           setFeedback({
             type: "error",
-            message: body?.message ?? "Nao foi possivel atualizar sua senha.",
+            message: body?.message ?? "Não foi possível atualizar sua senha.",
           });
           return;
         }
@@ -101,7 +101,7 @@ export function ConfigContent() {
       <Panel className="max-w-3xl">
       <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">
-          Seguranca da conta
+          Segurança da conta
         </p>
       </div>
       <form className="px-5 py-6 md:px-6 md:py-7" onSubmit={handleSubmit}>
@@ -113,7 +113,7 @@ export function ConfigContent() {
             Alterar senha
           </h2>
           <p className="mt-3 text-sm leading-6 text-[#231f20]/72">
-            Atualize sua senha de administrador para manter a seguranca do painel.
+            Atualize sua senha de administrador para manter a segurança do painel.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export function ConfigContent() {
           <div className="mb-4 flex items-center gap-2">
             <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
             <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
-              Atualizacao segura
+              Atualização segura
             </h4>
           </div>
 
@@ -131,7 +131,7 @@ export function ConfigContent() {
               errorMessage={fieldErrors.password}
               label="Nova senha"
               onChange={(value) => updateField("password", value)}
-              placeholder="Minimo de 8 caracteres"
+              placeholder="Mínimo de 8 caracteres"
               type="password"
               value={form.password}
             />
@@ -163,7 +163,7 @@ export function ConfigContent() {
 
         <div className="mt-5 flex flex-col gap-3 border-t-2 border-[#231f20]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-[#231f20]/60">
-            Esta acao atualiza a senha da sua conta de administrador.
+            Esta ação atualiza a senha da sua conta de administrador.
           </p>
 
           <button

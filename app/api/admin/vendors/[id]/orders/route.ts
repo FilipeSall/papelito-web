@@ -13,7 +13,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
-    return NextResponse.json({ message: "ID invalido." }, { status: 400 });
+    return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
   const url = new URL(request.url);
@@ -39,7 +39,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
   if (!result.ok) {
     return NextResponse.json(
-      { message: result.error.message ?? "Nao foi possivel carregar os pedidos." },
+      { message: result.error.message ?? "Não foi possível carregar os pedidos." },
       { status: result.status || 500 },
     );
   }

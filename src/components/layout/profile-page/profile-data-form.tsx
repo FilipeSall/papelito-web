@@ -172,7 +172,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
         if (!response.ok) {
           setFeedback({
             type: "error",
-            message: body?.message ?? "Nao foi possivel atualizar seus dados.",
+            message: body?.message ?? "Não foi possível atualizar seus dados.",
           });
           return;
         }
@@ -198,7 +198,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
           Meus Dados
         </h2>
         <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
-          Atualize suas informacoes de conta e deixe seu cadastro pronto para os proximos
+          Atualize suas informações de conta e deixe seu cadastro pronto para os próximos
           pedidos.
         </p>
       </div>
@@ -237,7 +237,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
               />
               <ProfileFormField
                 errorMessage={fieldErrors.displayName}
-                label="Nome de exibicao"
+                label="Nome de exibição"
                 onChange={(value) => updateField("displayName", value)}
                 placeholder="Como devemos te chamar"
                 value={form.displayName}
@@ -311,8 +311,8 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
           <div className="flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-6 text-[#1a1a1a]/70">
               {isCustomer
-                ? "As alteracoes sao aplicadas diretamente no seu cadastro principal."
-                : "Dados comerciais ficam disponiveis apenas para perfis seller."}
+                ? "As alterações são aplicadas diretamente no seu cadastro principal."
+                : "Dados comerciais ficam disponíveis apenas para perfis seller."}
             </p>
 
             <button

@@ -97,7 +97,7 @@ async function availabilityFetcher(url: string): Promise<ProductAvailabilityResp
   const response = await fetch(url, { cache: "no-store" });
 
   if (!response.ok) {
-    throw new Error("Nao foi possivel consultar disponibilidade.");
+    throw new Error("Não foi possível consultar disponibilidade.");
   }
 
   return response.json() as Promise<ProductAvailabilityResponse>;

@@ -13,7 +13,7 @@ export function AboutBannerImage({ image }: { image?: ManagedImageAsset }) {
     <div className="absolute inset-0 overflow-hidden">
       <Image
         priority
-        alt={image?.alt || "Mulher sorrindo e segurando dois papeis Papelito diante de um fundo amarelo."}
+        alt={image?.alt || "Mulher sorrindo e segurando dois papéis Papelito diante de um fundo amarelo."}
         className="absolute left-0 top-0 h-auto w-full max-w-none -translate-y-[22.57%]"
         height={674}
         sizes="100vw"

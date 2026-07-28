@@ -449,7 +449,7 @@ export function LegalPage() {
               className="mt-4 inline-flex h-11 items-center rounded-full bg-brand-yellow px-6 text-[14px] font-black tracking-[-0.15px] text-brand-dark transition hover:bg-brand-yellow/90"
               href="mailto:juridico@papelito.com.br"
             >
-              juridico@papelito.com.br
+              jurídico@papelito.com.br
             </a>
           </div>
 

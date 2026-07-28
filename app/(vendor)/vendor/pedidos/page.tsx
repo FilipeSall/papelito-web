@@ -27,7 +27,7 @@ export default async function VendorOrdersPage({
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Consulte pedidos atendidos por sua loja e avance o fluxo de separacao e entrega no detalhe de cada venda."
+        description="Consulte pedidos atendidos por sua loja e avance o fluxo de separação e entrega no detalhe de cada venda."
         eyebrow="Atendimento"
         signal="pedidos"
         title="Pedidos"

@@ -9,7 +9,7 @@ export function buildNotification(
     payload: {
       product_id: 99,
       product_name: "Produto favorito",
-      promo_label: "promocao relampago",
+      promo_label: "promoção relâmpago",
     },
     readAt: null,
     createdAt: "2026-06-07T10:00:00.000Z",

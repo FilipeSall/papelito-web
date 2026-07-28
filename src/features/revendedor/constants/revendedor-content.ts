@@ -7,7 +7,7 @@ import type {
 
 export const REVENDEDOR_HERO_CONTENT = {
   description:
-    "Preencha o formulário para começar a fazer parte da melhor comunidade de PDV's do Brasil",
+    "Preencha o formulário para começar a fazer parte da melhor comunidade de PDVs do Brasil",
   subtitle: "Todos os campos são obrigatórios.",
   submitLabel: "Quero fazer parte do PDV Perfeito",
   titleHighlight: "PDV Perfeito",

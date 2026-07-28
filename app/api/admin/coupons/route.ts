@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as CouponInput | null;
 
   if (!payload || typeof payload.code !== "string") {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     revalidateTag("admin-coupons", "max");
     return NextResponse.json({ coupon }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel criar o cupom.";
+    const message = error instanceof Error ? error.message : "Não foi possível criar o cupom.";
     const status = (error as { status?: number } | null)?.status ?? 500;
     const code = (error as { code?: string } | null)?.code;
     return NextResponse.json({ message, code }, { status });

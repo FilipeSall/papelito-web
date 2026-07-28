@@ -21,10 +21,10 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
       setMessage(
         response.ok
           ? "Recibo enviado para o seu e-mail."
-          : body?.message || "Nao foi possivel enviar o recibo agora.",
+          : body?.message || "Não foi possível enviar o recibo agora.",
       );
     } catch {
-      setMessage("Nao foi possivel enviar o recibo agora.");
+      setMessage("Não foi possível enviar o recibo agora.");
     } finally {
       setSending(false);
     }

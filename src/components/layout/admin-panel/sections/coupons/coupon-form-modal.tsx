@@ -231,7 +231,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
     const code = form.code.trim().toUpperCase();
     if (!code) {
-      setError("Informe um codigo para o cupom.");
+      setError("Informe um código para o cupom.");
       return;
     }
 
@@ -241,7 +241,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
     }
 
     if (form.discountType === "percent" && form.amount > 100) {
-      setError("Percentual nao pode ultrapassar 100%.");
+      setError("Percentual não pode ultrapassar 100%.");
       return;
     }
 
@@ -280,8 +280,8 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm">
               <CouponFieldLabel
-                label="Codigo"
-                text="Codigo unico do cupom. Ele e digitado pelo cliente no carrinho ou checkout."
+                label="Código"
+                text="Código único do cupom. Ele e digitado pelo cliente no carrinho ou checkout."
               />
               <input
                 type="text"
@@ -295,7 +295,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             </label>
 
             <AdminSelectField
-              helpText="Define se o cupom fica disponivel para uso imediato ou salvo como rascunho."
+              helpText="Define se o cupom fica disponível para uso imediato ou salvo como rascunho."
               label="Status"
               onChange={(value) => update("status", value as CouponStatus)}
               options={STATUS_OPTIONS}
@@ -318,7 +318,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
                 text={
                   form.discountType === "percent"
                     ? "Percentual de desconto aplicado sobre os itens elegiveis do pedido."
-                    : "Valor fixo abatido do total elegivel do pedido."
+                    : "Valor fixo abatido do total elegível do pedido."
                 }
               />
               <input
@@ -347,8 +347,8 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
             <label className="block text-sm">
               <CouponFieldLabel
-                label="Subtotal minimo (R$)"
-                text="Valor minimo do subtotal do pedido para liberar o uso do cupom."
+                label="Subtotal mínimo (R$)"
+                text="Valor mínimo do subtotal do pedido para liberar o uso do cupom."
               />
               <input
                 type="number"
@@ -363,7 +363,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             <label className="block text-sm">
               <CouponFieldLabel
                 label="Limite total de usos (0 = ilimitado)"
-                text="Quantidade maxima de vezes que o cupom pode ser usado no total."
+                text="Quantidade máxima de vezes que o cupom pode ser usado no total."
               />
               <input
                 type="number"
@@ -376,8 +376,8 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
             <label className="block text-sm">
               <CouponFieldLabel
-                label="Limite por usuario (0 = ilimitado)"
-                text="Quantidade maxima de usos do mesmo cupom por cliente."
+                label="Limite por usuário (0 = ilimitado)"
+                text="Quantidade máxima de usos do mesmo cupom por cliente."
               />
               <input
                 type="number"
@@ -392,13 +392,13 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
           <fieldset className="rounded-xl border border-[#cec7aa] bg-[#fff9ea] p-4">
             <legend className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-              Restricoes (vazio = todos)
+              Restrições (vazio = todos)
             </legend>
 
             <div className="mt-3">
               <div className="flex items-center gap-2">
                 <p className="text-xs font-semibold text-[#1e1c10]">Vendors permitidos</p>
-                <InfoTooltip text="Se selecionar vendors, o cupom so vale para produtos vendidos por essas lojas." />
+                <InfoTooltip text="Se selecionar vendors, o cupom só vale para produtos vendidos por essas lojas." />
               </div>
               <input
                 type="search"
@@ -442,7 +442,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
             <div className="mt-4">
               <div className="flex items-center gap-2">
                 <p className="text-xs font-semibold text-[#1e1c10]">Produtos permitidos</p>
-                <InfoTooltip text="Se selecionar produtos, o cupom so vale para esses itens especificos." />
+                <InfoTooltip text="Se selecionar produtos, o cupom só vale para esses itens específicos." />
               </div>
               <input
                 type="search"

@@ -13,7 +13,7 @@ const ORDER_STATUSES: Array<[VendorOrderStatus | "all", string]> = [
   ["all", "Todos"],
   ["aguardando_pagamento", "Aguardando pagamento"],
   ["aguardando_envio", "Aguardando envio"],
-  ["em_separacao", "Separacao"],
+  ["em_separacao", "Separação"],
   ["enviado", "Enviados"],
   ["entregue", "Entregues"],
   ["cancelado", "Cancelados"],
@@ -26,7 +26,7 @@ function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
       : status === "aguardando_envio"
         ? "Aguardando envio"
         : status === "em_separacao"
-          ? "Em separacao"
+          ? "Em separação"
           : status === "enviado"
             ? "Enviado"
             : status === "entregue"
@@ -160,7 +160,7 @@ export function VendorOrdersTab({
                 </Link>
               ) : null}
               <span>
-                Pagina {snapshot.page} de {snapshot.totalPages}
+                Página {snapshot.page} de {snapshot.totalPages}
               </span>
               {snapshot.page < snapshot.totalPages ? (
                 <Link
@@ -170,7 +170,7 @@ export function VendorOrdersTab({
                     orderFilters: { page: snapshot.page + 1 },
                   })}
                 >
-                  Proxima
+                  Próxima
                 </Link>
               ) : null}
             </div>

@@ -16,24 +16,24 @@ type WpApplyResponse = {
 
 const ERROR_MESSAGES: Record<string, string> = {
   papelito_coupon_missing_code: "Informe um cupom.",
-  papelito_coupon_not_found: "Cupom invalido ou inexistente.",
+  papelito_coupon_not_found: "Cupom inválido ou inexistente.",
   papelito_coupon_expired: "Este cupom expirou.",
-  papelito_coupon_role_restricted: "Este cupom e exclusivo para consumidores finais.",
+  papelito_coupon_role_restricted: "Este cupom é exclusivo para consumidores finais.",
   papelito_coupon_usage_limit_total: "Este cupom atingiu o limite total de uso.",
-  papelito_coupon_usage_limit_user: "Voce ja utilizou este cupom o numero maximo de vezes.",
-  papelito_coupon_vendor_restricted: "Este cupom nao pode ser aplicado a itens de outro vendor.",
+  papelito_coupon_usage_limit_user: "Você já utilizou este cupom o número máximo de vezes.",
+  papelito_coupon_vendor_restricted: "Este cupom não pode ser aplicado a itens de outro vendor.",
   papelito_coupon_product_restricted:
-    "Este cupom nao pode ser aplicado aos produtos atuais do carrinho.",
-  papelito_coupon_no_eligible_items: "Nenhum item do seu carrinho e elegivel para este cupom.",
-  papelito_coupon_minimum_not_met: "Subtotal minimo nao atingido para este cupom.",
-  papelito_coupon_invalid_type: "Tipo de desconto nao suportado.",
-  papelito_coupon_auth_required: "Faca login para aplicar cupons.",
+    "Este cupom não pode ser aplicado aos produtos atuais do carrinho.",
+  papelito_coupon_no_eligible_items: "Nenhum item do seu carrinho é elegível para este cupom.",
+  papelito_coupon_minimum_not_met: "Subtotal mínimo não atingido para este cupom.",
+  papelito_coupon_invalid_type: "Tipo de desconto não suportado.",
+  papelito_coupon_auth_required: "Faça login para aplicar cupons.",
 };
 
 function friendlyMessage(code: string | undefined, serverMessage: string | undefined): string {
   if (code && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code];
   if (serverMessage && serverMessage.length > 0) return serverMessage;
-  return "Nao foi possivel aplicar o cupom.";
+  return "Não foi possível aplicar o cupom.";
 }
 
 export async function applyCouponClient(
@@ -81,7 +81,7 @@ export async function applyCouponClient(
         ok: false,
         status: response.status,
         errorCode: "papelito_invalid_response",
-        message: "Resposta invalida ao aplicar cupom.",
+        message: "Resposta inválida ao aplicar cupom.",
       };
     }
   }

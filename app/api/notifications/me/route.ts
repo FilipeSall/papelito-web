@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const accessToken = await getAccessToken();
 
   if (!accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const url = new URL(request.url);

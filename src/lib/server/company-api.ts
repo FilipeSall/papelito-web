@@ -19,7 +19,7 @@ export async function getUserApiSession(): Promise<UserApiSession> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return { error: "Nao autenticado.", status: 401 };
+    return { error: "Não autenticado.", status: 401 };
   }
 
   return { accessToken: session.accessToken };

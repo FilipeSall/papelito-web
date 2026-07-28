@@ -12,22 +12,22 @@ export function UsersMetrics({
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <MetricCard
-        detail="Resultados visiveis no recorte atual"
+        detail="Resultados visíveis no recorte atual"
         label="Total filtrado"
         value={String(totalRows).padStart(2, "0")}
       />
       <MetricCard
-        detail="Contas com permissao de manage_options"
+        detail="Contas com permissão de manage_options"
         label="Admins"
         value={String(summary.adminsCount).padStart(2, "0")}
       />
       <MetricCard
-        detail="Operacao de vendor ativa ou com cobertura consolidada"
+        detail="Operação de vendor ativa ou com cobertura consolidada"
         label="Vendors"
         value={String(summary.sellersCount).padStart(2, "0")}
       />
       <MetricCard
-        detail="Base de compra / contas nao vendedoras"
+        detail="Base de compra / contas não vendedoras"
         label="Customers"
         value={String(summary.customersCount).padStart(2, "0")}
       />

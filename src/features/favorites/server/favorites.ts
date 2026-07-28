@@ -231,7 +231,7 @@ export async function addFavoriteProduct(
   );
 
   if (!data.addFavoriteProduct) {
-    throw new Error("Nao foi possivel adicionar o produto aos favoritos.");
+    throw new Error("Não foi possível adicionar o produto aos favoritos.");
   }
 
   return data.addFavoriteProduct;
@@ -248,7 +248,7 @@ export async function removeFavoriteProduct(
   );
 
   if (!data.removeFavoriteProduct) {
-    throw new Error("Nao foi possivel remover o produto dos favoritos.");
+    throw new Error("Não foi possível remover o produto dos favoritos.");
   }
 
   return data.removeFavoriteProduct;

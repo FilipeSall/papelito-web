@@ -15,7 +15,7 @@ async function readThreadResponse(response: Response): Promise<MessageThread> {
     const message =
       body && "message" in body && typeof body.message === "string"
         ? body.message
-        : "Nao foi possivel atualizar a conversa.";
+        : "Não foi possível atualizar a conversa.";
     throw new Error(message);
   }
 

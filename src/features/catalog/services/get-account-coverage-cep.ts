@@ -75,7 +75,7 @@ async function fetchCustomerCoverageCep(accessToken: string) {
   if (!response.ok || payload.errors?.length) {
     const message =
       payload.errors?.map((error) => error.message).filter(Boolean).join(" ") ||
-      "Nao foi possivel consultar o CEP da conta.";
+      "Não foi possível consultar o CEP da conta.";
     throw new Error(message);
   }
 

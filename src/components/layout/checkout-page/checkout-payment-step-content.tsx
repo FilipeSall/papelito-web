@@ -75,7 +75,7 @@ export function CheckoutPaymentStepContent() {
         setPaymentError(
           error instanceof Error
             ? error.message
-            : "Nao foi possivel preparar o pagamento.",
+            : "Não foi possível preparar o pagamento.",
         );
       }
     });
@@ -85,7 +85,7 @@ export function CheckoutPaymentStepContent() {
     <main className="bg-bg-light">
       <CheckoutHeader
         backHref="/checkout"
-        backLabel="Voltar para endereco"
+        backLabel="Voltar para endereço"
         currentStep={2}
       />
 
@@ -131,7 +131,7 @@ export function CheckoutPaymentStepContent() {
 
                 <fieldset className="mt-6 border-t border-[#E5E7EB] pt-5">
                   <legend className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
-                    Endereco de cobranca do cartao
+                    Endereço de cobrança do cartao
                   </legend>
                   <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
                     <input
@@ -141,7 +141,7 @@ export function CheckoutPaymentStepContent() {
                         setUseDeliveryAddressForBilling(event.target.checked)
                       }
                     />
-                    Usar o endereco de entrega
+                    Usar o endereço de entrega
                   </label>
 
                   {!useDeliveryAddressForBilling ? (
@@ -163,7 +163,7 @@ export function CheckoutPaymentStepContent() {
                         }
                       />
                       <CheckoutField
-                        label="Numero"
+                        label="Número"
                         placeholder="Ex: 123"
                         value={billingAddress.number}
                         onChange={(value) =>
@@ -253,7 +253,7 @@ export function CheckoutPaymentStepContent() {
               }
               onClick={goToReview}
             >
-              {pending ? "Preparando pagamento..." : "Proximo: Revisao"}
+              {pending ? "Preparando pagamento..." : "Próximo: Revisão"}
               <ArrowRightIcon
                 className="h-4.5 w-4.5"
                 size={18}

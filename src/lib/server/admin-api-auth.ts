@@ -14,7 +14,7 @@ export async function getAdminApiSession(): Promise<AdminApiSession> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return { error: "Nao autenticado.", status: 401 };
+    return { error: "Não autenticado.", status: 401 };
   }
 
   if ((await fetchCurrentUserRole(session.accessToken)) !== "administrator") {

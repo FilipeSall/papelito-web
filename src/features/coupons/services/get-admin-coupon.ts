@@ -23,7 +23,7 @@ export async function getAdminCoupon(
 
   const mapped = mapWpCoupon(result.data);
   if (!mapped) {
-    throw new Error("Cupom invalido retornado pelo servidor.");
+    throw new Error("Cupom inválido retornado pelo servidor.");
   }
 
   return mapped;

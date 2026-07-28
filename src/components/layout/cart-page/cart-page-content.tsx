@@ -121,7 +121,7 @@ export function CartPageContent() {
     ({ removed, code }: { removed: boolean; reason?: string; code: string | null }) => {
       if (removed && code) {
         setCouponStatus("invalid");
-        setCouponMessage(`O cupom ${code} nao vale mais para este carrinho.`);
+        setCouponMessage(`O cupom ${code} não vale mais para este carrinho.`);
       }
     },
     [],
@@ -204,7 +204,7 @@ export function CartPageContent() {
             </h1>
 
             <p className="mt-3 text-base leading-6 tracking-[-0.3125px] text-text-tertiary">
-              Voce ainda nao adicionou nenhum produto ao carrinho.
+              Você ainda não adicionou nenhum produto ao carrinho.
             </p>
 
             <Link
@@ -414,7 +414,7 @@ export function CartPageContent() {
                 />
               )}
               {summary.hasFreeShipping ? (
-                <p className="text-xs text-[#16A34A]">Parabens! Voce ganhou frete gratis.</p>
+                <p className="text-xs text-[#16A34A]">Parabéns! Você ganhou frete grátis.</p>
               ) : (
                 <p className="text-xs text-text-muted">
                   Faltam {formatBRL(summary.amountToFreeShipping)} para frete gratis

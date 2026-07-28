@@ -18,7 +18,7 @@ export async function fetchVendorOrders(filters: VendorOrdersFilters): Promise<V
   if (!response.ok) {
     throw new Error(body && typeof body === "object" && "message" in body && typeof body.message === "string"
       ? body.message
-      : "Nao foi possivel carregar os pedidos.");
+      : "Não foi possível carregar os pedidos.");
   }
 
   return body as VendorOrdersSnapshot;

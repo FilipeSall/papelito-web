@@ -15,7 +15,7 @@ import { StockPagination } from "./stock-pagination";
 import { StockRow } from "./stock-row";
 import { StockToolbar } from "./stock-toolbar";
 
-const tableHeaders = ["Produto", "Ultimo ajuste", "Status", "Quantidade"];
+const tableHeaders = ["Produto", "Último ajuste", "Status", "Quantidade"];
 
 export function VendorStockManager({
   filters,
@@ -67,19 +67,19 @@ export function VendorStockManager({
       const data = (await response.json().catch(() => null)) as { message?: string } | null;
 
       if (!response.ok) {
-        throw new Error(data?.message ?? "Nao foi possivel atualizar o estoque.");
+        throw new Error(data?.message ?? "Não foi possível atualizar o estoque.");
       }
 
       savedQty.current.set(productId, nextQty);
       setFeedback({
         error: false,
-        message: nextQty === 0 ? "Estoque zerado. A notificacao foi registrada." : "Estoque atualizado.",
+        message: nextQty === 0 ? "Estoque zerado. A notificação foi registrada." : "Estoque atualizado.",
       });
       router.refresh();
     } catch (error) {
       setFeedback({
         error: true,
-        message: error instanceof Error ? error.message : "Nao foi possivel atualizar o estoque.",
+        message: error instanceof Error ? error.message : "Não foi possível atualizar o estoque.",
       });
     } finally {
       setSavingIds((current) => {
@@ -118,7 +118,7 @@ export function VendorStockManager({
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
         {focusProductId && !focusedInPage ? (
           <p className="mx-5 mt-4 border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-3 text-sm font-medium text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
-            O produto indicado pela notificacao nao esta nesta pagina ou nao corresponde aos filtros atuais.
+            O produto indicado pela notificação não esta nesta página ou não corresponde aos filtros atuais.
           </p>
         ) : null}
         {snapshot.items.length === 0 ? (

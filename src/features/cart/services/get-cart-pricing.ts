@@ -123,7 +123,7 @@ export async function getCartPricing(
     return {
       ok: false,
       code: "papelito_checkout_invalid_items",
-      message: "O carrinho contem um produto invalido.",
+      message: "O carrinho contém um produto inválido.",
       status: 422,
     };
   }
@@ -160,7 +160,7 @@ export async function getCartPricing(
   }
 
   if (!isPricingQuote(payload) || !quoteMatchesItems(payload, items)) {
-    return { ok: false, code: "papelito_invalid_response", message: "Resposta invalida ao recalcular o carrinho.", status: response.status };
+    return { ok: false, code: "papelito_invalid_response", message: "Resposta inválida ao recalcular o carrinho.", status: response.status };
   }
 
   return { ok: true, quote: payload };

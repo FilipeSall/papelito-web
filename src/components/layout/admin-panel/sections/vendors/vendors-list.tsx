@@ -156,7 +156,7 @@ export function VendorsList({
       {snapshot.totalPages > 1 ? (
         <div className="flex items-center justify-between gap-3 px-1 text-xs uppercase tracking-[0.12em] text-[#231f20]/56">
           <span>
-            pagina {snapshot.currentPage} de {snapshot.totalPages} —{" "}
+            página {snapshot.currentPage} de {snapshot.totalPages} —{" "}
             {snapshot.totalRows} registros
           </span>
           <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export function VendorsList({
               filters={filters}
               page={snapshot.currentPage - 1}
               disabled={snapshot.currentPage <= 1}
-              ariaLabel="Pagina anterior"
+              ariaLabel="Página anterior"
             >
               {"<"}
             </PaginationLink>
@@ -172,7 +172,7 @@ export function VendorsList({
               filters={filters}
               page={snapshot.currentPage + 1}
               disabled={snapshot.currentPage >= snapshot.totalPages}
-              ariaLabel="Proxima pagina"
+              ariaLabel="Próxima página"
             >
               {">"}
             </PaginationLink>

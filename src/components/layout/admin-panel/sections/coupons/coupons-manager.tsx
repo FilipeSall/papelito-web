@@ -35,7 +35,7 @@ function formatRestrictions(coupon: Coupon): string {
   const parts: string[] = [];
   if (coupon.vendorIds.length > 0) parts.push(`${coupon.vendorIds.length} vendor(s)`);
   if (coupon.productIds.length > 0) parts.push(`${coupon.productIds.length} produto(s)`);
-  return parts.length > 0 ? parts.join(" • ") : "Sem restricoes";
+  return parts.length > 0 ? parts.join(" • ") : "Sem restrições";
 }
 
 function formatDate(value: string | null): string {
@@ -161,11 +161,11 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
       showToast(
         id
           ? {
-              description: "As alteracoes do cupom ja foram salvas e ele esta pronto para uso conforme as restricoes definidas.",
+              description: "As alterações do cupom já foram salvas e ele está pronto para uso conforme as restrições definidas.",
               title: "Cupom atualizado com sucesso.",
             }
           : {
-              description: "O novo cupom foi criado e ja pode ser usado conforme as configuracoes preenchidas.",
+              description: "O novo cupom foi criado e já pode ser usado conforme as configurações preenchidas.",
               title: "Cupom criado com sucesso.",
             },
       );
@@ -207,11 +207,11 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
         showToast(
           response.status === 404
             ? {
-                description: "O registro nao existia mais no backend e a lista foi sincronizada com o estado atual.",
+                description: "O registro não existia mais no backend e a lista foi sincronizada com o estado atual.",
                 title: "Lista de cupons atualizada.",
               }
             : {
-                description: "O cupom foi removido e nao podera mais ser usado em novas compras.",
+                description: "O cupom foi removido e não poderá mais ser usado em novas compras.",
                 title: "Cupom removido com sucesso.",
               },
         );
@@ -241,7 +241,7 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
             <div>
               <h2 className="text-base font-semibold text-[#1e1c10]">Cupons</h2>
               <p className="text-xs text-[#4b4731]">
-                Gerencie cupons percentuais e de valor fixo, com restricoes por vendor e produto.
+                Gerencie cupons percentuais e de valor fixo, com restrições por vendor e produto.
               </p>
             </div>
           </div>
@@ -272,14 +272,14 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
             <table className="w-full min-w-205 text-sm">
               <thead className="border-b border-[#231f20]/10 bg-[#f6f1da] text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-[#231f20]/64">
                 <tr>
-                  <th className="px-5 py-3">Codigo</th>
+                  <th className="px-5 py-3">Código</th>
                   <th className="px-5 py-3">Tipo</th>
                   <th className="px-5 py-3">Valor</th>
                   <th className="px-5 py-3">Validade</th>
-                  <th className="px-5 py-3">Restricoes</th>
+                  <th className="px-5 py-3">Restrições</th>
                   <th className="px-5 py-3">Usos</th>
                   <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3 text-right">Acoes</th>
+                  <th className="px-5 py-3 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#231f20]/8">

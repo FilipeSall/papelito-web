@@ -40,7 +40,7 @@ describe("ProfileAddressBook", () => {
       />,
     );
 
-    expect(await screen.findByRole("button", { name: /salvar endereco/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /salvar endereço/i })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(replaceMock).toHaveBeenCalledWith("/perfil/enderecos");
@@ -50,7 +50,7 @@ describe("ProfileAddressBook", () => {
   it("keeps the editor closed when the query hint is absent", () => {
     render(<ProfileAddressBook customer={createEmptyProfileCustomer()} />);
 
-    expect(screen.queryByRole("button", { name: /salvar endereco/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /salvar endereço/i })).not.toBeInTheDocument();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 });

@@ -63,7 +63,7 @@ function mapResult(payload: unknown): ResolveCartVendorResult {
   if (!isRecord(payload)) {
     return {
       status: "unavailable",
-      message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+      message: "Não foi possível validar a disponibilidade por CEP agora.",
     };
   }
 
@@ -85,14 +85,14 @@ function mapResult(payload: unknown): ResolveCartVendorResult {
       message:
         typeof payload.message === "string"
           ? payload.message
-          : "Nao foi possivel validar a disponibilidade por CEP agora.",
+          : "Não foi possível validar a disponibilidade por CEP agora.",
       href: typeof payload.href === "string" ? payload.href : undefined,
     };
   }
 
   return {
     status: "unavailable",
-    message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+    message: "Não foi possível validar a disponibilidade por CEP agora.",
   };
 }
 

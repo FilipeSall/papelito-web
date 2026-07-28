@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Falha de rede ao exportar relatorio.";
+      error instanceof Error ? error.message : "Falha de rede ao exportar relatório.";
     return NextResponse.json({ message }, { status: 502 });
   }
 
@@ -43,13 +43,13 @@ export async function GET(request: Request) {
     if (contentType.includes("application/json")) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       return NextResponse.json(
-        { message: payload?.message ?? "Nao foi possivel exportar o relatorio." },
+        { message: payload?.message ?? "Não foi possível exportar o relatório." },
         { status: response.status },
       );
     }
 
     return NextResponse.json(
-      { message: "Nao foi possivel exportar o relatorio." },
+      { message: "Não foi possível exportar o relatório." },
       { status: response.status || 500 },
     );
   }

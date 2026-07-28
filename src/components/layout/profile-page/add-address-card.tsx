@@ -30,7 +30,7 @@ export function AddAddressCard({ onClick }: AddAddressCardProps) {
 
       {/* Texto */}
       <span className="text-xs font-black uppercase tracking-widest text-[#1a1a1a]">
-        Adicionar endereco
+        Adicionar endereço
       </span>
     </button>
   );

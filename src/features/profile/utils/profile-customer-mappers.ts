@@ -100,7 +100,7 @@ export function buildProfileAddresses(customer: ProfileCustomer): Address[] {
   return [
     {
       id: "primary-address",
-      name: "Endereco principal",
+      name: "Endereço principal",
       street: source.address1,
       neighborhood: location,
       zipCode: formatZipCode(source.postcode),

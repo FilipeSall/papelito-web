@@ -40,7 +40,7 @@ export function InfoTooltip({ text }: { text: string }) {
   return (
     <span className="group relative inline-flex shrink-0 items-center self-center align-middle">
       <span
-        aria-label="Mais informacoes"
+        aria-label="Mais informações"
         className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[#c9bd96] bg-white text-[10px] font-black leading-none text-[#231f20] outline-none transition focus-visible:ring-2 focus-visible:ring-[#231f20]/20"
         role="button"
         tabIndex={0}
@@ -109,7 +109,7 @@ export function PromotionToggle({
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      Agendar promocao (Sim/Nao)
+      Agendar promoção (Sim/Não)
     </label>
   );
 }

@@ -15,7 +15,7 @@ export function VendorPeriodFilters({
   const presets = [
     { label: "7 dias", preset: "7d" as const },
     { label: "30 dias", preset: "30d" as const },
-    { label: "Mes atual", preset: "month" as const },
+    { label: "Mês atual", preset: "month" as const },
     { label: "1 ano", preset: "1y" as const },
   ];
 

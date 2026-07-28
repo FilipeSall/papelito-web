@@ -31,7 +31,7 @@ export function formatCurrency(value: number) {
 
 export function formatDateTimeLabel(value: string) {
   if (!value) {
-    return "Data indisponivel";
+    return "Data indisponível";
   }
 
   const date = new Date(value);

@@ -102,7 +102,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
     }
 
     if (rangeOverlaps(items, draftRanges, editingId)) {
-      setFeedback({ error: true, message: "Esta faixa se sobrepoe a uma faixa ja cadastrada." });
+      setFeedback({ error: true, message: "Esta faixa se sobrepoe a uma faixa já cadastrada." });
       return;
     }
 
@@ -114,7 +114,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
       });
 
       if (!nextItems) {
-        throw new Error("Nao foi possivel salvar a faixa.");
+        throw new Error("Não foi possível salvar a faixa.");
       }
 
       setItems(nextItems);
@@ -124,7 +124,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
     } catch (error) {
       setFeedback({
         error: true,
-        message: error instanceof Error ? error.message : "Nao foi possivel salvar a faixa.",
+        message: error instanceof Error ? error.message : "Não foi possível salvar a faixa.",
       });
     } finally {
       setPendingAction(null);
@@ -151,7 +151,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
       const nextItems = mapApiRanges(data);
 
       if (!response.ok || !nextItems) {
-        throw new Error(data?.message ?? "Nao foi possivel salvar a faixa.");
+        throw new Error(data?.message ?? "Não foi possível salvar a faixa.");
       }
 
       return nextItems;
@@ -172,7 +172,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
       const mappedItems = mapApiRanges(data);
 
       if (!response.ok || !mappedItems) {
-        throw new Error(data?.message ?? "Nao foi possivel salvar a faixa.");
+        throw new Error(data?.message ?? "Não foi possível salvar a faixa.");
       }
 
       nextItems = mappedItems;
@@ -197,7 +197,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
       const nextItems = mapApiRanges(data);
 
       if (!response.ok || !nextItems) {
-        throw new Error(data?.message ?? "Nao foi possivel remover a faixa.");
+        throw new Error(data?.message ?? "Não foi possível remover a faixa.");
       }
 
       setItems(nextItems);
@@ -209,7 +209,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
     } catch (error) {
       setFeedback({
         error: true,
-        message: error instanceof Error ? error.message : "Nao foi possivel remover a faixa.",
+        message: error instanceof Error ? error.message : "Não foi possível remover a faixa.",
       });
     } finally {
       setPendingAction(null);
@@ -239,7 +239,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
             <table className="min-w-full border-separate border-spacing-0 text-left">
               <thead>
                 <tr>
-                  {["CEP inicial", "CEP final", "Status", "Acoes"].map((header) => (
+                  {["CEP inicial", "CEP final", "Status", "Ações"].map((header) => (
                     <th
                       className="border-b border-brand-dark/12 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48 last:text-right"
                       key={header}

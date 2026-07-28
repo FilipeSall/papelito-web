@@ -70,7 +70,7 @@ function mapResponse(payload: ShippingQuoteApiResponse): ShippingQuoteResult {
     !Number.isFinite(vendorId) ||
     options.length === 0
   ) {
-    throw new Error("Resposta de frete invalida.");
+    throw new Error("Resposta de frete inválida.");
   }
 
   return {
@@ -83,11 +83,11 @@ function mapResponse(payload: ShippingQuoteApiResponse): ShippingQuoteResult {
 
 function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
   if (!payload || typeof payload.message !== "string") {
-    return "Nao foi possivel cotar o frete.";
+    return "Não foi possível cotar o frete.";
   }
 
   if (payload.code === "papelito_shipping_product_dimensions_missing") {
-    return "Um produto do carrinho ainda nao tem peso e dimensoes cadastrados para cotar frete. Remova o item ou escolha outro produto.";
+    return "Um produto do carrinho ainda não tem peso e dimensões cadastrados para cotar frete. Remova o item ou escolha outro produto.";
   }
 
   const data =
@@ -140,7 +140,7 @@ export async function getShippingQuote(
   }
 
   if (!payload) {
-    throw new Error("Nao foi possivel cotar o frete.");
+    throw new Error("Não foi possível cotar o frete.");
   }
 
   return mapResponse(payload);

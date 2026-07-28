@@ -104,7 +104,7 @@ export function ProfileAddressBook({
 
     if (form.zipCode.replace(/\D/g, "").length !== 8) nextErrors.zipCode = "Informe um CEP valido.";
     if (!form.street.trim()) nextErrors.street = "Informe o logradouro.";
-    if (!form.number.trim()) nextErrors.number = "Informe o numero.";
+    if (!form.number.trim()) nextErrors.number = "Informe o número.";
     if (!form.neighborhood.trim()) nextErrors.neighborhood = "Informe o bairro.";
     if (!form.city.trim()) nextErrors.city = "Informe a cidade.";
     if (!form.state.trim()) nextErrors.state = "Selecione o estado.";
@@ -142,7 +142,7 @@ export function ProfileAddressBook({
         if (!response.ok || !body?.customer) {
           setFeedback({
             type: "error",
-            message: body?.message ?? "Nao foi possivel salvar seu endereco.",
+            message: body?.message ?? "Não foi possível salvar seu endereço.",
           });
           return;
         }
@@ -153,14 +153,14 @@ export function ProfileAddressBook({
         setAddresses(buildProfileAddresses(nextCustomer));
         setFeedback({
           type: "success",
-          message: "Endereco salvo com sucesso.",
+          message: "Endereço salvo com sucesso.",
         });
         setIsEditorOpen(false);
         router.refresh();
       } catch {
         setFeedback({
           type: "error",
-          message: "Erro de rede ao salvar o endereco. Tente novamente.",
+          message: "Erro de rede ao salvar o endereço. Tente novamente.",
         });
       }
     });
@@ -184,7 +184,7 @@ export function ProfileAddressBook({
           <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] px-6 py-5 sm:px-8">
             <div className="space-y-1">
               <h3 className="text-xl font-black uppercase tracking-tight text-[#1a1a1a]">
-                {addresses.length > 0 ? "Editar endereco principal" : "Adicionar endereco"}
+                {addresses.length > 0 ? "Editar endereço principal" : "Adicionar endereço"}
               </h3>
               <p className="max-w-2xl text-sm leading-6 text-[#1a1a1a]/70">
                 Digite o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
@@ -207,7 +207,7 @@ export function ProfileAddressBook({
                 <div className="flex items-center gap-2">
                   <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
                   <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
-                    Endereco principal
+                    Endereço principal
                   </h4>
                 </div>
 
@@ -239,7 +239,7 @@ export function ProfileAddressBook({
 
                 <ProfileFormField
                   errorMessage={fieldErrors.number}
-                  label="Numero"
+                  label="Número"
                   onChange={(value) => updateField("number", value.replace(/[^\dA-Za-z-]/g, ""))}
                   placeholder="Ex: 123"
                   value={form.number}
@@ -278,7 +278,7 @@ export function ProfileAddressBook({
             </div>
 
             {cepLoading ? (
-              <p className="text-sm font-semibold text-[#1a1a1a]/60">Buscando endereco pelo CEP...</p>
+              <p className="text-sm font-semibold text-[#1a1a1a]/60">Buscando endereço pelo CEP...</p>
             ) : null}
 
             {feedback ? (
@@ -297,7 +297,7 @@ export function ProfileAddressBook({
 
             <div className="flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-[#1a1a1a]/70">
-                O endereco salvo sera usado como base para entrega e cobranca.
+                O endereço salvo será usado como base para entrega e cobrança.
               </p>
 
               <button
@@ -305,7 +305,7 @@ export function ProfileAddressBook({
                 disabled={isPending}
                 type="submit"
               >
-                {isPending ? "Salvando..." : "Salvar endereco"}
+                {isPending ? "Salvando..." : "Salvar endereço"}
                 {!isPending ? (
                   <ArrowRightIcon className="h-4 w-4" size={18} strokeWidth={1.8} />
                 ) : null}

@@ -71,7 +71,7 @@ function tokenizationErrorMessage(payload: PagarmeTokenErrorPayload | null) {
     return details.join("; ");
   }
 
-  return "Nao foi possivel tokenizar o cartao.";
+  return "Não foi possível tokenizar o cartao.";
 }
 
 export async function tokenizeCreditCard(
@@ -80,14 +80,14 @@ export async function tokenizeCreditCard(
   const publicKey = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY;
 
   if (!publicKey) {
-    throw new Error("Chave publica do Pagar.me nao configurada.");
+    throw new Error("Chave pública do Pagar.me não configurada.");
   }
 
   const digits = digitsOnly(input.cardNumber);
   const expiry = digitsOnly(input.expiryDate);
 
   if (digits.length < 13 || expiry.length !== 4 || digitsOnly(input.cvv).length < 3) {
-    throw new Error("Os dados do cartao estao incompletos.");
+    throw new Error("Os dados do cartao estão incompletos.");
   }
 
   const response = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${encodeURIComponent(publicKey)}`, {

@@ -70,7 +70,7 @@ const TONE_STYLES = {
     bar: "bg-red-400",
     icon: "bg-red-400 text-brand-dark",
     label: "text-red-300",
-    title: "Nao foi possivel adicionar",
+    title: "Não foi possível adicionar",
   },
 } as const;
 

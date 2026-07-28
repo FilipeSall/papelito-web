@@ -21,7 +21,7 @@ export type CoverageBlock = {
 export const CUSTOM_COVERAGE_PRESET_ID = "custom";
 
 export const COVERAGE_TOOLTIP_TEXT =
-  "Selecione uma regiao para preencher automaticamente o CEP minimo e maximo da cobertura. Caso precise atender uma area especifica, escolha a opcao de faixa personalizada.";
+  "Selecione uma regiao para preencher automaticamente o CEP mínimo e máximo da cobertura. Caso precise atender uma área específica, escolha a opção de faixa personalizada.";
 
 export const BRAZIL_COVERAGE_PRESETS: readonly CoveragePreset[] = [
   { id: "AC", label: "Acre", uf: "AC", ranges: [{ minCep: "69900-000", maxCep: "69999-999" }] },
@@ -40,7 +40,7 @@ export const BRAZIL_COVERAGE_PRESETS: readonly CoveragePreset[] = [
   { id: "CE", label: "Ceara", uf: "CE", ranges: [{ minCep: "60000-000", maxCep: "63999-999" }] },
   {
     id: "DF",
-    label: "Distrito Federal / Brasilia",
+    label: "Distrito Federal / Brasília",
     uf: "DF",
     ranges: [
       { minCep: "70000-000", maxCep: "72799-999" },
@@ -73,7 +73,7 @@ export const BRAZIL_COVERAGE_PRESETS: readonly CoveragePreset[] = [
   { id: "RS", label: "Rio Grande do Sul", uf: "RS", ranges: [{ minCep: "90000-000", maxCep: "99999-999" }] },
   { id: "SC", label: "Santa Catarina", uf: "SC", ranges: [{ minCep: "88000-000", maxCep: "89999-999" }] },
   { id: "SE", label: "Sergipe", uf: "SE", ranges: [{ minCep: "49000-000", maxCep: "49999-999" }] },
-  { id: "SP", label: "Sao Paulo", uf: "SP", ranges: [{ minCep: "01000-000", maxCep: "19999-999" }] },
+  { id: "SP", label: "São Paulo", uf: "SP", ranges: [{ minCep: "01000-000", maxCep: "19999-999" }] },
   { id: "TO", label: "Tocantins", uf: "TO", ranges: [{ minCep: "77000-000", maxCep: "77999-999" }] },
   { id: CUSTOM_COVERAGE_PRESET_ID, label: "Faixa personalizada", uf: null, ranges: [], isCustom: true },
 ] as const;

@@ -7,7 +7,7 @@ import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout
 const INTERVAL_OPTIONS = [
   { label: "Dia", value: "day" },
   { label: "Semana", value: "week" },
-  { label: "Mes", value: "month" },
+  { label: "Mês", value: "month" },
 ] as const;
 
 type VendorIntervalSelectProps = {

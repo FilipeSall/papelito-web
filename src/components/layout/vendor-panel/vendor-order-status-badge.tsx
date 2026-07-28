@@ -5,7 +5,7 @@ export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
   aguardando_pagamento: "Aguardando pagamento",
   aguardando_envio: "Aguardando envio",
   cancelado: "Cancelado",
-  em_separacao: "Em separacao",
+  em_separacao: "Em separação",
   enviado: "Enviado",
   entregue: "Entregue",
 };

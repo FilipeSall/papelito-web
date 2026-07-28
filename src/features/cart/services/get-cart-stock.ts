@@ -65,7 +65,7 @@ export async function getCartStock(
     if (!response.ok || !result) {
       return {
         status: "unavailable",
-        message: "Nao foi possivel validar o estoque agora. Tente novamente.",
+        message: "Não foi possível validar o estoque agora. Tente novamente.",
       };
     }
 
@@ -73,7 +73,7 @@ export async function getCartStock(
   } catch {
     return {
       status: "unavailable",
-      message: "Nao foi possivel validar o estoque agora. Tente novamente.",
+      message: "Não foi possível validar o estoque agora. Tente novamente.",
     };
   }
 }

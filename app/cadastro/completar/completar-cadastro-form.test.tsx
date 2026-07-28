@@ -14,7 +14,7 @@ const { replaceMock, refreshMock, updateMock, signOutMock, lookupCepMock } = vi.
     data: {
       street: "Avenida Paulista",
       neighborhood: "Bela Vista",
-      city: "São Paulo",
+      city: "Sao Paulo",
       state: "SP",
     },
     partial: false,
@@ -74,7 +74,7 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText("Logradouro"), { target: { value: "Avenida Paulista" } });
   fireEvent.change(screen.getByLabelText("Número"), { target: { value: "1000" } });
   fireEvent.change(screen.getByLabelText("Bairro"), { target: { value: "Bela Vista" } });
-  fireEvent.change(screen.getByLabelText("Cidade"), { target: { value: "São Paulo" } });
+  fireEvent.change(screen.getByLabelText("Cidade"), { target: { value: "Sao Paulo" } });
   fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "SP" } });
   fireEvent.change(screen.getByLabelText("CNPJ da empresa"), { target: { value: VALID_CNPJ } });
 }
@@ -304,7 +304,7 @@ describe("CompletarCadastroForm", () => {
       number: "1000",
       complement: "sala 2",
       neighborhood: "Bela Vista",
-      city: "São Paulo",
+      city: "Sao Paulo",
       state: "SP",
     });
   });
@@ -333,7 +333,7 @@ describe("CompletarCadastroForm", () => {
         "Avenida Paulista",
       ),
     );
-    expect((screen.getByLabelText("Cidade") as HTMLInputElement).value).toBe("São Paulo");
+    expect((screen.getByLabelText("Cidade") as HTMLInputElement).value).toBe("Sao Paulo");
     expect((screen.getByLabelText("Estado") as HTMLSelectElement).value).toBe("SP");
     expect(lookupCepMock).toHaveBeenCalledWith("01310000");
   });
@@ -355,7 +355,7 @@ describe("CompletarCadastroForm", () => {
           cep: "01310-000",
           street: "Avenida Paulista",
           neighborhood: "Bela Vista",
-          city: "São Paulo",
+          city: "Sao Paulo",
           state: "SP",
         })}
         callbackUrl="/"
@@ -365,7 +365,7 @@ describe("CompletarCadastroForm", () => {
     expect((screen.getByLabelText("CEP") as HTMLInputElement).value).toBe("01310-000");
     expect((screen.getByLabelText("Logradouro") as HTMLInputElement).value).toBe("Avenida Paulista");
     expect((screen.getByLabelText("Bairro") as HTMLInputElement).value).toBe("Bela Vista");
-    expect((screen.getByLabelText("Cidade") as HTMLInputElement).value).toBe("São Paulo");
+    expect((screen.getByLabelText("Cidade") as HTMLInputElement).value).toBe("Sao Paulo");
     expect((screen.getByLabelText("Estado") as HTMLSelectElement).value).toBe("SP");
   });
 });

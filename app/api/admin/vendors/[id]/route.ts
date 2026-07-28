@@ -14,13 +14,13 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   const vendorId = Number.parseInt(id, 10);
 
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
-    return NextResponse.json({ message: "ID invalido." }, { status: 400 });
+    return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
   const detail = await getAdminVendorDetail(auth.accessToken, vendorId);
 
   if (!detail) {
-    return NextResponse.json({ message: "Vendor nao encontrado." }, { status: 404 });
+    return NextResponse.json({ message: "Vendor não encontrado." }, { status: 404 });
   }
 
   return NextResponse.json({ vendor: detail });

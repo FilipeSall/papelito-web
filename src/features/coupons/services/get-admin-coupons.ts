@@ -17,7 +17,7 @@ export async function getAdminCouponsSnapshot(
   if (!accessToken) {
     return {
       list: { items: [], total: 0, page: 1, perPage: 20 },
-      issues: ["Sessao sem access token para consultar cupons."],
+      issues: ["Sessão sem access token para consultar cupons."],
     };
   }
 

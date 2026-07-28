@@ -273,7 +273,7 @@ export async function getAdminFlashSaleSnapshot(
     return {
       campaign: null,
       selectedProducts: [],
-      issues: ["Sessao sem access token para consultar campanha de oferta relampago."],
+      issues: ["Sessão sem access token para consultar campanha de oferta relâmpago."],
     };
   }
 
@@ -359,7 +359,7 @@ export async function getAdminFlashSaleProducts(
       perPage,
       total: 0,
       totalPages: 1,
-      issues: ["Sessao sem access token para consultar produtos elegiveis."],
+      issues: ["Sessão sem access token para consultar produtos elegiveis."],
     };
   }
 

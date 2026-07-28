@@ -97,7 +97,7 @@ export function mapStatus(status: string | undefined): OrderStatus {
 
 function paymentInfo(order: WpProfileOrder) {
   return {
-    methodLabel: order.payment_method || "Pagamento nao informado",
+    methodLabel: order.payment_method || "Pagamento não informado",
     maskedLabel: "",
     state: order.payment?.state,
     pix: order.payment?.pix
@@ -135,7 +135,7 @@ export function resolveStatus(order: WpProfileOrder, nowMs = Date.now()): OrderS
 }
 
 function formatDate(value: string | undefined) {
-  if (!value) return "Data indisponivel";
+  if (!value) return "Data indisponível";
   const date = new Date(value.replace(" ", "T"));
   return Number.isNaN(date.getTime())
     ? value
@@ -160,7 +160,7 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
         title: "Pedido realizado",
       },
       {
-        description: "O prazo de pagamento terminou antes da confirmacao.",
+        description: "O prazo de pagamento terminou antes da confirmação.",
         id: "expired",
         state: "current",
         title: "Pagamento expirado",
@@ -205,7 +205,7 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
   const stages: Array<{ id: string; title: string; description: string }> = [
     { id: "payment", title: "Pagamento", description: "Pagamento confirmado." },
     { id: "awaiting", title: "Aguardando envio", description: "Pedido recebido pelo vendor." },
-    { id: "picking", title: "Em separacao", description: "Itens sendo preparados para envio." },
+    { id: "picking", title: "Em separação", description: "Itens sendo preparados para envio." },
     { id: "shipped", title: "Enviado", description: "Postagem confirmada pelos Correios." },
     { id: "delivered", title: "Entregue", description: "Entrega confirmada pelos Correios." },
   ];
@@ -220,12 +220,12 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
     preposted: { title: "Etiqueta gerada", description: "Aguardando a postagem do objeto nos Correios." },
     posted: { title: "Postado", description: "O objeto foi postado e recebido pelos Correios." },
     in_transit: { title: "Em transito", description: "O objeto esta em deslocamento pela rede dos Correios." },
-    out_for_delivery: { title: "Saiu para entrega", description: "O objeto esta em rota de entrega." },
-    pickup_available: { title: "Disponivel para retirada", description: "Retire o objeto na unidade indicada pelos Correios." },
-    delivery_failed: { title: "Tentativa sem sucesso", description: "A entrega nao foi concluida; acompanhe a proxima orientacao." },
-    returning: { title: "Em devolucao", description: "O objeto esta retornando ao remetente." },
+    out_for_delivery: { title: "Saiu para entrega", description: "O objeto está em rota de entrega." },
+    pickup_available: { title: "Disponível para retirada", description: "Retire o objeto na unidade indicada pelos Correios." },
+    delivery_failed: { title: "Tentativa sem sucesso", description: "A entrega não foi concluida; acompanhe a próxima orientacao." },
+    returning: { title: "Em devolução", description: "O objeto esta retornando ao remetente." },
     returned: { title: "Devolvido", description: "O objeto foi devolvido ao remetente." },
-    lost: { title: "Ocorrencia no envio", description: "O envio exige acompanhamento do vendor e da Papelito." },
+    lost: { title: "Ocorrência no envio", description: "O envio exige acompanhamento do vendor e da Papelito." },
   };
   const logistics = logisticsMessages[order.logistics?.status ?? ""];
   const leadShipment = pickLeadShipment(order.logistics?.shipments);
@@ -269,12 +269,12 @@ function pickLeadShipment(shipments: WpProfileShipment[] | undefined): WpProfile
 
 function formatAddress(order: WpProfileOrder) {
   const address = order.shipping_address;
-  if (!address) return "Endereco nao informado.";
+  if (!address) return "Endereço não informado.";
 
   const street = [address.address_1, address.address_2].filter(Boolean).join(", ");
   const city = [address.city, address.state].filter(Boolean).join(" - ");
   const parts = [street, city, address.postcode ? `CEP: ${address.postcode}` : ""].filter(Boolean);
-  return parts.join(", ") || "Endereco nao informado.";
+  return parts.join(", ") || "Endereço não informado.";
 }
 
 function mapSummary(order: WpProfileOrder): Order {
@@ -305,8 +305,8 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
           code: trackingCode,
           estimatedDeliveryLabel:
             Number(order.delivery_time_days) > 0
-              ? `${Number(order.delivery_time_days)} dias uteis`
-              : "Prazo nao informado",
+              ? `${Number(order.delivery_time_days)} dias úteis`
+              : "Prazo não informado",
         }
       : null,
     timeline: buildTimeline(status, order),

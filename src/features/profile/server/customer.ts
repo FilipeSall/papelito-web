@@ -214,7 +214,7 @@ async function executeProfileGraphql<TData>(
   if (!response.ok || payload.errors?.length) {
     const message =
       payload.errors?.map((error) => error.message).filter(Boolean).join(" ") ||
-      "Nao foi possivel processar os dados do perfil.";
+      "Não foi possível processar os dados do perfil.";
     throw new Error(message);
   }
 

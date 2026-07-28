@@ -67,42 +67,42 @@ const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
     key: "productHero",
     eyebrow: "Produtos",
     title: "Imagem de produtos",
-    description: "Banner do topo da pagina /produtos, atras do titulo Nossos Produtos.",
+    description: "Banner do topo da página /produtos, atrás do título Nossos Produtos.",
     formatHint: "Formato ideal: horizontal largo, aproximadamente 3.5:1.",
   },
   {
     key: "aboutHero",
     eyebrow: "Sobre",
-    title: "Banner da pagina Sobre",
-    description: "Imagem larga no topo da pagina /sobre.",
+    title: "Banner da página Sobre",
+    description: "Imagem larga no topo da página /sobre.",
     formatHint: "Formato ideal: horizontal, aproximadamente 16:10.",
   },
   {
     key: "aboutStory",
     eyebrow: "Sobre",
-    title: "Imagem da historia",
-    description: 'Foto ao lado do bloco "Mais de uma decada de historia" na pagina /sobre.',
+    title: "Imagem da história",
+    description: 'Foto ao lado do bloco "Mais de uma década de história" na página /sobre.',
     formatHint: "Formato ideal: foto horizontal 3:2 com assunto central.",
   },
   {
     key: "revendedorBusinessMain",
     eyebrow: "Revendedor",
-    title: "Imagem principal dos negocios",
-    description: 'Foto grande ao lado do titulo "Atendemos Diferentes Tipos de Negocios!" em /revendedor.',
+    title: "Imagem principal dos negócios",
+    description: 'Foto grande ao lado do título "Atendemos Diferentes Tipos de Negócios!" em /revendedor.',
     formatHint: "Formato ideal: foto vertical 2:3 com foco no centro.",
   },
   {
     key: "revendedorBusinessSecondary",
     eyebrow: "Revendedor",
-    title: "Imagem secundaria dos negocios",
-    description: "Foto menor do mosaico de negocios atendidos em /revendedor.",
+    title: "Imagem secundária dos negócios",
+    description: "Foto menor do mosaico de negócios atendidos em /revendedor.",
     formatHint: "Formato ideal: foto horizontal ou vertical com crop seguro no centro.",
   },
   {
     key: "revendedorBusinessIllustration",
     eyebrow: "Revendedor",
-    title: "Ilustracao do card amarelo",
-    description: "Imagem do card amarelo no mosaico de negocios atendidos em /revendedor.",
+    title: "Ilustração do card amarelo",
+    description: "Imagem do card amarelo no mosaico de negócios atendidos em /revendedor.",
     formatHint: "Formato ideal: quadrado 1:1, PNG ou SVG com fundo transparente.",
     previewClass: "object-contain bg-brand-yellow",
   },
@@ -148,7 +148,7 @@ async function uploadMedia(file: File) {
   const json = await parseJson<UploadResponse>(response);
 
   if (!response.ok || !json?.media) {
-    throw new Error(json?.message ?? "Nao foi possivel enviar a imagem.");
+    throw new Error(json?.message ?? "Não foi possível enviar a imagem.");
   }
 
   return {
@@ -218,7 +218,7 @@ export function AssetsManager({
   function removeHeroBanner(id: string) {
     setHeroBanners((current) => {
       if (current.length <= 1) {
-        showNotice("error", "A Hero Section precisa manter pelo menos uma opcao.");
+        showNotice("error", "A Hero Section precisa manter pelo menos uma opção.");
         return current;
       }
 
@@ -250,7 +250,7 @@ export function AssetsManager({
       });
       showNotice("success", "Imagem da Hero Section enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel enviar a imagem da Hero Section."));
+      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem da Hero Section."));
     } finally {
       setUploadingKey(null);
     }
@@ -272,7 +272,7 @@ export function AssetsManager({
       }));
       showNotice("success", "Imagem do PDV Perfeito enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel enviar a imagem do PDV Perfeito."));
+      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem do PDV Perfeito."));
     } finally {
       setUploadingKey(null);
     }
@@ -291,7 +291,7 @@ export function AssetsManager({
       });
       showNotice("success", "Imagem enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel enviar a imagem."));
+      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem."));
     } finally {
       setUploadingKey(null);
     }
@@ -311,14 +311,14 @@ export function AssetsManager({
       const json = await parseJson<AdminHeroBannersSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel salvar a Hero Section.");
+        throw new Error(json?.message ?? "Não foi possível salvar a Hero Section.");
       }
 
       setHeroBanners(normalizeHeroOrder(json.banners));
       setHeroIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Hero Section atualizada.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel salvar a Hero Section."));
+      showNotice("error", messageFromError(error, "Não foi possível salvar a Hero Section."));
     } finally {
       setIsSavingHero(false);
     }
@@ -338,14 +338,14 @@ export function AssetsManager({
       const json = await parseJson<AdminPartnerBannerSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel salvar a imagem do PDV Perfeito.");
+        throw new Error(json?.message ?? "Não foi possível salvar a imagem do PDV Perfeito.");
       }
 
       setPartnerBanner({ ...json.banner, isActive: true });
       setPartnerIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Imagem do PDV Perfeito atualizada.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel salvar a imagem do PDV Perfeito."));
+      showNotice("error", messageFromError(error, "Não foi possível salvar a imagem do PDV Perfeito."));
     } finally {
       setIsSavingPartner(false);
     }
@@ -365,14 +365,14 @@ export function AssetsManager({
       const json = await parseJson<AdminSiteImageAssetsSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel salvar as imagens.");
+        throw new Error(json?.message ?? "Não foi possível salvar as imagens.");
       }
 
       setSiteImages(json.images);
       setSiteImageIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Imagens das paginas atualizadas.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Nao foi possivel salvar as imagens."));
+      showNotice("error", messageFromError(error, "Não foi possível salvar as imagens."));
     } finally {
       setIsSavingSiteImages(false);
     }
@@ -396,8 +396,8 @@ export function AssetsManager({
             Assets das paginas
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5e574c]">
-            Configure as imagens publicas usadas na Hero Section, pagina de produtos, pagina Sobre,
-            PDV Perfeito e pagina de revendedores. Nenhuma secao pode ser salva sem imagem.
+            Configure as imagens públicas usadas na Hero Section, página de produtos, página Sobre,
+            PDV Perfeito e página de revendedores. Nenhuma seção pode ser salva sem imagem.
           </p>
         </div>
       </section>
@@ -422,8 +422,8 @@ export function AssetsManager({
             </p>
             <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Hero Section</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Aparece no topo da home. Com uma opcao vira banner fixo; com mais de uma vira
-              carrossel. Sempre deve existir pelo menos uma opcao.
+              Aparece no topo da home. Com uma opção vira banner fixo; com mais de uma vira
+              carrossel. Sempre deve existir pelo menos uma opção.
             </p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
               Formato ideal: desktop 16:5 e mobile 1:2.
@@ -436,7 +436,7 @@ export function AssetsManager({
               type="button"
             >
               <ImagePlus className="h-4 w-4" />
-              Nova opcao
+              Nova opção
             </button>
             <button
               className={BUTTON_CLASS}
@@ -461,10 +461,10 @@ export function AssetsManager({
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6a5f00]">
-                    Opcao {index + 1}
+                    Opção {index + 1}
                   </p>
                   <p className="mt-1 text-sm text-[#5e574c]">
-                    Esta imagem aparece na area principal da home. Ordem {banner.order}.
+                    Esta imagem aparece na área principal da home. Ordem {banner.order}.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -544,8 +544,8 @@ export function AssetsManager({
             </p>
             <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Imagem do PDV Perfeito</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Imagem lateral do bloco PDV Perfeito na home. Esta secao havia sumido quando o
-              backend nao tinha imagem inicial; agora ela sempre possui um valor padrao.
+              Imagem lateral do bloco PDV Perfeito na home, ao lado do convite para virar
+              parceiro. Enquanto nenhuma imagem for enviada, a home exibe a imagem padrão.
             </p>
           </div>
           <button
@@ -594,7 +594,7 @@ export function AssetsManager({
           </div>
           <div>
             <label className={LABEL_CLASS} htmlFor="partner-href">
-              Link interno do botao
+              Link interno do botão
             </label>
             <input
               className={INPUT_CLASS}
@@ -623,7 +623,7 @@ export function AssetsManager({
           </div>
           <div>
             <label className={LABEL_CLASS} htmlFor="partner-cta">
-              Texto do botao
+              Texto do botão
             </label>
             <input
               className={INPUT_CLASS}
@@ -640,7 +640,7 @@ export function AssetsManager({
 
         <div className="mt-4">
           <label className={LABEL_CLASS} htmlFor="partner-description">
-            Descricao
+            Descrição
           </label>
           <textarea
             className={TEXTAREA_CLASS}
@@ -665,8 +665,8 @@ export function AssetsManager({
             </p>
             <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Imagens das paginas</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Cada imagem abaixo corresponde a uma secao publica especifica. Todas ja iniciam com
-              o asset atual do site e nao podem ser salvas vazias.
+              Cada imagem abaixo corresponde a uma seção pública específica. Todas já iniciam com
+              o asset atual do site e não podem ser salvas vazias.
             </p>
           </div>
           <button

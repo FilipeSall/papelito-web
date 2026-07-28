@@ -113,7 +113,7 @@ function buildCustomerLabel(order: WcOrder) {
     return order.billing.company.trim();
   }
 
-  return "Cliente nao identificado";
+  return "Cliente não identificado";
 }
 
 function buildItemsLabel(order: WcOrder) {
@@ -214,7 +214,7 @@ export async function getAdminSalesOrdersSnapshot(
       totalPages: 0,
       currentPage: filters.page,
       perPage: filters.perPage,
-      issues: ["Sessao sem access token para consultar pedidos do WooCommerce."],
+      issues: ["Sessão sem access token para consultar pedidos do WooCommerce."],
     };
   }
 
@@ -250,7 +250,7 @@ export async function getAdminSalesOrdersSnapshot(
         createdAt: order.date_created ?? "",
         customerLabel: buildCustomerLabel(order),
         itemsLabel: buildItemsLabel(order),
-        paymentMethodLabel: order.payment_method_title?.trim() || "Nao informado",
+        paymentMethodLabel: order.payment_method_title?.trim() || "Não informado",
         status: order.status?.trim() || "unknown",
         total: Math.max(0, toNumber(order.total)),
       })),
@@ -311,7 +311,7 @@ export async function getAdminSalesOrdersAggregate(
   if (!accessToken) {
     return {
       ...emptyAggregate(),
-      errors: ["Sessao sem access token para consultar pedidos do WooCommerce."],
+      errors: ["Sessão sem access token para consultar pedidos do WooCommerce."],
     };
   }
 

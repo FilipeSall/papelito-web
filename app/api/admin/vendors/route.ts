@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as AdminVendorCreatePayload | null;
 
   if (!payload || typeof payload !== "object") {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   const result = await wpRest<AdminVendorDetail>("/papelito/v1/admin/vendors", {

@@ -9,7 +9,7 @@ export async function PUT() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const result = await wpRest<MarkAllNotificationsReadResponse>(

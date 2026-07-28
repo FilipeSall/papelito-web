@@ -205,7 +205,7 @@ describe("POST /api/cart/stock", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
       status: "unavailable",
-      message: "Nao foi possivel validar o estoque agora. Tente novamente.",
+      message: "Não foi possível validar o estoque agora. Tente novamente.",
     });
   });
 });

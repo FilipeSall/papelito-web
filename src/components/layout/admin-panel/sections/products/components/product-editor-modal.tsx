@@ -253,7 +253,7 @@ function ModalHeader({
           onClick={() => void onSave()}
           type="button"
         >
-          {isSaving ? "Salvando" : "Salvar Alteracoes"}
+          {isSaving ? "Salvando" : "Salvar Alterações"}
         </button>
       </div>
     </div>
@@ -268,7 +268,7 @@ function BasicInfoSection({
   updateDraft: DraftUpdater;
 }) {
   return (
-    <ModalSection title="Informacoes basicas">
+    <ModalSection title="Informações basicas">
       <div className="grid gap-4">
         <TextField
           label="Nome do Produto"
@@ -278,13 +278,13 @@ function BasicInfoSection({
         <div className="grid gap-4 md:grid-cols-2">
           <TextField
             label="Slug"
-            helpText="Endereco amigavel do produto no site. Use texto curto, sem espacos; o WordPress tambem pode gerar isso automaticamente."
+            helpText="Endereço amigavel do produto no site. Use texto curto, sem espacos; o WordPress também pode gerar isso automaticamente."
             onChange={(value) => updateDraft("slug", value)}
             value={draft.slug}
           />
           <TextField
             label="SKU"
-            helpText="Codigo interno unico do produto para busca e integracoes."
+            helpText="Código interno único do produto para busca e integracoes."
             onChange={(value) => updateDraft("sku", value)}
             value={draft.sku}
           />
@@ -317,13 +317,13 @@ function PricingSection({
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
           inputMode="decimal"
-          label="Preco Regular (R$)"
+          label="Preço Regular (R$)"
           onChange={(value) => updateDraft("regularPrice", value)}
           value={draft.regularPrice}
         />
         <TextField
           inputMode="decimal"
-          label="Preco Promocional (R$)"
+          label="Preço Promocional (R$)"
           onChange={(value) => updateDraft("salePrice", value)}
           value={draft.salePrice}
         />
@@ -332,13 +332,13 @@ function PricingSection({
       {isPromotionEnabled ? (
         <div className="grid gap-4 md:grid-cols-2">
           <TextField
-            label="Inicio da Promocao"
+            label="Inicio da Promoção"
             onChange={(value) => updateDraft("dateOnSaleFrom", value)}
             type="datetime-local"
             value={draft.dateOnSaleFrom}
           />
           <TextField
-            label="Fim da Promocao"
+            label="Fim da Promoção"
             onChange={(value) => updateDraft("dateOnSaleTo", value)}
             type="datetime-local"
             value={draft.dateOnSaleTo}
@@ -367,17 +367,17 @@ function DimensionsSection({
     highlights.weight || highlights.length || highlights.width || highlights.height;
 
   return (
-    <ModalSection title="Dimensoes & Logistica">
+    <ModalSection title="Dimensões & Logística">
       {anyMissing ? (
         <p className="text-xs font-medium text-[#b42318]">
           Peso e dimensoes (comprimento, largura e altura) sao obrigatorios para calcular o frete
-          dos Correios. Produtos sem esses dados nao aparecem no catalogo nem podem ser comprados.
+          dos Correios. Produtos sem esses dados não aparecem no catálogo nem podem ser comprados.
         </p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
           error={highlights.weight}
-          helpText="Informe o peso em quilos. Exemplo: 400g deve ser preenchido como 0.4, nao como 400."
+          helpText="Informe o peso em quilos. Exemplo: 400g deve ser preenchido como 0.4, não como 400."
           inputMode="decimal"
           label="Peso (kg)"
           onChange={(value) => updateDraft("weight", value)}
@@ -420,11 +420,11 @@ function DescriptionsSection({
   updateDraft: DraftUpdater;
 }) {
   return (
-    <ModalSection title="Descricoes">
+    <ModalSection title="Descrições">
       <label className="grid gap-2">
         <FieldLabel
-          helpText="Resumo curto exibido em areas compactas do produto. Mantenha direto e comercial."
-          label="Descricao Curta"
+          helpText="Resumo curto exibido em áreas compactas do produto. Mantenha direto e comercial."
+          label="Descrição Curta"
         />
         <textarea
           className="min-h-24 resize-y border border-[#c9bd96] bg-white px-4 py-3 text-sm leading-6 text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
@@ -532,7 +532,7 @@ function ImagesSection({
                     capa
                   </button>
                   <button
-                    aria-label="Remover foto secundaria"
+                    aria-label="Remover foto secundária"
                     className="cursor-pointer bg-[#231f20] px-1.5 py-1 text-[9px] font-bold text-white"
                     onClick={() => onRemoveImage(String(image.id))}
                     type="button"

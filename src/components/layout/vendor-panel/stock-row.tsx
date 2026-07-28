@@ -117,7 +117,7 @@ export function StockRow({
               : "border-brand-dark bg-brand-dark text-brand-yellow"
           }`}
         >
-          {item.qty === 0 ? "Zerado" : "Disponivel"}
+          {item.qty === 0 ? "Zerado" : "Disponível"}
         </span>
       </td>
       <td className="border-b border-brand-dark/15 px-4 py-3">

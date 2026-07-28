@@ -116,10 +116,14 @@ function stripHtml(value: string | null | undefined) {
 
   return value
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/(?:p|div|h[1-6]|li|ul|ol|section)\s*>/gi, "\n\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/&(#x?[0-9a-f]+|\w+);/gi, decodeHtmlEntity)
-    .replace(/\s+/g, " ")
+    // Colapsa apenas espaco horizontal: um \s+ global apagaria as quebras de
+    // paragrafo criadas acima e emendaria as frases do cadastro num bloco unico.
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -138,7 +142,7 @@ function decodeHtmlEntity(_match: string, entity: string) {
 
   const namedEntities: Record<string, string> = {
     amp: "&",
-    apos: "'",
+    após: "'",
     gt: ">",
     hellip: "...",
     ldquo: "\"",

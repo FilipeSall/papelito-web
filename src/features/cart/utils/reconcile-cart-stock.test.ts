@@ -47,7 +47,7 @@ describe("reconcileCartStock", () => {
         },
         "2": {
           type: "out_of_stock",
-          message: "Este produto esta sem estoque no momento.",
+          message: "Este produto está sem estoque no momento.",
         },
       },
       canContinue: false,

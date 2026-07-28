@@ -21,7 +21,7 @@ export function AboutStorySection({ image }: { image?: ManagedImageAsset }) {
                 <div className="flex items-center gap-2">
                   <span aria-hidden className="h-1 w-8 bg-brand-yellow" />
                   <span className="text-sm font-black uppercase tracking-[1.2496px] text-white/80">
-                    Fabrica Papelito | Brasilia - DF
+                    Fábrica Papelito | Brasília - DF
                   </span>
                 </div>
               </div>

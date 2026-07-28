@@ -17,7 +17,7 @@ export const cepHandlers = [
     if (params.digits === "99999999") {
       return HttpResponse.json(
         {
-          message: "CEP nao encontrado.",
+          message: "CEP não encontrado.",
         },
         { status: 404 },
       );

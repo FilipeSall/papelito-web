@@ -63,12 +63,12 @@ const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
   aboutHero: {
     imageId: 0,
     imageUrl: "/images/sobre-page/sobre-banner.png",
-    alt: "Mulher sorrindo e segurando papeis Papelito diante de um fundo amarelo.",
+    alt: "Mulher sorrindo e segurando papéis Papelito diante de um fundo amarelo.",
   },
   aboutStory: {
     imageId: 0,
     imageUrl: "/images/sobre-page/fabrica-papelito.jpg",
-    alt: "Socios da Papelito em pe diante da linha de producao da fabrica.",
+    alt: "Sócios da Papelito em pé diante da linha de produção da fábrica.",
   },
   revendedorBusinessMain: {
     imageId: 0,
@@ -83,7 +83,7 @@ const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
   revendedorBusinessIllustration: {
     imageId: 0,
     imageUrl: "/images/revendedor/business-card-vector.svg",
-    alt: "Ilustracao de atendimento a negocios revendedores.",
+    alt: "Ilustração de atendimento a negócios revendedores.",
   },
 };
 
@@ -121,14 +121,14 @@ function emptyPartnerBanner(): PartnerBannerConfig {
   return {
     tag: "Seja um parceiro",
     description:
-      "Junte-se ao nosso PDV Perfeito com lojistas em todo o Brasil. Receba brindes, premios e beneficios exclusivos",
+      "Junte-se ao nosso PDV Perfeito com lojistas em todo o Brasil. Receba brindes, prêmios e benefícios exclusivos",
     ctaLabel: "Quero ser um parceiro",
     href: "/revendedor",
     desktopImageId: 0,
     desktopImageUrl: "/images/CT1A3510%201.png",
     mobileImageId: 0,
     mobileImageUrl: "/images/pdv-mobile.jpg",
-    alt: "Parceiros no espaco PDV Perfeito Papelito.",
+    alt: "Parceiros no espaço PDV Perfeito Papelito.",
     isActive: true,
   };
 }
@@ -204,7 +204,7 @@ export async function getAdminHeroBannersSnapshot(
   if (!accessToken) {
     return {
       banners: [],
-      issues: ["Sessao sem access token para consultar hero banners."],
+      issues: ["Sessão sem access token para consultar hero banners."],
     };
   }
 
@@ -258,7 +258,7 @@ export async function getAdminSiteImageAssetsSnapshot(
   if (!accessToken) {
     return {
       images: SITE_IMAGE_DEFAULTS,
-      issues: ["Sessao sem access token para consultar imagens do site."],
+      issues: ["Sessão sem access token para consultar imagens do site."],
     };
   }
 
@@ -304,7 +304,7 @@ export async function getAdminPromoBannerSnapshot(
   if (!accessToken) {
     return {
       banner: emptyPromoBanner(),
-      issues: ["Sessao sem access token para consultar promo banner."],
+      issues: ["Sessão sem access token para consultar promo banner."],
     };
   }
 
@@ -350,7 +350,7 @@ export async function getAdminPartnerBannerSnapshot(
   if (!accessToken) {
     return {
       banner: emptyPartnerBanner(),
-      issues: ["Sessao sem access token para consultar partner banner."],
+      issues: ["Sessão sem access token para consultar partner banner."],
     };
   }
 

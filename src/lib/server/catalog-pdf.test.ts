@@ -199,7 +199,7 @@ describe("resolveCatalogPdf", () => {
     expect(result).toEqual({
       ok: false,
       code: "catalog_not_found",
-      message: "Catalogo nao disponivel.",
+      message: "Catálogo não disponível.",
     });
   });
 
@@ -213,7 +213,7 @@ describe("resolveCatalogPdf", () => {
     expect(result).toEqual({
       ok: false,
       code: "catalog_not_found",
-      message: "Catalogo padrao indisponivel.",
+      message: "Catálogo padrão indisponível.",
     });
   });
 });

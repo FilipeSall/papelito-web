@@ -12,14 +12,14 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as PreferencesPayload | null;
 
   if (!payload || typeof payload.favoritePromotionEmailEnabled !== "boolean") {
     return NextResponse.json(
-      { message: "Payload invalido." },
+      { message: "Payload inválido." },
       { status: 400 },
     );
   }
@@ -39,7 +39,7 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel atualizar suas preferencias.";
+      error instanceof Error ? error.message : "Não foi possível atualizar suas preferências.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

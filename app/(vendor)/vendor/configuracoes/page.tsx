@@ -14,10 +14,10 @@ export default async function VendorSettingsPage() {
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Configure informacoes que afetam prazo e expectativa de entrega para os clientes atendidos por sua loja."
-        eyebrow="Operacao da loja"
+        description="Configure informações que afetam prazo e expectativa de entrega para os clientes atendidos por sua loja."
+        eyebrow="Operação da loja"
         signal="configuracao"
-        title="Configuracoes"
+        title="Configurações"
       />
       <VendorSettingsForm initialLeadTimeDays={settings.shippingLeadTimeDays} />
       <VendorRecipientPanel initialRecipient={recipient} />

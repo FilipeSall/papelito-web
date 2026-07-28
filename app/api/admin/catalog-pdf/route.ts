@@ -29,7 +29,7 @@ function isUploadedFile(value: FormDataEntryValue | null): value is File {
 
 async function validatePdf(file: File) {
   if (file.size <= 0) {
-    return "O PDF enviado esta vazio.";
+    return "O PDF enviado está vazio.";
   }
 
   if (file.size > MAX_CATALOG_SIZE) {
@@ -37,16 +37,16 @@ async function validatePdf(file: File) {
   }
 
   if (!file.name.toLowerCase().endsWith(".pdf")) {
-    return "Apenas arquivos PDF sao aceitos.";
+    return "Apenas arquivos PDF são aceitos.";
   }
 
   if (file.type && file.type !== "application/pdf" && file.type !== "application/x-pdf") {
-    return "Apenas arquivos PDF validos sao aceitos.";
+    return "Apenas arquivos PDF validos são aceitos.";
   }
 
   const signature = await file.slice(0, 5).arrayBuffer();
   if (!isPdfSignature(signature)) {
-    return "O arquivo enviado nao possui assinatura PDF valida.";
+    return "O arquivo enviado não possui assinatura PDF válida.";
   }
 
   return null;
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   const file = formData?.get("file") ?? null;
 
   if (!isUploadedFile(file)) {
-    return jsonError("Arquivo PDF obrigatorio.", 422);
+    return jsonError("Arquivo PDF obrigatório.", 422);
   }
 
   const validationError = await validatePdf(file);
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
   const json = await parseWpResponse(response);
 
   if (!response.ok) {
-    return jsonError(json?.message ?? "Nao foi possivel enviar o catalogo.", response.status);
+    return jsonError(json?.message ?? "Não foi possível enviar o catálogo.", response.status);
   }
 
   revalidatePath("/revendedor");
@@ -131,7 +131,7 @@ export async function DELETE() {
   const json = await parseWpResponse(response);
 
   if (!response.ok) {
-    return jsonError(json?.message ?? "Nao foi possivel restaurar o catalogo padrao.", response.status);
+    return jsonError(json?.message ?? "Não foi possível restaurar o catálogo padrão.", response.status);
   }
 
   revalidatePath("/revendedor");

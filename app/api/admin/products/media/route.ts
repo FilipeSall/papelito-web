@@ -15,14 +15,14 @@ export async function POST(request: Request) {
   const file = formData?.get("file");
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ message: "Arquivo de imagem obrigatorio." }, { status: 422 });
+    return NextResponse.json({ message: "Arquivo de imagem obrigatório." }, { status: 422 });
   }
 
   try {
     const media = await uploadAdminProductMedia(auth.accessToken, file);
     return NextResponse.json({ media }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel enviar a imagem.";
+    const message = error instanceof Error ? error.message : "Não foi possível enviar a imagem.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

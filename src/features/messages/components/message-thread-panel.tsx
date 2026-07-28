@@ -87,7 +87,7 @@ export function MessageThreadPanel({
       await mutate(updated, false);
       router.refresh();
     } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "Nao foi possivel enviar a mensagem.");
+      setNotice(cause instanceof Error ? cause.message : "Não foi possível enviar a mensagem.");
     } finally {
       setIsSending(false);
     }
@@ -103,7 +103,7 @@ export function MessageThreadPanel({
       await mutate(updated, false);
       router.refresh();
     } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "Nao foi possivel escalar o atendimento.");
+      setNotice(cause instanceof Error ? cause.message : "Não foi possível escalar o atendimento.");
     } finally {
       setIsEscalating(false);
     }
@@ -112,7 +112,7 @@ export function MessageThreadPanel({
   if (!thread && !canStart) {
     return (
       <div className="rounded-[20px] border-2 border-[#231f20] bg-[#fbf7ef] p-8 text-center shadow-[8px_8px_0_rgba(35,31,32,0.08)]">
-        <p className="text-sm text-brand-dark/62">Conversa indisponivel.</p>
+        <p className="text-sm text-brand-dark/62">Conversa indisponível.</p>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export function MessageThreadPanel({
               onClick={handleEscalate}
               type="button"
             >
-              {isEscalating ? "Acionando Papelito..." : "Nao resolveu? Falar com a Papelito"}
+              {isEscalating ? "Acionando Papelito..." : "Não resolveu? Falar com a Papelito"}
             </button>
           ) : (
             <span />

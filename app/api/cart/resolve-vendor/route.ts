@@ -283,7 +283,7 @@ export async function POST(request: Request) {
 
   if (!session?.user || !session.accessToken) {
     return NextResponse.json(
-      { status: "unavailable", message: "Nao autenticado." },
+      { status: "unavailable", message: "Não autenticado." },
       { status: 401 },
     );
   }
@@ -293,7 +293,7 @@ export async function POST(request: Request) {
 
   if (!payload || !productId) {
     return NextResponse.json(
-      { status: "unavailable", message: "Produto invalido." },
+      { status: "unavailable", message: "Produto inválido." },
       { status: 422 },
     );
   }
@@ -318,7 +318,7 @@ export async function POST(request: Request) {
   if (coverageByProduct === null) {
     return NextResponse.json({
       status: "unavailable",
-      message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+      message: "Não foi possível validar a disponibilidade por CEP agora.",
     });
   }
 
@@ -328,7 +328,7 @@ export async function POST(request: Request) {
     if (vendors.length === 0) {
       return NextResponse.json({
         status: "unavailable",
-        message: "Este produto nao esta disponivel para o seu CEP no momento.",
+        message: "Este produto não está disponível para o seu CEP no momento.",
       });
     }
   }
@@ -342,7 +342,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: "vendor_conflict",
       message:
-        "Este item nao pode ser adicionado porque nenhum vendor atende todos os produtos do carrinho.",
+        "Este item não pode ser adicionado porque nenhum vendor atende todos os produtos do carrinho.",
     });
   }
 

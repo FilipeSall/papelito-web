@@ -53,7 +53,7 @@ function validateSelectedFile(file: File) {
   }
 
   if (file.size <= 0) {
-    return "O PDF selecionado esta vazio.";
+    return "O PDF selecionado está vazio.";
   }
 
   if (file.size > MAX_CATALOG_SIZE) {
@@ -78,13 +78,13 @@ export function CatalogPdfManager() {
       const json = await parseJson(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel carregar o catalogo.");
+        throw new Error(json?.message ?? "Não foi possível carregar o catálogo.");
       }
 
       setSnapshot(json);
     } catch (error) {
       setNotice({
-        message: messageFromError(error, "Nao foi possivel carregar o catalogo."),
+        message: messageFromError(error, "Não foi possível carregar o catálogo."),
         tone: "error",
       });
     } finally {
@@ -117,14 +117,14 @@ export function CatalogPdfManager() {
       const json = await parseJson(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel enviar o catalogo.");
+        throw new Error(json?.message ?? "Não foi possível enviar o catálogo.");
       }
 
       setSnapshot(json);
-      setNotice({ message: "Catalogo atualizado com sucesso.", tone: "success" });
+      setNotice({ message: "Catálogo atualizado com sucesso.", tone: "success" });
     } catch (error) {
       setNotice({
-        message: messageFromError(error, "Nao foi possivel enviar o catalogo."),
+        message: messageFromError(error, "Não foi possível enviar o catálogo."),
         tone: "error",
       });
     } finally {
@@ -141,14 +141,14 @@ export function CatalogPdfManager() {
       const json = await parseJson(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Nao foi possivel restaurar o catalogo padrao.");
+        throw new Error(json?.message ?? "Não foi possível restaurar o catálogo padrão.");
       }
 
       setSnapshot(json);
-      setNotice({ message: "Catalogo padrao restaurado.", tone: "success" });
+      setNotice({ message: "Catálogo padrão restaurado.", tone: "success" });
     } catch (error) {
       setNotice({
-        message: messageFromError(error, "Nao foi possivel restaurar o catalogo padrao."),
+        message: messageFromError(error, "Não foi possível restaurar o catálogo padrão."),
         tone: "error",
       });
     } finally {
@@ -165,7 +165,7 @@ export function CatalogPdfManager() {
     <Panel className="max-w-3xl">
       <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">
-          Catalogo comercial
+          Catálogo comercial
         </p>
       </div>
 
@@ -175,10 +175,10 @@ export function CatalogPdfManager() {
             className="text-[1.85rem] font-semibold uppercase leading-none tracking-[0.12em]"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
-            PDF do portfolio
+            PDF do portfólio
           </h2>
           <p className="mt-3 text-sm leading-6 text-[#231f20]/72">
-            Controle o arquivo aberto pelo botao da pagina de revendedores.
+            Controle o arquivo aberto pelo botão da página de revendedores.
           </p>
         </div>
 
@@ -208,7 +208,7 @@ export function CatalogPdfManager() {
                   <div className="mb-3 flex items-center gap-2">
                     <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
                     <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
-                      Catalogo ativo
+                      Catálogo ativo
                     </h4>
                   </div>
                   <div className="flex min-w-0 items-center gap-3">
@@ -218,7 +218,7 @@ export function CatalogPdfManager() {
                         {active?.filename ?? "catalogo-papelito.pdf"}
                       </p>
                       <p className="mt-1 text-xs font-bold uppercase tracking-widest text-[#231f20]/56">
-                        {isCustomActive ? "Personalizado" : "Padrao Papelito"}
+                        {isCustomActive ? "Personalizado" : "Padrão Papelito"}
                       </p>
                     </div>
                   </div>
@@ -237,7 +237,7 @@ export function CatalogPdfManager() {
 
               {configured && configured.isAvailable === false ? (
                 <div className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-bold text-[#8a241a]">
-                  O catalogo personalizado configurado esta indisponivel. O PDF padrao esta ativo.
+                  O catálogo personalizado configurado está indisponível. O PDF padrão está ativo.
                 </div>
               ) : null}
 
@@ -264,7 +264,7 @@ export function CatalogPdfManager() {
                   type="button"
                 >
                   {isRestoring ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                  Restaurar padrao
+                  Restaurar padrão
                 </button>
               </div>
             </div>
@@ -273,7 +273,7 @@ export function CatalogPdfManager() {
 
         <div className="mt-5 flex flex-col gap-3 border-t-2 border-[#231f20]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-[#231f20]/60">
-            O arquivo precisa ser PDF e ter ate 15 MB.
+            O arquivo precisa ser PDF e ter até 15 MB.
           </p>
 
           <label className={BUTTON_CLASS}>

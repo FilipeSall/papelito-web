@@ -22,7 +22,7 @@ export function resolveCheckoutOutcome(result: {
   if (result.payment.method === "credit_card" && !paymentConfirmed) {
     return {
       kind: "error",
-      message: "Pagamento recusado. Revise os dados ou tente outro metodo.",
+      message: "Pagamento recusado. Revise os dados ou tente outro método.",
     };
   }
 

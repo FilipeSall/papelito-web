@@ -467,7 +467,7 @@ export async function getAdminSalesAnalyticsSnapshot(
 ): Promise<AdminSalesAnalyticsSnapshot> {
   if (!accessToken) {
     return buildEmptySnapshot(filters, [
-      "Sessao sem access token para consultar endpoints WooCommerce.",
+      "Sessão sem access token para consultar endpoints WooCommerce.",
     ]);
   }
 
@@ -555,7 +555,7 @@ export async function getAdminSalesAnalyticsSnapshot(
     paymentMix.ordersSampled > 0
   ) {
     issues.push(
-      `Mix de pagamento amostrado a partir dos ${paymentMix.ordersSampled} pedidos mais recentes (total no periodo: ${paymentMix.totalOrdersAvailable}).`,
+      `Mix de pagamento amostrado a partir dos ${paymentMix.ordersSampled} pedidos mais recentes (total no período: ${paymentMix.totalOrdersAvailable}).`,
     );
   }
 
@@ -730,7 +730,7 @@ export async function getAdminSalesAnalyticsSnapshot(
 
     if (ordersAggregate.truncated) {
       aggregateIssues.push(
-        `Periodo com ${ordersAggregate.totalOrdersAvailable} pedidos; agregacao limitada aos ${ordersAggregate.pagesFetched * 100} mais recentes para proteger o WooCommerce.`,
+        `Período com ${ordersAggregate.totalOrdersAvailable} pedidos; agregacao limitada aos ${ordersAggregate.pagesFetched * 100} mais recentes para proteger o WooCommerce.`,
       );
     }
 
@@ -773,7 +773,7 @@ export async function getAdminSalesAnalyticsSnapshot(
 
     return buildEmptySnapshot(
       filters,
-      [...issues, ...aggregateIssues, "WooCommerce sem dados no periodo selecionado."],
+      [...issues, ...aggregateIssues, "WooCommerce sem dados no período selecionado."],
       "fallback",
     );
   }

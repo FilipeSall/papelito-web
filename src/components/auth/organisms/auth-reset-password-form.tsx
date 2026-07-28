@@ -23,7 +23,7 @@ export function AuthResetPasswordForm() {
   const key = searchParams.get("key")?.trim() ?? "";
   const hasResetLink = Boolean(login && key);
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    hasResetLink ? null : "Link de redefinicao invalido ou incompleto.",
+    hasResetLink ? null : "Link de redefinicao inválido ou incompleto.",
   );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -48,7 +48,7 @@ export function AuthResetPasswordForm() {
     event.preventDefault();
 
     if (!hasResetLink) {
-      setErrorMessage("Link de redefinicao invalido ou incompleto.");
+      setErrorMessage("Link de redefinicao inválido ou incompleto.");
       return;
     }
 
@@ -84,13 +84,13 @@ export function AuthResetPasswordForm() {
 
         if (!response.ok) {
           setErrorMessage(
-            body?.message ?? "Nao foi possivel redefinir sua senha. Solicite um novo link.",
+            body?.message ?? "Não foi possível redefinir sua senha. Solicite um novo link.",
           );
           return;
         }
 
         setFieldErrors({});
-        setSuccessMessage("Senha alterada com sucesso. Agora voce ja pode entrar com a nova senha.");
+        setSuccessMessage("Senha alterada com sucesso. Agora você já pode entrar com a nova senha.");
       } catch {
         setErrorMessage("Erro de rede ao redefinir a senha. Tente novamente.");
       } finally {
@@ -130,7 +130,7 @@ export function AuthResetPasswordForm() {
                 id="password"
                 name="password"
                 label="Nova senha"
-                placeholder="Minimo de 8 caracteres"
+                placeholder="Mínimo de 8 caracteres"
                 autoComplete="new-password"
               />
               {fieldErrors.password ? (

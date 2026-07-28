@@ -61,7 +61,7 @@ function role(value: unknown): MessageSenderRole {
 function participant(value: { id?: unknown; name?: unknown } | undefined): MessageParticipant {
   return {
     id: number(value?.id),
-    name: text(value?.name, "Usuario"),
+    name: text(value?.name, "Usuário"),
   };
 }
 
@@ -72,7 +72,7 @@ export function mapMessage(raw: WpMessageItem): MessageItem {
     id: number(raw.id),
     isMine: raw.is_mine === true,
     senderId: number(raw.sender_id),
-    senderName: text(raw.sender_name, "Usuario"),
+    senderName: text(raw.sender_name, "Usuário"),
     senderRole: role(raw.sender_role),
   };
 }

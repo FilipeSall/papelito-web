@@ -25,7 +25,7 @@ export function AboutFactoryImage({
     <Image
       fill
       priority={priority}
-      alt={image?.alt || "Socios da Papelito em pe diante da linha de producao da fabrica."}
+      alt={image?.alt || "Socios da Papelito em pe diante da linha de produção da fábrica."}
       className={className ?? "object-cover object-center"}
       sizes={sizes}
       src={image?.imageUrl || "/images/sobre-page/fabrica-papelito.jpg"}

@@ -33,7 +33,7 @@ const statusConfig: Record<OrderStatus, { label: string; bgColor: string; textCo
     textColor: "text-blue-400",
   },
   picking: {
-    label: "Em separacao",
+    label: "Em separação",
     bgColor: "bg-orange-500/20",
     textColor: "text-orange-600",
   },

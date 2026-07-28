@@ -23,13 +23,13 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as AddressPayload | null;
 
   if (!payload) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   const zipCode = String(payload.zipCode ?? "").trim();
@@ -44,7 +44,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       {
         message:
-          "Preencha CEP, logradouro, numero, bairro, cidade e estado para salvar o endereco.",
+          "Preencha CEP, logradouro, número, bairro, cidade e estado para salvar o endereço.",
       },
       { status: 422 },
     );
@@ -100,7 +100,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ customer });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel atualizar seu endereco.";
+      error instanceof Error ? error.message : "Não foi possível atualizar seu endereço.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

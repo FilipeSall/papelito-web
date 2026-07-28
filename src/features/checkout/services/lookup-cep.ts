@@ -83,7 +83,7 @@ async function fetchViaCep(digits: string): Promise<CepLookupDetailedResult> {
 
       return {
         status: "error",
-        message: "Nao foi possivel consultar o CEP agora.",
+        message: "Não foi possível consultar o CEP agora.",
       };
     }
 
@@ -100,7 +100,7 @@ async function fetchViaCep(digits: string): Promise<CepLookupDetailedResult> {
     if (!data) {
       return {
         status: "error",
-        message: "Nao foi possivel consultar o CEP agora.",
+        message: "Não foi possível consultar o CEP agora.",
       };
     }
 
@@ -128,7 +128,7 @@ async function fetchViaCep(digits: string): Promise<CepLookupDetailedResult> {
   } catch {
     return {
       status: "error",
-      message: "Nao foi possivel consultar o CEP agora.",
+      message: "Não foi possível consultar o CEP agora.",
     };
   }
 }
@@ -147,7 +147,7 @@ async function fetchBrasilApi(digits: string): Promise<CepLookupDetailedResult> 
 
       return {
         status: "error",
-        message: "Nao foi possivel consultar o CEP agora.",
+        message: "Não foi possível consultar o CEP agora.",
       };
     }
 
@@ -161,7 +161,7 @@ async function fetchBrasilApi(digits: string): Promise<CepLookupDetailedResult> 
     if (!data) {
       return {
         status: "error",
-        message: "Nao foi possivel consultar o CEP agora.",
+        message: "Não foi possível consultar o CEP agora.",
       };
     }
 
@@ -174,7 +174,7 @@ async function fetchBrasilApi(digits: string): Promise<CepLookupDetailedResult> 
   } catch {
     return {
       status: "error",
-      message: "Nao foi possivel consultar o CEP agora.",
+      message: "Não foi possível consultar o CEP agora.",
     };
   }
 }

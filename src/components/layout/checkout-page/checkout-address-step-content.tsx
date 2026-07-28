@@ -162,7 +162,7 @@ export function CheckoutAddressStepContent({
           : "idle";
   const shippingError =
     invalidProductIdsForShipping
-      ? "Carrinho contem produtos sem identificador valido para cotar frete."
+      ? "Carrinho contém produtos sem identificador válido para cotar frete."
       : shippingQuote.error instanceof Error
         ? shippingQuote.error.message
         : null;
@@ -184,7 +184,7 @@ export function CheckoutAddressStepContent({
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,299px)]">
           <form className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
             <h2 className="text-[20px] font-black uppercase tracking-[-0.4492px] text-brand-dark">
-              Endereco de entrega
+              Endereço de entrega
             </h2>
 
             <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2">
@@ -209,7 +209,7 @@ export function CheckoutAddressStepContent({
               </div>
 
               <CheckoutField
-                label="Numero"
+                label="Número"
                 placeholder="Ex: 123"
                 value={form.number}
                 onChange={handleNumberChange}
@@ -252,11 +252,11 @@ export function CheckoutAddressStepContent({
 
               {!vendorId ? (
                 <p className="mt-2 text-sm leading-5 text-text-tertiary">
-                  A cotacao por vendor sera ativada quando o carrinho carregar o vendor escolhido.
+                  A cotação por vendor será ativada quando o carrinho carregar o vendor escolhido.
                 </p>
               ) : destinationCep.length !== 8 ? (
                 <p className="mt-2 text-sm leading-5 text-text-tertiary">
-                  Informe um CEP valido para cotar PAC e SEDEX.
+                  Informe um CEP válido para cotar PAC e SEDEX.
                 </p>
               ) : shippingStatus === "loading" ? (
                 <p className="mt-2 text-sm leading-5 text-text-tertiary">
@@ -264,7 +264,7 @@ export function CheckoutAddressStepContent({
                 </p>
               ) : shippingStatus === "error" ? (
                 <p className="mt-2 text-sm leading-5 text-[#B42318]">
-                  {shippingError ?? "Nao foi possivel cotar o frete."}
+                  {shippingError ?? "Não foi possível cotar o frete."}
                 </p>
               ) : shippingOptions.length > 0 ? (
                 <div className="mt-3 grid gap-2">
@@ -296,7 +296,7 @@ export function CheckoutAddressStepContent({
                           ) : null}
                           <span className="block text-xs text-text-tertiary">
                             {option.deliveryTime
-                              ? `${option.deliveryTime} dias uteis`
+                              ? `${option.deliveryTime} dias úteis`
                               : "Prazo sob consulta"}
                           </span>
                         </span>
@@ -315,7 +315,7 @@ export function CheckoutAddressStepContent({
                 className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FFFCF0] px-4 py-4"
                 label=""
                 layout="stacked"
-                message="Carregando opcoes de entrega..."
+                message="Carregando opções de entrega..."
                 size="sm"
               />
             ) : null}
@@ -326,7 +326,7 @@ export function CheckoutAddressStepContent({
 				disabled={!isFormValid || shouldBlockForShipping}
               onClick={handleAdvance}
             >
-					Proximo: Pagamento
+					Próximo: Pagamento
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </form>

@@ -43,7 +43,7 @@ export default async function CheckoutSuccessPage({
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-text-secondary">
-            Seu pagamento foi confirmado e o pedido ja seguiu para processamento.
+            Seu pagamento foi confirmado e o pedido já seguiu para processamento.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

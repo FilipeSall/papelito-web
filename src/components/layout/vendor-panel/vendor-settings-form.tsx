@@ -15,7 +15,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
   const numberOfDays = Number(days);
   const error =
     !Number.isInteger(numberOfDays) || numberOfDays < 1 || numberOfDays > 30
-      ? "Informe um numero inteiro entre 1 e 30."
+      ? "Informe um número inteiro entre 1 e 30."
       : "";
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -35,7 +35,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
       setFeedback(
         response.ok
           ? { error: false, message: "Prazo operacional atualizado." }
-          : { error: true, message: body?.message ?? "Nao foi possivel atualizar o prazo." },
+          : { error: true, message: body?.message ?? "Não foi possível atualizar o prazo." },
       );
     });
   }
@@ -50,14 +50,14 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
         </div>
         <form className="flex flex-1 flex-col px-5 py-6 md:px-6" onSubmit={submit}>
           <p className="mt-3 max-w-xl text-sm leading-6 text-brand-dark/68">
-            Defina quantos dias uteis sua loja precisa para preparar pedidos. Este prazo aparece
+            Defina quantos dias úteis sua loja precisa para preparar pedidos. Este prazo aparece
             para clientes ao escolherem seu vendor.
           </p>
           <div className="mt-6 max-w-sm border-2 border-[#1a1a1a] bg-white p-5 shadow-[4px_4px_0px_#1a1a1a]">
             <ProfileFormField
               errorMessage={days ? error : ""}
               inputMode="numeric"
-              label="Dias uteis de processamento"
+              label="Dias úteis de processamento"
               onChange={setDays}
               type="number"
               value={days}

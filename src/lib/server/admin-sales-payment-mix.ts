@@ -51,7 +51,7 @@ export async function getAdminSalesPaymentMix(
 ): Promise<AdminSalesPaymentMix> {
   if (!accessToken) {
     return {
-      errors: ["Sessao sem access token para amostrar metodos de pagamento."],
+      errors: ["Sessão sem access token para amostrar métodos de pagamento."],
       ordersSampled: 0,
       series: [],
       totalOrdersAvailable: 0,
@@ -96,7 +96,7 @@ export async function getAdminSalesPaymentMix(
       continue;
     }
 
-    const method = order.payment_method_title?.trim() || "nao informado";
+    const method = order.payment_method_title?.trim() || "não informado";
     const total = Math.max(0, toNumber(order.total));
 
     if (total <= 0) {

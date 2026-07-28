@@ -52,7 +52,7 @@ export function FavoritePromotionEmailSettingsCard({
           setIsEnabled(previousValue);
           setFeedback({
             type: "error",
-            message: body?.message ?? "Nao foi possivel atualizar sua preferencia.",
+            message: body?.message ?? "Não foi possível atualizar sua preferência.",
           });
           return;
         }
@@ -60,14 +60,14 @@ export function FavoritePromotionEmailSettingsCard({
         setFeedback({
           type: "success",
           message: nextValue
-            ? "Voce passara a receber e-mails quando favoritos entrarem em promocao."
-            : "Os e-mails sobre favoritos em promocao foram desativados.",
+            ? "Você passará a receber e-mails quando favoritos entrarem em promoção."
+            : "Os e-mails sobre favoritos em promoção foram desativados.",
         });
       } catch {
         setIsEnabled(previousValue);
         setFeedback({
           type: "error",
-          message: "Erro de rede ao atualizar sua preferencia. Tente novamente.",
+          message: "Erro de rede ao atualizar sua preferência. Tente novamente.",
         });
       }
     });
@@ -88,7 +88,7 @@ export function FavoritePromotionEmailSettingsCard({
                 </h4>
               </div>
               <p className="text-sm leading-6 text-[#1a1a1a]/70">
-                Receber e-mails quando produtos dos meus favoritos entrarem em promocao.
+                Receber e-mails quando produtos dos meus favoritos entrarem em promoção.
               </p>
             </div>
 
@@ -117,7 +117,7 @@ export function FavoritePromotionEmailSettingsCard({
           </div>
 
           <p className="pt-4 text-sm leading-6 text-[#1a1a1a]/60">
-            A notificacao dentro do app continua ativa mesmo quando o e-mail estiver desligado.
+            A notificação dentro do app continua ativa mesmo quando o e-mail estiver desligado.
           </p>
         </div>
 

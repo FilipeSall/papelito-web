@@ -18,13 +18,13 @@ describe("GET /api/vendor/orders", () => {
   });
 
   it("returns the auth error when the vendor is not authenticated", async () => {
-    requireVendorAccessTokenMock.mockResolvedValue({ error: "Nao autenticado.", status: 401 });
+    requireVendorAccessTokenMock.mockResolvedValue({ error: "Não autenticado.", status: 401 });
 
     const { GET } = await import("./route");
     const response = await GET(new Request("http://localhost/api/vendor/orders?status=all"));
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ message: "Nao autenticado." });
+    expect(await response.json()).toEqual({ message: "Não autenticado." });
   });
 
   it("forwards normalized filters to WordPress and maps the snapshot", async () => {

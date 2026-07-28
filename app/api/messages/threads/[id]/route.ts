@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const body = (await request.json().catch(() => null)) as { body?: unknown } | null;
   if (!/^\d+$/.test(id) || !body || typeof body.body !== "string") {
-    return NextResponse.json({ message: "Conversa e mensagem sao obrigatorias." }, { status: 400 });
+    return NextResponse.json({ message: "Conversa e mensagem são obrigatorias." }, { status: 400 });
   }
 
   const result = await wpRest<WpMessageThread>(`/papelito/v1/messages/threads/${id}`, {

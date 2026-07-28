@@ -41,7 +41,7 @@ describe("applyCouponClient", () => {
       ok: false,
       status: 200,
       errorCode: "papelito_invalid_response",
-      message: "Resposta invalida ao aplicar cupom.",
+      message: "Resposta inválida ao aplicar cupom.",
     });
   });
 

@@ -118,8 +118,8 @@ export function ProductsManager({
 
     showToast({
       description:
-        "As alteracoes do produto foram aplicadas no catalogo administrativo e ja estao prontas para nova revisao ou publicacao.",
-      title: "Alteracoes salvas com sucesso.",
+        "As alterações do produto foram aplicadas no catálogo administrativo e já estão prontas para nova revisão ou publicacao.",
+      title: "Alterações salvas com sucesso.",
     });
     return true;
   }, [manager, showToast]);
@@ -228,7 +228,7 @@ function ProductsHeader() {
           Produtos
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5e574c]">
-          Catalogo, precos, imagens e campanhas comerciais da loja.
+          Catálogo, preços, imagens e campanhas comerciais da loja.
         </p>
       </div>
     </section>
@@ -252,9 +252,9 @@ function CatalogStats({
 }: CatalogStatsProps) {
   const items = [
     { description: "total no WooCommerce", label: "Produtos", value: totalProducts },
-    { description: "navegacao atual", label: "Pagina", value: `${page}/${Math.max(totalPages, 1)}` },
-    { description: "visiveis no catalogo", label: "Publicados na lista", value: published },
-    { description: "campanhas em vitrine", label: "Promocoes ativas", value: promotions },
+    { description: "navegacao atual", label: "Página", value: `${page}/${Math.max(totalPages, 1)}` },
+    { description: "visíveis no catálogo", label: "Publicados na lista", value: published },
+    { description: "campanhas em vitrine", label: "Promoções ativas", value: promotions },
   ];
 
   return (

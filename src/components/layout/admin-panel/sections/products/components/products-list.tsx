@@ -8,7 +8,7 @@ import { formatDateTimeLabel } from "../../../formatters";
 import { FramedPanel } from "../../../primitives";
 import { findPromotionTag, formatMoney, formatTermLabel, isPromotionActive } from "../helpers";
 
-const TABLE_HEADERS = ["produto", "status", "preco", "promocao", "atualizado"];
+const TABLE_HEADERS = ["produto", "status", "preço", "promoção", "atualizado"];
 
 function buildPageItems(currentPage: number, totalPages: number) {
   if (totalPages <= 7) {
@@ -86,7 +86,7 @@ export function ProductsList({
       <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-            Catalogo
+            Catálogo
           </p>
           <p className="mt-1 text-sm text-[#231f20]/66">
             {totalProducts > 0
@@ -95,7 +95,7 @@ export function ProductsList({
           </p>
         </div>
         <div className="inline-flex min-h-10 items-center rounded-full border border-[#231f20]/14 bg-white/82 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#231f20]/64">
-          pagina {page} de {Math.max(totalPages, 1)}
+          página {page} de {Math.max(totalPages, 1)}
         </div>
       </div>
 
@@ -145,8 +145,8 @@ export function ProductsList({
                             {product.name}
                           </p>
                           <p className="mt-1 truncate text-sm text-[#70695d]">
-                            SKU: {product.sku || "nao informado"} · slug:{" "}
-                            {product.slug || "nao informado"}
+                            SKU: {product.sku || "não informado"} · slug:{" "}
+                            {product.slug || "não informado"}
                           </p>
                           <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#a0947b]">
                             {product.categories.length > 0
@@ -173,7 +173,7 @@ export function ProductsList({
                           {formatMoney(product.regularPrice || product.price)}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-[#8d8678]">preco base</p>
+                        <p className="mt-1 text-xs text-[#8d8678]">preço base</p>
                       )}
                     </td>
                     <td className="border-b border-[#231f20]/8 px-4 py-3 align-top">
@@ -187,7 +187,7 @@ export function ProductsList({
                         {formatDateTimeLabel(product.dateModified)}
                       </span>
                       <span className="mt-1 block text-xs uppercase tracking-[0.14em] text-[#9a958d]">
-                        ultima edicao
+                        última edição
                       </span>
                     </td>
                   </tr>
@@ -204,7 +204,7 @@ export function ProductsList({
         </p>
         <div className="flex items-center gap-3">
           <button
-            aria-label="Pagina anterior"
+            aria-label="Página anterior"
             className="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center rounded-[12px] border border-[#231f20]/16 bg-white px-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#231f20]/72 hover:border-[#231f20]/32 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={page <= 1 || isLoading}
             onClick={() => onChangePage(page - 1)}
@@ -214,7 +214,7 @@ export function ProductsList({
           </button>
           <div className="flex items-center gap-2 md:hidden">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8d8678]">
-              Pagina
+              Página
             </span>
             <CheckoutCustomSelect
               disabled={isLoading || totalPages <= 1}
@@ -225,7 +225,7 @@ export function ProductsList({
                 label: String(index + 1),
                 value: String(index + 1),
               }))}
-              placeholder="Pagina"
+              placeholder="Página"
               triggerClassName="h-9 min-h-9 rounded-[12px] border-[#231f20]/16 px-3 py-0 font-semibold text-[#231f20]/72 focus:border-[#231f20]"
               value={String(page)}
               onChange={(nextValue) => onChangePage(Number(nextValue))}
@@ -260,7 +260,7 @@ export function ProductsList({
             )}
           </div>
           <button
-            aria-label="Proxima pagina"
+            aria-label="Próxima página"
             className="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center rounded-[12px] border-2 border-[#231f20] bg-[#231f20] px-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#ffe500] disabled:cursor-not-allowed disabled:opacity-40"
             disabled={page >= totalPages || isLoading}
             onClick={() => onChangePage(page + 1)}

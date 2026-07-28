@@ -70,7 +70,7 @@ export function formatPaymentDeadline(expiresAt: string | undefined, nowMs: numb
 
   const formatted = deadlineFormatter.format(new Date(expiryMs));
   return {
-    label: `Pague ate ${formatted} (${remainingLabel(expiryMs - nowMs)})`,
+    label: `Pague até ${formatted} (${remainingLabel(expiryMs - nowMs)})`,
     expired: false,
     hasDeadline: true,
   };

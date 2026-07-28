@@ -21,7 +21,7 @@ export async function markNotificationRead(id: number): Promise<MarkNotification
   const payload = await parseJson<MarkNotificationReadResponse & ApiErrorPayload>(response);
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel marcar a notificacao como lida.");
+    throw new Error(payload.message || "Não foi possível marcar a notificação como lida.");
   }
 
   return payload;
@@ -36,7 +36,7 @@ export async function markAllNotificationsRead(): Promise<MarkAllNotificationsRe
   const payload = await parseJson<MarkAllNotificationsReadResponse & ApiErrorPayload>(response);
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel marcar notificacoes como lidas.");
+    throw new Error(payload.message || "Não foi possível marcar notificações como lidas.");
   }
 
   return payload;

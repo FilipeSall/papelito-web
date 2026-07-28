@@ -20,7 +20,7 @@ export async function POST(request: Request, context: RouteContext) {
   const parsedOrderId = Number.parseInt(orderId, 10);
 
   if (!Number.isFinite(userId) || userId <= 0 || !Number.isFinite(parsedOrderId) || parsedOrderId <= 0) {
-    return NextResponse.json({ message: "Parametros invalidos." }, { status: 400 });
+    return NextResponse.json({ message: "Parâmetros inválidos." }, { status: 400 });
   }
 
   if (!body?.reason || typeof body.reason !== "string") {

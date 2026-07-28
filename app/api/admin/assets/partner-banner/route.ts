@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
     | null;
 
   if (!payload?.banner) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
     revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel salvar o partner banner.";
+    const message = error instanceof Error ? error.message : "Não foi possível salvar o partner banner.";
     const status =
       typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
         ? error.status

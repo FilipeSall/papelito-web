@@ -131,7 +131,7 @@ export async function getAdminVendorsSnapshot(
   if (!accessToken) {
     return {
       ...emptySnapshot,
-      issues: ["Sessao sem access token para consultar a lista de vendors."],
+      issues: ["Sessão sem access token para consultar a lista de vendors."],
     };
   }
 

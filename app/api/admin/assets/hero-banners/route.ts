@@ -27,7 +27,7 @@ export async function PUT(request: Request) {
   const payload = (await request.json().catch(() => null)) as { banners?: HeroBanner[] } | null;
 
   if (!payload || !Array.isArray(payload.banners)) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -37,7 +37,7 @@ export async function PUT(request: Request) {
     revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel salvar os hero banners.";
+    const message = error instanceof Error ? error.message : "Não foi possível salvar os hero banners.";
     const status =
       typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
         ? error.status

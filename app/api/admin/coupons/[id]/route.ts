@@ -24,13 +24,13 @@ export async function GET(
   }
 
   const id = await resolveId(params);
-  if (!id) return NextResponse.json({ message: "ID invalido." }, { status: 422 });
+  if (!id) return NextResponse.json({ message: "ID inválido." }, { status: 422 });
 
   try {
     const coupon = await getAdminCoupon(auth.accessToken, id);
     return NextResponse.json({ coupon });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Cupom nao encontrado.";
+    const message = error instanceof Error ? error.message : "Cupom não encontrado.";
     return NextResponse.json({ message }, { status: 404 });
   }
 }
@@ -45,11 +45,11 @@ export async function PUT(
   }
 
   const id = await resolveId(params);
-  if (!id) return NextResponse.json({ message: "ID invalido." }, { status: 422 });
+  if (!id) return NextResponse.json({ message: "ID inválido." }, { status: 422 });
 
   const payload = (await request.json().catch(() => null)) as CouponInput | null;
   if (!payload || typeof payload.code !== "string") {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -57,7 +57,7 @@ export async function PUT(
     revalidateTag("admin-coupons", "max");
     return NextResponse.json({ coupon });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel atualizar o cupom.";
+    const message = error instanceof Error ? error.message : "Não foi possível atualizar o cupom.";
     const status = (error as { status?: number } | null)?.status ?? 500;
     const code = (error as { code?: string } | null)?.code;
     return NextResponse.json({ message, code }, { status });
@@ -74,7 +74,7 @@ export async function DELETE(
   }
 
   const id = await resolveId(params);
-  if (!id) return NextResponse.json({ message: "ID invalido." }, { status: 422 });
+  if (!id) return NextResponse.json({ message: "ID inválido." }, { status: 422 });
 
   try {
     await deleteCoupon(auth.accessToken, id);
@@ -89,7 +89,7 @@ export async function DELETE(
         { status: isMissing ? 404 : error.status },
       );
     }
-    const message = error instanceof Error ? error.message : "Nao foi possivel remover o cupom.";
+    const message = error instanceof Error ? error.message : "Não foi possível remover o cupom.";
     console.error("[admin/coupons:DELETE]", { id, message });
     return NextResponse.json({ message }, { status: 500 });
   }

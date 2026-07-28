@@ -71,7 +71,7 @@ export function useCartStockValidation(options?: { validateOnMount?: boolean }) 
 
     const stockItems = buildStockItems();
     if (!stockItems) {
-      const message = "O carrinho contem itens invalidos para validar o estoque.";
+      const message = "O carrinho contém itens inválidos para validar o estoque.";
       setGlobalError(message);
       return { status: "blocked", message };
     }
@@ -135,7 +135,7 @@ export function useCartStockValidation(options?: { validateOnMount?: boolean }) 
         !Number.isInteger(item.vendorId) ||
         item.vendorId <= 0
       ) {
-        setGlobalError("Nao foi possivel validar este item do carrinho.");
+        setGlobalError("Não foi possível validar este item do carrinho.");
         return;
       }
 
@@ -154,7 +154,7 @@ export function useCartStockValidation(options?: { validateOnMount?: boolean }) 
 
         const stock = result.products[productId];
         if (!stock) {
-          setGlobalError("Nao foi possivel validar o estoque deste produto.");
+          setGlobalError("Não foi possível validar o estoque deste produto.");
           return;
         }
 
@@ -166,7 +166,7 @@ export function useCartStockValidation(options?: { validateOnMount?: boolean }) 
             ...current,
             [productId]: {
               type: "out_of_stock",
-              message: "Este produto esta sem estoque no momento.",
+              message: "Este produto está sem estoque no momento.",
             },
           }));
           return;

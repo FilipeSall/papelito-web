@@ -12,7 +12,7 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as DocumentPayload | null;
@@ -20,7 +20,7 @@ export async function PATCH(request: Request) {
 
   if (digits.length !== 11 && digits.length !== 14) {
     return NextResponse.json(
-      { message: "Informe um CPF ou CNPJ valido." },
+      { message: "Informe um CPF ou CNPJ válido." },
       { status: 422 },
     );
   }
@@ -35,7 +35,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ customer });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel salvar o documento.";
+      error instanceof Error ? error.message : "Não foi possível salvar o documento.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

@@ -34,7 +34,7 @@ describe("GET /api/catalog", () => {
     resolveCatalogPdfMock.mockResolvedValue({
       ok: false,
       code: "catalog_not_found",
-      message: "Catalogo nao disponivel.",
+      message: "Catálogo não disponível.",
     });
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
@@ -46,7 +46,7 @@ describe("GET /api/catalog", () => {
     expect(response.headers.get("Content-Type")).toContain("application/json");
     expect(body).toEqual({
       code: "catalog_not_found",
-      message: "Catalogo nao disponivel.",
+      message: "Catálogo não disponível.",
     });
   });
 });

@@ -64,8 +64,8 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
         {orders.length === 0 ? (
           <ProfileEmptyShoppingState
             ctaLabel="Ir as compras"
-            description="Seu historico de pedidos vai aparecer aqui assim que voce fechar a primeira compra. Explore os produtos e aproveite para montar seu carrinho."
-            title="Voce ainda nao fez seu primeiro pedido"
+            description="Seu histórico de pedidos vai aparecer aqui assim que você fechar a primeira compra. Explore os produtos e aproveite para montar seu carrinho."
+            title="Você ainda não fez seu primeiro pedido"
           />
         ) : (
           orders.map((order) => <OrderCard key={order.id} order={order} />)

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as { body?: unknown; order_id?: unknown } | null;
   if (!body || !Number.isInteger(body.order_id) || typeof body.body !== "string") {
-    return NextResponse.json({ message: "Pedido e mensagem sao obrigatorios." }, { status: 400 });
+    return NextResponse.json({ message: "Pedido e mensagem são obrigatórios." }, { status: 400 });
   }
 
   const result = await wpRest<WpMessageThread>("/papelito/v1/messages/threads", {

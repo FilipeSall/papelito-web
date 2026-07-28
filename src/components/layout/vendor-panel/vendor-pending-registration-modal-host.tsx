@@ -208,12 +208,12 @@ function createFormFromResponse(payload: VendorPendingRegistrationResponse): Pen
 }
 
 function validateForm(form: PendingForm): string | null {
-  if (!isValidEmail(form.email)) return "Informe um e-mail valido.";
+  if (!isValidEmail(form.email)) return "Informe um e-mail válido.";
   if (!form.storeName.trim()) return "Informe o nome da loja.";
-  if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ valido.";
-  if (!isValidCep(form.cep)) return "Informe um CEP valido para a loja.";
+  if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ válido.";
+  if (!isValidCep(form.cep)) return "Informe um CEP válido para a loja.";
   if (!form.street.trim()) return "Informe o logradouro da loja.";
-  if (!form.number.trim()) return "Informe o numero da loja.";
+  if (!form.number.trim()) return "Informe o número da loja.";
   if (!form.neighborhood.trim()) return "Informe o bairro da loja.";
   if (!form.city.trim()) return "Informe a cidade da loja.";
   if (!form.state.trim()) return "Informe o estado da loja.";
@@ -554,7 +554,7 @@ export function VendorPendingRegistrationModalHost({
     }
 
     setIsCepLookingUp(true);
-    setCepStatus({ tone: "info", message: "Buscando endereco pelo CEP..." });
+    setCepStatus({ tone: "info", message: "Buscando endereço pelo CEP..." });
 
     try {
       const result = await lookupCepDetailed(rawDigits);
@@ -597,7 +597,7 @@ export function VendorPendingRegistrationModalHost({
       if (requestId === cepLookupRequestIdRef.current) {
         setCepStatus({
           tone: "error",
-          message: "Nao foi possivel consultar o CEP agora.",
+          message: "Não foi possível consultar o CEP agora.",
         });
       }
     } finally {
@@ -636,7 +636,7 @@ export function VendorPendingRegistrationModalHost({
 
       if (!response.ok) {
         setMessageTone("error");
-        setMessage(body && "message" in body ? body.message ?? "Nao foi possivel salvar agora." : "Nao foi possivel salvar agora.");
+        setMessage(body && "message" in body ? body.message ?? "Não foi possível salvar agora." : "Não foi possível salvar agora.");
         return;
       }
 
@@ -676,7 +676,7 @@ export function VendorPendingRegistrationModalHost({
         pendingFields: nextPendingFields,
       });
       setMessageTone("success");
-      setMessage(`Cadastro salvo. Ainda faltam ${nextPendingFields.length} campos obrigatorios.`);
+      setMessage(`Cadastro salvo. Ainda faltam ${nextPendingFields.length} campos obrigatórios.`);
     } catch {
       setMessageTone("error");
       setMessage("Erro de rede ao salvar o cadastro.");
@@ -712,7 +712,7 @@ export function VendorPendingRegistrationModalHost({
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#1a1a1a]/70">
               {currentState.pendingFields.length > 0
-                ? "Seu cadastro foi iniciado pelo time Papelito. Revise os dados preenchidos, ajuste o que for necessario e complete as pendencias obrigatorias para liberar suas vendas no marketplace."
+                ? "Seu cadastro foi iniciado pelo time Papelito. Revise os dados preenchidos, ajuste o que for necessário e complete as pendências obrigatorias para liberar suas vendas no marketplace."
                 : "Revise os dados cadastrais e financeiros usados no onboarding do recebedor antes de voltar ao painel."}
             </p>
           </div>
@@ -817,7 +817,7 @@ export function VendorPendingRegistrationModalHost({
             </div>
           </Section>
 
-          <Section title="Endereco e cobertura">
+          <Section title="Endereço e cobertura">
             <div className="grid gap-4 md:grid-cols-3">
               <Field
                 inputMode="numeric"
@@ -825,7 +825,7 @@ export function VendorPendingRegistrationModalHost({
                 helpText="Use o CEP para preencher logradouro, bairro, cidade e estado automaticamente."
                 helperText={
                   isCepLookingUp
-                    ? "Buscando endereco pelo CEP..."
+                    ? "Buscando endereço pelo CEP..."
                     : cepStatus?.tone === "info"
                       ? cepStatus.message
                       : undefined
@@ -872,7 +872,7 @@ export function VendorPendingRegistrationModalHost({
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field
-                label="Numero"
+                label="Número"
                 onChange={(value) => update("number", value.replace(/[^\dA-Za-z-]/g, ""))}
                 required
                 value={form.number}
@@ -912,7 +912,7 @@ export function VendorPendingRegistrationModalHost({
 
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <AdminSelectField
-                label="Natureza juridica"
+                label="Natureza jurídica"
                 onChange={(value) => {
                   updatePagarmeDraft("corporationTypeSelection", value);
                   updatePagarmeDraft(
@@ -945,7 +945,7 @@ export function VendorPendingRegistrationModalHost({
               <div className="mt-4">
                 <Field
                   error={isPendingField("corporationType")}
-                  label="Qual e a natureza juridica?"
+                  label="Qual é a natureza jurídica?"
                   onChange={(value) => {
                     updatePagarmeDraft("corporationTypeOther", value);
                     updatePagarmeDraft("corporationType", value);
@@ -956,7 +956,7 @@ export function VendorPendingRegistrationModalHost({
             ) : null}
           </Section>
 
-          <Section title="Responsavel legal / socio administrador">
+          <Section title="Responsável legal / socio administrador">
             <div className="grid gap-4 md:grid-cols-2">
               <Field
                 error={isPendingField("partner.name")}
@@ -1014,7 +1014,7 @@ export function VendorPendingRegistrationModalHost({
                 }
                 options={[
                   { label: "Sim", value: "sim" },
-                  { label: "Nao", value: "nao" },
+                  { label: "Não", value: "nao" },
                 ]}
                 placeholder="Selecione"
                 value={partner.selfDeclaredLegalRepresentative === false ? "nao" : "sim"}
@@ -1026,19 +1026,19 @@ export function VendorPendingRegistrationModalHost({
               <Field
                 error={isPendingField("partner.address.zipCode")}
                 inputMode="numeric"
-                label="CEP do responsavel"
+                label="CEP do responsável"
                 onChange={(value) => updateManagingPartnerAddressField("zipCode", formatCep(value))}
                 value={partner.address.zipCode}
               />
               <Field
                 error={isPendingField("partner.address.street")}
-                label="Rua do responsavel"
+                label="Rua do responsável"
                 onChange={(value) => updateManagingPartnerAddressField("street", value)}
                 value={partner.address.street}
               />
               <Field
                 error={isPendingField("partner.address.streetNumber")}
-                label="Numero"
+                label="Número"
                 onChange={(value) =>
                   updateManagingPartnerAddressField("streetNumber", value.replace(/[^\dA-Za-z-]/g, ""))
                 }
@@ -1065,7 +1065,7 @@ export function VendorPendingRegistrationModalHost({
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <AdminSelectField
-                label="Estado do responsavel"
+                label="Estado do responsável"
                 onChange={(value) => updateManagingPartnerAddressField("state", value)}
                 options={REVENDEDOR_STATE_OPTIONS}
                 placeholder="Selecione"
@@ -1077,7 +1077,7 @@ export function VendorPendingRegistrationModalHost({
                 onChange={(value) => updatePagarmeDraft("hasManagingPartner", value === "no" ? "no" : "yes")}
                 options={[
                   { label: "Sim", value: "yes" },
-                  { label: "Nao", value: "no" },
+                  { label: "Não", value: "no" },
                 ]}
                 placeholder="Selecione"
                 value={form.pagarmeDraft.hasManagingPartner}
@@ -1086,7 +1086,7 @@ export function VendorPendingRegistrationModalHost({
             </div>
           </Section>
 
-          <Section title="Dados bancarios">
+          <Section title="Dados bancários">
             <div className="grid gap-4 md:grid-cols-3">
               <Field
                 error={isPendingField("bankAccount.holderName")}
@@ -1102,8 +1102,8 @@ export function VendorPendingRegistrationModalHost({
                   updateBank("holderDocument", holderType === "company" ? form.cnpj : "");
                 }}
                 options={[
-                  { label: "Pessoa juridica", value: "company" },
-                  { label: "Pessoa fisica", value: "individual" },
+                  { label: "Pessoa jurídica", value: "company" },
+                  { label: "Pessoa física", value: "individual" },
                 ]}
                 placeholder="Selecione"
                 value={form.bankAccount.holderType}
@@ -1123,7 +1123,7 @@ export function VendorPendingRegistrationModalHost({
               />
               <AdminSelectField
                 label="Banco"
-                helpText="Selecione um banco da lista ou use Outro para informar manualmente o codigo de 3 digitos."
+                helpText="Selecione um banco da lista ou use Outro para informar manualmente o código de 3 digitos."
                 onChange={(value) => {
                   if (value === OTHER_BANK_OPTION_VALUE) {
                     setUseCustomBankCode(true);
@@ -1143,7 +1143,7 @@ export function VendorPendingRegistrationModalHost({
                 <Field
                   error={isPendingField("bankAccount.bankCode")}
                   inputMode="numeric"
-                  label="Codigo do banco"
+                  label="Código do banco"
                   onChange={(value) => updateBank("bankCode", digits(value, 3))}
                   placeholder="000"
                   value={form.bankAccount.bankCode}
@@ -1152,14 +1152,14 @@ export function VendorPendingRegistrationModalHost({
               <Field
                 error={isPendingField("bankAccount.branchNumber")}
                 inputMode="numeric"
-                label="Agencia"
+                label="Agência"
                 onChange={(value) => updateBank("branchNumber", digits(value, 4))}
                 value={form.bankAccount.branchNumber}
               />
               <Field
                 disabled={!branchHasCheckDigit}
-                label="Digito agencia"
-                placeholder={branchHasCheckDigit ? undefined : "Nao se aplica"}
+                label="Digito agência"
+                placeholder={branchHasCheckDigit ? undefined : "Não se aplica"}
                 onChange={(value) =>
                   updateBank("branchCheckDigit", value.replace(/[^0-9A-Za-z]/g, "").slice(0, 2))
                 }

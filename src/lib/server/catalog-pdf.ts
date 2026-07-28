@@ -125,7 +125,7 @@ async function readFallbackCatalog(
     return {
       ok: false,
       code: "catalog_not_found",
-      message: "Catalogo padrao indisponivel.",
+      message: "Catálogo padrão indisponível.",
     };
   }
 
@@ -204,7 +204,7 @@ export async function resolveCatalogPdf(
     return {
       ok: false,
       code: "catalog_not_found",
-      message: "Catalogo nao disponivel.",
+      message: "Catálogo não disponível.",
     };
   }
 }

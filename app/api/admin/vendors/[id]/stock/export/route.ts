@@ -21,7 +21,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
-    return NextResponse.json({ message: "ID invalido." }, { status: 400 });
+    return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
   const url = new URL(request.url);

@@ -19,7 +19,7 @@ describe("OrdersList", () => {
     render(<OrdersList currentPage={1} orders={[]} totalPages={1} />);
 
     expect(
-      screen.getByRole("heading", { name: /voce ainda nao fez seu primeiro pedido/i }),
+      screen.getByRole("heading", { name: /você ainda não fez seu primeiro pedido/i }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /paginação de pedidos/i })).not.toBeInTheDocument();
   });

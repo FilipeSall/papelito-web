@@ -257,14 +257,14 @@ function mergeMockFlashSale(
   }
 
   return {
-    title: "Oferta Relampago",
+    title: "Oferta Relâmpago",
     slug: "oferta-relampago",
     status: "active",
     startsAt: "",
     endsAt: "",
     productIds: mockProducts.map((product) => Number(product.id)).filter((id) => Number.isInteger(id)),
-    label: "Oferta Relampago",
-    supportingText: "Mock local ativo enquanto a campanha do WordPress nao estiver configurada.",
+    label: "Oferta Relâmpago",
+    supportingText: "Mock local ativo enquanto a campanha do WordPress não estiver configurada.",
     products: mockProducts,
   };
 }

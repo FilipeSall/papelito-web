@@ -19,7 +19,7 @@ export function SalesFiltersPanel({
   }> = [
     { label: "7 dias", preset: "7d" },
     { label: "30 dias", preset: "30d" },
-    { label: "Mes atual", preset: "month" },
+    { label: "Mês atual", preset: "month" },
     { label: "1 ano", preset: "1y" },
   ];
 
@@ -73,7 +73,7 @@ export function SalesFiltersPanel({
               />
             </label>
             <label className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[#231f20]/72">ate</span>
+              <span className="text-sm font-semibold text-[#231f20]/72">até</span>
               <input
                 className="min-h-9 w-full rounded-[8px] border border-[#231f20]/18 bg-white px-3 text-sm text-[#231f20] outline-none transition focus:border-[#231f20] md:w-36"
                 defaultValue={filters.to}

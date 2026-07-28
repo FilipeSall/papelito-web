@@ -48,7 +48,7 @@ describe("FavoritePromotionEmailSettingsCard", () => {
 
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(
-      screen.getByText(/voce passara a receber e-mails/i),
+      screen.getByText(/você passará a receber e-mails/i),
     ).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe("FavoritePromotionEmailSettingsCard", () => {
       ok: false,
       status: 401,
       json: async () => ({
-        message: "Nao autenticado.",
+        message: "Não autenticado.",
       }),
     });
 

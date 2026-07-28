@@ -21,13 +21,13 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as AccountPayload | null;
 
   if (!payload) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   const firstName = String(payload.firstName ?? "").trim();
@@ -43,7 +43,7 @@ export async function PATCH(request: Request) {
 
   if (!firstName || !lastName || !email) {
     return NextResponse.json(
-      { message: "Nome, sobrenome e e-mail sao obrigatorios." },
+      { message: "Nome, sobrenome e e-mail são obrigatórios." },
       { status: 422 },
     );
   }
@@ -71,7 +71,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ customer });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel atualizar seus dados.";
+      error instanceof Error ? error.message : "Não foi possível atualizar seus dados.";
 
     return NextResponse.json({ message }, { status: 500 });
   }
@@ -81,7 +81,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   try {
@@ -89,7 +89,7 @@ export async function GET() {
     return NextResponse.json({ customer });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel carregar seus dados.";
+      error instanceof Error ? error.message : "Não foi possível carregar seus dados.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

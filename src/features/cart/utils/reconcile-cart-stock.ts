@@ -37,7 +37,7 @@ export function reconcileCartStock(
     if (!stock) {
       issues[item.id] = {
         type: "validation_failed",
-        message: "Nao foi possivel validar o estoque deste produto.",
+        message: "Não foi possível validar o estoque deste produto.",
       };
       continue;
     }
@@ -45,7 +45,7 @@ export function reconcileCartStock(
     if (!stock.available || stock.stockQty <= 0) {
       issues[item.id] = {
         type: "out_of_stock",
-        message: "Este produto esta sem estoque no momento.",
+        message: "Este produto está sem estoque no momento.",
       };
       continue;
     }

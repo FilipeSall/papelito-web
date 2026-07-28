@@ -47,12 +47,12 @@ const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
   aboutHero: {
     imageId: 0,
     imageUrl: "/images/sobre-page/sobre-banner.png",
-    alt: "Mulher sorrindo e segurando papeis Papelito diante de um fundo amarelo.",
+    alt: "Mulher sorrindo e segurando papéis Papelito diante de um fundo amarelo.",
   },
   aboutStory: {
     imageId: 0,
     imageUrl: "/images/sobre-page/fabrica-papelito.jpg",
-    alt: "Socios da Papelito em pe diante da linha de producao da fabrica.",
+    alt: "Sócios da Papelito em pé diante da linha de produção da fábrica.",
   },
   revendedorBusinessMain: {
     imageId: 0,
@@ -67,7 +67,7 @@ const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
   revendedorBusinessIllustration: {
     imageId: 0,
     imageUrl: "/images/revendedor/business-card-vector.svg",
-    alt: "Ilustracao de atendimento a negocios revendedores.",
+    alt: "Ilustração de atendimento a negócios revendedores.",
   },
 };
 
@@ -130,10 +130,10 @@ function mapPartnerBanner(
   const tag = cleanText(banner.tag) || "Seja um parceiro";
   const description =
     cleanText(banner.description) ||
-    "Junte-se ao nosso PDV Perfeito com lojistas em todo o Brasil. Receba brindes, premios e beneficios exclusivos";
+    "Junte-se ao nosso PDV Perfeito com lojistas em todo o Brasil. Receba brindes, prêmios e benefícios exclusivos";
   const ctaLabel = cleanText(banner.ctaLabel) || "Quero ser um parceiro";
   const href = cleanText(banner.href) || "/revendedor";
-  const alt = cleanText(banner.alt) || "Parceiros no espaco PDV Perfeito Papelito.";
+  const alt = cleanText(banner.alt) || "Parceiros no espaço PDV Perfeito Papelito.";
 
   if (!desktopImageUrl || !mobileImageUrl || !tag || !description || !ctaLabel || !href || !alt) {
     return null;

@@ -81,7 +81,7 @@ export function PasswordSettingsCard({
         if (!response.ok) {
           setFeedback({
             type: "error",
-            message: body?.message ?? "Nao foi possivel atualizar sua senha.",
+            message: body?.message ?? "Não foi possível atualizar sua senha.",
           });
           return;
         }
@@ -118,7 +118,7 @@ export function PasswordSettingsCard({
           <div className="mb-4 flex items-center gap-2">
             <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
             <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
-              Atualizacao segura
+              Atualização segura
             </h4>
           </div>
 
@@ -128,7 +128,7 @@ export function PasswordSettingsCard({
               errorMessage={fieldErrors.password}
               label="Nova senha"
               onChange={(value) => updateField("password", value)}
-              placeholder="Minimo de 8 caracteres"
+              placeholder="Mínimo de 8 caracteres"
               type="password"
               value={form.password}
             />
@@ -160,7 +160,7 @@ export function PasswordSettingsCard({
 
         <div className="mt-auto flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-[#1a1a1a]/70">
-            Esta acao atualiza a senha diretamente na conta autenticada.
+            Esta ação atualiza a senha diretamente na conta autenticada.
           </p>
 
           <button

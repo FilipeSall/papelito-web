@@ -102,7 +102,7 @@ export function UsersList({
       <EmptyStateCard
         body="Ajuste busca ou filtro de role para encontrar outras contas."
         label="Sem dados"
-        title="Nenhum usuario encontrado"
+        title="Nenhum usuário encontrado"
       />
     );
   }
@@ -113,7 +113,7 @@ export function UsersList({
     return [
       <div key={`user-${row.id}`} className="space-y-1">
         <Link className="block font-semibold text-[#231f20] hover:underline" href={href}>
-          {row.name || row.email || `Usuario #${row.id}`}
+          {row.name || row.email || `Usuário #${row.id}`}
         </Link>
         <p className="text-xs text-[#231f20]/58">{row.email}</p>
       </div>,
@@ -121,7 +121,7 @@ export function UsersList({
         <UserRoleBadge label={row.roleLabel || "Outro"} />
         {row.isVendor ? (
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/52">
-            historico vendor
+            histórico vendor
           </p>
         ) : null}
       </div>,
@@ -149,11 +149,11 @@ export function UsersList({
       <Panel className="overflow-hidden rounded-none border-2 border-[#1a1a1a] shadow-[8px_8px_0px_#1a1a1a]">
         <div className="border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-5 py-4">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/48">
-            base administrativa de usuarios
+            base administrativa de usuários
           </p>
         </div>
         <CompactTable
-          headers={["usuario", "role", "status", "volume", "registro", ""]}
+          headers={["usuário", "perfil", "status", "volume", "registro", ""]}
           rows={rows}
         />
       </Panel>
@@ -161,11 +161,11 @@ export function UsersList({
       {snapshot.totalPages > 1 ? (
         <div className="flex items-center justify-between gap-3 px-1 text-xs uppercase tracking-[0.12em] text-[#231f20]/56">
           <span>
-            pagina {snapshot.currentPage} de {snapshot.totalPages} — {snapshot.totalRows} registros
+            página {snapshot.currentPage} de {snapshot.totalPages} — {snapshot.totalRows} registros
           </span>
           <div className="flex items-center gap-2">
             <PaginationLink
-              ariaLabel="Pagina anterior"
+              ariaLabel="Página anterior"
               disabled={snapshot.currentPage <= 1}
               filters={filters}
               page={snapshot.currentPage - 1}
@@ -173,7 +173,7 @@ export function UsersList({
               {"<"}
             </PaginationLink>
             <PaginationLink
-              ariaLabel="Proxima pagina"
+              ariaLabel="Próxima página"
               disabled={snapshot.currentPage >= snapshot.totalPages}
               filters={filters}
               page={snapshot.currentPage + 1}

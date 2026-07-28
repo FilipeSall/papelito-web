@@ -20,7 +20,7 @@ export function MessageList({
     return (
       <div className="max-h-120 min-h-64 space-y-3 overflow-y-auto bg-[#f6f2e8] px-4 py-5 md:px-5">
         <p className="rounded-[12px] border-2 border-[#c0392b] bg-[#c0392b]/10 p-4 text-sm font-semibold text-[#c0392b]">
-          Nao foi possivel atualizar a conversa.
+          Não foi possível atualizar a conversa.
         </p>
       </div>
     );
@@ -33,7 +33,7 @@ export function MessageList({
           <MessageSquareMore className="h-9 w-9 text-brand-dark/30" />
           <p className="mt-3 text-sm font-semibold text-brand-dark">Nenhuma mensagem enviada</p>
           <p className="mt-1 max-w-sm text-sm text-brand-dark/55">
-            Descreva sua duvida sobre o pedido para iniciar o atendimento com o vendor.
+            Descreva sua dúvida sobre o pedido para iniciar o atendimento com o vendor.
           </p>
         </div>
       </div>

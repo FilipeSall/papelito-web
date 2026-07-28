@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
   if (!payload || !payload.name?.trim()) {
     return NextResponse.json(
-      { message: "Nome do produto e obrigatorio." },
+      { message: "Nome do produto e obrigatório." },
       { status: 422 },
     );
   }
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     revalidateTag("wp:products", "max");
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel criar o produto.";
+    const message = error instanceof Error ? error.message : "Não foi possível criar o produto.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

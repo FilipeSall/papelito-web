@@ -31,14 +31,14 @@ export async function DELETE(_request: Request, { params }: FavoriteRouteProps) 
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const { productId } = await params;
   const numericId = Number(productId);
 
   if (!Number.isInteger(numericId) || numericId <= 0) {
-    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+    return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
   try {
@@ -46,7 +46,7 @@ export async function DELETE(_request: Request, { params }: FavoriteRouteProps) 
     return NextResponse.json(result);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel remover o produto dos favoritos.";
+      error instanceof Error ? error.message : "Não foi possível remover o produto dos favoritos.";
     return NextResponse.json({ message }, { status: resolveFavoritesStatus(error) });
   }
 }

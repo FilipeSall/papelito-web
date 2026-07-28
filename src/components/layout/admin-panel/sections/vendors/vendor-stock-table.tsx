@@ -67,7 +67,7 @@ export function VendorStockTable({ items, vendorId }: VendorStockTableProps) {
 
       const data = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        setErrorMessage(data?.message ?? "Nao foi possivel salvar o ajuste.");
+        setErrorMessage(data?.message ?? "Não foi possível salvar o ajuste.");
         return;
       }
 
@@ -100,7 +100,7 @@ export function VendorStockTable({ items, vendorId }: VendorStockTableProps) {
           <table className="min-w-full border-separate border-spacing-0 text-left">
             <thead>
               <tr>
-                {["Produto", "Quantidade", "Ultima atualizacao", "Historico", ""].map((label) => (
+                {["Produto", "Quantidade", "Última atualização", "Histórico", ""].map((label) => (
                   <th
                     className="border-b border-[#231f20]/10 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48"
                     key={label}
@@ -161,7 +161,7 @@ export function VendorStockTable({ items, vendorId }: VendorStockTableProps) {
                           className="text-xs font-semibold uppercase tracking-[0.14em] text-[#231f20] underline"
                           onClick={() => toggleExpanded(item.productId)}
                         >
-                          {isExpanded ? "Ocultar" : "Ver ultimos 5"}
+                          {isExpanded ? "Ocultar" : "Ver últimos 5"}
                         </button>
                       </td>
                       <td className="border-b border-[#231f20]/8 px-4 py-3 text-right">
@@ -199,7 +199,7 @@ export function VendorStockTable({ items, vendorId }: VendorStockTableProps) {
                             </div>
                           ) : (
                             <p className="text-sm text-[#231f20]/62">
-                              Nenhum historico recente para este produto.
+                              Nenhum histórico recente para este produto.
                             </p>
                           )}
                         </td>

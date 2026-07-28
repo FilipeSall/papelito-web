@@ -139,7 +139,7 @@ export default function NotFound() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-brand-yellow rounded-full px-5 py-2">
               <span className="font-black text-brand-dark text-xs sm:text-sm tracking-wide uppercase whitespace-nowrap">
-                Pagina nao encontrada
+                Página não encontrada
               </span>
             </div>
           </div>
@@ -147,13 +147,13 @@ export default function NotFound() {
 
         {/* Mensagens */}
         <p className="text-white/60 text-base mb-2">
-          Ops! Parece que a pagina que voce buscou se perdeu em algum lugar.
+          Ops! Parece que a página que você buscou se perdeu em algum lugar.
         </p>
         <p className="text-white/40 text-sm mb-10">
-          Mas nao se preocupe, temos muito mais para voce explorar!
+          Mas não se preocupe, temos muito mais para você explorar!
         </p>
 
-        {/* Botoes de acao */}
+        {/* Botões de ação */}
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-10">
           <Link
             href="/"

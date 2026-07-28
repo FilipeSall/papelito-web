@@ -11,13 +11,13 @@ export function ModalPreview() {
       <div className="grid min-h-[19rem] place-items-center bg-[linear-gradient(135deg,rgba(255,229,0,0.14),rgba(255,229,0,0.02))] p-5">
         <div className="w-full max-w-md rounded-[22px] border border-white/12 bg-[#f7f2e7] p-5 text-[#231f20] shadow-[0_18px_48px_rgba(0,0,0,0.22)]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/46">
-            confirmacao
+            confirmação
           </p>
           <h3
             className="mt-3 text-2xl font-semibold uppercase leading-none tracking-[0.08em]"
             style={{ fontFamily: "var(--font-admin-display)" }}
           >
-            Publicar mudanca
+            Publicar mudança
           </h3>
           <p className="mt-4 text-sm leading-6 text-[#231f20]/68">
             Preview de modal para publicar uma campanha, aprovar vendor ou trocar a ordem dos

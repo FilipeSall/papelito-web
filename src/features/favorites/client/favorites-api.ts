@@ -3,7 +3,7 @@ import type { FavoriteMutationResult, FavoritesPayload } from "../types/favorite
 export class FavoritesAuthError extends Error {
   status: number;
 
-  constructor(message = "Nao autenticado.", status = 401) {
+  constructor(message = "Não autenticado.", status = 401) {
     super(message);
     this.name = "FavoritesAuthError";
     this.status = status;
@@ -31,7 +31,7 @@ export async function fetchFavoritesClient(): Promise<FavoritesPayload> {
   }
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel carregar os favoritos.");
+    throw new Error(payload.message || "Não foi possível carregar os favoritos.");
   }
 
   return payload;
@@ -54,7 +54,7 @@ export async function addFavoriteClient(productId: string | number): Promise<Fav
   }
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel favoritar o produto.");
+    throw new Error(payload.message || "Não foi possível favoritar o produto.");
   }
 
   return payload;
@@ -77,7 +77,7 @@ export async function removeFavoriteClient(
   }
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel remover o produto dos favoritos.");
+    throw new Error(payload.message || "Não foi possível remover o produto dos favoritos.");
   }
 
   return payload;

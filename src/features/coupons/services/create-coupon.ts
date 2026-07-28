@@ -24,7 +24,7 @@ export async function createCoupon(accessToken: string, input: CouponInput): Pro
 
   const mapped = mapWpCoupon(result.data);
   if (!mapped) {
-    throw new Error("Cupom invalido retornado apos criacao.");
+    throw new Error("Cupom inválido retornado após criacao.");
   }
 
   return mapped;

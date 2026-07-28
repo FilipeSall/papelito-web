@@ -20,7 +20,7 @@ describe("AuthForgotPasswordForm", () => {
     await user.type(screen.getByLabelText("E-mail"), "email-invalido");
     await user.click(screen.getByRole("button", { name: /enviar instrucoes/i }));
 
-    expect(screen.getByText("Informe um e-mail valido.")).toBeInTheDocument();
+    expect(screen.getByText("Informe um e-mail válido.")).toBeInTheDocument();
   });
 
   it("shows the generic success message after a successful request", async () => {
@@ -40,7 +40,7 @@ describe("AuthForgotPasswordForm", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          "Se o e-mail informado estiver cadastrado, voce recebera as instrucoes para redefinir sua senha.",
+          "Se o e-mail informado estiver cadastrado, você receberá as instrucoes para redefinir sua senha.",
         ),
       ).toBeInTheDocument();
     });

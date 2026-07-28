@@ -19,11 +19,11 @@ export async function POST(request: Request, context: RouteContext) {
   const userId = Number.parseInt(id, 10);
 
   if (!Number.isFinite(userId) || userId <= 0) {
-    return NextResponse.json({ message: "Usuario invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Usuário inválido." }, { status: 400 });
   }
 
   if (!body?.role || typeof body.role !== "string") {
-    return NextResponse.json({ message: "Role invalida." }, { status: 400 });
+    return NextResponse.json({ message: "Role inválida." }, { status: 400 });
   }
 
   const result = await wpRest<unknown>(`/papelito/v1/admin/users/${userId}/role`, {

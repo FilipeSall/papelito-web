@@ -38,7 +38,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
           <Link className="border-b border-white/10 px-6 py-7" href="/vendor/dashboard">
             <Image alt="Papelito" height={34} priority src="/images/logo2.svg" width={114} />
             <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-yellow/76">
-              Area do vendor
+              Área do vendor
             </p>
           </Link>
           <nav aria-label="Navegacao do vendor" className="flex-1 space-y-1.5 overflow-y-auto px-4 py-5">
@@ -83,7 +83,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
                 <Image alt="Papelito" className="lg:hidden" height={30} src="/images/logo3.svg" width={100} />
                 <div>
                   <p className="hidden text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-dark/48 sm:block">
-                    Vendor / Operacao
+                    Vendor / Operação
                   </p>
                   <h1
                     className="text-lg font-semibold uppercase tracking-[0.12em] sm:text-xl"
@@ -98,7 +98,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
                 <PrivateHeaderLogoutButton />
               </div>
             </div>
-            <nav className="flex gap-2 overflow-x-auto border-t border-brand-dark/8 px-4 py-3 lg:hidden" aria-label="Secoes do painel">
+            <nav className="flex gap-2 overflow-x-auto border-t border-brand-dark/8 px-4 py-3 lg:hidden" aria-label="Seções do painel">
               {VENDOR_NAV_ITEMS.map((item) => (
                 <Link
                   className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${

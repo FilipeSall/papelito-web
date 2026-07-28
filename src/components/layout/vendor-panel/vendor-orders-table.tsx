@@ -27,7 +27,7 @@ const statusFilters: Array<[VendorOrderStatus | "all", string]> = [
   ["all", "Todos"],
   ["aguardando_pagamento", "Aguardando pagamento"],
   ["aguardando_envio", "Aguardando envio"],
-  ["em_separacao", "Separacao"],
+  ["em_separacao", "Separação"],
   ["enviado", "Enviados"],
   ["entregue", "Entregues"],
   ["cancelado", "Cancelados"],
@@ -49,7 +49,7 @@ function LoadingState() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="px-5 py-12 text-center">
-      <p className="text-sm font-semibold text-brand-dark">Nao foi possivel carregar os pedidos.</p>
+      <p className="text-sm font-semibold text-brand-dark">Não foi possível carregar os pedidos.</p>
       <p className="mt-1 text-sm text-brand-dark/60">{message}</p>
       <button
         className="mt-4 cursor-pointer rounded-[12px] bg-brand-dark px-5 py-2.5 text-sm font-semibold text-brand-yellow transition hover:opacity-90"
@@ -232,14 +232,14 @@ export function VendorOrdersTable({
               Anterior
             </button>
           ) : null}
-          <span>Pagina {snapshot.page} de {snapshot.totalPages}</span>
+          <span>Página {snapshot.page} de {snapshot.totalPages}</span>
           {snapshot.page < snapshot.totalPages ? (
             <button
               className="rounded-[10px] border border-brand-dark/16 px-3 py-2 transition hover:border-brand-dark/40"
               onClick={() => handlePageChange(snapshot.page + 1)}
               type="button"
             >
-              Proxima
+              Próxima
             </button>
           ) : null}
         </div>

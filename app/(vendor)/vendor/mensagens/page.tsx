@@ -18,7 +18,7 @@ export default async function VendorMessagesPage({
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Acompanhe duvidas de clientes vinculadas aos pedidos atendidos pela sua loja."
+        description="Acompanhe dúvidas de clientes vinculadas aos pedidos atendidos pela sua loja."
         eyebrow="Atendimento"
         signal={`${threads.total} conversa${threads.total === 1 ? "" : "s"}`}
         title="Mensagens"

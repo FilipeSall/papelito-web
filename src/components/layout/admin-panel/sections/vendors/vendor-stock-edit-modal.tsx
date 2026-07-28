@@ -102,7 +102,7 @@ export function VendorStockEditModal({
             </p>
           ) : cleanReason.length > 0 && cleanReason.length < 10 ? (
             <p className="rounded-lg bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">
-              Motivo obrigatorio com pelo menos 10 caracteres.
+              Motivo obrigatório com pelo menos 10 caracteres.
             </p>
           ) : null}
         </div>

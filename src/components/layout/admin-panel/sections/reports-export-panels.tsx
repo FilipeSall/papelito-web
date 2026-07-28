@@ -18,9 +18,9 @@ type ExportFilters = {
 };
 
 const PRESET_OPTIONS: readonly SelectOption[] = [
-  { label: "Ultimos 7 dias", value: "7d" },
-  { label: "Ultimos 30 dias", value: "30d" },
-  { label: "Mes atual", value: "month" },
+  { label: "Últimos 7 dias", value: "7d" },
+  { label: "Últimos 30 dias", value: "30d" },
+  { label: "Mês atual", value: "month" },
   { label: "Personalizado", value: "custom" },
 ];
 
@@ -124,7 +124,7 @@ function ExportPanel({
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(payload?.message ?? "Nao foi possivel gerar o export.");
+        throw new Error(payload?.message ?? "Não foi possível gerar o export.");
       }
 
       const blob = await response.blob();
@@ -166,7 +166,7 @@ function ExportPanel({
 
       <form className="mt-5 grid gap-4 lg:grid-cols-4 lg:items-end" onSubmit={handleSubmit}>
         <AdminSelectField
-          label="Periodo"
+          label="Período"
           onChange={handlePresetChange}
           options={PRESET_OPTIONS}
           placeholder="Selecione"
@@ -194,7 +194,7 @@ function ExportPanel({
         </label>
         <label className="grid gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#756d5f]">
-            Ate
+            Até
           </span>
           <input
             className="h-12 rounded-[14px] border border-[#d6ccb6] bg-white px-4 text-sm font-medium text-[#231f20] outline-none transition focus:border-[#231f20] focus:ring-1 focus:ring-[#231f20]"
@@ -244,16 +244,16 @@ export function ReportsExportPanels({
     <div className="grid gap-5">
       <ExportPanel
         action="/api/admin/reports/users/export"
-        body="Exporta usuarios cadastrados no periodo com telefone, CEP, cidade e estado. O formato padrao e XLSX, com opcao de CSV."
-        buttonLabel="Exportar usuarios"
+        body="Exporta usuários cadastrados no período com telefone, CEP, cidade e estado. O formato padrão é XLSX, com opção de CSV."
+        buttonLabel="Exportar usuários"
         filters={usersFilters}
         onChange={setUsersFilters}
         panelClassName="z-20"
-        title="Export de Usuarios"
+        title="Export de Usuários"
       />
       <ExportPanel
         action="/api/admin/reports/sales/export"
-        body="Exporta pedidos do WooCommerce no periodo com status, cliente, telefone, CEP, cidade, estado, pagamento e total. O formato padrao e XLSX, com opcao de CSV."
+        body="Exporta pedidos do WooCommerce no período com status, cliente, telefone, CEP, cidade, estado, pagamento e total. O formato padrão é XLSX, com opção de CSV."
         buttonLabel="Exportar vendas"
         filters={salesFilters}
         onChange={setSalesFilters}

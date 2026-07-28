@@ -19,7 +19,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
-    return NextResponse.json({ message: "ID invalido." }, { status: 400 });
+    return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
   const url = new URL(request.url);
@@ -46,7 +46,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
   if (!result.ok) {
     return NextResponse.json(
-      { message: result.error.message ?? "Nao foi possivel carregar o estoque." },
+      { message: result.error.message ?? "Não foi possível carregar o estoque." },
       { status: result.status || 500 },
     );
   }
@@ -63,7 +63,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
-    return NextResponse.json({ message: "ID invalido." }, { status: 400 });
+    return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
   const payload = (await request.json().catch(() => null)) as StockUpdatePayload | null;
@@ -72,16 +72,16 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   const reason = String(payload?.reason ?? "").trim();
 
   if (!Number.isInteger(productId) || productId <= 0) {
-    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+    return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
   if (!Number.isInteger(qty) || qty < 0) {
-    return NextResponse.json({ message: "Quantidade invalida." }, { status: 422 });
+    return NextResponse.json({ message: "Quantidade inválida." }, { status: 422 });
   }
 
   if (reason.length < 10) {
     return NextResponse.json(
-      { message: "Motivo obrigatorio com pelo menos 10 caracteres." },
+      { message: "Motivo obrigatório com pelo menos 10 caracteres." },
       { status: 422 },
     );
   }
@@ -94,7 +94,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
   if (!result.ok) {
     return NextResponse.json(
-      { message: result.error.message ?? "Nao foi possivel ajustar o estoque." },
+      { message: result.error.message ?? "Não foi possível ajustar o estoque." },
       { status: result.status || 500 },
     );
   }

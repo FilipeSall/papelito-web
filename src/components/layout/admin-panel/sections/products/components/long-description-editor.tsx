@@ -23,7 +23,7 @@ export function LongDescriptionEditor({ onChange, value }: LongDescriptionEditor
     <div className="grid gap-2">
       <FieldLabel
         helpText="Campo agrupado por paragrafos. Cada linha deste editor vira um paragrafo separado no WordPress."
-        label="Descricao Longa"
+        label="Descrição Longa"
       />
       <div className="border border-[#c9bd96] bg-white focus-within:border-[#231f20] focus-within:ring-1 focus-within:ring-[#231f20]">
         <textarea

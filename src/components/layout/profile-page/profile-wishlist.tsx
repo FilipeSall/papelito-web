@@ -55,7 +55,7 @@ export function ProfileWishlist({ initialItems = [] }: ProfileWishlistProps) {
 
         <ProfileEmptyShoppingState
           ctaLabel="Descobrir produtos"
-          description="Quando voce começar a salvar produtos, seus favoritos ficam aqui para facilitar a recompra e comparar novidades com calma."
+          description="Quando você começar a salvar produtos, seus favoritos ficam aqui para facilitar a recompra e comparar novidades com calma."
           title="Nenhum favorito por enquanto"
         />
       </section>

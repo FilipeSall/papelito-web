@@ -116,7 +116,7 @@ export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as ShippingQuoteRequestBody | null;
 
   if (!payload || typeof payload !== "object") {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   const vendorId = Number(payload.vendor_id);

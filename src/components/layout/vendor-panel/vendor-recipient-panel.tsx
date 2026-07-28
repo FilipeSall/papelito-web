@@ -21,7 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
 const EDIT_FINANCIAL_DATA_HREF = buildVendorOnboardingHref("/vendor/configuracoes");
 
 function formatStatus(value: string) {
-  return STATUS_LABELS[value] || "Nao iniciado";
+  return STATUS_LABELS[value] || "Não iniciado";
 }
 
 function buildRecipientErrorFeedback(body: {
@@ -32,28 +32,28 @@ function buildRecipientErrorFeedback(body: {
     case "papelito_pagarme_missing_partner":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
-        actionLabel: "Preencher responsavel legal",
+        actionLabel: "Preencher responsável legal",
         error: true,
-        hint: "Cadastre ao menos um responsavel legal ou socio administrador e tente sincronizar novamente.",
-        message: "A Pagar.me exige uma pessoa fisica responsavel pela empresa para concluir o onboarding do recebedor.",
-        title: "Responsavel legal pendente",
+        hint: "Cadastre ao menos um responsável legal ou socio administrador e tente sincronizar novamente.",
+        message: "A Pagar.me exige uma pessoa física responsável pela empresa para concluir o onboarding do recebedor.",
+        title: "Responsável legal pendente",
       };
     case "papelito_pagarme_missing_address":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar dados financeiros",
         error: true,
-        hint: "Confira o endereco comercial e o endereco do responsavel legal antes de sincronizar novamente.",
-        message: "Faltam dados de endereco obrigatorios para criar ou atualizar o recebedor.",
-        title: "Endereco incompleto",
+        hint: "Confira o endereço comercial e o endereço do responsável legal antes de sincronizar novamente.",
+        message: "Faltam dados de endereço obrigatórios para criar ou atualizar o recebedor.",
+        title: "Endereço incompleto",
       };
     case "papelito_pagarme_missing_document":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar cadastro financeiro",
         error: true,
-        hint: "O recebedor precisa de um CNPJ valido e coerente com os dados da empresa.",
-        message: "Nao foi possivel sincronizar porque a documentacao da empresa esta incompleta.",
+        hint: "O recebedor precisa de um CNPJ válido e coerente com os dados da empresa.",
+        message: "Não foi possível sincronizar porque a documentacao da empresa esta incompleta.",
         title: "Documento da empresa pendente",
       };
     case "papelito_pagarme_missing_draft":
@@ -61,8 +61,8 @@ function buildRecipientErrorFeedback(body: {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Preencher dados financeiros",
         error: true,
-        hint: "Abra o formulario financeiro, complete KYC e conta bancaria e depois tente sincronizar novamente.",
-        message: "Os dados financeiros do recebedor ainda nao foram preenchidos.",
+        hint: "Abra o formulário financeiro, complete KYC e conta bancária e depois tente sincronizar novamente.",
+        message: "Os dados financeiros do recebedor ainda não foram preenchidos.",
         title: "Dados financeiros pendentes",
       };
     case "papelito_pagarme_invalid_company_name":
@@ -70,18 +70,18 @@ function buildRecipientErrorFeedback(body: {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar razao social",
         error: true,
-        hint: "Informe a razao social completa da empresa (minimo de 5 caracteres).",
+        hint: "Informe a razao social completa da empresa (mínimo de 5 caracteres).",
         message: "A razao social informada e muito curta para a Pagar.me.",
-        title: "Razao social invalida",
+        title: "Razao social inválida",
       };
     case "papelito_pagarme_request_failed":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar dados enviados",
         error: true,
-        hint: "A Pagar.me recusou os dados enviados. Revise razao social, responsavel legal, endereco e conta bancaria (agencia e conta).",
-        message: "Nao foi possivel validar seus dados junto a Pagar.me.",
-        title: "Validacao recusada pela Pagar.me",
+        hint: "A Pagar.me recusou os dados enviados. Revise razao social, responsável legal, endereço e conta bancária (agência e conta).",
+        message: "Não foi possível validar seus dados junto a Pagar.me.",
+        title: "Validação recusada pela Pagar.me",
       };
     default:
       return {
@@ -89,7 +89,7 @@ function buildRecipientErrorFeedback(body: {
         actionLabel: "Editar dados financeiros",
         error: true,
         hint: "Se o erro persistir, revise os dados financeiros do recebedor antes de tentar novamente.",
-        message: "Nao foi possivel sincronizar o recebedor.",
+        message: "Não foi possível sincronizar o recebedor.",
         title: "Falha na sincronizacao",
       };
   }
@@ -163,7 +163,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             Recebedor
           </h3>
           <p className="mt-3 max-w-xl text-sm leading-6 text-brand-dark/68">
-            Sua operacao financeira depende de um recebedor ativo no Pagar.me.
+            Sua operação financeira depende de um recebedor ativo no Pagar.me.
           </p>
         </div>
 
@@ -179,22 +179,22 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
               Recipient ID
             </p>
             <p className="mt-1 break-all text-sm font-semibold text-brand-dark">
-              {recipient.recipientId || "Ainda nao criado"}
+              {recipient.recipientId || "Ainda não criado"}
             </p>
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-dark/55">
-              Ultima sincronizacao
+              Última sincronizacao
             </p>
             <p className="mt-1 text-sm text-brand-dark">{recipient.lastSyncAt || "Sem sincronizacao"}</p>
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-dark/55">
-              Ultimo erro
+              Último erro
             </p>
             <p className="mt-1 text-sm text-brand-dark">
               {recipient.lastError
-                ? "A ultima sincronizacao falhou. Revise os dados financeiros (razao social, endereco e conta bancaria) e sincronize novamente."
+                ? "A última sincronizacao falhou. Revise os dados financeiros (razao social, endereço e conta bancária) e sincronize novamente."
                 : "Nenhum"}
             </p>
           </div>

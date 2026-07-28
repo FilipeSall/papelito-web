@@ -71,7 +71,7 @@ export function SalesOrdersPanel({
       <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-            Pedidos do periodo
+            Pedidos do período
           </p>
           <p className="mt-1 text-sm text-[#231f20]/66">
             {snapshot.totalOrders > 0
@@ -80,7 +80,7 @@ export function SalesOrdersPanel({
           </p>
         </div>
         <div className="inline-flex min-h-10 items-center rounded-full border border-[#231f20]/14 bg-white/82 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#231f20]/64">
-          pagina {snapshot.currentPage} de {Math.max(snapshot.totalPages, 1)}
+          página {snapshot.currentPage} de {Math.max(snapshot.totalPages, 1)}
         </div>
       </div>
 
@@ -147,13 +147,13 @@ export function SalesOrdersPanel({
 
       <div className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-[#231f20]/64">
-          Lista de pedidos do periodo selecionado, ordenada do mais recente para o mais antigo.
+          Lista de pedidos do período selecionado, ordenada do mais recente para o mais antigo.
         </p>
         {snapshot.totalPages > 1 ? (
           <nav aria-label="Paginas de pedidos" className="flex flex-wrap items-center gap-1.5">
             {previousHref ? (
               <Link
-                aria-label="Pagina anterior"
+                aria-label="Página anterior"
                 className="inline-flex h-9 min-w-9 items-center justify-center rounded-[12px] border border-[#231f20]/16 bg-white px-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#231f20]/72 hover:border-[#231f20]/32"
                 href={previousHref}
               >
@@ -198,7 +198,7 @@ export function SalesOrdersPanel({
               return (
                 <Link
                   key={item}
-                  aria-label={`Ir para a pagina ${item}`}
+                  aria-label={`Ir para a página ${item}`}
                   className="inline-flex h-9 min-w-9 items-center justify-center rounded-[12px] border border-[#231f20]/16 bg-white px-3 text-sm font-semibold text-[#231f20]/72 hover:border-[#231f20]/32"
                   href={`${basePath}?${buildAdminSalesFilterQuery(filters, { page: item })}`}
                 >
@@ -209,7 +209,7 @@ export function SalesOrdersPanel({
 
             {nextHref ? (
               <Link
-                aria-label="Proxima pagina"
+                aria-label="Próxima página"
                 className="inline-flex h-9 min-w-9 items-center justify-center rounded-[12px] border-2 border-[#231f20] bg-[#231f20] px-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#ffe500]"
                 href={nextHref}
               >

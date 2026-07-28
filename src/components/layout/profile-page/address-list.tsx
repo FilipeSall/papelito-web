@@ -39,7 +39,7 @@ export function AddressList({
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
-        Meus Enderecos
+        Meus Endereços
       </h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -18,7 +18,7 @@ export async function POST(_request: Request, context: RouteContext) {
   const userId = Number.parseInt(id, 10);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return NextResponse.json({ message: "Usuario invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Usuário inválido." }, { status: 400 });
   }
 
   const result = await wpRest<unknown>(`/papelito/v1/admin/users/${userId}/activate-email`, {
@@ -28,7 +28,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
   if (!result.ok) {
     return NextResponse.json(
-      { message: result.error.message ?? "Falha ao ativar usuario." },
+      { message: result.error.message ?? "Falha ao ativar usuário." },
       { status: result.status || 500 },
     );
   }

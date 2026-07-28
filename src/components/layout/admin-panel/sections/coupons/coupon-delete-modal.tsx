@@ -41,7 +41,7 @@ export function CouponDeleteModal({
             </span>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-                Confirmacao
+                Confirmação
               </p>
               <h3
                 id="coupon-delete-title"
@@ -64,18 +64,18 @@ export function CouponDeleteModal({
 
         <div className="space-y-4 px-6 py-5">
           <p className="text-sm leading-6 text-[#4b4731]">
-            Voce esta prestes a remover o cupom{" "}
+            Você está prestes a remover o cupom{" "}
             <span className="rounded-md bg-[#fff9ea] px-2 py-0.5 font-mono text-xs font-semibold uppercase text-[#1e1c10]">
               {coupon.code}
             </span>
-            . Essa acao nao pode ser desfeita.
+            . Essa ação não pode ser desfeita.
           </p>
 
           {coupon.usageCount > 0 ? (
             <p className="rounded-xl border border-[#fde68a] bg-[#fef3c7] px-3 py-2 text-xs leading-5 text-[#92400e]">
               Este cupom ja foi usado <strong>{coupon.usageCount}</strong>{" "}
               {coupon.usageCount === 1 ? "vez" : "vezes"}. Pedidos antigos continuarao
-              referenciando o codigo.
+              referenciando o código.
             </p>
           ) : null}
 

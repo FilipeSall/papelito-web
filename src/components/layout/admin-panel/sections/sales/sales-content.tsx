@@ -64,21 +64,21 @@ export async function SalesContent({
     },
     {
       format: "currency" as const,
-      label: "Receita liquida",
+      label: "Receita líquida",
       value: analytics.netRevenue,
-      detail: `Variacao ${formatPercent(analytics.revenueDeltaRate)}`,
+      detail: `Variação ${formatPercent(analytics.revenueDeltaRate)}`,
       tone: "default" as const,
     },
     {
       format: "number" as const,
-      label: "Pedidos no periodo",
+      label: "Pedidos no período",
       value: analytics.orders,
-      detail: "Mesmo filtro aplicado no historico abaixo.",
+      detail: "Mesmo filtro aplicado no histórico abaixo.",
       tone: "default" as const,
     },
     {
       format: "currency" as const,
-      label: "Ticket medio",
+      label: "Ticket médio",
       value: analytics.avgOrderValue,
       detail: "Receita bruta dividida pelo total de pedidos.",
       tone: "default" as const,
@@ -108,7 +108,7 @@ export async function SalesContent({
       format: "currency" as const,
       label: "Reembolsos",
       value: analytics.refundsTotal,
-      detail: analytics.refundsTotal > 0 ? "Pedidos devolvidos no periodo." : "Sem reembolsos no periodo.",
+      detail: analytics.refundsTotal > 0 ? "Pedidos devolvidos no período." : "Sem reembolsos no período.",
       tone: analytics.refundsTotal > 0 ? ("warning" as const) : ("default" as const),
     },
   ];
@@ -130,7 +130,7 @@ export async function SalesContent({
   const generalNotifications = [
     ...classified.general,
     ...(analytics.usedFallback
-      ? ["Dados parciais: WooCommerce Analytics indisponivel ou incompleto; KPIs e graficos podem nao refletir o periodo inteiro."]
+      ? ["Dados parciais: WooCommerce Analytics indisponível ou incompleto; KPIs e gráficos podem não refletir o período inteiro."]
       : []),
   ];
   const animationKey = `${filters.preset}-${filters.from}-${filters.to}-${filters.interval}`;
@@ -152,7 +152,7 @@ export async function SalesContent({
       <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-2 [animation-delay:220ms]">
         <SalesLineChart
           key={`revenue-${animationKey}`}
-          label="receita por periodo"
+          label="receita por período"
           notifications={classified.revenue}
           points={analytics.revenueSeries}
         />
@@ -172,7 +172,7 @@ export async function SalesContent({
                 Mais vendidos
               </p>
               <p className="mt-1 text-sm text-[#231f20]/66">
-                Produtos e categorias com maior participacao na receita do periodo.
+                Produtos e categorias com maior participação na receita do período.
               </p>
             </div>
             <CardNotification issues={classified.leaderboard} />
@@ -183,7 +183,7 @@ export async function SalesContent({
         </FramedPanel>
         <SalesDonutChart
           key={`payment-${animationKey}`}
-          label="mix por metodo de pagamento"
+          label="mix por método de pagamento"
           notifications={classified.paymentMix}
           points={paymentMixSeries}
         />

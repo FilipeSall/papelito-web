@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as ForgotPasswordPayload;
   } catch {
-    return NextResponse.json({ code: "invalid_json", message: "JSON invalido." }, { status: 400 });
+    return NextResponse.json({ code: "invalid_json", message: "JSON inválido." }, { status: 400 });
   }
 
   const result = await wpRest<ForgotPasswordResponse>("/papelito/v1/auth/forgot-password", {

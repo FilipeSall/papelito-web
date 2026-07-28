@@ -29,7 +29,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   try {
@@ -37,7 +37,7 @@ export async function GET() {
     return NextResponse.json(favorites);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel carregar os favoritos.";
+      error instanceof Error ? error.message : "Não foi possível carregar os favoritos.";
     return NextResponse.json({ message }, { status: resolveFavoritesStatus(error) });
   }
 }
@@ -46,14 +46,14 @@ export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.accessToken) {
-    return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as FavoritePayload | null;
   const productId = Number(payload?.productId);
 
   if (!Number.isInteger(productId) || productId <= 0) {
-    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+    return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
   try {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Nao foi possivel favoritar o produto.";
+      error instanceof Error ? error.message : "Não foi possível favoritar o produto.";
     return NextResponse.json({ message }, { status: resolveFavoritesStatus(error) });
   }
 }

@@ -19,7 +19,7 @@ const CONFIRMED_PAYMENT_STATES = new Set(["paid", "captured"]);
 const PENDING_PAYMENT_STATES = new Set(["", "pending", "waiting_payment", "awaiting_payment", "processing"]);
 
 function formatExpiry(value?: string) {
-  if (!value) return "Prazo nao informado";
+  if (!value) return "Prazo não informado";
 
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -193,7 +193,7 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
       </h1>
 
       <p className="mt-3 text-sm leading-6 text-text-secondary">
-        Assim que o pagamento for confirmado, esta pagina atualiza automaticamente.
+        Assim que o pagamento for confirmado, esta página atualiza automaticamente.
       </p>
 
       {deadline.hasDeadline ? (
@@ -219,7 +219,7 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
             </div>
           ) : (
             <p className="mt-4 rounded-[14px] bg-white px-4 py-3 text-sm text-text-secondary">
-              QR Code indisponivel. Use o codigo copia e cola abaixo.
+              QR Code indisponível. Use o código copia e cola abaixo.
             </p>
           )}
           {pixCode ? (
@@ -235,7 +235,7 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
                 onClick={() => copyValue(pixCode)}
                 type="button"
               >
-                Copiar codigo
+                Copiar código
               </button>
             </div>
           ) : null}

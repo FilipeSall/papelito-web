@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
 
-const stepLabels = ["Pagamento", "Aguardando envio", "Separacao", "Enviado", "Entregue"];
+const stepLabels = ["Pagamento", "Aguardando envio", "Separação", "Enviado", "Entregue"];
 
 describe("VendorOrderStatusStepper", () => {
   it("renders all five steps in order", () => {

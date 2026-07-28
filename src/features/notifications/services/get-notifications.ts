@@ -43,7 +43,7 @@ export async function getNotifications(
   const payload = await parseJson<NotificationsListResponse & ApiErrorPayload>(response);
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel carregar as notificacoes.");
+    throw new Error(payload.message || "Não foi possível carregar as notificações.");
   }
 
   return payload;
@@ -59,7 +59,7 @@ export async function getUnreadNotificationCount(): Promise<NotificationUnreadCo
   const payload = await parseJson<NotificationUnreadCountResponse & ApiErrorPayload>(response);
 
   if (!response.ok) {
-    throw new Error(payload.message || "Nao foi possivel carregar as notificacoes.");
+    throw new Error(payload.message || "Não foi possível carregar as notificações.");
   }
 
   return payload;

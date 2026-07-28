@@ -53,7 +53,7 @@ describe("resolveCartVendor", () => {
       }),
     ).resolves.toEqual({
       status: "unavailable",
-      message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+      message: "Não foi possível validar a disponibilidade por CEP agora.",
     });
   });
 });

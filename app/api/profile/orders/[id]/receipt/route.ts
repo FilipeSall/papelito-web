@@ -12,7 +12,7 @@ function errorResponse(status: number, payload: unknown) {
     return NextResponse.json(payload, { status });
   }
 
-  return NextResponse.json({ message: "Nao foi possivel baixar o recibo." }, { status });
+  return NextResponse.json({ message: "Não foi possível baixar o recibo." }, { status });
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   if (!/^\d+$/.test(id)) {
-    return NextResponse.json({ message: "Pedido invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
   const response = await fetch(`${getWpRestBase()}/papelito/v1/profile/me/orders/${id}/receipt`, {

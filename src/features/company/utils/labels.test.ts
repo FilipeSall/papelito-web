@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { blockMessageFor, roleLabel } from "./labels";
 
-describe("blockMessageFor", () => {
+describe("blockMêssageFor", () => {
   const base = {
     onboardingStatus: "complete" as const,
     companyStatus: "active",

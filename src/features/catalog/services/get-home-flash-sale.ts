@@ -76,7 +76,7 @@ export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> 
 
   if (!result.ok) {
     if (result.status !== 404) {
-      console.warn("[home-flash-sale] Falha ao consultar campanha publica.", result.error.message);
+      console.warn("[home-flash-sale] Falha ao consultar campanha pública.", result.error.message);
     }
     return null;
   }
@@ -105,7 +105,7 @@ export async function getHomeFlashSale(): Promise<HomeFlashSaleCampaign | null> 
     productIds: Array.isArray(campaign.productIds)
       ? campaign.productIds.filter((id) => Number.isInteger(id) && id > 0)
       : [],
-    label: cleanText(campaign.label) || "Oferta Relampago",
+    label: cleanText(campaign.label) || "Oferta Relâmpago",
     supportingText: cleanText(campaign.supportingText),
     products,
   };

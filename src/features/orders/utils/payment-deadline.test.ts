@@ -57,7 +57,7 @@ describe("formatPaymentDeadline", () => {
     const result = formatPaymentDeadline("2026-06-11T23:24:00Z", NOW); // +24min
     expect(result.expired).toBe(false);
     expect(result.hasDeadline).toBe(true);
-    expect(result.label).toContain("Pague ate");
+    expect(result.label).toContain("Pague até");
     expect(result.label).toContain("faltam 24 min");
   });
 

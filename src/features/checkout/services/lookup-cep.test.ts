@@ -81,7 +81,7 @@ describe("lookupCep", () => {
 
     await expect(lookupCepDetailed("01310930")).resolves.toEqual({
       status: "error",
-      message: "Nao foi possivel consultar o CEP agora.",
+      message: "Não foi possível consultar o CEP agora.",
     });
   });
 });

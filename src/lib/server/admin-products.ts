@@ -429,7 +429,7 @@ export async function getAdminProductsSnapshot(
     return {
       categories: [],
       currentPage: page,
-      issues: ["Sessao sem access token para consultar produtos do WooCommerce."],
+      issues: ["Sessão sem access token para consultar produtos do WooCommerce."],
       perPage,
       products: [],
       tags: [],
@@ -564,7 +564,7 @@ export async function createAdminProductTag(
   const slug = cleanText(payload.slug);
 
   if (!name) {
-    throw new Error("Nome da tag e obrigatorio.");
+    throw new Error("Nome da tag e obrigatório.");
   }
 
   const result = await wpRest<WcProductTerm>("/wc/v3/products/tags", {
@@ -582,7 +582,7 @@ export async function createAdminProductTag(
   const tag = mapTaxonomyTerm(result.data);
 
   if (!tag) {
-    throw new Error("WooCommerce nao retornou a tag criada.");
+    throw new Error("WooCommerce não retornou a tag criada.");
   }
 
   return tag;
@@ -609,7 +609,7 @@ export async function uploadAdminProductMedia(accessToken: string, file: File) {
     const message =
       json && "message" in json && json.message
         ? json.message
-        : "Nao foi possivel enviar a imagem ao WordPress.";
+        : "Não foi possível enviar a imagem ao WordPress.";
     throw new Error(message);
   }
 

@@ -23,13 +23,13 @@ export async function PATCH(
   const parsedProductId = Number.parseInt(productId, 10);
 
   if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
-    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+    return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
   const payload = (await request.json().catch(() => null)) as AdminProductPayload | null;
 
   if (!payload) {
-    return NextResponse.json({ message: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
   try {
@@ -39,7 +39,7 @@ export async function PATCH(
     revalidateTag(`wp:product:${parsedProductId}`, "max");
     return NextResponse.json({ product });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel salvar o produto.";
+    const message = error instanceof Error ? error.message : "Não foi possível salvar o produto.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }
@@ -58,14 +58,14 @@ export async function GET(
   const parsedProductId = Number.parseInt(productId, 10);
 
   if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
-    return NextResponse.json({ message: "Produto invalido." }, { status: 422 });
+    return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
   try {
     const product = await getAdminProduct(auth.accessToken, parsedProductId);
     return NextResponse.json({ product });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel carregar o produto.";
+    const message = error instanceof Error ? error.message : "Não foi possível carregar o produto.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

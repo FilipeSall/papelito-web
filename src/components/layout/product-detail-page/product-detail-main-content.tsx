@@ -18,6 +18,7 @@ import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { formatBRL } from "@/lib/format-currency";
+import { parseDescriptionParagraphs } from "@/utils/html";
 
 interface ProductDetailMainContentProps {
   /** Dados do produto atual para renderização da seção principal. */
@@ -51,11 +52,16 @@ export function ProductDetailMainContent({
   const { status, isAdministrator, isSeller, isRoleLoading } = useAuthSession();
   const isPurchaseBlockedByRole = isAdministrator || isSeller;
   const roleBlockedMessage = isAdministrator
-    ? "Admins nao compram pela plataforma."
+    ? "Admins não compram pela plataforma."
     : isSeller
-      ? "Vendors nao compram pela plataforma."
+      ? "Vendors não compram pela plataforma."
       : undefined;
   const galleryImages = product.galleryImages ?? EMPTY_GALLERY;
+
+  const descriptionParagraphs = useMemo(
+    () => parseDescriptionParagraphs(product.description).filter(Boolean),
+    [product.description],
+  );
 
   const thumbnails = useMemo(
     () =>
@@ -141,10 +147,10 @@ export function ProductDetailMainContent({
     dispatchCartEvent({
       title:
         result.status === "missing_cep"
-          ? "CEP necessario"
+          ? "CEP necessário"
           : result.status === "vendor_conflict"
-            ? "Vendor indisponivel"
-            : "Disponibilidade indisponivel",
+            ? "Vendor indisponível"
+            : "Disponibilidade indisponível",
       message: result.message,
       tone: result.status === "vendor_conflict" ? "warning" : "error",
       href: result.href,
@@ -170,7 +176,7 @@ export function ProductDetailMainContent({
 
     if (isRegionBlocked) {
       dispatchCartEvent({
-        title: "Indisponivel na sua regiao",
+        title: "Indisponível na sua regiao",
         message: regionBlock?.message ?? "Nenhum vendor atende sua região no momento.",
         tone: "warning",
       });
@@ -179,8 +185,8 @@ export function ProductDetailMainContent({
 
     if (isOutOfStock) {
       dispatchCartEvent({
-        title: "Produto indisponivel",
-        message: "O vendor selecionado esta sem estoque deste produto.",
+        title: "Produto indisponível",
+        message: "O vendor selecionado está sem estoque deste produto.",
         tone: "warning",
       });
       return false;
@@ -190,7 +196,7 @@ export function ProductDetailMainContent({
       setQuantity(availableStock);
       dispatchCartEvent({
         title: "Estoque limitado",
-        message: `Este vendor tem ${availableStock} unidade(s) disponivel(is).`,
+        message: `Este vendor tem ${availableStock} unidade(s) disponível(is).`,
         tone: "warning",
       });
       return false;
@@ -234,8 +240,8 @@ export function ProductDetailMainContent({
       return true;
     } catch {
       dispatchCartEvent({
-        title: "Disponibilidade indisponivel",
-        message: "Nao foi possivel validar a disponibilidade por CEP agora.",
+        title: "Disponibilidade indisponível",
+        message: "Não foi possível validar a disponibilidade por CEP agora.",
         tone: "error",
       });
       return false;
@@ -333,7 +339,7 @@ export function ProductDetailMainContent({
     } catch {
       showShareToast({
         title: "Compartilhar produto",
-        message: "Nao foi possivel compartilhar.",
+        message: "Não foi possível compartilhar.",
         tone: "error",
       });
     }
@@ -426,9 +432,16 @@ export function ProductDetailMainContent({
             </span>
           )}
 
-          <p className="mt-6 max-w-113 text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">
-            {product.description}
-          </p>
+          <div className="mt-6 flex max-w-113 flex-col gap-3">
+            {descriptionParagraphs.map((paragraph, index) => (
+              <p
+                key={index}
+                className="whitespace-pre-line text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </div>
 
           <div className="mt-8 flex items-center gap-4">
             <span className="text-sm font-normal leading-5 tracking-[-0.150391px] text-[#6A7282]">Quantidade:</span>
@@ -626,10 +639,15 @@ export function ProductDetailMainContent({
             Descrição
           </div>
         </div>
-        <div className="px-8 py-8">
-          <p className="text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]">
-            {product.description}
-          </p>
+        <div className="flex flex-col gap-3 px-8 py-8">
+          {descriptionParagraphs.map((paragraph, index) => (
+            <p
+              key={index}
+              className="whitespace-pre-line text-sm font-normal leading-[22.75px] tracking-[-0.150391px] text-[#4A5565]"
+            >
+              {paragraph}
+            </p>
+          ))}
         </div>
       </section>
 

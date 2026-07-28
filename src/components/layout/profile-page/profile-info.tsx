@@ -14,7 +14,7 @@ type ProfileInfoProps = {
  */
 export function ProfileInfo({ name, email, badge, points }: ProfileInfoProps) {
   const displayName = name || "Minha Conta";
-  const displayEmail = email || "Seus dados de acesso aparecerao aqui";
+  const displayEmail = email || "Seus dados de acesso aparecerão aqui";
 
   return (
     <div className="flex min-w-0 flex-col">

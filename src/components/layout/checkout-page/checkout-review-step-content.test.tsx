@@ -126,17 +126,17 @@ describe("CheckoutReviewStepContent", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        "Selecione uma opcao de frete valida antes de finalizar.",
+        "Selecione uma opção de frete válida antes de finalizar.",
       ),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        "Complete os dados de endereco e pagamento para finalizar o pedido.",
+        "Complete os dados de endereço e pagamento para finalizar o pedido.",
       ),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        "Revise a cotacao de frete antes de concluir o pedido.",
+        "Revise a cotação de frete antes de concluir o pedido.",
       ),
     ).not.toBeInTheDocument();
   });

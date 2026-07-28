@@ -96,19 +96,19 @@ export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
       {/* Icone */}
       <LocationIcon className="mb-4 h-5 w-5 text-[#1a1a1a]" />
 
-      {/* Nome do endereco */}
+      {/* Nome do endereço */}
       <h3 className="mb-2 text-base font-black uppercase tracking-tight text-[#1a1a1a]">
         {address.name}
       </h3>
 
-      {/* Detalhes do endereco */}
+      {/* Detalhes do endereço */}
       <div className="mb-4 space-y-0.5 text-sm text-[#1a1a1a]/70">
         <p>{address.street}</p>
         <p>{address.neighborhood}</p>
         <p>CEP: {address.zipCode}</p>
       </div>
 
-      {/* Acoes */}
+      {/* Ações */}
       <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
         <button
           className="text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"

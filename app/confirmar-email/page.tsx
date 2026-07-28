@@ -45,14 +45,14 @@ export default function ConfirmarEmailPage() {
           setViewState("error");
           setFeedbackTone("error");
           setFeedbackMessage(
-            body?.message ?? "Nao foi possivel confirmar seu e-mail. Solicite um novo link.",
+            body?.message ?? "Não foi possível confirmar seu e-mail. Solicite um novo link.",
           );
           return;
         }
 
         setViewState("verified");
         setFeedbackTone("success");
-        setFeedbackMessage("E-mail confirmado com sucesso. Sua conta ja pode entrar com senha.");
+        setFeedbackMessage("E-mail confirmado com sucesso. Sua conta já pode entrar com senha.");
       } catch {
         setViewState("error");
         setFeedbackTone("error");
@@ -80,13 +80,13 @@ export default function ConfirmarEmailPage() {
         const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
         setFeedbackTone("error");
         setFeedbackMessage(
-          body?.message ?? "Nao foi possivel reenviar o e-mail de confirmacao agora.",
+          body?.message ?? "Não foi possível reenviar o e-mail de confirmação agora.",
         );
         return;
       }
 
       setFeedbackTone("success");
-      setFeedbackMessage("Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmacao.");
+      setFeedbackMessage("Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmação.");
     } catch {
       setFeedbackTone("error");
       setFeedbackMessage("Erro de rede ao reenviar o e-mail. Tente novamente.");
@@ -104,11 +104,11 @@ export default function ConfirmarEmailPage() {
 
   const description =
     viewState === "verified"
-      ? "Sua conta foi liberada. Agora voce ja pode entrar normalmente com seu e-mail e senha."
+      ? "Sua conta foi liberada. Agora você já pode entrar normalmente com seu e-mail e senha."
       : viewState === "verifying"
         ? "Estamos validando o link enviado para sua caixa de entrada."
         : email
-          ? `Enviamos um link de confirmacao para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`
+          ? `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`
           : "Abra o link enviado para seu e-mail para concluir a ativacao da conta.";
 
   return (
@@ -135,7 +135,7 @@ export default function ConfirmarEmailPage() {
 
           {viewState === "verifying" ? (
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
-              Validando seu link de confirmacao...
+              Validando seu link de confirmação...
             </div>
           ) : null}
 

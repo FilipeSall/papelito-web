@@ -185,7 +185,7 @@ describe("VendorOrdersTable", () => {
       buildSnapshot({ search: "Filipe", status: "aguardando_envio" }, { totalPages: 2 }),
     );
 
-    await user.click(screen.getByRole("button", { name: /proxima/i }));
+    await user.click(screen.getByRole("button", { name: /próxima/i }));
 
     expect(window.history.pushState).toHaveBeenCalledWith(
       null,

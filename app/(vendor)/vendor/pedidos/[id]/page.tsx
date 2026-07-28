@@ -27,32 +27,32 @@ function address(order: VendorOrderDetail) {
     shippingAddress.address2,
     [shippingAddress.city, shippingAddress.state].filter(Boolean).join(" - "),
     shippingAddress.postcode ? `CEP ${shippingAddress.postcode}` : "",
-  ].filter(Boolean).join(", ") || "Endereco nao informado.";
+  ].filter(Boolean).join(", ") || "Endereço não informado.";
 }
 
 const logisticsLabels = {
-  not_started: "Aguardando geracao da etiqueta",
+  not_started: "Aguardando geração da etiqueta",
   tracking_pending: "Aguardando eventos dos Correios",
   preposted: "Etiqueta gerada; aguardando postagem",
   posted: "Objeto postado",
   in_transit: "Objeto em transito",
   out_for_delivery: "Objeto saiu para entrega",
-  pickup_available: "Objeto disponivel para retirada",
+  pickup_available: "Objeto disponível para retirada",
   delivery_failed: "Tentativa de entrega sem sucesso",
-  returning: "Objeto em devolucao",
+  returning: "Objeto em devolução",
   returned: "Objeto devolvido ao remetente",
-  lost: "Ocorrencia logistica; acompanhamento necessario",
+  lost: "Ocorrência logística; acompanhamento necessário",
   cancelled: "Pre-postagem cancelada",
   expired: "Pre-postagem expirada",
   delivered: "Entrega confirmada pelos Correios",
 } as const;
 
 const generationLabels = {
-  failed: "Nao foi possivel gerar a etiqueta",
+  failed: "Não foi possível gerar a etiqueta",
   generated: "Etiqueta gerada",
-  generating: "Geracao da etiqueta em andamento",
-  not_started: "Aguardando geracao da etiqueta",
-  uncertain: "Geracao com resultado incerto; revisao do suporte necessaria",
+  generating: "Geração da etiqueta em andamento",
+  not_started: "Aguardando geração da etiqueta",
+  uncertain: "Geração com resultado incerto; revisão do suporte necessária",
 } as const;
 
 function formatLogisticsDate(value: string) {
@@ -89,7 +89,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             status={order.status}
           />
         }
-        description={`Pedido #${order.orderNumber} atendido pela sua loja. Os dados de entrega abaixo sao disponibilizados para expedicao.`}
+        description={`Pedido #${order.orderNumber} atendido pela sua loja. Os dados de entrega abaixo sao disponibilizados para expedição.`}
         eyebrow="Detalhe de pedido"
         title={`Pedido #${order.orderNumber}`}
       />
@@ -124,16 +124,16 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Atendimento</p>
               <p className="mt-2 text-xl font-semibold">{order.customerName}</p>
-              <p className="mt-1 text-sm text-brand-dark/62">{order.phone || "Telefone nao informado"}</p>
+              <p className="mt-1 text-sm text-brand-dark/62">{order.phone || "Telefone não informado"}</p>
             </div>
             <VendorOrderStatusBadge status={order.status} />
           </div>
           <div className="mt-5 rounded-xl bg-brand-dark/3 p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Endereco de entrega</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48">Endereço de entrega</p>
             <p className="mt-3 text-sm leading-6 text-brand-dark/74">{address(order)}</p>
             <p className="mt-3 text-sm text-brand-dark/62">
-              {order.shippingService || "Servico de entrega nao informado"}
-              {order.deliveryTimeDays > 0 ? ` - prazo estimado ${order.deliveryTimeDays} dias uteis` : ""}
+              {order.shippingService || "Serviço de entrega não informado"}
+              {order.deliveryTimeDays > 0 ? ` - prazo estimado ${order.deliveryTimeDays} dias úteis` : ""}
             </p>
           </div>
           {order.logistics.shipments.length > 0 ? (
