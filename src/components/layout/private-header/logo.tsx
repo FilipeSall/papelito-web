@@ -10,10 +10,11 @@ export function PrivateHeaderLogo() {
     >
       <Image
         alt="Papelito"
-        height={36}
+        height={73}
+        className="h-9 w-auto md:h-[73px]"
         priority
-        src="/images/logo2.svg"
-        width={121}
+        src="/images/logo.svg"
+        width={123}
       />
     </Link>
   );

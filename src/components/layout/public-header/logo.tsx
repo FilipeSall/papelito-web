@@ -13,7 +13,14 @@ export function PublicHeaderLogo({ variant }: PublicHeaderLogoProps) {
   if (variant === "mobile") {
     return (
       <Link aria-label="Ir para a home" href="/">
-        <Image alt="Papelito" height={36} priority src="/images/logo2.svg" width={121} />
+        <Image
+          alt="Papelito"
+          className="h-9 w-auto"
+          height={73}
+          priority
+          src="/images/logo.svg"
+          width={123}
+        />
       </Link>
     );
   }
