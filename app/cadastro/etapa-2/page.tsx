@@ -10,7 +10,6 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/atoms";
 import { AuthPasswordField, AuthSelectField, AuthTextField } from "@/components/auth/molecules";
-import { queueOnboardingSuccessToast } from "@/components/providers/onboarding-success-toast-host";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import {
   formatCep,
@@ -190,7 +189,6 @@ export default function CadastroEtapa2Page() {
           | null;
 
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
-        queueOnboardingSuccessToast(first);
         router.push(
           `/confirmar-email?email=${encodeURIComponent(body?.email ?? step1.email)}`,
         );

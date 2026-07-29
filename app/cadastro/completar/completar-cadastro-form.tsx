@@ -15,7 +15,6 @@ import {
   requestCompanyAccess,
   saveCustomerProfile,
 } from "@/features/company/client/company-client";
-import { queueOnboardingSuccessToast } from "@/components/providers/onboarding-success-toast-host";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import {
   formatCep,
@@ -188,9 +187,6 @@ export function CompletarCadastroForm({
       // Sem isto o token guarda onboardingStatus "incomplete" e o gate devolveria o usuário
       // para cá logo após concluir.
       await update({ refreshB2b: true });
-      if (!joining) {
-        queueOnboardingSuccessToast(name);
-      }
       router.replace(callbackUrl);
       router.refresh();
     });
