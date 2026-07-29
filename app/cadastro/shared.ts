@@ -1,4 +1,5 @@
 export const CADASTRO_STORAGE_KEY = "papelito:cadastro:step1";
+export const CADASTRO_STEP2_DRAFT_KEY = "papelito:cadastro:step2:draft";
 
 /**
  * Rascunho parcial da etapa 1, salvo quando o usuário sai da página sem enviar (ex.: clicando no
@@ -31,6 +32,17 @@ export type CadastroStep1Data = {
   email: string;
   phone: string;
   intent: CadastroIntent;
+};
+
+export type CadastroStep2Draft = {
+  cep: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cnpj: string;
 };
 
 /**

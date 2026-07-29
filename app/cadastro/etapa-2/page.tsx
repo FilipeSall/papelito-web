@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -18,7 +18,13 @@ import {
   isValidCnpj,
 } from "@/lib/validation/brazilian-documents";
 
-import { BRAZILIAN_STATES, CADASTRO_STORAGE_KEY, type CadastroStep1Data } from "../shared";
+import {
+  BRAZILIAN_STATES,
+  CADASTRO_STEP2_DRAFT_KEY,
+  CADASTRO_STORAGE_KEY,
+  type CadastroStep1Data,
+  type CadastroStep2Draft,
+} from "../shared";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -34,21 +40,48 @@ function splitName(fullName: string): { first: string; last: string } {
   return { first: parts[0], last: parts.slice(1).join(" ") };
 }
 
+const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
+  cep: "",
+  street: "",
+  number: "",
+  complement: "",
+  neighborhood: "",
+  city: "",
+  state: "",
+  cnpj: "",
+};
+
+function readStep2Draft(): CadastroStep2Draft {
+  if (typeof window === "undefined") return { ...EMPTY_STEP2_DRAFT };
+
+  const saved = window.sessionStorage.getItem(CADASTRO_STEP2_DRAFT_KEY);
+  if (!saved) return { ...EMPTY_STEP2_DRAFT };
+
+  try {
+    return { ...EMPTY_STEP2_DRAFT, ...(JSON.parse(saved) as Partial<CadastroStep2Draft>) };
+  } catch {
+    return { ...EMPTY_STEP2_DRAFT };
+  }
+}
+
 export default function CadastroEtapa2Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step1, setStep1] = useState<CadastroStep1Data | null>(null);
+  const [step2Draft] = useState<CadastroStep2Draft>(readStep2Draft);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [address, setAddress] = useState({
-    street: "",
-    neighborhood: "",
-    city: "",
-    state: "",
+    street: step2Draft.street,
+    neighborhood: step2Draft.neighborhood,
+    city: step2Draft.city,
+    state: step2Draft.state,
   });
   const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "error">("idle");
   const callbackUrl = searchParams.get("callbackUrl");
+  const submittedRef = useRef(false);
+  const valuesRef = useRef<CadastroStep2Draft>(step2Draft);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,8 +98,46 @@ export default function CadastroEtapa2Page() {
     }
   }, [router]);
 
+  useEffect(() => {
+    function persistDraft() {
+      if (submittedRef.current) return;
+
+      const draft = valuesRef.current;
+      const hasContent = Object.values(draft).some((value) => value !== "");
+      if (!hasContent) {
+        window.sessionStorage.removeItem(CADASTRO_STEP2_DRAFT_KEY);
+        return;
+      }
+
+      window.sessionStorage.setItem(CADASTRO_STEP2_DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    window.addEventListener("pagehide", persistDraft);
+    return () => {
+      window.removeEventListener("pagehide", persistDraft);
+      persistDraft();
+    };
+  }, []);
+
+  function handleFormChange(event: React.ChangeEvent<HTMLFormElement>) {
+    const target = event.target;
+    if (
+      !(target instanceof HTMLInputElement) &&
+      !(target instanceof HTMLSelectElement)
+    ) {
+      return;
+    }
+
+    if (!(target.name in EMPTY_STEP2_DRAFT)) return;
+    valuesRef.current = {
+      ...valuesRef.current,
+      [target.name]: target.value,
+    };
+  }
+
   async function handleCepChange(event: React.ChangeEvent<HTMLInputElement>) {
     event.currentTarget.value = formatCep(event.currentTarget.value);
+    valuesRef.current.cep = event.currentTarget.value;
     const digits = event.currentTarget.value.replace(/\D/g, "");
 
     if (digits.length !== 8) {
@@ -89,6 +160,13 @@ export default function CadastroEtapa2Page() {
       city: result.data.city || current.city,
       state: result.data.state || current.state,
     }));
+    valuesRef.current = {
+      ...valuesRef.current,
+      street: result.data.street || valuesRef.current.street,
+      neighborhood: result.data.neighborhood || valuesRef.current.neighborhood,
+      city: result.data.city || valuesRef.current.city,
+      state: result.data.state || valuesRef.current.state,
+    };
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -108,6 +186,17 @@ export default function CadastroEtapa2Page() {
     const neighborhood = String(formData.get("neighborhood") ?? "").trim();
     const city = String(formData.get("city") ?? "").trim();
     const state = String(formData.get("state") ?? "").trim().toUpperCase();
+
+    valuesRef.current = {
+      cep,
+      street,
+      number,
+      complement,
+      neighborhood,
+      city,
+      state,
+      cnpj,
+    };
 
     if (!isValidCnpj(cnpj)) {
       setErrorMessage("Informe um CNPJ válido.");
@@ -189,6 +278,7 @@ export default function CadastroEtapa2Page() {
           | null;
 
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
+        window.sessionStorage.removeItem(CADASTRO_STEP2_DRAFT_KEY);
         router.push(
           `/confirmar-email?email=${encodeURIComponent(body?.email ?? step1.email)}`,
         );
@@ -267,7 +357,7 @@ export default function CadastroEtapa2Page() {
             </Link>
           </p>
 
-          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+          <form className="mt-10 space-y-5" onChange={handleFormChange} onSubmit={handleSubmit}>
             <fieldset className="space-y-5" disabled={isSubmitting}>
               <AuthTextField
                 id="cep"
@@ -276,6 +366,7 @@ export default function CadastroEtapa2Page() {
                 placeholder="01.310-000"
                 inputMode="numeric"
                 autoComplete="postal-code"
+                defaultValue={step2Draft.cep}
                 maxLength={9}
                 onChange={(event) => {
                   void handleCepChange(event);
@@ -311,6 +402,7 @@ export default function CadastroEtapa2Page() {
                   label="Número"
                   placeholder="1000"
                   autoComplete="address-line2"
+                  defaultValue={step2Draft.number}
                   required
                 />
                 <AuthTextField
@@ -319,6 +411,7 @@ export default function CadastroEtapa2Page() {
                   label="Complemento"
                   placeholder="Sala 2 (opcional)"
                   autoComplete="address-line3"
+                  defaultValue={step2Draft.complement}
                 />
               </div>
 
@@ -375,6 +468,7 @@ export default function CadastroEtapa2Page() {
                 label="CNPJ da empresa"
                 placeholder="00.000.000/0000-00"
                 autoComplete="off"
+                defaultValue={step2Draft.cnpj}
                 onChange={(event) => {
                   event.currentTarget.value = formatCnpj(event.currentTarget.value);
                 }}
