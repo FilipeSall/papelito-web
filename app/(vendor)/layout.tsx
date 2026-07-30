@@ -3,6 +3,7 @@ import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { redirect } from "next/navigation";
 
 import { VendorShell } from "@/components/layout/vendor-panel";
+import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
 import { authOptions } from "@/lib/auth";
 import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 
@@ -33,9 +34,11 @@ export default async function VendorLayout({ children }: Readonly<{ children: Re
     redirect("/");
   }
 
+  const logos = await getSiteLogos();
+
   return (
     <section className={`${vendorDisplay.variable} ${vendorBody.variable} ${vendorMono.variable} h-screen overflow-hidden font-(--font-admin-body)`}>
-      <VendorShell>{children}</VendorShell>
+      <VendorShell logo={logos.privateHeader}>{children}</VendorShell>
     </section>
   );
 }

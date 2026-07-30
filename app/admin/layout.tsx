@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/layout/admin-panel";
 import { PrivateHeader } from "@/components/layout/private-header";
+import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
 import { authOptions } from "@/lib/auth";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 
@@ -40,11 +41,13 @@ export default async function AdminLayout({
     redirect("/perfil");
   }
 
+  const logos = await getSiteLogos();
+
   return (
     <section
       className={`${adminDisplay.variable} ${adminBody.variable} ${adminMono.variable} flex h-screen flex-col overflow-hidden bg-bg-light`}
     >
-      <PrivateHeader />
+      <PrivateHeader logo={logos.privateHeader} />
       <main className="min-h-0 flex-1 overflow-hidden">
         <AdminShell>{children}</AdminShell>
       </main>

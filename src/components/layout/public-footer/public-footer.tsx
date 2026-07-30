@@ -2,6 +2,12 @@ import { FooterLogo } from "./footer-logo";
 import { FooterNavColumn } from "./footer-nav-column";
 import { FooterCopyright } from "./footer-copyright";
 
+import type { ManagedImageAsset } from "@/types/home-assets";
+
+type PublicFooterProps = {
+  logo?: ManagedImageAsset;
+};
+
 // TODO: Substituir por requisição ao backend — GET /api/navigation/footer
 // Links de produto, empresa e suporte devem ser configuráveis via CMS/backend.
 const productLinks = [
@@ -43,13 +49,13 @@ const supportLinks = [
  * <PublicFooter />
  * ```
  */
-export function PublicFooter() {
+export function PublicFooter({ logo }: PublicFooterProps) {
   return (
-    <footer className="w-full bg-brand-dark px-6 pb-0 pt-16 lg:px-[174px]">
-      <div className="mx-auto flex max-w-[1564px] flex-col gap-12">
+    <footer className="w-full bg-brand-dark px-6 pb-0 pt-16 lg:px-43.5">
+      <div className="mx-auto flex max-w-391 flex-col gap-12">
         {/* Main Content */}
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:min-h-[220px] lg:grid-cols-4">
-          <FooterLogo />
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:min-h-55 lg:grid-cols-4">
+          <FooterLogo logo={logo} />
           <FooterNavColumn title="Produtos" links={productLinks} />
           <FooterNavColumn title="Empresa" links={companyLinks} />
           <FooterNavColumn title="Atendimento" links={supportLinks} />

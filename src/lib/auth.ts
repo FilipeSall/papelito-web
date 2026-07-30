@@ -89,6 +89,22 @@ type WpAuthIdentityResponse = {
     membershipRole?: string | null;
     membershipStatus?: string | null;
     onboardingStatus?: string;
+    ownerApplication?: {
+      applicationId: number;
+      companyId: number;
+      attemptNumber: number;
+      status:
+        | "document_required"
+        | "pending_manual_review"
+        | "auto_approved"
+        | "approved"
+        | "rejected";
+      fileName: string | null;
+      submittedAt: string | null;
+      decidedAt: string | null;
+      canUpload: boolean;
+      canRestart: boolean;
+    };
   } | null;
 };
 

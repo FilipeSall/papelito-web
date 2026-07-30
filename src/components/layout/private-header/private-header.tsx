@@ -13,16 +13,21 @@ import { SellerPurchaseGuard } from "@/components/layout/seller-purchase-guard";
 import { NotificationBell } from "@/components/layout/site-header";
 import { useCartStore } from "@/features/cart";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import type { ManagedImageAsset } from "@/types/home-assets";
 
 const iconButtonClass =
   "order-0 flex h-7 w-7 flex-none grow-0 items-center justify-center transition hover:opacity-70";
+
+type PrivateHeaderProps = {
+  logo?: ManagedImageAsset;
+};
 
 /**
  * Cabeçalho das páginas privadas da Papelito.
  * Compõe as variantes mobile e desktop a partir dos sub-componentes atômicos do módulo.
  * Utiliza fundo escuro (#231F20) e elementos claros para contraste.
  */
-export function PrivateHeader() {
+export function PrivateHeader({ logo }: PrivateHeaderProps) {
   const cartItemCount = useCartStore((state) =>
     state.items.reduce((count, item) => count + item.quantity, 0),
   );
@@ -46,7 +51,7 @@ export function PrivateHeader() {
       <SellerPurchaseGuard />
       {/* Mobile */}
       <div className="mx-auto flex w-full max-w-391 items-center justify-between px-4 py-3.75 md:hidden">
-        <PrivateHeaderLogo />
+        <PrivateHeaderLogo logo={logo} />
 
         <div className="flex items-start gap-2 pt-1">
           <NotificationBell inverted />
@@ -61,7 +66,7 @@ export function PrivateHeader() {
 
       {/* Desktop */}
       <div className="mx-auto hidden w-full max-w-391 grid-cols-[1fr_auto_1fr] items-center gap-6 md:grid md:h-23.25 md:px-8">
-        <PrivateHeaderLogo />
+        <PrivateHeaderLogo logo={logo} />
 
         <PrivateHeaderNav links={privateLinks} />
 

@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 
 import { PrivateHeaderLogoutButton } from "@/components/layout/private-header/logout-button";
 import { NotificationBell } from "@/components/layout/site-header";
+import { resolveLogo } from "@/lib/site-logos";
+import type { ManagedImageAsset } from "@/types/home-assets";
 
 import { getVendorPageTitle, VENDOR_NAV_ITEMS } from "./vendor-config";
 
@@ -18,9 +20,16 @@ function navClassName(active: boolean) {
   ].join(" ");
 }
 
-export function VendorShell({ children }: { children: React.ReactNode }) {
+export function VendorShell({
+  children,
+  logo,
+}: {
+  children: React.ReactNode;
+  logo?: ManagedImageAsset;
+}) {
   const pathname = usePathname();
   const title = getVendorPageTitle(pathname);
+  const resolvedLogo = resolveLogo("privateHeader", logo);
 
   return (
     <div className="relative h-screen overflow-hidden bg-[#ede9df] text-brand-dark">
@@ -36,7 +45,14 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex h-full">
         <aside className="hidden h-full w-72 shrink-0 flex-col border-r border-white/10 bg-brand-dark text-white lg:flex">
           <Link className="border-b border-white/10 px-6 py-7" href="/vendor/dashboard">
-            <Image alt="Papelito" height={34} priority src="/images/logo2.svg" width={114} />
+            <Image
+              alt={resolvedLogo.alt}
+              className="h-8.5 w-auto"
+              height={34}
+              priority
+              src={resolvedLogo.imageUrl}
+              width={114}
+            />
             <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-yellow/76">
               Área do vendor
             </p>
@@ -80,7 +96,13 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-30 border-b-2 border-brand-dark bg-[#efe9dd]/95 backdrop-blur">
             <div className="flex min-h-18 items-center justify-between gap-4 px-4 py-3 md:px-7">
               <div className="flex items-center gap-4">
-                <Image alt="Papelito" className="lg:hidden" height={30} src="/images/logo3.svg" width={100} />
+                <Image
+                  alt={resolvedLogo.alt}
+                  className="h-7.5 w-auto lg:hidden"
+                  height={30}
+                  src={resolvedLogo.imageUrl}
+                  width={100}
+                />
                 <div>
                   <p className="hidden text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-dark/48 sm:block">
                     Vendor / Operação

@@ -12,9 +12,29 @@ export type MemberStatus =
 export type OnboardingStatus =
   | "none"
   | "pending"
+  | "rejected"
   | "company_selection_required"
   | "complete"
   | "incomplete";
+
+export type OwnerApplicationStatus =
+  | "document_required"
+  | "pending_manual_review"
+  | "auto_approved"
+  | "approved"
+  | "rejected";
+
+export type OwnerApplication = {
+  applicationId: number;
+  companyId: number;
+  attemptNumber: number;
+  status: OwnerApplicationStatus;
+  fileName: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  canUpload: boolean;
+  canRestart: boolean;
+};
 
 /**
  * Estado retomável do onboarding, presente só quando `onboardingStatus === "incomplete"`.
@@ -50,6 +70,7 @@ export type CompanyContext = {
   membershipStatus: MemberStatus | null;
   onboardingStatus: OnboardingStatus;
   onboarding?: OnboardingResumeState;
+  ownerApplication?: OwnerApplication;
   companySelectionRequired: boolean;
   availableCompanies: AvailableCompany[];
   canPurchase: boolean;

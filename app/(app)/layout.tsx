@@ -2,18 +2,22 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { PrivateHeader } from "@/components/layout/private-header";
 import { AccountCepNotice } from "@/components/layout/profile-page";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
+import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
 
 export default async function AppAreaLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const coverageContext = await getAccountCoverageCepContext();
+  const [coverageContext, logos] = await Promise.all([
+    getAccountCoverageCepContext(),
+    getSiteLogos(),
+  ]);
 
   return (
     <section className="flex min-h-screen flex-col bg-bg-light">
-      <PrivateHeader />
+      <PrivateHeader logo={logos.privateHeader} />
       <AccountCepNotice show={coverageContext.isAuthenticated && !coverageContext.cep} />
       <main className="flex-1">{children}</main>
-      <PublicFooter />
+      <PublicFooter logo={logos.footer} />
     </section>
   );
 }

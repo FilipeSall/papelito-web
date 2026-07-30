@@ -26,6 +26,10 @@ export type SiteImageAssetKey =
 
 export type SiteImageAssets = Record<SiteImageAssetKey, ManagedImageAsset>;
 
+export type SiteLogoKey = "publicHeader" | "privateHeader" | "footer";
+
+export type SiteLogos = Record<SiteLogoKey, ManagedImageAsset>;
+
 export type PromoBannerConfig = {
   ctaLabel: string;
   href: string;
@@ -52,6 +56,11 @@ export type AdminHeroBannersSnapshot = {
 
 export type AdminSiteImageAssetsSnapshot = {
   images: SiteImageAssets;
+  issues: string[];
+};
+
+export type AdminSiteLogosSnapshot = {
+  logos: SiteLogos;
   issues: string[];
 };
 

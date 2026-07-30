@@ -145,6 +145,61 @@ export type AdminUserDetail = {
   } | null;
 };
 
+export type AdminOwnerApplicationDetail = {
+  application: {
+    applicationId: number;
+    companyId: number;
+    attemptNumber: number;
+    status: "document_required" | "pending_manual_review" | "auto_approved" | "approved" | "rejected";
+    fileName: string | null;
+    submittedAt: string | null;
+    decidedAt: string | null;
+    canUpload: boolean;
+    canRestart: boolean;
+    documentMime: string | null;
+    documentSize: number | null;
+    documentAvailable: boolean;
+    documentPurgeStatus: string;
+    rejectionReason: string | null;
+    decidedByUserId: number | null;
+  };
+  person: {
+    userId: number;
+    fullName: string;
+    email: string;
+    cpf: string | null;
+    birthDate: string | null;
+    phone: string;
+  };
+  company: {
+    id: number;
+    cnpj: string;
+    legalName: string;
+    tradeName: string | null;
+    registryStatus: string;
+    ownershipStatus: string;
+    companyStatus: string;
+    providerSource: string | null;
+    providerCheckedAt: string | null;
+    fiscalAddress: {
+      cep: string | null;
+      state: string | null;
+      city: string | null;
+      neighborhood: string | null;
+      street: string | null;
+      number: string | null;
+      complement: string | null;
+    };
+  };
+  membership: { role: string; status: string } | null;
+  evidence: Record<string, unknown>;
+};
+
+export type AdminOwnerApplications = {
+  current: AdminOwnerApplicationDetail | null;
+  history: AdminOwnerApplicationDetail[];
+};
+
 type RawUsersSnapshot = {
   currentPage?: unknown;
   issues?: unknown[];
@@ -277,4 +332,20 @@ export async function getAdminUserDetail(
   });
 
   return result.ok ? result.data : null;
+}
+
+export async function getAdminOwnerApplications(
+  accessToken: string | undefined,
+  userId: number,
+): Promise<AdminOwnerApplications> {
+  if (!accessToken || !Number.isFinite(userId) || userId <= 0) {
+    return { current: null, history: [] };
+  }
+
+  const result = await wpRest<AdminOwnerApplications>(
+    `/papelito/v1/admin/users/${userId}/owner-applications`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  return result.ok ? result.data : { current: null, history: [] };
 }

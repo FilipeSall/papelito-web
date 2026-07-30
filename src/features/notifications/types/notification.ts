@@ -16,7 +16,10 @@ export type NotificationType =
   | "shipment_delivery_failed"
   | "shipment_pickup_available"
   | "shipment_returned"
-  | "shipment_exception";
+  | "shipment_exception"
+  | "company_owner_review_pending"
+  | "company_owner_approved"
+  | "company_owner_rejected";
 
 export type NotificationPayload = Record<string, unknown>;
 

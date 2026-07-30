@@ -8,6 +8,7 @@ import type {
   CompanyMember,
   CompanyRole,
   InvitationPreview,
+  OwnerApplication,
 } from "../types/company";
 
 type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
@@ -96,6 +97,44 @@ export function createCompany(payload: {
     method: "POST",
     idempotent: true,
     body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadOwnerDocument(file: File): Promise<ApiResult<{
+  application: OwnerApplication;
+  context: CompanyContext;
+}>> {
+  const formData = new FormData();
+  formData.set("document", file);
+
+  let response: Response;
+  try {
+    response = await fetch("/api/company/current/owner-document", {
+      method: "POST",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      body: formData,
+    });
+  } catch {
+    return { ok: false, status: 0, message: "Falha de rede. Tente novamente." };
+  }
+
+  const body = (await response.json().catch(() => null)) as
+    | { application: OwnerApplication; context: CompanyContext; message?: string }
+    | null;
+  if (!response.ok || !body) {
+    return {
+      ok: false,
+      status: response.status,
+      message: body?.message ?? "Não foi possível enviar o documento.",
+    };
+  }
+
+  return { ok: true, data: body };
+}
+
+export function restartOwnerOnboarding() {
+  return call<CompanyContext>("/api/company/current/restart-onboarding", {
+    method: "POST",
   });
 }
 

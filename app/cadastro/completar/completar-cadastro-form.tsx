@@ -13,8 +13,11 @@ import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import {
   createCompany,
   requestCompanyAccess,
+  restartOwnerOnboarding,
   saveCustomerProfile,
+  uploadOwnerDocument,
 } from "@/features/company/client/company-client";
+import type { OwnerApplication } from "@/features/company/types/company";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import {
   formatCep,
@@ -44,9 +47,11 @@ function isRolloutDisabled(status: number) {
 export function CompletarCadastroForm({
   prefill,
   callbackUrl,
+  initialOwnerApplication,
 }: {
   prefill: CadastroPrefill;
   callbackUrl: string;
+  initialOwnerApplication?: OwnerApplication;
 }) {
   const router = useRouter();
   const { update } = useSession();
@@ -55,6 +60,7 @@ export function CompletarCadastroForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [ownerApplication, setOwnerApplication] = useState(initialOwnerApplication);
   const [address, setAddress] = useState({
     street: prefill.street,
     neighborhood: prefill.neighborhood,
@@ -184,6 +190,17 @@ export function CompletarCadastroForm({
         return;
       }
 
+      if (
+        !joining &&
+        "ownerApplication" in result.data &&
+        result.data.ownerApplication?.status === "document_required"
+      ) {
+        await update({ refreshB2b: true });
+        setOwnerApplication(result.data.ownerApplication);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Sem isto o token guarda onboardingStatus "incomplete" e o gate devolveria o usuário
       // para cá logo após concluir.
       await update({ refreshB2b: true });
@@ -195,6 +212,16 @@ export function CompletarCadastroForm({
   async function handleConfirmCancel() {
     setIsLeaving(true);
     await signOutAndClearSession({ callbackUrl: "/", redirect: true });
+  }
+
+  if (ownerApplication) {
+    return (
+      <OwnerApplicationStep
+        application={ownerApplication}
+        onApplicationChange={setOwnerApplication}
+        onSessionRefresh={() => update({ refreshB2b: true })}
+      />
+    );
   }
 
   return (
@@ -503,6 +530,188 @@ export function CompletarCadastroForm({
         }}
       />
     </div>
+  );
+}
+
+const TERMINAL_REJECTION_MESSAGE =
+  "Não foi possível aprovar seu cadastro empresarial porque encontramos divergências nos dados analisados. Esta solicitação foi encerrada. Para realizar uma nova tentativa, será necessário iniciar novamente o processo de cadastro empresarial.";
+
+function OwnerApplicationStep({
+  application,
+  onApplicationChange,
+  onSessionRefresh,
+}: {
+  application: OwnerApplication;
+  onApplicationChange: (application: OwnerApplication) => void;
+  onSessionRefresh: () => Promise<unknown>;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
+  const pending = application.status === "pending_manual_review";
+  const rejected = application.status === "rejected";
+
+  async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage(null);
+    if (!file) {
+      setErrorMessage("Selecione um documento para continuar.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage("O documento deve ter no máximo 10 MB.");
+      return;
+    }
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["jpg", "jpeg", "png", "pdf"].includes(extension)) {
+      setErrorMessage("Envie um arquivo JPG, JPEG, PNG ou PDF.");
+      return;
+    }
+
+    setIsWorking(true);
+    const result = await uploadOwnerDocument(file);
+    if (!result.ok) {
+      setErrorMessage(result.message);
+      setIsWorking(false);
+      return;
+    }
+    onApplicationChange(result.data.application);
+    await onSessionRefresh();
+    setIsWorking(false);
+  }
+
+  async function handleRestart() {
+    setErrorMessage(null);
+    setIsWorking(true);
+    const result = await restartOwnerOnboarding();
+    if (!result.ok) {
+      setErrorMessage(result.message);
+      setIsWorking(false);
+      return;
+    }
+    await onSessionRefresh();
+    window.location.reload();
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-brand-dark px-6 py-12">
+      <section className="w-full max-w-xl border-2 border-brand-yellow bg-[#171717] p-6 text-white shadow-[10px_10px_0px_#ffe500] sm:p-9">
+        <Link
+          href="/"
+          className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow"
+        >
+          <Image
+            src="/images/auth/logo-with-flag.svg"
+            alt="Marketplace Papelito"
+            width={152}
+            height={91}
+            priority
+          />
+        </Link>
+
+        <div className="mt-7 flex items-center gap-2" aria-label="Etapa 3 de 3">
+          {[1, 2, 3].map((step) => (
+            <span
+              key={step}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark"
+            >
+              {step < 3 ? <CheckIcon className="h-3.5 w-3.5" /> : "3"}
+            </span>
+          ))}
+          <span className="ml-2 text-xs font-bold uppercase tracking-[0.16em] text-white/50">
+            Análise empresarial
+          </span>
+        </div>
+
+        {application.status === "document_required" ? (
+          <>
+            <p className="mt-8 text-xs font-black uppercase tracking-[0.2em] text-brand-yellow">
+              Validação documental
+            </p>
+            <h1 className="mt-2 text-3xl font-black uppercase tracking-tight">
+              Envie o documento do responsável
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-white/65">
+              Não conseguimos confirmar automaticamente o vínculo com a empresa. Envie um documento
+              legível para análise da equipe Papelito.
+            </p>
+
+            <form className="mt-8 space-y-5" onSubmit={handleUpload}>
+              <label className="block border-2 border-dashed border-white/30 bg-white/[0.04] p-5 transition focus-within:border-brand-yellow">
+                <span className="block text-xs font-black uppercase tracking-[0.16em]">
+                  Documento comprobatório
+                </span>
+                <span className="mt-2 block text-xs leading-5 text-white/50">
+                  JPG, JPEG, PNG ou PDF, com até 10 MB. Após o envio, o arquivo não poderá ser
+                  substituído nesta solicitação.
+                </span>
+                <input
+                  className="mt-4 block w-full text-sm text-white file:mr-4 file:border-0 file:bg-brand-yellow file:px-4 file:py-2 file:text-xs file:font-black file:uppercase file:text-brand-dark"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                  disabled={isWorking}
+                  onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
+                />
+              </label>
+              {errorMessage ? (
+                <p className="bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={isWorking}
+                className="flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow px-5 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isWorking ? "Enviando..." : "Enviar para análise"}
+              </button>
+            </form>
+          </>
+        ) : null}
+
+        {pending ? (
+          <div className="mt-8">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-yellow">
+              Documento recebido
+            </p>
+            <h1 className="mt-2 text-3xl font-black uppercase tracking-tight">
+              Sua análise está em andamento
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-white/65">
+              Nossa equipe vai revisar os dados enviados. Você receberá um e-mail quando a decisão
+              for concluída. Enquanto isso, as compras permanecem bloqueadas.
+            </p>
+          </div>
+        ) : null}
+
+        {rejected ? (
+          <div className="mt-8">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-red-300">
+              Solicitação encerrada
+            </p>
+            <h1 className="mt-2 text-3xl font-black uppercase tracking-tight">
+              Cadastro não aprovado
+            </h1>
+            <p className="mt-4 border-l-4 border-brand-yellow pl-4 text-sm leading-7 text-white/75">
+              {TERMINAL_REJECTION_MESSAGE}
+            </p>
+            {errorMessage ? (
+              <p className="mt-5 bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
+                {errorMessage}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={isWorking}
+              onClick={() => void handleRestart()}
+              className="mt-7 flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow px-5 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isWorking ? "Reiniciando..." : "Iniciar novo cadastro empresarial"}
+            </button>
+          </div>
+        ) : null}
+      </section>
+    </main>
   );
 }
 

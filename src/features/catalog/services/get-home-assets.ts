@@ -1,6 +1,7 @@
 import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
+import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   HeroBanner,
   ManagedImageAsset,
@@ -8,6 +9,8 @@ import type {
   PromoBannerConfig,
   SiteImageAssetKey,
   SiteImageAssets,
+  SiteLogoKey,
+  SiteLogos,
 } from "@/types/home-assets";
 
 type WpHeroResponse = {
@@ -24,6 +27,10 @@ type WpPartnerResponse = {
 
 type WpSiteImagesResponse = {
   images?: Partial<Record<SiteImageAssetKey, Partial<ManagedImageAsset>>>;
+};
+
+type WpSiteLogosResponse = {
+  logos?: Partial<Record<SiteLogoKey, Partial<ManagedImageAsset>>>;
 };
 
 function cleanText(value: unknown) {
@@ -260,4 +267,25 @@ export async function getSiteImageAssets(): Promise<SiteImageAssets> {
   }
 
   return mapSiteImages(result.data.images);
+}
+
+export async function getSiteLogos(): Promise<SiteLogos> {
+  const result = await wpRest<WpSiteLogosResponse>(
+    "/papelito/v1/site/logos",
+    process.env.NODE_ENV === "development"
+      ? {}
+      : {
+          revalidate: 60,
+          tags: ["wp:site-logos"],
+        },
+  );
+
+  if (!result.ok) {
+    if (result.status !== 404) {
+      console.warn("[site-logos] Falha ao consultar logos do site.", result.error.message);
+    }
+    return SITE_LOGO_DEFAULTS;
+  }
+
+  return mapSiteLogos(result.data.logos);
 }

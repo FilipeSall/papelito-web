@@ -4,6 +4,22 @@ import { buildNotification } from "../../../../test/factories/notification";
 import { formatNotification } from "./format-notification";
 
 describe("formatNotification", () => {
+  it("links a pending company review directly to the user review tab", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "company_owner_review_pending",
+        payload: {
+          userId: 84,
+          companyName: "Papelaria Exemplo",
+        },
+      }),
+    );
+
+    expect(formatted.title).toBe("Análise empresarial pendente");
+    expect(formatted.body).toContain("Papelaria Exemplo");
+    expect(formatted.href).toBe("/admin/users/84?tab=company-review");
+  });
+
   it("shows discount details for favorite-on-promo notifications when available", () => {
     const formatted = formatNotification(
       buildNotification({

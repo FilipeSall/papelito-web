@@ -58,6 +58,33 @@ export function formatNotification(notification: NotificationItem): FormattedNot
   const { payload } = notification;
 
   switch (notification.type) {
+    case "company_owner_review_pending": {
+      const companyName = stringValue(payload, "companyName") || "Cadastro empresarial";
+      const userId = numberValue(payload, "userId");
+      return {
+        icon: "badge",
+        title: "Análise empresarial pendente",
+        body: `${companyName} enviou um documento para revisão.`,
+        href:
+          Number.isInteger(userId) && userId > 0
+            ? `/admin/users/${userId}?tab=company-review`
+            : "/admin/empresas",
+      };
+    }
+    case "company_owner_approved":
+      return {
+        icon: "check",
+        title: "Cadastro empresarial aprovado",
+        body: "Seu cadastro empresarial foi aprovado.",
+        href: "/perfil/empresa",
+      };
+    case "company_owner_rejected":
+      return {
+        icon: "x",
+        title: "Cadastro empresarial não aprovado",
+        body: "A solicitação foi encerrada. Inicie um novo cadastro para tentar novamente.",
+        href: "/cadastro/completar",
+      };
     case "new_vendor_application": {
       const storeName = stringValue(payload, "store_name") || "novo revendedor";
       const interestId = numberValue(payload, "interest_id");

@@ -1,38 +1,42 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ImagePlus, LoaderCircle, Save, Trash2 } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 
-import { Panel } from "@/components/layout/admin-panel/primitives";
+import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { messageFromError } from "@/utils/error-message";
 import type {
   AdminHeroBannersSnapshot,
   AdminPartnerBannerSnapshot,
   AdminSiteImageAssetsSnapshot,
+  AdminSiteLogosSnapshot,
   HeroBanner,
   ManagedImageAsset,
   SiteImageAssetKey,
+  SiteLogoKey,
 } from "@/types/home-assets";
+
+import {
+  BUTTON_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  TEXTAREA_CLASS,
+} from "./field-classes";
+import { ImageAssetCard, type ImageFieldConfig } from "./image-asset-card";
+import { IssuesList } from "./issues-list";
+import { LogosSection } from "./logos-section";
+import { UploadCard } from "./upload-card";
+import { parseJson, uploadMedia } from "./upload-media";
 
 const HERO_API = "/api/admin/assets/hero-banners";
 const PARTNER_API = "/api/admin/assets/partner-banner";
 const SITE_IMAGES_API = "/api/admin/assets/site-images";
-const MEDIA_API = "/api/admin/assets/media";
-
-const INPUT_CLASS =
-  "h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm leading-5 text-[#1e1c10] outline-none transition focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00] disabled:cursor-not-allowed disabled:opacity-60";
-const TEXTAREA_CLASS =
-  "min-h-24 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 py-3 text-sm leading-6 text-[#1e1c10] outline-none transition focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00] disabled:cursor-not-allowed disabled:opacity-60";
-const LABEL_CLASS =
-  "mb-1 block text-[12px] font-semibold uppercase leading-4 tracking-[0.05em] text-[#1e1c10]";
-const BUTTON_CLASS =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-[#231f20] bg-[#231f20] px-4 py-2 text-sm font-semibold text-[#fff9ea] transition hover:bg-[#3a3536] disabled:cursor-not-allowed disabled:opacity-60";
-const SECONDARY_BUTTON_CLASS =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-[#231f20]/16 bg-white px-3 py-2 text-sm font-semibold text-[#231f20] transition hover:bg-[#f6f1e7] disabled:cursor-not-allowed disabled:opacity-60";
+const LOGOS_API = "/api/admin/assets/logos";
 
 type AssetsManagerProps = {
   initialHeroSnapshot: AdminHeroBannersSnapshot;
+  initialLogosSnapshot: AdminSiteLogosSnapshot;
   initialPartnerSnapshot: AdminPartnerBannerSnapshot;
   initialSiteImagesSnapshot: AdminSiteImageAssetsSnapshot;
 };
@@ -42,24 +46,6 @@ type NoticeTone = "error" | "success";
 type NoticeState = {
   message: string;
   tone: NoticeTone;
-};
-
-type UploadResponse = {
-  media?: {
-    alt?: string;
-    id?: number;
-    src?: string;
-  };
-  message?: string;
-};
-
-type ImageFieldConfig = {
-  key: SiteImageAssetKey;
-  title: string;
-  eyebrow: string;
-  description: string;
-  formatHint: string;
-  previewClass?: string;
 };
 
 const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
@@ -133,33 +119,9 @@ function normalizeHeroOrder(banners: HeroBanner[]) {
   }));
 }
 
-async function parseJson<T>(response: Response): Promise<T | null> {
-  return (await response.json().catch(() => null)) as T | null;
-}
-
-async function uploadMedia(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(MEDIA_API, {
-    body: formData,
-    method: "POST",
-  });
-  const json = await parseJson<UploadResponse>(response);
-
-  if (!response.ok || !json?.media) {
-    throw new Error(json?.message ?? "Não foi possível enviar a imagem.");
-  }
-
-  return {
-    alt: typeof json.media.alt === "string" ? json.media.alt : "",
-    id: typeof json.media.id === "number" ? json.media.id : 0,
-    src: typeof json.media.src === "string" ? json.media.src : "",
-  };
-}
-
 export function AssetsManager({
   initialHeroSnapshot,
+  initialLogosSnapshot,
   initialPartnerSnapshot,
   initialSiteImagesSnapshot,
 }: AssetsManagerProps) {
@@ -176,10 +138,14 @@ export function AssetsManager({
   const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
   const [siteImages, setSiteImages] = useState(initialSiteImagesSnapshot.images);
   const [siteImageIssues, setSiteImageIssues] = useState(initialSiteImagesSnapshot.issues);
+  const [logos, setLogos] = useState(initialLogosSnapshot.logos);
+  const [logoIssues, setLogoIssues] = useState(initialLogosSnapshot.issues);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [isSavingHero, setIsSavingHero] = useState(false);
   const [isSavingPartner, setIsSavingPartner] = useState(false);
   const [isSavingSiteImages, setIsSavingSiteImages] = useState(false);
+  const [isSavingLogos, setIsSavingLogos] = useState(false);
+  const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(null);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   function showNotice(tone: NoticeTone, message: string) {
@@ -228,6 +194,16 @@ export function AssetsManager({
 
   function updateSiteImage(key: SiteImageAssetKey, patch: Partial<ManagedImageAsset>) {
     setSiteImages((current) => ({
+      ...current,
+      [key]: {
+        ...current[key],
+        ...patch,
+      },
+    }));
+  }
+
+  function updateLogo(key: SiteLogoKey, patch: Partial<ManagedImageAsset>) {
+    setLogos((current) => ({
       ...current,
       [key]: {
         ...current[key],
@@ -292,6 +268,25 @@ export function AssetsManager({
       showNotice("success", "Imagem enviada com sucesso.");
     } catch (error) {
       showNotice("error", messageFromError(error, "Não foi possível enviar a imagem."));
+    } finally {
+      setUploadingKey(null);
+    }
+  }
+
+  async function handleLogoUpload(key: SiteLogoKey, file: File) {
+    const uploadSlot = `logo:${key}`;
+    setUploadingKey(uploadSlot);
+
+    try {
+      const media = await uploadMedia(file);
+      updateLogo(key, {
+        imageId: media.id,
+        imageUrl: media.src,
+        alt: media.alt || logos[key].alt,
+      });
+      showNotice("success", "Logo enviada com sucesso. Salve para publicar.");
+    } catch (error) {
+      showNotice("error", messageFromError(error, "Não foi possível enviar a logo."));
     } finally {
       setUploadingKey(null);
     }
@@ -378,6 +373,56 @@ export function AssetsManager({
     }
   }
 
+  async function saveLogos() {
+    setIsSavingLogos(true);
+
+    try {
+      const response = await fetch(LOGOS_API, {
+        body: JSON.stringify({ logos }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
+      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível salvar as logos.");
+      }
+
+      setLogos(json.logos);
+      setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
+      showNotice("success", "Logos do site atualizadas.");
+    } catch (error) {
+      showNotice("error", messageFromError(error, "Não foi possível salvar as logos."));
+    } finally {
+      setIsSavingLogos(false);
+    }
+  }
+
+  async function restoreLogo(key: SiteLogoKey) {
+    setRestoringLogoKey(key);
+
+    try {
+      const response = await fetch(`${LOGOS_API}?key=${encodeURIComponent(key)}`, {
+        method: "DELETE",
+      });
+      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível restaurar a logo padrão.");
+      }
+
+      setLogos(json.logos);
+      setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
+      showNotice("success", "Logo padrão restaurada.");
+    } catch (error) {
+      showNotice("error", messageFromError(error, "Não foi possível restaurar a logo padrão."));
+    } finally {
+      setRestoringLogoKey(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -396,8 +441,9 @@ export function AssetsManager({
             Assets das paginas
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5e574c]">
-            Configure as imagens públicas usadas na Hero Section, página de produtos, página Sobre,
-            PDV Perfeito e página de revendedores. Nenhuma seção pode ser salva sem imagem.
+            Configure as logos do site e as imagens públicas usadas na Hero Section, página de
+            produtos, página Sobre, PDV Perfeito e página de revendedores. Abra uma seção para
+            editar seus assets; nenhuma seção pode ser salva sem imagem.
           </p>
         </div>
       </section>
@@ -409,27 +455,27 @@ export function AssetsManager({
               ? "rounded-[18px] border border-[#b7c77d] bg-[#f4f8e2] px-4 py-4 text-sm leading-6 text-[#24300c]"
               : "rounded-[18px] border border-[#d59d9d] bg-[#fff1f1] px-4 py-4 text-sm leading-6 text-[#5c1f1f]"
           }
+          role="status"
         >
           {notice.message}
         </div>
       ) : null}
 
-      <Panel className="p-5">
-        <div className="flex flex-col gap-4 border-b border-[#231f20]/10 pb-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-              home
-            </p>
-            <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Hero Section</h3>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Aparece no topo da home. Com uma opção vira banner fixo; com mais de uma vira
-              carrossel. Sempre deve existir pelo menos uma opção.
-            </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-              Formato ideal: desktop 16:5 e mobile 1:2.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <LogosSection
+        isRestoring={restoringLogoKey}
+        isSaving={isSavingLogos}
+        issues={logoIssues}
+        logos={logos}
+        onAltChange={(key, alt) => updateLogo(key, { alt })}
+        onFileSelect={handleLogoUpload}
+        onRestore={restoreLogo}
+        onSave={saveLogos}
+        uploadingKey={uploadingKey}
+      />
+
+      <CollapsiblePanel
+        actions={
+          <>
             <button
               className={SECONDARY_BUTTON_CLASS}
               onClick={() => setHeroBanners((current) => [...current, createEmptyHeroBanner(current.length)])}
@@ -447,12 +493,16 @@ export function AssetsManager({
               {isSavingHero ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar Hero Section
             </button>
-          </div>
-        </div>
-
+          </>
+        }
+        description="Aparece no topo da home. Com uma opção vira banner fixo; com mais de uma vira carrossel. Sempre deve existir pelo menos uma opção."
+        eyebrow="home"
+        hint="Formato ideal: desktop 16:5 e mobile 1:2."
+        title="Hero Section"
+      >
         {heroIssues.length > 0 ? <IssuesList issues={heroIssues} /> : null}
 
-        <div className="mt-4 space-y-4">
+        <div className="space-y-4">
           {heroBanners.map((banner, index) => (
             <div
               className="rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]"
@@ -534,20 +584,10 @@ export function AssetsManager({
             </div>
           ))}
         </div>
-      </Panel>
+      </CollapsiblePanel>
 
-      <Panel className="p-5">
-        <div className="flex flex-col gap-4 border-b border-[#231f20]/10 pb-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-              home
-            </p>
-            <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Imagem do PDV Perfeito</h3>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Imagem lateral do bloco PDV Perfeito na home, ao lado do convite para virar
-              parceiro. Enquanto nenhuma imagem for enviada, a home exibe a imagem padrão.
-            </p>
-          </div>
+      <CollapsiblePanel
+        actions={
           <button
             className={BUTTON_CLASS}
             disabled={isSavingPartner}
@@ -557,11 +597,14 @@ export function AssetsManager({
             {isSavingPartner ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Salvar PDV Perfeito
           </button>
-        </div>
-
+        }
+        description="Imagem lateral do bloco PDV Perfeito na home, ao lado do convite para virar parceiro. Enquanto nenhuma imagem for enviada, a home exibe a imagem padrão."
+        eyebrow="home"
+        title="Imagem do PDV Perfeito"
+      >
         {partnerIssues.length > 0 ? <IssuesList issues={partnerIssues} /> : null}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <UploadCard
             formatHint="Desktop: foto horizontal, aproximadamente 5:3."
             imageUrl={partnerBanner.desktopImageUrl}
@@ -655,20 +698,10 @@ export function AssetsManager({
             value={partnerBanner.description}
           />
         </div>
-      </Panel>
+      </CollapsiblePanel>
 
-      <Panel className="p-5">
-        <div className="flex flex-col gap-4 border-b border-[#231f20]/10 pb-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-              produtos / sobre / revendedor
-            </p>
-            <h3 className="mt-2 text-xl font-semibold text-[#231f20]">Imagens das paginas</h3>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[#5e574c]">
-              Cada imagem abaixo corresponde a uma seção pública específica. Todas já iniciam com
-              o asset atual do site e não podem ser salvas vazias.
-            </p>
-          </div>
+      <CollapsiblePanel
+        actions={
           <button
             className={BUTTON_CLASS}
             disabled={isSavingSiteImages}
@@ -678,11 +711,14 @@ export function AssetsManager({
             {isSavingSiteImages ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Salvar imagens
           </button>
-        </div>
-
+        }
+        description="Cada imagem abaixo corresponde a uma seção pública específica. Todas já iniciam com o asset atual do site e não podem ser salvas vazias."
+        eyebrow="produtos / sobre / revendedor"
+        title="Imagens das paginas"
+      >
         {siteImageIssues.length > 0 ? <IssuesList issues={siteImageIssues} /> : null}
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {SITE_IMAGE_FIELDS.map((field) => (
             <ImageAssetCard
               asset={siteImages[field.key]}
@@ -694,155 +730,7 @@ export function AssetsManager({
             />
           ))}
         </div>
-      </Panel>
-    </div>
-  );
-}
-
-function IssuesList({ issues }: { issues: string[] }) {
-  return (
-    <div className="mt-4 rounded-[18px] border border-[#cfbf80] bg-[#fff6bf] px-4 py-4 text-sm leading-6 text-[#231f20]">
-      {issues.join(" ")}
-    </div>
-  );
-}
-
-function ImageAssetCard({
-  asset,
-  config,
-  isUploading,
-  onAltChange,
-  onFileSelect,
-}: {
-  asset: ManagedImageAsset;
-  config: ImageFieldConfig;
-  isUploading: boolean;
-  onAltChange: (alt: string) => void;
-  onFileSelect: (file: File) => void | Promise<void>;
-}) {
-  return (
-    <div className="rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6a5f00]">
-            {config.eyebrow}
-          </p>
-          <h4 className="mt-1 text-base font-semibold text-[#231f20]">{config.title}</h4>
-          <p className="mt-1 text-sm leading-6 text-[#5e574c]">{config.description}</p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-            {config.formatHint}
-          </p>
-        </div>
-        <UploadButton isUploading={isUploading} onFileSelect={onFileSelect} />
-      </div>
-
-      <PreviewImage
-        className={config.previewClass}
-        imageUrl={asset.imageUrl}
-        label={config.title}
-      />
-
-      <div className="mt-4">
-        <label className={LABEL_CLASS} htmlFor={`site-image-alt-${config.key}`}>
-          Texto alternativo
-        </label>
-        <input
-          className={INPUT_CLASS}
-          id={`site-image-alt-${config.key}`}
-          onChange={(event) => onAltChange(event.target.value)}
-          type="text"
-          value={asset.alt}
-        />
-      </div>
-    </div>
-  );
-}
-
-function UploadCard({
-  formatHint,
-  imageUrl,
-  isUploading,
-  label,
-  onFileSelect,
-  previewClass,
-}: {
-  formatHint: string;
-  imageUrl: string;
-  isUploading: boolean;
-  label: string;
-  onFileSelect: (file: File) => void | Promise<void>;
-  previewClass?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[#231f20]/12 bg-[#fffdf7] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#6a5f00]">
-            {label}
-          </p>
-          <p className="mt-1 text-sm text-[#5e574c]">{formatHint}</p>
-        </div>
-        <UploadButton isUploading={isUploading} onFileSelect={onFileSelect} />
-      </div>
-
-      <PreviewImage className={previewClass} imageUrl={imageUrl} label={label} />
-    </div>
-  );
-}
-
-function UploadButton({
-  isUploading,
-  onFileSelect,
-}: {
-  isUploading: boolean;
-  onFileSelect: (file: File) => void | Promise<void>;
-}) {
-  return (
-    <label className={SECONDARY_BUTTON_CLASS}>
-      {isUploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-      Enviar
-      <input
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) {
-            void onFileSelect(file);
-          }
-          event.target.value = "";
-        }}
-        type="file"
-      />
-    </label>
-  );
-}
-
-function PreviewImage({
-  className,
-  imageUrl,
-  label,
-}: {
-  className?: string;
-  imageUrl: string;
-  label: string;
-}) {
-  return (
-    <div className="mt-4 overflow-hidden rounded-xl border border-dashed border-[#231f20]/15 bg-white">
-      {imageUrl ? (
-        <div className="relative h-48 w-full">
-          <Image
-            alt={label}
-            className={className ?? "object-cover"}
-            fill
-            sizes="(max-width: 1024px) 100vw, 480px"
-            src={imageUrl}
-          />
-        </div>
-      ) : (
-        <div className="flex h-48 items-center justify-center px-4 text-center text-sm text-[#7b7568]">
-          Nenhuma imagem enviada ainda.
-        </div>
-      )}
+      </CollapsiblePanel>
     </div>
   );
 }

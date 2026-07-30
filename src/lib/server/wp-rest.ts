@@ -39,13 +39,14 @@ export async function wpRest<T>(
     typeof revalidate === "number"
       ? { next: { revalidate, ...(tags?.length ? { tags } : {}) } }
       : { cache: "no-store" as const };
+  const isFormData = typeof FormData !== "undefined" && rest.body instanceof FormData;
 
   let response: Response;
   try {
     response = await fetch(url, {
       method: rest.method ?? (json !== undefined ? "POST" : "GET"),
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         Accept: "application/json",
         ...(headers as Record<string, string> | undefined),
       },

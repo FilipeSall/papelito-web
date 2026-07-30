@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { CadastroPrefill } from "../shared";
+import type { OwnerApplication } from "@/features/company/types/company";
 import { CompletarCadastroForm } from "./completar-cadastro-form";
 
 const { replaceMock, refreshMock, updateMock, signOutMock, lookupCepMock } = vi.hoisted(() => ({
@@ -83,6 +84,22 @@ function submitForm() {
   fireEvent.submit(screen.getByRole("button", { name: /concluir/i }).closest("form")!);
 }
 
+function ownerApplication(
+  status: OwnerApplication["status"],
+): OwnerApplication {
+  return {
+    applicationId: 77,
+    companyId: 10,
+    attemptNumber: 1,
+    status,
+    fileName: status === "pending_manual_review" ? "documento.pdf" : null,
+    submittedAt: status === "pending_manual_review" ? "2026-07-30 12:00:00" : null,
+    decidedAt: status === "rejected" ? "2026-07-30 13:00:00" : null,
+    canUpload: status === "document_required",
+    canRestart: status === "rejected",
+  };
+}
+
 describe("CompletarCadastroForm", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -160,6 +177,57 @@ describe("CompletarCadastroForm", () => {
     ]);
     // Sem o refresh do token o gate devolveria o usuário para o onboarding logo após concluir.
     expect(updateMock).toHaveBeenCalledWith({ refreshB2b: true });
+  });
+
+  it("abre a etapa 3 quando a validação automática exige documento", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse({ identityStatus: "verified" }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          companyId: 10,
+          ownerApplication: ownerApplication("document_required"),
+        }),
+      );
+
+    render(<CompletarCadastroForm prefill={buildPrefill()} callbackUrl="/checkout" />);
+    fillValidForm();
+    submitForm();
+
+    expect(await screen.findByRole("heading", { name: /envie o documento/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Documento comprobatório/)).toBeInTheDocument();
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  it("não permite substituir documento enquanto a revisão está pendente", () => {
+    render(
+      <CompletarCadastroForm
+        prefill={buildPrefill()}
+        callbackUrl="/"
+        initialOwnerApplication={ownerApplication("pending_manual_review")}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /análise está em andamento/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Documento comprobatório/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Enviar outro documento")).not.toBeInTheDocument();
+  });
+
+  it("mostra a reprovação terminal sem opções de correção ou reenvio", () => {
+    render(
+      <CompletarCadastroForm
+        prefill={buildPrefill()}
+        callbackUrl="/"
+        initialOwnerApplication={ownerApplication("rejected")}
+      />,
+    );
+
+    expect(screen.getByText(/Esta solicitação foi encerrada/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Iniciar novo cadastro empresarial" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Enviar outro documento")).not.toBeInTheDocument();
+    expect(screen.queryByText("Corrigir dados informados")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Documento comprobatório/)).not.toBeInTheDocument();
   });
 
   it("solicita acesso quando a intenção é entrar em uma empresa existente", async () => {

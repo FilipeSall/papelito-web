@@ -3,13 +3,15 @@ import { getServerSession } from "next-auth";
 
 import { UserDetailPage, type UserDetailOrigin, type UserDetailTabKey } from "@/components/layout/admin-panel/sections/users";
 import { authOptions } from "@/lib/auth";
-import { getAdminUserDetail } from "@/lib/server/admin-users";
+import { getAdminOwnerApplications, getAdminUserDetail } from "@/lib/server/admin-users";
 import type { AdminUserFilterRole } from "@/lib/server/admin-users-filters";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import { firstParam } from "@/lib/search-params";
 
 function parseTab(value: string | undefined): UserDetailTabKey {
-  return value === "orders" || value === "sales" || value === "role" ? value : "overview";
+  return value === "orders" || value === "sales" || value === "role" || value === "company-review"
+    ? value
+    : "overview";
 }
 
 function parseOriginRole(value: string | undefined): AdminUserFilterRole {
@@ -41,7 +43,10 @@ export default async function AdminUserDetailRoute({
     notFound();
   }
 
-  const user = await getAdminUserDetail(session.accessToken, userId);
+  const [user, ownerApplications] = await Promise.all([
+    getAdminUserDetail(session.accessToken, userId),
+    getAdminOwnerApplications(session.accessToken, userId),
+  ]);
   if (!user) {
     notFound();
   }
@@ -54,5 +59,12 @@ export default async function AdminUserDetailRoute({
     search: firstParam(resolvedSearchParams.originSearch)?.trim() ?? "",
   };
 
-  return <UserDetailPage activeTab={activeTab} origin={origin} user={user} />;
+  return (
+    <UserDetailPage
+      activeTab={activeTab}
+      ownerApplications={ownerApplications}
+      origin={origin}
+      user={user}
+    />
+  );
 }

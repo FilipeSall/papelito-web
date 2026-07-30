@@ -1,4 +1,5 @@
 export { Panel, type PanelProps } from "./panel";
+export { CollapsiblePanel, type CollapsiblePanelProps } from "./collapsible-panel";
 export { FramedPanel, type FramedPanelProps } from "./framed-panel";
 export { StatusBadge, badge, type StatusBadgeTone } from "./status-badge";
 export { MetricCard, type MetricCardProps } from "./metric-card";

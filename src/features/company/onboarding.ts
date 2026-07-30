@@ -38,7 +38,7 @@ export function buildPostAuthUrl(callbackUrl?: string | null): string {
 export function requiresB2bOnboarding(
   b2b: { onboardingStatus?: CompanyContext["onboardingStatus"] | string } | null | undefined,
 ): boolean {
-  return b2b?.onboardingStatus === "incomplete";
+  return b2b?.onboardingStatus === "incomplete" || b2b?.onboardingStatus === "rejected";
 }
 
 /**

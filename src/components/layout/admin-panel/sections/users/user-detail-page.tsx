@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import type { AdminUserDetail, AdminUserRelatedOrder } from "@/lib/server/admin-users";
+import type {
+  AdminOwnerApplications,
+  AdminUserDetail,
+  AdminUserRelatedOrder,
+} from "@/lib/server/admin-users";
 import type { AdminUserFilterRole } from "@/lib/server/admin-users-filters";
 import { buildAdminUsersQuery } from "@/lib/server/admin-users-filters";
 
@@ -9,8 +13,9 @@ import { CompactTable, EmptyStateCard, MetricCard, Panel, StatusBadge } from "..
 import { UserRoleBadge, UserStatusBadge } from "./user-badges";
 import { UserOrderActionButton } from "./user-order-action-button";
 import { UserRoleActions } from "./user-role-actions";
+import { CompanyOwnerReviewTab } from "./company-owner-review-tab";
 
-export type UserDetailTabKey = "orders" | "overview" | "role" | "sales";
+export type UserDetailTabKey = "company-review" | "orders" | "overview" | "role" | "sales";
 
 export type UserDetailOrigin = {
   page: number;
@@ -160,10 +165,12 @@ function ordersTableRows({
 
 export function UserDetailPage({
   activeTab,
+  ownerApplications,
   origin,
   user,
 }: {
   activeTab: UserDetailTabKey;
+  ownerApplications: AdminOwnerApplications;
   origin: UserDetailOrigin;
   user: AdminUserDetail;
 }) {
@@ -177,8 +184,11 @@ export function UserDetailPage({
     { key: "overview", label: "Visão geral" },
     { key: "orders", label: "Pedidos" },
     { key: "sales", label: "Vendas" },
+    { key: "company-review", label: "Análise empresarial" },
     { key: "role", label: "Role / ações" },
   ];
+  const hasPendingOwnerReview =
+    ownerApplications.current?.application.status === "pending_manual_review";
 
   return (
     <div className="space-y-5">
@@ -271,6 +281,11 @@ export function UserDetailPage({
               href={buildDetailHref(user.id, origin, { tab: tab.key })}
             >
               {tab.label}
+              {tab.key === "company-review" && hasPendingOwnerReview ? (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#a7412e] px-1 text-[10px] text-white">
+                  1
+                </span>
+              ) : null}
             </Link>
           );
         })}
@@ -413,6 +428,10 @@ export function UserDetailPage({
             title="Sem vendas recentes"
           />
         )
+      ) : null}
+
+      {activeTab === "company-review" ? (
+        <CompanyOwnerReviewTab initialData={ownerApplications} />
       ) : null}
 
       {activeTab === "role" ? (

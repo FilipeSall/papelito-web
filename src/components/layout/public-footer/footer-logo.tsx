@@ -1,6 +1,13 @@
 import Image from "next/image";
 import { FooterSocialLinks } from "./footer-social-links";
 
+import { resolveLogo } from "@/lib/site-logos";
+import type { ManagedImageAsset } from "@/types/home-assets";
+
+type FooterLogoProps = {
+  logo?: ManagedImageAsset;
+};
+
 /**
  * Secao de logo e descricao do footer.
  *
@@ -12,17 +19,19 @@ import { FooterSocialLinks } from "./footer-social-links";
  * <FooterLogo />
  * ```
  */
-export function FooterLogo() {
+export function FooterLogo({ logo }: FooterLogoProps) {
+  const resolved = resolveLogo("footer", logo);
+
   return (
-    <div className="flex max-w-[274px] flex-col gap-5">
+    <div className="flex max-w-68.5 flex-col gap-5">
       <Image
-        src="/images/logo3.svg"
-        alt="Papelito"
+        src={resolved.imageUrl}
+        alt={resolved.alt}
         width={183}
         height={31}
-        className="h-[31px] w-[183px]"
+        className="h-7.75 w-auto max-w-45.75"
       />
-      <p className="max-w-[243px] text-sm leading-[22.75px] tracking-normal text-white/60">
+      <p className="max-w-60.75 text-sm leading-[22.75px] tracking-normal text-white/60">
         A primeira e única indústria de papéis para enrolar do Brasil.
         Qualidade, inovação e sustentabilidade.
       </p>

@@ -1,17 +1,21 @@
 import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
+import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   AdminHeroBannersSnapshot,
   AdminPartnerBannerSnapshot,
   AdminPromoBannerSnapshot,
   AdminSiteImageAssetsSnapshot,
+  AdminSiteLogosSnapshot,
   HeroBanner,
   ManagedImageAsset,
   PartnerBannerConfig,
   PromoBannerConfig,
   SiteImageAssets,
   SiteImageAssetKey,
+  SiteLogoKey,
+  SiteLogos,
 } from "@/types/home-assets";
 
 type HttpError = Error & {
@@ -39,6 +43,11 @@ type WpPartnerSnapshot = {
 
 type WpSiteImagesSnapshot = {
   images?: Partial<Record<SiteImageAssetKey, Partial<ManagedImageAsset>>>;
+  issues?: string[];
+};
+
+type WpSiteLogosSnapshot = {
+  logos?: Partial<Record<SiteLogoKey, Partial<ManagedImageAsset>>>;
   issues?: string[];
 };
 
@@ -296,6 +305,71 @@ export async function saveAdminSiteImageAssets(accessToken: string, images: Site
     images: mapSiteImages(result.data.images),
     issues: mapIssues(result.data.issues),
   } satisfies AdminSiteImageAssetsSnapshot;
+}
+
+export async function getAdminSiteLogosSnapshot(
+  accessToken: string | undefined,
+): Promise<AdminSiteLogosSnapshot> {
+  if (!accessToken) {
+    return {
+      logos: SITE_LOGO_DEFAULTS,
+      issues: ["Sessão sem access token para consultar logos do site."],
+    };
+  }
+
+  const result = await wpRest<WpSiteLogosSnapshot>("/papelito/v1/admin/assets/logos", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    revalidate: 60,
+    tags: ["admin-site-logos"],
+  });
+
+  if (!result.ok) {
+    return {
+      logos: SITE_LOGO_DEFAULTS,
+      issues: [result.error.message],
+    };
+  }
+
+  return {
+    logos: mapSiteLogos(result.data.logos),
+    issues: mapIssues(result.data.issues),
+  };
+}
+
+export async function saveAdminSiteLogos(accessToken: string, logos: SiteLogos) {
+  const result = await wpRest<WpSiteLogosSnapshot>("/papelito/v1/admin/assets/logos", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    json: { logos },
+    method: "PUT",
+  });
+
+  if (!result.ok) {
+    throw buildHttpError(result.error.message, result.status);
+  }
+
+  return {
+    logos: mapSiteLogos(result.data.logos),
+    issues: mapIssues(result.data.issues),
+  } satisfies AdminSiteLogosSnapshot;
+}
+
+export async function restoreAdminSiteLogo(accessToken: string, key: SiteLogoKey) {
+  const result = await wpRest<WpSiteLogosSnapshot>(
+    `/papelito/v1/admin/assets/logos?key=${encodeURIComponent(key)}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      method: "DELETE",
+    },
+  );
+
+  if (!result.ok) {
+    throw buildHttpError(result.error.message, result.status);
+  }
+
+  return {
+    logos: mapSiteLogos(result.data.logos),
+    issues: mapIssues(result.data.issues),
+  } satisfies AdminSiteLogosSnapshot;
 }
 
 export async function getAdminPromoBannerSnapshot(

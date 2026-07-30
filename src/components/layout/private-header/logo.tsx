@@ -1,7 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function PrivateHeaderLogo() {
+import { resolveLogo } from "@/lib/site-logos";
+import type { ManagedImageAsset } from "@/types/home-assets";
+
+type PrivateHeaderLogoProps = {
+  logo?: ManagedImageAsset;
+};
+
+export function PrivateHeaderLogo({ logo }: PrivateHeaderLogoProps) {
+  const resolved = resolveLogo("privateHeader", logo);
+
   return (
     <Link
       aria-label="Ir para a home"
@@ -9,11 +18,11 @@ export function PrivateHeaderLogo() {
       href="/"
     >
       <Image
-        alt="Papelito"
+        alt={resolved.alt}
         height={73}
-        className="h-9 w-auto md:h-[73px]"
+        className="h-9 w-auto md:h-18.25"
         priority
-        src="/images/logo.svg"
+        src={resolved.imageUrl}
         width={123}
       />
     </Link>

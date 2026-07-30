@@ -79,7 +79,13 @@ export default async function CompletarCadastroPage({
   const context = contextResult.ok ? contextResult.data : null;
   const b2b = context ?? session.b2b ?? null;
 
-  if (context && !requiresB2bOnboarding(context)) {
+  const application = context?.ownerApplication ?? session.b2b?.ownerApplication;
+  const isOwnerReviewFlow =
+    application?.status === "document_required" ||
+    application?.status === "pending_manual_review" ||
+    application?.status === "rejected";
+
+  if (context && !requiresB2bOnboarding(context) && !isOwnerReviewFlow) {
     redirect(callbackUrl);
   }
 
@@ -99,5 +105,11 @@ export default async function CompletarCadastroPage({
     intent: resolveIntent(resume?.type),
   };
 
-  return <CompletarCadastroForm prefill={prefill} callbackUrl={callbackUrl} />;
+  return (
+    <CompletarCadastroForm
+      prefill={prefill}
+      callbackUrl={callbackUrl}
+      initialOwnerApplication={application}
+    />
+  );
 }

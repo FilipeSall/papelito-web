@@ -1,14 +1,148 @@
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { wpRest } from "@/lib/server/wp-rest";
-import { CompanyReviewList } from "@/components/layout/admin-companies/company-review-list";
+import { firstParam } from "@/lib/search-params";
 
-type CompaniesResponse = { items: Array<{ id: number; legal_name: string; registry_status: string; ownership_status: string; created_at: string }>; total: number };
+type ApplicationStatus =
+  | "pending_manual_review"
+  | "document_required"
+  | "approved"
+  | "rejected"
+  | "auto_approved";
 
-export default async function AdminCompaniesPage() {
+type ApplicationsResponse = {
+  items: Array<{
+    applicationId: number;
+    companyId: number;
+    userId: number;
+    attemptNumber: number;
+    status: ApplicationStatus;
+    submittedAt: string | null;
+    createdAt: string;
+    companyName: string;
+    tradeName: string | null;
+    userName: string;
+    userEmail: string;
+  }>;
+  total: number;
+};
+
+const FILTERS: Array<{ status: ApplicationStatus; label: string }> = [
+  { status: "pending_manual_review", label: "Aguardando revisão" },
+  { status: "document_required", label: "Aguardando documento" },
+  { status: "approved", label: "Aprovadas" },
+  { status: "rejected", label: "Reprovadas" },
+  { status: "auto_approved", label: "Automáticas" },
+];
+
+function parseStatus(value: string | undefined): ApplicationStatus {
+  return FILTERS.some((filter) => filter.status === value)
+    ? (value as ApplicationStatus)
+    : "pending_manual_review";
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value.replace(" ", "T") + "Z");
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "America/Sao_Paulo",
+      }).format(date);
+}
+
+export default async function AdminCompaniesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const status = parseStatus(firstParam(params.status));
   const session = await getServerSession(authOptions);
-  const result = await wpRest<CompaniesResponse>("/papelito/v1/admin/companies?page=1&perPage=20", { headers: { Authorization: `Bearer ${session?.accessToken ?? ""}` } });
-  const companies = result.ok ? result.data.items : [];
-  return <section className="space-y-5"><div><p className="text-xs font-black uppercase tracking-widest text-text-tertiary">B2B</p><h1 className="text-3xl font-black uppercase">Empresas em revisão</h1></div><CompanyReviewList companies={companies} /></section>;
+  const result = await wpRest<ApplicationsResponse>(
+    `/papelito/v1/admin/owner-applications?page=1&perPage=50&status=${status}`,
+    { headers: { Authorization: `Bearer ${session?.accessToken ?? ""}` } },
+  );
+  const applications = result.ok ? result.data.items : [];
+  const total = result.ok ? result.data.total : 0;
+
+  return (
+    <section className="space-y-5">
+      <div>
+        <p className="text-xs font-black uppercase tracking-widest text-text-tertiary">B2B</p>
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-black uppercase">Análises empresariais</h1>
+          <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#1a1a1a] px-2 text-xs font-black text-brand-yellow">
+            {total}
+          </span>
+        </div>
+      </div>
+
+      <nav className="flex flex-wrap gap-2" aria-label="Filtrar candidaturas">
+        {FILTERS.map((filter) => (
+          <Link
+            key={filter.status}
+            href={`/admin/empresas?status=${filter.status}`}
+            className={[
+              "border-2 border-[#1a1a1a] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em]",
+              status === filter.status
+                ? "bg-[#1a1a1a] text-brand-yellow shadow-[3px_3px_0px_#ffe500]"
+                : "bg-white text-[#1a1a1a] hover:bg-brand-yellow",
+            ].join(" ")}
+          >
+            {filter.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="overflow-x-auto border-2 border-[#1a1a1a] bg-white shadow-[8px_8px_0px_#1a1a1a]">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead>
+            <tr className="border-b-2 border-[#1a1a1a] bg-brand-yellow text-[10px] uppercase tracking-[0.16em]">
+              <th className="p-3">Empresa</th>
+              <th className="p-3">Responsável</th>
+              <th className="p-3">Tentativa</th>
+              <th className="p-3">Recebida</th>
+              <th className="p-3">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {applications.map((application) => (
+              <tr key={application.applicationId} className="border-b border-[#1a1a1a]/14">
+                <td className="p-3">
+                  <p className="font-bold">{application.companyName}</p>
+                  <p className="text-xs text-[#1a1a1a]/55">{application.tradeName || `#${application.companyId}`}</p>
+                </td>
+                <td className="p-3">
+                  <p>{application.userName}</p>
+                  <p className="text-xs text-[#1a1a1a]/55">{application.userEmail}</p>
+                </td>
+                <td className="p-3">#{application.attemptNumber}</td>
+                <td className="p-3">{formatDate(application.submittedAt ?? application.createdAt)}</td>
+                <td className="p-3">
+                  <Link
+                    href={`/admin/users/${application.userId}?tab=company-review`}
+                    className="inline-flex border-2 border-[#1a1a1a] bg-white px-3 py-2 text-[10px] font-black uppercase hover:bg-brand-yellow"
+                  >
+                    Abrir análise
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {applications.length === 0 ? (
+              <tr>
+                <td className="p-6 text-center text-[#1a1a1a]/58" colSpan={5}>
+                  Nenhuma candidatura neste filtro.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
