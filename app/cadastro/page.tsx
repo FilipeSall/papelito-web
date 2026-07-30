@@ -33,7 +33,6 @@ export default function CadastroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
-  const intentParam = searchParams.get("intent");
 
   const submittedRef = useRef(false);
   const [draft] = useState<CadastroStep1Draft>(() => {
@@ -47,11 +46,9 @@ export default function CadastroPage() {
     }
   });
 
-  const initialIntent: CadastroIntent =
-    intentParam === "join" ? "join_company" : (draft.intent ?? "create_company");
-  const [intent, setIntent] = useState<CadastroIntent>(initialIntent);
+  // Colaboradores entram apenas pelo fluxo de convite por e-mail.
+  const intent: CadastroIntent = "create_company";
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const joining = intent === "join_company";
 
   const intentRef = useRef(intent);
 
@@ -202,36 +199,8 @@ export default function CadastroPage() {
             </Link>
           </p>
 
-          <div className="mt-8 grid grid-cols-2 gap-2" role="group" aria-label="Tipo de cadastro B2B">
-            <button
-              type="button"
-              aria-pressed={!joining}
-              onClick={() => setIntent("create_company")}
-              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
-                !joining
-                  ? "bg-brand-yellow text-brand-dark"
-                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
-              }`}
-            >
-              Cadastrar minha empresa
-            </button>
-            <button
-              type="button"
-              aria-pressed={joining}
-              onClick={() => setIntent("join_company")}
-              className={`px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-colors ${
-                joining
-                  ? "bg-brand-yellow text-brand-dark"
-                  : "border border-white/20 bg-transparent text-white/60 hover:text-white"
-              }`}
-            >
-              Entrar em uma empresa
-            </button>
-          </div>
           <p className="mt-3 text-xs text-white/50">
-            {joining
-              ? "Crie sua conta e, em seguida, solicite acesso a uma empresa existente pelo CNPJ."
-              : "Você será o titular da empresa cadastrada e poderá convidar sua equipe."}
+            Você será o titular da empresa cadastrada e poderá convidar sua equipe por e-mail.
           </p>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit} onChange={handleFormChange}>

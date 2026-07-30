@@ -38,6 +38,7 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
   conflict: "pending",
 
   rejected: "danger",
+  declined: "danger",
   suspended: "danger",
   revoked: "danger",
   expired: "danger",
@@ -61,6 +62,7 @@ const STATUS_LABELS: Record<string, string> = {
   unavailable: "Indisponível",
   conflict: "Divergente",
   rejected: "Recusado",
+  declined: "Recusado",
   suspended: "Suspenso",
   revoked: "Revogado",
   expired: "Expirado",

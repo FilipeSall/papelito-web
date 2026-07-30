@@ -9,7 +9,7 @@ type Ctx = { params: Promise<{ token: string }> };
 /**
  * Valida o token de convite no backend ANTES de revelar qualquer dado. Em caso de sucesso,
  * move o token para um cookie HttpOnly/Secure/SameSite=Lax e devolve apenas o preview neutro
- * (nome da empresa, papel, e-mail convidado, se trava CPF) — nunca CNPJ, membros ou dados fiscais.
+ * (nome da empresa, papel e e-mail convidado) — nunca CNPJ, membros ou dados fiscais.
  * O token nunca é persistido no cliente (localStorage) nem exposto na resposta.
  */
 export async function GET(_request: Request, { params }: Ctx) {
@@ -20,7 +20,6 @@ export async function GET(_request: Request, { params }: Ctx) {
     companyName: string;
     invitedRole: string;
     invitedEmail: string;
-    cpfLocked: boolean;
   }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);
 
   if (!result.ok) {
@@ -28,6 +27,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   }
 
   const response = NextResponse.json(result.data);
+	response.headers.set("Referrer-Policy", "no-referrer");
   response.cookies.set(INVITE_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

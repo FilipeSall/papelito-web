@@ -8,7 +8,7 @@ const INVITE_COOKIE = "papelito_invite_token";
 
 /**
  * Aceita o convite. Exige autenticação. O token vem do cookie HttpOnly gravado no preview (não
- * do corpo nem da URL, que já foram limpos). O WordPress valida e-mail/CPF, expiração, uso único
+ * do corpo nem da URL, que já foram limpos). O WordPress valida e-mail confirmado, expiração, uso único
  * e a inexistência de vínculo, invalidando o token transacionalmente.
  */
 export async function POST() {

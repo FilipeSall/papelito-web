@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 
-import { acceptInvitation, previewInvitation } from "@/features/company/client/company-client";
+import { acceptInvitation, declineInvitation, previewInvitation } from "@/features/company/client/company-client";
 import type { InvitationPreview } from "@/features/company/types/company";
 import { roleLabel } from "@/features/company/utils/labels";
 
@@ -13,7 +13,7 @@ type InvitationLandingProps = {
   token: string;
 };
 
-type Phase = "loading" | "invalid" | "ready" | "accepting" | "accepted" | "error";
+type Phase = "loading" | "invalid" | "ready" | "accepting" | "accepted" | "declined" | "error";
 
 /**
  * Landing de convite (/convite/[token]).
@@ -21,7 +21,7 @@ type Phase = "loading" | "invalid" | "ready" | "accepting" | "accepted" | "error
  * 1. Valida o token no backend ANTES de exibir qualquer dado; o backend move o token para um
  *    cookie HttpOnly e devolve só o preview neutro (nome da empresa + papel). O token some da URL.
  * 2. Sem sessão: oferece login OU cadastro; o cookie sobrevive ao fluxo de autenticação.
- * 3. Com sessão: permite aceitar; o backend confere e-mail/CPF/expiração/uso único.
+ * 3. Com sessão: permite aceitar; o backend confere e-mail confirmado, expiração e uso único.
  */
 export function InvitationLanding({ token }: InvitationLandingProps) {
   const router = useRouter();
@@ -68,6 +68,17 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
     setTimeout(() => router.push("/perfil/empresa"), 1200);
   }
 
+  async function handleDecline() {
+    setPhase("accepting");
+    const result = await declineInvitation();
+    if (!result.ok) {
+      setMessage(`⚠ ${result.message}`);
+      setPhase("error");
+      return;
+    }
+    setPhase("declined");
+  }
+
   const isAuthed = status === "authenticated" && Boolean(session?.user);
 
   return (
@@ -106,22 +117,29 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
             <p className="text-sm font-medium text-[#231f20]">
               Você foi convidado(a) como{" "}
               <strong className="font-black uppercase">{roleLabel(preview.invitedRole)}</strong>.
-              {preview.cpfLocked
-                ? " Este convite está vinculado ao seu CPF — confirme que seu perfil possui o CPF correto."
-                : ""}
             </p>
 
             {message ? <p className="text-sm font-bold text-[#c0392b]">{message}</p> : null}
 
             {isAuthed ? (
-              <button
-                type="button"
-                disabled={phase === "accepting"}
-                onClick={handleAccept}
-                className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
-              >
-                {phase === "accepting" ? "Aceitando..." : "Aceitar convite"}
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  disabled={phase === "accepting"}
+                  onClick={handleAccept}
+                  className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
+                >
+                  {phase === "accepting" ? "Aceitando..." : "Aceitar convite"}
+                </button>
+                <button
+                  type="button"
+                  disabled={phase === "accepting"}
+                  onClick={handleDecline}
+                  className="w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] disabled:opacity-50"
+                >
+                  Recusar convite
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
                 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#231f20]">
@@ -135,7 +153,7 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
                   Entrar
                 </button>
                 <Link
-                  href={`/cadastro?next=${encodeURIComponent("/convite")}`}
+                  href="/convite/cadastro"
                   className="block w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
                 >
                   Criar conta
@@ -152,6 +170,10 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
             </h1>
             <p className="text-sm font-medium text-[#231f20]">Redirecionando para sua empresa...</p>
           </div>
+        ) : null}
+
+        {phase === "declined" ? (
+          <div className="space-y-2"><h1 className="text-xl font-black uppercase">Convite recusado</h1><p className="text-sm font-medium">Você não foi vinculado(a) à empresa.</p></div>
         ) : null}
       </div>
     </main>

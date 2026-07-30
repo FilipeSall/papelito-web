@@ -4,15 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CompanyInvitationsSection } from "./company-invitations-section";
 
 const companyClient = vi.hoisted(() => ({
-  checkInvitationEligibility: vi.fn(),
   createInvitation: vi.fn(),
   listInvitations: vi.fn(),
   resendInvitation: vi.fn(),
   revokeInvitation: vi.fn(),
-}));
-
-vi.mock("next-auth/react", () => ({
-  useSession: () => ({ data: { user: { email: "admin@papelito.test" } } }),
 }));
 
 vi.mock("@/features/company/client/company-client", () => companyClient);
@@ -23,7 +18,8 @@ describe("CompanyInvitationsSection", () => {
     companyClient.listInvitations.mockResolvedValue({ ok: true, data: { items: [] } });
   });
 
-  it("blocks an invitation to the signed-in email before making an eligibility request", async () => {
+  it("allows an invitation for an e-mail that may already have an account", async () => {
+    companyClient.createInvitation.mockResolvedValue({ ok: true, data: { invitationId: 1 } });
     render(<CompanyInvitationsSection viewerRole="owner" />);
 
     fireEvent.change(screen.getByLabelText("E-mail *"), {
@@ -31,8 +27,11 @@ describe("CompanyInvitationsSection", () => {
     });
 
     const button = screen.getByRole("button", { name: "Convidar" });
-    expect(button).toBeDisabled();
-    expect(companyClient.checkInvitationEligibility).not.toHaveBeenCalled();
-    expect(screen.getByText("Este e-mail já está cadastrado na Papelito.")).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(companyClient.createInvitation).toHaveBeenCalledWith({
+      invited_email: "admin@papelito.test",
+      invited_role: "buyer",
+    });
+    expect(screen.queryByLabelText(/CPF/i)).not.toBeInTheDocument();
   });
 });

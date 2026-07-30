@@ -199,16 +199,9 @@ export function listInvitations() {
   return call<{ items: CompanyInvitation[] }>("/api/company/current/invitations");
 }
 
-export function checkInvitationEligibility(email: string) {
-  return call<{ invitable: boolean }>(
-    `/api/company/current/invitations/eligibility?email=${encodeURIComponent(email)}`,
-  );
-}
-
 export function createInvitation(payload: {
   invited_email: string;
   invited_role: CompanyRole;
-  invited_cpf?: string;
 }) {
   return call<{ invitationId: number }>("/api/company/current/invitations", {
     method: "POST",
@@ -268,4 +261,8 @@ export function acceptInvitation() {
   return call<CompanyContext>("/api/company/invitations/accept", {
     method: "POST",
   });
+}
+
+export function declineInvitation() {
+  return call<{ ok: true }>("/api/company/invitations/decline", { method: "POST" });
 }

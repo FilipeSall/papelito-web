@@ -119,8 +119,7 @@ export type CompanyInvitation = {
   invitationId: number;
   email: string;
   role: CompanyRole;
-  status: "pending" | "accepted" | "revoked" | "expired";
-  cpfLocked: boolean;
+  status: "pending" | "accepted" | "declined" | "revoked" | "expired";
   expiresAt: string | null;
   resendCount: number;
   createdAt: string | null;
@@ -140,7 +139,6 @@ export type InvitationPreview = {
   companyName: string;
   invitedRole: CompanyRole;
   invitedEmail: string;
-  cpfLocked: boolean;
 };
 
 /** Papéis que owner/admin podem atribuir (owner só via transferência). */

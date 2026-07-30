@@ -19,6 +19,7 @@ export default function ConfirmarEmailPage() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email")?.trim() ?? "";
   const token = searchParams.get("token")?.trim() ?? "";
+  const callbackUrl = searchParams.get("callbackUrl") === "/convite" ? "/convite" : "/entrar";
   const hasAttemptedVerification = useRef(false);
   const [viewState, setViewState] = useState<VerificationViewState>(token ? "verifying" : "idle");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -142,10 +143,10 @@ export default function ConfirmarEmailPage() {
           {viewState === "verified" ? (
             <div className="mt-10 space-y-4">
               <Link
-                href="/entrar"
+                href={callbackUrl}
                 className="flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90"
               >
-                Ir Para Entrar
+                {callbackUrl === "/convite" ? "Voltar ao convite" : "Ir Para Entrar"}
               </Link>
             </div>
           ) : null}
