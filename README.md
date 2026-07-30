@@ -5,8 +5,8 @@
 Frontend headless do marketplace Papelito. Consome [`papelito-wordpress`](https://github.com/FilipeSall/papelito-wordpress) via WPGraphQL.
 
 Em produção, configure `NEXTAUTH_URL=https://marketplace.papelito.com`.
-Mantenha `papelito-web.vercel.app` apenas como fallback com redirect para esse domínio;
-não o use como `NEXTAUTH_URL`.
+Mantenha `papelito-web.vercel.app` acessível como fallback, mas não o use como
+`NEXTAUTH_URL`. As sessões de login não são compartilhadas entre os dois domínios.
 
 ## Documentos
 - [Onboarding](docs/onboarding.md)
