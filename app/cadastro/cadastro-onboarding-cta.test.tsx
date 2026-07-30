@@ -58,10 +58,11 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     pushMock.mockClear();
   });
 
-  it("oferece as duas opções: cadastrar minha empresa e entrar em uma empresa", () => {
+  it("oferece cadastro de nova empresa e orienta convite para colaboradores", () => {
     render(<CadastroPage />);
-    expect(screen.getByRole("button", { name: /cadastrar minha empresa/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /entrar em uma empresa/i })).toBeInTheDocument();
+    expect(screen.getByText(/você será o titular da empresa cadastrada/i)).toBeInTheDocument();
+    expect(screen.getByText(/convidar sua equipe por e-mail/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /entrar em uma empresa/i })).not.toBeInTheDocument();
   });
 
   it("não exibe CNPJ na etapa 1", () => {
@@ -79,11 +80,10 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     expect(cpf).toHaveAttribute("maxLength", "14");
   });
 
-  it("mantém a escolha de entrar em uma empresa na etapa 1", () => {
+  it("não oferece solicitação de acesso por CNPJ na etapa 1", () => {
     render(<CadastroPage />);
-    fireEvent.click(screen.getByRole("button", { name: /entrar em uma empresa/i }));
     expect(screen.queryByLabelText(/CNPJ da empresa/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/solicite acesso a uma empresa existente/i)).toBeInTheDocument();
+    expect(screen.queryByText(/solicite acesso a uma empresa existente/i)).not.toBeInTheDocument();
   });
 
   it("avança para a segunda etapa quando os dados são válidos", () => {

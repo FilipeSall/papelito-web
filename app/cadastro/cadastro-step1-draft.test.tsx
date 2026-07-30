@@ -95,18 +95,13 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     expect(screen.getByLabelText(/^telefone$/i)).toHaveValue("11999999999");
   });
 
-  it("preserva a escolha de entrar em uma empresa", () => {
+  it("preserva o cadastro como titular da nova empresa", () => {
     const view = render(<CadastroPage />);
-    fireEvent.click(screen.getByRole("button", { name: /entrar em uma empresa/i }));
     fillStep1();
     view.unmount();
 
-    render(<CadastroPage />);
-
-    expect(screen.getByRole("button", { name: /entrar em uma empresa/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const saved = JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY) ?? "{}");
+    expect(saved.intent).toBe("create_company");
   });
 
   it("não grava rascunho quando o formulário está vazio", () => {
