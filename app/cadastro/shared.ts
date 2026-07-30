@@ -27,6 +27,7 @@ export type CadastroIntent = "create_company" | "join_company";
 
 export type CadastroStep1Data = {
   birthDate: string;
+  cnpj: string;
   cpf: string;
   name: string;
   email: string;
@@ -42,7 +43,6 @@ export type CadastroStep2Draft = {
   neighborhood: string;
   city: string;
   state: string;
-  cnpj: string;
 };
 
 /**

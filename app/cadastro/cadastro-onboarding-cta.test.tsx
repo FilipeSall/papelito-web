@@ -11,7 +11,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/validation/brazilian-documents", () => ({
+  formatCnpj: (value: string) => value,
   isValidCpf: (value: string) => value === "cpf-valid",
+  isValidCnpj: (value: string) => value === "cnpj-valid",
 }));
 
 vi.mock("@/features/revendedor/utils/revendedor-registration", () => ({
@@ -65,9 +67,9 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     expect(screen.queryByRole("button", { name: /entrar em uma empresa/i })).not.toBeInTheDocument();
   });
 
-  it("não exibe CNPJ na etapa 1", () => {
+  it("exibe CNPJ na etapa 1 para o titular da empresa", () => {
     render(<CadastroPage />);
-    expect(screen.queryByLabelText(/CNPJ da empresa/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/CNPJ da empresa/i)).toBeInTheDocument();
   });
 
   it("mascara o CPF e descarta letras ou caracteres além do limite", () => {
@@ -82,7 +84,6 @@ describe("Cadastro — CTA de onboarding B2B", () => {
 
   it("não oferece solicitação de acesso por CNPJ na etapa 1", () => {
     render(<CadastroPage />);
-    expect(screen.queryByLabelText(/CNPJ da empresa/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/solicite acesso a uma empresa existente/i)).not.toBeInTheDocument();
   });
 
@@ -93,6 +94,7 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: "teste@example.test" } });
     fireEvent.change(screen.getByLabelText(/^telefone$/i), { target: { value: "11999999999" } });
     fireEvent.change(screen.getByLabelText(/^cpf$/i), { target: { value: "cpf-valid" } });
+    fireEvent.change(screen.getByLabelText(/CNPJ da empresa/i), { target: { value: "cnpj-valid" } });
     fireEvent.change(screen.getByLabelText(/data de nascimento/i), { target: { value: "1990-01-01" } });
     fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
 
@@ -106,6 +108,7 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: "teste@example.test" } });
     fireEvent.change(screen.getByLabelText(/^telefone$/i), { target: { value: "11999999999" } });
     fireEvent.change(screen.getByLabelText(/^cpf$/i), { target: { value: "invalid" } });
+    fireEvent.change(screen.getByLabelText(/CNPJ da empresa/i), { target: { value: "cnpj-valid" } });
     fireEvent.change(screen.getByLabelText(/data de nascimento/i), { target: { value: "1990-01-01" } });
     fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
 

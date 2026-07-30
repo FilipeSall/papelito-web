@@ -12,7 +12,7 @@ import {
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
-import { isValidCpf } from "@/lib/validation/brazilian-documents";
+import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
@@ -58,6 +58,7 @@ export default function CadastroPage() {
 
   const valuesRef = useRef<Record<string, string>>({
     birthDate: draft.birthDate ?? "",
+    cnpj: draft.cnpj ?? "",
     cpf: draft.cpf ?? "",
     name: draft.name ?? "",
     email: draft.email ?? "",
@@ -103,8 +104,10 @@ export default function CadastroPage() {
     setErrorMessage(null);
     const formData = new FormData(event.currentTarget);
     const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
+    const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
     const payload: CadastroStep1Data = {
       birthDate: String(formData.get("birthDate") ?? ""),
+      cnpj,
       cpf,
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
@@ -119,6 +122,11 @@ export default function CadastroPage() {
 
     if (!isValidCpf(cpf)) {
       setErrorMessage("Informe um CPF válido.");
+      return;
+    }
+
+    if (!isValidCnpj(cnpj)) {
+      setErrorMessage("Informe um CNPJ válido.");
       return;
     }
 
@@ -246,6 +254,20 @@ export default function CadastroPage() {
               maxLength={14}
               onChange={handleCpfChange}
               defaultValue={draft.cpf}
+              required
+            />
+
+            <AuthTextField
+              id="cnpj"
+              name="cnpj"
+              label="CNPJ da empresa"
+              placeholder="00.000.000/0000-00"
+              autoComplete="off"
+              maxLength={18}
+              defaultValue={draft.cnpj}
+              onChange={(event) => {
+                event.currentTarget.value = formatCnpj(event.currentTarget.value);
+              }}
               required
             />
 

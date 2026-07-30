@@ -12,7 +12,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/validation/brazilian-documents", () => ({
+  formatCnpj: (value: string) => value,
   isValidCpf: (value: string) => value === "cpf-valid",
+  isValidCnpj: (value: string) => value === "cnpj-valid",
 }));
 
 vi.mock("@/features/revendedor/utils/revendedor-registration", () => ({
@@ -115,6 +117,7 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     render(<CadastroPage />);
     fillStep1();
     fireEvent.change(screen.getByLabelText(/^cpf$/i), { target: { value: "cpf-valid" } });
+    fireEvent.change(screen.getByLabelText(/CNPJ da empresa/i), { target: { value: "cnpj-valid" } });
     fireEvent.change(screen.getByLabelText(/data de nascimento/i), {
       target: { value: "1990-01-01" },
     });

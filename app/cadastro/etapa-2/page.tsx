@@ -13,7 +13,6 @@ import { AuthPasswordField, AuthSelectField, AuthTextField } from "@/components/
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import {
   formatCep,
-  formatCnpj,
   isValidCep,
   isValidCnpj,
 } from "@/lib/validation/brazilian-documents";
@@ -48,7 +47,6 @@ const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
   neighborhood: "",
   city: "",
   state: "",
-  cnpj: "",
 };
 
 function readStep2Draft(): CadastroStep2Draft {
@@ -179,7 +177,7 @@ export default function CadastroEtapa2Page() {
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
     const cep = String(formData.get("cep") ?? "").trim();
-    const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
+    const cnpj = step1.cnpj.trim();
     const street = String(formData.get("street") ?? "").trim();
     const number = String(formData.get("number") ?? "").trim();
     const complement = String(formData.get("complement") ?? "").trim();
@@ -195,7 +193,6 @@ export default function CadastroEtapa2Page() {
       neighborhood,
       city,
       state,
-      cnpj,
     };
 
     if (!isValidCnpj(cnpj)) {
@@ -461,19 +458,6 @@ export default function CadastroEtapa2Page() {
                   ))}
                 </AuthSelectField>
               </div>
-
-              <AuthTextField
-                id="cnpj"
-                name="cnpj"
-                label="CNPJ da empresa"
-                placeholder="00.000.000/0000-00"
-                autoComplete="off"
-                defaultValue={step2Draft.cnpj}
-                onChange={(event) => {
-                  event.currentTarget.value = formatCnpj(event.currentTarget.value);
-                }}
-                required
-              />
 
               <AuthPasswordField
                 id="password"

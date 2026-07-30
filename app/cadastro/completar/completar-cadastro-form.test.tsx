@@ -233,7 +233,6 @@ describe("CompletarCadastroForm", () => {
   it("solicita acesso quando a intenção é entrar em uma empresa existente", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(jsonResponse({ identityStatus: "verified" }))
       .mockResolvedValueOnce(jsonResponse({ status: "received" }));
 
     render(<CompletarCadastroForm prefill={buildPrefill()} callbackUrl="/" />);
@@ -242,7 +241,26 @@ describe("CompletarCadastroForm", () => {
     submitForm();
 
     await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/"));
-    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/company/request-access");
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/company/request-access",
+    ]);
+  });
+
+  it("não exige CPF para entrar em uma empresa por convite", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse({ status: "received" }));
+
+    render(<CompletarCadastroForm prefill={buildPrefill()} callbackUrl="/" />);
+    fireEvent.click(screen.getByRole("button", { name: "Entrar em uma empresa" }));
+    fillValidForm();
+    fireEvent.change(screen.getByLabelText("CPF do responsável"), { target: { value: "" } });
+    submitForm();
+
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/"));
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/company/request-access",
+    ]);
   });
 
   it("retoma o cadastro com o CNPJ salvo e a dica do CPF já registrado", () => {

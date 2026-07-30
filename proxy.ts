@@ -22,9 +22,21 @@ function hasAuthenticatedAccessToken(token: {
   );
 }
 
+function isCadastroPath(pathname: string) {
+  return pathname === "/cadastro";
+}
+
 export default withAuth(
   function proxy(request) {
     const { pathname } = request.nextUrl;
+
+    if (isCadastroPath(pathname) && hasAuthenticatedAccessToken(request.nextauth.token)) {
+      const onboardingUrl = request.nextUrl.clone();
+      const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/";
+      onboardingUrl.pathname = ONBOARDING_PATH;
+      onboardingUrl.search = `?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      return NextResponse.redirect(onboardingUrl);
+    }
 
     // Quebra-loop: a própria tela de onboarding nunca pode ser gateada por si mesma.
     if (pathname === ONBOARDING_PATH) {
@@ -62,7 +74,8 @@ export default withAuth(
       signIn: "/entrar",
     },
     callbacks: {
-      authorized: ({ token }) => hasAuthenticatedAccessToken(token),
+      authorized: ({ token, req }) =>
+        isCadastroPath(req.nextUrl.pathname) || hasAuthenticatedAccessToken(token),
     },
   },
 );
@@ -77,6 +90,7 @@ export const config = {
     "/checkout/:path*",
     "/admin/:path*",
     "/vendor/:path*",
+    "/cadastro",
     // Presente para que o `authorized` do withAuth mande anônimo para /entrar; o gate acima isenta.
     "/cadastro/completar",
   ],

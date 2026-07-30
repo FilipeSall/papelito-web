@@ -69,6 +69,7 @@ export function CompletarCadastroForm({
   });
   const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "error">("idle");
   const joining = intent === "join_company";
+  const cpfRequired = !joining;
 
   async function handleCepChange(event: React.ChangeEvent<HTMLInputElement>) {
     // currentTarget é anulado após o await, então o valor é lido antes de qualquer suspensão.
@@ -121,7 +122,7 @@ export function CompletarCadastroForm({
       return;
     }
 
-    if (!isValidCpf(cpf)) {
+    if (cpfRequired && !isValidCpf(cpf)) {
       setErrorMessage("Informe um CPF válido.");
       return;
     }
@@ -146,23 +147,25 @@ export function CompletarCadastroForm({
     setIsSubmitting(true);
 
     startTransition(async () => {
-      const profile = await saveCustomerProfile({
-        cpf,
-        birth_date: birthDate,
-        cep,
-        street,
-        number,
-        complement,
-        neighborhood,
-        city,
-        state,
-      });
-      if (!profile.ok) {
-        setErrorMessage(
-          isRolloutDisabled(profile.status) ? ROLLOUT_DISABLED_MESSAGE : profile.message,
-        );
-        setIsSubmitting(false);
-        return;
+      if (!joining) {
+        const profile = await saveCustomerProfile({
+          cpf,
+          birth_date: birthDate,
+          cep,
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          state,
+        });
+        if (!profile.ok) {
+          setErrorMessage(
+            isRolloutDisabled(profile.status) ? ROLLOUT_DISABLED_MESSAGE : profile.message,
+          );
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       const result = joining
@@ -361,9 +364,11 @@ export function CompletarCadastroForm({
                 hint={
                   prefill.cpfLast4
                     ? `Já temos um CPF salvo terminando em ${prefill.cpfLast4}. Digite novamente para confirmar.`
-                    : undefined
+                    : joining
+                      ? "Opcional para entrar em uma empresa por convite."
+                      : undefined
                 }
-                required
+                required={cpfRequired}
               />
 
               <AuthTextField

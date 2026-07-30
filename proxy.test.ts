@@ -18,7 +18,11 @@ vi.mock("next-auth/middleware", () => ({
 import { ONBOARDING_PATH } from "./src/features/company/onboarding";
 import proxy, { config } from "./proxy";
 
-type TokenOverrides = { role?: string; b2b?: Record<string, unknown> | undefined };
+type TokenOverrides = {
+  accessToken?: string;
+  role?: string;
+  b2b?: Record<string, unknown> | undefined;
+};
 
 function buildRequest(pathname: string, tokenOverrides: TokenOverrides | string = {}) {
   const overrides: TokenOverrides =
@@ -37,6 +41,7 @@ function buildRequest(pathname: string, tokenOverrides: TokenOverrides | string 
     nextauth: {
       token: {
         ...(overrides.role ? { role: overrides.role } : {}),
+        ...(overrides.accessToken ? { accessToken: overrides.accessToken } : {}),
         ...(overrides.b2b ? { b2b: overrides.b2b } : {}),
       },
     },
@@ -81,6 +86,17 @@ describe("proxy", () => {
 
     expect(response.headers.get("location")).toBe(
       `http://localhost${ONBOARDING_PATH}?callbackUrl=%2Fperfil`,
+    );
+  });
+
+  it("sends authenticated users from public registration to B2B onboarding", async () => {
+    const response = (await proxy(
+      buildRequest("/cadastro?callbackUrl=%2F", { accessToken: "access-token" }) as never,
+      {} as never,
+    )) as Response;
+
+    expect(response.headers.get("location")).toBe(
+      `http://localhost${ONBOARDING_PATH}?callbackUrl=%2F`,
     );
   });
 
@@ -159,6 +175,7 @@ describe("proxy", () => {
       "/checkout/:path*",
       "/admin/:path*",
       "/vendor/:path*",
+      "/cadastro",
       "/cadastro/completar",
     ]);
 
@@ -168,9 +185,9 @@ describe("proxy", () => {
     const wrappedOptions = (
       globalThis as typeof globalThis & {
         __withAuthOptions?: {
-          callbacks: {
-            authorized: ({ token }: { token: unknown }) => boolean;
-          };
+        callbacks: {
+            authorized: ({ token, req }: { token: unknown; req: unknown }) => boolean;
+        };
         };
       }
     ).__withAuthOptions;
@@ -178,16 +195,28 @@ describe("proxy", () => {
     if (!wrappedOptions) {
       throw new Error("withAuth options were not captured.");
     }
-    expect(wrappedOptions.callbacks.authorized({ token: null })).toBe(false);
+    expect(
+      wrappedOptions.callbacks.authorized({ token: null, req: { nextUrl: { pathname: "/perfil" } } }),
+    ).toBe(false);
+    expect(
+      wrappedOptions.callbacks.authorized({ token: null, req: { nextUrl: { pathname: "/cadastro" } } }),
+    ).toBe(true);
     expect(
       wrappedOptions.callbacks.authorized({
         token: { sub: "42", accessToken: "access-token" },
+        req: { nextUrl: { pathname: "/perfil" } },
       }),
     ).toBe(true);
-    expect(wrappedOptions.callbacks.authorized({ token: { sub: "42" } })).toBe(false);
+    expect(
+      wrappedOptions.callbacks.authorized({
+        token: { sub: "42" },
+        req: { nextUrl: { pathname: "/perfil" } },
+      }),
+    ).toBe(false);
     expect(
       wrappedOptions.callbacks.authorized({
         token: { sub: "42", accessToken: "access-token", authError: "invalid_refresh_token" },
+        req: { nextUrl: { pathname: "/perfil" } },
       }),
     ).toBe(false);
   });

@@ -96,6 +96,7 @@ vi.mock("@/components/auth/molecules", () => ({
 
 const step1: CadastroStep1Data = {
   birthDate: "1990-01-01",
+  cnpj: "65.326.368/0001-90",
   cpf: "529.982.247-25",
   name: "Nome de Teste",
   email: "teste@example.test",
@@ -111,7 +112,6 @@ const step2Draft: CadastroStep2Draft = {
   neighborhood: "Asa Norte",
   city: "Brasília",
   state: "DF",
-  cnpj: "65.326.368/0001-90",
 };
 
 describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
@@ -132,16 +132,12 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
     expect(screen.getByLabelText("CEP")).toHaveValue(step2Draft.cep);
     expect(screen.getByLabelText("Logradouro")).toHaveValue(step2Draft.street);
     expect(screen.getByLabelText("Número")).toHaveValue(step2Draft.number);
-    expect(screen.getByLabelText("CNPJ da empresa")).toHaveValue(step2Draft.cnpj);
   });
 
   it("salva os campos preenchidos sem gravar a senha", () => {
     const view = render(<CadastroEtapa2Page />);
 
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: step2Draft.cep } });
-    fireEvent.change(screen.getByLabelText("CNPJ da empresa"), {
-      target: { value: step2Draft.cnpj },
-    });
     fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "senha-secreta" } });
 
     view.unmount();
@@ -150,7 +146,6 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
       window.sessionStorage.getItem(CADASTRO_STEP2_DRAFT_KEY) ?? "{}",
     ) as Record<string, string>;
     expect(saved.cep).toBe(step2Draft.cep);
-    expect(saved.cnpj).toBe(step2Draft.cnpj);
     expect(saved.password).toBeUndefined();
   });
 });
