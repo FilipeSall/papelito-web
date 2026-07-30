@@ -4,14 +4,21 @@ import { ArrowDown, ArrowUp, ImagePlus, LoaderCircle, Save, Trash2 } from "lucid
 import { useState } from "react";
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
+import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
+import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
+import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
 import { messageFromError } from "@/utils/error-message";
 import type {
   AdminHeroBannersSnapshot,
+  AdminHomeFeaturesSnapshot,
   AdminPartnerBannerSnapshot,
+  AdminPromoMarqueeSnapshot,
   AdminSiteImageAssetsSnapshot,
   AdminSiteLogosSnapshot,
   HeroBanner,
+  HomeFeatureItem,
   ManagedImageAsset,
+  PromoMarqueeItem,
   SiteImageAssetKey,
   SiteLogoKey,
 } from "@/types/home-assets";
@@ -26,6 +33,8 @@ import {
 import { ImageAssetCard, type ImageFieldConfig } from "./image-asset-card";
 import { IssuesList } from "./issues-list";
 import { LogosSection } from "./logos-section";
+import { CatalogPdfManager } from "../catalog-pdf-manager";
+import { PromoMarqueeSection } from "./promo-marquee-section";
 import { UploadCard } from "./upload-card";
 import { parseJson, uploadMedia } from "./upload-media";
 
@@ -33,11 +42,15 @@ const HERO_API = "/api/admin/assets/hero-banners";
 const PARTNER_API = "/api/admin/assets/partner-banner";
 const SITE_IMAGES_API = "/api/admin/assets/site-images";
 const LOGOS_API = "/api/admin/assets/logos";
+const PROMO_MARQUEE_API = "/api/admin/assets/promo-marquee";
+const HOME_FEATURES_API = "/api/admin/assets/features";
 
 type AssetsManagerProps = {
+  initialFeaturesSnapshot: AdminHomeFeaturesSnapshot;
   initialHeroSnapshot: AdminHeroBannersSnapshot;
   initialLogosSnapshot: AdminSiteLogosSnapshot;
   initialPartnerSnapshot: AdminPartnerBannerSnapshot;
+  initialPromoMarqueeSnapshot: AdminPromoMarqueeSnapshot;
   initialSiteImagesSnapshot: AdminSiteImageAssetsSnapshot;
 };
 
@@ -119,10 +132,31 @@ function normalizeHeroOrder(banners: HeroBanner[]) {
   }));
 }
 
+function normalizePromoMarqueeOrder(messages: PromoMarqueeItem[]) {
+  return messages.map((message, index) => ({
+    ...message,
+    order: index + 1,
+  }));
+}
+
+function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
+  return {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `marquee-${Date.now()}-${index + 1}`,
+    text: "",
+    order: index + 1,
+    isActive: true,
+  };
+}
+
 export function AssetsManager({
+  initialFeaturesSnapshot,
   initialHeroSnapshot,
   initialLogosSnapshot,
   initialPartnerSnapshot,
+  initialPromoMarqueeSnapshot,
   initialSiteImagesSnapshot,
 }: AssetsManagerProps) {
   const [heroBanners, setHeroBanners] = useState(() =>
@@ -136,6 +170,24 @@ export function AssetsManager({
     isActive: true,
   }));
   const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
+  const [promoMarquee, setPromoMarquee] = useState(() =>
+    normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
+  );
+  const [persistedPromoMarquee, setPersistedPromoMarquee] = useState(() =>
+    normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
+  );
+  const [promoMarqueeIssues, setPromoMarqueeIssues] = useState(initialPromoMarqueeSnapshot.issues);
+  const [features, setFeatures] = useState<HomeFeatureItem[]>(() =>
+    initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
+      ? initialFeaturesSnapshot.items
+      : FEATURES_BAR_ITEMS,
+  );
+  const [persistedFeatures, setPersistedFeatures] = useState<HomeFeatureItem[]>(() =>
+    initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
+      ? initialFeaturesSnapshot.items
+      : FEATURES_BAR_ITEMS,
+  );
+  const [featureIssues, setFeatureIssues] = useState(initialFeaturesSnapshot.issues);
   const [siteImages, setSiteImages] = useState(initialSiteImagesSnapshot.images);
   const [siteImageIssues, setSiteImageIssues] = useState(initialSiteImagesSnapshot.issues);
   const [logos, setLogos] = useState(initialLogosSnapshot.logos);
@@ -143,6 +195,8 @@ export function AssetsManager({
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [isSavingHero, setIsSavingHero] = useState(false);
   const [isSavingPartner, setIsSavingPartner] = useState(false);
+  const [isSavingPromoMarquee, setIsSavingPromoMarquee] = useState(false);
+  const [isSavingFeatures, setIsSavingFeatures] = useState(false);
   const [isSavingSiteImages, setIsSavingSiteImages] = useState(false);
   const [isSavingLogos, setIsSavingLogos] = useState(false);
   const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(null);
@@ -210,6 +264,51 @@ export function AssetsManager({
         ...patch,
       },
     }));
+  }
+
+  function updatePromoMarqueeItem(id: string, patch: Partial<PromoMarqueeItem>) {
+    setPromoMarquee((current) =>
+      current.map((message) => (message.id === id ? { ...message, ...patch } : message)),
+    );
+  }
+
+  function updateFeatureItem(id: string, patch: Partial<HomeFeatureItem>) {
+    setFeatures((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
+
+  function addPromoMarqueeItem() {
+    setPromoMarquee((current) => [...current, createEmptyPromoMarqueeItem(current.length)]);
+  }
+
+  function movePromoMarqueeItem(id: string, direction: -1 | 1) {
+    setPromoMarquee((current) => {
+      const index = current.findIndex((message) => message.id === id);
+
+      if (index < 0) {
+        return current;
+      }
+
+      const nextIndex = index + direction;
+
+      if (nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const clone = [...current];
+      const [item] = clone.splice(index, 1);
+      clone.splice(nextIndex, 0, item);
+      return normalizePromoMarqueeOrder(clone);
+    });
+  }
+
+  function removePromoMarqueeItem(id: string) {
+    if (!window.confirm("Remover esta mensagem da faixa?")) {
+      return;
+    }
+
+    setPromoMarquee((current) => normalizePromoMarqueeOrder(current.filter((message) => message.id !== id)));
   }
 
   async function handleHeroUpload(id: string, field: "desktop" | "mobile", file: File) {
@@ -287,6 +386,33 @@ export function AssetsManager({
       showNotice("success", "Logo enviada com sucesso. Salve para publicar.");
     } catch (error) {
       showNotice("error", messageFromError(error, "Não foi possível enviar a logo."));
+    } finally {
+      setUploadingKey(null);
+    }
+  }
+
+  async function handleFeatureIconUpload(id: string, file: File) {
+    const isSvg = file.name.toLowerCase().endsWith(".svg");
+    const validMime = !file.type || file.type === "image/svg+xml";
+
+    if (!isSvg || !validMime) {
+      showNotice("error", "Selecione um arquivo SVG válido.");
+      return;
+    }
+
+    if (file.size <= 0 || file.size > 2 * 1024 * 1024) {
+      showNotice("error", "O SVG deve ter entre 1 byte e 2 MB.");
+      return;
+    }
+
+    setUploadingKey(`feature:${id}`);
+
+    try {
+      const media = await uploadMedia(file);
+      updateFeatureItem(id, { iconId: media.id, iconUrl: media.src });
+      showNotice("success", "Ícone do benefício enviado. Salve os benefícios para publicar.");
+    } catch (error) {
+      showNotice("error", messageFromError(error, "Não foi possível enviar o ícone do benefício."));
     } finally {
       setUploadingKey(null);
     }
@@ -400,6 +526,88 @@ export function AssetsManager({
     }
   }
 
+  async function savePromoMarquee() {
+    if (isSavingPromoMarquee) {
+      return;
+    }
+
+    const validation = getPromoMarqueeValidation(promoMarquee);
+
+    if (!validation.isValid) {
+      showNotice("error", validation.message);
+      return;
+    }
+
+    const previousPersistedPromoMarquee = persistedPromoMarquee;
+    setIsSavingPromoMarquee(true);
+
+    try {
+      const response = await fetch(PROMO_MARQUEE_API, {
+        body: JSON.stringify({ messages: normalizePromoMarqueeOrder(promoMarquee) }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "PUT",
+      });
+      const json = await parseJson<AdminPromoMarqueeSnapshot & { message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível salvar a faixa de avisos.");
+      }
+
+      const confirmedMessages = normalizePromoMarqueeOrder(json.messages);
+      setPromoMarquee(confirmedMessages);
+      setPersistedPromoMarquee(confirmedMessages);
+      setPromoMarqueeIssues(Array.isArray(json.issues) ? json.issues : []);
+      showNotice("success", "Faixa de avisos atualizada.");
+    } catch (error) {
+      setPromoMarquee(previousPersistedPromoMarquee);
+      showNotice("error", messageFromError(error, "Não foi possível salvar a faixa de avisos."));
+    } finally {
+      setIsSavingPromoMarquee(false);
+    }
+  }
+
+  async function saveHomeFeatures() {
+    if (isSavingFeatures) {
+      return;
+    }
+
+    const validation = getHomeFeaturesValidation(features);
+
+    if (!validation.isValid) {
+      showNotice("error", validation.message);
+      return;
+    }
+
+    const previousPersistedFeatures = persistedFeatures;
+    setIsSavingFeatures(true);
+
+    try {
+      const response = await fetch(HOME_FEATURES_API, {
+        body: JSON.stringify({ items: features }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+      const json = await parseJson<AdminHomeFeaturesSnapshot & { message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível salvar os benefícios da Home.");
+      }
+
+      const confirmedItems = json.items.length === FEATURES_BAR_ITEMS.length ? json.items : FEATURES_BAR_ITEMS;
+      setFeatures(confirmedItems);
+      setPersistedFeatures(confirmedItems);
+      setFeatureIssues(Array.isArray(json.issues) ? json.issues : []);
+      showNotice("success", "Benefícios comerciais atualizados.");
+    } catch (error) {
+      setFeatures(previousPersistedFeatures);
+      showNotice("error", messageFromError(error, "Não foi possível salvar os benefícios da Home."));
+    } finally {
+      setIsSavingFeatures(false);
+    }
+  }
+
   async function restoreLogo(key: SiteLogoKey) {
     setRestoringLogoKey(key);
 
@@ -471,6 +679,24 @@ export function AssetsManager({
         onRestore={restoreLogo}
         onSave={saveLogos}
         uploadingKey={uploadingKey}
+      />
+
+      <PromoMarqueeSection
+        featureItems={features}
+        featureIssues={featureIssues}
+        featureUploadingId={uploadingKey?.startsWith("feature:") ? uploadingKey.slice("feature:".length) : null}
+        isSaving={isSavingPromoMarquee}
+        isSavingFeatures={isSavingFeatures}
+        issues={promoMarqueeIssues}
+        messages={promoMarquee}
+        onAdd={addPromoMarqueeItem}
+        onChange={updatePromoMarqueeItem}
+        onFeatureChange={updateFeatureItem}
+        onFeatureSave={saveHomeFeatures}
+        onFeatureUploadIcon={handleFeatureIconUpload}
+        onMove={movePromoMarqueeItem}
+        onRemove={removePromoMarqueeItem}
+        onSave={savePromoMarquee}
       />
 
       <CollapsiblePanel
@@ -698,6 +924,8 @@ export function AssetsManager({
             value={partnerBanner.description}
           />
         </div>
+
+        <CatalogPdfManager />
       </CollapsiblePanel>
 
       <CollapsiblePanel

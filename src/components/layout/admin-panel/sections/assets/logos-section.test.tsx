@@ -3,7 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SITE_LOGO_DEFAULTS } from "@/lib/site-logos";
-import type { AdminHeroBannersSnapshot, AdminPartnerBannerSnapshot } from "@/types/home-assets";
+import type {
+  AdminHeroBannersSnapshot,
+  AdminHomeFeaturesSnapshot,
+  AdminPartnerBannerSnapshot,
+  AdminPromoMarqueeSnapshot,
+} from "@/types/home-assets";
+
+vi.mock("../catalog-pdf-manager", () => ({
+  CatalogPdfManager: () => <div data-testid="catalog-pdf-manager" />,
+}));
 
 import { AssetsManager } from "./assets-manager";
 
@@ -40,6 +49,26 @@ const partnerSnapshot: AdminPartnerBannerSnapshot = {
   issues: [],
 };
 
+const promoMarqueeSnapshot: AdminPromoMarqueeSnapshot = {
+  messages: [
+    { id: "message-1", text: "⚡ Oferta inicial", order: 1, isActive: true },
+    { id: "message-2", text: "🌿 Mensagem pausada", order: 2, isActive: false },
+    { id: "message-3", text: "🎁 Oferta três", order: 3, isActive: true },
+    { id: "message-4", text: "🔥 Oferta quatro", order: 4, isActive: true },
+  ],
+  issues: [],
+};
+
+const featuresSnapshot: AdminHomeFeaturesSnapshot = {
+  items: [
+    { id: "frete-gratis", title: "Frete Grátis", subtitle: "Acima de R$500", iconId: 0, iconUrl: "/images/icons/truck.svg" },
+    { id: "troca-facil", title: "Troca Fácil", subtitle: "15 dias para troca", iconId: 0, iconUrl: "/images/icons/refresh.svg" },
+    { id: "parcelamos", title: "Parcelamos", subtitle: "Em 3x sem juros", iconId: 0, iconUrl: "/images/icons/price.svg" },
+    { id: "envio-rapido", title: "Envio Rápido", subtitle: "Sai no mesmo dia", iconId: 0, iconUrl: "/images/icons/thunder.svg" },
+  ],
+  issues: [],
+};
+
 const siteImagesSnapshot = {
   images: {
     productHero: { imageId: 0, imageUrl: "/images/Rectangle21.png", alt: "Produtos" },
@@ -65,6 +94,7 @@ const CUSTOM_LOGO_URL = "http://localhost:8080/wp-content/uploads/2026/07/nova-l
 function renderManager(customPrivateLogo = false) {
   return render(
     <AssetsManager
+      initialFeaturesSnapshot={featuresSnapshot}
       initialHeroSnapshot={heroSnapshot}
       initialLogosSnapshot={{
         logos: {
@@ -81,7 +111,8 @@ function renderManager(customPrivateLogo = false) {
         },
         issues: [],
       }}
-      initialPartnerSnapshot={partnerSnapshot}
+    initialPartnerSnapshot={partnerSnapshot}
+      initialPromoMarqueeSnapshot={promoMarqueeSnapshot}
       initialSiteImagesSnapshot={siteImagesSnapshot}
     />,
   );
@@ -89,6 +120,10 @@ function renderManager(customPrivateLogo = false) {
 
 async function openLogosSection(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /expandir logos do site/i }));
+}
+
+async function openPromoMarqueeSection(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /expandir faixa de avisos e promoções/i }));
 }
 
 const fetchMock = vi.fn();
@@ -112,6 +147,7 @@ describe("AssetsManager - seção de logos", () => {
     expect(screen.getByRole("heading", { name: "Logo das rotas privadas" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Logo do rodapé" })).toBeInTheDocument();
     expect(screen.getAllByText("Usando a logo padrão do projeto.")).toHaveLength(3);
+    expect(screen.getByTestId("catalog-pdf-manager")).toBeInTheDocument();
   });
 
   it("falls back to the default logo of each area", async () => {
@@ -223,4 +259,86 @@ describe("AssetsManager - seção de logos", () => {
       );
     });
   });
+});
+
+describe("AssetsManager - faixa de avisos e promoções", () => {
+  it("edits, toggles, reorders and removes messages with confirmation", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    renderManager();
+    await openPromoMarqueeSection(user);
+
+    const firstInput = screen.getByLabelText("Mensagem 1");
+    await user.clear(firstInput);
+    await user.type(firstInput, "⚡ Oferta atualizada");
+    await user.click(screen.getAllByLabelText("Ativa")[0]);
+    expect(screen.getByRole("alert")).toHaveTextContent(/ative mais 1 frase/i);
+    expect(screen.getByRole("button", { name: /salvar faixa/i })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Descer mensagem 1" }));
+
+    expect(screen.getByDisplayValue("⚡ Oferta atualizada")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Subir mensagem 2" })).toBeEnabled();
+
+    await user.click(screen.getAllByRole("button", { name: "Remover" })[1]);
+
+    expect(confirm).toHaveBeenCalledWith("Remover esta mensagem da faixa?");
+    expect(screen.queryByDisplayValue("⚡ Oferta atualizada")).not.toBeInTheDocument();
+    confirm.mockRestore();
+  }, 15000);
+
+  it("adds a message and saves the complete collection once", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ messages: promoMarqueeSnapshot.messages, issues: [] }),
+    });
+
+    renderManager();
+    await openPromoMarqueeSection(user);
+    await user.click(screen.getByRole("button", { name: /nova mensagem/i }));
+
+    const newInput = screen.getByLabelText("Mensagem 5");
+    await user.type(newInput, "🎁 Nova mensagem");
+    await user.click(screen.getByRole("button", { name: /salvar faixa/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(/faixa de avisos atualizada/i);
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/admin/assets/promo-marquee");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(String(init.body)).messages).toHaveLength(5);
+  }, 15000);
+
+  it("shows the API error and keeps the save action guarded", async () => {
+    const user = userEvent.setup();
+    let resolveRequest: ((value: unknown) => void) | undefined;
+    fetchMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+
+    renderManager();
+    await openPromoMarqueeSection(user);
+    const firstInput = screen.getByLabelText("Mensagem 1");
+    await user.clear(firstInput);
+    await user.type(firstInput, "⚡ Oferta local");
+    const saveButton = screen.getByRole("button", { name: /salvar faixa/i });
+    await user.click(saveButton);
+    await user.click(saveButton);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    resolveRequest?.({
+      ok: false,
+      json: async () => ({ message: "Falha ao salvar faixa." }),
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(/falha ao salvar faixa/i);
+    });
+    expect(screen.getByDisplayValue("⚡ Oferta inicial")).toBeInTheDocument();
+  }, 15000);
 });

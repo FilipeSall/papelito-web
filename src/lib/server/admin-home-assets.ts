@@ -4,14 +4,18 @@ import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   AdminHeroBannersSnapshot,
+  AdminHomeFeaturesSnapshot,
   AdminPartnerBannerSnapshot,
   AdminPromoBannerSnapshot,
+  AdminPromoMarqueeSnapshot,
   AdminSiteImageAssetsSnapshot,
   AdminSiteLogosSnapshot,
   HeroBanner,
+  HomeFeatureItem,
   ManagedImageAsset,
   PartnerBannerConfig,
   PromoBannerConfig,
+  PromoMarqueeItem,
   SiteImageAssets,
   SiteImageAssetKey,
   SiteLogoKey,
@@ -33,6 +37,16 @@ type WpHeroSnapshot = {
 
 type WpPromoSnapshot = {
   banner?: WpPromoBanner;
+  issues?: string[];
+};
+
+type WpPromoMarqueeSnapshot = {
+  messages?: Partial<PromoMarqueeItem>[];
+  issues?: string[];
+};
+
+type WpFeaturesSnapshot = {
+  items?: Partial<HomeFeatureItem>[];
   issues?: string[];
 };
 
@@ -151,6 +165,47 @@ function mapPromoBanner(banner: WpPromoBanner | null | undefined): PromoBannerCo
     ctaLabel: cleanText(banner.ctaLabel),
     href: cleanText(banner.href),
     isActive: toBoolean(banner.isActive),
+  };
+}
+
+function mapPromoMarqueeItem(
+  item: Partial<PromoMarqueeItem> | null | undefined,
+  index: number,
+): PromoMarqueeItem | null {
+  if (!item || typeof item.text !== "string" || item.text.trim() === "") {
+    return null;
+  }
+
+  return {
+    id: cleanText(item.id) || `marquee-${index + 1}`,
+    text: item.text.trim(),
+    order: toNumber(item.order) || index + 1,
+    isActive: toBoolean(item.isActive),
+  };
+}
+
+function mapHomeFeatureItem(
+  item: Partial<HomeFeatureItem> | null | undefined,
+  index: number,
+): HomeFeatureItem | null {
+  if (
+    !item ||
+    typeof item.title !== "string" ||
+    typeof item.subtitle !== "string" ||
+    typeof item.iconUrl !== "string" ||
+    item.title.trim() === "" ||
+    item.subtitle.trim() === "" ||
+    item.iconUrl.trim() === ""
+  ) {
+    return null;
+  }
+
+  return {
+    id: cleanText(item.id) || `feature-${index + 1}`,
+    title: item.title.trim(),
+    subtitle: item.subtitle.trim(),
+    iconId: toNumber(item.iconId),
+    iconUrl: item.iconUrl.trim(),
   };
 }
 
@@ -416,6 +471,112 @@ export async function saveAdminPromoBanner(accessToken: string, banner: PromoBan
     banner: mapPromoBanner(result.data.banner),
     issues: mapIssues(result.data.issues),
   } satisfies AdminPromoBannerSnapshot;
+}
+
+export async function getAdminPromoMarqueeSnapshot(
+  accessToken: string | undefined,
+): Promise<AdminPromoMarqueeSnapshot> {
+  if (!accessToken) {
+    return {
+      messages: [],
+      issues: ["Sessão sem access token para consultar a faixa de avisos."],
+    };
+  }
+
+  const result = await wpRest<WpPromoMarqueeSnapshot>("/papelito/v1/admin/assets/promo-marquee", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!result.ok) {
+    return {
+      messages: [],
+      issues: [result.error.message],
+    };
+  }
+
+  return {
+    messages: Array.isArray(result.data.messages)
+      ? result.data.messages
+          .map((message, index) => mapPromoMarqueeItem(message, index))
+          .filter((message): message is PromoMarqueeItem => message !== null)
+          .sort((left, right) => left.order - right.order)
+      : [],
+    issues: mapIssues(result.data.issues),
+  };
+}
+
+export async function saveAdminPromoMarquee(accessToken: string, messages: PromoMarqueeItem[]) {
+  const result = await wpRest<WpPromoMarqueeSnapshot>("/papelito/v1/admin/assets/promo-marquee", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    json: { messages },
+    method: "PUT",
+  });
+
+  if (!result.ok) {
+    throw buildHttpError(result.error.message, result.status);
+  }
+
+  return {
+    messages: Array.isArray(result.data.messages)
+      ? result.data.messages
+          .map((message, index) => mapPromoMarqueeItem(message, index))
+          .filter((message): message is PromoMarqueeItem => message !== null)
+          .sort((left, right) => left.order - right.order)
+      : [],
+    issues: mapIssues(result.data.issues),
+  } satisfies AdminPromoMarqueeSnapshot;
+}
+
+export async function getAdminHomeFeaturesSnapshot(
+  accessToken: string | undefined,
+): Promise<AdminHomeFeaturesSnapshot> {
+  if (!accessToken) {
+    return {
+      items: [],
+      issues: ["Sessão sem access token para consultar os benefícios da Home."],
+    };
+  }
+
+  const result = await wpRest<WpFeaturesSnapshot>("/papelito/v1/admin/assets/features", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!result.ok) {
+    return {
+      items: [],
+      issues: [result.error.message],
+    };
+  }
+
+  return {
+    items: Array.isArray(result.data.items)
+      ? result.data.items
+          .map((item, index) => mapHomeFeatureItem(item, index))
+          .filter((item): item is HomeFeatureItem => item !== null)
+      : [],
+    issues: mapIssues(result.data.issues),
+  };
+}
+
+export async function saveAdminHomeFeatures(accessToken: string, items: HomeFeatureItem[]) {
+  const result = await wpRest<WpFeaturesSnapshot>("/papelito/v1/admin/assets/features", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    json: { items },
+    method: "PUT",
+  });
+
+  if (!result.ok) {
+    throw buildHttpError(result.error.message, result.status);
+  }
+
+  return {
+    items: Array.isArray(result.data.items)
+      ? result.data.items
+          .map((item, index) => mapHomeFeatureItem(item, index))
+          .filter((item): item is HomeFeatureItem => item !== null)
+      : [],
+    issues: mapIssues(result.data.issues),
+  } satisfies AdminHomeFeaturesSnapshot;
 }
 
 export async function getAdminPartnerBannerSnapshot(

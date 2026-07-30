@@ -5,7 +5,6 @@ import { useState, useTransition } from "react";
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { Panel } from "../primitives";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
-import { CatalogPdfManager } from "./catalog-pdf-manager";
 
 type FeedbackState =
   | { type: "error"; message: string }
@@ -97,7 +96,6 @@ export function ConfigContent() {
 
   return (
     <div className="space-y-5">
-      <CatalogPdfManager />
       <Panel className="max-w-3xl">
       <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">

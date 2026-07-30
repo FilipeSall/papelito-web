@@ -1,12 +1,19 @@
 import "server-only";
 
+import {
+  PROMO_ITEMS,
+  PROMO_MARQUEE_MIN_ACTIVE_MESSAGES,
+} from "@/components/layout/promo-marquee/constants";
+import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   HeroBanner,
   ManagedImageAsset,
+  HomeFeatureItem,
   PartnerBannerConfig,
   PromoBannerConfig,
+  PromoMarqueeItem,
   SiteImageAssetKey,
   SiteImageAssets,
   SiteLogoKey,
@@ -19,6 +26,14 @@ type WpHeroResponse = {
 
 type WpPromoResponse = {
   banner?: Partial<PromoBannerConfig>;
+};
+
+type WpPromoMarqueeResponse = {
+  messages?: Partial<PromoMarqueeItem>[];
+};
+
+type WpFeaturesResponse = {
+  items?: Partial<HomeFeatureItem>[];
 };
 
 type WpPartnerResponse = {
@@ -43,6 +58,47 @@ function toNumber(value: unknown) {
 
 function toBoolean(value: unknown) {
   return typeof value === "boolean" ? value : false;
+}
+
+function mapPromoMarqueeItem(
+  item: Partial<PromoMarqueeItem> | undefined,
+  index: number,
+): PromoMarqueeItem | null {
+  if (!item || typeof item.text !== "string" || item.text.trim() === "") {
+    return null;
+  }
+
+  return {
+    id: cleanText(item.id) || `marquee-${index + 1}`,
+    text: item.text.trim(),
+    order: toNumber(item.order) || index + 1,
+    isActive: toBoolean(item.isActive),
+  };
+}
+
+function mapHomeFeatureItem(
+  item: Partial<HomeFeatureItem> | undefined,
+  index: number,
+): HomeFeatureItem | null {
+  if (
+    !item ||
+    typeof item.title !== "string" ||
+    typeof item.subtitle !== "string" ||
+    typeof item.iconUrl !== "string" ||
+    item.title.trim() === "" ||
+    item.subtitle.trim() === "" ||
+    item.iconUrl.trim() === ""
+  ) {
+    return null;
+  }
+
+  return {
+    id: cleanText(item.id) || FEATURES_BAR_ITEMS[index]?.id || `feature-${index + 1}`,
+    title: item.title.trim(),
+    subtitle: item.subtitle.trim(),
+    iconId: toNumber(item.iconId),
+    iconUrl: item.iconUrl.trim(),
+  };
 }
 
 const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
@@ -225,6 +281,63 @@ export async function getHomePromoBanner(): Promise<PromoBannerConfig | null> {
   }
 
   return mapPromoBanner(result.data.banner);
+}
+
+export async function getHomePromoMarquee(): Promise<PromoMarqueeItem[]> {
+  const result = await wpRest<WpPromoMarqueeResponse>(
+    "/papelito/v1/home/promo-marquee",
+    process.env.NODE_ENV === "development"
+      ? {}
+      : {
+          revalidate: 60,
+          tags: ["wp:home-promo-marquee"],
+        },
+  );
+
+  if (!result.ok) {
+    if (result.status !== 404) {
+      console.warn("[home-promo-marquee] Falha ao consultar a faixa.", result.error.message);
+    }
+
+    return PROMO_ITEMS;
+  }
+
+  if (!Array.isArray(result.data.messages)) {
+    return PROMO_ITEMS;
+  }
+
+  const activeMessages = result.data.messages
+    .map((message, index) => mapPromoMarqueeItem(message, index))
+    .filter((message): message is PromoMarqueeItem => message !== null && message.isActive)
+    .sort((left, right) => left.order - right.order);
+
+  return activeMessages.length >= PROMO_MARQUEE_MIN_ACTIVE_MESSAGES ? activeMessages : [];
+}
+
+export async function getHomeFeatures(): Promise<HomeFeatureItem[]> {
+  const result = await wpRest<WpFeaturesResponse>(
+    "/papelito/v1/home/features",
+    process.env.NODE_ENV === "development"
+      ? {}
+      : {
+          revalidate: 60,
+          tags: ["wp:home-features"],
+        },
+  );
+
+  if (!result.ok || !Array.isArray(result.data.items)) {
+    if (!result.ok && result.status !== 404) {
+      console.warn("[home-features] Falha ao consultar os benefícios.", result.error.message);
+    }
+
+    return FEATURES_BAR_ITEMS;
+  }
+
+  const items = result.data.items
+    .map((item, index) => mapHomeFeatureItem(item, index))
+    .filter((item): item is HomeFeatureItem => item !== null);
+
+  return items.length === FEATURES_BAR_ITEMS.length ? items : FEATURES_BAR_ITEMS;
 }
 
 export async function getHomePartnerBanner(): Promise<PartnerBannerConfig | null> {

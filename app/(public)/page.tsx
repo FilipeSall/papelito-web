@@ -11,20 +11,24 @@ import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import {
+  getHomeFeatures,
   getHomeHeroBanners,
   getHomePartnerBanner,
   getHomePromoBanner,
+  getHomePromoMarquee,
 } from "@/features/catalog/services/get-home-assets";
 import { getHomeProducts } from "@/features/catalog/services/get-home-products";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const [homeProducts, heroBanners, promoBanner, partnerBanner] = await Promise.all([
+  const [homeProducts, heroBanners, promoBanner, partnerBanner, promoMarquee, homeFeatures] = await Promise.all([
     getHomeProducts(),
     getHomeHeroBanners(),
     getHomePromoBanner(),
     getHomePartnerBanner(),
+    getHomePromoMarquee(),
+    getHomeFeatures(),
   ]);
 
   const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = homeProducts;
@@ -41,9 +45,9 @@ export default async function Home() {
       <main className="flex flex-col bg-white">
         <AddToCartToastHost />
         <div className="flex flex-col">
-          <PromoMarquee />
+          <PromoMarquee items={promoMarquee} />
           <HeroSection banners={heroBanners} />
-          <FeaturesBar />
+          <FeaturesBar items={homeFeatures} />
           <CategoriesNav />
         </div>
         {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}

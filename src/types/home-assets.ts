@@ -36,6 +36,21 @@ export type PromoBannerConfig = {
   isActive: boolean;
 };
 
+export type PromoMarqueeItem = {
+  id: string;
+  text: string;
+  order: number;
+  isActive: boolean;
+};
+
+export type HomeFeatureItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  iconId: number;
+  iconUrl: string;
+};
+
 export type PartnerBannerConfig = {
   tag: string;
   description: string;
@@ -66,6 +81,16 @@ export type AdminSiteLogosSnapshot = {
 
 export type AdminPromoBannerSnapshot = {
   banner: PromoBannerConfig;
+  issues: string[];
+};
+
+export type AdminPromoMarqueeSnapshot = {
+  messages: PromoMarqueeItem[];
+  issues: string[];
+};
+
+export type AdminHomeFeaturesSnapshot = {
+  items: HomeFeatureItem[];
   issues: string[];
 };
 

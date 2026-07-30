@@ -6,12 +6,14 @@ import { SECONDARY_BUTTON_CLASS } from "./field-classes";
 
 export function UploadButton({
   accept = "image/*",
+  disabled = false,
   inputLabel,
   isUploading,
   label = "Enviar",
   onFileSelect,
 }: {
   accept?: string;
+  disabled?: boolean;
   inputLabel?: string;
   isUploading: boolean;
   label?: string;
@@ -25,6 +27,7 @@ export function UploadButton({
         accept={accept}
         aria-label={inputLabel}
         className="hidden"
+        disabled={disabled || isUploading}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) {
