@@ -175,7 +175,7 @@ function CoveragePresetSelect({
   value: string;
   variant: VendorCoverageRangesFieldProps["variant"];
 }) {
-  const label = `Regiao de cobertura por CEP${blockIndex > 0 ? ` ${blockIndex + 1}` : ""}${isRequired ? " *" : ""}`;
+  const label = `Região de cobertura por CEP${blockIndex > 0 ? ` ${blockIndex + 1}` : ""}${isRequired ? " *" : ""}`;
 
   if (variant === "vendor-create") {
     return (

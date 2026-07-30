@@ -16,7 +16,7 @@ export default async function VendorSettingsPage() {
       <VendorPageHeader
         description="Configure informações que afetam prazo e expectativa de entrega para os clientes atendidos por sua loja."
         eyebrow="Operação da loja"
-        signal="configuracao"
+        signal="configuração"
         title="Configurações"
       />
       <VendorSettingsForm initialLeadTimeDays={settings.shippingLeadTimeDays} />

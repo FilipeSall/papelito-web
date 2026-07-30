@@ -45,7 +45,7 @@ export function AddToCartButton({
     useAuthSession();
   const [isResolving, setIsResolving] = useState(false);
 	const b2bBlockedMessage = "Sua empresa ainda não está apta para comprar. Revise o cadastro empresarial.";
-  const notBuyerMessage = "Esta conta não possui um contexto de customer habilitado para compra.";
+  const notBuyerMessage = "Indisponível para compra no momento.";
   const blockedMessage = disabledReason ?? (isB2bPurchaseBlocked ? b2bBlockedMessage : (isNotBuyer ? notBuyerMessage : undefined));
   const isPurchaseBlockedByRole = isNotBuyer || isB2bPurchaseBlocked;
   const isDisabled =

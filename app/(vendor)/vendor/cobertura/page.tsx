@@ -11,7 +11,7 @@ export default async function VendorCoveragePage() {
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
         description="Defina as faixas de CEP que sua loja atende. Essas regras controlam a disponibilidade regional dos produtos para clientes."
-        eyebrow="Regiao atendida"
+        eyebrow="Região atendida"
         signal="cobertura"
         title="Cobertura"
       />

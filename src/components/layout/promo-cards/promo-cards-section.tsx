@@ -25,7 +25,7 @@ export function PromoCardsSection() {
           {/* Dark card - PDV Materials */}
           <PromoCard
             variant="dark"
-            title={"MATERIAIS\nEXCLUSIVOS\nDE MERCHAN"}
+            title={"MATERIAIS\nEXCLUSIVOS\nDE MERCHANDISING"}
             linkText={"SEJA PDV\nPERFEITO"}
             href="/pdv"
             image="/images/promo/mobile-livreto-premium.png"

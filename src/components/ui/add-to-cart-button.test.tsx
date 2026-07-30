@@ -96,7 +96,7 @@ describe("AddToCartButton", () => {
     expect(screen.getByRole("button", { name: /adicionar ao carrinho/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /adicionar ao carrinho/i })).toHaveAttribute(
       "title",
-			"Esta conta não possui um contexto de customer habilitado para compra.",
+			"Indisponível para compra no momento.",
     );
   });
 

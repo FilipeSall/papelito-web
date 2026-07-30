@@ -31,14 +31,14 @@ export default async function VendorDashboardPage({
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
         description="Acompanhe sua operação Papelito: faturamento, pedidos aguardando tratamento e produtos com maior saída."
-        eyebrow="Centro de operacoes"
+        eyebrow="Centro de operações"
         signal="seller ativo"
         title="Dashboard"
       />
       <VendorPeriodFilters basePath="/vendor/dashboard" filters={filters} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard detail={`Janela ${filters.periodLabel}`} label="Faturamento" value={formatBRLIntl(snapshot.grossRevenue)} />
-        <MetricCard detail="Media dos pedidos atendidos" label="Ticket médio" value={formatBRLIntl(snapshot.averageTicket)} />
+        <MetricCard detail="Média dos pedidos atendidos" label="Ticket médio" value={formatBRLIntl(snapshot.averageTicket)} />
         <MetricCard
           detail="Requerem separação ou envio"
           label="Pedidos pendentes"

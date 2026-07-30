@@ -90,7 +90,7 @@ function buildRecipientErrorFeedback(body: {
         error: true,
         hint: "Se o erro persistir, revise os dados financeiros do recebedor antes de tentar novamente.",
         message: "Não foi possível sincronizar o recebedor.",
-        title: "Falha na sincronizacao",
+        title: "Falha na sincronização",
       };
   }
 }
@@ -184,9 +184,9 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-dark/55">
-              Última sincronizacao
+              Última sincronização
             </p>
-            <p className="mt-1 text-sm text-brand-dark">{recipient.lastSyncAt || "Sem sincronizacao"}</p>
+            <p className="mt-1 text-sm text-brand-dark">{recipient.lastSyncAt || "Sem sincronização"}</p>
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-dark/55">
@@ -194,7 +194,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
             </p>
             <p className="mt-1 text-sm text-brand-dark">
               {recipient.lastError
-                ? "A última sincronizacao falhou. Revise os dados financeiros (razao social, endereço e conta bancária) e sincronize novamente."
+                ? "A última sincronização falhou. Revise os dados financeiros (razão social, endereço e conta bancária) e sincronize novamente."
                 : "Nenhum"}
             </p>
           </div>
