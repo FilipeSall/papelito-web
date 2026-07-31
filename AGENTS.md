@@ -1,24 +1,22 @@
 # Codex Context — papelito-web
 
-Leia `CLAUDE.md` antes de editar. Este repo é o frontend Next.js do marketplace Papelito.
+**As instruções deste repositório vivem em [CLAUDE.md](CLAUDE.md)** — stack, invariantes e convenções. Leia-o primeiro; este arquivo não duplica o conteúdo.
 
-## Performance: Home e Catálogo
+Documentação:
 
-Documento fonte: `docs/performance/home-produtos-loading-fix.md`.
+- [docs/README.md](docs/README.md) — índice do frontend.
+- [`../docs/README.md`](../docs/README.md) — contexto compartilhado com o backend: negócio, contratos REST/GraphQL e fluxos ponta a ponta.
 
-- `app/(public)/page.tsx` deve continuar ISR/cacheável (`revalidate = 60`). Não adicione `getServerSession`, `cookies()`, `headers()` nem fetch `no-store` nessa rota.
-- UI específica de seller na home deve ser tratada no cliente, hoje via `SellerHidden`.
-- As rotas de catálogo (`/produtos`, `/colecoes`, `/kits`, `/novidades`, `/premium`, `/promocoes`) renderizam todos os produtos e não bloqueiam SSR em CEP/vendor/cobertura.
-- Disponibilidade regional usa `ProductAvailabilityProvider` e `useProductAvailability`, chamando `GET /api/catalog/availability?productIds=...` apenas para usuário logado não-seller.
-- Produtos sem cobertura/estoque no vendor da região ficam opacos, exibem tooltip e passam `disabledReason` para `AddToCartButton`.
-- Anônimos e usuários sem CEP não chamam availability.
-- Preserve `PRODUCTS_LIST_QUERY` como query leve de listagem; descrição completa, galeria e SKU pertencem à query de detalhe.
+O backend fica no repositório irmão `../papelito-wordpress`. Mudança que cruza os dois exige PR nos dois, na mesma branch nominal.
 
-## Validação
+## Validação esperada
 
 ```bash
-npm run lint
-npm run build
+bun run lint
+./node_modules/.bin/tsc --noEmit
+bun run test:run
+bun run build
+npm ci        # o CI usa Node 24 + npm ci; package-lock.json precisa estar sincronizado
 ```
 
-O resumo do build deve manter `/` como rota estática/ISR.
+Mudança no fluxo de disponibilidade regional: conferir as invariantes em [docs/context/rendering-and-performance.md](docs/context/rendering-and-performance.md) e confirmar no resumo do build que `/` continua estática/ISR.
