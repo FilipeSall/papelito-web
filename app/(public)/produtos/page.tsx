@@ -3,9 +3,12 @@ import {
   ProductsHeroBanner,
   ProductsSection,
 } from "@/components/layout/products-page";
-import type { ProductTypeId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
+import {
+  readSingleQueryParam,
+  resolveSelectedTypesFromParams,
+} from "@/features/catalog/utils/product-type-taxonomy";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -33,46 +36,6 @@ interface ProdutosPageProps {
         precoMin?: string | string[];
         precoMax?: string | string[];
       };
-}
-
-function readSingleParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-
-  return value;
-}
-
-function normalizeType(value: string | undefined): ProductTypeId {
-  const normalized = value?.toLowerCase();
-
-  if (
-    normalized === "todos" ||
-    normalized === "sedas" ||
-    normalized === "piteiras" ||
-    normalized === "filtros" ||
-    normalized === "acessorios"
-  ) {
-    return normalized;
-  }
-
-  return "todos";
-}
-
-function normalizeSelectedTypes(value: string | string[] | undefined) {
-  const raw = Array.isArray(value) ? value : value ? [value] : [];
-  const split = raw
-    .flatMap((part) => part.split(","))
-    .map((part) => part.trim().toLowerCase())
-    .filter(Boolean);
-
-  const allowed = new Set(["sedas", "piteiras", "filtros", "acessorios"]);
-  const filtered = split.filter(
-    (item): item is "sedas" | "piteiras" | "filtros" | "acessorios" =>
-      allowed.has(item),
-  );
-
-  return Array.from(new Set(filtered));
 }
 
 function normalizePage(value: string | undefined) {
@@ -110,23 +73,18 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
 
-  const queryType = normalizeType(readSingleParam(resolvedSearchParams.tipo));
-  const querySelectedTypes = normalizeSelectedTypes(resolvedSearchParams.tipos);
-  const selectedTypes =
-    querySelectedTypes.length > 0
-      ? querySelectedTypes
-      : queryType !== "todos"
-        ? [queryType]
-        : [];
+  const { queryType, selectedTypes } = resolveSelectedTypesFromParams(resolvedSearchParams);
 
-  const currentPage = normalizePage(readSingleParam(resolvedSearchParams.page));
-  const viewMode = normalizeProductsViewMode(readSingleParam(resolvedSearchParams.view));
+  const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
+  const viewMode = normalizeProductsViewMode(
+    readSingleQueryParam(resolvedSearchParams.view),
+  );
   const perPage = normalizeProductsPerPage(
-    readSingleParam(resolvedSearchParams.perPage),
+    readSingleQueryParam(resolvedSearchParams.perPage),
     viewMode,
   );
-  const minPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMin));
-  const maxPrice = normalizePrice(readSingleParam(resolvedSearchParams.precoMax));
+  const minPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin));
+  const maxPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMax));
 
   const [catalog, siteImages] = use(
     Promise.all([

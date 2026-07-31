@@ -23,7 +23,10 @@ export async function ProductsContent({
   const focusParam = firstString(searchParams?.focus);
   const issueParam = firstString(searchParams?.issue);
   const initialFocusProductId = Number.parseInt(focusParam ?? "", 10);
-  const initialIssue = issueParam === "missing-weight" ? issueParam : null;
+  const initialIssue =
+    issueParam === "missing-weight" || issueParam === "product-data-incomplete"
+      ? issueParam
+      : null;
 
   return (
     <ProductsManager

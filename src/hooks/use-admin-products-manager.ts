@@ -43,9 +43,27 @@ function normalizeFilters(filters: ProductFilters): ProductFilters {
   };
 }
 
+function mergeTags(
+  currentTags: AdminProductTaxonomyTerm[],
+  additionalTags: AdminProductTaxonomyTerm[],
+) {
+  const tagsById = new Map(currentTags.map((tag) => [tag.id, tag]));
+
+  for (const tag of additionalTags) {
+    tagsById.set(tag.id, tag);
+  }
+
+  return Array.from(tagsById.values()).sort((left, right) =>
+    left.name.localeCompare(right.name, "pt-BR"),
+  );
+}
+
 export function useAdminProductsManager(
   snapshot: AdminProductsSnapshot,
-  options: { initialFocusProductId?: number | null } = {},
+  options: {
+    initialFocusProductId?: number | null;
+    onUploadError?: (message: string) => void;
+  } = {},
 ) {
   const initialFocusProductId = options.initialFocusProductId ?? null;
   const [products, setProducts] = useState(snapshot.products);
@@ -63,6 +81,7 @@ export function useAdminProductsManager(
   const [draft, setDraft] = useState<ProductDraft>(
     snapshot.products[0] ? productToDraft(snapshot.products[0]) : newProductDraft(),
   );
+  const draftRef = useRef(draft);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -71,6 +90,12 @@ export function useAdminProductsManager(
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [notice, setNotice] = useState("");
   const handledInitialFocusRef = useRef(false);
+
+  function updateDraftState(updater: (currentDraft: ProductDraft) => ProductDraft) {
+    const nextDraft = updater(draftRef.current);
+    draftRef.current = nextDraft;
+    setDraft(nextDraft);
+  }
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) ?? null,
@@ -97,14 +122,19 @@ export function useAdminProductsManager(
 
   function selectProduct(product: AdminProduct) {
     setSelectedProductId(product.id);
-    setDraft(productToDraft(product));
+    setTags((currentTags) => mergeTags(currentTags, product.tags));
+    const nextDraft = productToDraft(product);
+    draftRef.current = nextDraft;
+    setDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
   }
 
   function startNewProduct() {
     setSelectedProductId("new");
-    setDraft(newProductDraft());
+    const nextDraft = newProductDraft();
+    draftRef.current = nextDraft;
+    setDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
   }
@@ -145,19 +175,24 @@ export function useAdminProductsManager(
           throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
         }
 
+        const focusedProduct = json.product;
+
         if (cancelled) {
           return;
         }
 
         setProducts((currentProducts) => {
-          if (currentProducts.some((product) => product.id === json.product?.id)) {
+          if (currentProducts.some((product) => product.id === focusedProduct.id)) {
             return currentProducts;
           }
 
-          return [json.product as AdminProduct, ...currentProducts];
+          return [focusedProduct, ...currentProducts];
         });
-        setSelectedProductId(json.product.id);
-        setDraft(productToDraft(json.product));
+        setTags((currentTags) => mergeTags(currentTags, focusedProduct.tags));
+        setSelectedProductId(focusedProduct.id);
+        const nextDraft = productToDraft(focusedProduct);
+        draftRef.current = nextDraft;
+        setDraft(nextDraft);
         setIsEditorOpen(true);
       } catch (error) {
         if (!cancelled) {
@@ -212,11 +247,11 @@ export function useAdminProductsManager(
       setAppliedFilters(normalizedFilters);
 
       setSelectedProductId(nextSnapshot.products[0]?.id ?? "new");
-      setDraft(
-        nextSnapshot.products[0]
-          ? productToDraft(nextSnapshot.products[0])
-          : newProductDraft(),
-      );
+      const nextDraft = nextSnapshot.products[0]
+        ? productToDraft(nextSnapshot.products[0])
+        : newProductDraft();
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
       setIsEditorOpen(false);
     } catch (error) {
       setNotice(messageFromError(error, PRODUCT_ERROR_MESSAGES.load));
@@ -226,7 +261,9 @@ export function useAdminProductsManager(
   }
 
   async function handleSave() {
-    if (!draft.name.trim()) {
+    const draftToSave = draftRef.current;
+
+    if (!draftToSave.name.trim()) {
       setNotice(PRODUCT_ERROR_MESSAGES.missingName);
       return false;
     }
@@ -240,7 +277,7 @@ export function useAdminProductsManager(
           ? ADMIN_PRODUCTS_API.list
           : ADMIN_PRODUCTS_API.detail(selectedProductId);
       const response = await fetch(endpoint, {
-        body: JSON.stringify(buildPayload(draft)),
+        body: JSON.stringify(buildPayload(draftToSave)),
         headers: { "Content-Type": "application/json" },
         method: selectedProductId === "new" ? "POST" : "PATCH",
       });
@@ -261,7 +298,10 @@ export function useAdminProductsManager(
         return [savedProduct, ...currentProducts];
       });
       setSelectedProductId(savedProduct.id);
-      setDraft(productToDraft(savedProduct));
+      setTags((currentTags) => mergeTags(currentTags, savedProduct.tags));
+      const nextDraft = productToDraft(savedProduct);
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
       setNotice(PRODUCT_NOTICES.saved);
       return true;
     } catch (error) {
@@ -290,7 +330,7 @@ export function useAdminProductsManager(
       }
 
       const media = json.media as { alt: string; id: number; src: string };
-      setDraft((currentDraft) => ({
+      updateDraftState((currentDraft) => ({
         ...currentDraft,
         imageIds:
           target === "cover"
@@ -327,7 +367,9 @@ export function useAdminProductsManager(
         target === "cover" ? PRODUCT_NOTICES.coverUpdated : PRODUCT_NOTICES.secondaryAdded,
       );
     } catch (error) {
-      setNotice(messageFromError(error, PRODUCT_ERROR_MESSAGES.upload));
+      const message = messageFromError(error, PRODUCT_ERROR_MESSAGES.upload);
+      setNotice(message);
+      options.onUploadError?.(message);
     } finally {
       setIsUploading(false);
     }
@@ -347,7 +389,7 @@ export function useAdminProductsManager(
 
     if (existingTag) {
       if (shouldSelect) {
-        setDraft((currentDraft) => ({
+        updateDraftState((currentDraft) => ({
           ...currentDraft,
           tagIds: currentDraft.tagIds.includes(String(existingTag.id))
             ? currentDraft.tagIds
@@ -375,13 +417,9 @@ export function useAdminProductsManager(
       }
 
       const tag = json.tag as AdminProductTaxonomyTerm;
-      setTags((currentTags) =>
-        [...currentTags, tag].sort((left, right) =>
-          left.name.localeCompare(right.name, "pt-BR"),
-        ),
-      );
+      setTags((currentTags) => mergeTags(currentTags, [tag]));
       if (shouldSelect) {
-        setDraft((currentDraft) => ({
+        updateDraftState((currentDraft) => ({
           ...currentDraft,
           tagIds: currentDraft.tagIds.includes(String(tag.id))
             ? currentDraft.tagIds
@@ -398,11 +436,13 @@ export function useAdminProductsManager(
   }
 
   function updateDraft<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
-    setDraft((currentDraft) => ({ ...currentDraft, [key]: value }));
+    const nextDraft = { ...draftRef.current, [key]: value };
+    draftRef.current = nextDraft;
+    setDraft(nextDraft);
   }
 
   function removeImage(imageId: string) {
-    setDraft((currentDraft) => ({
+    updateDraftState((currentDraft) => ({
       ...currentDraft,
       imageIds: currentDraft.imageIds.filter((id) => id !== imageId),
       images: currentDraft.images.filter((image) => String(image.id) !== imageId),
@@ -410,7 +450,7 @@ export function useAdminProductsManager(
   }
 
   function moveImageToCover(imageId: string) {
-    setDraft((currentDraft) => {
+    updateDraftState((currentDraft) => {
       const targetImage = currentDraft.images.find(
         (image) => String(image.id) === imageId,
       );
@@ -436,7 +476,7 @@ export function useAdminProductsManager(
   }
 
   function toggleDraftTerm(key: DraftTermKey, id: string) {
-    setDraft((currentDraft) => {
+    updateDraftState((currentDraft) => {
       const currentIds = currentDraft[key];
       return {
         ...currentDraft,
@@ -448,7 +488,7 @@ export function useAdminProductsManager(
   }
 
   function togglePromotion(isEnabled: boolean) {
-    setDraft((currentDraft) => {
+    updateDraftState((currentDraft) => {
       const promotionTagId = promotionTag ? String(promotionTag.id) : "";
       const nextTagIds =
         isEnabled && promotionTagId

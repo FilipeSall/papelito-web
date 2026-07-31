@@ -49,6 +49,6 @@ export const PRODUCT_NOTICES = {
   saved: "Produto salvo.",
   coverUpdated: "Imagem principal atualizada.",
   secondaryAdded: "Foto secundária adicionada.",
-  tagApplied: "Tag já existente aplicada ao produto.",
-  tagCreated: "Tag criada.",
+  tagApplied: "Tag aplicada ao produto. Salve o produto para confirmar.",
+  tagCreated: "Tag criada e aplicada ao produto. Salve o produto para confirmar.",
 } as const;

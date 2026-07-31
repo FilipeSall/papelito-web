@@ -5,10 +5,12 @@ import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import {
-  getCategorySlugsForTypes,
+  getCategoryFilterForTypes,
+  getCategoryTypeBySlug,
   getTabCounts,
 } from "./get-wp-product-categories";
 import { fetchWpProductsSafe, mapWpProductToCatalogItem } from "./wp-catalog";
+import { SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
@@ -103,17 +105,10 @@ function normalizeSelectedTypes(
   type: GetProductsCatalogInput["type"],
 ) {
   if (Array.isArray(selectedTypes) && selectedTypes.length > 0) {
-    const allowed: Exclude<ProductTypeId, "todos">[] = [
-      "sedas",
-      "piteiras",
-      "filtros",
-      "acessorios",
-    ];
-
     const normalized = selectedTypes.filter(
       (item): item is Exclude<ProductTypeId, "todos"> =>
         typeof item === "string" &&
-        allowed.includes(item as Exclude<ProductTypeId, "todos">),
+        SPECIFIC_PRODUCT_TYPES.includes(item as Exclude<ProductTypeId, "todos">),
     );
 
     return Array.from(new Set(normalized));
@@ -295,6 +290,34 @@ async function requestProductsCatalogMockFile() {
   return JSON.parse(raw) as ProductsMockFile;
 }
 
+interface EmptyPayloadInput {
+  tabs: ProductsCatalogTab[];
+  selectedTypes: Exclude<ProductTypeId, "todos">[];
+  activeType: ProductTypeId;
+  activeCollection: ProductCollectionId;
+  minPrice: number | null;
+  maxPrice: number | null;
+  perPage: number;
+}
+
+function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
+  return {
+    items: [],
+    tabs: input.tabs,
+    selectedTypes: input.selectedTypes,
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+    activeType: input.activeType,
+    activeCollection: input.activeCollection,
+    totalItems: 0,
+    totalPages: 1,
+    currentPage: 1,
+    perPage: input.perPage,
+    coverageCep: null,
+    coverageStatus: "not_requested",
+  };
+}
+
 export async function getProductsCatalog(
   input: GetProductsCatalogInput = {},
 ): Promise<ProductsCatalogPayload> {
@@ -331,25 +354,12 @@ export async function getProductsCatalog(
       })),
     ];
   } else {
-    const categorySlugsPromise =
-      selectedTypes.length > 0 ? getCategorySlugsForTypes(selectedTypes) : Promise.resolve([]);
-
-    const [categorySlugs, tabCounts] = await Promise.all([
-      categorySlugsPromise,
+    const [categoryFilter, typeBySlug, tabCounts] = await Promise.all([
+      getCategoryFilterForTypes(selectedTypes),
+      getCategoryTypeBySlug(),
       getTabCounts(),
     ]);
 
-    const wpProducts = await fetchWpProductsSafe(
-      {
-        first: fetchFirst,
-        categoryIn: categorySlugs,
-        minPrice,
-        maxPrice,
-      },
-      "products-catalog",
-    );
-
-    fetchedItems = wpProducts.map(mapWpProductToCatalogItem);
     tabs = [
       { id: "todos", label: TYPE_LABEL.todos, count: tabCounts.todos },
       ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
@@ -358,10 +368,41 @@ export async function getProductsCatalog(
         count: tabCounts[type],
       })),
     ];
+
+    if (categoryFilter.unresolved.length > 0) {
+      console.warn(
+        "[products-catalog] Categoria sem termo correspondente no WordPress; nenhum produto será listado.",
+        categoryFilter.unresolved.join(", "),
+      );
+
+      return buildEmptyPayload({
+        tabs,
+        selectedTypes,
+        activeType,
+        activeCollection,
+        minPrice,
+        maxPrice,
+        perPage,
+      });
+    }
+
+    const wpProducts = await fetchWpProductsSafe(
+      {
+        first: fetchFirst,
+        categoryIn: selectedTypes.length > 0 ? categoryFilter.slugs : undefined,
+        minPrice,
+        maxPrice,
+      },
+      "products-catalog",
+    );
+
+    fetchedItems = wpProducts.map((product, index) =>
+      mapWpProductToCatalogItem(product, index, typeBySlug),
+    );
   }
 
   const typeFilteredItems =
-    selectedTypes.length === 0 || !useMockData
+    selectedTypes.length === 0
       ? fetchedItems
       : fetchedItems.filter((item) => selectedTypes.includes(item.type));
 

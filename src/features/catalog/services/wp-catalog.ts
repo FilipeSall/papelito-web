@@ -10,6 +10,10 @@ import type { ProductTypeId, ProductsCatalogItem } from "../types/products-catal
 import { PRODUCTS_LIST_QUERY, PRODUCT_QUERY } from "../queries/products";
 import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
 import {
+  normalizeTaxonomyText,
+  type SpecificProductTypeId,
+} from "../utils/product-type-taxonomy";
+import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
 } from "../utils/resolve-product-image";
@@ -22,7 +26,7 @@ interface WpProductCategoryNode {
   slug?: string | null;
 }
 
-interface WpProductNode {
+export interface WpProductNode {
   __typename?: string | null;
   id: string;
   databaseId: number;
@@ -169,8 +173,31 @@ function getCategories(product: WpProductNode) {
     .filter((category) => category.name || category.slug);
 }
 
-function inferType(product: WpProductNode): Exclude<ProductTypeId, "todos"> {
-  const categoryText = getCategories(product)
+export type ProductTypeBySlug = ReadonlyMap<string, SpecificProductTypeId>;
+
+/**
+ * A taxonomia manda: o tipo vem da categoria raiz do `product_cat` do produto.
+ * O nome só entra quando nenhuma das categorias do produto está mapeada.
+ */
+function inferType(
+  product: WpProductNode,
+  typeBySlug?: ProductTypeBySlug,
+): Exclude<ProductTypeId, "todos"> {
+  const categories = getCategories(product);
+
+  if (typeBySlug) {
+    for (const category of categories) {
+      const fromTaxonomy =
+        typeBySlug.get(normalizeTaxonomyText(category.slug)) ??
+        typeBySlug.get(normalizeTaxonomyText(category.name));
+
+      if (fromTaxonomy) {
+        return fromTaxonomy;
+      }
+    }
+  }
+
+  const categoryText = categories
     .map((category) => `${category.name} ${category.slug}`)
     .join(" ");
 
@@ -247,6 +274,10 @@ function hasValidShippingData(product: WpProductNode) {
   );
 }
 
+export function isCatalogProductVisible(product: WpProductNode) {
+  return hasValidShippingData(product) && resolvePrices(product).price > 0;
+}
+
 export interface FetchWpProductsInput {
   first?: number;
   after?: string | null;
@@ -271,7 +302,13 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     variables.after = normalized.after;
   }
 
-  if (normalized.categoryIn && normalized.categoryIn.length > 0) {
+  // `categoryIn` presente e vazio significa "nenhuma categoria corresponde", nunca
+  // "sem filtro": omitir a cláusula devolveria o catálogo inteiro sob a categoria errada.
+  if (normalized.categoryIn) {
+    if (normalized.categoryIn.length === 0) {
+      return [] as WpProductNode[];
+    }
+
     variables.categoryIn = normalized.categoryIn;
   }
 
@@ -292,7 +329,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     tags: ["wp:products"],
   });
 
-  return (data.products?.nodes ?? []).filter(hasValidShippingData);
+  return (data.products?.nodes ?? []).filter(isCatalogProductVisible);
 }
 
 export async function fetchWpProductsSafe(
@@ -340,7 +377,7 @@ export async function fetchWpProductByDatabaseId(id: string) {
 
   const product = data.product ?? null;
 
-  if (!product || !hasValidShippingData(product)) {
+  if (!product || !isCatalogProductVisible(product)) {
     return null;
   }
 
@@ -350,8 +387,9 @@ export async function fetchWpProductByDatabaseId(id: string) {
 export function mapWpProductToCatalogItem(
   product: WpProductNode,
   index: number,
+  typeBySlug?: ProductTypeBySlug,
 ): ProductsCatalogItem {
-  const type = inferType(product);
+  const type = inferType(product, typeBySlug);
   const prices = resolvePrices(product);
 
   return {
@@ -441,8 +479,9 @@ function buildProductGallery(product: WpProductNode) {
 export function mapWpProductToDetailItem(
   product: WpProductNode,
   relatedProducts: WpProductNode[],
+  typeBySlug?: ProductTypeBySlug,
 ): ProductDetailItem {
-  const type = inferType(product);
+  const type = inferType(product, typeBySlug);
   const prices = resolvePrices(product);
   const galleryImages = buildProductGallery(product);
   const primaryImage = resolveImage(product) ?? galleryImages[0]?.image;
@@ -467,7 +506,7 @@ export function mapWpProductToDetailItem(
     galleryImages,
     relatedThumbs: relatedProducts
       .filter((item) => item.databaseId !== product.databaseId)
-      .filter((item) => inferType(item) === type)
+      .filter((item) => inferType(item, typeBySlug) === type)
       .slice(0, 4)
       .map(mapWpProductToRelatedThumb),
   };

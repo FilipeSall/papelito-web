@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
+import { getCategoryTypeBySlug } from "./get-wp-product-categories";
 import {
   fetchWpProductByDatabaseId,
   fetchWpProducts,
@@ -152,16 +153,17 @@ async function requestProductsMockFile() {
 
 export async function getProductDetail(id: string): Promise<ProductDetailItem | null> {
   if (!isMockDataEnabled()) {
-    const [product, allProducts] = await Promise.all([
+    const [product, allProducts, typeBySlug] = await Promise.all([
       fetchWpProductByDatabaseId(id),
       fetchWpProducts(64),
+      getCategoryTypeBySlug(),
     ]);
 
     if (!product) {
       return null;
     }
 
-    return mapWpProductToDetailItem(product, allProducts);
+    return mapWpProductToDetailItem(product, allProducts, typeBySlug);
   }
 
   const mockFile = await requestProductsMockFile();

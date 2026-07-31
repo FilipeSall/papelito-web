@@ -59,6 +59,24 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/admin/products?focus=321&issue=missing-weight");
   });
 
+  it("consolidates missing price and weight into one admin notification", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "product_data_incomplete",
+        payload: {
+          missing_price: true,
+          missing_weight: true,
+          product_id: 321,
+          product_name: "Dichavador Brilho",
+        },
+      }),
+    );
+
+    expect(formatted.title).toBe("Cadastro de produto incompleto");
+    expect(formatted.body).toContain("sem preço e sem peso");
+    expect(formatted.href).toBe("/admin/products?focus=321&issue=product-data-incomplete");
+  });
+
   it("links a vendor interest notification to its detail inside Vendors", () => {
     const formatted = formatNotification(
       buildNotification({

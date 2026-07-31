@@ -13,6 +13,7 @@ import type {
 import {
   canViewProduct,
   getFrontendProductHref,
+  shouldHighlightPriceField,
   shouldHighlightShippingField,
 } from "../helpers";
 import { AdminSelectField } from "./admin-select-field";
@@ -40,6 +41,7 @@ type ProductEditorModalProps = Pick<
   | "isUploading"
   | "moveImageToCover"
   | "newTagName"
+  | "notice"
   | "removeImage"
   | "selectedProduct"
   | "selectedProductId"
@@ -66,6 +68,7 @@ export function ProductEditorModal({
   isUploading,
   moveImageToCover,
   newTagName,
+  notice,
   onClose,
   removeImage,
   selectedProduct,
@@ -149,10 +152,21 @@ export function ProductEditorModal({
           <ModalHeader
             draftName={draft.name}
             isSaving={isSaving}
+            isUploading={isUploading}
             onSave={handleSave}
             selectedProduct={selectedProduct}
             selectedProductId={selectedProductId}
           />
+
+          {notice ? (
+            <p
+              aria-live="polite"
+              className="border-b border-[#d4c8a4] bg-white px-6 py-3 text-sm text-[#231f20]/78"
+              role="status"
+            >
+              {notice}
+            </p>
+          ) : null}
 
           <div className="grid max-h-[calc(100vh-8rem)] gap-6 overflow-y-auto p-6 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
             <div className="space-y-6">
@@ -216,12 +230,14 @@ type DraftUpdater = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K
 function ModalHeader({
   draftName,
   isSaving,
+  isUploading,
   onSave,
   selectedProduct,
   selectedProductId,
 }: {
   draftName: string;
   isSaving: boolean;
+  isUploading: boolean;
   onSave: () => void | Promise<boolean>;
   selectedProduct: UseAdminProductsManagerReturn["selectedProduct"];
   selectedProductId: UseAdminProductsManagerReturn["selectedProductId"];
@@ -249,7 +265,7 @@ function ModalHeader({
         ) : null}
         <button
           className="inline-flex min-h-10 cursor-pointer items-center justify-center border border-brand-yellow bg-brand-yellow px-6 text-sm font-semibold -tracking-tight text-[#231f20] transition hover:bg-[#ead300] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSaving}
+          disabled={isSaving || isUploading}
           onClick={() => void onSave()}
           type="button"
         >
@@ -312,10 +328,13 @@ function PricingSection({
   onTogglePromotion: (isEnabled: boolean) => void;
   updateDraft: DraftUpdater;
 }) {
+  const hasInvalidRegularPrice = shouldHighlightPriceField(draft.regularPrice);
+
   return (
     <ModalSection title="Precificacao">
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
+          error={hasInvalidRegularPrice}
           inputMode="decimal"
           label="Preço Regular (R$)"
           onChange={(value) => updateDraft("regularPrice", value)}
@@ -328,6 +347,11 @@ function PricingSection({
           value={draft.salePrice}
         />
       </div>
+      {hasInvalidRegularPrice ? (
+        <p className="text-xs font-medium text-[#b42318]" role="alert">
+          Informe um preço válido. Produtos sem preço não são exibidos no catálogo.
+        </p>
+      ) : null}
       <PromotionToggle isEnabled={isPromotionEnabled} onChange={onTogglePromotion} />
       {isPromotionEnabled ? (
         <div className="grid gap-4 md:grid-cols-2">

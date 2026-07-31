@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { mapWpProductToDetailItem } from "./wp-catalog";
+import {
+  isCatalogProductVisible,
+  mapWpProductToCatalogItem,
+  mapWpProductToDetailItem,
+} from "./wp-catalog";
 
 function buildProduct(description: string) {
   return {
@@ -54,5 +58,75 @@ describe("mapWpProductToDetailItem — descrição", () => {
     expect(describeOf("")).toBe(
       "Seda Tradicional Mini Size com qualidade premium para o seu dia a dia.",
     );
+  });
+});
+
+describe("isCatalogProductVisible", () => {
+  const product = {
+    databaseId: 1,
+    height: "3",
+    id: "gid://1",
+    length: "16",
+    name: "Produto",
+    price: "R$ 10,00",
+    slug: "produto",
+    weight: "0.4",
+    width: "11",
+  };
+
+  it("keeps a product with a valid price in the catalog", () => {
+    expect(isCatalogProductVisible(product)).toBe(true);
+  });
+
+  it("keeps a product without a price out of the catalog", () => {
+    expect(isCatalogProductVisible({ ...product, price: "", regularPrice: "", salePrice: "" })).toBe(false);
+  });
+});
+
+describe("mapWpProductToCatalogItem — tipo do produto", () => {
+  const typeBySlug = new Map<string, "sedas" | "piteiras" | "filtros" | "acessorios">([
+    ["papel", "sedas"],
+    ["hemp", "sedas"],
+    ["acessorios", "acessorios"],
+    ["tubelito", "acessorios"],
+  ]);
+
+  function buildNode(name: string, categorySlugs: string[]) {
+    return {
+      id: `gid://${name}`,
+      databaseId: 1,
+      name,
+      slug: "produto",
+      price: "R$ 90,00",
+      productCategories: {
+        nodes: categorySlugs.map((slug) => ({ slug, name: slug })),
+      },
+    };
+  }
+
+  it("usa a taxonomia, não o nome do produto", () => {
+    const item = mapWpProductToCatalogItem(
+      buildNode("Seda Especial", ["acessorios", "tubelito"]),
+      0,
+      typeBySlug,
+    );
+
+    expect(item.type).toBe("acessorios");
+  });
+
+  it("classifica seda cadastrada na raiz Papel", () => {
+    const item = mapWpProductToCatalogItem(buildNode("Papel Fino", ["hemp", "papel"]), 0, typeBySlug);
+
+    expect(item.type).toBe("sedas");
+  });
+
+  it("cai no nome só quando nenhuma categoria do produto está mapeada", () => {
+    const item = mapWpProductToCatalogItem(
+      buildNode("Piteira Longa", ["sem-categoria"]),
+      0,
+      typeBySlug,
+    );
+
+    expect(item.type).toBe("piteiras");
   });
 });

@@ -26,6 +26,12 @@ Este documento existe porque a home e o catálogo já foram lentos, o motivo foi
 
 **A query de listagem é leve.** `PRODUCTS_LIST_QUERY` não deve voltar a carregar descrição completa, galeria e SKU — esses campos pertencem à query de detalhe.
 
+**O tipo de produto vem da categoria raiz do `product_cat`, por mapa explícito.** Os ids da UI (`sedas`, `piteiras`, `filtros`, `acessorios`) nunca foram slugs do WordPress — a raiz das sedas se chama `Papel` e a dos filtros `Filtro`. A tradução vive em `ROOT_CATEGORY_ALIASES`, em [`src/features/catalog/utils/product-type-taxonomy.ts`](../../src/features/catalog/utils/product-type-taxonomy.ts), e as subcategorias herdam o tipo da raiz via `parentDatabaseId`. **Não volte a classificar categoria por substring do nome** (`includes("seda")`, com `acessorios` de fallback): esse desenho fazia toda categoria desconhecida cair em ACESSÓRIOS e o filtro de Acessórios listar as sedas. Raiz fora do mapa fica **sem tipo** — o produto aparece só em TODOS, nunca em outra aba.
+
+**O filtro de categoria é fail-closed.** Se a categoria pedida não resolve em nenhum termo — WPGraphQL indisponível, termo renomeado ou removido — a listagem devolve **zero produtos** com `console.warn`, nunca o catálogo inteiro. Em `fetchWpProducts`, `categoryIn` presente e vazio significa "nenhuma categoria corresponde": a cláusula não pode ser omitida da query. O filtro por tipo também roda sobre os itens já mapeados (`get-products-catalog.ts`), como segunda barreira — é uma exceção deliberada ao fail-open do catálogo, porque aqui o erro não é "faltou marcação regional", é "a aba mostra produto de outra categoria".
+
+**Contagem das abas conta a raiz, não a árvore.** Produto fica atribuído à raiz *e* à subcategoria; somar todos os termos conta duas vezes (dava `todos: 62` para 40 produtos).
+
 ## Onde a validação de verdade acontece
 
 A marcação visual de disponibilidade **não é** controle de acesso. A validação definitiva de vendor e estoque acontece no fluxo de carrinho e checkout, e depois na reserva transacional no WordPress. Ver [`../../../docs/flows/cart-and-checkout.md`](../../../docs/flows/cart-and-checkout.md).

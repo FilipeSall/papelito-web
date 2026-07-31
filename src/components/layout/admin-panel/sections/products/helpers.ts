@@ -24,6 +24,34 @@ export function formatMoney(value: string) {
   return parsed > 0 ? formatCurrency(parsed) : "Sem preço";
 }
 
+export function hasValidProductPrice(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return false;
+  }
+
+  const normalized = value
+    .trim()
+    .replace(/^R\$\s*/i, "")
+    .replace(/\s/g, "");
+
+  if (!/^(?:\d+|\d{1,3}(?:[.,]\d{3})+)(?:[.,]\d{1,2})?$/.test(normalized)) {
+    return false;
+  }
+
+  return parseMoney(normalized) > 0;
+}
+
+export function shouldHighlightPriceField(value: string | null | undefined) {
+  return !hasValidProductPrice(value);
+}
+
+export function normalizeShippingMeasure(value: string | null | undefined) {
+  const normalized = value?.trim().replace(",", ".") ?? "";
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : "";
+}
+
 export function productToDraft(product: AdminProduct): ProductDraft {
   return {
     categoryIds: product.categories.map((category) => String(category.id)),
@@ -77,9 +105,9 @@ export function buildPayload(draft: ProductDraft) {
     dateOnSaleTo: draft.dateOnSaleTo || null,
     description: draft.description,
     dimensions: {
-      height: draft.height,
-      length: draft.length,
-      width: draft.width,
+      height: normalizeShippingMeasure(draft.height),
+      length: normalizeShippingMeasure(draft.length),
+      width: normalizeShippingMeasure(draft.width),
     },
     images: draft.imageIds.map(Number),
     name: draft.name,
@@ -90,7 +118,7 @@ export function buildPayload(draft: ProductDraft) {
     slug: draft.slug,
     status: draft.status,
     tags: draft.tagIds.map(Number),
-    weight: draft.weight,
+    weight: normalizeShippingMeasure(draft.weight),
   };
 }
 

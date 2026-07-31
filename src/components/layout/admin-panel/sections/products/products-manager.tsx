@@ -16,6 +16,7 @@ const TOAST_REMOVE_DELAY_MS = 2900;
 type ToastState = {
   description: string;
   title: string;
+  tone: "error" | "success";
 } | null;
 
 export function ProductsManager({
@@ -23,37 +24,15 @@ export function ProductsManager({
   snapshot,
   initialFocusProductId = null,
 }: {
-  initialIssue?: "missing-weight" | null;
+  initialIssue?: "missing-weight" | "product-data-incomplete" | null;
   snapshot: AdminProductsSnapshot;
   initialFocusProductId?: number | null;
 }) {
-  const manager = useAdminProductsManager(snapshot, { initialFocusProductId });
   const [toast, setToast] = useState<ToastState>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastEnterFrameRef = useRef<number | null>(null);
-  const {
-    appliedFilters,
-    catalogSummary,
-    categories,
-    closeEditor,
-    filters,
-    isEditorOpen,
-    isLoading,
-    issues,
-    loadProducts,
-    notice,
-    page,
-    perPage,
-    products,
-    selectProduct,
-    startNewProduct,
-    totalPages,
-    totalProducts,
-    updateFilter,
-  } = manager;
-
   useEffect(() => {
     return () => {
       if (toastHideTimerRef.current) {
@@ -95,6 +74,35 @@ export function ProductsManager({
     }, TOAST_REMOVE_DELAY_MS);
   }, []);
 
+  const manager = useAdminProductsManager(snapshot, {
+    initialFocusProductId,
+    onUploadError: (description) => {
+      showToast({
+        description,
+        title: "Não foi possível enviar a imagem.",
+        tone: "error",
+      });
+    },
+  });
+  const {
+    appliedFilters,
+    catalogSummary,
+    categories,
+    closeEditor,
+    filters,
+    isEditorOpen,
+    isLoading,
+    loadProducts,
+    page,
+    perPage,
+    products,
+    selectProduct,
+    startNewProduct,
+    totalPages,
+    totalProducts,
+    updateFilter,
+  } = manager;
+
   const dismissToast = useCallback(() => {
     if (toastHideTimerRef.current) {
       clearTimeout(toastHideTimerRef.current);
@@ -120,6 +128,7 @@ export function ProductsManager({
       description:
         "As alterações do produto foram aplicadas no catálogo administrativo e já estão prontas para nova revisão ou publicacao.",
       title: "Alterações salvas com sucesso.",
+      tone: "success",
     });
     return true;
   }, [manager, showToast]);
@@ -128,12 +137,6 @@ export function ProductsManager({
     <>
       <div className="space-y-5">
       <ProductsHeader />
-
-      {(issues.length > 0 || notice) && (
-        <div className="rounded-[18px] border border-[#cfbf80] bg-[#fff6bf] px-4 py-4 text-sm leading-6 text-[#231f20] shadow-[0_10px_30px_rgba(207,191,128,0.16)]">
-          {[notice, ...issues].filter(Boolean).join(" ")}
-        </div>
-      )}
 
       <CatalogStats
         page={page}
@@ -185,6 +188,7 @@ export function ProductsManager({
           isUploading={manager.isUploading}
           moveImageToCover={manager.moveImageToCover}
           newTagName={manager.newTagName}
+          notice={manager.notice}
           onClose={closeEditor}
           removeImage={manager.removeImage}
           selectedProduct={manager.selectedProduct}
@@ -203,6 +207,7 @@ export function ProductsManager({
           description={toast.description}
           onClose={dismissToast}
           title={toast.title}
+          tone={toast.tone}
           visible={toastVisible}
         />
       ) : null}

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     });
     revalidateTag("admin-products", "max");
     revalidateTag("wp:products", "max");
+    revalidateTag("wp:categories", "max");
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível criar o produto.";

@@ -36,6 +36,7 @@ export async function PATCH(
     const product = await updateAdminProduct(auth.accessToken, parsedProductId, payload);
     revalidateTag("admin-products", "max");
     revalidateTag("wp:products", "max");
+    revalidateTag("wp:categories", "max");
     revalidateTag(`wp:product:${parsedProductId}`, "max");
     return NextResponse.json({ product });
   } catch (error) {

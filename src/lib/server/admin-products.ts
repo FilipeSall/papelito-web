@@ -214,6 +214,13 @@ function normalizeTaxonomyKey(term: AdminProductTaxonomyTerm) {
     .replace(/^-+|-+$/g, "");
 }
 
+function hasTaxonomyKey(term: AdminProductTaxonomyTerm, key: string) {
+  return (
+    normalizeTaxonomyKey(term) === key ||
+    normalizeTaxonomyKey({ ...term, slug: "" }) === key
+  );
+}
+
 function mapTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
   if (!term.id) {
     return null;
@@ -469,17 +476,23 @@ export async function getAdminProductsSnapshot(
   const rawTags = tagsResult.ok
     ? tagsResult.data.map(mapTaxonomyTerm).filter(Boolean) as AdminProductTaxonomyTerm[]
     : [];
+  const rawProducts = productsResult.ok
+    ? productsResult.data
+        .map(mapProduct)
+        .filter((product) => product.id > 0)
+    : [];
   const categoriesDedupe = dedupeTaxonomyTerms(rawCategories, {
     allowedKeys: OFFICIAL_CATEGORY_KEYS,
   });
-  const tagsDedupe = dedupeTaxonomyTerms(rawTags);
+  const tagsDedupe = dedupeTaxonomyTerms([
+    ...rawTags,
+    ...rawProducts.flatMap((product) => product.tags),
+  ]);
   const categories = categoriesDedupe.terms;
   const tags = tagsDedupe.terms;
 
   if (productsResult.ok) {
-    products = productsResult.data
-      .map(mapProduct)
-      .filter((product) => product.id > 0)
+    products = rawProducts
       .map((product) =>
         remapProductTerms(
           remapProductTerms(product, "categories", categoriesDedupe.idMap),
@@ -567,6 +580,35 @@ export async function createAdminProductTag(
     throw new Error("Nome da tag e obrigatório.");
   }
 
+  const tagKey = normalizeTaxonomyKey({ id: 0, name, parent: 0, slug: "" });
+  const tagSearch = new URLSearchParams({
+    order: "asc",
+    orderby: "name",
+    per_page: "100",
+    search: name,
+  });
+  const findExistingTag = async () => {
+    const existingResult = await wpRest<WcProductTerm[]>(
+      `/wc/v3/products/tags?${tagSearch.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!existingResult.ok) {
+      throw new Error(existingResult.error.message);
+    }
+
+    return existingResult.data
+      .map(mapTaxonomyTerm)
+      .filter(Boolean)
+      .find((term) => hasTaxonomyKey(term as AdminProductTaxonomyTerm, tagKey)) ?? null;
+  };
+
+  const existingTag = await findExistingTag();
+
+  if (existingTag) {
+    return existingTag;
+  }
+
   const result = await wpRest<WcProductTerm>("/wc/v3/products/tags", {
     headers: { Authorization: `Bearer ${accessToken}` },
     json: {
@@ -576,6 +618,14 @@ export async function createAdminProductTag(
   });
 
   if (!result.ok) {
+    if (result.status === 400 || result.status === 409) {
+      const concurrentlyCreatedTag = await findExistingTag();
+
+      if (concurrentlyCreatedTag) {
+        return concurrentlyCreatedTag;
+      }
+    }
+
     throw new Error(result.error.message);
   }
 
@@ -588,29 +638,45 @@ export async function createAdminProductTag(
   return tag;
 }
 
+export class AdminProductMediaUploadError extends Error {
+  constructor(
+    readonly status: number,
+    readonly wordpressCode: string | null,
+  ) {
+    super("WordPress não conseguiu armazenar a imagem.");
+  }
+}
+
+export function isAdminProductMediaUploadError(
+  error: unknown,
+): error is AdminProductMediaUploadError {
+  return error instanceof AdminProductMediaUploadError;
+}
+
 export async function uploadAdminProductMedia(accessToken: string, file: File) {
   const safeName = file.name.replace(/[^\w.\-]+/g, "-") || "produto.jpg";
   const url = `${getWpRestBase().replace(/\/$/, "")}/wp/v2/media`;
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const body = new FormData();
+  body.append("file", file, safeName);
   const response = await fetch(url, {
-    body: buffer,
+    body,
     cache: "no-store",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Disposition": `attachment; filename="${safeName}"`,
-      "Content-Type": file.type || "application/octet-stream",
     },
     method: "POST",
   });
 
-  const json = (await response.json().catch(() => null)) as WpMediaResponse | { message?: string } | null;
+  const json = (await response.json().catch(() => null)) as
+    | WpMediaResponse
+    | { code?: string; message?: string }
+    | null;
 
   if (!response.ok) {
-    const message =
-      json && "message" in json && json.message
-        ? json.message
-        : "Não foi possível enviar a imagem ao WordPress.";
-    throw new Error(message);
+    throw new AdminProductMediaUploadError(
+      response.status,
+      json && "code" in json && typeof json.code === "string" ? json.code : null,
+    );
   }
 
   const media = json as WpMediaResponse | null;
