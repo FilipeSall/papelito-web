@@ -19,15 +19,23 @@ export async function POST(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
-  const response = await fetch(`${getWpRestBase()}/papelito/v1/profile/me/orders/${id}/receipt/email`, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${session.accessToken}`,
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  });
+  const base = getWpRestBase().replace(/\/$/, "");
+  let response: Response;
+
+  try {
+    response = await fetch(`${base}/papelito/v1/profile/me/orders/${id}/receipt/email`, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  } catch {
+    return NextResponse.json({ message: "Nao foi possivel enviar o recibo." }, { status: 502 });
+  }
+
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {

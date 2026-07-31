@@ -9,10 +9,10 @@ import {
   getPaymentExpiresAt,
 } from "@/features/orders/utils/payment-deadline";
 import {
+  OrderDocumentsSection,
   OrderStatusBadge,
   OrderTrackingCopyButton,
 } from "@/components/layout/profile-page";
-import { OrderReceiptActions } from "@/components/layout/profile-page/order-receipt-actions";
 import { OrderStatusAutoRefresh } from "@/components/layout/order-status-auto-refresh";
 
 type OrderDetailPageProps = {
@@ -46,7 +46,6 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   const awaitingPayment = order.status === "awaiting_payment";
   const expiredPayment = order.status === "expired";
-  const paymentConfirmed = order.payment.state === "paid" || order.payment.state === "captured";
   const paymentDeadline = awaitingPayment
     ? formatPaymentDeadline(getPaymentExpiresAt(order.payment), currentTimestamp())
     : null;
@@ -122,7 +121,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   <code className="font-mono text-sm font-bold tracking-[1.4px] text-brand-dark">
                     {order.tracking.code}
                   </code>
-                  <OrderTrackingCopyButton code={order.tracking.code} />
+                  <OrderTrackingCopyButton value={order.tracking.code} />
                 </div>
               ) : (
                 <p className="mt-4 rounded-[14px] bg-bg-light px-4 py-3 text-sm text-gray-500">
@@ -165,7 +164,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                       <p className="text-xs font-black text-brand-dark">Pacote {index + 1}</p>
                       <div className="mt-1 flex items-center justify-between gap-3">
                         <code className="font-mono text-xs font-bold tracking-[1px] text-brand-dark">{shipment.code}</code>
-                        <OrderTrackingCopyButton code={shipment.code} />
+                        <OrderTrackingCopyButton value={shipment.code} />
                       </div>
                       <a className="mt-2 inline-flex text-xs font-bold text-brand-dark underline" href={`https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(shipment.code)}`} rel="noreferrer" target="_blank">Acompanhar pacote nos Correios</a>
                       {shipment.lastEventDescription ? (
@@ -397,8 +396,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 </div>
               ) : null}
 
-              {paymentConfirmed ? <OrderReceiptActions orderId={order.id} /> : null}
             </article>
+
+            <OrderDocumentsSection orderId={order.id} receipt={order.receipt} />
 
             <article className="rounded-2xl bg-brand-yellow p-5">
               <p className="text-base font-black text-brand-dark">{order.storeLabel}</p>

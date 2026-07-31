@@ -17,7 +17,7 @@ vi.mock("@/lib/server/wp-rest", () => ({
   wpRest: wpRestMock,
 }));
 
-import { getProfileOrders, resolveStatus } from "./get-profile-order-detail";
+import { getProfileOrderDetail, getProfileOrders, resolveStatus } from "./get-profile-order-detail";
 
 describe("resolveStatus", () => {
   it("marks unpaid orders with expired payment state as expired", () => {
@@ -128,5 +128,35 @@ describe("getProfileOrders", () => {
     expect(snapshot.items).toHaveLength(2);
     expect(snapshot.items[0]?.status).toBe("expired");
     expect(snapshot.items[1]?.status).toBe("awaiting_shipment");
+  });
+});
+
+describe("getProfileOrderDetail", () => {
+  beforeEach(() => {
+    getServerSessionMock.mockReset();
+    wpRestMock.mockReset();
+  });
+
+  it("maps the receipt summary returned by the customer order detail", async () => {
+    getServerSessionMock.mockResolvedValue({ accessToken: "token" });
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 42,
+        receipt: {
+          available: true,
+          issued_at: "03/07/2026 09:31",
+          number: "PPL-2026-000482",
+        },
+      },
+    });
+
+    await expect(getProfileOrderDetail("42")).resolves.toMatchObject({
+      receipt: {
+        available: true,
+        issuedAtLabel: "03/07/2026 09:31",
+        number: "PPL-2026-000482",
+      },
+    });
   });
 });

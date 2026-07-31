@@ -3,18 +3,22 @@
 import { useState } from "react";
 
 type OrderTrackingCopyButtonProps = {
-  code: string;
+  value: string;
+  label?: string;
 };
 
 /**
- * Botão que copia o código de rastreio para a área de transferência.
+ * Botão que copia um identificador do pedido para a área de transferência.
  */
-export function OrderTrackingCopyButton({ code }: OrderTrackingCopyButtonProps) {
+export function OrderTrackingCopyButton({
+  value,
+  label = "Copiar código de rastreamento",
+}: OrderTrackingCopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
@@ -24,7 +28,7 @@ export function OrderTrackingCopyButton({ code }: OrderTrackingCopyButtonProps) 
 
   return (
     <button
-      aria-label="Copiar código de rastreamento"
+      aria-label={label}
       className="inline-flex size-6 items-center justify-center rounded text-gray-500 transition hover:bg-gray-200 hover:text-brand-dark"
       onClick={handleCopy}
       type="button"

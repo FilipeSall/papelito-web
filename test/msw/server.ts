@@ -7,6 +7,7 @@ import { cepHandlers } from "./handlers/cep";
 import { checkoutHandlers } from "./handlers/checkout";
 import { couponsHandlers } from "./handlers/coupons";
 import { notificationsHandlers } from "./handlers/notifications";
+import { profileOrdersHandlers } from "./handlers/profile-orders";
 
 export const server = setupServer(
   ...authHandlers,
@@ -16,4 +17,5 @@ export const server = setupServer(
   ...checkoutHandlers,
   ...couponsHandlers,
   ...notificationsHandlers,
+  ...profileOrdersHandlers,
 );

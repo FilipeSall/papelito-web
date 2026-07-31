@@ -27,23 +27,31 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
-  const response = await fetch(`${getWpRestBase()}/papelito/v1/profile/me/orders/${id}/receipt`, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/pdf",
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
+  const base = getWpRestBase().replace(/\/$/, "");
+  let response: Response;
+
+  try {
+    response = await fetch(`${base}/papelito/v1/profile/me/orders/${id}/receipt`, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/pdf",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+  } catch {
+    return NextResponse.json({ message: "Não foi possível baixar o recibo." }, { status: 502 });
+  }
 
   if (!response.ok) {
     return errorResponse(response.status, await response.json().catch(() => null));
   }
 
-  return new NextResponse(await response.arrayBuffer(), {
+  return new NextResponse(response.body, {
     headers: {
       "Cache-Control": "private, no-store, max-age=0",
-      "Content-Disposition": response.headers.get("Content-Disposition") ?? `attachment; filename="recibo-pedido-${id}.pdf"`,
-      "Content-Type": "application/pdf",
+      "Content-Disposition":
+        response.headers.get("content-disposition") ?? `attachment; filename="recibo-pedido-${id}.pdf"`,
+      "Content-Type": response.headers.get("content-type") ?? "application/pdf",
       "X-Content-Type-Options": "nosniff",
     },
     status: 200,

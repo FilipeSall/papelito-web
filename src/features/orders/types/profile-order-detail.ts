@@ -63,6 +63,16 @@ export interface ProfileOrderPaymentInfo {
 }
 
 /**
+ * Recibo interno do pedido. `number` é nulo enquanto o recibo não foi emitido;
+ * `available` é a decisão do WordPress sobre liberar o download.
+ */
+export interface ProfileOrderReceipt {
+  number: string | null;
+  available: boolean;
+  issuedAtLabel: string | null;
+}
+
+/**
  * Dados de detalhe exibidos na página de pedido.
  */
 export interface ProfileOrderDetail {
@@ -80,4 +90,5 @@ export interface ProfileOrderDetail {
   shipping: number;
   total: number;
   payment: ProfileOrderPaymentInfo;
+  receipt: ProfileOrderReceipt;
 }

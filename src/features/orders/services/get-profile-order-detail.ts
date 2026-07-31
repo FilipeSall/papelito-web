@@ -7,7 +7,11 @@ import type { OrderStatus } from "@/components/layout/profile-page/order-status-
 import { authOptions } from "@/lib/auth";
 import { wpRest } from "@/lib/server/wp-rest";
 
-import type { ProfileOrderDetail, ProfileOrderTimelineEvent } from "../types/profile-order-detail";
+import type {
+  ProfileOrderDetail,
+  ProfileOrderReceipt,
+  ProfileOrderTimelineEvent,
+} from "../types/profile-order-detail";
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
 
@@ -67,6 +71,11 @@ type WpProfileOrder = {
       expires_at?: string;
     };
   };
+  receipt?: {
+    number?: string | null;
+    available?: boolean;
+    issued_at?: string | null;
+  };
 };
 
 type WpProfileOrdersList = {
@@ -93,6 +102,17 @@ export function mapStatus(status: string | undefined): OrderStatus {
     default:
       return "awaiting_payment";
   }
+}
+
+function receiptInfo(order: WpProfileOrder): ProfileOrderReceipt {
+  const number = typeof order.receipt?.number === "string" ? order.receipt.number.trim() : "";
+  const issuedAt = typeof order.receipt?.issued_at === "string" ? order.receipt.issued_at.trim() : "";
+
+  return {
+    available: order.receipt?.available === true,
+    issuedAtLabel: issuedAt || null,
+    number: number || null,
+  };
 }
 
 function paymentInfo(order: WpProfileOrder) {
@@ -333,6 +353,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     shipping: Number(order.shipping_total) || 0,
     total: Number(order.total) || 0,
     payment: paymentInfo(order),
+    receipt: receiptInfo(order),
   };
 }
 

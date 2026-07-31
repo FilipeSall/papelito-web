@@ -8,22 +8,26 @@ type ReceiptActionsProps = {
 
 export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
   const [message, setMessage] = useState("");
+  const [failed, setFailed] = useState(false);
   const [sending, setSending] = useState(false);
 
   async function sendReceipt() {
     setSending(true);
     setMessage("");
+    setFailed(false);
 
     try {
       const response = await fetch(`/api/profile/orders/${orderId}/receipt/email`, { method: "POST" });
       const body = (await response.json().catch(() => null)) as { message?: string } | null;
 
+      setFailed(!response.ok);
       setMessage(
         response.ok
           ? "Recibo enviado para o seu e-mail."
           : body?.message || "Não foi possível enviar o recibo agora.",
       );
     } catch {
+      setFailed(true);
       setMessage("Não foi possível enviar o recibo agora.");
     } finally {
       setSending(false);
@@ -31,7 +35,7 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
   }
 
   return (
-    <div className="mt-4 border-t border-gray-100 pt-4">
+    <div>
       <a
         className="inline-flex h-10 w-full items-center justify-center rounded-full border border-brand-dark px-5 text-sm font-black uppercase tracking-[0.12em] text-brand-dark transition hover:bg-brand-dark hover:text-white"
         href={`/api/profile/orders/${orderId}/receipt`}
@@ -46,7 +50,14 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
       >
         {sending ? "Enviando..." : "Enviar para meu e-mail"}
       </button>
-      {message ? <p className="mt-2 text-center text-xs font-semibold text-brand-dark">{message}</p> : null}
+      {message ? (
+        <p
+          className={`mt-2 text-center text-xs font-semibold ${failed ? "text-red-600" : "text-brand-dark"}`}
+          role={failed ? "alert" : "status"}
+        >
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }
