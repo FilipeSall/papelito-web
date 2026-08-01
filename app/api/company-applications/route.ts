@@ -30,10 +30,13 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ application: result.data.application }, { status: result.status });
+  // O prefixo __Host- exige o atributo Secure sempre: sem ele o navegador descarta o cookie
+  // silenciosamente, inclusive em localhost, e a retomada da candidatura nunca encontra token.
+  // Chrome e Firefox aceitam cookies Secure em http://localhost, então isso não quebra o dev.
   response.cookies.set(APPLICATION_COOKIE, result.data.resume_token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
