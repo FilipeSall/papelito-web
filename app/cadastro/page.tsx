@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -28,6 +28,15 @@ const benefits = [
   "Acesso antecipado a novidades",
   "Programa de pontos e recompensas",
 ];
+
+function handleCpfChange(event: ChangeEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatCpf(event.currentTarget.value);
+}
+
+function formDataString(formData: FormData, field: string): string {
+  const value = formData.get(field);
+  return typeof value === "string" ? value : "";
+}
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -99,23 +108,19 @@ export default function CadastroPage() {
     };
   }, []);
 
-  function handleCpfChange(event: React.ChangeEvent<HTMLInputElement>) {
-    event.currentTarget.value = formatCpf(event.currentTarget.value);
-  }
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     const formData = new FormData(event.currentTarget);
-    const cpf = formatCpf(String(formData.get("cpf") ?? "")).trim();
-    const cnpj = formatCnpj(String(formData.get("cnpj") ?? "")).trim();
+    const cpf = formatCpf(formDataString(formData, "cpf")).trim();
+    const cnpj = formatCnpj(formDataString(formData, "cnpj")).trim();
     const payload: CadastroStep1Data = {
-      birthDate: String(formData.get("birthDate") ?? ""),
+      birthDate: formDataString(formData, "birthDate"),
       cnpj,
       cpf,
-      name: String(formData.get("name") ?? "").trim(),
-      email: String(formData.get("email") ?? "").trim(),
-      phone: String(formData.get("phone") ?? "").trim(),
+      name: formDataString(formData, "name").trim(),
+      email: formDataString(formData, "email").trim(),
+      phone: formDataString(formData, "phone").trim(),
       intent,
     };
 
@@ -313,7 +318,7 @@ export default function CadastroPage() {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function CheckIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}
