@@ -11,6 +11,7 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
+import { ToastCloseButton } from "@/components/ui/toast-close-button";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
 
@@ -57,10 +58,9 @@ export default function CadastroPage() {
 
   // Colaboradores entram apenas pelo fluxo de convite por e-mail.
   const intent: CadastroIntent = "create_company";
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    searchParams.get("feedback") === "google_account_required"
-      ? "Ainda não encontramos uma conta aprovada para este e-mail Google. Preencha o cadastro para enviar sua candidatura."
-      : null,
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [googleAccountFeedbackVisible, setGoogleAccountFeedbackVisible] = useState(
+    () => searchParams.get("feedback") === "google_account_required",
   );
 
   const intentRef = useRef(intent);
@@ -108,6 +108,12 @@ export default function CadastroPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!googleAccountFeedbackVisible) return;
+    const timeoutId = window.setTimeout(() => setGoogleAccountFeedbackVisible(false), 7000);
+    return () => window.clearTimeout(timeoutId);
+  }, [googleAccountFeedbackVisible]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
@@ -151,6 +157,9 @@ export default function CadastroPage() {
 
   return (
     <div className="flex min-h-screen">
+      {googleAccountFeedbackVisible ? (
+        <GoogleAccountFeedbackToast onClose={() => setGoogleAccountFeedbackVisible(false)} />
+      ) : null}
       <div className="relative hidden items-center justify-center bg-brand-yellow lg:flex lg:h-screen lg:w-1/2 lg:sticky lg:top-0">
         <div className="flex flex-col items-center text-center px-12">
           <Link
@@ -334,5 +343,34 @@ function CheckIcon({ className }: Readonly<{ className?: string }>) {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function GoogleAccountFeedbackToast({ onClose }: Readonly<{ onClose: () => void }>) {
+  return (
+    <aside
+      aria-live="polite"
+      className="fixed right-4 top-24 z-70 w-[min(24rem,calc(100vw-2rem))] md:right-8 md:top-28"
+      role="status"
+    >
+      <div className="relative overflow-hidden rounded-2xl border border-brand-yellow/70 bg-brand-dark p-4 shadow-[0_14px_35px_rgba(35,31,32,0.36)]">
+        <div className="absolute inset-x-0 top-0 h-1 bg-brand-yellow" />
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark">
+            i
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.55px] text-brand-yellow">
+              Conta Google
+            </p>
+            <p className="mt-1 text-sm leading-5 text-white/90">
+              Ainda não encontramos uma conta aprovada para este e-mail Google. Preencha o cadastro
+              para enviar sua candidatura.
+            </p>
+          </div>
+          <ToastCloseButton onClose={onClose} />
+        </div>
+      </div>
+    </aside>
   );
 }

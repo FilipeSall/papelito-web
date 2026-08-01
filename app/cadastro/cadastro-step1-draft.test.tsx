@@ -5,10 +5,11 @@ import CadastroPage from "./page";
 import { CADASTRO_STEP1_DRAFT_KEY, CADASTRO_STORAGE_KEY } from "./shared";
 
 const pushMock = vi.fn();
+let searchParamsValue = "";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => new URLSearchParams(searchParamsValue),
 }));
 
 vi.mock("@/lib/validation/brazilian-documents", () => ({
@@ -64,6 +65,7 @@ function fillStep1() {
 describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
   beforeEach(() => {
     pushMock.mockClear();
+    searchParamsValue = "";
     window.sessionStorage.clear();
   });
 
@@ -136,5 +138,17 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
 
     expect(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY)).not.toBeNull();
     expect(window.sessionStorage.getItem(CADASTRO_STORAGE_KEY)).toBeNull();
+  });
+
+  it("mostra o feedback da conta Google em um toast", () => {
+    searchParamsValue = "feedback=google_account_required";
+
+    render(<CadastroPage />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Ainda não encontramos uma conta aprovada para este e-mail Google.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: /fechar notificação/i }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });
