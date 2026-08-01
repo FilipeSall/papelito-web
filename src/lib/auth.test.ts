@@ -397,5 +397,18 @@ describe("authOptions callbacks", () => {
       expect(first.id).toBe("42");
       expect(second.id).toBe(first.id);
     });
+
+    it("direciona ao cadastro quando o e-mail Google ainda não possui conta", async () => {
+      server.use(
+        http.post("http://localhost:8080/wp-json/papelito/v1/auth/google", () =>
+          HttpResponse.json(
+            { code: "papelito_pre_account_required", message: "Candidatura necessária." },
+            { status: 422 },
+          ),
+        ),
+      );
+
+      await expect(runSignIn()).resolves.toBe("/cadastro?feedback=google_account_required");
+    });
   });
 });

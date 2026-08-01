@@ -191,17 +191,21 @@ function isEmailVerificationError(message: string | undefined) {
   return message === "Confirme seu e-mail antes de entrar.";
 }
 
-async function wpExchangeGoogleToken(idToken: string): Promise<WpAuthResponse | null> {
+type WpGoogleExchangeResult =
+  | { ok: true; data: WpAuthResponse }
+  | { ok: false; code: string };
+
+async function wpExchangeGoogleToken(idToken: string): Promise<WpGoogleExchangeResult> {
   const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/google", {
     json: { id_token: idToken },
   });
 
   if (!result.ok) {
     console.error("[auth] Google → WP exchange failed", result.status, result.error);
-    return null;
+    return { ok: false, code: result.error.code };
   }
 
-  return result.data;
+  return { ok: true, data: result.data };
 }
 
 function clearInvalidAuthState(
@@ -414,9 +418,14 @@ export const authOptions: NextAuthOptions = {
 
       const wpAuth = await wpExchangeGoogleToken(idToken);
 
-      if (!wpAuth) {
+      if (!wpAuth.ok) {
+        if (wpAuth.code === "papelito_pre_account_required") {
+          return "/cadastro?feedback=google_account_required";
+        }
         return false;
       }
+
+      const wpIdentity = wpAuth.data;
 
       const userWithTokens = user as typeof user & {
         accessToken?: string;
@@ -428,13 +437,13 @@ export const authOptions: NextAuthOptions = {
         b2b?: NonNullable<WpAuthIdentityResponse["b2b"]>;
       };
 
-      userWithTokens.id = String(wpAuth.user.databaseId);
-      userWithTokens.accessToken = wpAuth.authToken;
-      userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpAuth.authToken);
-      userWithTokens.refreshToken = wpAuth.refreshToken;
-      userWithTokens.profileComplete = wpAuth.profileComplete;
+      userWithTokens.id = String(wpIdentity.user.databaseId);
+      userWithTokens.accessToken = wpIdentity.authToken;
+      userWithTokens.accessTokenExpires = getAccessTokenExpiresAt(wpIdentity.authToken);
+      userWithTokens.refreshToken = wpIdentity.refreshToken;
+      userWithTokens.profileComplete = wpIdentity.profileComplete;
 
-      const identity = await wpFetchAuthenticatedIdentity(wpAuth.authToken);
+      const identity = await wpFetchAuthenticatedIdentity(wpIdentity.authToken);
       userWithTokens.role = identity.role;
       userWithTokens.b2b = identity.b2b;
 

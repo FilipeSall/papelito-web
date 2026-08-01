@@ -48,7 +48,11 @@ export default function CadastroPage() {
 
   // Colaboradores entram apenas pelo fluxo de convite por e-mail.
   const intent: CadastroIntent = "create_company";
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    searchParams.get("feedback") === "google_account_required"
+      ? "Ainda não encontramos uma conta aprovada para este e-mail Google. Preencha o cadastro para enviar sua candidatura."
+      : null,
+  );
 
   const intentRef = useRef(intent);
 
