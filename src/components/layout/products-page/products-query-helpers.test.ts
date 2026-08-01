@@ -116,4 +116,22 @@ describe("contrato de URL dos filtros", () => {
     expect(params.perPage).toBe("9");
     expect(resolveSelectedTypesFromParams(params).selectedTypes).toEqual(["sedas"]);
   });
+
+  it("preserva a busca ao navegar por filtros e páginas", () => {
+    const href = buildProductsHref({
+      selectedTypes: ["sedas"],
+      minPrice: 10,
+      maxPrice: null,
+      viewMode: "list",
+      perPage: 24,
+      page: 2,
+      search: "Seda trad",
+    });
+
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.get("busca")).toBe("Seda trad");
+    expect(params.get("page")).toBe("2");
+    expect(params.get("tipo")).toBe("sedas");
+    expect(params.get("precoMin")).toBe("10");
+  });
 });

@@ -5,6 +5,7 @@ export const PRODUCTS_QUERY = gql`
     $first: Int = 60
     $after: String
     $categoryIn: [String]
+    $include: [Int]
     $minPrice: Float
     $maxPrice: Float
   ) {
@@ -14,6 +15,7 @@ export const PRODUCTS_QUERY = gql`
       where: {
         status: "publish"
         categoryIn: $categoryIn
+        include: $include
         minPrice: $minPrice
         maxPrice: $maxPrice
       }
@@ -92,6 +94,7 @@ export const PRODUCTS_LIST_QUERY = gql`
     $first: Int = 60
     $after: String
     $categoryIn: [String]
+    $include: [Int]
     $minPrice: Float
     $maxPrice: Float
   ) {
@@ -101,6 +104,7 @@ export const PRODUCTS_LIST_QUERY = gql`
       where: {
         status: "publish"
         categoryIn: $categoryIn
+        include: $include
         minPrice: $minPrice
         maxPrice: $maxPrice
       }

@@ -39,6 +39,7 @@ interface ProductFilterTabsProps {
   maxPrice?: number | null;
   viewMode: ProductsViewMode;
   perPage: number;
+  search?: string;
 }
 
 /**
@@ -62,6 +63,7 @@ export function ProductFilterTabs({
   maxPrice = null,
   viewMode,
   perPage,
+  search,
 }: ProductFilterTabsProps) {
   const typedTabs = tabs.map((tab) => ({
     id: tab.id,
@@ -78,6 +80,7 @@ export function ProductFilterTabs({
       maxPrice,
       viewMode,
       perPage,
+      search,
     });
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -14,7 +14,7 @@ type FlashSaleProductsCarouselProps = {
 
 export function FlashSaleProductsCarousel({
   products,
-}: FlashSaleProductsCarouselProps) {
+}: Readonly<FlashSaleProductsCarouselProps>) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -56,27 +56,12 @@ export function FlashSaleProductsCarousel({
     emblaApi?.scrollNext();
   }, [emblaApi]);
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        scrollNext();
-      }
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        scrollPrev();
-      }
-    },
-    [scrollNext, scrollPrev],
-  );
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end gap-2">
         <button
           aria-label="Produtos anteriores da oferta relâmpago"
-          className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ffe500]/30 bg-white/[0.06] text-[#ffe500] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-[#ffe500] hover:bg-[#ffe500] hover:text-[#231f20] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-white/18"
+          className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-brand-yellow/30 bg-white/6 text-brand-yellow shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-brand-yellow hover:bg-brand-yellow hover:text-brand-dark disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/3 disabled:text-white/18"
           disabled={!canScrollPrev}
           onClick={scrollPrev}
           type="button"
@@ -85,7 +70,7 @@ export function FlashSaleProductsCarousel({
         </button>
         <button
           aria-label="Próximos produtos da oferta relâmpago"
-          className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ffe500]/30 bg-white/[0.06] text-[#ffe500] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-[#ffe500] hover:bg-[#ffe500] hover:text-[#231f20] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-white/18"
+          className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-brand-yellow/30 bg-white/6 text-brand-yellow shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm transition hover:border-brand-yellow hover:bg-brand-yellow hover:text-brand-dark disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/3 disabled:text-white/18"
           disabled={!canScrollNext}
           onClick={scrollNext}
           type="button"
@@ -94,13 +79,10 @@ export function FlashSaleProductsCarousel({
         </button>
       </div>
 
-      <div
+      <section
         aria-label="Carrossel de produtos da oferta relâmpago"
-        className="overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe500] focus-visible:ring-offset-2 focus-visible:ring-offset-[#231f20]"
-        onKeyDown={handleKeyDown}
+        className="overflow-hidden"
         ref={emblaRef}
-        role="region"
-        tabIndex={0}
       >
         <div className="flex gap-4">
           {products.map((product) => (
@@ -112,7 +94,7 @@ export function FlashSaleProductsCarousel({
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -39,7 +39,7 @@ function getCampaignPhaseLabel(campaign: HomeFlashSaleCampaign) {
   return "Nova campanha";
 }
 
-export function FlashSaleSection({ campaign }: FlashSaleSectionProps) {
+export function FlashSaleSection({ campaign }: Readonly<FlashSaleSectionProps>) {
   const phaseLabel = getCampaignPhaseLabel(campaign);
   const shouldUseCarousel = campaign.products.length > 4;
   const displayTitle = campaign.title.trim();

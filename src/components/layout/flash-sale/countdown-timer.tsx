@@ -28,7 +28,7 @@ function Separator() {
  * Componente cliente que calcula o restante a partir do encerramento da
  * campanha. Cada unidade exibe animação de entrada ao trocar de valor.
  */
-export function CountdownTimer({ endsAt }: { endsAt: string }) {
+export function CountdownTimer({ endsAt }: Readonly<{ endsAt: string }>) {
   const [now, setNow] = useState(() => Date.now());
   const [centered, setCentered] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);

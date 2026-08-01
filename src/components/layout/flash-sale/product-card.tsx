@@ -42,7 +42,7 @@ interface ProductCardProps {
 export function ProductCard({
   product,
   compactOnMobile = false,
-}: ProductCardProps) {
+}: Readonly<ProductCardProps>) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     id,

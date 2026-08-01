@@ -13,6 +13,7 @@ interface ProductsPaginationProps {
   maxPrice: number | null;
   viewMode: ProductsViewMode;
   perPage: number;
+  search?: string;
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {
@@ -63,6 +64,7 @@ export function ProductsPagination({
   maxPrice,
   viewMode,
   perPage,
+  search,
 }: ProductsPaginationProps) {
   if (totalPages <= 1) {
     return null;
@@ -89,6 +91,7 @@ export function ProductsPagination({
                 maxPrice,
                 viewMode,
                 perPage,
+                search,
               })
             : "#"
         }
@@ -127,6 +130,7 @@ export function ProductsPagination({
               maxPrice,
               viewMode,
               perPage,
+              search,
             })}
             aria-current={isActive ? "page" : undefined}
             className={`h-10 min-w-10 inline-flex items-center justify-center rounded-xl border text-sm font-black transition-colors ${
@@ -152,6 +156,7 @@ export function ProductsPagination({
                 maxPrice,
                 viewMode,
                 perPage,
+                search,
               })
             : "#"
         }

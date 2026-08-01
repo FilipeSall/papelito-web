@@ -26,6 +26,7 @@ interface ProdutosPageProps {
         perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
+        busca?: string | string[];
       }>
     | {
         tipo?: string | string[];
@@ -35,6 +36,7 @@ interface ProdutosPageProps {
         perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
+        busca?: string | string[];
       };
 }
 
@@ -85,6 +87,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
   );
   const minPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin));
   const maxPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMax));
+  const search = readSingleQueryParam(resolvedSearchParams.busca) ?? "";
 
   const [catalog, siteImages] = use(
     Promise.all([
@@ -95,6 +98,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         maxPrice,
         page: currentPage,
         perPage,
+        search,
       }),
       siteImagesPromise,
     ]),
@@ -117,6 +121,8 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         perPage={catalog.perPage}
         coverageCep={catalog.coverageCep}
         coverageStatus={catalog.coverageStatus}
+        search={search}
+        showSearch
       />
     </main>
   );

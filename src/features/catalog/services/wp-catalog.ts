@@ -282,6 +282,7 @@ export interface FetchWpProductsInput {
   first?: number;
   after?: string | null;
   categoryIn?: string[];
+  include?: number[];
   minPrice?: number | null;
   maxPrice?: number | null;
 }
@@ -310,6 +311,14 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     }
 
     variables.categoryIn = normalized.categoryIn;
+  }
+
+  if (normalized.include) {
+    if (normalized.include.length === 0) {
+      return [] as WpProductNode[];
+    }
+
+    variables.include = normalized.include;
   }
 
   if (typeof normalized.minPrice === "number" && Number.isFinite(normalized.minPrice)) {

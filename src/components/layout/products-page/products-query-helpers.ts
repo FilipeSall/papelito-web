@@ -12,6 +12,7 @@ interface BuildProductsHrefInput {
   viewMode: ProductsViewMode;
   perPage: number;
   page?: number;
+  search?: string;
 }
 
 export function buildProductsHref({
@@ -23,6 +24,7 @@ export function buildProductsHref({
   viewMode,
   perPage,
   page,
+  search,
 }: BuildProductsHrefInput) {
   const params = new URLSearchParams();
 
@@ -50,6 +52,10 @@ export function buildProductsHref({
 
   if (viewMode === "list") {
     params.set("view", "list");
+  }
+
+  if (search?.trim()) {
+    params.set("busca", search.trim());
   }
 
   params.set("perPage", String(perPage));

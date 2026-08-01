@@ -117,6 +117,7 @@ interface ProductFilterSidebarProps {
   selectedTypes: SpecificType[];
   viewMode: ProductsViewMode;
   perPage: number;
+  search?: string;
 }
 
 function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
@@ -144,6 +145,7 @@ function buildHrefFromSelection(
   maxPrice: number | null,
   viewMode: ProductsViewMode,
   perPage: number,
+  search?: string,
 ) {
   return buildProductsHref({
     basePath,
@@ -153,6 +155,7 @@ function buildHrefFromSelection(
     maxPrice,
     viewMode,
     perPage,
+    search,
   });
 }
 
@@ -171,6 +174,7 @@ export function ProductFilterSidebar({
   selectedTypes,
   viewMode,
   perPage,
+  search,
 }: ProductFilterSidebarProps) {
   const isTodosChecked = selectedTypes.length === 0;
 
@@ -199,6 +203,7 @@ export function ProductFilterSidebar({
             ) : null}
             {viewMode === "list" ? <input type="hidden" name="view" value="list" /> : null}
             <input type="hidden" name="perPage" value={String(perPage)} />
+            {search ? <input type="hidden" name="busca" value={search} /> : null}
 
             <div className="flex items-center gap-2">
               <PriceRangeInput
@@ -253,6 +258,7 @@ export function ProductFilterSidebar({
                     maxPrice,
                     viewMode,
                     perPage,
+                    search,
                   )}
                 />
               );
@@ -273,6 +279,7 @@ export function ProductFilterSidebar({
             null,
             viewMode,
             perPage,
+            search,
           )}
           className="text-sm text-text-muted hover:text-brand-dark transition-colors underline"
         >

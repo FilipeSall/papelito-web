@@ -16,6 +16,7 @@ interface ProductsPerPageSelectorProps {
   maxPrice: number | null;
   viewMode: ProductsViewMode;
   perPage: number;
+  search?: string;
 }
 
 export function ProductsPerPageSelector({
@@ -26,6 +27,7 @@ export function ProductsPerPageSelector({
   maxPrice,
   viewMode,
   perPage,
+  search,
 }: ProductsPerPageSelectorProps) {
   const options = getPerPageOptionsForView(viewMode);
 
@@ -46,6 +48,7 @@ export function ProductsPerPageSelector({
               maxPrice,
               viewMode,
               perPage: option,
+              search,
             })}
             className={`min-w-10 rounded-md px-2 py-1 text-center text-xs font-black transition-colors ${
               isActive ? "bg-white text-brand-dark shadow-sm" : "text-text-secondary hover:bg-gray-200"

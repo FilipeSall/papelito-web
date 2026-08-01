@@ -10,6 +10,7 @@ import {
   getTabCounts,
 } from "./get-wp-product-categories";
 import { fetchWpProductsSafe, mapWpProductToCatalogItem } from "./wp-catalog";
+import { searchCatalogProducts } from "./catalog-search";
 import { SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -22,6 +23,7 @@ import type {
   ProductsCatalogPayload,
   ProductsCatalogTab,
 } from "../types/products-catalog";
+import { normalizeProductSearch } from "../utils/product-search";
 
 interface MockHomeData {
   displayName?: string;
@@ -57,6 +59,7 @@ export interface GetProductsCatalogInput {
   minPrice?: number | null;
   maxPrice?: number | null;
   perPage?: number;
+  search?: string;
 }
 
 const TYPE_LABEL: Record<ProductTypeId, string> = {
@@ -330,6 +333,7 @@ export async function getProductsCatalog(
     maxPrice: input.maxPrice,
   });
   const perPage = clamp(input.perPage ?? 9, 1, 60);
+  const search = normalizeProductSearch(input.search);
 
   const currentPage = clamp(input.page ?? 1, 1, Number.MAX_SAFE_INTEGER);
   const fetchBufferCap = 120;
@@ -384,6 +388,46 @@ export async function getProductsCatalog(
         maxPrice,
         perPage,
       });
+    }
+
+    if (search) {
+      const searchResult = await searchCatalogProducts({
+        search,
+        categorySlugs: selectedTypes.length > 0 ? categoryFilter.slugs : [],
+        minPrice,
+        maxPrice,
+        page: currentPage,
+        perPage,
+      });
+      const wpProducts = await fetchWpProductsSafe(
+        { first: Math.max(1, searchResult.ids.length), include: searchResult.ids },
+        "products-catalog-search",
+      );
+      const itemsById = new Map(
+        wpProducts.map((product, index) => [
+          product.databaseId,
+          mapWpProductToCatalogItem(product, index, typeBySlug),
+        ]),
+      );
+
+      return {
+        items: searchResult.ids.flatMap((id) => {
+          const item = itemsById.get(id);
+          return item ? [item] : [];
+        }),
+        tabs,
+        selectedTypes,
+        minPrice,
+        maxPrice,
+        activeType,
+        activeCollection,
+        totalItems: searchResult.total,
+        totalPages: Math.max(1, Math.ceil(searchResult.total / searchResult.per_page)),
+        currentPage: searchResult.page,
+        perPage: searchResult.per_page,
+        coverageCep: null,
+        coverageStatus: "not_requested",
+      };
     }
 
     const wpProducts = await fetchWpProductsSafe(

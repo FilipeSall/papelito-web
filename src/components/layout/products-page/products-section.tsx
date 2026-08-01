@@ -7,6 +7,7 @@ import { ProductsPerPageSelector } from "./products-per-page-selector";
 import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import { CoverageWarningToastHost } from "./coverage-warning-toast-host";
+import { ClearProductSearchButton, ProductSearch } from "./product-search";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import type {
   CatalogCoverageStatus,
@@ -34,6 +35,8 @@ interface ProductsSectionProps {
   perPage: number;
   coverageCep?: string | null;
   coverageStatus?: CatalogCoverageStatus;
+  search?: string;
+  showSearch?: boolean;
 }
 
 /**
@@ -70,12 +73,16 @@ export function ProductsSection({
   perPage,
   coverageCep = null,
   coverageStatus = "not_requested",
+  search = "",
+  showSearch = false,
 }: ProductsSectionProps) {
   const showCoverageWarning = coverageStatus === "unavailable";
   const emptyMessage =
     coverageStatus === "applied" && coverageCep
       ? "Em breve atenderemos sua região."
-      : "Nenhum produto encontrado.";
+      : search
+        ? `Nenhum produto encontrado para “${search}”.`
+        : "Nenhum produto encontrado.";
 
   return (
     <ProductAvailabilityProvider productIds={products.map((product) => product.id)}>
@@ -83,6 +90,11 @@ export function ProductsSection({
         <AddToCartToastHost />
         <CoverageWarningToastHost shouldShow={showCoverageWarning} />
         <div className="max-w-7xl mx-auto px-4 md:px-8">
+          {showSearch ? (
+            <div className="mb-6">
+              <ProductSearch initialValue={search} totalItems={totalItems} />
+            </div>
+          ) : null}
           {/* Filter Tabs */}
           {showCollectionFilters ? (
             <div className="mb-4">
@@ -108,6 +120,7 @@ export function ProductsSection({
               maxPrice={maxPrice}
               viewMode={viewMode}
               perPage={perPage}
+              search={search}
             />
           </div>
 
@@ -136,6 +149,7 @@ export function ProductsSection({
                 maxPrice={maxPrice}
                 currentPage={currentPage}
                 perPage={perPage}
+                search={search}
               />
             </div>
           </div>
@@ -151,12 +165,14 @@ export function ProductsSection({
               maxPrice={maxPrice}
               viewMode={viewMode}
               perPage={perPage}
+              search={search}
             />
 
             {/* Products Grid */}
             <div className="flex-1">
               <ProductsGrid
                 emptyMessage={emptyMessage}
+                emptyAction={search ? <ClearProductSearchButton /> : undefined}
                 products={products}
                 viewMode={viewMode}
               />
@@ -170,6 +186,7 @@ export function ProductsSection({
                 maxPrice={maxPrice}
                 viewMode={viewMode}
                 perPage={perPage}
+                search={search}
               />
             </div>
           </div>

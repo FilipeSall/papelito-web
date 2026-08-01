@@ -7,5 +7,6 @@ export { ProductsGrid } from "./products-grid";
 export { ProductsPagination } from "./products-pagination";
 export { ViewToggle } from "./view-toggle";
 export { ProductsSection } from "./products-section";
+export { ProductSearch } from "./product-search";
 export { ProductsDiscoveryPage } from "./products-discovery-page";
 export type { ProductGridItem } from "./product-grid-card";

@@ -20,6 +20,7 @@ interface ViewToggleProps {
   maxPrice: number | null;
   currentPage: number;
   perPage: number;
+  search?: string;
 }
 
 /**
@@ -42,6 +43,7 @@ export function ViewToggle({
   maxPrice,
   currentPage,
   perPage,
+  search,
 }: ViewToggleProps) {
   const defaultGridPerPage = getDefaultPerPageForView("grid");
   const defaultListPerPage = getDefaultPerPageForView("list");
@@ -62,6 +64,7 @@ export function ViewToggle({
           page: currentPage,
           viewMode: "grid",
           perPage: gridPerPage,
+          search,
         })}
         className={`p-1.5 rounded-md transition-colors ${
           activeView === "grid" ? "bg-white shadow-sm" : "hover:bg-gray-200"
@@ -80,6 +83,7 @@ export function ViewToggle({
           page: currentPage,
           viewMode: "list",
           perPage: listPerPage,
+          search,
         })}
         className={`p-1.5 rounded-md transition-colors ${
           activeView === "list" ? "bg-white shadow-sm" : "hover:bg-gray-200"

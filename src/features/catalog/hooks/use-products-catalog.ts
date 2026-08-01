@@ -14,6 +14,7 @@ const getCachedProductsCatalog = cache(
     minPrice: number | null,
     maxPrice: number | null,
     perPage: number,
+    search: string,
   ) =>
     getProductsCatalog({
       page,
@@ -29,6 +30,7 @@ const getCachedProductsCatalog = cache(
       minPrice,
       maxPrice,
       perPage,
+      search,
     }),
 );
 
@@ -46,6 +48,7 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
       ? input.maxPrice
       : null;
   const perPage = input.perPage ?? 9;
+  const search = input.search?.trim() ?? "";
 
   return getCachedProductsCatalog(
     page,
@@ -55,5 +58,6 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
     minPrice,
     maxPrice,
     perPage,
+    search,
   );
 }

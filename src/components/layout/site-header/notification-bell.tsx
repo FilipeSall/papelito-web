@@ -25,7 +25,7 @@ type RedirectState = {
   to: string;
 };
 
-export function NotificationBell({ inverted = false }: NotificationBellProps) {
+export function NotificationBell({ inverted = false }: Readonly<NotificationBellProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -40,7 +40,8 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
   const markAllRead = useNotificationsStore((state) => state.markAllRead);
   const setUnreadCount = useNotificationsStore((state) => state.setUnreadCount);
   const currentSearch = searchParams?.toString() ?? "";
-  const currentLocation = `${pathname}${currentSearch ? `?${currentSearch}` : ""}`;
+  const currentSearchSuffix = currentSearch ? `?${currentSearch}` : "";
+  const currentLocation = `${pathname}${currentSearchSuffix}`;
   const isRedirecting = redirectState !== null && currentLocation === redirectState.from;
 
   useEffect(() => {
@@ -137,6 +138,9 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
   }
 
   const badgeLabel = unreadCount > 9 ? "9+" : String(unreadCount);
+  const unreadPlural = unreadCount === 1 ? "" : "s";
+  const bellAriaLabel =
+    unreadCount > 0 ? `Notificações, ${unreadCount} não lida${unreadPlural}` : "Notificações";
   const buttonClass = inverted
     ? "bg-white/8 text-white hover:bg-white/12 focus-visible:ring-brand-yellow/80"
     : "bg-white/12 text-brand-dark hover:bg-white/22 focus-visible:ring-brand-dark/30";
@@ -148,11 +152,7 @@ export function NotificationBell({ inverted = false }: NotificationBellProps) {
     <div className="relative" ref={ref}>
       <button
         aria-expanded={open}
-        aria-label={
-          unreadCount > 0
-            ? `Notificações, ${unreadCount} não lida${unreadCount === 1 ? "" : "s"}`
-            : "Notificações"
-        }
+        aria-label={bellAriaLabel}
         className={`relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${buttonClass}`}
         disabled={isRedirecting}
         onClick={() => setOpen((current) => !current)}

@@ -88,7 +88,7 @@ function buildSlides(banners: HeroBanner[]): HeroSlide[] {
   }));
 }
 
-export function HeroSection({ banners = [] }: { banners?: HeroBanner[] }) {
+export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] }>) {
   const [current, setCurrent] = useState(0);
   const [isMobileOnly, setIsMobileOnly] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,8 +147,8 @@ export function HeroSection({ banners = [] }: { banners?: HeroBanner[] }) {
       <section
         className={
           isMobileOnly
-            ? "relative h-[calc(100vw*2)] min-h-[640px] w-full flex-none overflow-hidden"
-            : "relative h-[540px] w-full flex-none overflow-hidden"
+            ? "relative h-[calc(100vw*2)] min-h-160 w-full flex-none overflow-hidden"
+            : "relative h-135 w-full flex-none overflow-hidden"
         }
       >
         {slides.map((slide, i) => (
@@ -209,9 +209,9 @@ export function HeroSection({ banners = [] }: { banners?: HeroBanner[] }) {
               zIndex: 10,
             }}
           >
-            {slides.map((_, i) => (
+            {slides.map((slide, i) => (
               <button
-                key={i}
+                key={slide.id}
                 onClick={() => {
                   setCurrent(i);
                   resetTimer();
@@ -232,7 +232,7 @@ export function HeroSection({ banners = [] }: { banners?: HeroBanner[] }) {
           </div>
         ) : null}
       </section>
-      <div className="h-[0.125rem] w-full bg-[#FFE500] max-[500px]:h-[0.25rem]" />
+      <div className="h-0.5 w-full bg-[#FFE500] max-[500px]:h-1" />
     </>
   );
 }

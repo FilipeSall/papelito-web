@@ -1,5 +1,6 @@
 import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
 import { ProductsList } from "./products-list";
+import type { ReactNode } from "react";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsGridProps {
@@ -7,6 +8,7 @@ interface ProductsGridProps {
   products: ProductGridItem[];
   viewMode: ProductsViewMode;
   emptyMessage?: string;
+  emptyAction?: ReactNode;
 }
 
 /**
@@ -24,13 +26,13 @@ export function ProductsGrid({
   products,
   viewMode,
   emptyMessage = "Nenhum produto encontrado.",
+  emptyAction,
 }: ProductsGridProps) {
   if (products.length === 0) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-text-muted text-sm">
-          {emptyMessage}
-        </p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <p className="text-sm text-text-muted">{emptyMessage}</p>
+        {emptyAction}
       </div>
     );
   }
