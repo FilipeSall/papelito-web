@@ -32,13 +32,6 @@ const benefits = [
   "Programa de pontos e recompensas",
 ];
 
-function splitName(fullName: string): { first: string; last: string } {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 0) return { first: "", last: "" };
-  if (parts.length === 1) return { first: parts[0], last: "" };
-  return { first: parts[0], last: parts.slice(1).join(" ") };
-}
-
 const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
   cep: "",
   street: "",
@@ -224,19 +217,16 @@ export default function CadastroEtapa2Page() {
 
     setIsSubmitting(true);
 
-    const { first, last } = splitName(step1.name);
-
     startTransition(async () => {
       try {
-        const response = await fetch("/api/auth/register", {
+        const response = await fetch("/api/company-applications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: step1.email,
             password,
-            first_name: first,
-            last_name: last,
-            phone_number: step1.phone,
+            full_name: step1.name,
+            phone: step1.phone,
             cpf: step1.cpf,
             birth_date: step1.birthDate,
             cnpj,
@@ -247,7 +237,6 @@ export default function CadastroEtapa2Page() {
             neighborhood,
             city,
             state,
-            intent: step1.intent,
           }),
         });
 
@@ -257,28 +246,22 @@ export default function CadastroEtapa2Page() {
             | null;
 
           if (response.status === 409) {
-            setErrorMessage("Já existe uma conta com este e-mail.");
+            setErrorMessage("Já existe uma candidatura em aberto para estes dados.");
           } else if (response.status === 422) {
             const messages = Object.values(body?.data?.errors ?? {})
               .flat()
               .filter(Boolean);
             setErrorMessage(messages[0] ?? "Verifique os dados informados.");
           } else {
-            setErrorMessage(body?.message ?? "Não foi possível criar a conta. Tente novamente.");
+            setErrorMessage(body?.message ?? "Não foi possível enviar sua candidatura. Tente novamente.");
           }
           setIsSubmitting(false);
           return;
         }
 
-        const body = (await response.json()) as
-          | { ok?: boolean; requiresEmailVerification?: boolean; email?: string }
-          | null;
-
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
         window.sessionStorage.removeItem(CADASTRO_STEP2_DRAFT_KEY);
-        router.push(
-          `/confirmar-email?email=${encodeURIComponent(body?.email ?? step1.email)}`,
-        );
+        router.push("/cadastro/analise");
         router.refresh();
       } catch {
         setErrorMessage("Erro de rede. Tente novamente.");
@@ -342,7 +325,7 @@ export default function CadastroEtapa2Page() {
           </div>
 
           <h2 className="text-3xl font-black uppercase tracking-wide text-white">
-            Finalizar Cadastro
+            Enviar candidatura
           </h2>
           <p className="mt-2 text-sm text-white/50">
             Já tem uma conta?{" "}
@@ -533,7 +516,7 @@ export default function CadastroEtapa2Page() {
                     icon={!isSubmitting ? <ArrowRightIcon className="h-4 w-4" /> : undefined}
                     disabled={!acceptTerms || isSubmitting || !step1}
                   >
-                    {isSubmitting ? "Criando..." : "Criar Conta"}
+                    {isSubmitting ? "Enviando..." : "Enviar candidatura"}
                   </AuthSubmitButton>
                 </div>
               </div>
