@@ -44,6 +44,63 @@ function DataCard({ label, value }: { label: string; value: unknown }) {
   );
 }
 
+function DocumentViewer({ mime, url }: { mime: string | null; url: string }) {
+  const [zoom, setZoom] = useState(100);
+  const isImage = mime?.startsWith("image/") ?? false;
+  const zoomIn = () => setZoom((current) => Math.min(200, current + 25));
+  const zoomOut = () => setZoom((current) => Math.max(50, current - 25));
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Controles de zoom do documento">
+        <button
+          aria-label="Diminuir zoom"
+          className="inline-flex h-9 min-w-9 items-center justify-center border-2 border-[#1a1a1a] bg-white px-3 text-lg font-black hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={zoom <= 50}
+          onClick={zoomOut}
+          type="button"
+        >
+          −
+        </button>
+        <button
+          aria-label="Restaurar zoom"
+          className="h-9 border-2 border-[#1a1a1a] bg-white px-3 text-[10px] font-black uppercase tracking-[0.16em] hover:bg-brand-yellow"
+          onClick={() => setZoom(100)}
+          type="button"
+        >
+          {zoom}%
+        </button>
+        <button
+          aria-label="Aumentar zoom"
+          className="inline-flex h-9 min-w-9 items-center justify-center border-2 border-[#1a1a1a] bg-white px-3 text-lg font-black hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={zoom >= 200}
+          onClick={zoomIn}
+          type="button"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="h-[560px] overflow-auto border-2 border-[#1a1a1a] bg-[#f2f2f2]">
+        {isImage ? (
+          <img
+            alt="Documento privado da candidatura"
+            className="block max-w-none"
+            src={url}
+            style={{ minWidth: "100%", width: `${zoom}%` }}
+          />
+        ) : (
+          <iframe
+            className="h-full w-full bg-[#f2f2f2]"
+            src={`${url}#zoom=${zoom}`}
+            title="Documento privado da candidatura"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ApplicationHistory({ items }: { items: AdminOwnerApplicationDetail[] }) {
   return (
     <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
@@ -77,7 +134,11 @@ function ApplicationHistory({ items }: { items: AdminOwnerApplicationDetail[] })
   );
 }
 
-export function CompanyOwnerReviewTab({ initialData }: { initialData: AdminOwnerApplications }) {
+export function CompanyApplicationReview({
+  initialData,
+  apiBasePath = "/api/admin/owner-applications",
+}: Readonly<{ initialData: AdminOwnerApplications; apiBasePath?: string }>) {
+
   const [data, setData] = useState(initialData);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -106,7 +167,7 @@ export function CompanyOwnerReviewTab({ initialData }: { initialData: AdminOwner
     setBusy(true);
     setMessage(null);
     const response = await fetch(
-      `/api/admin/owner-applications/${current.application.applicationId}/${action}`,
+      `${apiBasePath}/${encodeURIComponent(String(current.application.applicationId))}/${action}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,7 +214,7 @@ export function CompanyOwnerReviewTab({ initialData }: { initialData: AdminOwner
 
   const { application, company, evidence, person } = current;
   const canDecide = application.status === "pending_manual_review";
-  const documentUrl = `/api/admin/owner-applications/${application.applicationId}/document`;
+  const documentUrl = `${apiBasePath}/${encodeURIComponent(String(application.applicationId))}/document`;
 
   return (
     <div className="space-y-5">
@@ -219,11 +280,7 @@ export function CompanyOwnerReviewTab({ initialData }: { initialData: AdminOwner
           </p>
           {application.documentAvailable ? (
             <>
-              <iframe
-                className="mt-4 h-[560px] w-full border-2 border-[#1a1a1a] bg-[#f2f2f2]"
-                src={documentUrl}
-                title="Documento privado da candidatura"
-              />
+              <DocumentViewer mime={application.documentMime} url={documentUrl} />
               <a
                 href={documentUrl}
                 target="_blank"

@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { GOOGLE_REGISTRATION_EMAIL_COOKIE } from "@/lib/server/google-registration-ticket";
 import { wpRest } from "@/lib/server/wp-rest";
 
 const APPLICATION_COOKIE = "__Host-papelito_application";
@@ -21,9 +23,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
+  const googleEmail = (await cookies()).get(GOOGLE_REGISTRATION_EMAIL_COOKIE)?.value;
+  const registrationPayload = googleEmail ? { ...payload, email: googleEmail } : payload;
   const result = await wpRest<ApplicationResponse>("/papelito/v1/company-applications", {
     method: "POST",
-    json: payload,
+    json: registrationPayload,
   });
   if (!result.ok) {
     return NextResponse.json(result.error, { status: result.status || 502 });
@@ -40,6 +44,7 @@ export async function POST(request: Request) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
+  response.cookies.set(GOOGLE_REGISTRATION_EMAIL_COOKIE, "", { path: "/", maxAge: 0 });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

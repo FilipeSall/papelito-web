@@ -1,14 +1,19 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { firstParam } from "@/lib/search-params";
 import type { AdminUsersPageSearchParams } from "@/lib/server/admin-users-filters";
 import {
   ADMIN_USER_ROLES,
   parseAdminUsersFilters,
 } from "@/lib/server/admin-users-filters";
-import { getAdminUsersSnapshot } from "@/lib/server/admin-users";
+import {
+  getAdminPreAccountApplication,
+  getAdminUsersSnapshot,
+} from "@/lib/server/admin-users";
 
 import { Panel } from "../primitives";
+import { CompanyApplicationReview } from "./company-application-review";
 
 import { UsersFilters, UsersList, UsersMetrics, UsersTabs } from "./users";
 
@@ -27,7 +32,11 @@ export async function UsersContent({
 }) {
   const session = await getServerSession(authOptions);
   const filters = parseAdminUsersFilters(searchParams);
-  const snapshot = await getAdminUsersSnapshot(session?.accessToken, filters);
+  const preAccountApplication = firstParam(searchParams?.preAccountApplication);
+  const [snapshot, application] = await Promise.all([
+    getAdminUsersSnapshot(session?.accessToken, filters),
+    getAdminPreAccountApplication(session?.accessToken, preAccountApplication),
+  ]);
 
   return (
     <div className="space-y-5">
@@ -55,7 +64,7 @@ export async function UsersContent({
                 {String(snapshot.totalRows).padStart(2, "0")}
               </p>
               <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[#1a1a1a]/64">
-                usuários encontrados
+                registros encontrados
               </p>
             </div>
           </div>
@@ -67,6 +76,13 @@ export async function UsersContent({
       <UsersMetrics summary={snapshot.summary} totalRows={snapshot.totalRows} />
       <UsersTabs filters={filters} totalRows={snapshot.totalRows} />
       <UsersList filters={filters} snapshot={snapshot} />
+
+      {application ? (
+        <CompanyApplicationReview
+          apiBasePath="/api/admin/pre-account-applications"
+          initialData={{ current: application, history: [application] }}
+        />
+      ) : null}
 
       {snapshot.issues.length > 0 ? (
         <p className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-semibold text-[#7a3428]">

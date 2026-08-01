@@ -12,6 +12,7 @@ interface AuthTextFieldProps {
   value?: string;
   required?: boolean;
   readOnly?: boolean;
+  disabled?: boolean;
   maxLength?: number;
   max?: string;
   hint?: React.ReactNode;
@@ -30,6 +31,7 @@ export function AuthTextField({
   value,
   required,
   readOnly,
+  disabled,
   maxLength,
   max,
   hint,
@@ -49,12 +51,13 @@ export function AuthTextField({
         value={value}
         required={required}
         readOnly={readOnly}
+        disabled={disabled}
         maxLength={maxLength}
         max={max}
         inputMode={inputMode}
         onChange={onChange}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        className={readOnly ? "cursor-not-allowed opacity-70" : undefined}
+        className={readOnly || disabled ? "cursor-not-allowed opacity-70" : undefined}
       />
       {hint ? (
         <p id={`${id}-hint`} className="text-xs text-white/40">

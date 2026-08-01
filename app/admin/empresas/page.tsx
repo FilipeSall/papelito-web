@@ -29,6 +29,19 @@ type ApplicationsResponse = {
   total: number;
 };
 
+type PreAccountApplicationsResponse = {
+  items: Array<{
+    applicationId: string;
+    email: string | null;
+    fullName: string | null;
+    companyName: string | null;
+    cnpj: string;
+    status: Exclude<ApplicationStatus, "auto_approved">;
+    submittedAt: string | null;
+    createdAt: string;
+  }>;
+};
+
 const FILTERS: Array<{ status: ApplicationStatus; label: string }> = [
   { status: "pending_manual_review", label: "Aguardando revisão" },
   { status: "document_required", label: "Aguardando documento" },
@@ -63,12 +76,41 @@ export default async function AdminCompaniesPage({
   const params = searchParams ? await searchParams : {};
   const status = parseStatus(firstParam(params.status));
   const session = await getServerSession(authOptions);
-  const result = await wpRest<ApplicationsResponse>(
-    `/papelito/v1/admin/owner-applications?page=1&perPage=50&status=${status}`,
-    { headers: { Authorization: `Bearer ${session?.accessToken ?? ""}` } },
-  );
-  const applications = result.ok ? result.data.items : [];
-  const total = result.ok ? result.data.total : 0;
+  const headers = { Authorization: `Bearer ${session?.accessToken ?? ""}` };
+  const [ownerResult, preAccountResult] = await Promise.all([
+    wpRest<ApplicationsResponse>(
+      `/papelito/v1/admin/owner-applications?page=1&perPage=50&status=${status}`,
+      { headers },
+    ),
+    wpRest<PreAccountApplicationsResponse>(
+      `/papelito/v1/admin/pre-account-applications?status=${status}`,
+      { headers },
+    ),
+  ]);
+  const applications = [
+    ...(ownerResult.ok
+      ? ownerResult.data.items.map((application) => ({
+          ...application,
+          source: "existing_account" as const,
+          href: `/admin/users/${application.userId}?tab=company-review`,
+          companyIdentifier: application.tradeName || `#${application.companyId}`,
+        }))
+      : []),
+    ...(preAccountResult.ok
+      ? preAccountResult.data.items.map((application) => ({
+          applicationId: application.applicationId,
+          companyName: application.companyName || "Empresa em análise",
+          companyIdentifier: application.cnpj,
+          createdAt: application.createdAt,
+          fullName: application.fullName || "Responsável não disponível",
+          href: `/admin/empresas/${encodeURIComponent(application.applicationId)}`,
+          source: "pre_account" as const,
+          submittedAt: application.submittedAt,
+          userEmail: application.email || "—",
+        }))
+      : []),
+  ];
+  const total = applications.length;
 
   return (
     <section className="space-y-5">
@@ -105,7 +147,7 @@ export default async function AdminCompaniesPage({
             <tr className="border-b-2 border-[#1a1a1a] bg-brand-yellow text-[10px] uppercase tracking-[0.16em]">
               <th className="p-3">Empresa</th>
               <th className="p-3">Responsável</th>
-              <th className="p-3">Tentativa</th>
+              <th className="p-3">Origem</th>
               <th className="p-3">Recebida</th>
               <th className="p-3">Ação</th>
             </tr>
@@ -115,17 +157,19 @@ export default async function AdminCompaniesPage({
               <tr key={application.applicationId} className="border-b border-[#1a1a1a]/14">
                 <td className="p-3">
                   <p className="font-bold">{application.companyName}</p>
-                  <p className="text-xs text-[#1a1a1a]/55">{application.tradeName || `#${application.companyId}`}</p>
+                  <p className="text-xs text-[#1a1a1a]/55">{application.companyIdentifier}</p>
                 </td>
                 <td className="p-3">
-                  <p>{application.userName}</p>
+                  <p>{"fullName" in application ? application.fullName : application.userName}</p>
                   <p className="text-xs text-[#1a1a1a]/55">{application.userEmail}</p>
                 </td>
-                <td className="p-3">#{application.attemptNumber}</td>
+                <td className="p-3">
+                  {application.source === "pre_account" ? "Pré-conta" : `Tentativa #${application.attemptNumber}`}
+                </td>
                 <td className="p-3">{formatDate(application.submittedAt ?? application.createdAt)}</td>
                 <td className="p-3">
                   <Link
-                    href={`/admin/users/${application.userId}?tab=company-review`}
+                    href={application.href}
                     className="inline-flex border-2 border-[#1a1a1a] bg-white px-3 py-2 text-[10px] font-black uppercase hover:bg-brand-yellow"
                   >
                     Abrir análise

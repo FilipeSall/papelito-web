@@ -8,11 +8,12 @@ export type AdminUserRow = {
   accountStatusLabel: string;
   email: string;
   favoritesCount: number;
-  id: number;
+  id: number | string;
   isVendor: boolean;
   name: string;
   ordersCount: number;
   purchasesCount: number;
+  recordType: "pre_account_application" | "user";
   registeredAt: string;
   role: string;
   roleLabel: string;
@@ -145,10 +146,10 @@ export type AdminUserDetail = {
   } | null;
 };
 
-export type AdminOwnerApplicationDetail = {
+export type AdminCompanyApplicationDetail = {
   application: {
-    applicationId: number;
-    companyId: number;
+    applicationId: string | number;
+    companyId: number | null;
     attemptNumber: number;
     status: "document_required" | "pending_manual_review" | "auto_approved" | "approved" | "rejected";
     fileName: string | null;
@@ -164,21 +165,21 @@ export type AdminOwnerApplicationDetail = {
     decidedByUserId: number | null;
   };
   person: {
-    userId: number;
-    fullName: string;
-    email: string;
+    userId: number | null;
+    fullName: string | null;
+    email: string | null;
     cpf: string | null;
     birthDate: string | null;
-    phone: string;
+    phone: string | null;
   };
   company: {
-    id: number;
+    id: number | null;
     cnpj: string;
-    legalName: string;
+    legalName: string | null;
     tradeName: string | null;
-    registryStatus: string;
-    ownershipStatus: string;
-    companyStatus: string;
+    registryStatus: string | null;
+    ownershipStatus: string | null;
+    companyStatus: string | null;
     providerSource: string | null;
     providerCheckedAt: string | null;
     fiscalAddress: {
@@ -194,6 +195,8 @@ export type AdminOwnerApplicationDetail = {
   membership: { role: string; status: string } | null;
   evidence: Record<string, unknown>;
 };
+
+export type AdminOwnerApplicationDetail = AdminCompanyApplicationDetail;
 
 export type AdminOwnerApplications = {
   current: AdminOwnerApplicationDetail | null;
@@ -221,10 +224,17 @@ function mapRow(raw: unknown): AdminUserRow | null {
   }
 
   const row = raw as Record<string, unknown>;
-  const id = toNumber(row.id);
-  if (id <= 0) {
-    return null;
-  }
+  const recordType =
+    row.recordType === "pre_account_application" ? "pre_account_application" : "user";
+  const rawId = row.id;
+  const id =
+    recordType === "pre_account_application"
+      ? typeof rawId === "string" && /^pre:\d+$/.test(rawId)
+        ? rawId
+        : null
+      : toNumber(rawId);
+
+  if (id === null || (typeof id === "number" && id <= 0)) return null;
 
   return {
     accountStatus: String(row.accountStatus ?? ""),
@@ -236,12 +246,18 @@ function mapRow(raw: unknown): AdminUserRow | null {
     name: String(row.name ?? ""),
     ordersCount: toNumber(row.ordersCount),
     purchasesCount: toNumber(row.purchasesCount),
+    recordType,
     registeredAt: String(row.registeredAt ?? ""),
     role: String(row.role ?? ""),
     roleLabel: String(row.roleLabel ?? ""),
     salesCount: toNumber(row.salesCount),
     supportTicketsCount: toNumber(row.supportTicketsCount),
   };
+}
+
+function parsePreAccountApplicationId(value: string | undefined) {
+  const match = /^pre:(\d+)$/.exec(value ?? "");
+  return match ? Number.parseInt(match[1], 10) : 0;
 }
 
 function emptySnapshot(filters: AdminUsersFilters): AdminUsersSnapshot {
@@ -348,4 +364,19 @@ export async function getAdminOwnerApplications(
   );
 
   return result.ok ? result.data : { current: null, history: [] };
+}
+
+export async function getAdminPreAccountApplication(
+  accessToken: string | undefined,
+  externalApplicationId: string | undefined,
+): Promise<AdminOwnerApplicationDetail | null> {
+  const applicationId = parsePreAccountApplicationId(externalApplicationId);
+  if (!accessToken || applicationId <= 0) return null;
+
+  const result = await wpRest<AdminOwnerApplicationDetail>(
+    `/papelito/v1/admin/pre-account-applications/${applicationId}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  return result.ok ? result.data : null;
 }

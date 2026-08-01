@@ -1,8 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CadastroPage from "./page";
 import { CADASTRO_STEP1_DRAFT_KEY, CADASTRO_STORAGE_KEY } from "./shared";
+import { server } from "../../test/msw/server";
 
 const pushMock = vi.fn();
 let searchParamsValue = "";
@@ -34,18 +36,31 @@ vi.mock("@/components/auth/molecules", () => ({
   AuthSocialDivider: () => <div />,
   AuthTextField: ({
     id,
+    name,
     label,
     onChange,
     defaultValue,
+    value,
+    disabled,
   }: {
     id: string;
+    name: string;
     label: string;
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
     defaultValue?: string;
+    value?: string;
+    disabled?: boolean;
   }) => (
     <label htmlFor={id}>
       {label}
-      <input id={id} name={id} onChange={onChange} defaultValue={defaultValue} />
+      <input
+        id={id}
+        name={name}
+        onChange={onChange}
+        defaultValue={defaultValue}
+        value={value}
+        disabled={disabled}
+      />
     </label>
   ),
 }));
@@ -71,6 +86,8 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+    server.resetHandlers();
   });
 
   it("salva o que foi preenchido quando o usuário sai sem enviar", () => {
@@ -150,5 +167,24 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /fechar notificação/i }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("fixa o e-mail escolhido no Google e o envia pelo campo oculto", async () => {
+    searchParamsValue = "feedback=google_account_required&googleRegistration=ticket-opaco";
+    server.use(
+      http.get("/api/cadastro/google-email", () =>
+        HttpResponse.json({ email: "google@example.test" }),
+      ),
+    );
+
+    render(<CadastroPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/e-mail/i)).toBeDisabled();
+    });
+    expect(screen.getByLabelText(/e-mail/i)).toHaveValue("google@example.test");
+    expect(document.querySelector('input[type="hidden"][name="email"]')).toHaveValue(
+      "google@example.test",
+    );
   });
 });

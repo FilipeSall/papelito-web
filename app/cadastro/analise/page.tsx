@@ -57,6 +57,8 @@ export default function CadastroAnalisePage() {
 
   const requiresDocument = application?.status === "document_required";
   const pendingReview = application?.status === "pending_manual_review";
+  const approved = application?.status === "approved";
+  const rejected = application?.status === "rejected";
 
   return (
     <div className="flex min-h-screen">
@@ -113,7 +115,13 @@ export default function CadastroAnalisePage() {
             Análise empresarial
           </p>
           <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-white">
-            {requiresDocument ? "Envie seu documento com foto" : "Sua candidatura está em análise"}
+            {requiresDocument
+              ? "Envie seu documento com foto"
+              : approved
+                ? "Cadastro aprovado"
+                : rejected
+                  ? "Candidatura encerrada"
+                  : "Sua candidatura está em análise"}
           </h2>
 
           {!application ? (
@@ -169,7 +177,35 @@ export default function CadastroAnalisePage() {
             </p>
           ) : null}
 
-          {application && !requiresDocument && !pendingReview ? (
+          {approved ? (
+            <>
+              <p className="mt-4 text-sm leading-6 text-white/55">
+                Seu cadastro empresarial foi aprovado e sua conta já foi criada. Você já pode entrar.
+              </p>
+              <Link
+                href="/entrar"
+                className="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white"
+              >
+                Entrar na conta
+              </Link>
+            </>
+          ) : null}
+
+          {rejected ? (
+            <>
+              <p className="mt-4 text-sm leading-6 text-white/55">
+                Não foi possível aprovar sua candidatura. Para uma nova tentativa, reinicie o cadastro empresarial.
+              </p>
+              <Link
+                href="/cadastro"
+                className="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white"
+              >
+                Iniciar novo cadastro
+              </Link>
+            </>
+          ) : null}
+
+          {application && !requiresDocument && !pendingReview && !approved && !rejected ? (
             <p className="mt-4 text-sm leading-6 text-white/55">
               Não foi possível carregar o estado da candidatura. Atualize a página para tentar
               novamente.

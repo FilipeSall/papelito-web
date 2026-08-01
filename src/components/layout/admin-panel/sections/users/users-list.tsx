@@ -30,6 +30,13 @@ function formatRegisteredAgo(value: string) {
 function detailHref(row: AdminUserRow, filters: AdminUsersFilters) {
   const params = new URLSearchParams();
 
+  if (row.recordType === "pre_account_application") {
+    const query = buildAdminUsersQuery(filters);
+    const hrefParams = new URLSearchParams(query);
+    hrefParams.set("preAccountApplication", String(row.id));
+    return `/admin/users?${hrefParams.toString()}`;
+  }
+
   if (filters.page > 1) {
     params.set("originPage", String(filters.page));
   }
@@ -109,11 +116,12 @@ export function UsersList({
 
   const rows = snapshot.rows.map((row) => {
     const href = detailHref(row, filters);
+    const displayName = row.name || row.email || `Candidatura #${row.id}`;
 
     return [
       <div key={`user-${row.id}`} className="space-y-1">
         <Link className="block font-semibold text-[#231f20] hover:underline" href={href}>
-          {row.name || row.email || `Usuário #${row.id}`}
+          {displayName}
         </Link>
         <p className="text-xs text-[#231f20]/58">{row.email}</p>
       </div>,

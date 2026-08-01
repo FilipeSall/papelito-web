@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
+import { createGoogleRegistrationTicket } from "@/lib/server/google-registration-ticket";
 import { wpRest } from "@/lib/server/wp-rest";
 
 const WP_LOGIN_MUTATION = `
@@ -420,7 +421,11 @@ export const authOptions: NextAuthOptions = {
 
       if (!wpAuth.ok) {
         if (wpAuth.code === "papelito_pre_account_required") {
-          return "/cadastro?feedback=google_account_required";
+          const email = typeof user.email === "string" ? user.email : "";
+          const ticket = email ? createGoogleRegistrationTicket(email) : "";
+          return ticket
+            ? `/cadastro?feedback=google_account_required&googleRegistration=${encodeURIComponent(ticket)}`
+            : "/cadastro?feedback=google_account_required";
         }
         return false;
       }

@@ -61,14 +61,20 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     case "company_owner_review_pending": {
       const companyName = stringValue(payload, "companyName") || "Cadastro empresarial";
       const userId = numberValue(payload, "userId");
+      const href = stringValue(payload, "href");
+      const applicationId = stringValue(payload, "applicationId");
       return {
         icon: "badge",
         title: "Análise empresarial pendente",
         body: `${companyName} enviou um documento para revisão.`,
         href:
-          Number.isInteger(userId) && userId > 0
+          /^pre:\d+$/.test(applicationId)
+            ? `/admin/users?preAccountApplication=${encodeURIComponent(applicationId)}`
+            : href.startsWith("/admin/users")
+            ? href
+            : Number.isInteger(userId) && userId > 0
             ? `/admin/users/${userId}?tab=company-review`
-            : "/admin/empresas",
+            : "/admin/users",
       };
     }
     case "company_owner_approved":

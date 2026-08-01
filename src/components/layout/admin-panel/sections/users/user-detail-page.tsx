@@ -13,7 +13,7 @@ import { CompactTable, EmptyStateCard, MetricCard, Panel, StatusBadge } from "..
 import { UserRoleBadge, UserStatusBadge } from "./user-badges";
 import { UserOrderActionButton } from "./user-order-action-button";
 import { UserRoleActions } from "./user-role-actions";
-import { CompanyOwnerReviewTab } from "./company-owner-review-tab";
+import { CompanyApplicationReview } from "../company-application-review";
 
 export type UserDetailTabKey = "company-review" | "orders" | "overview" | "role" | "sales";
 
@@ -431,7 +431,7 @@ export function UserDetailPage({
       ) : null}
 
       {activeTab === "company-review" ? (
-        <CompanyOwnerReviewTab initialData={ownerApplications} />
+        <CompanyApplicationReview initialData={ownerApplications} />
       ) : null}
 
       {activeTab === "role" ? (

@@ -26,7 +26,7 @@ function statusTone(label: string): UserStatusBadgeTone {
     return "rejected";
   }
 
-  if (normalized.includes("pendente")) {
+  if (normalized.includes("pendente") || normalized.includes("análise")) {
     return "pending";
   }
 

@@ -410,5 +410,21 @@ describe("authOptions callbacks", () => {
 
       await expect(runSignIn()).resolves.toBe("/cadastro?feedback=google_account_required");
     });
+
+    it("leva o e-mail Google ao cadastro em ticket opaco", async () => {
+      server.use(
+        http.post("http://localhost:8080/wp-json/papelito/v1/auth/google", () =>
+          HttpResponse.json(
+            { code: "papelito_pre_account_required", message: "Candidatura necessária." },
+            { status: 422 },
+          ),
+        ),
+      );
+
+      const result = await runSignIn({ email: "google@example.test" });
+
+      expect(result).toContain("/cadastro?feedback=google_account_required&googleRegistration=");
+      expect(result).not.toContain("google@example.test");
+    });
   });
 });

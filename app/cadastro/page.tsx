@@ -43,6 +43,7 @@ export default function CadastroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const googleRegistrationTicket = searchParams.get("googleRegistration");
 
   const submittedRef = useRef(false);
   const [draft] = useState<CadastroStep1Draft>(() => {
@@ -62,6 +63,7 @@ export default function CadastroPage() {
   const [googleAccountFeedbackVisible, setGoogleAccountFeedbackVisible] = useState(
     () => searchParams.get("feedback") === "google_account_required",
   );
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
 
   const intentRef = useRef(intent);
 
@@ -113,6 +115,20 @@ export default function CadastroPage() {
     const timeoutId = window.setTimeout(() => setGoogleAccountFeedbackVisible(false), 7000);
     return () => window.clearTimeout(timeoutId);
   }, [googleAccountFeedbackVisible]);
+
+  useEffect(() => {
+    if (!googleRegistrationTicket) {
+      return;
+    }
+    void fetch(`/api/cadastro/google-email?ticket=${encodeURIComponent(googleRegistrationTicket)}`, { cache: "no-store" })
+      .then(async (response) => (response.ok ? (response.json() as Promise<{ email?: unknown }>) : null))
+      .then((body) => {
+        if (typeof body?.email !== "string" || !body.email) return;
+        setGoogleEmail(body.email);
+        valuesRef.current = { ...valuesRef.current, email: body.email };
+      })
+      .catch(() => undefined);
+  }, [googleRegistrationTicket]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -240,16 +256,33 @@ export default function CadastroPage() {
               required
             />
 
-            <AuthTextField
-              id="email"
-              name="email"
-              label="E-mail"
-              type="email"
-              placeholder="seu@email.com"
-              autoComplete="email"
-              defaultValue={draft.email}
-              required
-            />
+            {googleEmail ? (
+              <>
+                <AuthTextField
+                  id="email"
+                  name="googleEmail"
+                  label="E-mail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  autoComplete="email"
+                  value={googleEmail}
+                  disabled
+                  required
+                />
+                <input type="hidden" name="email" value={googleEmail} />
+              </>
+            ) : (
+              <AuthTextField
+                id="email"
+                name="email"
+                label="E-mail"
+                type="email"
+                placeholder="seu@email.com"
+                autoComplete="email"
+                defaultValue={draft.email}
+                required
+              />
+            )}
 
             <AuthTextField
               id="phone"

@@ -20,6 +20,21 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/admin/users/84?tab=company-review");
   });
 
+  it("links a pre-account document review into the administrative users table", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "company_owner_review_pending",
+        payload: {
+          applicationId: "pre:84",
+          companyName: "Papelaria Exemplo",
+          href: "/admin/empresas/pre%3A84",
+        },
+      }),
+    );
+
+    expect(formatted.href).toBe("/admin/users?preAccountApplication=pre%3A84");
+  });
+
   it("shows discount details for favorite-on-promo notifications when available", () => {
     const formatted = formatNotification(
       buildNotification({
