@@ -6,15 +6,8 @@ import {
   isAdminProductMediaUploadError,
   uploadAdminProductMedia,
 } from "@/lib/server/admin-products";
-
-const PRODUCT_IMAGE_TYPES = new Set([
-  "image/avif",
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-const PRODUCT_IMAGE_EXTENSIONS = new Set(["avif", "gif", "jpeg", "jpg", "png", "webp"]);
+import { fileExtension, validateImageUpload } from "@/lib/server/image-upload";
+import { rejectionToFailure, wordpressFailure } from "@/lib/server/media-upload-errors";
 
 function isUploadedFile(value: FormDataEntryValue | null | undefined): value is File {
   return (
@@ -41,31 +34,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Arquivo de imagem obrigatório." }, { status: 422 });
   }
 
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const validation = await validateImageUpload(file);
 
-  if (!PRODUCT_IMAGE_TYPES.has(file.type) && !PRODUCT_IMAGE_EXTENSIONS.has(extension)) {
-    return NextResponse.json(
-      { message: "Formato de imagem não permitido." },
-      { status: 422 },
-    );
+  if (!validation.ok) {
+    const failure = rejectionToFailure(validation.rejection);
+
+    console.warn("[admin-product-media] Upload rejeitado na validação", {
+      declaredType: file.type || null,
+      detectedType:
+        "detected" in validation.rejection ? validation.rejection.detected : null,
+      extension: fileExtension(file.name) || null,
+      reason: failure.logCode,
+      size: file.size,
+    });
+
+    return NextResponse.json({ message: failure.message }, { status: failure.status });
   }
 
   try {
-    const media = await uploadAdminProductMedia(auth.accessToken, file);
+    const media = await uploadAdminProductMedia(auth.accessToken, file, {
+      contentType: validation.mimeType,
+      fileName: validation.fileName,
+    });
+
     return NextResponse.json({ media }, { status: 201 });
   } catch (error) {
     if (isAdminProductMediaUploadError(error)) {
-      console.error("[admin-product-media] WordPress upload failed", {
-        status: error.status,
+      const failure = wordpressFailure(error.status, error.wordpressCode);
+
+      console.error("[admin-product-media] WordPress recusou o upload", {
+        detectedType: validation.mimeType,
+        reason: failure.logCode,
+        size: validation.size,
         wordpressCode: error.wordpressCode,
+        wordpressMessage: error.wordpressMessage,
+        wordpressStatus: error.status,
       });
-      return NextResponse.json(
-        { message: "Não foi possível armazenar a imagem. Tente novamente." },
-        { status: error.status },
-      );
+
+      return NextResponse.json({ message: failure.message }, { status: failure.status });
     }
 
-    console.error("[admin-product-media] Upload proxy failed", { error });
-    return NextResponse.json({ message: "Não foi possível enviar a imagem." }, { status: 500 });
+    console.error("[admin-product-media] Falha inesperada no proxy de upload", {
+      detectedType: validation.mimeType,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    return NextResponse.json(
+      { message: "Erro interno ao enviar a imagem. Tente novamente." },
+      { status: 500 },
+    );
   }
 }

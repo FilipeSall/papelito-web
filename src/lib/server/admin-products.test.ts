@@ -124,6 +124,99 @@ describe("admin product media", () => {
     expect(product.tags).toEqual([tag]);
   });
 
+  it("updates uniform variable-product prices in one variations batch and rehydrates them", async () => {
+    const parent = { id: 11856, name: "Produto", type: "variable" };
+    const variations = [
+      { id: 11857, regular_price: "140", sale_price: "" },
+      { id: 11858, regular_price: "140", sale_price: "" },
+      { id: 11859, regular_price: "140", sale_price: "" },
+    ];
+    const updatedVariations = variations.map((variation) => ({
+      ...variation,
+      date_on_sale_from: "2026-08-01T00:00:00",
+      date_on_sale_to: "2026-08-31T23:59:59",
+      regular_price: "150",
+      sale_price: "120",
+    }));
+    wpRestMock
+      .mockResolvedValueOnce({
+        data: parent,
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      })
+      .mockResolvedValueOnce({
+        data: variations,
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      })
+      .mockResolvedValueOnce({
+        data: { update: updatedVariations },
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      });
+    const { updateAdminProduct } = await import("./admin-products");
+
+    const product = await updateAdminProduct("token", 11856, {
+      regularPrice: "150",
+      salePrice: "120",
+      dateOnSaleFrom: "2026-08-01T00:00:00",
+      dateOnSaleTo: "2026-08-31T23:59:59",
+    });
+
+    expect(wpRestMock).toHaveBeenCalledWith("/wc/v3/products/11856", {
+      headers: { Authorization: "Bearer token" },
+      revalidate: 0,
+    });
+    expect(wpRestMock).toHaveBeenCalledWith(
+      "/wc/v3/products/11856/variations/batch",
+      {
+        headers: { Authorization: "Bearer token" },
+        json: {
+          update: updatedVariations.map((variation) => ({
+            date_on_sale_from: "2026-08-01T00:00:00",
+            date_on_sale_to: "2026-08-31T23:59:59",
+            id: variation.id,
+            regular_price: "150",
+            sale_price: "120",
+          })),
+        },
+        method: "PUT",
+      },
+    );
+    expect(product.regularPrice).toBe("150");
+    expect(product.salePrice).toBe("120");
+    expect(product.dateOnSaleFrom).toBe("2026-08-01T00:00:00");
+    expect(product.dateOnSaleTo).toBe("2026-08-31T23:59:59");
+  });
+
+  it("hydrates uniform variation prices after reopening a product", async () => {
+    wpRestMock
+      .mockResolvedValueOnce({
+        data: { id: 11856, name: "Produto", type: "variable" },
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          { id: 11857, regular_price: "150", sale_price: "120" },
+          { id: 11858, regular_price: "150", sale_price: "120" },
+        ],
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      });
+    const { getAdminProduct } = await import("./admin-products");
+
+    await expect(getAdminProduct("token", 11856)).resolves.toMatchObject({
+      regularPrice: "150",
+      salePrice: "120",
+    });
+  });
+
   it("hydrates tags from product responses with three collection requests for forty products", async () => {
     const tag = { id: 215, name: "teste", parent: 0, slug: "teste" };
     const products = Array.from({ length: 40 }, (_, index) => ({

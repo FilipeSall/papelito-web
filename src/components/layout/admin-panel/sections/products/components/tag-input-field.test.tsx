@@ -46,4 +46,21 @@ describe("TagInputField", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remover tag teste" }));
     expect(onRemoveTag).toHaveBeenCalledWith("215");
   });
+
+  it("shows a subtle pending state and blocks new input while creating a tag", () => {
+    render(
+      <TagInputField
+        isCreating
+        newTagName="teste"
+        onCreateTag={vi.fn()}
+        onNewTagNameChange={vi.fn()}
+        onRemoveTag={vi.fn()}
+        selectedIds={[]}
+        tags={[]}
+      />,
+    );
+
+    expect(screen.getByRole("textbox")).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Criando tag");
+  });
 });

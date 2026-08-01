@@ -141,6 +141,10 @@ type WcProduct = {
   weight?: string | null;
 };
 
+type WcProductVariationBatch = {
+  update?: WcProduct[] | null;
+};
+
 type WpMediaResponse = {
   alt_text?: string | null;
   id?: number;
@@ -278,6 +282,91 @@ function mapProduct(product: WcProduct): AdminProduct {
     type: product.type ?? "simple",
     weight: product.weight ?? "",
   };
+}
+
+function uniformVariationValue(
+  variations: WcProduct[],
+  field: "regular_price" | "sale_price" | "date_on_sale_from" | "date_on_sale_to",
+) {
+  if (variations.length === 0) {
+    return null;
+  }
+
+  const values = variations.map((variation) => cleanText(variation[field]));
+  return values.every((value) => value === values[0]) ? values[0] : null;
+}
+
+function mapProductWithVariations(product: WcProduct, variations: WcProduct[]) {
+  const mappedProduct = mapProduct(product);
+
+  if (mappedProduct.type !== "variable") {
+    return mappedProduct;
+  }
+
+  const regularPrice = uniformVariationValue(variations, "regular_price");
+  const salePrice = uniformVariationValue(variations, "sale_price");
+  const dateOnSaleFrom = uniformVariationValue(variations, "date_on_sale_from");
+  const dateOnSaleTo = uniformVariationValue(variations, "date_on_sale_to");
+
+  return {
+    ...mappedProduct,
+    ...(regularPrice !== null ? { regularPrice } : {}),
+    ...(salePrice !== null ? { salePrice } : {}),
+    ...(dateOnSaleFrom !== null ? { dateOnSaleFrom } : {}),
+    ...(dateOnSaleTo !== null ? { dateOnSaleTo } : {}),
+  };
+}
+
+async function getAdminProductVariations(accessToken: string, productId: number) {
+  const result = await wpRest<WcProduct[]>(
+    `/wc/v3/products/${productId}/variations?per_page=100&orderby=id&order=asc`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      revalidate: 0,
+    },
+  );
+
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  return result.data;
+}
+
+function hasVariablePricingChange(payload: AdminProductPayload) {
+  return (
+    payload.regularPrice !== undefined ||
+    payload.salePrice !== undefined ||
+    payload.dateOnSaleFrom !== undefined ||
+    payload.dateOnSaleTo !== undefined
+  );
+}
+
+function omitVariablePricing(payload: AdminProductPayload): AdminProductPayload {
+  const {
+    dateOnSaleFrom: _dateOnSaleFrom,
+    dateOnSaleTo: _dateOnSaleTo,
+    regularPrice: _regularPrice,
+    salePrice: _salePrice,
+    ...productPayload
+  } = payload;
+
+  return productPayload;
+}
+
+function buildVariationPricingPayload(payload: AdminProductPayload) {
+  const pricing: Record<string, string | null> = {};
+
+  if (payload.regularPrice !== undefined) pricing.regular_price = cleanText(payload.regularPrice);
+  if (payload.salePrice !== undefined) pricing.sale_price = cleanText(payload.salePrice);
+  if (payload.dateOnSaleFrom !== undefined) {
+    pricing.date_on_sale_from = payload.dateOnSaleFrom ? cleanText(payload.dateOnSaleFrom) : null;
+  }
+  if (payload.dateOnSaleTo !== undefined) {
+    pricing.date_on_sale_to = payload.dateOnSaleTo ? cleanText(payload.dateOnSaleTo) : null;
+  }
+
+  return pricing;
 }
 
 function mapTaxonomyTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
@@ -548,7 +637,14 @@ export async function getAdminProduct(accessToken: string, productId: number) {
     throw new Error(result.error.message);
   }
 
-  return mapProduct(result.data);
+  const product = mapProduct(result.data);
+
+  if (product.type !== "variable") {
+    return product;
+  }
+
+  const variations = await getAdminProductVariations(accessToken, productId);
+  return mapProductWithVariations(result.data, variations);
 }
 
 export async function updateAdminProduct(
@@ -556,17 +652,64 @@ export async function updateAdminProduct(
   productId: number,
   payload: AdminProductPayload,
 ) {
-  const result = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
+  const existingResult = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    json: buildWooProductPayload(payload),
-    method: "PUT",
+    revalidate: 0,
   });
 
-  if (!result.ok) {
-    throw new Error(result.error.message);
+  if (!existingResult.ok) {
+    throw new Error(existingResult.error.message);
   }
 
-  return mapProduct(result.data);
+  const isVariableProduct = mapProduct(existingResult.data).type === "variable";
+  const productPayload = isVariableProduct ? omitVariablePricing(payload) : payload;
+  const hasProductChanges = Object.keys(productPayload).length > 0;
+  let updatedProduct = existingResult.data;
+
+  if (hasProductChanges) {
+    const result = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      json: buildWooProductPayload(productPayload),
+      method: "PUT",
+    });
+
+    if (!result.ok) {
+      throw new Error(result.error.message);
+    }
+
+    updatedProduct = result.data;
+  }
+
+  if (!isVariableProduct) {
+    return mapProduct(updatedProduct);
+  }
+
+  if (!hasVariablePricingChange(payload)) {
+    const variations = await getAdminProductVariations(accessToken, productId);
+    return mapProductWithVariations(updatedProduct, variations);
+  }
+
+  const variations = await getAdminProductVariations(accessToken, productId);
+  const variationPricing = buildVariationPricingPayload(payload);
+  const batchResult = await wpRest<WcProductVariationBatch>(
+    `/wc/v3/products/${productId}/variations/batch`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      json: {
+        update: variations
+          .filter((variation) => typeof variation.id === "number" && variation.id > 0)
+          .map((variation) => ({ id: variation.id, ...variationPricing })),
+      },
+      method: "PUT",
+    },
+  );
+
+  if (!batchResult.ok) {
+    throw new Error(batchResult.error.message);
+  }
+
+  const updatedVariations = batchResult.data.update ?? [];
+  return mapProductWithVariations(updatedProduct, updatedVariations);
 }
 
 export async function createAdminProductTag(
@@ -642,6 +785,7 @@ export class AdminProductMediaUploadError extends Error {
   constructor(
     readonly status: number,
     readonly wordpressCode: string | null,
+    readonly wordpressMessage: string | null = null,
   ) {
     super("WordPress não conseguiu armazenar a imagem.");
   }
@@ -653,11 +797,20 @@ export function isAdminProductMediaUploadError(
   return error instanceof AdminProductMediaUploadError;
 }
 
-export async function uploadAdminProductMedia(accessToken: string, file: File) {
-  const safeName = file.name.replace(/[^\w.\-]+/g, "-") || "produto.jpg";
+export async function uploadAdminProductMedia(
+  accessToken: string,
+  file: File,
+  options: { contentType?: string; fileName?: string } = {},
+) {
+  const safeName =
+    options.fileName ?? (file.name.replace(/[^\w.\-]+/g, "-") || "produto.jpg");
+  const upload =
+    options.contentType && options.contentType !== file.type
+      ? new File([file], safeName, { type: options.contentType })
+      : file;
   const url = `${getWpRestBase().replace(/\/$/, "")}/wp/v2/media`;
   const body = new FormData();
-  body.append("file", file, safeName);
+  body.append("file", upload, safeName);
   const response = await fetch(url, {
     body,
     cache: "no-store",
@@ -676,6 +829,7 @@ export async function uploadAdminProductMedia(accessToken: string, file: File) {
     throw new AdminProductMediaUploadError(
       response.status,
       json && "code" in json && typeof json.code === "string" ? json.code : null,
+      json && "message" in json && typeof json.message === "string" ? json.message : null,
     );
   }
 

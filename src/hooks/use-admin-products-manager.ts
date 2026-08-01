@@ -11,6 +11,7 @@ import {
 import {
   buildPayload,
   findPromotionTag,
+  hasValidProductPrice,
   isPromotionActive,
   newProductDraft,
   productToDraft,
@@ -82,6 +83,7 @@ export function useAdminProductsManager(
     snapshot.products[0] ? productToDraft(snapshot.products[0]) : newProductDraft(),
   );
   const draftRef = useRef(draft);
+  const changedFieldsRef = useRef<Set<keyof ProductDraft>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -90,10 +92,31 @@ export function useAdminProductsManager(
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [notice, setNotice] = useState("");
   const handledInitialFocusRef = useRef(false);
+  const selectionRequestRef = useRef(0);
 
-  function updateDraftState(updater: (currentDraft: ProductDraft) => ProductDraft) {
+  function resetDraft(nextDraft: ProductDraft) {
+    draftRef.current = nextDraft;
+    changedFieldsRef.current = new Set();
+    setDraft(nextDraft);
+  }
+
+  function markChanged(...fields: (keyof ProductDraft)[]) {
+    if (fields.length === 0) {
+      return;
+    }
+
+    for (const field of fields) {
+      changedFieldsRef.current.add(field);
+    }
+  }
+
+  function updateDraftState(
+    updater: (currentDraft: ProductDraft) => ProductDraft,
+    changedFields: (keyof ProductDraft)[] = [],
+  ) {
     const nextDraft = updater(draftRef.current);
     draftRef.current = nextDraft;
+    markChanged(...changedFields);
     setDraft(nextDraft);
   }
 
@@ -120,21 +143,64 @@ export function useAdminProductsManager(
     Boolean(draft.dateOnSaleFrom || draft.dateOnSaleTo) ||
     Boolean(promotionTag && draft.tagIds.includes(String(promotionTag.id)));
 
-  function selectProduct(product: AdminProduct) {
+  function openProduct(product: AdminProduct) {
     setSelectedProductId(product.id);
     setTags((currentTags) => mergeTags(currentTags, product.tags));
     const nextDraft = productToDraft(product);
-    draftRef.current = nextDraft;
-    setDraft(nextDraft);
+    resetDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
+  }
+
+  async function selectProduct(product: AdminProduct) {
+    if (product.type !== "variable") {
+      openProduct(product);
+      return;
+    }
+
+    const requestId = selectionRequestRef.current + 1;
+    selectionRequestRef.current = requestId;
+    setIsLoading(true);
+    setNotice("");
+
+    try {
+      const response = await fetch(ADMIN_PRODUCTS_API.detail(product.id), {
+        cache: "no-store",
+      });
+      const json = (await response.json().catch(() => null)) as
+        | { message?: string; product?: AdminProduct }
+        | null;
+
+      if (!response.ok || !json?.product) {
+        throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
+      }
+
+      if (selectionRequestRef.current !== requestId) {
+        return;
+      }
+
+      const detailedProduct = json.product;
+      setProducts((currentProducts) =>
+        currentProducts.map((currentProduct) =>
+          currentProduct.id === detailedProduct.id ? detailedProduct : currentProduct,
+        ),
+      );
+      openProduct(detailedProduct);
+    } catch (error) {
+      if (selectionRequestRef.current === requestId) {
+        setNotice(messageFromError(error, "Não foi possível carregar os preços do produto."));
+      }
+    } finally {
+      if (selectionRequestRef.current === requestId) {
+        setIsLoading(false);
+      }
+    }
   }
 
   function startNewProduct() {
     setSelectedProductId("new");
     const nextDraft = newProductDraft();
-    draftRef.current = nextDraft;
-    setDraft(nextDraft);
+    resetDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
   }
@@ -152,7 +218,7 @@ export function useAdminProductsManager(
     const existingProduct = products.find((product) => product.id === initialFocusProductId);
 
     if (existingProduct) {
-      selectProduct(existingProduct);
+      void selectProduct(existingProduct);
       return;
     }
 
@@ -191,8 +257,7 @@ export function useAdminProductsManager(
         setTags((currentTags) => mergeTags(currentTags, focusedProduct.tags));
         setSelectedProductId(focusedProduct.id);
         const nextDraft = productToDraft(focusedProduct);
-        draftRef.current = nextDraft;
-        setDraft(nextDraft);
+        resetDraft(nextDraft);
         setIsEditorOpen(true);
       } catch (error) {
         if (!cancelled) {
@@ -250,8 +315,7 @@ export function useAdminProductsManager(
       const nextDraft = nextSnapshot.products[0]
         ? productToDraft(nextSnapshot.products[0])
         : newProductDraft();
-      draftRef.current = nextDraft;
-      setDraft(nextDraft);
+      resetDraft(nextDraft);
       setIsEditorOpen(false);
     } catch (error) {
       setNotice(messageFromError(error, PRODUCT_ERROR_MESSAGES.load));
@@ -268,6 +332,23 @@ export function useAdminProductsManager(
       return false;
     }
 
+    if (
+      changedFieldsRef.current.has("regularPrice") &&
+      !hasValidProductPrice(draftToSave.regularPrice)
+    ) {
+      setNotice(PRODUCT_ERROR_MESSAGES.invalidRegularPrice);
+      return false;
+    }
+
+    if (
+      changedFieldsRef.current.has("salePrice") &&
+      draftToSave.salePrice.trim() &&
+      !hasValidProductPrice(draftToSave.salePrice)
+    ) {
+      setNotice(PRODUCT_ERROR_MESSAGES.invalidSalePrice);
+      return false;
+    }
+
     setIsSaving(true);
     setNotice("");
 
@@ -277,7 +358,12 @@ export function useAdminProductsManager(
           ? ADMIN_PRODUCTS_API.list
           : ADMIN_PRODUCTS_API.detail(selectedProductId);
       const response = await fetch(endpoint, {
-        body: JSON.stringify(buildPayload(draftToSave)),
+        body: JSON.stringify(
+          buildPayload(
+            draftToSave,
+            selectedProductId === "new" ? undefined : changedFieldsRef.current,
+          ),
+        ),
         headers: { "Content-Type": "application/json" },
         method: selectedProductId === "new" ? "POST" : "PATCH",
       });
@@ -300,8 +386,7 @@ export function useAdminProductsManager(
       setSelectedProductId(savedProduct.id);
       setTags((currentTags) => mergeTags(currentTags, savedProduct.tags));
       const nextDraft = productToDraft(savedProduct);
-      draftRef.current = nextDraft;
-      setDraft(nextDraft);
+      resetDraft(nextDraft);
       setNotice(PRODUCT_NOTICES.saved);
       return true;
     } catch (error) {
@@ -362,7 +447,7 @@ export function useAdminProductsManager(
                   src: media.src,
                 },
               ],
-      }));
+      }), ["imageIds"]);
       setNotice(
         target === "cover" ? PRODUCT_NOTICES.coverUpdated : PRODUCT_NOTICES.secondaryAdded,
       );
@@ -394,7 +479,7 @@ export function useAdminProductsManager(
           tagIds: currentDraft.tagIds.includes(String(existingTag.id))
             ? currentDraft.tagIds
             : [...currentDraft.tagIds, String(existingTag.id)],
-        }));
+        }), ["tagIds"]);
       }
       setNewTagName("");
       setNotice(PRODUCT_NOTICES.tagApplied);
@@ -424,7 +509,7 @@ export function useAdminProductsManager(
           tagIds: currentDraft.tagIds.includes(String(tag.id))
             ? currentDraft.tagIds
             : [...currentDraft.tagIds, String(tag.id)],
-        }));
+        }), ["tagIds"]);
       }
       setNewTagName("");
       setNotice(PRODUCT_NOTICES.tagCreated);
@@ -436,9 +521,7 @@ export function useAdminProductsManager(
   }
 
   function updateDraft<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
-    const nextDraft = { ...draftRef.current, [key]: value };
-    draftRef.current = nextDraft;
-    setDraft(nextDraft);
+    updateDraftState((currentDraft) => ({ ...currentDraft, [key]: value }), [key]);
   }
 
   function removeImage(imageId: string) {
@@ -446,7 +529,7 @@ export function useAdminProductsManager(
       ...currentDraft,
       imageIds: currentDraft.imageIds.filter((id) => id !== imageId),
       images: currentDraft.images.filter((image) => String(image.id) !== imageId),
-    }));
+    }), ["imageIds"]);
   }
 
   function moveImageToCover(imageId: string) {
@@ -472,7 +555,7 @@ export function useAdminProductsManager(
         imageIds: nextImageIds,
         images: nextImages,
       };
-    });
+    }, ["imageIds"]);
   }
 
   function toggleDraftTerm(key: DraftTermKey, id: string) {
@@ -484,7 +567,7 @@ export function useAdminProductsManager(
           ? currentIds.filter((currentId) => currentId !== id)
           : [...currentIds, id],
       };
-    });
+    }, [key]);
   }
 
   function togglePromotion(isEnabled: boolean) {
@@ -500,7 +583,7 @@ export function useAdminProductsManager(
         tagIds: nextTagIds,
         ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "", salePrice: "" }),
       };
-    });
+    }, isEnabled ? ["tagIds"] : ["tagIds", "dateOnSaleFrom", "dateOnSaleTo", "salePrice"]);
 
     if (isEnabled && !promotionTag) {
       setNotice(PRODUCT_ERROR_MESSAGES.promotionTagMissing);

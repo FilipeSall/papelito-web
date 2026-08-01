@@ -4,7 +4,7 @@ import type { ChangeEvent } from "react";
 import { X } from "lucide-react";
 
 import { ProductImageFallback } from "@/components/ui";
-import { PRODUCT_EDIT_STATUS_OPTIONS } from "@/constants/admin-products";
+import { PRODUCT_EDIT_STATUS_OPTIONS, PRODUCT_IMAGE_ACCEPT } from "@/constants/admin-products";
 import type {
   ImageUploadTarget,
   ProductDraft,
@@ -13,6 +13,7 @@ import type {
 import {
   canViewProduct,
   getFrontendProductHref,
+  hasValidProductPrice,
   shouldHighlightPriceField,
   shouldHighlightShippingField,
 } from "../helpers";
@@ -151,6 +152,7 @@ export function ProductEditorModal({
           </button>
           <ModalHeader
             draftName={draft.name}
+            isCreatingTag={isCreatingTag}
             isSaving={isSaving}
             isUploading={isUploading}
             onSave={handleSave}
@@ -229,6 +231,7 @@ type DraftUpdater = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K
 
 function ModalHeader({
   draftName,
+  isCreatingTag,
   isSaving,
   isUploading,
   onSave,
@@ -236,6 +239,7 @@ function ModalHeader({
   selectedProductId,
 }: {
   draftName: string;
+  isCreatingTag: boolean;
   isSaving: boolean;
   isUploading: boolean;
   onSave: () => void | Promise<boolean>;
@@ -265,7 +269,7 @@ function ModalHeader({
         ) : null}
         <button
           className="inline-flex min-h-10 cursor-pointer items-center justify-center border border-brand-yellow bg-brand-yellow px-6 text-sm font-semibold -tracking-tight text-[#231f20] transition hover:bg-[#ead300] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSaving || isUploading}
+          disabled={isCreatingTag || isSaving || isUploading}
           onClick={() => void onSave()}
           type="button"
         >
@@ -329,6 +333,7 @@ function PricingSection({
   updateDraft: DraftUpdater;
 }) {
   const hasInvalidRegularPrice = shouldHighlightPriceField(draft.regularPrice);
+  const hasInvalidSalePrice = Boolean(draft.salePrice.trim()) && !hasValidProductPrice(draft.salePrice);
 
   return (
     <ModalSection title="Precificacao">
@@ -341,6 +346,7 @@ function PricingSection({
           value={draft.regularPrice}
         />
         <TextField
+          error={hasInvalidSalePrice}
           inputMode="decimal"
           label="Preço Promocional (R$)"
           onChange={(value) => updateDraft("salePrice", value)}
@@ -350,6 +356,11 @@ function PricingSection({
       {hasInvalidRegularPrice ? (
         <p className="text-xs font-medium text-[#b42318]" role="alert">
           Informe um preço válido. Produtos sem preço não são exibidos no catálogo.
+        </p>
+      ) : null}
+      {hasInvalidSalePrice ? (
+        <p className="text-xs font-medium text-[#b42318]" role="alert">
+          Informe um preço promocional válido ou deixe o campo vazio.
         </p>
       ) : null}
       <PromotionToggle isEnabled={isPromotionEnabled} onChange={onTogglePromotion} />
@@ -484,7 +495,7 @@ function ImagesSection({
         <label className="cursor-pointer text-sm font-medium text-[#b8a400] transition hover:text-[#231f20]">
           {isUploading ? "Enviando" : "Adicionar"}
           <input
-            accept="image/*"
+            accept={PRODUCT_IMAGE_ACCEPT}
             className="sr-only"
             disabled={isUploading}
             onChange={(event) => onFileChange(event, "cover")}
@@ -592,7 +603,7 @@ function AdditionalImageInput({
         "+"
       )}
       <input
-        accept="image/*"
+        accept={PRODUCT_IMAGE_ACCEPT}
         className="sr-only"
         disabled={isUploading}
         onChange={(event) => onFileChange(event, "secondary")}

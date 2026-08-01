@@ -41,6 +41,10 @@ export function hasValidProductPrice(value: string | null | undefined) {
   return parseMoney(normalized) > 0;
 }
 
+export function normalizeProductPrice(value: string) {
+  return value.trim() ? parseMoney(value).toFixed(2) : "";
+}
+
 export function shouldHighlightPriceField(value: string | null | undefined) {
   return !hasValidProductPrice(value);
 }
@@ -98,28 +102,37 @@ export function newProductDraft(): ProductDraft {
   };
 }
 
-export function buildPayload(draft: ProductDraft) {
-  return {
-    categories: draft.categoryIds.map(Number),
-    dateOnSaleFrom: draft.dateOnSaleFrom || null,
-    dateOnSaleTo: draft.dateOnSaleTo || null,
-    description: draft.description,
-    dimensions: {
+export function buildPayload(
+  draft: ProductDraft,
+  changedFields?: ReadonlySet<keyof ProductDraft>,
+) {
+  const hasChanged = (field: keyof ProductDraft) =>
+    !changedFields || changedFields.has(field);
+  const payload: Record<string, unknown> = {};
+
+  if (hasChanged("categoryIds")) payload.categories = draft.categoryIds.map(Number);
+  if (hasChanged("dateOnSaleFrom")) payload.dateOnSaleFrom = draft.dateOnSaleFrom || null;
+  if (hasChanged("dateOnSaleTo")) payload.dateOnSaleTo = draft.dateOnSaleTo || null;
+  if (hasChanged("description")) payload.description = draft.description;
+  if (hasChanged("height") || hasChanged("length") || hasChanged("width")) {
+    payload.dimensions = {
       height: normalizeShippingMeasure(draft.height),
       length: normalizeShippingMeasure(draft.length),
       width: normalizeShippingMeasure(draft.width),
-    },
-    images: draft.imageIds.map(Number),
-    name: draft.name,
-    regularPrice: draft.regularPrice,
-    salePrice: draft.salePrice,
-    shortDescription: draft.shortDescription,
-    sku: draft.sku,
-    slug: draft.slug,
-    status: draft.status,
-    tags: draft.tagIds.map(Number),
-    weight: normalizeShippingMeasure(draft.weight),
-  };
+    };
+  }
+  if (hasChanged("imageIds")) payload.images = draft.imageIds.map(Number);
+  if (hasChanged("name")) payload.name = draft.name;
+  if (hasChanged("regularPrice")) payload.regularPrice = normalizeProductPrice(draft.regularPrice);
+  if (hasChanged("salePrice")) payload.salePrice = normalizeProductPrice(draft.salePrice);
+  if (hasChanged("shortDescription")) payload.shortDescription = draft.shortDescription;
+  if (hasChanged("sku")) payload.sku = draft.sku;
+  if (hasChanged("slug")) payload.slug = draft.slug;
+  if (hasChanged("status")) payload.status = draft.status;
+  if (hasChanged("tagIds")) payload.tags = draft.tagIds.map(Number);
+  if (hasChanged("weight")) payload.weight = normalizeShippingMeasure(draft.weight);
+
+  return payload;
 }
 
 export function formatTermLabel(

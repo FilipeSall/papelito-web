@@ -64,15 +64,29 @@ export function TagInputField({
           </div>
         ) : null}
 
-        <input
-          className="min-h-9 w-full bg-transparent px-1.5 text-sm outline-none placeholder:text-[#231f20]/35 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isCreating}
-          onBlur={commit}
-          onChange={(event) => onNewTagNameChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isCreating ? "Criando tag..." : TAG_PLACEHOLDER_EXAMPLES}
-          value={newTagName}
-        />
+        <div className="flex items-center gap-2">
+          <input
+            className="min-h-9 min-w-0 flex-1 bg-transparent px-1.5 text-sm outline-none placeholder:text-[#231f20]/35 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isCreating}
+            onBlur={commit}
+            onChange={(event) => onNewTagNameChange(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isCreating ? "Criando tag..." : TAG_PLACEHOLDER_EXAMPLES}
+            value={newTagName}
+          />
+          {isCreating ? (
+            <span
+              className="inline-flex items-center gap-1.5 pr-1 text-xs text-[#231f20]/52"
+              role="status"
+            >
+              <span
+                aria-hidden
+                className="h-3 w-3 animate-spin rounded-full border border-[#231f20]/18 border-t-[#231f20]/60"
+              />
+              Criando tag
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <p className="text-[10px] leading-relaxed text-[#231f20]/48">

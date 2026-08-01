@@ -34,11 +34,16 @@ export const ADMIN_PRODUCTS_API = {
 
 export const FRONTEND_PRODUCT_PATH = "/produtos";
 
+export const PRODUCT_IMAGE_ACCEPT =
+  "image/webp,image/png,image/jpeg,image/avif,image/gif,.webp,.png,.jpg,.jpeg,.avif,.gif";
+
 export const PRODUCT_ERROR_MESSAGES = {
   load: "Não foi possível carregar produtos.",
   save: "Não foi possível salvar o produto.",
   upload: "Não foi possível enviar imagem.",
   createTag: "Não foi possível criar a tag.",
+  invalidRegularPrice: "Informe um preço regular válido.",
+  invalidSalePrice: "Informe um preço promocional válido ou deixe o campo vazio.",
   missingName: "Informe o nome do produto.",
   missingTagName: "Informe o nome da tag.",
   promotionTagMissing:

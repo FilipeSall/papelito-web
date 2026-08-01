@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPayload,
   hasValidProductPrice,
+  normalizeProductPrice,
   normalizeShippingMeasure,
   shouldHighlightPriceField,
   shouldHighlightWeightField,
@@ -47,6 +48,7 @@ describe("pricing and shipping draft values", () => {
     expect(shouldHighlightPriceField("sem preço")).toBe(true);
     expect(hasValidProductPrice("12,50")).toBe(true);
     expect(shouldHighlightPriceField("12,50")).toBe(false);
+    expect(normalizeProductPrice("R$ 1.234,50")).toBe("1234.50");
   });
 
   it("normalizes valid measures and clears zero, empty and invalid values", () => {
@@ -81,5 +83,60 @@ describe("pricing and shipping draft values", () => {
 
     expect(payload.dimensions).toEqual({ height: "5", length: "5.5", width: "5" });
     expect(payload.weight).toBe("0.4");
+  });
+
+  it("keeps unrelated fields out of a partial update", () => {
+    const draft = {
+      categoryIds: ["4"],
+      dateOnSaleFrom: "",
+      dateOnSaleTo: "",
+      description: "Descrição",
+      height: "4",
+      imageIds: ["8"],
+      images: [],
+      length: "3",
+      name: "Produto",
+      regularPrice: "140",
+      salePrice: "120",
+      shortDescription: "Resumo",
+      sku: "SKU-11856",
+      slug: "produto",
+      status: "publish",
+      tagIds: ["215"],
+      weight: "0.4",
+      width: "2",
+    };
+
+    expect(buildPayload(draft, new Set(["sku", "weight"]))).toEqual({
+      sku: "SKU-11856",
+      weight: "0.4",
+    });
+
+    expect(
+      buildPayload(
+        draft,
+        new Set([
+          "categoryIds",
+          "description",
+          "height",
+          "imageIds",
+          "length",
+          "shortDescription",
+          "slug",
+          "status",
+          "tagIds",
+          "width",
+        ]),
+      ),
+    ).toEqual({
+      categories: [4],
+      description: "Descrição",
+      dimensions: { height: "4", length: "3", width: "2" },
+      images: [8],
+      shortDescription: "Resumo",
+      slug: "produto",
+      status: "publish",
+      tags: [215],
+    });
   });
 });

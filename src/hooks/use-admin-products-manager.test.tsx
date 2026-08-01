@@ -62,7 +62,28 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
         onChange={(event) => manager.updateDraft("height", event.target.value)}
         value={manager.draft.height}
       />
+      <input
+        aria-label="preço regular"
+        onChange={(event) => manager.updateDraft("regularPrice", event.target.value)}
+        value={manager.draft.regularPrice}
+      />
+      <input
+        aria-label="preço promocional"
+        onChange={(event) => manager.updateDraft("salePrice", event.target.value)}
+        value={manager.draft.salePrice}
+      />
+      <input
+        aria-label="sku"
+        onChange={(event) => manager.updateDraft("sku", event.target.value)}
+        value={manager.draft.sku}
+      />
+      <input
+        aria-label="peso"
+        onChange={(event) => manager.updateDraft("weight", event.target.value)}
+        value={manager.draft.weight}
+      />
       <output aria-label="tags selecionadas">{manager.draft.tagIds.join(",")}</output>
+      <output aria-label="aviso">{manager.notice}</output>
       <input
         aria-label="nova tag"
         onChange={(event) => manager.setNewTagName(event.target.value)}
@@ -79,6 +100,17 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
       </button>
       <button onClick={() => void manager.handleSave()} type="button">
         salvar
+      </button>
+      <button
+        onClick={() => {
+          const firstProduct = manager.products[0];
+          if (firstProduct) {
+            void manager.selectProduct(firstProduct);
+          }
+        }}
+        type="button"
+      >
+        abrir produto
       </button>
     </>
   );
@@ -123,6 +155,115 @@ describe("useAdminProductsManager", () => {
     });
 
     expect(screen.getByLabelText("comprimento")).toHaveValue("5");
+  });
+
+  it("sends only changed fields so a SKU update cannot clear existing prices", async () => {
+    const initialSnapshot = {
+      ...snapshot,
+      products: [{ ...product, regularPrice: "140", salePrice: "120" }],
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ product: initialSnapshot.products[0] })),
+    );
+
+    render(<ManagerHarness initialSnapshot={initialSnapshot} />);
+    fireEvent.change(screen.getByLabelText("sku"), { target: { value: "SKU-11856" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(request.body))).toEqual({ sku: "SKU-11856" });
+  });
+
+  it("saves both prices with another changed field and keeps the confirmed values", async () => {
+    const savedProduct = { ...product, regularPrice: "150", salePrice: "120", weight: "0.5" };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ product: savedProduct })),
+    );
+
+    render(<ManagerHarness />);
+    fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "150" } });
+    fireEvent.change(screen.getByLabelText("preço promocional"), { target: { value: "120" } });
+    fireEvent.change(screen.getByLabelText("peso"), { target: { value: "0.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(request.body))).toEqual({
+      regularPrice: "150.00",
+      salePrice: "120.00",
+      weight: "0.5",
+    });
+    expect(screen.getByLabelText("preço regular")).toHaveValue("150");
+    expect(screen.getByLabelText("preço promocional")).toHaveValue("120");
+  });
+
+  it("preserves prices when a save fails and allows intentionally clearing only the sale price", async () => {
+    const initialSnapshot = {
+      ...snapshot,
+      products: [{ ...product, regularPrice: "140", salePrice: "120" }],
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Falhou" }), { status: 500 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ product: { ...initialSnapshot.products[0], salePrice: "" } })),
+      );
+
+    render(<ManagerHarness initialSnapshot={initialSnapshot} />);
+    fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("preço regular")).toHaveValue("150");
+      expect(screen.getByLabelText("preço promocional")).toHaveValue("120");
+    });
+
+    fireEvent.change(screen.getByLabelText("preço promocional"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body))).toEqual({
+      regularPrice: "150.00",
+      salePrice: "",
+    });
+  });
+
+  it("loads persisted variation prices before editing a variable product", async () => {
+    const variableProduct = { ...product, regularPrice: "", salePrice: "", type: "variable" };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ product: { ...variableProduct, regularPrice: "150", salePrice: "120" } }),
+      ),
+    );
+
+    render(<ManagerHarness initialSnapshot={{ ...snapshot, products: [variableProduct] }} />);
+    fireEvent.click(screen.getByRole("button", { name: "abrir produto" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/admin/products/123", { cache: "no-store" });
+      expect(screen.getByLabelText("preço regular")).toHaveValue("150");
+      expect(screen.getByLabelText("preço promocional")).toHaveValue("120");
+    });
+  });
+
+  it("does not report success or send an invalid price", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    render(<ManagerHarness />);
+    fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "invalido" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("aviso")).toHaveTextContent("Informe um preço regular válido.");
   });
 
   it("keeps a newly created tag in the draft and sends its ID when saving", async () => {
