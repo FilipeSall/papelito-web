@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import CadastroAnalisePage from "./page";
 
 vi.mock("next/image", () => ({
-  default: (props: { alt: string }) => <img alt={props.alt} />,
+  default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
 }));
 
 vi.mock("next/link", () => ({

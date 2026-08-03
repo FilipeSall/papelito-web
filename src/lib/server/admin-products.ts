@@ -343,13 +343,12 @@ function hasVariablePricingChange(payload: AdminProductPayload) {
 }
 
 function omitVariablePricing(payload: AdminProductPayload): AdminProductPayload {
-  const {
-    dateOnSaleFrom: _dateOnSaleFrom,
-    dateOnSaleTo: _dateOnSaleTo,
-    regularPrice: _regularPrice,
-    salePrice: _salePrice,
-    ...productPayload
-  } = payload;
+  const productPayload = { ...payload };
+
+  delete productPayload.dateOnSaleFrom;
+  delete productPayload.dateOnSaleTo;
+  delete productPayload.regularPrice;
+  delete productPayload.salePrice;
 
   return productPayload;
 }

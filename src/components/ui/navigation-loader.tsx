@@ -51,12 +51,6 @@ function NavigationLoaderInner() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  useEffect(() => {
-    if (startUrl !== null && startUrl !== currentUrl) {
-      setStartUrl(null);
-    }
-  }, [currentUrl, startUrl]);
-
   if (!loading) {
     return null;
   }

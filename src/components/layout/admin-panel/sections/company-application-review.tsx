@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import type {
@@ -83,11 +84,14 @@ function DocumentViewer({ mime, url }: { mime: string | null; url: string }) {
 
       <div className="h-[560px] overflow-auto border-2 border-[#1a1a1a] bg-[#f2f2f2]">
         {isImage ? (
-          <img
+          <Image
             alt="Documento privado da candidatura"
             className="block max-w-none"
+            height={1000}
             src={url}
             style={{ minWidth: "100%", width: `${zoom}%` }}
+            unoptimized
+            width={1000}
           />
         ) : (
           <iframe

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { NavigationLoader } from "./navigation-loader";
 
 vi.mock("next/image", () => ({
-  default: (props: { alt: string }) => <img alt={props.alt} />,
+  default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
 }));
 
 vi.mock("next/navigation", () => ({

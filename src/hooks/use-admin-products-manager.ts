@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ADMIN_PRODUCTS_API,
@@ -94,11 +94,11 @@ export function useAdminProductsManager(
   const handledInitialFocusRef = useRef(false);
   const selectionRequestRef = useRef(0);
 
-  function resetDraft(nextDraft: ProductDraft) {
+  const resetDraft = useCallback((nextDraft: ProductDraft) => {
     draftRef.current = nextDraft;
     changedFieldsRef.current = new Set();
     setDraft(nextDraft);
-  }
+  }, []);
 
   function markChanged(...fields: (keyof ProductDraft)[]) {
     if (fields.length === 0) {
@@ -143,16 +143,16 @@ export function useAdminProductsManager(
     Boolean(draft.dateOnSaleFrom || draft.dateOnSaleTo) ||
     Boolean(promotionTag && draft.tagIds.includes(String(promotionTag.id)));
 
-  function openProduct(product: AdminProduct) {
+  const openProduct = useCallback((product: AdminProduct) => {
     setSelectedProductId(product.id);
     setTags((currentTags) => mergeTags(currentTags, product.tags));
     const nextDraft = productToDraft(product);
     resetDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
-  }
+  }, [resetDraft]);
 
-  async function selectProduct(product: AdminProduct) {
+  const selectProduct = useCallback(async (product: AdminProduct) => {
     if (product.type !== "variable") {
       openProduct(product);
       return;
@@ -195,7 +195,7 @@ export function useAdminProductsManager(
         setIsLoading(false);
       }
     }
-  }
+  }, [openProduct]);
 
   function startNewProduct() {
     setSelectedProductId("new");
@@ -275,7 +275,7 @@ export function useAdminProductsManager(
     return () => {
       cancelled = true;
     };
-  }, [initialFocusProductId, products]);
+  }, [initialFocusProductId, products, selectProduct]);
 
   async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
     setIsLoading(true);
