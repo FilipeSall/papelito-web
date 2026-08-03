@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 import { useState } from "react";
 
 import type { SelectOption } from "@/types/admin-products-manager";
@@ -106,7 +106,7 @@ function ExportPanel({
     });
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
     setError("");

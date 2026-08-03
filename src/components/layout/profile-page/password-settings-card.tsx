@@ -52,7 +52,7 @@ export function PasswordSettingsCard({
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validateForm()) {

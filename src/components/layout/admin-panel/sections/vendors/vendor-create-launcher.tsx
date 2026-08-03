@@ -529,7 +529,7 @@ export function VendorCreateLauncher({
     }
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setCreatedVendor(null);

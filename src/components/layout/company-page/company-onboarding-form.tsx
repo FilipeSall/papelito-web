@@ -18,7 +18,7 @@ export function CompanyOnboardingForm({ isLegacyMigration = false, onComplete }:
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
     setBusy(true);

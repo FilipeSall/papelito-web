@@ -43,7 +43,15 @@ function highestTone(items: FlashSaleNotification[]): FlashSaleNotificationTone 
   );
 }
 
-export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificationBellProps) {
+function bellLabel(count: number): string {
+  if (count === 0) {
+    return "Nenhuma notificação";
+  }
+
+  return count === 1 ? "1 notificação" : `${count} notificações`;
+}
+
+export function FlashSaleNotificationBell({ notifications }: Readonly<FlashSaleNotificationBellProps>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -68,12 +76,9 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
   return (
     <div className="relative" ref={ref}>
       <button
+        aria-controls="flash-sale-notifications"
         aria-expanded={open}
-        aria-label={
-          count === 0
-            ? "Nenhuma notificação"
-            : `${count} notificaç${count === 1 ? "ão" : "ões"}`
-        }
+        aria-label={bellLabel(count)}
         className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
         onClick={() => setOpen((current) => !current)}
         type="button"
@@ -92,7 +97,7 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
       {open ? (
         <div
           className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] border-2 border-[#1a1a1a] bg-[#faf8f2] p-3 shadow-[8px_8px_0px_#1a1a1a]"
-          role="dialog"
+          id="flash-sale-notifications"
         >
           <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a1a]">
             Notificações {count > 0 ? `(${count})` : ""}
@@ -102,7 +107,7 @@ export function FlashSaleNotificationBell({ notifications }: FlashSaleNotificati
               Sem alertas no momento.
             </p>
           ) : (
-            <ul className="max-h-[320px] space-y-2 overflow-y-auto">
+            <ul className="max-h-80 space-y-2 overflow-y-auto">
               {notifications.map((item) => (
                 <li
                   key={item.id}

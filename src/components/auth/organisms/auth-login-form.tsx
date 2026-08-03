@@ -25,7 +25,7 @@ export function AuthLoginForm() {
   const callbackUrl = searchParams.get("callbackUrl");
   const postAuthUrl = buildPostAuthUrl(callbackUrl);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);

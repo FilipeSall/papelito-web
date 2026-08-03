@@ -57,7 +57,7 @@ export function CompanyInvitationsSection({ viewerRole }: CompanyInvitationsSect
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [canManage]);
 
-  async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreate(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
     const formElement = event.currentTarget;

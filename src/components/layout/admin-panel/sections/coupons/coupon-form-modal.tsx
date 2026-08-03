@@ -225,7 +225,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 

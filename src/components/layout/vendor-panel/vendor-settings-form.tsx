@@ -8,7 +8,7 @@ import { ProfileFormField } from "@/components/layout/profile-page/profile-form-
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
 
-export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDays: number }) {
+export function VendorSettingsForm({ initialLeadTimeDays }: Readonly<{ initialLeadTimeDays: number }>) {
   const [days, setDays] = useState(String(initialLeadTimeDays));
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [pending, startTransition] = useTransition();
@@ -18,7 +18,7 @@ export function VendorSettingsForm({ initialLeadTimeDays }: { initialLeadTimeDay
       ? "Informe um número inteiro entre 1 e 30."
       : "";
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (error) {
       setFeedback({ error: true, message: error });

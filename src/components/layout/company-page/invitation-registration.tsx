@@ -22,7 +22,7 @@ export function InvitationRegistration() {
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Convite inválido."));
   }, []);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!invitation || submitting) return;
     const form = new FormData(event.currentTarget);

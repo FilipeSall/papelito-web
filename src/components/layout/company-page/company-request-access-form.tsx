@@ -17,7 +17,7 @@ export function CompanyRequestAccessForm({ onRequested }: CompanyRequestAccessFo
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
     const cnpj = String(new FormData(event.currentTarget).get("cnpj") ?? "").trim();

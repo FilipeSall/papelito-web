@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { PRODUCT_STATUS_OPTIONS } from "@/constants/admin-products";
 import type { AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
@@ -33,7 +33,7 @@ export function ProductsFilters({
     filters.status.trim() !== appliedFilters.status.trim() ||
     filters.category.trim() !== appliedFilters.category.trim();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!hasPendingFilterChanges || isLoading) {
       return;

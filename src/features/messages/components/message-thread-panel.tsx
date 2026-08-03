@@ -2,7 +2,7 @@
 
 import { ArrowUp, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { type SubmitEvent, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 
 import { MESSAGE_BODY_MAX_LENGTH, MESSAGE_POLL_INTERVAL_MS } from "../constants";
@@ -68,7 +68,7 @@ export function MessageThreadPanel({
     return `Pedido #${thread.orderNumber} - ${thread.counterpartName}`;
   }, [thread]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const message = body.trim();
 

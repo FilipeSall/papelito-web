@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type SubmitEvent, useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -130,7 +130,7 @@ export default function CadastroPage() {
       .catch(() => undefined);
   }, [googleRegistrationTicket]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     const formData = new FormData(event.currentTarget);

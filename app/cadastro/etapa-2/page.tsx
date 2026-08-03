@@ -160,7 +160,7 @@ export default function CadastroEtapa2Page() {
     };
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
 

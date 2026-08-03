@@ -24,7 +24,7 @@ export function CompanyDetailsSection({
   const company = context.company;
   if (!company) return null;
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = await updateCompanyDetails({ ...(email ? { billingEmail: email } : {}), phone });
     if (!result.ok) {

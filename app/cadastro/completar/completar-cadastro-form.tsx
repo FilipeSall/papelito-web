@@ -99,7 +99,7 @@ export function CompletarCadastroForm({
     }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
 
@@ -556,7 +556,7 @@ function OwnerApplicationStep({
   const pending = application.status === "pending_manual_review";
   const rejected = application.status === "rejected";
 
-  async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
+  async function handleUpload(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     if (!file) {

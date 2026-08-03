@@ -2,20 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 
 import { ADMIN_USER_ROLES, buildAdminUsersQuery, type AdminUsersFilters } from "@/lib/server/admin-users-filters";
 import type { SelectOption } from "@/types/admin-products-manager";
 
 import { AdminSelectField } from "../products/components/admin-select-field";
 
-export function UsersFilters({
-  filters,
-  roleLabels,
-}: {
+type UsersFiltersProps = {
   filters: AdminUsersFilters;
   roleLabels: Record<(typeof ADMIN_USER_ROLES)[number], string>;
-}) {
+};
+
+export function UsersFilters({ filters, roleLabels }: Readonly<UsersFiltersProps>) {
   const router = useRouter();
   const [draft, setDraft] = useState(filters);
 
@@ -27,7 +26,7 @@ export function UsersFilters({
   const hasPendingChanges =
     draft.search.trim() !== filters.search.trim() || draft.role !== filters.role;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const query = buildAdminUsersQuery(
@@ -42,12 +41,12 @@ export function UsersFilters({
   }
 
   return (
-    <form className="relative z-[70] space-y-4" onSubmit={handleSubmit}>
+    <form className="relative z-70 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_auto]">
         <label className="block">
           <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
             <span className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" aria-hidden="true" />
-            Busca
+            {"Busca"}
           </span>
           <input
             className="mt-2 h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none placeholder:text-[#1a1a1a]/40"
