@@ -26,6 +26,7 @@ export interface ProductDetailItem {
   price: number;
   originalPrice: number;
   discountPercent: number;
+  promotionContext?: string;
   galleryImages: ProductDetailGalleryImage[];
   relatedThumbs: ProductDetailRelatedThumb[];
 }

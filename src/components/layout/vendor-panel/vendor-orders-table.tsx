@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { FormEvent, startTransition, useMemo, useOptimistic } from "react";
+import { startTransition, type ReactNode, type SubmitEvent, useMemo, useOptimistic } from "react";
 import useSWR from "swr";
 
 import { Panel } from "@/components/layout/operational-panel";
@@ -46,7 +46,7 @@ function LoadingState() {
   );
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorState({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return (
     <div className="px-5 py-12 text-center">
       <p className="text-sm font-semibold text-brand-dark">Não foi possível carregar os pedidos.</p>
@@ -62,13 +62,15 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
+interface VendorOrdersTableProps {
+  initialFilters: VendorOrdersFilters;
+  initialSnapshot: VendorOrdersSnapshot;
+}
+
 export function VendorOrdersTable({
   initialFilters,
   initialSnapshot,
-}: {
-  initialFilters: VendorOrdersFilters;
-  initialSnapshot: VendorOrdersSnapshot;
-}) {
+}: Readonly<VendorOrdersTableProps>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
@@ -121,10 +123,11 @@ export function VendorOrdersTable({
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const search = parseVendorOrdersSearch(String(formData.get("search") ?? ""));
+    const searchValue = formData.get("search");
+    const search = parseVendorOrdersSearch(typeof searchValue === "string" ? searchValue : "");
 
     commitFilters({
       page: 1,
@@ -139,6 +142,56 @@ export function VendorOrdersTable({
       search: filters.search,
       status: filters.status,
     });
+  }
+
+  let ordersContent: ReactNode;
+  if (showLoading) {
+    ordersContent = <LoadingState />;
+  } else if (showError) {
+    ordersContent = <ErrorState message={error.message} onRetry={() => void mutate()} />;
+  } else if (isEmpty) {
+    ordersContent = (
+      <div className="px-5 py-12 text-center">
+        <p className="text-sm font-semibold text-brand-dark">Nenhum pedido encontrado.</p>
+        <p className="mt-1 text-sm text-brand-dark/60">
+          Ajuste a busca ou o filtro de status para ver outros pedidos.
+        </p>
+      </div>
+    );
+  } else {
+    ordersContent = (
+      <>
+        <div className="hidden overflow-x-auto px-2 pt-2 md:block">
+          <table className="min-w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr>
+                {["Pedido", "Data", "Cliente", "Itens", "Status", "Total"].map((label) => (
+                  <th
+                    className={`border-b border-brand-dark/12 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48 ${
+                      label === "Total" ? "text-right" : ""
+                    }`}
+                    key={label}
+                  >
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.items.map((order) => (
+                <VendorOrdersTableRow key={order.id} order={order} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="grid gap-3 px-4 py-4 md:hidden">
+          {snapshot.items.map((order) => (
+            <VendorOrdersCard key={order.id} order={order} />
+          ))}
+        </div>
+      </>
+    );
   }
 
   return (
@@ -175,50 +228,7 @@ export function VendorOrdersTable({
         </div>
       </div>
 
-      {showLoading ? (
-        <LoadingState />
-      ) : showError ? (
-        <ErrorState message={error.message} onRetry={() => void mutate()} />
-      ) : isEmpty ? (
-        <div className="px-5 py-12 text-center">
-          <p className="text-sm font-semibold text-brand-dark">Nenhum pedido encontrado.</p>
-          <p className="mt-1 text-sm text-brand-dark/60">
-            Ajuste a busca ou o filtro de status para ver outros pedidos.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="hidden overflow-x-auto px-2 pt-2 md:block">
-            <table className="min-w-full border-separate border-spacing-0 text-left">
-              <thead>
-                <tr>
-                  {["Pedido", "Data", "Cliente", "Itens", "Status", "Total"].map((label) => (
-                    <th
-                      className={`border-b border-brand-dark/12 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-dark/48 ${
-                        label === "Total" ? "text-right" : ""
-                      }`}
-                      key={label}
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.items.map((order) => (
-                  <VendorOrdersTableRow key={order.id} order={order} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 px-4 py-4 md:hidden">
-            {snapshot.items.map((order) => (
-              <VendorOrdersCard key={order.id} order={order} />
-            ))}
-          </div>
-        </>
-      )}
+      {ordersContent}
 
       <div className="flex flex-col gap-2 border-t border-brand-dark/10 px-5 py-4 text-sm text-brand-dark/62 sm:flex-row sm:items-center sm:justify-between">
         <span>{snapshot.total} pedidos</span>

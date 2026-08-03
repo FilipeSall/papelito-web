@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  PROMO_ITEMS,
-  PROMO_MARQUEE_MIN_ACTIVE_MESSAGES,
-} from "@/components/layout/promo-marquee/constants";
+import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/components/layout/promo-marquee/constants";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
@@ -299,11 +296,11 @@ export async function getHomePromoMarquee(): Promise<PromoMarqueeItem[]> {
       console.warn("[home-promo-marquee] Falha ao consultar a faixa.", result.error.message);
     }
 
-    return PROMO_ITEMS;
+    return [];
   }
 
   if (!Array.isArray(result.data.messages)) {
-    return PROMO_ITEMS;
+    return [];
   }
 
   const activeMessages = result.data.messages

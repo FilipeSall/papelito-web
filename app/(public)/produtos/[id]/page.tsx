@@ -9,6 +9,8 @@ import { fetchProductFavoriteStatus } from "@/features/favorites";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getCoverage } from "@/features/catalog/services/get-coverage";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
+import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
+import { applyFlashSaleToProductDetail } from "@/features/catalog/services/apply-flash-sale-to-product-detail";
 import {
   createRegionBlock,
   type RegionBlock,
@@ -33,8 +35,9 @@ export default async function ProdutoDetalhePage({
 }: ProdutoDetalhePageProps) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  const [product, initialIsFavorite, activeVendorResult] = await Promise.all([
+  const [product, flashSaleCampaign, initialIsFavorite, activeVendorResult] = await Promise.all([
     getProductDetail(id),
+    getHomeFlashSale(),
     fetchProductFavoriteStatus(id, session?.accessToken),
     session?.user ? getActiveVendor() : Promise.resolve(null),
   ]);
@@ -42,6 +45,8 @@ export default async function ProdutoDetalhePage({
   if (!product) {
     notFound();
   }
+
+  const displayedProduct = applyFlashSaleToProductDetail(product, flashSaleCampaign);
 
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
@@ -60,12 +65,12 @@ export default async function ProdutoDetalhePage({
     const { cep } = await getAccountCoverageCepContext();
 
     if (cep) {
-      const coverage = await getCoverage(cep, [product.id], activeVendor.vendorId).catch(
+      const coverage = await getCoverage(cep, [displayedProduct.id], activeVendor.vendorId).catch(
         () => null,
       );
-      selectedVendorStockQty = coverage?.[product.id]?.bestVendor?.qty ?? null;
+      selectedVendorStockQty = coverage?.[displayedProduct.id]?.bestVendor?.qty ?? null;
 
-      if (coverage && coverage[product.id]?.hasCoverage === false) {
+      if (coverage && coverage[displayedProduct.id]?.hasCoverage === false) {
         regionBlock = createRegionBlock("no_product_coverage");
       }
     } else {
@@ -77,7 +82,7 @@ export default async function ProdutoDetalhePage({
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
       <ProductBreadcrumbs productName={product.name} />
       <ProductDetailMainSection
-        product={product}
+        product={displayedProduct}
         initialIsFavorite={initialIsFavorite}
         activeVendor={activeVendor}
         selectedVendorStockQty={selectedVendorStockQty}

@@ -227,6 +227,7 @@ export function ProductDetailMainContent({
           image: product.image,
           price: product.price,
           originalPrice: product.originalPrice,
+          promotionContext: product.promotionContext,
           ...result.vendor,
         },
         quantity,

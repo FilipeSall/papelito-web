@@ -12,10 +12,6 @@ function NavigationLoaderInner() {
   const currentUrl = search ? `${pathname}?${search}` : pathname;
   const loading = startUrl !== null && startUrl === currentUrl;
 
-  if (startUrl !== null && startUrl !== currentUrl) {
-    setStartUrl(null);
-  }
-
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (
@@ -55,13 +51,20 @@ function NavigationLoaderInner() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
+  useEffect(() => {
+    if (startUrl !== null && startUrl !== currentUrl) {
+      setStartUrl(null);
+    }
+  }, [currentUrl, startUrl]);
+
+  if (!loading) {
+    return null;
+  }
+
   return (
     <div
-      aria-hidden={!loading}
       role="status"
-      className={`fixed inset-0 z-1600 flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 ${
-        loading ? "opacity-100" : "pointer-events-none opacity-0"
-      }`}
+      className="fixed inset-0 z-1600 flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 opacity-100"
     >
       <div className="relative size-28">
         <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-brand-yellow/25 border-t-brand-yellow" />

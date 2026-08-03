@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type FormEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 
 type Application = { status: string; canUpload: boolean };
+type ApplicationLoadState = "loading" | "loaded" | "missing" | "error";
 
 const benefits = [
   "Descontos exclusivos para membros",
@@ -15,17 +16,46 @@ const benefits = [
 
 export default function CadastroAnalisePage() {
   const [application, setApplication] = useState<Application | null>(null);
+  const [loadState, setLoadState] = useState<ApplicationLoadState>("loading");
+  const [reloadCount, setReloadCount] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
   useEffect(() => {
-    void fetch("/api/company-applications/current", { cache: "no-store" })
-      .then(async (response) => (response.ok ? (response.json() as Promise<Application>) : null))
-      .then(setApplication);
-  }, []);
+    let active = true;
 
-  async function submitDocument(event: FormEvent<HTMLFormElement>) {
+    void fetch("/api/company-applications/current", { cache: "no-store" })
+      .then(async (response) => {
+        if (!active) return;
+
+        if (response.status === 404) {
+          setApplication(null);
+          setLoadState("missing");
+          return;
+        }
+
+        if (!response.ok) {
+          setApplication(null);
+          setLoadState("error");
+          return;
+        }
+
+        setApplication(await response.json() as Application);
+        setLoadState("loaded");
+      })
+      .catch(() => {
+        if (!active) return;
+        setApplication(null);
+        setLoadState("error");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [reloadCount]);
+
+  async function submitDocument(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file) {
       setMessage("Selecione um documento com foto para continuar.");
@@ -124,8 +154,40 @@ export default function CadastroAnalisePage() {
                   : "Sua candidatura está em análise"}
           </h2>
 
-          {!application ? (
+          {loadState === "loading" ? (
             <p className="mt-4 text-sm leading-6 text-white/55">Carregando sua candidatura...</p>
+          ) : null}
+
+          {loadState === "missing" ? (
+            <>
+              <p className="mt-4 text-sm leading-6 text-white/55">
+                Não encontramos uma candidatura neste dispositivo. Inicie um novo cadastro para continuar.
+              </p>
+              <Link
+                href="/cadastro"
+                className="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white"
+              >
+                Iniciar cadastro
+              </Link>
+            </>
+          ) : null}
+
+          {loadState === "error" ? (
+            <>
+              <p className="mt-4 text-sm leading-6 text-white/55">
+                Não foi possível carregar sua candidatura. Tente novamente.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadState("loading");
+                  setReloadCount((current) => current + 1);
+                }}
+                className="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-black uppercase tracking-wide text-brand-dark transition hover:bg-white"
+              >
+                Tentar novamente
+              </button>
+            </>
           ) : null}
 
           {requiresDocument ? (
@@ -205,7 +267,7 @@ export default function CadastroAnalisePage() {
             </>
           ) : null}
 
-          {application && !requiresDocument && !pendingReview && !approved && !rejected ? (
+          {loadState === "loaded" && application && !requiresDocument && !pendingReview && !approved && !rejected ? (
             <p className="mt-4 text-sm leading-6 text-white/55">
               Não foi possível carregar o estado da candidatura. Atualize a página para tentar
               novamente.
