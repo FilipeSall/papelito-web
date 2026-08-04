@@ -53,6 +53,17 @@ describe("PostLoginPage", () => {
     await expectRedirect(renderPage(), "/");
   });
 
+  it("usa o contexto canônico da sessão se a consulta pós-login falhar", async () => {
+    getServerSessionMock.mockResolvedValueOnce(buildSession());
+    fetchCompanyContextMock.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      error: { code: "papelito_network_error", message: "Indisponível." },
+    });
+
+    await expectRedirect(renderPage(), "/");
+  });
+
   it("nunca usa /produtos como destino padrão", async () => {
     getServerSessionMock.mockResolvedValueOnce(buildSession());
     fetchCompanyContextMock.mockResolvedValueOnce(COMPLETE);

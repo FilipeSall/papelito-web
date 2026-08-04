@@ -30,9 +30,14 @@ function buildError(code: string, message: string, status: number): WpRestError 
 
 export async function wpRest<T>(
   path: string,
-  init: RequestInit & { json?: unknown; revalidate?: number; tags?: string[] } = {},
+  init: RequestInit & {
+    json?: unknown;
+    revalidate?: number;
+    tags?: string[];
+    timeoutMs?: number;
+  } = {},
 ): Promise<WpRestResult<T>> {
-  const { json, headers, revalidate, tags, ...rest } = init;
+  const { json, headers, revalidate, tags, timeoutMs, signal, ...rest } = init;
   const url = `${getWpRestBase().replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 
   const cacheConfig =
@@ -51,6 +56,7 @@ export async function wpRest<T>(
         ...(headers as Record<string, string> | undefined),
       },
       body: json !== undefined ? JSON.stringify(json) : rest.body,
+      signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : signal,
       ...cacheConfig,
       ...rest,
     });

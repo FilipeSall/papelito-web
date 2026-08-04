@@ -24,12 +24,15 @@ export function AuthLoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const callbackUrl = searchParams.get("callbackUrl");
   const postAuthUrl = buildPostAuthUrl(callbackUrl);
+  const authUnavailable =
+    searchParams.get("error") === "papelito_auth_unavailable" ||
+    searchParams.get("error") === "papelito_auth_context_unavailable";
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const username = String(formData.get("username") ?? "").trim();
+    const username = String(formData.get("username") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
 
     if (!username || !password) {
@@ -66,7 +69,17 @@ export function AuthLoginForm() {
           return;
         }
 
-        setErrorMessage("Não foi possível autenticar com sua conta Papelito.");
+        if (
+          result?.error === "papelito_auth_unavailable" ||
+          result?.error === "papelito_auth_context_unavailable"
+        ) {
+          setErrorMessage("Não foi possível concluir seu login agora. Tente novamente.");
+          return;
+        }
+
+        setErrorMessage(
+          "E-mail ou senha inválidos. Se sua conta foi criada com Google, entre pelo Google ou redefina sua senha.",
+        );
         return;
       }
 
@@ -108,9 +121,9 @@ export function AuthLoginForm() {
               </Link>
             </div>
 
-            {errorMessage ? (
+            {errorMessage || authUnavailable ? (
               <div className="space-y-2 text-sm text-red-200">
-                <p>{errorMessage}</p>
+                <p>{errorMessage ?? "Não foi possível concluir seu login agora. Tente novamente."}</p>
                 {pendingVerificationEmail ? (
                   <Link
                     href={`/confirmar-email?email=${encodeURIComponent(pendingVerificationEmail)}`}

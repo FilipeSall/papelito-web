@@ -33,5 +33,6 @@ export async function fetchCompanyContext(
 ): Promise<WpRestResult<CompanyContext>> {
   return wpRest<CompanyContext>("/papelito/v1/companies/current", {
     headers: { Authorization: `Bearer ${accessToken}` },
+    timeoutMs: 10_000,
   });
 }

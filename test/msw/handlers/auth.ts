@@ -23,7 +23,10 @@ export const authHandlers = [
         });
       }
 
-      if (body.variables?.u === "invalido@papelito.com") {
+      if (
+        body.variables?.u === "invalido@papelito.com" ||
+        body.variables?.u === "senha-incorreta@papelito.com"
+      ) {
         return HttpResponse.json({ data: { login: null } });
       }
 

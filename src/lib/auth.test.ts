@@ -35,6 +35,22 @@ async function runJwtCallback(
   } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.jwt>>[0]);
 }
 
+function getCredentialsAuthorize() {
+  const provider = authOptions.providers.find((item) => item.id === "credentials") as {
+    options?: {
+      authorize?: (
+        credentials: { username?: string; password?: string },
+      ) => Promise<Record<string, unknown> | null>;
+    };
+  };
+
+  if (!provider?.options?.authorize) {
+    throw new Error("Credentials provider is not configured.");
+  }
+
+  return provider.options.authorize;
+}
+
 describe("authOptions callbacks", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -338,6 +354,60 @@ describe("authOptions callbacks", () => {
     expect(session.role).toBeUndefined();
   });
 
+  describe("credentials sign-in", () => {
+    it("normalizes the email and builds the same canonical B2B context as OAuth", async () => {
+      server.use(
+        http.get(AUTH_ME_URL, () =>
+          HttpResponse.json({
+            user: { role: "customer", profileComplete: true },
+            b2b: { companyId: 7, onboardingStatus: "complete", canPurchase: true },
+          }),
+        ),
+      );
+
+      const user = await getCredentialsAuthorize()({
+        username: "  CLIENTE@PAPELITO.COM ",
+        password: "senha-correta",
+      });
+
+      expect(user).toMatchObject({
+        id: "42",
+        email: "cliente@papelito.com",
+        role: "customer",
+        b2b: { companyId: 7, onboardingStatus: "complete", canPurchase: true },
+      });
+    });
+
+    it("rejects an unknown email without returning a user", async () => {
+      await expect(
+        getCredentialsAuthorize()({
+          username: "invalido@papelito.com",
+          password: "senha-incorreta",
+        }),
+      ).rejects.toThrow("papelito_invalid_credentials");
+    });
+
+    it("rejects an invalid password without returning a user", async () => {
+      await expect(
+        getCredentialsAuthorize()({
+          username: "senha-incorreta@papelito.com",
+          password: "senha-incorreta",
+        }),
+      ).rejects.toThrow("papelito_invalid_credentials");
+    });
+
+    it("does not create a partial session when the canonical identity cannot load", async () => {
+      server.use(http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })));
+
+      await expect(
+        getCredentialsAuthorize()({
+          username: "cliente@papelito.com",
+          password: "senha-correta",
+        }),
+      ).rejects.toThrow("papelito_auth_context_unavailable");
+    });
+  });
+
   describe("Google sign-in", () => {
     async function runSignIn(user: Record<string, unknown> = {}) {
       if (!authOptions.callbacks?.signIn) {
@@ -425,6 +495,12 @@ describe("authOptions callbacks", () => {
 
       expect(result).toContain("/cadastro?feedback=google_account_required&googleRegistration=");
       expect(result).not.toContain("google@example.test");
+    });
+
+    it("does not continue OAuth when the canonical identity cannot load", async () => {
+      server.use(http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })));
+
+      await expect(runSignIn()).resolves.toBe("/entrar?error=papelito_auth_context_unavailable");
     });
   });
 });

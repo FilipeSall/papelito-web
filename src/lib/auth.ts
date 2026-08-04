@@ -125,6 +125,7 @@ type WpLoginResult = {
     };
   } | null;
   errorMessage?: string;
+  unavailable?: boolean;
 };
 
 const ROLE_REVALIDATE_INTERVAL_MS = 5 * 60 * 1000;
@@ -152,40 +153,49 @@ function shouldRevalidateRole(token: {
 }
 
 async function wpLogin(username: string, password: string): Promise<WpLoginResult> {
-  const response = await fetch(getWpGraphqlEndpoint(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: WP_LOGIN_MUTATION,
-      variables: {
-        u: username,
-        p: password,
+  try {
+    const response = await fetch(getWpGraphqlEndpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        query: WP_LOGIN_MUTATION,
+        variables: {
+          u: username,
+          p: password,
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
 
-  const json = (await response.json()) as {
-    data?: {
-      login?: {
-        authToken?: string;
-        refreshToken?: string;
-        user?: {
-          databaseId?: number;
-          email?: string | null;
-          firstName?: string | null;
-          lastName?: string | null;
+    const json = (await response.json()) as {
+      data?: {
+        login?: {
+          authToken?: string;
+          refreshToken?: string;
+          user?: {
+            databaseId?: number;
+            email?: string | null;
+            firstName?: string | null;
+            lastName?: string | null;
+          };
         };
       };
+      errors?: WpGraphqlError[];
     };
-    errors?: WpGraphqlError[];
-  };
 
-  return {
-    login: json.data?.login ?? null,
-    errorMessage: json.errors?.[0]?.message,
-  };
+    if (!response.ok) {
+      return { login: null, unavailable: true };
+    }
+
+    return {
+      login: json.data?.login ?? null,
+      errorMessage: json.errors?.[0]?.message,
+    };
+  } catch {
+    return { login: null, unavailable: true };
+  }
 }
 
 function isEmailVerificationError(message: string | undefined) {
@@ -199,6 +209,7 @@ type WpGoogleExchangeResult =
 async function wpExchangeGoogleToken(idToken: string): Promise<WpGoogleExchangeResult> {
   const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/google", {
     json: { id_token: idToken },
+    timeoutMs: 10_000,
   });
 
   if (!result.ok) {
@@ -369,7 +380,12 @@ providers.push(
         return null;
       }
 
-      const { login, errorMessage } = await wpLogin(credentials.username, credentials.password);
+      const username = credentials.username.trim().toLowerCase();
+      const { login, errorMessage, unavailable } = await wpLogin(username, credentials.password);
+
+      if (unavailable) {
+        throw new Error("papelito_auth_unavailable");
+      }
 
       if (isEmailVerificationError(errorMessage)) {
         throw new Error("papelito_email_not_verified");
@@ -385,9 +401,13 @@ providers.push(
 
       const identity = await wpFetchAuthenticatedIdentity(login.authToken);
 
+      if (!identity.ok) {
+        throw new Error("papelito_auth_context_unavailable");
+      }
+
       return {
         id: String(login.user.databaseId),
-        email: login.user.email ?? credentials.username,
+        email: login.user.email ?? username,
         name: `${login.user.firstName ?? ""} ${login.user.lastName ?? ""}`.trim(),
         accessToken: login.authToken,
         accessTokenExpires: getAccessTokenExpiresAt(login.authToken),
@@ -449,6 +469,9 @@ export const authOptions: NextAuthOptions = {
       userWithTokens.profileComplete = wpIdentity.profileComplete;
 
       const identity = await wpFetchAuthenticatedIdentity(wpIdentity.authToken);
+      if (!identity.ok) {
+        return "/entrar?error=papelito_auth_context_unavailable";
+      }
       userWithTokens.role = identity.role;
       userWithTokens.b2b = identity.b2b;
 

@@ -205,7 +205,10 @@ export function VendorOrdersTable({
             name="search"
             placeholder="Pedido ou cliente"
           />
-          <button className="cursor-pointer rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none">
+          <button
+            className="cursor-pointer rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
+            type="submit"
+          >
             Buscar
           </button>
         </form>
