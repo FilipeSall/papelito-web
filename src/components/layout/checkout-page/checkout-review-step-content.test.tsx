@@ -193,6 +193,35 @@ describe("CheckoutReviewStepContent", () => {
     expect(pushMock).not.toHaveBeenCalled();
   });
 
+  it("rotates the checkout attempt after a payload conflict", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json(
+          {
+            code: "papelito_checkout_attempt_payload_conflict",
+            message: "Esta tentativa de checkout foi reutilizada com dados diferentes.",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
+
+    await waitFor(() => {
+      expect(useCheckoutStore.getState().checkoutAttemptFingerprint).toBeTruthy();
+    });
+    const previousAttemptId = useCheckoutStore.getState().checkoutAttemptId;
+
+    await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
+
+    expect(
+      await screen.findByText("Esta tentativa de checkout foi reutilizada com dados diferentes."),
+    ).toBeInTheDocument();
+    expect(useCheckoutStore.getState().checkoutAttemptId).not.toBe(previousAttemptId);
+  });
+
   it("submits only once when the finish button is clicked repeatedly", async () => {
     let placeOrderCalls = 0;
     server.use(

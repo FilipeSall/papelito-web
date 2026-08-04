@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import {
@@ -44,11 +44,11 @@ export function CheckoutReviewStepContent() {
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
-  const checkoutAttemptId = useCheckoutStore(
-    (state) => state.checkoutAttemptId,
-  );
   const rotateCheckoutAttempt = useCheckoutStore(
     (state) => state.rotateCheckoutAttempt,
+  );
+  const syncCheckoutAttempt = useCheckoutStore(
+    (state) => state.syncCheckoutAttempt,
   );
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const stockValidation = useCartStockValidation();
@@ -58,8 +58,6 @@ export function CheckoutReviewStepContent() {
   const [pending, startTransition] = useTransition();
   const submissionRef = useRef(false);
   const isProcessing = isSubmitting || pending || stockValidation.isValidating;
-
-  if (items.length === 0 && !isProcessing) return <CheckoutEmptyCart />;
 
   const isAddressValid =
     addressForm.zipCode.replace(/\D/g, "").length === 8 &&
@@ -123,6 +121,36 @@ export function CheckoutReviewStepContent() {
     b2b?.canPurchase === true &&
     typeof b2b.companyId === "number";
 
+  const checkoutAttemptFingerprint = JSON.stringify({
+    expectedCompanyId: b2b?.companyId ?? null,
+    items: placeOrderItems,
+    address: addressForm,
+    shipping: {
+      selectedCode: selectedShippingQuote?.code ?? null,
+      destinationCep: addressForm.zipCode.replace(/\D/g, ""),
+    },
+    payment: {
+      method: paymentMethod,
+      installments:
+        paymentMethod === "credit_card"
+          ? Number.parseInt(paymentForm.installments, 10) || 1
+          : null,
+      cardTokenId: paymentMethod === "credit_card" ? paymentForm.cardTokenId : null,
+      holderName: paymentMethod === "credit_card" ? paymentForm.holderName : null,
+      billingAddress:
+        paymentMethod === "credit_card"
+          ? activeBillingAddress
+          : null,
+    },
+    couponCode,
+  });
+
+  useEffect(() => {
+    syncCheckoutAttempt(checkoutAttemptFingerprint);
+  }, [checkoutAttemptFingerprint, syncCheckoutAttempt]);
+
+  if (items.length === 0 && !isProcessing) return <CheckoutEmptyCart />;
+
   const cartLines = items.map((item) => ({
     id: item.id,
     name: item.name,
@@ -161,8 +189,9 @@ export function CheckoutReviewStepContent() {
 
     startTransition(async () => {
       try {
+        const currentCheckoutAttemptId = syncCheckoutAttempt(checkoutAttemptFingerprint);
         const result = await placeOrder({
-          checkoutAttemptId,
+          checkoutAttemptId: currentCheckoutAttemptId,
 			expectedCompanyId: b2b?.companyId ?? undefined,
           items: placeOrderItems,
           address: addressForm,
@@ -196,6 +225,12 @@ export function CheckoutReviewStepContent() {
           setCheckoutError(result.error.message);
           setIsSubmitting(false);
           submissionRef.current = false;
+          if (
+            result.error.code === "papelito_checkout_attempt_payload_conflict" ||
+            result.error.code === "papelito_checkout_company_context_changed"
+          ) {
+            rotateCheckoutAttempt();
+          }
           return;
         }
 

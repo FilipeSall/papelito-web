@@ -36,6 +36,7 @@ interface CheckoutState {
   paymentForm: PaymentForm;
   shippingQuote: CheckoutShippingQuoteState;
   checkoutAttemptId: string;
+  checkoutAttemptFingerprint?: string;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setBillingAddressField: (
@@ -50,6 +51,7 @@ interface CheckoutState {
   setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
   clearShippingQuote: () => void;
   rotateCheckoutAttempt: () => void;
+  syncCheckoutAttempt: (fingerprint: string) => string;
   resetCheckout: () => void;
 }
 
@@ -58,15 +60,23 @@ const INITIAL_SHIPPING_QUOTE: CheckoutShippingQuoteState = {
   selectedOption: null,
 };
 
+let checkoutAttemptFallbackSequence = 0;
+
 function createCheckoutAttemptId() {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
+  if (typeof crypto !== "undefined") {
+    if (typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+
+    if (typeof crypto.getRandomValues === "function") {
+      const values = new Uint32Array(4);
+      crypto.getRandomValues(values);
+      return `checkout-${Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("")}`;
+    }
   }
 
-  return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  checkoutAttemptFallbackSequence += 1;
+  return `checkout-${Date.now()}-${checkoutAttemptFallbackSequence}`;
 }
 
 export const useCheckoutStore = create<CheckoutState>()(
@@ -79,6 +89,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       paymentForm: INITIAL_PAYMENT_FORM,
       shippingQuote: INITIAL_SHIPPING_QUOTE,
       checkoutAttemptId: createCheckoutAttemptId(),
+      checkoutAttemptFingerprint: undefined,
       setAddressField: (field, value) =>
         set((state) => ({
           addressForm: {
@@ -134,6 +145,27 @@ export const useCheckoutStore = create<CheckoutState>()(
       clearShippingQuote: () => set({ shippingQuote: INITIAL_SHIPPING_QUOTE }),
       rotateCheckoutAttempt: () =>
         set({ checkoutAttemptId: createCheckoutAttemptId() }),
+      syncCheckoutAttempt: (fingerprint) => {
+        let attemptId = "";
+
+        set((state) => {
+          if (
+            state.checkoutAttemptFingerprint === fingerprint &&
+            state.checkoutAttemptId
+          ) {
+            attemptId = state.checkoutAttemptId;
+            return state;
+          }
+
+          attemptId = createCheckoutAttemptId();
+          return {
+            checkoutAttemptId: attemptId,
+            checkoutAttemptFingerprint: fingerprint,
+          };
+        });
+
+        return attemptId;
+      },
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
@@ -143,11 +175,12 @@ export const useCheckoutStore = create<CheckoutState>()(
           paymentForm: INITIAL_PAYMENT_FORM,
           shippingQuote: INITIAL_SHIPPING_QUOTE,
           checkoutAttemptId: createCheckoutAttemptId(),
+          checkoutAttemptFingerprint: undefined,
         }),
     }),
     {
       name: "papelito-checkout-store",
-      version: 4,
+      version: 5,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
@@ -164,6 +197,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           billingAddressForm?: CheckoutAddressForm;
           useDeliveryAddressForBilling?: boolean;
           checkoutAttemptId?: string;
+          checkoutAttemptFingerprint?: string;
         };
 
         const safePaymentForm: PaymentForm = {
@@ -198,6 +232,10 @@ export const useCheckoutStore = create<CheckoutState>()(
               state.checkoutAttemptId.trim()
                 ? state.checkoutAttemptId
                 : createCheckoutAttemptId(),
+            checkoutAttemptFingerprint:
+              typeof state.checkoutAttemptFingerprint === "string"
+                ? state.checkoutAttemptFingerprint
+                : undefined,
           };
         }
 
@@ -216,6 +254,10 @@ export const useCheckoutStore = create<CheckoutState>()(
             state.checkoutAttemptId.trim()
               ? state.checkoutAttemptId
               : createCheckoutAttemptId(),
+          checkoutAttemptFingerprint:
+            typeof state.checkoutAttemptFingerprint === "string"
+              ? state.checkoutAttemptFingerprint
+              : undefined,
         };
       },
       partialize: (state) => ({
@@ -226,6 +268,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         paymentForm: state.paymentForm,
         shippingQuote: state.shippingQuote,
         checkoutAttemptId: state.checkoutAttemptId,
+        checkoutAttemptFingerprint: state.checkoutAttemptFingerprint,
       }),
     },
   ),

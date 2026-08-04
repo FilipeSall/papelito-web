@@ -101,6 +101,22 @@ describe("useCheckoutStore", () => {
     expect(useCheckoutStore.getState().addressForm.city).toBe("Campinas");
   });
 
+  it("keeps an attempt for the same payload and rotates it when the payload changes", () => {
+    const firstAttemptId = useCheckoutStore
+      .getState()
+      .syncCheckoutAttempt("cart-v1");
+    const sameAttemptId = useCheckoutStore
+      .getState()
+      .syncCheckoutAttempt("cart-v1");
+    const changedAttemptId = useCheckoutStore
+      .getState()
+      .syncCheckoutAttempt("cart-v2");
+
+    expect(sameAttemptId).toBe(firstAttemptId);
+    expect(changedAttemptId).not.toBe(firstAttemptId);
+    expect(useCheckoutStore.getState().checkoutAttemptFingerprint).toBe("cart-v2");
+  });
+
   it("keeps a card billing address independent from the delivery address", () => {
     useCheckoutStore.getState().setAddressField("city", "Sao Paulo");
     useCheckoutStore.getState().setUseDeliveryAddressForBilling(false);
