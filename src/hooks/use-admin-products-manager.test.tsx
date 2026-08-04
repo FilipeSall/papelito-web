@@ -172,19 +172,32 @@ describe("useAdminProductsManager", () => {
     expect(screen.getByLabelText("comprimento")).toHaveValue("5");
   });
 
-  it("shows a clear size limit message when the platform rejects a large image", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("Request Entity Too Large", { status: 413 }),
-    );
+  it("uploads product images through the direct WordPress upload flow", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            ticket: "a".repeat(43),
+            uploadUrl: "https://wordpress.test/wp-json/papelito/v1/uploads/direct",
+          }),
+          { status: 201 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ media: { alt: "Produto", id: 321, src: "https://wordpress.test/produto.jpg" } }),
+          { status: 201 },
+        ),
+      );
 
     render(<ManagerHarness />);
     fireEvent.click(screen.getByRole("button", { name: "enviar imagem" }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("aviso")).toHaveTextContent(
-        "A imagem é grande demais. Envie uma imagem de até 4 MB.",
-      );
+      expect(screen.getByLabelText("aviso")).toHaveTextContent("Imagem principal atualizada.");
     });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("sends only changed fields so a SKU update cannot clear existing prices", async () => {

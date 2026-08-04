@@ -54,7 +54,7 @@ export function blockMessageFor(context: {
 		membership_suspended: { title: "Acesso suspenso", body: "Seu vínculo empresarial está suspenso." },
 		membership_expired: { title: "Vínculo expirado", body: "Seu vínculo empresarial expirou." },
 		role_cannot_purchase: { title: "Sem permissão de compra", body: "Seu papel empresarial não permite realizar compras." },
-		billing_email_unverified: { title: "E-mail de faturamento pendente", body: "Confirme o e-mail de faturamento da empresa para comprar." },
+		billing_email_unverified: { title: "E-mail de faturamento pendente", body: "Confirme o e-mail de faturamento em Perfil › Empresa para liberar as compras." },
 		fiscal_address_incomplete: { title: "Endereço fiscal incompleto", body: "Complete o endereço fiscal da empresa para comprar." },
 		payment_profile_incomplete: { title: "Dados de pagamento incompletos", body: "Revise os dados empresariais necessários para o pagamento." },
 		alphanumeric_cnpj_payment_disabled: { title: "Pagamento indisponível", body: "O pagamento para CNPJ alfanumérico ainda não está disponível." },

@@ -1,6 +1,7 @@
 import "server-only";
 
 type EnvKey =
+  | "APP_URL"
   | "NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT"
   | "NEXT_PUBLIC_WP_REST_BASE"
   | "NEXTAUTH_SECRET"
@@ -29,6 +30,7 @@ export function getServerEnv() {
   }
 
   return {
+    APP_URL: process.env.APP_URL,
     NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT: getWpGraphqlEndpoint(),
     NEXT_PUBLIC_WP_REST_BASE: getWpRestBase(),
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET as string,

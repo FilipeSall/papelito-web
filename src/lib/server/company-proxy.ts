@@ -2,6 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
+import { getAppBaseUrlOrUndefined } from "./app-url";
 import { getUserApiSession } from "./company-api";
 import { wpRest } from "./wp-rest";
 
@@ -31,6 +32,12 @@ export async function proxyCompanyRequest(
   if (IDEMPOTENT_METHODS.has(method)) {
     const key = request.headers.get("Idempotency-Key");
     if (key) headers["Idempotency-Key"] = key;
+
+    // O WordPress monta os links de e-mail e é servido por Preview e produção ao mesmo tempo; só
+    // esta implantação sabe qual é o próprio domínio. O valor é validado contra
+    // PAPELITO_ALLOWED_ORIGINS no backend — nunca aceito como veio.
+    const appBaseUrl = getAppBaseUrlOrUndefined();
+    if (appBaseUrl) headers["X-Papelito-Frontend-Base"] = appBaseUrl;
   }
 
   let json: unknown;

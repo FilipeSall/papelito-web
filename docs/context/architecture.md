@@ -47,7 +47,7 @@ Pontos que a lista de pastas não conta:
 Regras que valem para todo proxy:
 
 - repassa `Idempotency-Key` quando existe;
-- **encaminha `FormData` como `FormData`** — nunca converte upload para JSON (o upload de documento empresarial depende disso);
+- **autoriza uploads no servidor e envia o arquivo diretamente ao WordPress** — arquivos não atravessam Functions da Vercel; ver [`../../../docs/file-uploads.md`](../../../docs/file-uploads.md);
 - preserva status e mensagem de erro do WordPress em vez de reescrevê-los;
 - não loga corpo de requisição com dado sensível.
 
@@ -130,6 +130,7 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 |---|---|---|
 | `NEXTAUTH_SECRET` | sim | assina os cookies de sessão |
 | `NEXTAUTH_URL` | sim | URL pública do app |
+| `APP_URL` | opcional | base canônica desta implantação, repassada ao WordPress para montar links de e-mail. Só é necessária para Preview e Production emitirem **domínios diferentes** — e então precisa de escopo separado na Vercel. Sem ela, `getAppBaseUrl()` usa o domínio que a Vercel injeta e, por último, `NEXTAUTH_URL` |
 | `NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT` | recomendado | default `http://localhost:8080/graphql` |
 | `NEXT_PUBLIC_WP_REST_BASE` | recomendado | default `http://localhost:8080/wp-json` |
 | `GOOGLE_CLIENT_ID` | opcional | habilita o botão Google; **mesmo valor** de `PAPELITO_GOOGLE_CLIENT_ID` no WP |
@@ -139,6 +140,25 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 | `PAPELITO_FRONT_PROXY_TOKEN` | recomendado em produção | segredo compartilhado com o WordPress para chamadas internas do proxy; permite rate limit de frete por comprador sem confiar em header público |
 
 **Em produção, `NEXTAUTH_URL` deve ser `https://marketplace.papelito.com`.** O domínio `papelito-web.vercel.app` pode continuar acessível como fallback, mas nunca como `NEXTAUTH_URL`: **sessões de login não são compartilhadas entre os dois domínios**.
+
+### `APP_URL` e a base dos links de e-mail
+
+`getAppBaseUrl()` (`src/lib/server/app-url.ts`) resolve, nesta ordem:
+
+1. `APP_URL` / `NEXT_PUBLIC_APP_URL`;
+2. domínio que a Vercel injeta sozinha — `VERCEL_PROJECT_PRODUCTION_URL` em production, `VERCEL_URL` em preview;
+3. `NEXTAUTH_URL`;
+4. `http://localhost:3000`, **somente** fora de `VERCEL_ENV`.
+
+Em `production`/`preview` sem nada resolvido a função **lança**: um erro no log é melhor que e-mail com link `localhost`.
+
+**`APP_URL` é opcional.** Ela existe para um caso específico: fazer Preview e Production emitirem **domínios diferentes**. Se você não precisa disso, os passos 2 e 3 já entregam um domínio que atende de verdade.
+
+**Por que `NEXTAUTH_URL` é fallback e não a fonte preferida.** O mesmo valor também define o callback do OAuth e o host do cookie de sessão. Mudá-la para acertar um link de e-mail **desloga usuário** e exige o domínio novo nas redirect URIs do Google — dois efeitos que `APP_URL` não tem. Além disso ela está hoje como *All Environments*, então sozinha não distingue Preview de Production. Como último recurso, porém, é um domínio válido, e é o que evita exigir variável nova só para corrigir o link.
+
+Base de loopback é descartada quando `VERCEL_ENV` é `production`/`preview`, em qualquer posição da cadeia — a mesma guarda existe no WordPress (`papelito_frontend_is_local_base()`). São duas camadas de propósito: aqui o header nem é enviado; lá o valor é recusado mesmo se chegar.
+
+O valor sai daqui em `X-Papelito-Frontend-Base` (só em mutações, via `proxyCompanyRequest`) e o WordPress o valida contra `PAPELITO_ALLOWED_ORIGINS` antes de usar. Contrato completo em [integration-contracts.md](../../../docs/integration-contracts.md#base-pública-dos-links-de-e-mail).
 
 ## Dívida conhecida
 

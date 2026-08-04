@@ -10,6 +10,7 @@ import type {
   InvitationPreview,
   OwnerApplication,
 } from "../types/company";
+import { DirectUploadError, uploadDirectFile } from "@/lib/client/direct-upload";
 
 type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
 
@@ -104,32 +105,23 @@ export async function uploadOwnerDocument(file: File): Promise<ApiResult<{
   application: OwnerApplication;
   context: CompanyContext;
 }>> {
-  const formData = new FormData();
-  formData.set("document", file);
-
-  let response: Response;
   try {
-    response = await fetch("/api/company/current/owner-document", {
-      method: "POST",
-      headers: { "Idempotency-Key": crypto.randomUUID() },
-      body: formData,
-    });
-  } catch {
-    return { ok: false, status: 0, message: "Falha de rede. Tente novamente." };
-  }
+    const data = await uploadDirectFile<{
+      application: OwnerApplication;
+      context: CompanyContext;
+    }>("owner-document", file);
+    return { ok: true, data };
+  } catch (error) {
+    if (error instanceof DirectUploadError) {
+      return { ok: false, status: error.status, message: error.message };
+    }
 
-  const body = (await response.json().catch(() => null)) as
-    | { application: OwnerApplication; context: CompanyContext; message?: string }
-    | null;
-  if (!response.ok || !body) {
     return {
       ok: false,
-      status: response.status,
-      message: body?.message ?? "Não foi possível enviar o documento.",
+      status: 0,
+      message: error instanceof Error ? error.message : "Não foi possível enviar o documento.",
     };
   }
-
-  return { ok: true, data: body };
 }
 
 export function restartOwnerOnboarding() {
@@ -186,6 +178,14 @@ export function updateCompanyDetails(payload: { billingEmail?: string; phone?: s
 
 export function listCompanyAudit(page = 1) {
   return call<{ items: CompanyAuditEvent[]; page: number; perPage: number }>(`/api/company/current/audit?page=${page}`);
+}
+
+export function resendBillingEmailConfirmation(key = idempotencyKey()) {
+  return call<CompanyContext>("/api/company/current/billing-email/resend", {
+    method: "POST",
+    idempotent: true,
+    headers: { "Idempotency-Key": key },
+  });
 }
 
 export function removeMember(memberId: number) {

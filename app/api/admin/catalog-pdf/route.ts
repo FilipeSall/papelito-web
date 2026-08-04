@@ -6,7 +6,7 @@ import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getWpRestBase } from "@/lib/server/env";
 import { wpRest } from "@/lib/server/wp-rest";
 
-const MAX_CATALOG_SIZE = 15 * 1024 * 1024;
+const MAX_CATALOG_SIZE = 10 * 1024 * 1024;
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ message }, { status });
@@ -33,7 +33,7 @@ async function validatePdf(file: File) {
   }
 
   if (file.size > MAX_CATALOG_SIZE) {
-    return "O PDF excede o limite de 15 MB.";
+    return "O PDF excede o limite de 10 MB.";
   }
 
   if (!file.name.toLowerCase().endsWith(".pdf")) {

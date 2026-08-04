@@ -1,4 +1,4 @@
-export const MEDIA_API = "/api/admin/assets/media";
+import { uploadDirectFile } from "@/lib/client/direct-upload";
 
 type UploadResponse = {
   media?: {
@@ -14,17 +14,10 @@ export async function parseJson<T>(response: Response): Promise<T | null> {
 }
 
 export async function uploadMedia(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
+  const json = await uploadDirectFile<UploadResponse>("media", file);
 
-  const response = await fetch(MEDIA_API, {
-    body: formData,
-    method: "POST",
-  });
-  const json = await parseJson<UploadResponse>(response);
-
-  if (!response.ok || !json?.media) {
-    throw new Error(json?.message ?? "Não foi possível enviar a imagem.");
+  if (!json.media) {
+    throw new Error("Não foi possível enviar a imagem.");
   }
 
   return {

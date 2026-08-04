@@ -27,6 +27,7 @@ import type {
   ProductDraft,
   ProductFilters,
 } from "@/types/admin-products-manager";
+import { uploadDirectFile } from "@/lib/client/direct-upload";
 import { messageFromError } from "@/utils/error-message";
 import { normalizeKey } from "@/utils/normalize-key";
 
@@ -402,22 +403,12 @@ export function useAdminProductsManager(
     setNotice("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(ADMIN_PRODUCTS_API.media, {
-        body: formData,
-        method: "POST",
-      });
-      const json = (await response.json().catch(() => null)) as
-        | { media?: { alt: string; id: number; src: string }; message?: string }
-        | null;
-
-      if (!response.ok || !json?.media) {
-        throw new Error(
-          response.status === 413
-            ? PRODUCT_ERROR_MESSAGES.imageTooLarge
-            : json?.message ?? PRODUCT_ERROR_MESSAGES.upload,
-        );
+      const json = await uploadDirectFile<{ media?: { alt: string; id: number; src: string } }>(
+        "media",
+        file,
+      );
+      if (!json.media) {
+        throw new Error(PRODUCT_ERROR_MESSAGES.upload);
       }
 
       const media = json.media;

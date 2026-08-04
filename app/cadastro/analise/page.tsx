@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { type SubmitEvent, useEffect, useState } from "react";
 
+import { uploadDirectFile } from "@/lib/client/direct-upload";
+
 type Application = { status: string; canUpload: boolean };
 type ApplicationLoadState = "loading" | "loaded" | "missing" | "error";
 
@@ -64,24 +66,14 @@ export default function CadastroAnalisePage() {
 
     setWorking(true);
     setMessage(null);
-    const data = new FormData();
-    data.set("document", file);
-    const response = await fetch("/api/company-applications/current/document", {
-      method: "POST",
-      body: data,
-    });
-    const body = (await response.json().catch(() => null)) as Application | { message?: string } | null;
-    if (!response.ok) {
-      setMessage(
-        body && "message" in body
-          ? (body.message ?? "Não foi possível enviar o documento.")
-          : "Não foi possível enviar o documento.",
-      );
+    try {
+      setApplication(await uploadDirectFile<Application>("pre-account-document", file));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível enviar o documento.");
       setWorking(false);
       return;
     }
 
-    setApplication(body as Application);
     setWorking(false);
   }
 
@@ -145,13 +137,7 @@ export default function CadastroAnalisePage() {
             Análise empresarial
           </p>
           <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-white">
-            {requiresDocument
-              ? "Envie seu documento com foto"
-              : approved
-                ? "Cadastro aprovado"
-                : rejected
-                  ? "Candidatura encerrada"
-                  : "Sua candidatura está em análise"}
+            {applicationTitle(application?.status)}
           </h2>
 
           {loadState === "loading" ? (
@@ -197,7 +183,7 @@ export default function CadastroAnalisePage() {
                 legível para a equipe Papelito.
               </p>
               <form className="mt-8 space-y-5" onSubmit={submitDocument}>
-                <label className="block cursor-pointer border border-dashed border-white/30 bg-white/[0.04] p-5 transition hover:border-brand-yellow focus-within:border-brand-yellow">
+                <label className="block cursor-pointer border border-dashed border-white/30 bg-white/4 p-5 transition hover:border-brand-yellow focus-within:border-brand-yellow">
                   <span className="text-xs font-black uppercase tracking-[0.14em] text-white">
                     Documento com foto
                   </span>
@@ -281,6 +267,16 @@ export default function CadastroAnalisePage() {
       </main>
     </div>
   );
+}
+
+function applicationTitle(status: Application["status"] | undefined) {
+  const titles: Record<string, string> = {
+    approved: "Cadastro aprovado",
+    document_required: "Envie seu documento com foto",
+    rejected: "Candidatura encerrada",
+  };
+
+  return titles[status ?? ""] ?? "Sua candidatura está em análise";
 }
 
 function CheckIcon({ className }: Readonly<{ className?: string }>) {

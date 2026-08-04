@@ -168,10 +168,18 @@ describe("AssetsManager - seção de logos", () => {
 
   it("uploads a logo and shows the new preview", async () => {
     const user = userEvent.setup();
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ media: { alt: "", id: 501, src: CUSTOM_LOGO_URL } }),
-    });
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ticket: "a".repeat(43),
+          uploadUrl: "https://wordpress.test/wp-json/papelito/v1/uploads/direct",
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ media: { alt: "", id: 501, src: CUSTOM_LOGO_URL } }),
+      });
 
     renderManager();
     await openLogosSection(user);
@@ -189,7 +197,16 @@ describe("AssetsManager - seção de logos", () => {
       );
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/admin/assets/media", expect.objectContaining({ method: "POST" }));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/uploads/ticket",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://wordpress.test/wp-json/papelito/v1/uploads/direct",
+      expect.objectContaining({ method: "POST" }),
+    );
     expect(screen.getByRole("status")).toHaveTextContent(/logo enviada com sucesso/i);
   });
 

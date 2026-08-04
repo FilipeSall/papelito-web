@@ -4,6 +4,7 @@ import { ExternalLink, FileText, LoaderCircle, RotateCcw, Upload } from "lucide-
 import { useEffect, useState } from "react";
 
 import { messageFromError } from "@/utils/error-message";
+import { uploadDirectFile } from "@/lib/client/direct-upload";
 
 type CatalogItem = {
   filename?: string;
@@ -28,7 +29,7 @@ type Notice = {
 };
 
 const CATALOG_API = "/api/admin/catalog-pdf";
-const MAX_CATALOG_SIZE = 15 * 1024 * 1024;
+const MAX_CATALOG_SIZE = 10 * 1024 * 1024;
 const BUTTON_CLASS =
   "inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60";
 const SECONDARY_BUTTON_CLASS =
@@ -39,11 +40,7 @@ async function parseJson(response: Response) {
 }
 
 function resolveCatalogHref(url: string | undefined) {
-  if (!url) {
-    return "/api/catalog";
-  }
-
-  return url.startsWith("/") ? url : url;
+  return url || "/api/catalog";
 }
 
 function validateSelectedFile(file: File) {
@@ -56,7 +53,7 @@ function validateSelectedFile(file: File) {
   }
 
   if (file.size > MAX_CATALOG_SIZE) {
-    return "O PDF selecionado excede 15 MB.";
+    return "O PDF selecionado excede 10 MB.";
   }
 
   return null;
@@ -106,18 +103,7 @@ export function CatalogPdfManager() {
     setNotice(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(CATALOG_API, {
-        body: formData,
-        method: "POST",
-      });
-      const json = await parseJson(response);
-
-      if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível enviar o catálogo.");
-      }
+      const json = await uploadDirectFile<CatalogSnapshot>("catalog", file);
 
       setSnapshot(json);
       setNotice({ message: "Catálogo atualizado com sucesso.", tone: "success" });
@@ -200,18 +186,7 @@ export function CatalogPdfManager() {
         </label>
       </div>
 
-      {notice ? (
-        <div
-          className={`mt-4 px-4 py-3 text-sm font-bold ${
-            notice.tone === "error"
-              ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
-              : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
-          }`}
-          role={notice.tone === "error" ? "alert" : "status"}
-        >
-          {notice.message}
-        </div>
-      ) : null}
+      {notice ? <CatalogNotice notice={notice} /> : null}
 
       <div className="mt-4 rounded-2xl border border-[#231f20]/12 bg-[#fffdf7] p-4">
         {isLoading ? (
@@ -250,7 +225,7 @@ export function CatalogPdfManager() {
               </a>
             </div>
 
-            {configured && configured.isAvailable === false ? (
+            {configured?.isAvailable === false ? (
               <div className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-bold text-[#8a241a]">
                 O catálogo personalizado configurado está indisponível. O PDF padrão está ativo.
               </div>
@@ -287,8 +262,24 @@ export function CatalogPdfManager() {
       </div>
 
       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-        O arquivo precisa ser PDF e ter até 15 MB.
+        O arquivo precisa ser PDF e ter até 10 MB.
       </p>
     </section>
+  );
+}
+
+function CatalogNotice({ notice }: Readonly<{ notice: Notice }>) {
+  if (notice.tone === "success") {
+    return (
+      <output className="mt-4 block border-2 border-[#1a1a1a] bg-brand-yellow px-4 py-3 text-sm font-bold text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
+        {notice.message}
+      </output>
+    );
+  }
+
+  return (
+    <div className="mt-4 border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-bold text-[#c0392b]" role="alert">
+      {notice.message}
+    </div>
   );
 }
