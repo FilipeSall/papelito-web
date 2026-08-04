@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { AdminProductsSnapshot } from "@/lib/server/admin-products";
@@ -102,6 +102,17 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
         salvar
       </button>
       <button
+        onClick={() =>
+          void manager.handleUpload(
+            new File(["imagem"], "produto.jpg", { type: "image/jpeg" }),
+            "cover",
+          )
+        }
+        type="button"
+      >
+        enviar imagem
+      </button>
+      <button
         onClick={() => {
           const firstProduct = manager.products[0];
           if (firstProduct) {
@@ -131,8 +142,10 @@ describe("useAdminProductsManager", () => {
     fireEvent.change(screen.getByLabelText("largura"), { target: { value: "5" } });
     fireEvent.change(screen.getByLabelText("altura"), { target: { value: "5" } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("aviso")).toHaveTextContent("Produto salvo.");
     });
 
     const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -150,11 +163,28 @@ describe("useAdminProductsManager", () => {
     render(<ManagerHarness />);
     fireEvent.change(screen.getByLabelText("comprimento"), { target: { value: "5" } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("aviso")).toHaveTextContent("Falhou");
     });
 
     expect(screen.getByLabelText("comprimento")).toHaveValue("5");
+  });
+
+  it("shows a clear size limit message when the platform rejects a large image", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("Request Entity Too Large", { status: 413 }),
+    );
+
+    render(<ManagerHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "enviar imagem" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("aviso")).toHaveTextContent(
+        "A imagem é grande demais. Envie uma imagem de até 4 MB.",
+      );
+    });
   });
 
   it("sends only changed fields so a SKU update cannot clear existing prices", async () => {

@@ -408,13 +408,19 @@ export function useAdminProductsManager(
         body: formData,
         method: "POST",
       });
-      const json = await response.json();
+      const json = (await response.json().catch(() => null)) as
+        | { media?: { alt: string; id: number; src: string }; message?: string }
+        | null;
 
-      if (!response.ok) {
-        throw new Error(json.message ?? PRODUCT_ERROR_MESSAGES.upload);
+      if (!response.ok || !json?.media) {
+        throw new Error(
+          response.status === 413
+            ? PRODUCT_ERROR_MESSAGES.imageTooLarge
+            : json?.message ?? PRODUCT_ERROR_MESSAGES.upload,
+        );
       }
 
-      const media = json.media as { alt: string; id: number; src: string };
+      const media = json.media;
       updateDraftState((currentDraft) => ({
         ...currentDraft,
         imageIds:

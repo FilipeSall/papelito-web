@@ -41,6 +41,7 @@ export const PRODUCT_ERROR_MESSAGES = {
   load: "Não foi possível carregar produtos.",
   save: "Não foi possível salvar o produto.",
   upload: "Não foi possível enviar imagem.",
+  imageTooLarge: "A imagem é grande demais. Envie uma imagem de até 4 MB.",
   createTag: "Não foi possível criar a tag.",
   invalidRegularPrice: "Informe um preço regular válido.",
   invalidSalePrice: "Informe um preço promocional válido ou deixe o campo vazio.",
