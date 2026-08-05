@@ -7,6 +7,7 @@ import {
   deleteAdminFlashSale,
   getAdminFlashSaleSnapshot,
   saveAdminFlashSale,
+  AdminFlashSaleRequestError,
   type AdminFlashSalePayload,
 } from "@/lib/server/admin-flash-sale";
 
@@ -43,7 +44,8 @@ export async function PUT(request: Request) {
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível salvar a campanha.";
-    return NextResponse.json({ message }, { status: 500 });
+    const status = error instanceof AdminFlashSaleRequestError ? error.status : 500;
+    return NextResponse.json({ message }, { status });
   }
 }
 
@@ -62,6 +64,7 @@ export async function DELETE() {
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível remover a campanha.";
-    return NextResponse.json({ message }, { status: 500 });
+    const status = error instanceof AdminFlashSaleRequestError ? error.status : 500;
+    return NextResponse.json({ message }, { status });
   }
 }

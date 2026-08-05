@@ -42,6 +42,7 @@ export interface ProductsCatalogItem {
   isNewArrival: boolean;
   isOnSale: boolean;
   isKit: boolean;
+  promotionContext?: string;
   bestVendor?: CatalogBestVendor;
 }
 

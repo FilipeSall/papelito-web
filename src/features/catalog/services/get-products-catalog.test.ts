@@ -17,6 +17,14 @@ vi.mock("@/lib/server/env", () => ({
   getWpGraphqlEndpoint: () => "http://wordpress.test/graphql",
 }));
 
+const activeFlashSale = vi.hoisted(() => ({
+  current: null as { productIds: number[]; products: unknown[] } | null,
+}));
+
+vi.mock("./get-home-flash-sale", () => ({
+  getHomeFlashSale: () => Promise.resolve(activeFlashSale.current),
+}));
+
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
   return { ...actual, cache: <T,>(fn: T) => fn };
@@ -30,6 +38,14 @@ interface GraphqlCall {
 let calls: GraphqlCall[] = [];
 let categories = WP_PRODUCT_CATEGORIES;
 
+function fixturePrice(value: string) {
+  return Number(value.replace(/[^\d,]/g, "").replace(",", "."));
+}
+
+/**
+ * O WordPress filtra faixa de preço pelo preço regular e ignora o desconto da campanha:
+ * o stub precisa reproduzir isso para o teste do filtro valer alguma coisa.
+ */
 function stubWordPress() {
   wpGraphqlRequest.mockImplementation(
     async (query: string, variables: Record<string, unknown> = {}) => {
@@ -39,7 +55,28 @@ function stubWordPress() {
         return buildCategoriesResponse(categories);
       }
 
-      return buildProductsResponse(variables.categoryIn as string[] | undefined);
+      const { products } = buildProductsResponse(variables.categoryIn as string[] | undefined);
+      const include = variables.include as number[] | undefined;
+      const minPrice = variables.minPrice as number | undefined;
+      const maxPrice = variables.maxPrice as number | undefined;
+
+      return {
+        products: {
+          nodes: products.nodes.filter((node) => {
+            if (include && !include.includes(node.databaseId)) {
+              return false;
+            }
+
+            const regularPrice = fixturePrice(node.regularPrice);
+
+            if (typeof minPrice === "number" && regularPrice < minPrice) {
+              return false;
+            }
+
+            return !(typeof maxPrice === "number" && regularPrice > maxPrice);
+          }),
+        },
+      };
     },
   );
 }
@@ -58,6 +95,7 @@ beforeEach(() => {
   wpGraphqlRequest.mockReset();
   calls = [];
   categories = WP_PRODUCT_CATEGORIES;
+  activeFlashSale.current = null;
   stubWordPress();
 });
 
@@ -295,5 +333,73 @@ describe("getProductsCatalog — contagem das abas", () => {
       { id: "filtros", label: "FILTROS", count: 8 },
       { id: "acessorios", label: "ACESSÓRIOS", count: 6 },
     ]);
+  });
+});
+
+describe("getProductsCatalog — campanha relâmpago", () => {
+  const campaignProduct = {
+    id: "11794",
+    category: "Papel",
+    name: "Seda Insane Brown King Size",
+    badge: "Premium",
+    discount: 99,
+    originalPrice: 90,
+    price: 0.9,
+    rating: 0,
+    reviews: 0,
+    image: "",
+    promotionContext: "contexto-assinado",
+  };
+
+  function activateCampaign() {
+    activeFlashSale.current = { productIds: [11794], products: [campaignProduct] };
+  }
+
+  it("projeta o preço da campanha na grade, sem tocar nos demais produtos", async () => {
+    activateCampaign();
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 60 });
+    const promotional = payload.items.find((item) => item.id === "11794");
+
+    expect(promotional).toMatchObject({
+      price: 0.9,
+      originalPrice: 90,
+      isOnSale: true,
+      promotionContext: "contexto-assinado",
+    });
+    expect(
+      payload.items.filter((item) => item.id !== "11794").every((item) => item.price === 90),
+    ).toBe(true);
+  });
+
+  it("mantém o preço regular quando não há campanha ativa (expirada devolve null)", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 60 });
+    const product = payload.items.find((item) => item.id === "11794");
+
+    expect(product).toMatchObject({ price: 90, originalPrice: 90 });
+    expect(product?.promotionContext).toBeUndefined();
+  });
+
+  it("não perde o produto em campanha no filtro por faixa de preço", async () => {
+    activateCampaign();
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 60, maxPrice: 10 });
+
+    expect(payload.items.map((item) => item.id)).toEqual(["11794"]);
+    expect(payload.items[0].price).toBe(0.9);
+  });
+
+  it("descarta o produto em campanha quando o preço promocional fica fora da faixa", async () => {
+    activateCampaign();
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 60, minPrice: 50 });
+
+    expect(payload.items.some((item) => item.id === "11794")).toBe(false);
+    expect(payload.items.every((item) => item.price === 90)).toBe(true);
   });
 });

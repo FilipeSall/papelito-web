@@ -113,6 +113,7 @@ export type AdminFlashSalePayload = {
   endsAt: string;
   productIds: number[];
   discountPercent: number;
+  extremeDiscountConfirmed: boolean;
 };
 
 export type AdminFlashSaleProductsSnapshot = {
@@ -130,6 +131,13 @@ export type AdminFlashSaleProductsFilters = {
   perPage?: string;
   search?: string;
 };
+
+export class AdminFlashSaleRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "AdminFlashSaleRequestError";
+  }
+}
 
 function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -302,7 +310,7 @@ export async function saveAdminFlashSale(accessToken: string, payload: AdminFlas
   });
 
   if (!result.ok) {
-    throw new Error(result.error.message);
+    throw new AdminFlashSaleRequestError(result.error.message, result.status);
   }
 
   return mapSnapshot(result.data);
@@ -407,7 +415,7 @@ export async function deleteAdminFlashSale(accessToken: string) {
   });
 
   if (!result.ok) {
-    throw new Error(result.error.message);
+    throw new AdminFlashSaleRequestError(result.error.message, result.status);
   }
 
   return mapSnapshot(result.data);

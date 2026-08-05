@@ -21,6 +21,7 @@ export interface ProductGridItem {
   price: number;
   /** Caminho da imagem */
   image?: string;
+  promotionContext?: string;
 }
 
 interface ProductGridCardProps {
@@ -49,7 +50,7 @@ interface ProductGridCardProps {
  * />
  * ```
  */
-export function ProductGridCard({ product }: ProductGridCardProps) {
+export function ProductGridCard({ product }: Readonly<ProductGridCardProps>) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     category,
@@ -57,6 +58,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
     originalPrice,
     price,
     image,
+    promotionContext,
   } = product;
 
   return (
@@ -122,6 +124,7 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
                 image,
                 price,
                 originalPrice,
+                promotionContext,
               }}
             />
           </div>

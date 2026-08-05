@@ -11,6 +11,8 @@ import {
 } from "./get-wp-product-categories";
 import { fetchWpProductsSafe, mapWpProductToCatalogItem } from "./wp-catalog";
 import { searchCatalogProducts } from "./catalog-search";
+import { getHomeFlashSale } from "./get-home-flash-sale";
+import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
 import { SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -238,10 +240,10 @@ function mapMockProductToCatalogItem(
     typeof product.subcategory2 === "string"
       ? normalizeText(product.subcategory2)
       : "";
-  const normalizedTags = (product.homeData?.tags ?? []).map((tag) =>
-    normalizeText(tag),
+  const normalizedTags = new Set(
+    (product.homeData?.tags ?? []).map((tag) => normalizeText(tag)),
   );
-  const hasTag = (value: string) => normalizedTags.includes(normalizeText(value));
+  const hasTag = (value: string) => normalizedTags.has(normalizeText(value));
 
   const isPremium =
     hasTag("Premium") ||
@@ -344,11 +346,16 @@ export async function getProductsCatalog(
 
   let fetchedItems: ProductsCatalogItem[];
   let tabs: ProductsCatalogTab[];
+  const flashSaleCampaignPromise = getHomeFlashSale();
 
   if (useMockData) {
-    fetchedItems = (await requestProductsCatalogMockFile()).products.map(
-      mapMockProductToCatalogItem,
-    );
+    const [mockFile, flashSaleCampaign] = await Promise.all([
+      requestProductsCatalogMockFile(),
+      flashSaleCampaignPromise,
+    ]);
+    fetchedItems = mockFile.products
+      .map((product, index) => mapMockProductToCatalogItem(product, index))
+      .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign));
     tabs = [
       { id: "todos", label: TYPE_LABEL.todos, count: fetchedItems.length },
       ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
@@ -358,10 +365,11 @@ export async function getProductsCatalog(
       })),
     ];
   } else {
-    const [categoryFilter, typeBySlug, tabCounts] = await Promise.all([
+    const [categoryFilter, typeBySlug, tabCounts, flashSaleCampaign] = await Promise.all([
       getCategoryFilterForTypes(selectedTypes),
       getCategoryTypeBySlug(),
       getTabCounts(),
+      flashSaleCampaignPromise,
     ]);
 
     tabs = [
@@ -406,7 +414,10 @@ export async function getProductsCatalog(
       const itemsById = new Map(
         wpProducts.map((product, index) => [
           product.databaseId,
-          mapWpProductToCatalogItem(product, index, typeBySlug),
+          applyFlashSaleToCatalogItem(
+            mapWpProductToCatalogItem(product, index, typeBySlug),
+            flashSaleCampaign,
+          ),
         ]),
       );
 
@@ -430,18 +441,42 @@ export async function getProductsCatalog(
       };
     }
 
-    const wpProducts = await fetchWpProductsSafe(
-      {
-        first: fetchFirst,
-        categoryIn: selectedTypes.length > 0 ? categoryFilter.slugs : undefined,
-        minPrice,
-        maxPrice,
-      },
-      "products-catalog",
-    );
+    // O WordPress filtra faixa de preço pelo preço regular; produto em campanha
+    // precisa entrar mesmo assim para ser julgado adiante pelo preço promocional.
+    const campaignProductIds =
+      (minPrice !== null || maxPrice !== null) && flashSaleCampaign
+        ? flashSaleCampaign.products
+            .map((product) => Number(product.id))
+            .filter((id) => Number.isInteger(id) && id > 0)
+        : [];
+    const [wpProducts, wpCampaignProducts] = await Promise.all([
+      fetchWpProductsSafe(
+        {
+          first: fetchFirst,
+          categoryIn: selectedTypes.length > 0 ? categoryFilter.slugs : undefined,
+          minPrice,
+          maxPrice,
+        },
+        "products-catalog",
+      ),
+      campaignProductIds.length > 0
+        ? fetchWpProductsSafe(
+            { first: campaignProductIds.length, include: campaignProductIds },
+            "products-catalog-flash-sale",
+          )
+        : Promise.resolve([]),
+    ]);
+    const knownIds = new Set(wpProducts.map((product) => product.databaseId));
+    const mergedProducts = [
+      ...wpProducts,
+      ...wpCampaignProducts.filter((product) => !knownIds.has(product.databaseId)),
+    ];
 
-    fetchedItems = wpProducts.map((product, index) =>
-      mapWpProductToCatalogItem(product, index, typeBySlug),
+    fetchedItems = mergedProducts.map((product, index) =>
+      applyFlashSaleToCatalogItem(
+        mapWpProductToCatalogItem(product, index, typeBySlug),
+        flashSaleCampaign,
+      ),
     );
   }
 

@@ -10,7 +10,7 @@ import { getAccountCoverageCepContext } from "@/features/catalog/services/get-ac
 import { getCoverage } from "@/features/catalog/services/get-coverage";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
-import { applyFlashSaleToProductDetail } from "@/features/catalog/services/apply-flash-sale-to-product-detail";
+import { applyFlashSaleToProductDetail } from "@/features/catalog/services/apply-flash-sale-to-product";
 import {
   createRegionBlock,
   type RegionBlock,

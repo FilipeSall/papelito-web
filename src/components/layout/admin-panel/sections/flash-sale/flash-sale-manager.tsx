@@ -11,6 +11,7 @@ import type {
   AdminProductTaxonomyTerm,
 } from "@/lib/server/admin-products";
 import { messageFromError } from "@/utils/error-message";
+import { BaseModal } from "@/components/ui/base-modal";
 
 import { FlashSaleActionBar } from "./flash-sale-action-bar";
 import { FlashSaleCampaignForm } from "./flash-sale-campaign-form";
@@ -105,6 +106,7 @@ export function FlashSaleManager({
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExtremeDiscountConfirmOpen, setIsExtremeDiscountConfirmOpen] = useState(false);
   const [hasPersistedCampaign, setHasPersistedCampaign] = useState(Boolean(snapshot.campaign));
   const [toast, setToast] = useState<ToastState | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -405,7 +407,7 @@ export function FlashSaleManager({
     setSelectedProducts((current) => current.filter((product) => product.productId !== productId));
   }
 
-  async function handleSave() {
+  async function saveCampaign(extremeDiscountConfirmed: boolean) {
     setIsSaving(true);
 
     try {
@@ -418,6 +420,7 @@ export function FlashSaleManager({
           endsAt: toApiDatetime(draft.endsAt),
           productIds: selectedProducts.map((product) => product.productId),
           discountPercent: draft.discountPercent,
+          extremeDiscountConfirmed,
         }),
       });
       const json = (await response.json()) as AdminFlashSaleSnapshot & { message?: string };
@@ -448,6 +451,15 @@ export function FlashSaleManager({
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function handleSave() {
+    if (draft.discountPercent === 99) {
+      setIsExtremeDiscountConfirmOpen(true);
+      return;
+    }
+
+    void saveCampaign(false);
   }
 
   async function handleDelete() {
@@ -488,6 +500,61 @@ export function FlashSaleManager({
           visible={toastVisible}
         />
       ) : null}
+
+      <BaseModal
+        ariaDescribedBy="flash-sale-extreme-discount-description"
+        ariaLabelledBy="flash-sale-extreme-discount-title"
+        contentClassName="max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+        onClose={() => setIsExtremeDiscountConfirmOpen(false)}
+        open={isExtremeDiscountConfirmOpen}
+      >
+        <h2
+          className="text-lg font-black text-brand-dark"
+          id="flash-sale-extreme-discount-title"
+        >
+          Confirmar desconto de 99%
+        </h2>
+        <p
+          className="mt-2 text-sm leading-5 text-text-secondary"
+          id="flash-sale-extreme-discount-description"
+        >
+          Você está prestes a publicar os preços finais abaixo. Confirme que esta campanha é
+          intencional.
+        </p>
+        <ul className="mt-4 max-h-56 space-y-2 overflow-y-auto rounded-xl bg-bg-light p-3">
+          {selectedProducts.map((product) => (
+            <li className="flex items-center justify-between gap-4 text-sm" key={product.productId}>
+              <span className="min-w-0 truncate font-medium text-brand-dark">{product.name}</span>
+              <span className="shrink-0 text-text-secondary">
+                R$ {product.originalPrice.toFixed(2).replace(".", ",")} → R${" "}
+                <strong className="text-brand-dark">
+                  {product.price.toFixed(2).replace(".", ",")}
+                </strong>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            className="rounded-full border border-gray-300 px-4 py-2 text-sm font-bold text-brand-dark"
+            onClick={() => setIsExtremeDiscountConfirmOpen(false)}
+            type="button"
+          >
+            Cancelar
+          </button>
+          <button
+            className="rounded-full bg-brand-dark px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+            disabled={isSaving}
+            onClick={() => {
+              setIsExtremeDiscountConfirmOpen(false);
+              void saveCampaign(true);
+            }}
+            type="button"
+          >
+            Confirmar e salvar
+          </button>
+        </div>
+      </BaseModal>
 
       <div className="w-full space-y-6">
         <FlashSalePageHeader notifications={notifications} />

@@ -8,6 +8,7 @@ export interface FavoriteProductItem {
   price: number;
   originalPrice: number;
   stockStatus: string;
+  promotionContext?: string;
 }
 
 export interface FavoritesPayload {

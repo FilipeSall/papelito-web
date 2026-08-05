@@ -6,6 +6,7 @@ import path from "node:path";
 import { isMockDataEnabled } from "@/lib/server/env";
 import { fetchWpProductsSafe, mapWpProductToHomeCard } from "./wp-catalog";
 import { getHomeFlashSale } from "./get-home-flash-sale";
+import { applyFlashSaleToHomeProductCard } from "./apply-flash-sale-to-product";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type {
   HomeFlashSaleCampaign,
@@ -188,7 +189,9 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
       getHomeFlashSale(),
       fetchWpProductsSafe(48, "home-products"),
     ]);
-    const cards = products.map(mapWpProductToHomeCard);
+    const cards = products
+      .map((product, index) => mapWpProductToHomeCard(product, index))
+      .map((card) => applyFlashSaleToHomeProductCard(card, flashSaleCampaign));
     const bestSellerProducts = cards.slice(0, 8);
     const newArrivalProducts: HomeNewArrivalProduct[] = cards.slice(0, 8).map((card) => ({
       id: card.id,
@@ -213,7 +216,7 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
   const products = Array.isArray(mockFile?.products) ? mockFile.products : [];
 
   const candidates = products
-    .map(toHomeCandidate)
+    .map((product, index) => toHomeCandidate(product, index))
     .filter((item): item is HomeCandidate => item !== null);
 
   const bestSellerProducts = candidates

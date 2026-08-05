@@ -159,6 +159,7 @@ export function ProfileWishlist({ initialItems = [] }: ProfileWishlistProps) {
                       image: item.image,
                       price: item.price,
                       originalPrice: item.originalPrice,
+                      promotionContext: item.promotionContext,
                     }}
                   />
                   <button

@@ -18,6 +18,7 @@ export function ProductListCard({ product }: ProductListCardProps) {
     originalPrice,
     price,
     image,
+    promotionContext,
   } = product;
 
   return (
@@ -71,6 +72,7 @@ export function ProductListCard({ product }: ProductListCardProps) {
                 image,
                 price,
                 originalPrice,
+                promotionContext,
               }}
             />
           </div>

@@ -1,6 +1,9 @@
 import "server-only";
 
 import { wpGraphqlRequest } from "@/lib/server/wp-graphql";
+import { findCampaignProduct } from "@/features/catalog/services/apply-flash-sale-to-product";
+import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
+import type { HomeFlashSaleCampaign } from "@/features/catalog/types/home-products";
 import type {
   FavoriteMutationResult,
   FavoriteProductItem,
@@ -178,18 +181,41 @@ function mapFavoriteNode(node: FavoriteNode): FavoriteProductItem | null {
   };
 }
 
+function applyFlashSaleToFavorite(
+  item: FavoriteProductItem,
+  campaign: HomeFlashSaleCampaign | null,
+): FavoriteProductItem {
+  const campaignProduct = findCampaignProduct(item.productId, campaign);
+
+  if (!campaignProduct) {
+    return item;
+  }
+
+  return {
+    ...item,
+    price: campaignProduct.price,
+    originalPrice: campaignProduct.originalPrice,
+    promotionContext: campaignProduct.promotionContext,
+  };
+}
+
 export async function fetchFavorites(accessToken?: string): Promise<FavoritesPayload> {
   if (!accessToken) {
     return { items: [], count: 0 };
   }
 
-  const data = await wpGraphqlRequest<FavoritesQueryResponse>(
-    MY_FAVORITES_QUERY,
-    undefined,
-    { token: accessToken, cache: "no-store" },
-  );
+  const [data, flashSaleCampaign] = await Promise.all([
+    wpGraphqlRequest<FavoritesQueryResponse>(MY_FAVORITES_QUERY, undefined, {
+      token: accessToken,
+      cache: "no-store",
+    }),
+    getHomeFlashSale(),
+  ]);
 
-  const items = (data.customer?.favorites ?? []).map(mapFavoriteNode).filter(Boolean) as FavoriteProductItem[];
+  const items = (data.customer?.favorites ?? [])
+    .map(mapFavoriteNode)
+    .filter(Boolean)
+    .map((item) => applyFlashSaleToFavorite(item as FavoriteProductItem, flashSaleCampaign));
   const count = typeof data.customer?.favoritesCount === "number"
     ? data.customer.favoritesCount
     : items.length;
