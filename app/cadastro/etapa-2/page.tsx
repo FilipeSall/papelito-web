@@ -42,6 +42,11 @@ const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
   state: "",
 };
 
+function getFormDataString(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
 function readStep2Draft(): CadastroStep2Draft {
   if (typeof window === "undefined") return { ...EMPTY_STEP2_DRAFT };
 
@@ -167,16 +172,16 @@ export default function CadastroEtapa2Page() {
     if (!step1) return;
 
     const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
-    const cep = String(formData.get("cep") ?? "").trim();
+    const password = getFormDataString(formData, "password");
+    const confirmPassword = getFormDataString(formData, "confirmPassword");
+    const cep = getFormDataString(formData, "cep").trim();
     const cnpj = step1.cnpj.trim();
-    const street = String(formData.get("street") ?? "").trim();
-    const number = String(formData.get("number") ?? "").trim();
-    const complement = String(formData.get("complement") ?? "").trim();
-    const neighborhood = String(formData.get("neighborhood") ?? "").trim();
-    const city = String(formData.get("city") ?? "").trim();
-    const state = String(formData.get("state") ?? "").trim().toUpperCase();
+    const street = getFormDataString(formData, "street").trim();
+    const number = getFormDataString(formData, "number").trim();
+    const complement = getFormDataString(formData, "complement").trim();
+    const neighborhood = getFormDataString(formData, "neighborhood").trim();
+    const city = getFormDataString(formData, "city").trim();
+    const state = getFormDataString(formData, "state").trim().toUpperCase();
 
     valuesRef.current = {
       cep,
@@ -248,10 +253,10 @@ export default function CadastroEtapa2Page() {
           if (response.status === 409) {
             setErrorMessage("Já existe uma candidatura em aberto para estes dados.");
           } else if (response.status === 422) {
-            const messages = Object.values(body?.data?.errors ?? {})
+            const message = Object.values(body?.data?.errors ?? {})
               .flat()
-              .filter(Boolean);
-            setErrorMessage(messages[0] ?? "Verifique os dados informados.");
+              .find(Boolean);
+            setErrorMessage(message ?? "Verifique os dados informados.");
           } else {
             setErrorMessage(body?.message ?? "Não foi possível enviar sua candidatura. Tente novamente.");
           }
@@ -268,6 +273,13 @@ export default function CadastroEtapa2Page() {
         setIsSubmitting(false);
       }
     });
+  }
+
+  let cepHint = "Preenchemos o endereço automaticamente.";
+  if (cepStatus === "loading") {
+    cepHint = "Buscando endereço...";
+  } else if (cepStatus === "error") {
+    cepHint = "Não encontramos esse CEP. Preencha o endereço manualmente.";
   }
 
   return (
@@ -351,13 +363,7 @@ export default function CadastroEtapa2Page() {
                 onChange={(event) => {
                   void handleCepChange(event);
                 }}
-                hint={
-                  cepStatus === "loading"
-                    ? "Buscando endereço..."
-                    : cepStatus === "error"
-                      ? "Não encontramos esse CEP. Preencha o endereço manualmente."
-                      : "Preenchemos o endereço automaticamente."
-                }
+                hint={cepHint}
                 required
               />
 
@@ -528,7 +534,7 @@ export default function CadastroEtapa2Page() {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function CheckIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path

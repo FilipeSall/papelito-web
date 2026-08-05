@@ -1,5 +1,3 @@
-import type { CompanyContext } from "./types/company";
-
 /**
  * Rota única de conclusão do cadastro B2B. O gate em proxy.ts isenta exatamente este caminho;
  * importar a constante (em vez de repetir a string) impede que a lista de isentos divirja da rota.
@@ -36,7 +34,7 @@ export function buildPostAuthUrl(callbackUrl?: string | null): string {
  * já completos. `onboardingStatus` é derivado ao vivo de memberships + linha de onboarding.
  */
 export function requiresB2bOnboarding(
-  b2b: { onboardingStatus?: CompanyContext["onboardingStatus"] | string } | null | undefined,
+  b2b: { onboardingStatus?: string } | null | undefined,
 ): boolean {
   return b2b?.onboardingStatus === "incomplete" || b2b?.onboardingStatus === "rejected";
 }

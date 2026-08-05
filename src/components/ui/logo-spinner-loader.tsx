@@ -14,7 +14,7 @@ export function LogoSpinnerLoader({
   message,
   size = "md",
   layout = "stacked",
-}: LogoSpinnerLoaderProps) {
+}: Readonly<LogoSpinnerLoaderProps>) {
   const isSmall = size === "sm";
   const isInline = layout === "inline";
   const hasLabel = label.trim().length > 0;

@@ -7,11 +7,11 @@ import { ONBOARDING_PATH } from "@/features/company/onboarding";
 import { authOptions } from "@/lib/auth";
 
 export async function requireCheckoutCustomer(callbackPath: string) {
-  const session = await getServerSession(authOptions);
+	const session = await getServerSession(authOptions);
 
-  if (!session?.user || !session.accessToken) {
-    redirect(`/entrar?callbackUrl=${encodeURIComponent(callbackPath)}`);
-  }
+	if (!session?.user || !session.accessToken) {
+		redirect(`/entrar?callbackUrl=${encodeURIComponent(callbackPath)}`);
+	}
 
 
 	if (session.b2b?.canPurchase !== true) {
@@ -22,5 +22,5 @@ export async function requireCheckoutCustomer(callbackPath: string) {
 		);
 	}
 
-  return session;
+	return session;
 }

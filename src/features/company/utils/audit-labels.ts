@@ -134,7 +134,7 @@ export const AUDIT_COPY: Record<string, AuditCopy> = {
  * em vez de "member_role_changed".
  */
 export function humanizeAuditAction(action: string): string {
-  const words = action.replace(/_/g, " ").trim();
+  const words = action.replaceAll('_', " ").trim();
   if (!words) return "Evento registrado";
   return words.charAt(0).toUpperCase() + words.slice(1);
 }

@@ -66,7 +66,7 @@ export async function getCoverage(
   activeVendorId?: number | null,
 ): Promise<ProductsCoverageMap> {
   const numericProductIds = productIds
-    .map((id) => Number(id))
+    .map(Number)
     .filter((id) => Number.isInteger(id) && id > 0);
 
   if (numericProductIds.length === 0) {

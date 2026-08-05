@@ -10,8 +10,8 @@ export function parseMoney(value: string) {
   if (normalized.includes(",") && normalized.includes(".")) {
     normalized =
       normalized.lastIndexOf(",") > normalized.lastIndexOf(".")
-        ? normalized.replace(/\./g, "").replace(",", ".")
-        : normalized.replace(/,/g, "");
+        ? normalized.replaceAll(".", "").replace(",", ".")
+        : normalized.replaceAll(",", "");
   } else if (normalized.includes(",")) {
     normalized = normalized.replace(",", ".");
   }

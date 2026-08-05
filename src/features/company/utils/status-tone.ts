@@ -71,5 +71,5 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function statusLabel(status: string | null | undefined): string {
   if (!status) return "—";
-  return STATUS_LABELS[status] ?? status.replace(/_/g, " ");
+  return STATUS_LABELS[status] ?? status.replaceAll('_', " ");
 }

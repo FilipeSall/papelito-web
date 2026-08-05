@@ -27,7 +27,7 @@ export function ProductsGrid({
   viewMode,
   emptyMessage = "Nenhum produto encontrado.",
   emptyAction,
-}: ProductsGridProps) {
+}: Readonly<ProductsGridProps>) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">

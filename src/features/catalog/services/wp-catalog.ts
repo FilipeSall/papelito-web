@@ -96,9 +96,9 @@ function parseMoney(value: string | null | undefined) {
 
   if (normalized.includes(",") && normalized.includes(".")) {
     if (normalized.lastIndexOf(",") > normalized.lastIndexOf(".")) {
-      normalized = normalized.replace(/\./g, "").replace(",", ".");
+      normalized = normalized.replaceAll(".", "").replace(",", ".");
     } else {
-      normalized = normalized.replace(/,/g, "");
+      normalized = normalized.replaceAll(",", "");
     }
   } else if (normalized.includes(",")) {
     normalized = normalized.replace(",", ".");
@@ -113,20 +113,59 @@ function parseMoney(value: string | null | undefined) {
   return toMoney(parsed);
 }
 
+function stripHtmlTags(value: string) {
+  let result = "";
+  let cursor = 0;
+
+  while (cursor < value.length) {
+    const tagStart = value.indexOf("<", cursor);
+
+    if (tagStart === -1) {
+      return result + value.slice(cursor);
+    }
+
+    const tagEnd = value.indexOf(">", tagStart + 1);
+
+    if (tagEnd === -1) {
+      return result + value.slice(cursor);
+    }
+
+    if (tagEnd === tagStart + 1) {
+      result += value.slice(cursor, tagStart + 1);
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    result += value.slice(cursor, tagStart) + " ";
+    cursor = tagEnd + 1;
+  }
+
+  return result;
+}
+
+function trimHtmlLineBoundaries(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
+}
+
 function stripHtml(value: string | null | undefined) {
   if (!value) {
     return "";
   }
 
-  return value
+  const withLineBreaks = value
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(?:p|div|h[1-6]|li|ul|ol|section)\s*>/gi, "\n\n")
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<\/(?:p|div|h[1-6]|li|ul|ol|section)\s*>/gi, "\n\n");
+
+  return trimHtmlLineBoundaries(
+    stripHtmlTags(withLineBreaks)
     .replace(/&(#x?[0-9a-f]+|\w+);/gi, decodeHtmlEntity)
     // Colapsa apenas espaco horizontal: um \s+ global apagaria as quebras de
     // paragrafo criadas acima e emendaria as frases do cadastro num bloco unico.
     .replace(/[^\S\n]+/g, " ")
-    .replace(/ *\n */g, "\n")
+  )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

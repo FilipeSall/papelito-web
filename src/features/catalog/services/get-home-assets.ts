@@ -305,7 +305,7 @@ export async function getHomePromoMarquee(): Promise<PromoMarqueeItem[]> {
 
   const activeMessages = result.data.messages
     .map((message, index) => mapPromoMarqueeItem(message, index))
-    .filter((message): message is PromoMarqueeItem => message !== null && message.isActive)
+    .filter((message): message is PromoMarqueeItem => message?.isActive === true)
     .sort((left, right) => left.order - right.order);
 
   return activeMessages.length >= PROMO_MARQUEE_MIN_ACTIVE_MESSAGES ? activeMessages : [];

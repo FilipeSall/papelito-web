@@ -1,20 +1,69 @@
 export function escapeHtml(value: string) {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export function decodeHtmlEntities(value: string) {
   return value
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#039;/gi, "'");
+    .replaceAll(/&nbsp;/gi, " ")
+    .replaceAll(/&amp;/gi, "&")
+    .replaceAll(/&lt;/gi, "<")
+    .replaceAll(/&gt;/gi, ">")
+    .replaceAll(/&quot;/gi, "\"")
+    .replaceAll(/&#039;/gi, "'");
+}
+
+function stripHtmlTags(value: string) {
+  let result = "";
+  let cursor = 0;
+
+  while (cursor < value.length) {
+    const tagStart = value.indexOf("<", cursor);
+
+    if (tagStart === -1) {
+      return result + value.slice(cursor);
+    }
+
+    const tagEnd = value.indexOf(">", tagStart + 1);
+
+    if (tagEnd === -1) {
+      return result + value.slice(cursor);
+    }
+
+    if (tagEnd === tagStart + 1) {
+      result += value.slice(cursor, tagStart + 1);
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    result += value.slice(cursor, tagStart);
+    cursor = tagEnd + 1;
+  }
+
+  return result;
+}
+
+function removeTrailingSpacesBeforeNewlines(value: string) {
+  const lines = value.split("\n");
+
+  return lines
+    .map((line, index) => {
+      if (index === lines.length - 1) {
+        return line;
+      }
+
+      let end = line.length;
+      while (end > 0 && (line[end - 1] === " " || line[end - 1] === "\t")) {
+        end -= 1;
+      }
+
+      return line.slice(0, end);
+    })
+    .join("\n");
 }
 
 export function parseDescriptionParagraphs(value: string) {
@@ -29,11 +78,9 @@ export function parseDescriptionParagraphs(value: string) {
 
   const paragraphs = rawParagraphs.map((paragraph) =>
     decodeHtmlEntities(
-      paragraph
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<[^>]+>/g, "")
-        .replace(/[ \t]+\n/g, "\n")
-        .trim(),
+      removeTrailingSpacesBeforeNewlines(
+        stripHtmlTags(paragraph.replace(/<br\s*\/?>/gi, "\n")),
+      ).trim(),
     ),
   );
 
