@@ -4,13 +4,8 @@ import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-function NavigationLoaderInner() {
-  const [startUrl, setStartUrl] = useState<string | null>(null);
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const search = searchParams.toString();
-  const currentUrl = search ? `${pathname}?${search}` : pathname;
-  const loading = startUrl !== null && startUrl === currentUrl;
+function NavigationLoaderOverlay() {
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -41,7 +36,7 @@ function NavigationLoaderInner() {
         ) {
           return;
         }
-        setStartUrl(`${window.location.pathname}${window.location.search}`);
+        setLoading(true);
       } catch {
         // href inválido — ignorar
       }
@@ -56,10 +51,7 @@ function NavigationLoaderInner() {
   }
 
   return (
-    <div
-      role="status"
-      className="fixed inset-0 z-1600 flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 opacity-100"
-    >
+    <output className="fixed inset-0 z-1600 flex items-center justify-center bg-brand-dark/40 backdrop-blur-sm transition-opacity duration-300 opacity-100">
       <div className="relative size-28">
         <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-brand-yellow/25 border-t-brand-yellow" />
         <div className="absolute inset-2 flex items-center justify-center rounded-full bg-brand-yellow shadow-2xl">
@@ -73,8 +65,17 @@ function NavigationLoaderInner() {
         </div>
       </div>
       <span className="sr-only">Carregando…</span>
-    </div>
+    </output>
   );
+}
+
+function NavigationLoaderInner() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const currentUrl = search ? `${pathname}?${search}` : pathname;
+
+  return <NavigationLoaderOverlay key={currentUrl} />;
 }
 
 export function NavigationLoader() {

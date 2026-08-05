@@ -475,7 +475,7 @@ export function ProductDetailMainContent({
             </div>
           </div>
 
-          {isRegionBlocked ? (
+          {isRegionBlocked && status !== "loading" && !isAdministrator ? (
             <div
               role="status"
               className="mt-6 border-2 border-[#1a1a1a] bg-brand-yellow/35 px-4 py-4 text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
