@@ -107,8 +107,13 @@ export const PRODUCTS_LIST_QUERY = gql`
         include: $include
         minPrice: $minPrice
         maxPrice: $maxPrice
+        orderby: [{ field: DATE, order: DESC }]
       }
     ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         __typename
         id

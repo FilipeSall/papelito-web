@@ -326,9 +326,34 @@ export interface FetchWpProductsInput {
   maxPrice?: number | null;
 }
 
-export async function fetchWpProducts(input: FetchWpProductsInput | number = {}) {
+export interface FetchWpProductsResult {
+  products: WpProductNode[];
+  ok: boolean;
+  truncated: boolean;
+}
+
+/**
+ * Teto por requisição imposto pelo próprio WPGraphQL.
+ *
+ * `AbstractConnectionResolver::max_query_amount()` devolve 100 e nada no plugin sobrescreve o
+ * filtro `graphql_connection_max_query_amount`. Pedir `first` acima disso é cortado em
+ * silêncio pelo servidor, então quem precisa de mais tem que paginar por cursor.
+ */
+export const WP_GRAPHQL_MAX_FIRST = 100;
+
+interface RequestWpProductsResult {
+  products: WpProductNode[];
+  /** Nós devolvidos antes do filtro de visibilidade — é o que a varredura precisa contar. */
+  scanned: number;
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+async function requestWpProducts(
+  input: FetchWpProductsInput | number,
+): Promise<RequestWpProductsResult> {
   if (isMockDataEnabled()) {
-    return [] as WpProductNode[];
+    return { products: [], scanned: 0, hasNextPage: false, endCursor: null };
   }
 
   const normalized: FetchWpProductsInput =
@@ -346,7 +371,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
   // "sem filtro": omitir a cláusula devolveria o catálogo inteiro sob a categoria errada.
   if (normalized.categoryIn) {
     if (normalized.categoryIn.length === 0) {
-      return [] as WpProductNode[];
+      return { products: [], scanned: 0, hasNextPage: false, endCursor: null };
     }
 
     variables.categoryIn = normalized.categoryIn;
@@ -354,7 +379,7 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
 
   if (normalized.include) {
     if (normalized.include.length === 0) {
-      return [] as WpProductNode[];
+      return { products: [], scanned: 0, hasNextPage: false, endCursor: null };
     }
 
     variables.include = normalized.include;
@@ -370,6 +395,10 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
 
   const data = await wpGraphqlRequest<{
     products?: {
+      pageInfo?: {
+        hasNextPage?: boolean | null;
+        endCursor?: string | null;
+      } | null;
       nodes?: WpProductNode[];
     };
   }>(print(PRODUCTS_LIST_QUERY), variables, {
@@ -377,19 +406,93 @@ export async function fetchWpProducts(input: FetchWpProductsInput | number = {})
     tags: ["wp:products"],
   });
 
-  return (data.products?.nodes ?? []).filter(isCatalogProductVisible);
+  const nodes = data.products?.nodes ?? [];
+
+  return {
+    products: nodes.filter(isCatalogProductVisible),
+    scanned: nodes.length,
+    hasNextPage: data.products?.pageInfo?.hasNextPage === true,
+    endCursor: data.products?.pageInfo?.endCursor ?? null,
+  };
+}
+
+export async function fetchWpProducts(input: FetchWpProductsInput | number = {}) {
+  const { products } = await requestWpProducts(input);
+  return products;
+}
+
+/**
+ * Consulta produtos distinguindo "não há produtos" de "não consegui consultar".
+ *
+ * Indisponibilidade da origem não pode ser servida como catálogo vazio: quem consome
+ * precisa de `ok: false` para renderizar erro em vez de estado vazio legítimo.
+ *
+ * Traz uma página só — para varrer o catálogo inteiro use `fetchAllWpProductsResult`.
+ */
+export async function fetchWpProductsResult(
+  input: FetchWpProductsInput | number = {},
+  context = "wp-products",
+): Promise<FetchWpProductsResult> {
+  try {
+    const { products, hasNextPage } = await requestWpProducts(input);
+    return { products, ok: true, truncated: hasNextPage };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[${context}] Falha ao consultar produtos no WPGraphQL.`, message);
+    return { products: [], ok: false, truncated: false };
+  }
 }
 
 export async function fetchWpProductsSafe(
   input: FetchWpProductsInput | number = {},
   context = "wp-products",
 ) {
+  const { products } = await fetchWpProductsResult(input, context);
+  return products;
+}
+
+/**
+ * Varre o catálogo paginando por cursor até acabar ou bater em `limit`.
+ *
+ * `first` não serve para isso: o WPGraphQL corta em `WP_GRAPHQL_MAX_FIRST` sem erro, então
+ * pedir mais numa tacada devolvia um recorte silencioso — e coleção, tipo e preço, que são
+ * filtrados em memória sobre o resultado, ficavam calculados sobre catálogo incompleto.
+ *
+ * `truncated` só é `true` quando o `limit` interrompeu uma varredura que ainda tinha página.
+ */
+export async function fetchAllWpProductsResult(
+  input: Omit<FetchWpProductsInput, "first" | "after">,
+  limit: number,
+  context = "wp-products",
+): Promise<FetchWpProductsResult> {
+  const products: WpProductNode[] = [];
+  let after: string | null = null;
+  let fetched = 0;
+
   try {
-    return await fetchWpProducts(input);
+    while (fetched < limit) {
+      const page = await requestWpProducts({
+        ...input,
+        first: Math.min(WP_GRAPHQL_MAX_FIRST, limit - fetched),
+        after,
+      });
+
+      products.push(...page.products);
+      fetched += page.scanned;
+
+      // `scanned === 0` sem avanço travaria o laço: `fetched` não cresce e o cursor não muda.
+      if (!page.hasNextPage || !page.endCursor || page.scanned === 0) {
+        return { products, ok: true, truncated: false };
+      }
+
+      after = page.endCursor;
+    }
+
+    return { products, ok: true, truncated: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[${context}] Falha ao consultar produtos no WPGraphQL.`, message);
-    return [] as WpProductNode[];
+    return { products: [], ok: false, truncated: false };
   }
 }
 
@@ -432,6 +535,19 @@ export async function fetchWpProductByDatabaseId(id: string) {
   return product;
 }
 
+// Coleção é termo de `product_cat`, nunca substring do nome: classificar por nome já é
+// proibido para categoria (docs/context/rendering-and-performance.md) e mantinha /kits e
+// /premium permanentemente vazios.
+const PREMIUM_CATEGORY_SLUGS = ["premium"];
+const KIT_CATEGORY_SLUGS = ["kits", "kit"];
+
+function hasCategorySlug(product: WpProductNode, slugs: string[]) {
+  return (product.productCategories?.nodes ?? []).some((node) => {
+    const slug = node?.slug;
+    return typeof slug === "string" && slugs.includes(normalizeText(slug));
+  });
+}
+
 export function mapWpProductToCatalogItem(
   product: WpProductNode,
   index: number,
@@ -451,11 +567,31 @@ export function mapWpProductToCatalogItem(
     reviews: 32 + ((index * 19) % 480),
     image: resolveImage(product) ?? PRODUCT_FALLBACK_IMAGE,
     type,
-    isPremium: normalizeText(product.name).includes("premium"),
-    isNewArrival: index < 8,
+    isPremium: hasCategorySlug(product, PREMIUM_CATEGORY_SLUGS),
+    // Quem decide "novidade" é `markNewArrivals`, sobre a lista já ordenada por data:
+    // dentro do mapper só existiria a posição no lote, que varia com perPage e page.
+    isNewArrival: false,
     isOnSale: prices.discountPercent > 0,
-    isKit: normalizeText(product.name).includes("kit"),
+    isKit: hasCategorySlug(product, KIT_CATEGORY_SLUGS),
   };
+}
+
+export const NEW_ARRIVALS_COUNT = 8;
+
+/**
+ * Marca os N primeiros itens como novidade.
+ *
+ * Depende de a lista chegar ordenada por data decrescente (`orderby` de
+ * `PRODUCTS_LIST_QUERY`) e de o lote ser constante — do contrário o conjunto mudaria
+ * conforme `perPage` e `page`.
+ */
+export function markNewArrivals(
+  items: ProductsCatalogItem[],
+  count = NEW_ARRIVALS_COUNT,
+): ProductsCatalogItem[] {
+  return items.map((item, index) =>
+    index < count ? { ...item, isNewArrival: true } : item,
+  );
 }
 
 export function mapWpProductToHomeCard(

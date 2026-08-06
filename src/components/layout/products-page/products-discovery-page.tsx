@@ -127,6 +127,7 @@ export function ProductsDiscoveryPage({
         perPage={catalog.perPage}
         coverageCep={catalog.coverageCep}
         coverageStatus={catalog.coverageStatus}
+        sourceStatus={catalog.sourceStatus}
       />
     </main>
   );

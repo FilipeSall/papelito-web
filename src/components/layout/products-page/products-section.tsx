@@ -8,9 +8,11 @@ import { ViewToggle } from "./view-toggle";
 import { AddToCartToastHost } from "./add-to-cart-toast-host";
 import { CoverageWarningToastHost } from "./coverage-warning-toast-host";
 import { ClearProductSearchButton, ProductSearch } from "./product-search";
+import { CatalogUnavailableNotice } from "./catalog-unavailable-notice";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import type {
   CatalogCoverageStatus,
+  CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
@@ -35,6 +37,7 @@ interface ProductsSectionProps {
   perPage: number;
   coverageCep?: string | null;
   coverageStatus?: CatalogCoverageStatus;
+  sourceStatus?: CatalogSourceStatus;
   search?: string;
   showSearch?: boolean;
 }
@@ -73,10 +76,12 @@ export function ProductsSection({
   perPage,
   coverageCep = null,
   coverageStatus = "not_requested",
+  sourceStatus = "ok",
   search = "",
   showSearch = false,
 }: Readonly<ProductsSectionProps>) {
   const showCoverageWarning = coverageStatus === "unavailable";
+  const isSourceUnavailable = sourceStatus === "unavailable";
   let emptyMessage = "Nenhum produto encontrado.";
 
   if (coverageStatus === "applied" && coverageCep) {
@@ -128,8 +133,14 @@ export function ProductsSection({
           {/* Products count and view toggle */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-text-secondary">
-              <span className="font-bold text-brand-dark">{totalItems}</span>{" "}
-              produtos encontrados
+              {isSourceUnavailable ? (
+                "Catálogo indisponível no momento"
+              ) : (
+                <>
+                  <span className="font-bold text-brand-dark">{totalItems}</span>{" "}
+                  produtos encontrados
+                </>
+              )}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <ProductsPerPageSelector
@@ -148,7 +159,6 @@ export function ProductsSection({
                 selectedTypes={selectedTypes}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
-                currentPage={currentPage}
                 perPage={perPage}
                 search={search}
               />
@@ -171,24 +181,30 @@ export function ProductsSection({
 
             {/* Products Grid */}
             <div className="flex-1">
-              <ProductsGrid
-                emptyMessage={emptyMessage}
-                emptyAction={search ? <ClearProductSearchButton /> : undefined}
-                products={products}
-                viewMode={viewMode}
-              />
-              <ProductsPagination
-                basePath={basePath}
-                collection={activeCollection}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                selectedTypes={selectedTypes}
-                minPrice={minPrice}
-                maxPrice={maxPrice}
-                viewMode={viewMode}
-                perPage={perPage}
-                search={search}
-              />
+              {isSourceUnavailable ? (
+                <CatalogUnavailableNotice />
+              ) : (
+                <>
+                  <ProductsGrid
+                    emptyMessage={emptyMessage}
+                    emptyAction={search ? <ClearProductSearchButton /> : undefined}
+                    products={products}
+                    viewMode={viewMode}
+                  />
+                  <ProductsPagination
+                    basePath={basePath}
+                    collection={activeCollection}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    selectedTypes={selectedTypes}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    viewMode={viewMode}
+                    perPage={perPage}
+                    search={search}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

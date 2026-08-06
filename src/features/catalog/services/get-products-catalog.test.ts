@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   WP_PRODUCT_CATEGORIES,
   buildCategoriesResponse,
+  buildProductNode,
   buildProductsResponse,
 } from "../../../../test/factories/wp-catalog-taxonomy";
 
@@ -333,6 +334,254 @@ describe("getProductsCatalog — contagem das abas", () => {
       { id: "filtros", label: "FILTROS", count: 8 },
       { id: "acessorios", label: "ACESSÓRIOS", count: 6 },
     ]);
+  });
+});
+
+describe("getProductsCatalog — origem indisponível", () => {
+  it("falha do WPGraphQL de produtos vira sourceStatus 'unavailable', não catálogo vazio", async () => {
+    wpGraphqlRequest.mockImplementation(async (query: string) => {
+      if (query.includes("query Categories")) {
+        return buildCategoriesResponse(categories);
+      }
+
+      throw new TypeError("fetch failed");
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.sourceStatus).toBe("unavailable");
+    expect(payload.items).toEqual([]);
+  });
+
+  it("falha da consulta de categorias com filtro de tipo ativo também é 'unavailable'", async () => {
+    wpGraphqlRequest.mockImplementation(async (query: string) => {
+      if (query.includes("query Categories")) {
+        throw new TypeError("fetch failed");
+      }
+
+      return buildProductsResponse();
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      type: "sedas",
+      selectedTypes: ["sedas"],
+      perPage: 9,
+    });
+
+    expect(payload.sourceStatus).toBe("unavailable");
+    expect(payload.items).toEqual([]);
+  });
+
+  it("termo ausente com WordPress saudável continua 'ok' (fail-closed, não erro)", async () => {
+    categories = WP_PRODUCT_CATEGORIES.filter((category) => category.databaseId !== 156);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      type: "acessorios",
+      selectedTypes: ["acessorios"],
+      perPage: 9,
+    });
+
+    expect(payload.sourceStatus).toBe("ok");
+    expect(payload.items).toEqual([]);
+  });
+
+  it("catálogo legitimamente vazio continua sendo 'ok'", async () => {
+    wpGraphqlRequest.mockImplementation(async (query: string) => {
+      if (query.includes("query Categories")) {
+        return buildCategoriesResponse(categories);
+      }
+
+      return { products: { nodes: [] } };
+    });
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.sourceStatus).toBe("ok");
+    expect(payload.items).toEqual([]);
+  });
+
+  it("resposta normal é 'ok'", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.sourceStatus).toBe("ok");
+  });
+});
+
+describe("getProductsCatalog — varredura por cursor", () => {
+  /**
+   * O WPGraphQL corta `first` em 100 sem erro. O stub reproduz isso para o teste provar que a
+   * varredura pagina por cursor, e não que ela confia num `first` que o servidor ignora.
+   */
+  function stubCappedWordPress(totalProducts: number) {
+    const all = Array.from({ length: totalProducts }, (_, index) =>
+      buildProductNode({
+        databaseId: 20000 + index,
+        name: `Seda Paginada ${index}`,
+        categorySlugs: ["papel"],
+      }),
+    );
+
+    wpGraphqlRequest.mockImplementation(
+      async (query: string, variables: Record<string, unknown> = {}) => {
+        calls.push({ query, variables });
+
+        if (query.includes("query Categories")) {
+          return buildCategoriesResponse(categories);
+        }
+
+        const offset = variables.after ? Number(variables.after) : 0;
+        const requested = Math.min(Number(variables.first ?? 60), 100);
+        const slice = all.slice(offset, offset + requested);
+        const nextOffset = offset + slice.length;
+
+        return {
+          products: {
+            pageInfo: {
+              hasNextPage: nextOffset < all.length,
+              endCursor: String(nextOffset),
+            },
+            nodes: slice,
+          },
+        };
+      },
+    );
+  }
+
+  it("pagina além do teto de 100 do WPGraphQL e conta o catálogo inteiro", async () => {
+    stubCappedWordPress(250);
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.totalItems).toBe(250);
+    expect(payload.totalPages).toBe(Math.ceil(250 / 9));
+
+    const productPages = calls.filter((call) => call.query.includes("query ProductsList"));
+    expect(productPages.length).toBe(3);
+    expect(productPages.every((call) => Number(call.variables.first) <= 100)).toBe(true);
+  });
+
+  it("não pagina quando a primeira página já esgota o catálogo", async () => {
+    stubCappedWordPress(40);
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.totalItems).toBe(40);
+    expect(calls.filter((call) => call.query.includes("query ProductsList")).length).toBe(1);
+  });
+
+  it("avisa e não trava quando a varredura bate no teto de segurança", async () => {
+    stubCappedWordPress(5000);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ perPage: 9 });
+
+    expect(payload.totalItems).toBe(1000);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Varredura interrompida"));
+  });
+});
+
+describe("getProductsCatalog — lote constante", () => {
+  it("pede o mesmo `first` para qualquer perPage e qualquer página", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    for (const [perPage, page] of [
+      [9, 1],
+      [12, 1],
+      [15, 1],
+      [18, 1],
+      [30, 2],
+      [9, 5],
+    ] as const) {
+      await getProductsCatalog({ perPage, page });
+    }
+
+    const firsts = new Set(
+      calls
+        .filter((call) => call.query.includes("query ProductsList"))
+        .map((call) => call.variables.first),
+    );
+
+    expect(firsts.size).toBe(1);
+  });
+
+  it("totalItems não muda de uma página para outra (regressão: 36 na p1, 38 na p2)", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const pages = await Promise.all(
+      [1, 2, 3, 4, 5].map((page) => getProductsCatalog({ perPage: 9, page })),
+    );
+
+    expect(new Set(pages.map((payload) => payload.totalItems))).toEqual(new Set([40]));
+    expect(new Set(pages.map((payload) => payload.totalPages))).toEqual(new Set([5]));
+  });
+
+  it("trocar perPage não muda o total, só o fatiamento", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const [nove, doze, dezoito] = await Promise.all([
+      getProductsCatalog({ perPage: 9 }),
+      getProductsCatalog({ perPage: 12 }),
+      getProductsCatalog({ perPage: 18 }),
+    ]);
+
+    expect([nove.totalItems, doze.totalItems, dezoito.totalItems]).toEqual([40, 40, 40]);
+    expect([nove.items.length, doze.items.length, dezoito.items.length]).toEqual([9, 12, 18]);
+  });
+});
+
+describe("getProductsCatalog — coleções por termo", () => {
+  it("premium sai da categoria `premium`, não de substring do nome", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ collection: "premium", perPage: 60 });
+
+    expect(payload.items.map((item) => item.name)).toEqual([
+      "Seda Pink King Size",
+      "Seda Insane King Size",
+      "Seda Insane Brown King Size",
+      "Seda Alfafa King Size",
+    ]);
+    expect(payload.items.every((item) => !item.name.toLowerCase().includes("premium"))).toBe(
+      true,
+    );
+  });
+
+  it("kits fica vazio enquanto a categoria não existir no WordPress", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ collection: "kits", perPage: 60 });
+
+    expect(payload.items).toEqual([]);
+    expect(payload.sourceStatus).toBe("ok");
+  });
+
+  it("novidades é o mesmo conjunto para qualquer perPage e não depende da página", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const [nove, trinta, segunda] = await Promise.all([
+      getProductsCatalog({ collection: "novidades", perPage: 9 }),
+      getProductsCatalog({ collection: "novidades", perPage: 30 }),
+      getProductsCatalog({ collection: "novidades", perPage: 9, page: 2 }),
+    ]);
+
+    expect(nove.totalItems).toBe(8);
+    expect(trinta.totalItems).toBe(8);
+    expect(segunda.totalItems).toBe(8);
+    expect(trinta.items.map((item) => item.id)).toEqual(
+      expect.arrayContaining(nove.items.map((item) => item.id)),
+    );
   });
 });
 

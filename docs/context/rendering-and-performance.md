@@ -32,6 +32,16 @@ Este documento existe porque a home e o catálogo já foram lentos, o motivo foi
 
 **Contagem das abas conta a raiz, não a árvore.** Produto fica atribuído à raiz *e* à subcategoria; somar todos os termos conta duas vezes (dava `todos: 62` para 40 produtos).
 
+**Origem indisponível não é catálogo vazio.** `fetchWpProductsResult` devolve `ok: false` quando o WPGraphQL não responde, `getProductsCatalog` propaga `sourceStatus: "unavailable"` e `ProductsSection` renderiza `CatalogUnavailableNotice` em vez de "Nenhum produto encontrado.". Antes disso, `fetchWpProductsSafe` engolia a falha e devolvia `[]`: com o WordPress fora do ar o cliente lia que não existem produtos, sem erro nenhum no console do navegador (a falha é de SSR). Rota nova de listagem precisa repassar `sourceStatus` para a `ProductsSection` — foi assim que `/produtos` ficou de fora na primeira passada.
+
+**O lote pedido ao WPGraphQL é constante, nunca derivado de `perPage`/`page`.** A chave do Data Cache do Next inclui o corpo da requisição, e o corpo carrega `first`: com o lote variável, cada combinação de `perPage` e página virava uma chave distinta. O efeito visível era duplo — durante uma indisponibilidade do WordPress só a combinação que já estava quente renderizava (o que fez o bug parecer específico de `colecao=promocoes`), e `totalItems` mudava de uma página para outra (`/produtos?perPage=9` dava `36` e 4 páginas na página 1, `38` e 5 páginas na página 2).
+
+**`first` não passa de 100, e pedir mais é cortado em silêncio.** `AbstractConnectionResolver::max_query_amount()` do WPGraphQL devolve 100 e nada sobrescreve o filtro `graphql_connection_max_query_amount`. Por isso a listagem varre o catálogo com `fetchAllWpProductsResult`, paginando por cursor (`after`/`endCursor`) em blocos de `WP_GRAPHQL_MAX_FIRST`. **Não volte a confiar num `first` alto**: coleção, tipo e preço são filtrados em memória sobre o resultado, então um recorte silencioso produz contagem, filtro e coleção errados. `CATALOG_SCAN_LIMIT` é rede de segurança contra varredura infinita, não recorte — bater nele emite `console.warn`. Home e detalhe seguem pedindo uma página só, de propósito: querem amostra, não o catálogo.
+
+**Coleção é termo de `product_cat`, nunca substring do nome.** `isPremium` e `isKit` saem dos slugs de `productCategories` (`premium`, `kits`). Classificar por nome — `name.includes("kit")` — mantinha `/kits` e `/premium` permanentemente vazios: nenhum dos 40 produtos tem "kit" ou "premium" no nome. É a mesma armadilha já documentada acima para categoria. **`/kits` depende de produtos atribuídos ao termo `kits` no WordPress**; o termo existe, a curadoria é da operação.
+
+**Novidade é posição na ordenação por data, decidida fora do mapper.** `PRODUCTS_LIST_QUERY` ordena por `orderby: [{ field: DATE, order: DESC }]` e `markNewArrivals` marca os N primeiros. O `isNewArrival: index < 8` que vivia dentro de `mapWpProductToCatalogItem` era posição no lote — mudava com `perPage` e com a página.
+
 ## Onde a validação de verdade acontece
 
 A marcação visual de disponibilidade **não é** controle de acesso. A validação definitiva de vendor e estoque acontece no fluxo de carrinho e checkout, e depois na reserva transacional no WordPress. Ver [`../../../docs/flows/cart-and-checkout.md`](../../../docs/flows/cart-and-checkout.md).

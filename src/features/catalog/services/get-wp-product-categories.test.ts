@@ -100,7 +100,11 @@ describe("getCategoryFilterForTypes", () => {
   it("sem tipo selecionado não há filtro nem tipo irresolvido", async () => {
     const { getCategoryFilterForTypes } = await importModule();
 
-    expect(await getCategoryFilterForTypes([])).toEqual({ slugs: [], unresolved: [] });
+    expect(await getCategoryFilterForTypes([])).toEqual({
+      slugs: [],
+      unresolved: [],
+      available: true,
+    });
   });
 
   it("marca o tipo como irresolvido quando a categoria não existe no WordPress", async () => {
@@ -115,6 +119,7 @@ describe("getCategoryFilterForTypes", () => {
 
     expect(filter.unresolved).toEqual(["acessorios"]);
     expect(filter.slugs).toEqual([]);
+    expect(filter.available).toBe(true);
   });
 
   it("marca todos os tipos como irresolvidos quando o WPGraphQL falha", async () => {
@@ -124,7 +129,9 @@ describe("getCategoryFilterForTypes", () => {
 
     const filter = await getCategoryFilterForTypes(["sedas"]);
 
-    expect(filter).toEqual({ slugs: [], unresolved: ["sedas"] });
+    // `available: false` é o que separa indisponibilidade de termo ausente: sem esse campo o
+    // chamador serve a falha como "Nenhum produto encontrado.".
+    expect(filter).toEqual({ slugs: [], unresolved: ["sedas"], available: false });
   });
 });
 

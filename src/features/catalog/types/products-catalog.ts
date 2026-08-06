@@ -27,6 +27,14 @@ export type CatalogCoverageStatus =
   | "applied"
   | "unavailable";
 
+/**
+ * Origem do catálogo respondeu (`ok`) ou está indisponível (`unavailable`).
+ *
+ * Sem isso, falha de transporte no WPGraphQL chega à UI como catálogo vazio e o cliente lê
+ * "Nenhum produto encontrado." durante uma indisponibilidade.
+ */
+export type CatalogSourceStatus = "ok" | "unavailable";
+
 export interface ProductsCatalogItem {
   id: string;
   category: string;
@@ -66,4 +74,5 @@ export interface ProductsCatalogPayload {
   perPage: number;
   coverageCep: string | null;
   coverageStatus: CatalogCoverageStatus;
+  sourceStatus: CatalogSourceStatus;
 }

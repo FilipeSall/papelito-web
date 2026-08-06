@@ -18,7 +18,6 @@ interface ViewToggleProps {
   selectedTypes: SpecificType[];
   minPrice: number | null;
   maxPrice: number | null;
-  currentPage: number;
   perPage: number;
   search?: string;
 }
@@ -41,14 +40,15 @@ export function ViewToggle({
   selectedTypes,
   minPrice,
   maxPrice,
-  currentPage,
   perPage,
   search,
 }: Readonly<ViewToggleProps>) {
   const defaultGridPerPage = getDefaultPerPageForView("grid");
   const defaultListPerPage = getDefaultPerPageForView("list");
 
-  const gridPerPage = perPage > defaultListPerPage ? defaultGridPerPage : perPage;
+  // `>=`: no default da lista (18) o grid precisa cair para o default dele, senão o link de
+  // grade mantém um perPage fora das opções de grade e o seletor fica sem opção ativa.
+  const gridPerPage = perPage >= defaultListPerPage ? defaultGridPerPage : perPage;
   const listPerPage = Math.max(perPage, defaultListPerPage);
 
   return (
@@ -61,7 +61,6 @@ export function ViewToggle({
           selectedTypes,
           minPrice,
           maxPrice,
-          page: currentPage,
           viewMode: "grid",
           perPage: gridPerPage,
           search,
@@ -80,7 +79,6 @@ export function ViewToggle({
           selectedTypes,
           minPrice,
           maxPrice,
-          page: currentPage,
           viewMode: "list",
           perPage: listPerPage,
           search,

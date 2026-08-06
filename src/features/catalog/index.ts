@@ -16,6 +16,7 @@ export type {
 export type {
   CatalogBestVendor,
   CatalogCoverageStatus,
+  CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,

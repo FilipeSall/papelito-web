@@ -9,7 +9,12 @@ import {
   getCategoryTypeBySlug,
   getTabCounts,
 } from "./get-wp-product-categories";
-import { fetchWpProductsSafe, mapWpProductToCatalogItem } from "./wp-catalog";
+import {
+  fetchAllWpProductsResult,
+  fetchWpProductsResult,
+  mapWpProductToCatalogItem,
+  markNewArrivals,
+} from "./wp-catalog";
 import { searchCatalogProducts } from "./catalog-search";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
@@ -19,6 +24,7 @@ import {
   resolveProductImage,
 } from "../utils/resolve-product-image";
 import type {
+  CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
   ProductsCatalogItem,
@@ -79,6 +85,19 @@ const CATEGORY_LABEL: Record<Exclude<ProductTypeId, "todos">, string> = {
   acessorios: "Acessório",
 };
 
+/**
+ * Teto de produtos varridos por listagem, constante de propósito.
+ *
+ * Constante, e não derivado de `perPage`/`page`: a chave do Data Cache do Next inclui o corpo
+ * da requisição, e o corpo carrega `first` — com lote variável cada combinação da UI virava
+ * uma chave distinta e `totalItems`/`totalPages` mudavam de uma página para outra.
+ *
+ * Alto de propósito: `fetchAllWpProductsResult` pagina por cursor em blocos de
+ * `WP_GRAPHQL_MAX_FIRST`, então isto é só a rede de segurança contra varredura infinita — não
+ * o recorte que a listagem enxerga. Bater neste limite emite warning, nunca corta em silêncio.
+ */
+const CATALOG_SCAN_LIMIT = 1000;
+
 const BADGE_PRIORITY = [
   "Mais Vendido",
   "Kit",
@@ -113,7 +132,9 @@ function normalizeSelectedTypes(
     const normalized = selectedTypes.filter(
       (item): item is Exclude<ProductTypeId, "todos"> =>
         typeof item === "string" &&
-        SPECIFIC_PRODUCT_TYPES.includes(item as Exclude<ProductTypeId, "todos">),
+        SPECIFIC_PRODUCT_TYPES.includes(
+          item as Exclude<ProductTypeId, "todos">,
+        ),
     );
 
     return Array.from(new Set(normalized));
@@ -150,7 +171,10 @@ function normalizePriceValue(value: number | null | undefined) {
   return Number(value.toFixed(2));
 }
 
-function normalizePriceRange(input: { minPrice?: number | null; maxPrice?: number | null }) {
+function normalizePriceRange(input: {
+  minPrice?: number | null;
+  maxPrice?: number | null;
+}) {
   const normalizedMin = normalizePriceValue(input.minPrice);
   const normalizedMax = normalizePriceValue(input.maxPrice);
 
@@ -181,7 +205,10 @@ function inferTypeFromName(name: string): Exclude<ProductTypeId, "todos"> {
   return "acessorios";
 }
 
-function inferBadge(product: MockCatalogProduct, type: Exclude<ProductTypeId, "todos">) {
+function inferBadge(
+  product: MockCatalogProduct,
+  type: Exclude<ProductTypeId, "todos">,
+) {
   const homeTags = product.homeData?.tags ?? [];
   for (const badge of BADGE_PRIORITY) {
     if (homeTags.includes(badge)) {
@@ -235,7 +262,9 @@ function mapMockProductToCatalogItem(
 
   const normalizedName = normalizeText(product.name);
   const normalizedSubcategory =
-    typeof product.subcategory === "string" ? normalizeText(product.subcategory) : "";
+    typeof product.subcategory === "string"
+      ? normalizeText(product.subcategory)
+      : "";
   const normalizedSubcategory2 =
     typeof product.subcategory2 === "string"
       ? normalizeText(product.subcategory2)
@@ -303,6 +332,7 @@ interface EmptyPayloadInput {
   minPrice: number | null;
   maxPrice: number | null;
   perPage: number;
+  sourceStatus?: CatalogSourceStatus;
 }
 
 function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
@@ -320,222 +350,362 @@ function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
     perPage: input.perPage,
     coverageCep: null,
     coverageStatus: "not_requested",
+    sourceStatus: input.sourceStatus ?? "ok",
+  };
+}
+
+interface NormalizedCatalogInput {
+  selectedTypes: Exclude<ProductTypeId, "todos">[];
+  activeCollection: ProductCollectionId;
+  activeType: ProductTypeId;
+  minPrice: number | null;
+  maxPrice: number | null;
+  perPage: number;
+  currentPage: number;
+  search: string;
+}
+
+interface CatalogItemsResult {
+  items: ProductsCatalogItem[];
+  sourceStatus: CatalogSourceStatus;
+}
+
+type FlashSaleCampaign = Awaited<ReturnType<typeof getHomeFlashSale>>;
+
+function normalizeCatalogInput(
+  input: GetProductsCatalogInput,
+): NormalizedCatalogInput {
+  const selectedTypes = normalizeSelectedTypes(input.selectedTypes, input.type);
+  const { minPrice, maxPrice } = normalizePriceRange({
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+  });
+
+  return {
+    selectedTypes,
+    activeCollection: normalizeCollection(input.collection),
+    activeType: selectedTypes.length === 1 ? selectedTypes[0] : "todos",
+    minPrice,
+    maxPrice,
+    perPage: clamp(input.perPage ?? 9, 1, 60),
+    currentPage: clamp(input.page ?? 1, 1, Number.MAX_SAFE_INTEGER),
+    search: normalizeProductSearch(input.search),
+  };
+}
+
+function buildTabs(
+  counts: Record<ProductTypeId, number>,
+): ProductsCatalogTab[] {
+  return [
+    { id: "todos", label: TYPE_LABEL.todos, count: counts.todos },
+    ...SPECIFIC_PRODUCT_TYPES.map((type) => ({
+      id: type,
+      label: TYPE_LABEL[type],
+      count: counts[type],
+    })),
+  ];
+}
+
+function buildMockTabs(items: ProductsCatalogItem[]): ProductsCatalogTab[] {
+  const counts: Record<ProductTypeId, number> = {
+    todos: items.length,
+    sedas: 0,
+    piteiras: 0,
+    filtros: 0,
+    acessorios: 0,
+  };
+
+  for (const item of items) {
+    counts[item.type] += 1;
+  }
+
+  return buildTabs(counts);
+}
+
+async function loadMockCatalog(): Promise<
+  CatalogItemsResult & { tabs: ProductsCatalogTab[] }
+> {
+  const [mockFile, flashSaleCampaign] = await Promise.all([
+    requestProductsCatalogMockFile(),
+    getHomeFlashSale(),
+  ]);
+  const items = mockFile.products
+    .map((product, index) => mapMockProductToCatalogItem(product, index))
+    .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign));
+
+  return { items, tabs: buildMockTabs(items), sourceStatus: "ok" };
+}
+
+function buildSearchPayload(
+  input: NormalizedCatalogInput,
+  tabs: ProductsCatalogTab[],
+  searchResult: Awaited<ReturnType<typeof searchCatalogProducts>>,
+  products: ProductsCatalogItem[],
+  sourceStatus: CatalogSourceStatus,
+): ProductsCatalogPayload {
+  const itemsById = new Map(products.map((item) => [item.id, item]));
+
+  return {
+    items: searchResult.ids.flatMap((id) => {
+      const item = itemsById.get(String(id));
+      return item ? [item] : [];
+    }),
+    tabs,
+    selectedTypes: input.selectedTypes,
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+    activeType: input.activeType,
+    activeCollection: input.activeCollection,
+    totalItems: searchResult.total,
+    totalPages: Math.max(
+      1,
+      Math.ceil(searchResult.total / searchResult.per_page),
+    ),
+    currentPage: searchResult.page,
+    perPage: searchResult.per_page,
+    coverageCep: null,
+    coverageStatus: "not_requested",
+    sourceStatus,
+  };
+}
+
+async function loadSearchCatalog(
+  input: NormalizedCatalogInput,
+  categorySlugs: string[],
+  typeBySlug: Awaited<ReturnType<typeof getCategoryTypeBySlug>>,
+  tabs: ProductsCatalogTab[],
+  flashSaleCampaign: FlashSaleCampaign,
+): Promise<ProductsCatalogPayload> {
+  const searchResult = await searchCatalogProducts({
+    search: input.search,
+    categorySlugs: input.selectedTypes.length > 0 ? categorySlugs : [],
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+    page: input.currentPage,
+    perPage: input.perPage,
+  });
+  const searchHydration = await fetchWpProductsResult(
+    { first: Math.max(1, searchResult.ids.length), include: searchResult.ids },
+    "products-catalog-search",
+  );
+  const products = searchHydration.products.map((product, index) =>
+    applyFlashSaleToCatalogItem(
+      mapWpProductToCatalogItem(product, index, typeBySlug),
+      flashSaleCampaign,
+    ),
+  );
+
+  return buildSearchPayload(
+    input,
+    tabs,
+    searchResult,
+    products,
+    searchHydration.ok ? "ok" : "unavailable",
+  );
+}
+
+function getCampaignProductIds(
+  flashSaleCampaign: FlashSaleCampaign,
+  minPrice: number | null,
+  maxPrice: number | null,
+) {
+  if ((minPrice === null && maxPrice === null) || !flashSaleCampaign) {
+    return [];
+  }
+
+  return flashSaleCampaign.products
+    .map((product) => Number(product.id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+}
+
+async function loadWpCatalogItems(
+  input: NormalizedCatalogInput,
+  categorySlugs: string[],
+  typeBySlug: Awaited<ReturnType<typeof getCategoryTypeBySlug>>,
+  flashSaleCampaign: FlashSaleCampaign,
+): Promise<CatalogItemsResult> {
+  const campaignProductIds = getCampaignProductIds(
+    flashSaleCampaign,
+    input.minPrice,
+    input.maxPrice,
+  );
+  const [catalogResult, campaignResult] = await Promise.all([
+    fetchAllWpProductsResult(
+      {
+        categoryIn: input.selectedTypes.length > 0 ? categorySlugs : undefined,
+        minPrice: input.minPrice,
+        maxPrice: input.maxPrice,
+      },
+      CATALOG_SCAN_LIMIT,
+      "products-catalog",
+    ),
+    campaignProductIds.length > 0
+      ? fetchWpProductsResult(
+          { first: campaignProductIds.length, include: campaignProductIds },
+          "products-catalog-flash-sale",
+        )
+      : Promise.resolve({ products: [], ok: true, truncated: false }),
+  ]);
+
+  if (catalogResult.truncated) {
+    console.warn(
+      `[products-catalog] Varredura interrompida em ${CATALOG_SCAN_LIMIT} produtos; coleção, tipo e preço foram filtrados sobre catálogo incompleto.`,
+    );
+  }
+
+  const knownIds = new Set(
+    catalogResult.products.map((product) => product.databaseId),
+  );
+  const mergedProducts = [
+    ...catalogResult.products,
+    ...campaignResult.products.filter(
+      (product) => !knownIds.has(product.databaseId),
+    ),
+  ];
+  const items = markNewArrivals(
+    mergedProducts
+      .map((product, index) =>
+        mapWpProductToCatalogItem(product, index, typeBySlug),
+      )
+      .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign)),
+  );
+
+  return {
+    items,
+    sourceStatus: catalogResult.ok ? "ok" : "unavailable",
+  };
+}
+
+async function loadWpCatalog(
+  input: NormalizedCatalogInput,
+): Promise<ProductsCatalogPayload> {
+  const [categoryFilter, typeBySlug, tabCounts, flashSaleCampaign] =
+    await Promise.all([
+      getCategoryFilterForTypes(input.selectedTypes),
+      getCategoryTypeBySlug(),
+      getTabCounts(),
+      getHomeFlashSale(),
+    ]);
+  const tabs = buildTabs(tabCounts);
+
+  if (categoryFilter.unresolved.length > 0) {
+    console.warn(
+      categoryFilter.available
+        ? "[products-catalog] Categoria sem termo correspondente no WordPress; nenhum produto será listado."
+        : "[products-catalog] Taxonomia indisponível no WPGraphQL; listagem vai para estado de erro.",
+      categoryFilter.unresolved.join(", "),
+    );
+
+    return buildEmptyPayload({
+      tabs,
+      selectedTypes: input.selectedTypes,
+      activeType: input.activeType,
+      activeCollection: input.activeCollection,
+      minPrice: input.minPrice,
+      maxPrice: input.maxPrice,
+      perPage: input.perPage,
+      sourceStatus: categoryFilter.available ? "ok" : "unavailable",
+    });
+  }
+
+  if (input.search) {
+    return loadSearchCatalog(
+      input,
+      categoryFilter.slugs,
+      typeBySlug,
+      tabs,
+      flashSaleCampaign,
+    );
+  }
+
+  const catalog = await loadWpCatalogItems(
+    input,
+    categoryFilter.slugs,
+    typeBySlug,
+    flashSaleCampaign,
+  );
+  return buildCatalogPayload(input, catalog.items, tabs, catalog.sourceStatus);
+}
+
+function matchesCollection(
+  item: ProductsCatalogItem,
+  collection: ProductCollectionId,
+) {
+  if (collection === "premium") return item.isPremium;
+  if (collection === "novidades") return item.isNewArrival;
+  if (collection === "promocoes") return item.isOnSale;
+  if (collection === "kits") return item.isKit;
+  return true;
+}
+
+function filterCatalogItems(
+  items: ProductsCatalogItem[],
+  input: NormalizedCatalogInput,
+) {
+  return items.filter((item) => {
+    if (
+      input.selectedTypes.length > 0 &&
+      !input.selectedTypes.includes(item.type)
+    ) {
+      return false;
+    }
+    if (!matchesCollection(item, input.activeCollection)) {
+      return false;
+    }
+    if (input.minPrice !== null && item.price < input.minPrice) {
+      return false;
+    }
+    if (input.maxPrice !== null && item.price > input.maxPrice) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function buildCatalogPayload(
+  input: NormalizedCatalogInput,
+  items: ProductsCatalogItem[],
+  tabs: ProductsCatalogTab[],
+  sourceStatus: CatalogSourceStatus,
+): ProductsCatalogPayload {
+  const filteredItems = filterCatalogItems(items, input);
+  const totalItems = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / input.perPage));
+  const currentPage = clamp(input.currentPage, 1, totalPages);
+  const start = (currentPage - 1) * input.perPage;
+
+  return {
+    items: filteredItems.slice(start, start + input.perPage),
+    tabs,
+    selectedTypes: input.selectedTypes,
+    minPrice: input.minPrice,
+    maxPrice: input.maxPrice,
+    activeType: input.activeType,
+    activeCollection: input.activeCollection,
+    totalItems,
+    totalPages,
+    currentPage,
+    perPage: input.perPage,
+    coverageCep: null,
+    coverageStatus: "not_requested",
+    sourceStatus,
   };
 }
 
 export async function getProductsCatalog(
   input: GetProductsCatalogInput = {},
 ): Promise<ProductsCatalogPayload> {
-  const useMockData = isMockDataEnabled();
-  const selectedTypes = normalizeSelectedTypes(input.selectedTypes, input.type);
-  const activeCollection = normalizeCollection(input.collection);
-  const activeType = selectedTypes.length === 1 ? selectedTypes[0] : "todos";
-  const { minPrice, maxPrice } = normalizePriceRange({
-    minPrice: input.minPrice,
-    maxPrice: input.maxPrice,
-  });
-  const perPage = clamp(input.perPage ?? 9, 1, 60);
-  const search = normalizeProductSearch(input.search);
+  const normalizedInput = normalizeCatalogInput(input);
 
-  const currentPage = clamp(input.page ?? 1, 1, Number.MAX_SAFE_INTEGER);
-  const fetchBufferCap = 120;
-  const fetchFirst = Math.min(
-    fetchBufferCap,
-    Math.max(perPage * 3, currentPage * perPage * 2 + 20),
-  );
-
-  let fetchedItems: ProductsCatalogItem[];
-  let tabs: ProductsCatalogTab[];
-  const flashSaleCampaignPromise = getHomeFlashSale();
-
-  if (useMockData) {
-    const [mockFile, flashSaleCampaign] = await Promise.all([
-      requestProductsCatalogMockFile(),
-      flashSaleCampaignPromise,
-    ]);
-    fetchedItems = mockFile.products
-      .map((product, index) => mapMockProductToCatalogItem(product, index))
-      .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign));
-    tabs = [
-      { id: "todos", label: TYPE_LABEL.todos, count: fetchedItems.length },
-      ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
-        id: type,
-        label: TYPE_LABEL[type],
-        count: fetchedItems.filter((item) => item.type === type).length,
-      })),
-    ];
-  } else {
-    const [categoryFilter, typeBySlug, tabCounts, flashSaleCampaign] = await Promise.all([
-      getCategoryFilterForTypes(selectedTypes),
-      getCategoryTypeBySlug(),
-      getTabCounts(),
-      flashSaleCampaignPromise,
-    ]);
-
-    tabs = [
-      { id: "todos", label: TYPE_LABEL.todos, count: tabCounts.todos },
-      ...(["sedas", "piteiras", "filtros", "acessorios"] as const).map((type) => ({
-        id: type,
-        label: TYPE_LABEL[type],
-        count: tabCounts[type],
-      })),
-    ];
-
-    if (categoryFilter.unresolved.length > 0) {
-      console.warn(
-        "[products-catalog] Categoria sem termo correspondente no WordPress; nenhum produto será listado.",
-        categoryFilter.unresolved.join(", "),
-      );
-
-      return buildEmptyPayload({
-        tabs,
-        selectedTypes,
-        activeType,
-        activeCollection,
-        minPrice,
-        maxPrice,
-        perPage,
-      });
-    }
-
-    if (search) {
-      const searchResult = await searchCatalogProducts({
-        search,
-        categorySlugs: selectedTypes.length > 0 ? categoryFilter.slugs : [],
-        minPrice,
-        maxPrice,
-        page: currentPage,
-        perPage,
-      });
-      const wpProducts = await fetchWpProductsSafe(
-        { first: Math.max(1, searchResult.ids.length), include: searchResult.ids },
-        "products-catalog-search",
-      );
-      const itemsById = new Map(
-        wpProducts.map((product, index) => [
-          product.databaseId,
-          applyFlashSaleToCatalogItem(
-            mapWpProductToCatalogItem(product, index, typeBySlug),
-            flashSaleCampaign,
-          ),
-        ]),
-      );
-
-      return {
-        items: searchResult.ids.flatMap((id) => {
-          const item = itemsById.get(id);
-          return item ? [item] : [];
-        }),
-        tabs,
-        selectedTypes,
-        minPrice,
-        maxPrice,
-        activeType,
-        activeCollection,
-        totalItems: searchResult.total,
-        totalPages: Math.max(1, Math.ceil(searchResult.total / searchResult.per_page)),
-        currentPage: searchResult.page,
-        perPage: searchResult.per_page,
-        coverageCep: null,
-        coverageStatus: "not_requested",
-      };
-    }
-
-    // O WordPress filtra faixa de preço pelo preço regular; produto em campanha
-    // precisa entrar mesmo assim para ser julgado adiante pelo preço promocional.
-    const campaignProductIds =
-      (minPrice !== null || maxPrice !== null) && flashSaleCampaign
-        ? flashSaleCampaign.products
-            .map((product) => Number(product.id))
-            .filter((id) => Number.isInteger(id) && id > 0)
-        : [];
-    const [wpProducts, wpCampaignProducts] = await Promise.all([
-      fetchWpProductsSafe(
-        {
-          first: fetchFirst,
-          categoryIn: selectedTypes.length > 0 ? categoryFilter.slugs : undefined,
-          minPrice,
-          maxPrice,
-        },
-        "products-catalog",
-      ),
-      campaignProductIds.length > 0
-        ? fetchWpProductsSafe(
-            { first: campaignProductIds.length, include: campaignProductIds },
-            "products-catalog-flash-sale",
-          )
-        : Promise.resolve([]),
-    ]);
-    const knownIds = new Set(wpProducts.map((product) => product.databaseId));
-    const mergedProducts = [
-      ...wpProducts,
-      ...wpCampaignProducts.filter((product) => !knownIds.has(product.databaseId)),
-    ];
-
-    fetchedItems = mergedProducts.map((product, index) =>
-      applyFlashSaleToCatalogItem(
-        mapWpProductToCatalogItem(product, index, typeBySlug),
-        flashSaleCampaign,
-      ),
+  if (isMockDataEnabled()) {
+    const catalog = await loadMockCatalog();
+    return buildCatalogPayload(
+      normalizedInput,
+      catalog.items,
+      catalog.tabs,
+      catalog.sourceStatus,
     );
   }
 
-  const typeFilteredItems =
-    selectedTypes.length === 0
-      ? fetchedItems
-      : fetchedItems.filter((item) => selectedTypes.includes(item.type));
-
-  const collectionFilteredItems = typeFilteredItems.filter((item) => {
-    if (activeCollection === "premium") {
-      return item.isPremium;
-    }
-
-    if (activeCollection === "novidades") {
-      return item.isNewArrival;
-    }
-
-    if (activeCollection === "promocoes") {
-      return item.isOnSale;
-    }
-
-    if (activeCollection === "kits") {
-      return item.isKit;
-    }
-
-    return true;
-  });
-
-  const filteredItems = collectionFilteredItems.filter((item) => {
-    if (minPrice !== null && item.price < minPrice) {
-      return false;
-    }
-
-    if (maxPrice !== null && item.price > maxPrice) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const totalItems = filteredItems.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const clampedPage = clamp(currentPage, 1, totalPages);
-  const start = (clampedPage - 1) * perPage;
-  const end = start + perPage;
-
-  return {
-    items: filteredItems.slice(start, end),
-    tabs,
-    selectedTypes,
-    minPrice,
-    maxPrice,
-    activeType,
-    activeCollection,
-    totalItems,
-    totalPages,
-    currentPage: clampedPage,
-    perPage,
-    coverageCep: null,
-    coverageStatus: "not_requested",
-  };
+  return loadWpCatalog(normalizedInput);
 }

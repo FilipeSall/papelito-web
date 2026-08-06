@@ -71,7 +71,7 @@ function normalizePrice(value: string | undefined) {
  * - Filtros por categoria (tabs) via query params
  * - Grid responsivo com paginação server-side
  */
-export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
+export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProps>) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
 
@@ -121,6 +121,7 @@ export default function ProdutosPage({ searchParams }: ProdutosPageProps) {
         perPage={catalog.perPage}
         coverageCep={catalog.coverageCep}
         coverageStatus={catalog.coverageStatus}
+        sourceStatus={catalog.sourceStatus}
         search={search}
         showSearch
       />

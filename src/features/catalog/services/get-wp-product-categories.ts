@@ -32,6 +32,14 @@ export interface WpCategoryTaxonomy {
 export interface CategoryFilter {
   slugs: string[];
   unresolved: SpecificProductTypeId[];
+  /**
+   * `false` quando a taxonomia não pôde ser consultada.
+   *
+   * Sem isso, `unresolved` colapsa duas causas com tratamento oposto: termo renomeado ou
+   * removido com WordPress saudável é fail-closed legítimo ("nenhum produto"), enquanto
+   * WPGraphQL indisponível é erro e precisa virar `sourceStatus: "unavailable"`.
+   */
+  available: boolean;
 }
 
 interface WpCategoryNode {
@@ -131,13 +139,13 @@ export async function getCategoryFilterForTypes(
   const wanted = Array.from(new Set(types));
 
   if (wanted.length === 0) {
-    return { slugs: [], unresolved: [] };
+    return { slugs: [], unresolved: [], available: true };
   }
 
   const { available, entries } = await getWpProductCategories();
 
   if (!available) {
-    return { slugs: [], unresolved: wanted };
+    return { slugs: [], unresolved: wanted, available: false };
   }
 
   const slugs: string[] = [];
@@ -156,7 +164,7 @@ export async function getCategoryFilterForTypes(
     slugs.push(...matched);
   }
 
-  return { slugs: Array.from(new Set(slugs)), unresolved };
+  return { slugs: Array.from(new Set(slugs)), unresolved, available: true };
 }
 
 /**
