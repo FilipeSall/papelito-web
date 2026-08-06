@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, type KeyboardEvent } from "react";
+import { useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeftIcon, ChevronRightIcon, SectionHeader } from "@/components/ui";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SectionHeader,
+} from "@/components/ui";
 import { MiniProductCard } from "./mini-product-card";
 import type { HomeNewArrivalProduct } from "@/features/catalog";
 
@@ -11,7 +15,9 @@ interface NewArrivalsSectionProps {
   products: HomeNewArrivalProduct[];
 }
 
-export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
+export function NewArrivalsSection({
+  products,
+}: Readonly<NewArrivalsSectionProps>) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -26,31 +32,16 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
     emblaApi?.scrollNext();
   }, [emblaApi]);
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (!emblaApi) {
-        return;
-      }
-
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        scrollNext();
-      }
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        scrollPrev();
-      }
-    },
-    [emblaApi, scrollNext, scrollPrev],
-  );
-
   return (
     <section className="w-full bg-white py-12">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="w-full max-w-304 mx-auto flex flex-col gap-6">
           <div className="flex items-center gap-3">
-            <SectionHeader emoji="✨" title="Recém Chegados" variant="compact" />
+            <SectionHeader
+              emoji="✨"
+              title="Recém Chegados"
+              variant="compact"
+            />
 
             <div className="ml-auto flex items-center gap-2">
               <Link
@@ -81,12 +72,9 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
             </div>
           </div>
 
-          <div
+          <section
             aria-label="Carrossel de produtos recém chegados"
-            className="-mx-1 overflow-hidden pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            role="region"
-            tabIndex={0}
-            onKeyDown={handleKeyDown}
+            className="-mx-1 overflow-hidden pb-1"
             ref={emblaRef}
           >
             <div className="flex gap-4 px-1">
@@ -102,7 +90,7 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
                 />
               ))}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </section>
