@@ -19,9 +19,11 @@ import {
 
 import {
   BRAZILIAN_STATES,
+  CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STEP2_DRAFT_KEY,
   CADASTRO_STORAGE_KEY,
   type CadastroStep1Data,
+  type CadastroStep1Errors,
   type CadastroStep2Draft,
 } from "../shared";
 
@@ -45,6 +47,23 @@ const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
 function getFormDataString(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function step1ErrorsFromApiErrors(errors: Record<string, string[]>): CadastroStep1Errors {
+  const mappedFields = {
+    full_name: "name",
+    email: "email",
+    phone: "phone",
+    cpf: "cpf",
+    birth_date: "birthDate",
+    cnpj: "cnpj",
+  } as const;
+
+  return Object.entries(mappedFields).reduce<CadastroStep1Errors>((result, [apiField, field]) => {
+    const message = errors[apiField]?.find(Boolean);
+    if (message) result[field] = message;
+    return result;
+  }, {});
 }
 
 function readStep2Draft(): CadastroStep2Draft {
@@ -253,7 +272,16 @@ export default function CadastroEtapa2Page() {
           if (response.status === 409) {
             setErrorMessage("Já existe uma candidatura em aberto para estes dados.");
           } else if (response.status === 422) {
-            const message = Object.values(body?.data?.errors ?? {})
+            const errors = body?.data?.errors ?? {};
+            const step1Errors = step1ErrorsFromApiErrors(errors);
+            if (Object.keys(step1Errors).length > 0) {
+              window.sessionStorage.setItem(CADASTRO_STEP1_ERROR_KEY, JSON.stringify(step1Errors));
+              router.push(
+                callbackUrl ? `/cadastro?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/cadastro",
+              );
+              return;
+            }
+            const message = Object.values(errors)
               .flat()
               .find(Boolean);
             setErrorMessage(message ?? "Verifique os dados informados.");

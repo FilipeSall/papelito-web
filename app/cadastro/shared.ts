@@ -1,5 +1,6 @@
 export const CADASTRO_STORAGE_KEY = "papelito:cadastro:step1";
 export const CADASTRO_STEP2_DRAFT_KEY = "papelito:cadastro:step2:draft";
+export const CADASTRO_STEP1_ERROR_KEY = "papelito:cadastro:step1:errors";
 
 /**
  * Rascunho parcial da etapa 1, salvo quando o usuário sai da página sem enviar (ex.: clicando no
@@ -34,6 +35,9 @@ export type CadastroStep1Data = {
   phone: string;
   intent: CadastroIntent;
 };
+
+export type CadastroStep1Field = Exclude<keyof CadastroStep1Data, "intent">;
+export type CadastroStep1Errors = Partial<Record<CadastroStep1Field, string>>;
 
 export type CadastroStep2Draft = {
   cep: string;

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import CadastroPage from "./page";
@@ -38,19 +38,37 @@ vi.mock("@/components/auth/atoms", () => ({
 vi.mock("@/components/auth/molecules", () => ({
   AuthSocialDivider: () => <div />,
   AuthTextField: ({
+    error,
     id,
     label,
+    name,
     onChange,
     maxLength,
+    value,
+    defaultValue,
   }: {
+    error?: string;
     id: string;
     label: string;
+    name: string;
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
     maxLength?: number;
+    value?: string;
+    defaultValue?: string;
   }) => (
     <label htmlFor={id}>
       {label}
-      <input id={id} name={id} onChange={onChange} maxLength={maxLength} />
+      <input
+        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={Boolean(error)}
+        defaultValue={defaultValue}
+        id={id}
+        maxLength={maxLength}
+        name={name}
+        onChange={onChange}
+        value={value}
+      />
+      {error ? <span id={`${id}-error`}>{error}</span> : null}
     </label>
   ),
 }));
@@ -99,6 +117,27 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
 
     expect(pushMock).toHaveBeenCalledWith("/cadastro/etapa-2");
+  });
+
+  it("exibe todos os erros por campo e foca o primeiro campo inválido", async () => {
+    render(<CadastroPage />);
+
+    fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/revise os campos destacados/i);
+    });
+
+    expect(screen.getAllByText("Informe seu nome completo.")).toHaveLength(2);
+    expect(screen.getAllByText("Informe seu e-mail.")).toHaveLength(2);
+    expect(screen.getAllByText("Informe seu telefone.")).toHaveLength(2);
+    expect(screen.getAllByText("Informe um CPF válido.")).toHaveLength(2);
+    expect(screen.getAllByText("Informe um CNPJ válido.")).toHaveLength(2);
+    expect(screen.getAllByText("Informe sua data de nascimento.")).toHaveLength(2);
+    expect(screen.getByLabelText(/nome completo/i)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/nome completo/i)).toHaveAttribute("aria-describedby", "name-error");
+    expect(document.activeElement).toBe(screen.getByLabelText(/nome completo/i));
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("explica quando um documento bloqueia o avanço", () => {

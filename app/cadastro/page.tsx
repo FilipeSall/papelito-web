@@ -17,10 +17,13 @@ import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
+  CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STORAGE_KEY,
   type CadastroIntent,
   type CadastroStep1Data,
   type CadastroStep1Draft,
+  type CadastroStep1Errors,
+  type CadastroStep1Field,
 } from "./shared";
 
 const benefits = [
@@ -37,6 +40,54 @@ function handleCpfChange(event: ChangeEvent<HTMLInputElement>) {
 function formDataString(formData: FormData, field: string): string {
   const value = formData.get(field);
   return typeof value === "string" ? value : "";
+}
+
+const cadastroStep1Fields: CadastroStep1Field[] = [
+  "name",
+  "email",
+  "phone",
+  "cpf",
+  "cnpj",
+  "birthDate",
+];
+
+function readStep1Errors(): CadastroStep1Errors {
+  if (typeof window === "undefined") return {};
+
+  const saved = window.sessionStorage.getItem(CADASTRO_STEP1_ERROR_KEY);
+  if (!saved) return {};
+
+  try {
+    const parsed = JSON.parse(saved) as Record<string, unknown>;
+    return cadastroStep1Fields.reduce<CadastroStep1Errors>((errors, field) => {
+      if (typeof parsed[field] === "string" && parsed[field]) {
+        errors[field] = parsed[field];
+      }
+      return errors;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function validateStep1(
+  payload: CadastroStep1Data,
+  emailIsInvalid: boolean,
+): CadastroStep1Errors {
+  const errors: CadastroStep1Errors = {};
+
+  if (!payload.name) errors.name = "Informe seu nome completo.";
+  if (!payload.email) {
+    errors.email = "Informe seu e-mail.";
+  } else if (emailIsInvalid) {
+    errors.email = "Informe um e-mail válido.";
+  }
+  if (!payload.phone) errors.phone = "Informe seu telefone.";
+  if (!isValidCpf(payload.cpf)) errors.cpf = "Informe um CPF válido.";
+  if (!isValidCnpj(payload.cnpj)) errors.cnpj = "Informe um CNPJ válido.";
+  if (!payload.birthDate) errors.birthDate = "Informe sua data de nascimento.";
+
+  return errors;
 }
 
 export default function CadastroPage() {
@@ -59,17 +110,32 @@ export default function CadastroPage() {
 
   // Colaboradores entram apenas pelo fluxo de convite por e-mail.
   const intent: CadastroIntent = "create_company";
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<CadastroStep1Errors>(readStep1Errors);
   const [googleAccountFeedbackVisible, setGoogleAccountFeedbackVisible] = useState(
     () => searchParams.get("feedback") === "google_account_required",
   );
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
 
   const intentRef = useRef(intent);
+  const shouldFocusErrorRef = useRef(true);
 
   useEffect(() => {
     intentRef.current = intent;
   }, [intent]);
+
+  useEffect(() => {
+    window.sessionStorage.removeItem(CADASTRO_STEP1_ERROR_KEY);
+  }, []);
+
+  useEffect(() => {
+    if (!shouldFocusErrorRef.current) return;
+
+    const firstField = cadastroStep1Fields.find((field) => fieldErrors[field]);
+    if (!firstField) return;
+
+    document.getElementById(firstField)?.focus();
+    shouldFocusErrorRef.current = false;
+  }, [fieldErrors]);
 
   const valuesRef = useRef<Record<string, string>>({
     birthDate: draft.birthDate ?? "",
@@ -84,6 +150,13 @@ export default function CadastroPage() {
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !target.name) return;
     valuesRef.current = { ...valuesRef.current, [target.name]: target.value };
+    if (!cadastroStep1Fields.includes(target.name as CadastroStep1Field)) return;
+    setFieldErrors((current) => {
+      if (!current[target.name as CadastroStep1Field]) return current;
+      const next = { ...current };
+      delete next[target.name as CadastroStep1Field];
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -132,7 +205,6 @@ export default function CadastroPage() {
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrorMessage(null);
     const formData = new FormData(event.currentTarget);
     const cpf = formatCpf(formDataString(formData, "cpf")).trim();
     const cnpj = formatCnpj(formDataString(formData, "cnpj")).trim();
@@ -146,18 +218,14 @@ export default function CadastroPage() {
       intent,
     };
 
-    if (!payload.name || !payload.email || !payload.phone || !payload.birthDate) {
-      setErrorMessage("Preencha todos os campos para continuar.");
-      return;
-    }
-
-    if (!isValidCpf(cpf)) {
-      setErrorMessage("Informe um CPF válido.");
-      return;
-    }
-
-    if (!isValidCnpj(cnpj)) {
-      setErrorMessage("Informe um CNPJ válido.");
+    const emailInput = event.currentTarget.elements.namedItem("email");
+    const emailIsInvalid = !googleEmail
+      && emailInput instanceof HTMLInputElement
+      && emailInput.validity.typeMismatch;
+    const errors = validateStep1(payload, emailIsInvalid);
+    if (Object.keys(errors).length > 0) {
+      shouldFocusErrorRef.current = true;
+      setFieldErrors(errors);
       return;
     }
 
@@ -245,7 +313,7 @@ export default function CadastroPage() {
             Você será o titular da empresa cadastrada e poderá convidar sua equipe por e-mail.
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit} onChange={handleFormChange}>
+          <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit} onChange={handleFormChange}>
             <AuthTextField
               id="name"
               name="name"
@@ -253,6 +321,7 @@ export default function CadastroPage() {
               placeholder="Seu nome completo"
               autoComplete="name"
               defaultValue={draft.name}
+              error={fieldErrors.name}
               required
             />
 
@@ -267,6 +336,7 @@ export default function CadastroPage() {
                   autoComplete="email"
                   value={googleEmail}
                   disabled
+                  error={fieldErrors.email}
                   required
                 />
                 <input type="hidden" name="email" value={googleEmail} />
@@ -280,6 +350,7 @@ export default function CadastroPage() {
                 placeholder="seu@email.com"
                 autoComplete="email"
                 defaultValue={draft.email}
+                error={fieldErrors.email}
                 required
               />
             )}
@@ -292,6 +363,7 @@ export default function CadastroPage() {
               placeholder="(11) 99999-9999"
               autoComplete="tel"
               defaultValue={draft.phone}
+              error={fieldErrors.phone}
               required
             />
 
@@ -305,6 +377,7 @@ export default function CadastroPage() {
               maxLength={14}
               onChange={handleCpfChange}
               defaultValue={draft.cpf}
+              error={fieldErrors.cpf}
               required
             />
 
@@ -319,6 +392,7 @@ export default function CadastroPage() {
               onChange={(event) => {
                 event.currentTarget.value = formatCnpj(event.currentTarget.value);
               }}
+              error={fieldErrors.cnpj}
               required
             />
 
@@ -329,13 +403,25 @@ export default function CadastroPage() {
               type="date"
               placeholder="AAAA-MM-DD"
               defaultValue={draft.birthDate}
+              error={fieldErrors.birthDate}
               required
             />
 
-            {errorMessage ? (
-              <p className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
-                {errorMessage}
-              </p>
+            {Object.keys(fieldErrors).length > 0 ? (
+              <div className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
+                <p>Revise os campos destacados para continuar.</p>
+                <ul className="mt-2 list-inside list-disc space-y-1">
+                  {cadastroStep1Fields.map((field) =>
+                    fieldErrors[field] ? (
+                      <li key={field}>
+                        <a className="underline" href={`#${field}`}>
+                          {fieldErrors[field]}
+                        </a>
+                      </li>
+                    ) : null,
+                  )}
+                </ul>
+              </div>
             ) : null}
 
             <div className="pt-2">

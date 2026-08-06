@@ -15,6 +15,7 @@ interface AuthTextFieldProps {
   disabled?: boolean;
   maxLength?: number;
   max?: string;
+  error?: string;
   hint?: React.ReactNode;
   inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -34,10 +35,15 @@ export function AuthTextField({
   disabled,
   maxLength,
   max,
+  error,
   hint,
   inputMode,
   onChange,
 }: AuthTextFieldProps) {
+  const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div className="flex flex-col gap-2">
       <AuthFieldLabel htmlFor={id}>{label}</AuthFieldLabel>
@@ -56,12 +62,18 @@ export function AuthTextField({
         max={max}
         inputMode={inputMode}
         onChange={onChange}
-        aria-describedby={hint ? `${id}-hint` : undefined}
+        aria-describedby={describedBy || undefined}
+        aria-invalid={error ? true : undefined}
         className={readOnly || disabled ? "cursor-not-allowed opacity-70" : undefined}
       />
       {hint ? (
         <p id={`${id}-hint`} className="text-xs text-white/40">
           {hint}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={`${id}-error`} className="text-xs text-red-300">
+          {error}
         </p>
       ) : null}
     </div>

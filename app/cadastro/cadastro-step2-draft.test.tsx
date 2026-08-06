@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CadastroEtapa2Page from "./etapa-2/page";
 import {
   CADASTRO_STEP2_DRAFT_KEY,
+  CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STORAGE_KEY,
   type CadastroStep1Data,
   type CadastroStep2Draft,
@@ -116,6 +117,8 @@ const step2Draft: CadastroStep2Draft = {
 
 describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
   beforeEach(() => {
+    routerMock.push.mockReset();
+    routerMock.replace.mockReset();
     window.sessionStorage.clear();
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(step1));
   });
@@ -147,5 +150,40 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
     ) as Record<string, string>;
     expect(saved.cep).toBe(step2Draft.cep);
     expect(saved.password).toBeUndefined();
+  });
+
+  it("retorna à etapa 1 quando a API informa erro de identidade", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: { errors: { cpf: ["Informe um CPF válido."] } },
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+
+    render(<CadastroEtapa2Page />);
+
+    fireEvent.change(screen.getByLabelText("CEP"), { target: { value: step2Draft.cep } });
+    fireEvent.change(screen.getByLabelText("Logradouro"), { target: { value: step2Draft.street } });
+    fireEvent.change(screen.getByLabelText("Número"), { target: { value: step2Draft.number } });
+    fireEvent.change(screen.getByLabelText("Bairro"), { target: { value: step2Draft.neighborhood } });
+    fireEvent.change(screen.getByLabelText("Cidade"), { target: { value: step2Draft.city } });
+    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: step2Draft.state } });
+    fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "senha-secreta" } });
+    fireEvent.change(screen.getByLabelText("Confirmar Senha"), { target: { value: "senha-secreta" } });
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar termos" }));
+    fireEvent.submit(screen.getByRole("button", { name: /enviar candidatura/i }).closest("form")!);
+
+    await waitFor(() => {
+      expect(routerMock.push).toHaveBeenCalledWith("/cadastro");
+    });
+
+    expect(JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_ERROR_KEY) ?? "{}")).toEqual({
+      cpf: "Informe um CPF válido.",
+    });
   });
 });
