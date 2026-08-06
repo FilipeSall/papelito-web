@@ -75,14 +75,15 @@ export function ProductsSection({
   coverageStatus = "not_requested",
   search = "",
   showSearch = false,
-}: ProductsSectionProps) {
+}: Readonly<ProductsSectionProps>) {
   const showCoverageWarning = coverageStatus === "unavailable";
-  const emptyMessage =
-    coverageStatus === "applied" && coverageCep
-      ? "Em breve atenderemos sua região."
-      : search
-        ? `Nenhum produto encontrado para “${search}”.`
-        : "Nenhum produto encontrado.";
+  let emptyMessage = "Nenhum produto encontrado.";
+
+  if (coverageStatus === "applied" && coverageCep) {
+    emptyMessage = "Em breve atenderemos sua região.";
+  } else if (search) {
+    emptyMessage = `Nenhum produto encontrado para “${search}”.`;
+  }
 
   return (
     <ProductAvailabilityProvider productIds={products.map((product) => product.id)}>

@@ -40,7 +40,7 @@ function LegalBadgeIcon() {
   );
 }
 
-function LegalTitle({ children }: { children: string }) {
+function LegalTitle({ children }: Readonly<{ children: string }>) {
   return (
     <p className="text-[14px] leading-[22.75px] tracking-[-0.15px] text-slate-600">
       <strong className="font-semibold text-slate-700">{children}</strong>
@@ -48,7 +48,7 @@ function LegalTitle({ children }: { children: string }) {
   );
 }
 
-function LegalParagraph({ children }: { children: ReactNode }) {
+function LegalParagraph({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <p className="text-[14px] leading-[22.75px] tracking-[-0.15px] text-slate-600">
       {children}
@@ -56,11 +56,11 @@ function LegalParagraph({ children }: { children: ReactNode }) {
   );
 }
 
-function LegalList({ items }: { items: ReactNode[] }) {
+function LegalList({ items }: Readonly<{ items: readonly string[] }>) {
   return (
-    <ul className="list-disc space-y-0 pl-[21px] text-[14px] leading-[22.75px] tracking-[-0.15px] text-slate-600 marker:text-slate-500">
-      {items.map((item, index) => (
-        <li key={index}>{item}</li>
+    <ul className="list-disc space-y-0 pl-5.25 text-[14px] leading-[22.75px] tracking-[-0.15px] text-slate-600 marker:text-slate-500">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
       ))}
     </ul>
   );
@@ -68,9 +68,9 @@ function LegalList({ items }: { items: ReactNode[] }) {
 
 export function LegalPage() {
   return (
-    <main className="bg-[#f9fafb]">
+    <main className="bg-bg-light">
       <section className="bg-brand-dark px-6 pb-14 pt-10 md:pb-14 md:pt-14">
-        <div className="mx-auto flex max-w-[896px] flex-col items-center text-center">
+        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-brand-yellow px-4 py-1.5 text-[12px] font-black uppercase tracking-[0.6px] text-brand-dark">
             <LegalBadgeIcon />
             Legal
@@ -84,9 +84,9 @@ export function LegalPage() {
         </div>
       </section>
 
-      <section className="px-6 py-14 md:py-[88px]">
-        <div className="mx-auto flex max-w-[896px] flex-col items-center">
-          <div className="w-full rounded-2xl bg-brand-yellow px-5 py-5 md:max-w-[832px]">
+      <section className="px-6 py-14 md:py-22">
+        <div className="mx-auto flex max-w-4xl flex-col items-center">
+          <div className="w-full rounded-2xl bg-brand-yellow px-5 py-5 md:max-w-208">
             <p className="text-[14px] font-black leading-5 tracking-[-0.15px] text-brand-dark">
               📋 Resumo dos Termos
             </p>
@@ -97,8 +97,8 @@ export function LegalPage() {
             </p>
           </div>
 
-          <div className="mt-6 w-full border-t border-[#f3f4f6] px-6 pt-4 md:max-w-[832px] md:px-6">
-            <div className="mx-auto flex max-w-[759px] flex-col space-y-0">
+          <div className="mt-6 w-full border-t border-[#f3f4f6] px-6 pt-4 md:max-w-208 md:px-6">
+            <div className="mx-auto flex max-w-189.75 flex-col space-y-0">
               <LegalParagraph>
                 PAPELITO, pessoa jurídica de direito privado leva a sua privacidade a
                 sério e zela pela segurança e proteção de dados de todos os seus
@@ -140,8 +140,7 @@ export function LegalPage() {
                   href="mailto:loja@papelitobrasil.com"
                 >
                   loja@papelitobrasil.com
-                </a>
-                .
+                </a>.
               </LegalParagraph>
               <LegalParagraph>
                 Caso você nos envie Dados Pessoais referentes a outras pessoas físicas,
@@ -432,13 +431,12 @@ export function LegalPage() {
                   href="mailto:loja@papelitobrasil.com"
                 >
                   loja@papelitobrasil.com
-                </a>
-                .
+                </a>.
               </LegalParagraph>
             </div>
           </div>
 
-          <div className="mt-16 w-full rounded-2xl bg-brand-dark px-6 py-7 text-center md:max-w-[832px] md:px-8 md:py-6">
+          <div className="mt-16 w-full rounded-2xl bg-brand-dark px-6 py-7 text-center md:max-w-208 md:px-8 md:py-6">
             <h2 className="text-[24px] font-black leading-6 tracking-[-0.15px] text-white">
               Dúvidas sobre nossos termos?
             </h2>
