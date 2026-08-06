@@ -14,6 +14,7 @@ import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 import { ToastCloseButton } from "@/components/ui/toast-close-button";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
+import { getMaximumAdultBirthDate, validateAdultBirthDate } from "@/lib/validation/birth-date";
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
@@ -85,7 +86,12 @@ function validateStep1(
   if (!payload.phone) errors.phone = "Informe seu telefone.";
   if (!isValidCpf(payload.cpf)) errors.cpf = "Informe um CPF válido.";
   if (!isValidCnpj(payload.cnpj)) errors.cnpj = "Informe um CNPJ válido.";
-  if (!payload.birthDate) errors.birthDate = "Informe sua data de nascimento.";
+  if (!payload.birthDate) {
+    errors.birthDate = "Informe sua data de nascimento.";
+  } else {
+    const birthDateError = validateAdultBirthDate(payload.birthDate);
+    if (birthDateError) errors.birthDate = birthDateError;
+  }
 
   return errors;
 }
@@ -404,6 +410,7 @@ export default function CadastroPage() {
               placeholder="AAAA-MM-DD"
               defaultValue={draft.birthDate}
               error={fieldErrors.birthDate}
+              max={getMaximumAdultBirthDate()}
               required
             />
 

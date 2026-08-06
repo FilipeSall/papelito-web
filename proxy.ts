@@ -47,8 +47,9 @@ export default withAuth(
     // server-side em require-checkout-customer, e fechar aqui trancaria todos numa queda do WP.
     if (requiresB2bOnboarding(request.nextauth.token?.b2b)) {
       const onboardingUrl = request.nextUrl.clone();
+      const requestedDestination = `${pathname}${request.nextUrl.search}`;
       onboardingUrl.pathname = ONBOARDING_PATH;
-      onboardingUrl.search = `?callbackUrl=${encodeURIComponent(`${pathname}${request.nextUrl.search}`)}`;
+      onboardingUrl.search = `?callbackUrl=${encodeURIComponent(requestedDestination)}`;
 
       return NextResponse.redirect(onboardingUrl);
     }

@@ -12,22 +12,15 @@ export default function ProductNotFound() {
             Não foi possível abrir este produto.
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-brand-dark/72 md:text-base">
-            Esse item pode ter saido do catálogo público, ter sido removido ou representar
-            apenas uma variação interna usada no controle de estoque do vendor.
+            Este produto não está disponível no catálogo público ou foi removido.
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div>
           <Link
             className="inline-flex items-center justify-center rounded-full bg-brand-dark px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-brand-yellow transition hover:opacity-92"
             href="/produtos"
           >
             Ver catálogo
-          </Link>
-          <Link
-            className="inline-flex items-center justify-center rounded-full border-2 border-brand-dark px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-brand-dark transition hover:bg-brand-dark/5"
-            href="/vendor/estoque"
-          >
-            Voltar ao estoque
           </Link>
         </div>
       </div>

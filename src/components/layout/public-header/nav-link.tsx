@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { MenuUnderline } from "@/components/ui/menu-underline";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 type PublicHeaderNavLinkProps = {
   href: string;
@@ -11,9 +12,13 @@ type PublicHeaderNavLinkProps = {
   widthClass?: string;
 };
 
-export function PublicHeaderNavLink({ href, label, widthClass = "" }: PublicHeaderNavLinkProps) {
+export function PublicHeaderNavLink({ href, label, widthClass = "" }: Readonly<PublicHeaderNavLinkProps>) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isMounted = useIsMounted();
+  // O estado ativo é resolvido só no cliente: em rota ISR ele ficaria congelado no HTML
+  // em cache (o prerender da "/" na Vercel não vê pathname "/") e o React não corrige
+  // divergência de atributo na hidratação.
+  const isActive = isMounted && pathname === href;
 
   return (
     <Link
