@@ -72,7 +72,7 @@ export function ProductsDiscoveryPage({
   basePath,
   searchParams,
   initialCollection = "todos",
-}: ProductsDiscoveryPageProps) {
+}: Readonly<ProductsDiscoveryPageProps>) {
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
 

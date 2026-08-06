@@ -44,12 +44,12 @@ export function ViewToggle({
   currentPage,
   perPage,
   search,
-}: ViewToggleProps) {
+}: Readonly<ViewToggleProps>) {
   const defaultGridPerPage = getDefaultPerPageForView("grid");
   const defaultListPerPage = getDefaultPerPageForView("list");
 
   const gridPerPage = perPage > defaultListPerPage ? defaultGridPerPage : perPage;
-  const listPerPage = perPage < defaultListPerPage ? defaultListPerPage : perPage;
+  const listPerPage = Math.max(perPage, defaultListPerPage);
 
   return (
     <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
