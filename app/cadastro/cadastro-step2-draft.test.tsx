@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CadastroEtapa2Page from "./etapa-2/page";
 import {
+  CADASTRO_STEP1_DRAFT_KEY,
   CADASTRO_STEP2_DRAFT_KEY,
   CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STORAGE_KEY,
@@ -121,6 +122,7 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
     routerMock.replace.mockReset();
     window.sessionStorage.clear();
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(step1));
+    window.sessionStorage.setItem(CADASTRO_STEP1_DRAFT_KEY, JSON.stringify(step1));
   });
 
   afterEach(() => {
@@ -184,6 +186,13 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
 
     expect(JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_ERROR_KEY) ?? "{}")).toEqual({
       cpf: "Informe um CPF válido.",
+    });
+    expect(JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY) ?? "{}")).toMatchObject({
+      name: step1.name,
+      email: step1.email,
+      cpf: step1.cpf,
+      cnpj: step1.cnpj,
+      birthDate: step1.birthDate,
     });
   });
 });

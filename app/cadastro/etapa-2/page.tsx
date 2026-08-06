@@ -18,6 +18,7 @@ import {
 } from "@/lib/validation/brazilian-documents";
 
 import {
+  CADASTRO_STEP1_DRAFT_KEY,
   BRAZILIAN_STATES,
   CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STEP2_DRAFT_KEY,
@@ -293,6 +294,7 @@ export default function CadastroEtapa2Page() {
         }
 
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
+        window.sessionStorage.removeItem(CADASTRO_STEP1_DRAFT_KEY);
         window.sessionStorage.removeItem(CADASTRO_STEP2_DRAFT_KEY);
         router.push("/cadastro/analise");
         router.refresh();

@@ -132,7 +132,7 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     expect(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY)).toBeNull();
   });
 
-  it("descarta o rascunho ao concluir a etapa 1", () => {
+  it("mantém o rascunho até a conclusão da candidatura", () => {
     render(<CadastroPage />);
     fillStep1();
     fireEvent.change(screen.getByLabelText(/^cpf$/i), { target: { value: "cpf-valid" } });
@@ -144,7 +144,7 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
 
     expect(pushMock).toHaveBeenCalledWith("/cadastro/etapa-2");
-    expect(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY)).not.toBeNull();
     expect(window.sessionStorage.getItem(CADASTRO_STORAGE_KEY)).not.toBeNull();
   });
 

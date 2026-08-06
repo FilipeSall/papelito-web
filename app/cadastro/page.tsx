@@ -231,7 +231,7 @@ export default function CadastroPage() {
 
     submittedRef.current = true;
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
-    window.sessionStorage.removeItem(CADASTRO_STEP1_DRAFT_KEY);
+    window.sessionStorage.setItem(CADASTRO_STEP1_DRAFT_KEY, JSON.stringify(payload));
     router.push(
       callbackUrl
         ? `/cadastro/etapa-2?callbackUrl=${encodeURIComponent(callbackUrl)}`

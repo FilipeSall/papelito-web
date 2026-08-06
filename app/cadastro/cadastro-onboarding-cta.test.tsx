@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import CadastroPage from "./page";
+import { CADASTRO_STEP1_DRAFT_KEY } from "./shared";
 
 const pushMock = vi.fn();
 
@@ -76,6 +77,7 @@ vi.mock("@/components/auth/molecules", () => ({
 describe("Cadastro — CTA de onboarding B2B", () => {
   beforeEach(() => {
     pushMock.mockClear();
+    window.sessionStorage.clear();
   });
 
   it("oferece cadastro de nova empresa e orienta convite para colaboradores", () => {
@@ -117,6 +119,12 @@ describe("Cadastro — CTA de onboarding B2B", () => {
     fireEvent.submit(screen.getByRole("button", { name: /próximo/i }).closest("form")!);
 
     expect(pushMock).toHaveBeenCalledWith("/cadastro/etapa-2");
+    expect(JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_DRAFT_KEY) ?? "{}")).toMatchObject({
+      name: "Nome de Teste",
+      email: "teste@example.test",
+      cpf: "cpf-valid",
+      cnpj: "cnpj-valid",
+    });
   });
 
   it("exibe todos os erros por campo e foca o primeiro campo inválido", async () => {
