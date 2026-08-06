@@ -8,7 +8,7 @@ type PrivateHeaderLogoProps = {
   logo?: ManagedImageAsset;
 };
 
-export function PrivateHeaderLogo({ logo }: PrivateHeaderLogoProps) {
+export function PrivateHeaderLogo({ logo }: Readonly<PrivateHeaderLogoProps>) {
   const resolved = resolveLogo("privateHeader", logo);
 
   return (

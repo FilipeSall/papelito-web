@@ -19,7 +19,7 @@ export function ProductBreadcrumbLink({
   label,
   href,
   isCurrent = false,
-}: ProductBreadcrumbLinkProps) {
+}: Readonly<ProductBreadcrumbLinkProps>) {
   if (isCurrent || !href) {
     return (
       <span className="text-xs font-medium leading-4 text-brand-dark" aria-current="page">
