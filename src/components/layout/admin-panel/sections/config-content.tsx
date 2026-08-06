@@ -4,12 +4,10 @@ import { useState, useTransition } from "react";
 
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import { Panel } from "../primitives";
+import { FormFeedback, type FormFeedbackState } from "@/components/ui/feedback";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 
-type FeedbackState =
-  | { type: "error"; message: string }
-  | { type: "success"; message: string }
-  | null;
+type FeedbackState = FormFeedbackState;
 
 const INITIAL_PASSWORD_FORM = {
   currentPassword: "",
@@ -155,16 +153,8 @@ export function ConfigContent() {
         </div>
 
         {feedback ? (
-          <div
-            className={`mt-5 px-4 py-3 text-sm font-bold ${
-              feedback.type === "error"
-                ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
-                : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
-            }`}
-            role={feedback.type === "error" ? "alert" : "status"}
-          >
-            {feedback.type === "error" ? "⚠ " : "✓ "}
-            {feedback.message}
+          <div className="mt-5">
+            <FormFeedback feedback={feedback} />
           </div>
         ) : null}
 

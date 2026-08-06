@@ -4,14 +4,10 @@ import { useState, useTransition } from "react";
 
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import type { ProfilePasswordFormValues } from "@/features/profile/types/profile-customer";
+import { FormFeedback, type FormFeedbackState } from "@/components/ui/feedback";
 import { ArrowRightIcon } from "@/components/ui/icons";
 
 import { ProfileFormField } from "./profile-form-field";
-
-type FeedbackState =
-  | { type: "error"; message: string }
-  | { type: "success"; message: string }
-  | null;
 
 const INITIAL_PASSWORD_FORM: ProfilePasswordFormValues = {
   currentPassword: "",
@@ -21,11 +17,11 @@ const INITIAL_PASSWORD_FORM: ProfilePasswordFormValues = {
 
 export function PasswordSettingsCard({
   variant = "default",
-}: {
+}: Readonly<{
   variant?: "default" | "embedded";
-}) {
+}>) {
   const [form, setForm] = useState(INITIAL_PASSWORD_FORM);
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const [feedback, setFeedback] = useState<FormFeedbackState>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
 
@@ -153,19 +149,7 @@ export function PasswordSettingsCard({
           </div>
         </div>
 
-        {feedback ? (
-          <div
-            className={`px-4 py-3 text-sm font-bold ${
-              feedback.type === "error"
-                ? "border-2 border-[#c0392b] bg-[#c0392b]/10 text-[#c0392b]"
-                : "border-2 border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
-            }`}
-            role={feedback.type === "error" ? "alert" : "status"}
-          >
-            {feedback.type === "error" ? "⚠ " : "✓ "}
-            {feedback.message}
-          </div>
-        ) : null}
+        <FormFeedback feedback={feedback} />
 
         <div className="mt-auto flex flex-col gap-3 border-t-2 border-[#1a1a1a] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-[#1a1a1a]/70">

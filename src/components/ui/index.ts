@@ -11,3 +11,4 @@ export { ToastCloseButton } from "./toast-close-button";
 
 export * from "./icons";
 export * from "./badges";
+export * from "./feedback";
