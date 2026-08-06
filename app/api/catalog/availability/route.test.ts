@@ -59,7 +59,9 @@ describe("GET /api/catalog/availability", () => {
 
     const { GET } = await import("./route");
     const response = await GET(
-      new Request("http://localhost:3000/api/catalog/availability?productIds=11760,11762"),
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760,11762",
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -88,7 +90,9 @@ describe("GET /api/catalog/availability", () => {
 
     const { GET } = await import("./route");
     const response = await GET(
-      new Request("http://localhost:3000/api/catalog/availability?productIds=11760"),
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760",
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -97,5 +101,102 @@ describe("GET /api/catalog/availability", () => {
       products: {},
     });
     expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
+  it("allows an anonymous visitor to check one product with a temporary CEP", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+    getCoverageMock.mockResolvedValue({
+      "11760": {
+        hasCoverage: true,
+        bestVendor: {
+          vendor_id: 101,
+          qty: 8,
+        },
+        alternatives: [],
+      },
+    });
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760&cep=01310-930",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "ok",
+      products: {
+        "11760": { available: true, stockQty: 1 },
+      },
+    });
+    expect(getCoverageMock).toHaveBeenCalledWith("01310930", ["11760"]);
+  });
+
+  it("rejects public availability requests with more than one product", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760,11762&cep=01310930",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a public availability request with an invalid CEP", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760&cep=123",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
+  it("rate limits repeated public availability requests", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+    getCoverageMock.mockResolvedValue({
+      "11760": {
+        hasCoverage: true,
+        bestVendor: { vendor_id: 101, qty: 8 },
+        alternatives: [],
+      },
+    });
+
+    const { GET } = await import("./route");
+    const requestUrl =
+      "http://localhost:3000/api/catalog/availability?productIds=11760&cep=01310930";
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      expect((await GET(new Request(requestUrl))).status).toBe(200);
+    }
+
+    expect((await GET(new Request(requestUrl))).status).toBe(429);
+  });
+
+  it("returns unavailable when public coverage lookup fails", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+    getCoverageMock.mockRejectedValue(new Error("coverage failed"));
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request(
+        "http://localhost:3000/api/catalog/availability?productIds=11760&cep=01310930",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "unavailable",
+      products: {},
+    });
   });
 });

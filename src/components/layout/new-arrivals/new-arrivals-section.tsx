@@ -66,7 +66,7 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
                 type="button"
                 aria-label="Produtos anteriores"
                 onClick={scrollPrev}
-                className="flex size-8 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
+                className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
               >
                 <ChevronLeftIcon className="size-4" />
               </button>
@@ -74,7 +74,7 @@ export function NewArrivalsSection({ products }: NewArrivalsSectionProps) {
                 type="button"
                 aria-label="Próximos produtos"
                 onClick={scrollNext}
-                className="flex size-8 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
+                className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
               >
                 <ChevronRightIcon className="size-4" />
               </button>

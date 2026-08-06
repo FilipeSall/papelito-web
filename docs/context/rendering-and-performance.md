@@ -20,7 +20,7 @@ Este documento existe porque a home e o catálogo já foram lentos, o motivo foi
 
 **Produto indisponível não desaparece.** Ele recebe opacidade reduzida, tooltip em hover e em focus, e o `AddToCartButton` recebe `disabledReason`. O texto é exatamente: `O vendor da sua região não tem esse produto.`
 
-**A fonte da região é apenas o CEP salvo na conta do usuário logado.** Não existe prompt de CEP, cookie `papelito_user_cep` nem store de CEP — esse desenho foi implementado, testado e **removido**. Anônimo ou logado sem CEP não chama availability e vê o catálogo normal; a área logada mostra um aviso curto.
+**A fonte da região no catálogo continua sendo o CEP salvo na conta do usuário logado.** Não existe prompt de CEP, cookie `papelito_user_cep` nem store de CEP para listagens — esse desenho foi implementado, testado e **removido**. A exceção é a página dedicada do produto: após ação explícita do usuário, ela aceita um CEP temporário para consultar somente aquele produto; esse valor não é persistido nem autoriza compra.
 
 **Cache esperado**: server-side por `accountId + cep + activeVendorId + productIdsHash` por 5 minutos; cliente em `localStorage` + SWR por 5 minutos.
 
@@ -68,7 +68,7 @@ bun run build
 
 No resumo do build, `/` deve aparecer como rota estática/ISR — **não** como SSR dinâmico por sessão. Além disso:
 
-- usuário anônimo não deve chamar `/api/catalog/availability`;
+- usuário anônimo não deve chamar `/api/catalog/availability` automaticamente nem em lote; a página dedicada pode chamar a rota após envio explícito de um único CEP/produto;
 - usuário logado com CEP deve receber home e catálogo rápido e ver a disponibilidade aplicada **depois** da hidratação;
 - produto indisponível deve ficar opaco, com tooltip, e não permitir compra.
 
