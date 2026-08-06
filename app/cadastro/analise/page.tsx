@@ -81,6 +81,8 @@ export default function CadastroAnalisePage() {
   const pendingReview = application?.status === "pending_manual_review";
   const approved = application?.status === "approved";
   const rejected = application?.status === "rejected";
+  const hasLoadedApplication = loadState === "loaded" && application !== null;
+  const pageTitle = applicationPageTitle(loadState, application?.status);
 
   return (
     <div className="flex min-h-screen">
@@ -118,26 +120,28 @@ export default function CadastroAnalisePage() {
 
       <main className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
         <section className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-2" aria-label="Etapa 3 de 3">
-            {[1, 2].map((step) => (
-              <div key={step} className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow">
-                  <CheckIcon className="h-3.5 w-3.5 text-brand-dark" />
-                </span>
-                <div className="h-px w-6 bg-brand-yellow" />
-              </div>
-            ))}
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark">
-              3
-            </span>
-            <span className="ml-2 text-xs text-white/40">Etapa 3 de 3</span>
-          </div>
+          {hasLoadedApplication ? (
+            <div className="mb-8 flex items-center gap-2" aria-label="Etapa 3 de 3">
+              {[1, 2].map((step) => (
+                <div key={step} className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow">
+                    <CheckIcon className="h-3.5 w-3.5 text-brand-dark" />
+                  </span>
+                  <div className="h-px w-6 bg-brand-yellow" />
+                </div>
+              ))}
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-yellow text-xs font-black text-brand-dark">
+                3
+              </span>
+              <span className="ml-2 text-xs text-white/40">Etapa 3 de 3</span>
+            </div>
+          ) : null}
 
           <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-yellow">
-            Análise empresarial
+            {hasLoadedApplication ? "Análise empresarial" : "Cadastro empresarial"}
           </p>
           <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-white">
-            {applicationTitle(application?.status)}
+            {pageTitle}
           </h2>
 
           {loadState === "loading" ? (
@@ -269,14 +273,19 @@ export default function CadastroAnalisePage() {
   );
 }
 
-function applicationTitle(status: Application["status"] | undefined) {
+function applicationPageTitle(loadState: ApplicationLoadState, status: Application["status"] | undefined) {
+  if (loadState === "missing") return "Nenhuma candidatura encontrada";
+  if (loadState === "error") return "Não foi possível carregar a candidatura";
+  if (loadState === "loading") return "Carregando candidatura";
+
   const titles: Record<string, string> = {
     approved: "Cadastro aprovado",
     document_required: "Envie seu documento com foto",
+    pending_manual_review: "Sua candidatura está em análise",
     rejected: "Candidatura encerrada",
   };
 
-  return titles[status ?? ""] ?? "Sua candidatura está em análise";
+  return titles[status ?? ""] ?? "Status da candidatura indisponível";
 }
 
 function CheckIcon({ className }: Readonly<{ className?: string }>) {

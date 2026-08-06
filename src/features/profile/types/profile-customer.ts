@@ -64,6 +64,7 @@ export type ProfileAccountFormValues = {
 };
 
 export type ProfilePasswordFormValues = {
+  currentPassword: string;
   password: string;
   confirmPassword: string;
 };

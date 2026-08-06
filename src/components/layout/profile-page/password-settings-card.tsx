@@ -14,6 +14,7 @@ type FeedbackState =
   | null;
 
 const INITIAL_PASSWORD_FORM: ProfilePasswordFormValues = {
+  currentPassword: "",
   password: "",
   confirmPassword: "",
 };
@@ -39,6 +40,10 @@ export function PasswordSettingsCard({
 
   function validateForm() {
     const nextErrors: Record<string, string> = {};
+
+    if (!form.currentPassword) {
+      nextErrors.currentPassword = "Informe sua senha atual.";
+    }
 
     if (form.password.length < 8) {
       nextErrors.password = "A nova senha precisa ter pelo menos 8 caracteres.";
@@ -86,11 +91,7 @@ export function PasswordSettingsCard({
           return;
         }
 
-        setFeedback({
-          type: "success",
-          message: "Sua senha foi atualizada com sucesso.",
-        });
-        setForm(INITIAL_PASSWORD_FORM);
+        await signOutAndClearSession({ callbackUrl: "/entrar" });
       } catch {
         setFeedback({
           type: "error",
@@ -122,7 +123,15 @@ export function PasswordSettingsCard({
             </h4>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <ProfileFormField
+              autoComplete="current-password"
+              errorMessage={fieldErrors.currentPassword}
+              label="Senha atual"
+              onChange={(value) => updateField("currentPassword", value)}
+              type="password"
+              value={form.currentPassword}
+            />
             <ProfileFormField
               autoComplete="new-password"
               errorMessage={fieldErrors.password}

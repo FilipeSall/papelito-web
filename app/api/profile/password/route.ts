@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { updateProfileCustomer } from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import { wpRest } from "@/lib/server/wp-rest";
 
 type PasswordPayload = {
+  currentPassword?: string;
   password?: string;
   confirmPassword?: string;
 };
@@ -22,8 +23,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
-  const password = String(payload.password ?? "");
-  const confirmPassword = String(payload.confirmPassword ?? "");
+  const currentPassword = typeof payload.currentPassword === "string" ? payload.currentPassword : "";
+  const password = typeof payload.password === "string" ? payload.password : "";
+  const confirmPassword = typeof payload.confirmPassword === "string" ? payload.confirmPassword : "";
+
+  if (!currentPassword) {
+    return NextResponse.json(
+      { message: "Informe sua senha atual." },
+      { status: 422 },
+    );
+  }
 
   if (password.length < 8) {
     return NextResponse.json(
@@ -40,15 +49,25 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    await updateProfileCustomer(session.accessToken, {
-      password,
+    const result = await wpRest<{ ok: true }>("/papelito/v1/auth/change-password", {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+      json: {
+        currentPassword,
+        password,
+        confirmPassword,
+      },
+      method: "POST",
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Não foi possível atualizar sua senha.";
+    if (!result.ok) {
+      return NextResponse.json(result.error, { status: result.status || 502 });
+    }
 
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json(
+      { message: "Não foi possível atualizar sua senha." },
+      { status: 500 },
+    );
   }
 }
