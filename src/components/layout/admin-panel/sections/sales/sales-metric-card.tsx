@@ -30,17 +30,17 @@ export function SalesMetricCard({
   label,
   tone = "default",
   value,
-}: SalesMetricCardProps) {
+}: Readonly<SalesMetricCardProps>) {
   return (
     <section
-      className="animate-admin-panel-enter relative min-h-[108px] overflow-hidden rounded-[12px] border border-[#231f20]/18 bg-white p-4 text-[#231f20]"
+      className="animate-admin-panel-enter relative min-h-27 overflow-hidden rounded-[12px] border border-[#231f20]/18 bg-white p-4 text-[#231f20]"
       style={{ animationDelay: `${animationDelayMs}ms` }}
     >
       <div
         aria-hidden
         className={[
           "absolute left-0 top-0 h-1 w-full",
-          tone === "warning" ? "bg-[#ffe500]" : "bg-[#231f20]/18",
+          tone === "warning" ? "bg-brand-yellow" : "bg-[#231f20]/18",
         ].join(" ")}
       />
       <p className="text-sm font-semibold text-[#231f20]/82">{label}</p>

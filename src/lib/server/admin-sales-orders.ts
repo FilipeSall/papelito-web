@@ -422,7 +422,7 @@ export async function getAdminSalesOrdersAggregate(
     netRevenue,
     orderStatusSeries,
     orderVolumeSeries: sortSeries(orderVolumeByInterval, filters),
-    orders: allOrders.length,
+    orders: paidOrders,
     pagesFetched,
     refundsTotal,
     revenueSeries: sortSeries(revenueByInterval, filters),

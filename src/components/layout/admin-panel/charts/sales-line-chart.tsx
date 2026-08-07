@@ -4,14 +4,32 @@ import { formatCompactCurrency, niceMax } from "../formatters";
 import { CardNotification, FramedPanel } from "../primitives";
 
 export function SalesLineChart({
+  emptyMessage = "Nenhum dado no período.",
   label,
   notifications = [],
   points,
-}: {
+}: Readonly<{
+  emptyMessage?: string;
   label: string;
   notifications?: string[];
   points: AdminAnalyticsSeriesPoint[];
-}) {
+}>) {
+  const hasData = points.some((point) => point.value > 0);
+
+  if (!hasData) {
+    return (
+      <FramedPanel className="flex h-full flex-1 flex-col">
+        <div className="flex items-center justify-between gap-3 px-5 pt-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
+          <CardNotification issues={notifications} />
+        </div>
+        <div className="mx-5 mt-5 mb-5 grid min-h-56 place-items-center rounded-xl border border-dashed border-[#231f20]/18 bg-[#f3efe4] px-5 text-center text-sm text-[#231f20]/64">
+          {emptyMessage}
+        </div>
+      </FramedPanel>
+    );
+  }
+
   const chartPoints = points.length > 0 ? points : [{ label: "sem dados", value: 0 }];
   const width = 640;
   const height = 280;

@@ -1,26 +1,26 @@
 // TODO: Substituir por requisição ao backend — GET /api/categories
-// Os dados mockados abaixo (emoji, título, subtítulo com contagem) devem vir do CMS/backend.
+// Os dados mockados abaixo (ícone, título, subtítulo com contagem) devem vir do CMS/backend.
 export const CATEGORIES_NAV_ITEMS = [
   {
-    emoji: "🎁",
+    iconSrc: "/images/categorias/icons/kit.webp",
     title: "Kits",
-    subtitle: "6 kits exclusivos",
+    subtitle: "Kits exclusivos",
     href: "/kits",
   },
   {
-    emoji: "⭐",
+    iconSrc: "/images/categorias/icons/premium.webp",
     title: "Premium",
     subtitle: "Top sellers",
     href: "/premium",
   },
   {
-    emoji: "💥",
+    iconSrc: "/images/categorias/icons/promocoes.webp",
     title: "Promoções",
     subtitle: "Até 15% off",
     href: "/promocoes",
   },
   {
-    emoji: "🔥",
+    iconSrc: "/images/categorias/icons/novidades.webp",
     title: "Novidades",
     subtitle: "Recém chegados",
     href: "/novidades",

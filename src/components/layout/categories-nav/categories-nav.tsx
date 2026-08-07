@@ -4,12 +4,6 @@ import useEmblaCarousel from "embla-carousel-react";
 import { CategoryNavItem } from "./category-nav-item";
 import { CATEGORIES_NAV_ITEMS } from "./constants";
 
-/**
- * Barra de navegação por categoria exibida abaixo da barra de benefícios.
- *
- * Apresenta quatro cards clicáveis — Kits, Premium, Promoções e Novidades —
- * em layout horizontal com gap uniforme e sombra aplicada ao conjunto.
- */
 export function CategoriesNav() {
   const [emblaRef] = useEmblaCarousel({
     align: "start",
@@ -18,33 +12,42 @@ export function CategoriesNav() {
   });
 
   return (
-    <section className="w-full bg-white py-3 lg:bg-[#F9FAFB] lg:pt-8 lg:pb-[25px]">
+    <section className="w-full bg-[#f9fafb] py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
+        <div className="mb-4 flex items-center gap-3 sm:mb-5">
+          <span aria-hidden className="h-2.5 w-2.5 rotate-45 bg-brand-yellow" />
+          <h2 className="text-xs font-black uppercase tracking-[0.18em] text-brand-dark sm:text-sm">
+            Explore por coleção
+          </h2>
+        </div>
         <div
           ref={emblaRef}
-          className="overflow-hidden pb-0.5 lg:hidden"
+          className="overflow-hidden px-0.5 pb-2 lg:hidden"
           aria-label="Carrossel de categorias"
         >
-          <div className="flex gap-3.5 pr-4">
+          <div className="flex gap-4 pr-4">
             {CATEGORIES_NAV_ITEMS.map((item) => (
-              <div key={item.title} className="min-w-0 shrink-0 basis-[46%]">
+              <div
+                key={item.title}
+                className="min-w-0 shrink-0 basis-[78%] min-[480px]:basis-[46%]"
+              >
                 <CategoryNavItem
-                  emoji={item.emoji}
+                  iconSrc={item.iconSrc}
                   title={item.title}
                   subtitle={item.subtitle}
                   href={item.href}
-                  className="h-27 max-w-none px-4"
+                  className="max-w-none"
                 />
               </div>
             ))}
           </div>
         </div>
 
-        <div className="hidden justify-center gap-12 lg:grid lg:grid-cols-[repeat(4,186px)] lg:drop-shadow-[0px_4px_2px_rgba(0,0,0,0.25)]">
+        <div className="hidden grid-cols-4 gap-5 lg:grid">
           {CATEGORIES_NAV_ITEMS.map((item) => (
             <CategoryNavItem
               key={item.title}
-              emoji={item.emoji}
+              iconSrc={item.iconSrc}
               title={item.title}
               subtitle={item.subtitle}
               href={item.href}

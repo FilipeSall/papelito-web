@@ -26,7 +26,7 @@ function classifyIssues(issues: string[]) {
   const general: string[] = [];
 
   for (const issue of issues) {
-    if (/revenue|reports\/sales/i.test(issue)) {
+    if (/revenue|reports\/sales|sales\/snapshot/i.test(issue)) {
       revenue.push(issue);
     } else if (/orders\/stats|products\/stats/i.test(issue)) {
       orders.push(issue);
@@ -44,9 +44,9 @@ function classifyIssues(issues: string[]) {
 
 export async function SalesContent({
   searchParams,
-}: {
+}: Readonly<{
   searchParams?: AdminSalesPageSearchParams;
-}) {
+}>) {
   const filters = parseAdminSalesFilters(searchParams);
   const session = await getServerSession(authOptions);
   const [analytics, ordersSnapshot] = await Promise.all([
@@ -59,35 +59,42 @@ export async function SalesContent({
       format: "currency" as const,
       label: "Receita bruta",
       value: analytics.grossRevenue,
-      detail: `Janela ${analytics.periodLabel}`,
+      detail: `Vendas confirmadas na janela ${analytics.periodLabel}`,
       tone: "default" as const,
     },
     {
       format: "currency" as const,
       label: "Receita líquida",
       value: analytics.netRevenue,
-      detail: `Variação ${formatPercent(analytics.revenueDeltaRate)}`,
+      detail: `Vendas confirmadas menos reembolsos. Variação ${formatPercent(analytics.revenueDeltaRate)}`,
       tone: "default" as const,
     },
     {
       format: "number" as const,
-      label: "Pedidos no período",
+      label: "Pedidos criados",
+      value: ordersSnapshot.totalOrders,
+      detail: "Mesmo período e mesma consulta do histórico abaixo.",
+      tone: "default" as const,
+    },
+    {
+      format: "number" as const,
+      label: "Vendas confirmadas",
       value: analytics.orders,
-      detail: "Mesmo filtro aplicado no histórico abaixo.",
+      detail: "Pedidos com pagamento confirmado.",
       tone: "default" as const,
     },
     {
       format: "currency" as const,
       label: "Ticket médio",
       value: analytics.avgOrderValue,
-      detail: "Receita bruta dividida pelo total de pedidos.",
+      detail: "Receita bruta dividida pelas vendas confirmadas.",
       tone: "default" as const,
     },
     {
       format: "number" as const,
       label: "Itens vendidos",
       value: analytics.itemsSold,
-      detail: "Volume agregado de itens no recorte.",
+      detail: "Itens de vendas com pagamento confirmado.",
       tone: "default" as const,
     },
     {
@@ -130,7 +137,7 @@ export async function SalesContent({
   const generalNotifications = [
     ...classified.general,
     ...(analytics.usedFallback
-      ? ["Dados parciais: WooCommerce Analytics indisponível ou incompleto; KPIs e gráficos podem não refletir o período inteiro."]
+      ? ["Dados indisponíveis: não foi possível consultar o snapshot financeiro completo do período."]
       : []),
   ];
   const animationKey = `${filters.preset}-${filters.from}-${filters.to}-${filters.interval}`;
@@ -151,6 +158,7 @@ export async function SalesContent({
 
       <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-2 [animation-delay:220ms]">
         <SalesLineChart
+          emptyMessage="Nenhuma venda confirmada no período."
           key={`revenue-${animationKey}`}
           label="receita por período"
           notifications={classified.revenue}
