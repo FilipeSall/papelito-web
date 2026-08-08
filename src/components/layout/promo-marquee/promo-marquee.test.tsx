@@ -1,33 +1,53 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { PromoMarqueeItem } from "@/types/home-assets";
+import { PromoMarquee, type PromoMarqueeMessage } from "./promo-marquee";
 
-import { PromoMarquee } from "./promo-marquee";
+function message(id: string, text: string): PromoMarqueeMessage {
+  return { id, nodes: [{ text, bold: false, italic: false }] };
+}
 
-const messages: PromoMarqueeItem[] = [
-  { id: "one", text: "⚡ Oferta um", order: 1, isActive: true },
-  { id: "two", text: "Inativa", order: 2, isActive: false },
-  { id: "three", text: "Oferta três", order: 3, isActive: true },
-  { id: "four", text: "Oferta quatro", order: 4, isActive: true },
+const messages: PromoMarqueeMessage[] = [
+  message("one", "⚡ Oferta"),
+  message("two", "🌿 Novidade"),
+  message("three", "🏆 Campeão"),
 ];
 
 describe("PromoMarquee", () => {
-  it("renders only active messages and duplicates them for the animation", () => {
-    const { container } = render(<PromoMarquee items={messages} />);
-
-    expect(screen.queryByText("Inativa")).not.toBeInTheDocument();
-    expect(screen.getAllByText("⚡ Oferta um")).toHaveLength(2);
-    expect(screen.getAllByText("Oferta três")).toHaveLength(2);
-    expect(screen.getAllByText("Oferta quatro")).toHaveLength(2);
-    expect(container.querySelectorAll("span")).toHaveLength(6);
+  it("duplica as mensagens para o loop contínuo", () => {
+    render(<PromoMarquee items={messages} />);
+    expect(screen.getAllByText("⚡ Oferta")).toHaveLength(2);
   });
 
-  it("renders no reserved space when there are no active messages", () => {
-    const { container } = render(
-      <PromoMarquee items={[{ ...messages[0], isActive: false }, messages[1], messages[2]]} />,
+  it("fica oculta abaixo do mínimo de mensagens", () => {
+    const { container } = render(<PromoMarquee items={messages.slice(0, 2)} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("ignora mensagem sem conteúdo resolvido", () => {
+    render(<PromoMarquee items={[...messages, { id: "vazia", nodes: [] }]} />);
+    expect(screen.getAllByText("🏆 Campeão")).toHaveLength(2);
+    expect(screen.queryByTestId("vazia")).not.toBeInTheDocument();
+  });
+
+  it("renderiza negrito e itálico como elementos, nunca como HTML cru", () => {
+    render(
+      <PromoMarquee
+        items={[
+          ...messages,
+          {
+            id: "rica",
+            nodes: [
+              { text: "Só hoje ", bold: false, italic: false },
+              { text: "15% OFF", bold: true, italic: true },
+            ],
+          },
+        ]}
+      />,
     );
 
-    expect(container.firstChild).toBeNull();
+    const emphasis = screen.getAllByText("15% OFF")[0];
+    expect(emphasis.tagName).toBe("EM");
+    expect(emphasis.parentElement?.tagName).toBe("STRONG");
   });
 });

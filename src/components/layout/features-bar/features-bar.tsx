@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { HomeFeatureItem } from "@/types/home-assets";
 
 import { FeatureItem } from "./feature-item";
@@ -9,7 +11,9 @@ import { FeatureItem } from "./feature-item";
  * parcelamento e envio rápido — em layout horizontal com separadores
  * verticais e fundo branco.
  */
-export function FeaturesBar({ items }: { items: HomeFeatureItem[] }) {
+export type FeaturesBarItem = Omit<HomeFeatureItem, "subtitle"> & { subtitle: ReactNode };
+
+export function FeaturesBar({ items }: { items: FeaturesBarItem[] }) {
   return (
     <section className="w-full border-b border-[#F3F4F6] bg-white">
       <div className="mx-auto max-w-450">

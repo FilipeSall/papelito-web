@@ -1,3 +1,5 @@
+import type { RichTextDocument } from "@/features/rich-text";
+
 export type HeroBanner = {
   id: string;
   desktopImageId: number;
@@ -39,6 +41,7 @@ export type PromoBannerConfig = {
 export type PromoMarqueeItem = {
   id: string;
   text: string;
+  content: RichTextDocument | null;
   order: number;
   isActive: boolean;
 };
@@ -47,6 +50,7 @@ export type HomeFeatureItem = {
   id: string;
   title: string;
   subtitle: string;
+  subtitleContent: RichTextDocument | null;
   iconId: number;
   iconUrl: string;
 };

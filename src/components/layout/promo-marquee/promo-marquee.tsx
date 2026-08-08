@@ -1,6 +1,11 @@
-import type { PromoMarqueeItem } from "@/types/home-assets";
+import { RichText, type ResolvedRichTextNode } from "@/features/rich-text";
 
 import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "./constants";
+
+export type PromoMarqueeMessage = {
+  id: string;
+  nodes: ResolvedRichTextNode[];
+};
 
 /**
  * Faixa promocional com scroll infinito exibida abaixo do header.
@@ -11,8 +16,8 @@ import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "./constants";
  *
  * A animação é controlada pela classe `.animate-marquee` definida em `globals.css`.
  */
-export function PromoMarquee({ items }: { items: PromoMarqueeItem[] }) {
-  const activeItems = items.filter((item) => item.isActive && item.text.trim() !== "");
+export function PromoMarquee({ items }: { items: PromoMarqueeMessage[] }) {
+  const activeItems = items.filter((item) => item.nodes.length > 0);
 
   if (activeItems.length < PROMO_MARQUEE_MIN_ACTIVE_MESSAGES) {
     return null;
@@ -29,7 +34,7 @@ export function PromoMarquee({ items }: { items: PromoMarqueeItem[] }) {
               key={`${item.id}-${i}`}
               className="px-8 text-xs font-black uppercase leading-4 tracking-[0.6px] text-[#231F20]"
             >
-              {item.text}
+              <RichText nodes={item.nodes} />
             </span>
           ))}
         </div>

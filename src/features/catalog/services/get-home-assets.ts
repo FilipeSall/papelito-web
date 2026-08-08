@@ -1,6 +1,7 @@
 import "server-only";
 
 import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/components/layout/promo-marquee/constants";
+import { normalizeRichTextDocument } from "@/features/rich-text";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
@@ -61,13 +62,18 @@ function mapPromoMarqueeItem(
   item: Partial<PromoMarqueeItem> | undefined,
   index: number,
 ): PromoMarqueeItem | null {
-  if (!item || typeof item.text !== "string" || item.text.trim() === "") {
+  const content = normalizeRichTextDocument(item?.content);
+
+  // Mensagem composta apenas por tokens tem texto puro vazio e mesmo assim é válida: o
+  // WordPress aceita e o painel exibe. Sem esta condição ela sumiria só na vitrine.
+  if (!item || typeof item.text !== "string" || (item.text.trim() === "" && content === null)) {
     return null;
   }
 
   return {
     id: cleanText(item.id) || `marquee-${index + 1}`,
     text: item.text.trim(),
+    content,
     order: toNumber(item.order) || index + 1,
     isActive: toBoolean(item.isActive),
   };
@@ -77,13 +83,15 @@ function mapHomeFeatureItem(
   item: Partial<HomeFeatureItem> | undefined,
   index: number,
 ): HomeFeatureItem | null {
+  const subtitleContent = normalizeRichTextDocument(item?.subtitleContent);
+
   if (
     !item ||
     typeof item.title !== "string" ||
     typeof item.subtitle !== "string" ||
     typeof item.iconUrl !== "string" ||
     item.title.trim() === "" ||
-    item.subtitle.trim() === "" ||
+    (item.subtitle.trim() === "" && subtitleContent === null) ||
     item.iconUrl.trim() === ""
   ) {
     return null;
@@ -93,6 +101,7 @@ function mapHomeFeatureItem(
     id: cleanText(item.id) || FEATURES_BAR_ITEMS[index]?.id || `feature-${index + 1}`,
     title: item.title.trim(),
     subtitle: item.subtitle.trim(),
+    subtitleContent,
     iconId: toNumber(item.iconId),
     iconUrl: item.iconUrl.trim(),
   };

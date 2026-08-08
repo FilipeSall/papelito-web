@@ -7,6 +7,7 @@ import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
+import type { RichTextResolutionContext } from "@/features/rich-text";
 import { messageFromError } from "@/utils/error-message";
 import type {
   AdminHeroBannersSnapshot,
@@ -46,6 +47,7 @@ const PROMO_MARQUEE_API = "/api/admin/assets/promo-marquee";
 const HOME_FEATURES_API = "/api/admin/assets/features";
 
 type AssetsManagerProps = {
+  richTextContext: RichTextResolutionContext;
   initialFeaturesSnapshot: AdminHomeFeaturesSnapshot;
   initialHeroSnapshot: AdminHeroBannersSnapshot;
   initialLogosSnapshot: AdminSiteLogosSnapshot;
@@ -146,12 +148,14 @@ function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
         ? crypto.randomUUID()
         : `marquee-${Date.now()}-${index + 1}`,
     text: "",
+    content: null,
     order: index + 1,
     isActive: true,
   };
 }
 
 export function AssetsManager({
+  richTextContext,
   initialFeaturesSnapshot,
   initialHeroSnapshot,
   initialLogosSnapshot,
@@ -684,6 +688,7 @@ export function AssetsManager({
       <PromoMarqueeSection
         featureItems={features}
         featureIssues={featureIssues}
+        richTextContext={richTextContext}
         featureUploadingId={uploadingKey?.startsWith("feature:") ? uploadingKey.slice("feature:".length) : null}
         isSaving={isSavingPromoMarquee}
         isSavingFeatures={isSavingFeatures}

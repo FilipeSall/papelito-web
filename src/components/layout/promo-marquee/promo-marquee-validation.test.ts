@@ -8,6 +8,7 @@ function messages(activeCount: number, total = 5): PromoMarqueeItem[] {
   return Array.from({ length: total }, (_, index) => ({
     id: `message-${index + 1}`,
     text: `Mensagem ${index + 1}`,
+    content: null,
     order: index + 1,
     isActive: index < activeCount,
   }));

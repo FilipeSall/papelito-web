@@ -4,18 +4,25 @@ import { ArrowDown, ArrowUp, LoaderCircle, Plus, Save, Trash2 } from "lucide-rea
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
+import {
+  documentToPlainText,
+  resolveRichTextDocument,
+  resolveRichTextSource,
+  type RichTextResolutionContext,
+} from "@/features/rich-text";
 import type { HomeFeatureItem, PromoMarqueeItem } from "@/types/home-assets";
 
 import {
   BUTTON_CLASS,
-  INPUT_CLASS,
   LABEL_CLASS,
   SECONDARY_BUTTON_CLASS,
 } from "./field-classes";
 import { IssuesList } from "./issues-list";
+import { RichTextEditor } from "./rich-text/rich-text-editor";
 import { HomeFeaturesSection } from "./home-features-section";
 
 type PromoMarqueeSectionProps = {
+  richTextContext: RichTextResolutionContext;
   isSaving: boolean;
   issues: string[];
   messages: PromoMarqueeItem[];
@@ -34,6 +41,7 @@ type PromoMarqueeSectionProps = {
 };
 
 export function PromoMarqueeSection({
+  richTextContext,
   isSaving,
   issues,
   messages,
@@ -51,7 +59,14 @@ export function PromoMarqueeSection({
   featureUploadingId,
 }: PromoMarqueeSectionProps) {
   const activeMessages = messages.filter((message) => message.isActive);
-  const previewMessages = activeMessages.length > 0 ? [...activeMessages, ...activeMessages] : [];
+  const resolvedMessages = activeMessages.flatMap((message) => {
+    const nodes = resolveRichTextDocument(
+      resolveRichTextSource(message.content, message.text),
+      richTextContext,
+    );
+    return nodes === null ? [] : [{ ...message, text: nodes.map((node) => node.text).join("") }];
+  });
+  const previewMessages = resolvedMessages.length > 0 ? [...resolvedMessages, ...resolvedMessages] : [];
   const validation = getPromoMarqueeValidation(messages);
 
   return (
@@ -135,19 +150,19 @@ export function PromoMarqueeSection({
                   <label className={LABEL_CLASS} htmlFor={`promo-marquee-${message.id}`}>
                     Mensagem {index + 1}
                   </label>
-                  <span className="text-xs text-[#6f6758]">
-                    Posição {message.order} · {message.text.length}/120
-                  </span>
+                  <span className="text-xs text-[#6f6758]">Posição {message.order}</span>
                 </div>
-                <input
-                  className={INPUT_CLASS}
+                <RichTextEditor
+                  ariaLabel={`Mensagem ${index + 1}`}
+                  context={richTextContext}
                   disabled={isSaving}
                   id={`promo-marquee-${message.id}`}
                   maxLength={120}
-                  onChange={(event) => onChange(message.id, { text: event.target.value })}
-                  placeholder="Ex: ⚡ COMPRE 3 LEVE 4 em Sedas"
-                  type="text"
-                  value={message.text}
+                  onChange={(content) =>
+                    onChange(message.id, { content, text: documentToPlainText(content) })
+                  }
+                  promotionProducts={richTextContext.promotionProducts}
+                  value={resolveRichTextSource(message.content, message.text)}
                 />
               </div>
 
@@ -197,6 +212,7 @@ export function PromoMarqueeSection({
       </div>
 
       <HomeFeaturesSection
+        richTextContext={richTextContext}
         isSaving={isSavingFeatures}
         issues={featureIssues}
         items={featureItems}

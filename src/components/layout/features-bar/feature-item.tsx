@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 
 interface FeatureItemProps {
   iconUrl: string;
   title: string;
-  subtitle: string;
+  subtitle: ReactNode;
   className?: string;
   contentClassName?: string;
 }

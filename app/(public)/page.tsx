@@ -18,20 +18,49 @@ import {
   getHomePromoMarquee,
 } from "@/features/catalog/services/get-home-assets";
 import { getHomeProducts } from "@/features/catalog/services/get-home-products";
+import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
+import {
+  buildRichTextContext,
+  resolveRichTextDocument,
+  resolveRichTextSource,
+  RichText,
+} from "@/features/rich-text";
+import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const [homeProducts, heroBanners, promoBanner, partnerBanner, promoMarquee, homeFeatures] = await Promise.all([
+  const [homeProducts, heroBanners, promoBanner, partnerBanner, promoMarquee, homeFeatures, freeShippingThreshold, paymentConfig] = await Promise.all([
     getHomeProducts(),
     getHomeHeroBanners(),
     getHomePromoBanner(),
     getHomePartnerBanner(),
     getHomePromoMarquee(),
     getHomeFeatures(),
+    getFreeShippingThreshold(),
+    getPaymentConfig(),
   ]);
 
   const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = homeProducts;
+  const richTextContext = buildRichTextContext({
+    freeShippingMinimumCents: freeShippingThreshold?.minimumOrderCents ?? null,
+    flashSaleCampaign,
+    paymentConfig,
+  });
+  const resolvedPromoMarquee = promoMarquee.flatMap((item) => {
+    const nodes = resolveRichTextDocument(
+      resolveRichTextSource(item.content, item.text),
+      richTextContext,
+    );
+    return nodes === null ? [] : [{ id: item.id, nodes }];
+  });
+  const resolvedHomeFeatures = homeFeatures.flatMap((item) => {
+    const nodes = resolveRichTextDocument(
+      resolveRichTextSource(item.subtitleContent, item.subtitle),
+      richTextContext,
+    );
+    return nodes === null ? [] : [{ ...item, subtitle: <RichText nodes={nodes} /> }];
+  });
   const productIds = Array.from(
     new Set([
       ...bestSellerProducts.map((product) => product.id),
@@ -45,9 +74,9 @@ export default async function Home() {
       <main className="flex flex-col bg-white">
         <AddToCartToastHost />
         <div className="flex flex-col">
-          <PromoMarquee items={promoMarquee} />
+          <PromoMarquee items={resolvedPromoMarquee} />
           <HeroSection banners={heroBanners} />
-          <FeaturesBar items={homeFeatures} />
+          <FeaturesBar items={resolvedHomeFeatures} />
           <CategoriesNav />
         </div>
         {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}

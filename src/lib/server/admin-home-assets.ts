@@ -1,5 +1,6 @@
 import "server-only";
 
+import { normalizeRichTextDocument } from "@/features/rich-text";
 import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
@@ -172,13 +173,16 @@ function mapPromoMarqueeItem(
   item: Partial<PromoMarqueeItem> | null | undefined,
   index: number,
 ): PromoMarqueeItem | null {
-  if (!item || typeof item.text !== "string" || item.text.trim() === "") {
+  const content = normalizeRichTextDocument(item?.content);
+
+  if (!item || typeof item.text !== "string" || (item.text.trim() === "" && content === null)) {
     return null;
   }
 
   return {
     id: cleanText(item.id) || `marquee-${index + 1}`,
-    text: item.text.trim(),
+    text: item.text,
+    content,
     order: toNumber(item.order) || index + 1,
     isActive: toBoolean(item.isActive),
   };
@@ -194,7 +198,7 @@ function mapHomeFeatureItem(
     typeof item.subtitle !== "string" ||
     typeof item.iconUrl !== "string" ||
     item.title.trim() === "" ||
-    item.subtitle.trim() === "" ||
+    (item.subtitle.trim() === "" && normalizeRichTextDocument(item.subtitleContent) === null) ||
     item.iconUrl.trim() === ""
   ) {
     return null;
@@ -203,7 +207,8 @@ function mapHomeFeatureItem(
   return {
     id: cleanText(item.id) || `feature-${index + 1}`,
     title: item.title.trim(),
-    subtitle: item.subtitle.trim(),
+    subtitle: item.subtitle,
+    subtitleContent: normalizeRichTextDocument(item.subtitleContent),
     iconId: toNumber(item.iconId),
     iconUrl: item.iconUrl.trim(),
   };

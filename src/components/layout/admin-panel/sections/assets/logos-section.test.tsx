@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { EMPTY_RICH_TEXT_CONTEXT } from "@/features/rich-text";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SITE_LOGO_DEFAULTS } from "@/lib/site-logos";
@@ -51,20 +52,20 @@ const partnerSnapshot: AdminPartnerBannerSnapshot = {
 
 const promoMarqueeSnapshot: AdminPromoMarqueeSnapshot = {
   messages: [
-    { id: "message-1", text: "⚡ Oferta inicial", order: 1, isActive: true },
-    { id: "message-2", text: "🌿 Mensagem pausada", order: 2, isActive: false },
-    { id: "message-3", text: "🎁 Oferta três", order: 3, isActive: true },
-    { id: "message-4", text: "🔥 Oferta quatro", order: 4, isActive: true },
+    { id: "message-1", text: "⚡ Oferta inicial", content: null, order: 1, isActive: true },
+    { id: "message-2", text: "🌿 Mensagem pausada", content: null, order: 2, isActive: false },
+    { id: "message-3", text: "🎁 Oferta três", content: null, order: 3, isActive: true },
+    { id: "message-4", text: "🔥 Oferta quatro", content: null, order: 4, isActive: true },
   ],
   issues: [],
 };
 
 const featuresSnapshot: AdminHomeFeaturesSnapshot = {
   items: [
-    { id: "frete-gratis", title: "Frete Grátis", subtitle: "Acima de R$500", iconId: 0, iconUrl: "/images/icons/truck.svg" },
-    { id: "troca-facil", title: "Troca Fácil", subtitle: "15 dias para troca", iconId: 0, iconUrl: "/images/icons/refresh.svg" },
-    { id: "parcelamos", title: "Parcelamos", subtitle: "Em 3x sem juros", iconId: 0, iconUrl: "/images/icons/price.svg" },
-    { id: "envio-rapido", title: "Envio Rápido", subtitle: "Sai no mesmo dia", iconId: 0, iconUrl: "/images/icons/thunder.svg" },
+    { id: "frete-gratis", title: "Frete Grátis", subtitle: "Com cupom", subtitleContent: null, iconId: 0, iconUrl: "/images/icons/truck.svg" },
+    { id: "troca-facil", title: "Troca Fácil", subtitle: "15 dias para troca", subtitleContent: null, iconId: 0, iconUrl: "/images/icons/refresh.svg" },
+    { id: "parcelamos", title: "Parcelamos", subtitle: "Em 3x sem juros", subtitleContent: null, iconId: 0, iconUrl: "/images/icons/price.svg" },
+    { id: "envio-rapido", title: "Envio Rápido", subtitle: "Sai no mesmo dia", subtitleContent: null, iconId: 0, iconUrl: "/images/icons/thunder.svg" },
   ],
   issues: [],
 };
@@ -94,6 +95,7 @@ const CUSTOM_LOGO_URL = "http://localhost:8080/wp-content/uploads/2026/07/nova-l
 function renderManager(customPrivateLogo = false) {
   return render(
     <AssetsManager
+      richTextContext={EMPTY_RICH_TEXT_CONTEXT}
       initialFeaturesSnapshot={featuresSnapshot}
       initialHeroSnapshot={heroSnapshot}
       initialLogosSnapshot={{
@@ -294,13 +296,13 @@ describe("AssetsManager - faixa de avisos e promoções", () => {
     expect(screen.getByRole("button", { name: /salvar faixa/i })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Descer mensagem 1" }));
 
-    expect(screen.getByDisplayValue("⚡ Oferta atualizada")).toBeInTheDocument();
+    expect(screen.getAllByText("⚡ Oferta atualizada").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Subir mensagem 2" })).toBeEnabled();
 
     await user.click(screen.getAllByRole("button", { name: "Remover" })[1]);
 
     expect(confirm).toHaveBeenCalledWith("Remover esta mensagem da faixa?");
-    expect(screen.queryByDisplayValue("⚡ Oferta atualizada")).not.toBeInTheDocument();
+    expect(screen.queryAllByText("⚡ Oferta atualizada")).toHaveLength(0);
     confirm.mockRestore();
   }, 15000);
 
@@ -356,6 +358,6 @@ describe("AssetsManager - faixa de avisos e promoções", () => {
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(/falha ao salvar faixa/i);
     });
-    expect(screen.getByDisplayValue("⚡ Oferta inicial")).toBeInTheDocument();
+    expect(screen.getAllByText("⚡ Oferta inicial").length).toBeGreaterThan(0);
   }, 15000);
 });

@@ -4,6 +4,12 @@ import Image from "next/image";
 import { LoaderCircle, Save } from "lucide-react";
 
 import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
+import {
+  documentToPlainText,
+  resolveRichTextDocument,
+  resolveRichTextSource,
+  type RichTextResolutionContext,
+} from "@/features/rich-text";
 import type { HomeFeatureItem } from "@/types/home-assets";
 
 import {
@@ -12,9 +18,11 @@ import {
   LABEL_CLASS,
 } from "./field-classes";
 import { IssuesList } from "./issues-list";
+import { RichTextEditor } from "./rich-text/rich-text-editor";
 import { UploadButton } from "./upload-button";
 
 type HomeFeaturesSectionProps = {
+  richTextContext: RichTextResolutionContext;
   isSaving: boolean;
   issues: string[];
   items: HomeFeatureItem[];
@@ -25,6 +33,7 @@ type HomeFeaturesSectionProps = {
 };
 
 export function HomeFeaturesSection({
+  richTextContext,
   isSaving,
   issues,
   items,
@@ -34,6 +43,17 @@ export function HomeFeaturesSection({
   uploadingId,
 }: HomeFeaturesSectionProps) {
   const validation = getHomeFeaturesValidation(items);
+  const previewItems = items.map((item) => {
+    const nodes = resolveRichTextDocument(
+      resolveRichTextSource(item.subtitleContent, item.subtitle),
+      richTextContext,
+    );
+
+    return {
+      ...item,
+      subtitle: nodes === null ? "" : nodes.map((node) => node.text).join(""),
+    };
+  });
 
   return (
     <section className="mt-8 border-t border-[#231f20]/10 pt-6" aria-labelledby="home-features-title">
@@ -45,6 +65,7 @@ export function HomeFeaturesSection({
           </h4>
           <p className="mt-1 text-sm leading-6 text-[#5e574c]">
             Edite os quatro benefícios exibidos abaixo do Hero. Os ícones devem ser SVGs seguros.
+            O subtítulo aceita negrito, itálico e dados dinâmicos do marketplace.
           </p>
         </div>
         <button
@@ -112,16 +133,21 @@ export function HomeFeaturesSection({
                 <label className={LABEL_CLASS} htmlFor={`home-feature-subtitle-${item.id}`}>
                   Texto auxiliar
                 </label>
-                <input
-                  className={INPUT_CLASS}
+                <RichTextEditor
+                  ariaLabel={`Texto auxiliar do benefício ${index + 1}`}
+                  context={richTextContext}
                   disabled={isSaving}
                   id={`home-feature-subtitle-${item.id}`}
                   maxLength={44}
-                  onChange={(event) => onChange(item.id, { subtitle: event.target.value })}
-                  type="text"
-                  value={item.subtitle}
+                  onChange={(content) =>
+                    onChange(item.id, {
+                      subtitleContent: content,
+                      subtitle: documentToPlainText(content),
+                    })
+                  }
+                  promotionProducts={richTextContext.promotionProducts}
+                  value={resolveRichTextSource(item.subtitleContent, item.subtitle)}
                 />
-                <p className="mt-1 text-right text-xs text-[#6f6758]">{item.subtitle.length}/44</p>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#231f20]/10 pt-3">
@@ -146,9 +172,9 @@ export function HomeFeaturesSection({
       <div className="mt-5 rounded-2xl border border-[#231f20]/10 bg-white p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6a5f00]">Prévia</p>
         <div className="mt-3 grid grid-cols-2 border-t border-brand-yellow md:grid-cols-4">
-          {items.map((item, index) => (
+          {previewItems.map((item, index) => (
             <div
-              className={`flex min-h-20 items-center gap-3 px-3 py-3 ${index < items.length - 1 ? "border-r border-[#f3f4f6]" : ""}`}
+              className={`flex min-h-20 items-center gap-3 px-3 py-3 ${index < previewItems.length - 1 ? "border-r border-[#f3f4f6]" : ""}`}
               key={`${item.id}-preview`}
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffe500]">
