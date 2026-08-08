@@ -6,7 +6,6 @@ import type {
   CartVendorGroup,
 } from "../types/cart";
 
-export const CART_SHIPPING_THRESHOLD = 99;
 export const CART_SHIPPING_COST = 8.9;
 
 function roundMoney(value: number) {
@@ -47,6 +46,7 @@ export function getCartSummary(
   coupon: CartCoupon | null,
   shippingOverride?: number | null,
   pricing?: CartPricingQuote | null,
+  freeShippingMinimumCents?: number | null,
 ): CartSummary {
   const subtotal = pricing
     ? roundMoney(pricing.totals.subtotalCents / 100)
@@ -60,7 +60,17 @@ export function getCartSummary(
       : 0;
 
   const hasItems = subtotal > 0;
-  const hasFreeShipping = hasItems && subtotal >= CART_SHIPPING_THRESHOLD;
+  const validFreeShippingMinimumCents =
+    typeof freeShippingMinimumCents === "number" &&
+    Number.isSafeInteger(freeShippingMinimumCents) &&
+    freeShippingMinimumCents > 0
+      ? freeShippingMinimumCents
+      : null;
+  const subtotalCents = Math.round(subtotal * 100);
+  const isFreeShippingCouponEligible =
+    hasItems &&
+    validFreeShippingMinimumCents !== null &&
+    subtotalCents >= validFreeShippingMinimumCents;
   const quotedShipping =
     typeof shippingOverride === "number" && Number.isFinite(shippingOverride)
       ? Math.max(0, shippingOverride)
@@ -69,12 +79,13 @@ export function getCartSummary(
     ? pricing.totals.shippingCents / 100
     : quotedShipping !== null
       ? quotedShipping
-      : hasItems && !hasFreeShipping
+      : hasItems
         ? CART_SHIPPING_COST
         : 0;
-  const amountToFreeShipping = hasFreeShipping
-    ? 0
-    : roundMoney(Math.max(0, CART_SHIPPING_THRESHOLD - subtotal));
+  const amountToFreeShippingCoupon =
+    validFreeShippingMinimumCents === null
+      ? null
+      : roundMoney(Math.max(0, validFreeShippingMinimumCents - subtotalCents) / 100);
 
   const itemsTotal = pricing
     ? roundMoney(pricing.totals.itemsCents / 100)
@@ -88,8 +99,8 @@ export function getCartSummary(
     total,
     totalItems,
     vendorGroups: getVendorGroups(items),
-    amountToFreeShipping,
-    hasFreeShipping,
+    amountToFreeShippingCoupon,
+    isFreeShippingCouponEligible,
     coupon,
   };
 }

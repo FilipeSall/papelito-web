@@ -92,7 +92,7 @@ export interface CartSummary {
   total: number;
   totalItems: number;
   vendorGroups: CartVendorGroup[];
-  amountToFreeShipping: number;
-  hasFreeShipping: boolean;
+  amountToFreeShippingCoupon: number | null;
+  isFreeShippingCouponEligible: boolean;
   coupon: CartCoupon | null;
 }

@@ -16,7 +16,6 @@ export type {
 export { resolveCartVendor } from "./services/resolve-cart-vendor";
 export {
   CART_SHIPPING_COST,
-  CART_SHIPPING_THRESHOLD,
   getCartSummary,
 } from "./utils/get-cart-summary";
 export { normalizeProductImage } from "./utils/normalize-product-image";

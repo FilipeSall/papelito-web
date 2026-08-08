@@ -10,8 +10,11 @@ import { formatBRL } from "@/lib/format-currency";
 import { AdminToast, Panel } from "../../primitives";
 import { CouponDeleteModal } from "./coupon-delete-modal";
 import { CouponFormModal } from "./coupon-form-modal";
+import { FreeShippingThresholdSettings } from "./free-shipping-threshold-settings";
 
 type CouponsManagerProps = {
+  initialFreeShippingIssue?: string;
+  initialFreeShippingMinimumCents: number | null;
   initialList: CouponListSnapshot;
   initialIssues: string[];
 };
@@ -52,7 +55,12 @@ function formatUsage(coupon: Coupon): string {
   return `${coupon.usageCount} / ${limit}`;
 }
 
-export function CouponsManager({ initialList, initialIssues }: CouponsManagerProps) {
+export function CouponsManager({
+  initialFreeShippingIssue,
+  initialFreeShippingMinimumCents,
+  initialList,
+  initialIssues,
+}: CouponsManagerProps) {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialList.items);
   const [issues] = useState<string[]>(initialIssues);
@@ -234,6 +242,18 @@ export function CouponsManager({ initialList, initialIssues }: CouponsManagerPro
 
   return (
     <>
+      <FreeShippingThresholdSettings
+        initialIssue={initialFreeShippingIssue}
+        initialMinimumOrderCents={initialFreeShippingMinimumCents}
+        onSaved={(minimumOrderCents) => {
+          showToast({
+            description: `Pedidos a partir de ${formatBRL(minimumOrderCents / 100)} já podem ser comunicados como elegíveis ao cupom manual.`,
+            title: "Mínimo de frete grátis atualizado.",
+          });
+          startTransition(() => router.refresh());
+        }}
+      />
+
       <Panel className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#231f20]/10 px-5 py-4 md:px-6">
           <div className="flex items-center gap-3">

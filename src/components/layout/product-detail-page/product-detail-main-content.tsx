@@ -7,6 +7,7 @@ import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { formatBRL } from "@/lib/format-currency";
+import { formatFreeShippingCouponCopy } from "@/features/shipping/utils/free-shipping-copy";
 import { ProductDetailDescriptionSection } from "./product-detail-description-section";
 import { ProductDetailCepAvailability } from "./product-detail-cep-availability";
 import { ProductDetailGallery } from "./product-detail-gallery";
@@ -29,6 +30,7 @@ interface ProductDetailMainContentProps {
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
   regionBlock?: RegionBlock | null;
+  freeShippingMinimumCents?: number | null;
 }
 
 const MAX_RELATED_PRODUCTS = 4;
@@ -44,6 +46,7 @@ export function ProductDetailMainContent({
   activeVendor = null,
   selectedVendorStockQty = null,
   regionBlock = null,
+  freeShippingMinimumCents = null,
 }: Readonly<ProductDetailMainContentProps>) {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const { status, role } = useAuthSession();
@@ -161,7 +164,7 @@ export function ProductDetailMainContent({
                 Frete Grátis
               </div>
               <div className="mt-1 text-sm font-normal leading-4 text-[#99A1AF]">
-                Acima de R$ 500
+                {formatFreeShippingCouponCopy(freeShippingMinimumCents)}
               </div>
             </div>
             <div className="flex flex-col items-center">

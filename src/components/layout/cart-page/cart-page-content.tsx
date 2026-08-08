@@ -89,7 +89,11 @@ function TrashIcon() {
   );
 }
 
-export function CartPageContent() {
+type CartPageContentProps = {
+  freeShippingMinimumCents?: number | null;
+};
+
+export function CartPageContent({ freeShippingMinimumCents = null }: CartPageContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const decreaseItem = useCartStore((state) => state.decreaseItem);
@@ -97,7 +101,7 @@ export function CartPageContent() {
   const clearCart = useCartStore((state) => state.clearCart);
   const applyCoupon = useCartStore((state) => state.applyCoupon);
   const removeCoupon = useCartStore((state) => state.removeCoupon);
-  const summary = useCartSummary();
+  const summary = useCartSummary(freeShippingMinimumCents);
   const pricingError = useCartStore((state) => state.pricingError);
   const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(
@@ -413,13 +417,15 @@ export function CartPageContent() {
                   valueClassName="text-sm font-medium text-[#16A34A]"
                 />
               )}
-              {summary.hasFreeShipping ? (
-                <p className="text-xs text-[#16A34A]">Parabéns! Você ganhou frete grátis.</p>
-              ) : (
-                <p className="text-xs text-text-muted">
-                  Faltam {formatBRL(summary.amountToFreeShipping)} para frete gratis
+              {summary.isFreeShippingCouponEligible ? (
+                <p className="text-xs text-[#16A34A]">
+                  Seu pedido atingiu o valor mínimo. Aplique seu cupom de frete grátis.
                 </p>
-              )}
+              ) : summary.amountToFreeShippingCoupon !== null ? (
+                <p className="text-xs text-text-muted">
+                  Faltam {formatBRL(summary.amountToFreeShippingCoupon)} para se qualificar ao cupom de frete grátis.
+                </p>
+              ) : null}
 
               <div className="border-t border-[#F3F4F6] pt-3">
                 <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">

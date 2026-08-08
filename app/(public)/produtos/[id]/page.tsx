@@ -16,6 +16,7 @@ import {
   type RegionBlock,
 } from "@/features/catalog/types/region-block";
 import { getActiveVendor } from "@/features/active-vendor/server";
+import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import { authOptions } from "@/lib/auth";
 
 interface ProdutoDetalhePageProps {
@@ -35,11 +36,12 @@ export default async function ProdutoDetalhePage({
 }: ProdutoDetalhePageProps) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  const [product, flashSaleCampaign, initialIsFavorite, activeVendorResult] = await Promise.all([
+  const [product, flashSaleCampaign, initialIsFavorite, activeVendorResult, freeShippingThreshold] = await Promise.all([
     getProductDetail(id),
     getHomeFlashSale(),
     fetchProductFavoriteStatus(id, session?.accessToken),
     session?.user ? getActiveVendor() : Promise.resolve(null),
+    getFreeShippingThreshold(),
   ]);
 
   if (!product) {
@@ -87,6 +89,7 @@ export default async function ProdutoDetalhePage({
         activeVendor={activeVendor}
         selectedVendorStockQty={selectedVendorStockQty}
         regionBlock={regionBlock}
+        freeShippingMinimumCents={freeShippingThreshold?.minimumOrderCents ?? null}
       />
       <AddToCartToastHost />
     </main>

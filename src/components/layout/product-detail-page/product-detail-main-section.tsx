@@ -11,6 +11,7 @@ interface ProductDetailMainSectionProps {
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
   regionBlock?: RegionBlock | null;
+  freeShippingMinimumCents?: number | null;
 }
 
 /**
@@ -24,6 +25,7 @@ export function ProductDetailMainSection({
   activeVendor = null,
   selectedVendorStockQty = null,
   regionBlock = null,
+  freeShippingMinimumCents = null,
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -59,6 +61,7 @@ export function ProductDetailMainSection({
             activeVendor={activeVendor}
             selectedVendorStockQty={selectedVendorStockQty}
             regionBlock={regionBlock}
+            freeShippingMinimumCents={freeShippingMinimumCents}
           />
         </div>
       </div>
