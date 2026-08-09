@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ChevronDown, LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
@@ -208,7 +208,7 @@ export function PromoMarqueeSection({
 }: PromoMarqueeSectionProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(() => new Set());
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
+  const pendingMessageIdRef = useRef<string | null>(null);
   const activeMessages = messages.filter((message) => message.isActive);
   const resolvedMessages = activeMessages.flatMap((message) => {
     const nodes = resolveRichTextDocument(
@@ -237,11 +237,12 @@ export function PromoMarqueeSection({
     if (id) {
       setExpandedMessageIds((current) => new Set(current).add(id));
       setIsPanelOpen(true);
-      setPendingMessageId(id);
+      pendingMessageIdRef.current = id;
     }
   }
 
   useEffect(() => {
+    const pendingMessageId = pendingMessageIdRef.current;
     if (!pendingMessageId) {
       return;
     }
@@ -252,10 +253,10 @@ export function PromoMarqueeSection({
       return;
     }
 
+    pendingMessageIdRef.current = null;
     card.scrollIntoView?.({ behavior: "smooth", block: "center" });
     editor.focus({ preventScroll: true });
-    setPendingMessageId(null);
-  }, [messages, pendingMessageId]);
+  }, [messages]);
 
   return (
     <CollapsiblePanel

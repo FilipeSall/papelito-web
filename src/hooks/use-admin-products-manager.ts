@@ -276,7 +276,7 @@ export function useAdminProductsManager(
     return () => {
       cancelled = true;
     };
-  }, [initialFocusProductId, products, selectProduct]);
+  }, [initialFocusProductId, products, resetDraft, selectProduct]);
 
   async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
     setIsLoading(true);
