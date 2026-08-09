@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 type BaseModalProps = {
@@ -8,6 +8,7 @@ type BaseModalProps = {
   ariaLabelledBy: string;
   children: ReactNode;
   contentClassName?: string;
+  initialFocusRef?: RefObject<HTMLElement | null>;
   onClose: () => void;
   open: boolean;
 };
@@ -20,6 +21,7 @@ export function BaseModal({
   ariaLabelledBy,
   children,
   contentClassName = "",
+  initialFocusRef,
   onClose,
   open,
 }: BaseModalProps) {
@@ -37,7 +39,7 @@ export function BaseModal({
 
     const dialog = dialogRef.current;
     const focusables = dialog ? dialog.querySelectorAll<HTMLElement>(FOCUSABLE) : null;
-    (focusables && focusables.length > 0 ? focusables[0] : dialog)?.focus();
+    (initialFocusRef?.current ?? (focusables && focusables.length > 0 ? focusables[0] : dialog))?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -70,7 +72,7 @@ export function BaseModal({
       window.removeEventListener("keydown", handleKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [onClose, open]);
+  }, [initialFocusRef, onClose, open]);
 
   if (!open || typeof document === "undefined") {
     return null;

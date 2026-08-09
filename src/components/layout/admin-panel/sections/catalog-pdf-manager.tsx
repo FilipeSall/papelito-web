@@ -6,6 +6,18 @@ import { useEffect, useState } from "react";
 import { messageFromError } from "@/utils/error-message";
 import { uploadDirectFile } from "@/lib/client/direct-upload";
 
+import {
+  ALERT_ERROR_CLASS,
+  ALERT_SUCCESS_CLASS,
+  ALERT_WARNING_CLASS,
+  BUTTON_CLASS,
+  DIAMOND_CLASS,
+  HINT_CLASS,
+  MUTED_TEXT_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SUBPANEL_CLASS,
+} from "./assets/field-classes";
+
 type CatalogItem = {
   filename?: string;
   id?: number;
@@ -30,10 +42,6 @@ type Notice = {
 
 const CATALOG_API = "/api/admin/catalog-pdf";
 const MAX_CATALOG_SIZE = 10 * 1024 * 1024;
-const BUTTON_CLASS =
-  "inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60";
-const SECONDARY_BUTTON_CLASS =
-  "inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a]/20 bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:border-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-60";
 
 async function parseJson(response: Response) {
   return (await response.json().catch(() => null)) as CatalogSnapshot | null;
@@ -147,32 +155,38 @@ export function CatalogPdfManager() {
   const activeHref = resolveCatalogHref(active?.url);
 
   return (
-    <section
-      aria-labelledby="catalog-pdf-title"
-      className="mt-6 rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6a5f00]">
+    <section aria-labelledby="catalog-pdf-title" className={`mt-6 ${SUBPANEL_CLASS}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+            <span aria-hidden className={DIAMOND_CLASS} />
             Catálogo comercial
           </p>
           <h3
-            className="mt-1 text-base font-semibold text-[#231f20]"
+            className="mt-1.5 text-base font-black uppercase tracking-tight text-[#1a1a1a]"
             id="catalog-pdf-title"
           >
             PDF do portfólio
           </h3>
-          <p className="mt-1 text-sm leading-6 text-[#5e574c]">
+          <p className={`mt-1 ${MUTED_TEXT_CLASS}`}>
             Controle o arquivo aberto pelo botão da página de revendedores.
           </p>
         </div>
 
-        <label className={BUTTON_CLASS}>
-          {isUploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        <label
+          className={`${BUTTON_CLASS} shrink-0 ${
+            isUploading ? "pointer-events-none cursor-not-allowed opacity-60" : ""
+          } focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#1a1a1a]`}
+        >
+          {isUploading ? (
+            <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          )}
           {isUploading ? "Enviando..." : "Enviar PDF"}
           <input
             accept="application/pdf,.pdf"
-            className="hidden"
+            className="sr-only"
             disabled={isUploading}
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -188,53 +202,51 @@ export function CatalogPdfManager() {
 
       {notice ? <CatalogNotice notice={notice} /> : null}
 
-      <div className="mt-4 rounded-2xl border border-[#231f20]/12 bg-[#fffdf7] p-4">
+      <div className="mt-4 border-2 border-[#1a1a1a]/14 bg-[#faf8f2] p-4">
         {isLoading ? (
-          <div className="flex h-28 items-center justify-center text-sm font-bold uppercase tracking-widest text-[#231f20]/56">
-            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+          <div className="flex h-28 items-center justify-center text-xs font-black uppercase tracking-widest text-[#231f20]/56">
+            <LoaderCircle aria-hidden className="mr-2 h-4 w-4 animate-spin" />
             Carregando
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-yellow">
-                  <FileText className="h-5 w-5 text-[#1a1a1a]" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[#1a1a1a] bg-brand-yellow">
+                  <FileText aria-hidden className="h-5 w-5 text-[#1a1a1a]" strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6a5f00]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
                     Preview atual
                   </p>
                   <p className="truncate text-sm font-black text-[#1a1a1a]">
                     {active?.filename ?? "catalogo-papelito.pdf"}
                   </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-[#231f20]/56">
+                  <p className="mt-1.5 inline-flex items-center border-2 border-[#1a1a1a]/20 bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/70">
                     {isCustomActive ? "Personalizado" : "Padrão Papelito"}
                   </p>
                 </div>
               </div>
 
               <a
-                className={SECONDARY_BUTTON_CLASS}
+                className={`${SECONDARY_BUTTON_CLASS} shrink-0`}
                 href="/api/catalog"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink aria-hidden className="h-4 w-4" strokeWidth={2.4} />
                 Abrir
               </a>
             </div>
 
             {configured?.isAvailable === false ? (
-              <div className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-bold text-[#8a241a]">
-                O catálogo personalizado configurado está indisponível. O PDF padrão está ativo.
+              <div className={ALERT_ERROR_CLASS}>
+                ⚠ O catálogo personalizado configurado está indisponível. O PDF padrão está ativo.
               </div>
             ) : null}
 
             {snapshot?.issues?.length ? (
-              <div className="border-2 border-[#cfbf80] bg-[#fff6bf] px-4 py-3 text-sm font-bold text-[#231f20]">
-                {snapshot.issues.join(" ")}
-              </div>
+              <div className={ALERT_WARNING_CLASS}>⚠ {snapshot.issues.join(" ")}</div>
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -244,7 +256,7 @@ export function CatalogPdfManager() {
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink aria-hidden className="h-4 w-4" strokeWidth={2.4} />
                 Prévia
               </a>
               <button
@@ -253,7 +265,11 @@ export function CatalogPdfManager() {
                 onClick={restoreDefault}
                 type="button"
               >
-                {isRestoring ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                {isRestoring ? (
+                  <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+                )}
                 Restaurar padrão
               </button>
             </div>
@@ -261,9 +277,7 @@ export function CatalogPdfManager() {
         )}
       </div>
 
-      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-        O arquivo precisa ser PDF e ter até 10 MB.
-      </p>
+      <p className={`mt-3 ${HINT_CLASS}`}>O arquivo precisa ser PDF e ter até 10 MB.</p>
     </section>
   );
 }
@@ -271,15 +285,13 @@ export function CatalogPdfManager() {
 function CatalogNotice({ notice }: Readonly<{ notice: Notice }>) {
   if (notice.tone === "success") {
     return (
-      <output className="mt-4 block border-2 border-[#1a1a1a] bg-brand-yellow px-4 py-3 text-sm font-bold text-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]">
-        {notice.message}
-      </output>
+      <output className={`mt-4 block ${ALERT_SUCCESS_CLASS}`}>✓ {notice.message}</output>
     );
   }
 
   return (
-    <div className="mt-4 border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-bold text-[#c0392b]" role="alert">
-      {notice.message}
+    <div className={`mt-4 ${ALERT_ERROR_CLASS}`} role="alert">
+      ⚠ {notice.message}
     </div>
   );
 }

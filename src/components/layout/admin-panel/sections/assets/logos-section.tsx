@@ -6,7 +6,15 @@ import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { SITE_LOGO_DEFAULTS, isDefaultLogo } from "@/lib/site-logos";
 import type { ManagedImageAsset, SiteLogoKey, SiteLogos } from "@/types/home-assets";
 
-import { BUTTON_CLASS, INPUT_CLASS, LABEL_CLASS, SECONDARY_BUTTON_CLASS } from "./field-classes";
+import {
+  BUTTON_CLASS,
+  HINT_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  MUTED_TEXT_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SUBPANEL_CLASS,
+} from "./field-classes";
 import { IssuesList } from "./issues-list";
 import { PreviewImage } from "./preview-image";
 import { UploadButton } from "./upload-button";
@@ -117,19 +125,23 @@ function LogoCard({
   const isDefault = isDefaultLogo(config.key, logo);
 
   return (
-    <div className="rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h4 className="text-base font-semibold text-[#231f20]">{config.title}</h4>
-          <p className="mt-1 text-sm leading-6 text-[#5e574c]">{config.description}</p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-            {config.formatHint}
-          </p>
-          <p className="mt-2 text-xs text-[#7b7568]">
+    <div className={SUBPANEL_CLASS}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="text-base font-black uppercase tracking-tight text-[#1a1a1a]">
+            {config.title}
+          </h4>
+          <p className={`mt-1 ${MUTED_TEXT_CLASS}`}>{config.description}</p>
+          <p className={`mt-2 ${HINT_CLASS}`}>{config.formatHint}</p>
+          <p className="mt-2 inline-flex items-center gap-2 border-2 border-[#1a1a1a]/20 bg-[#faf8f2] px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/70">
+            <span
+              aria-hidden
+              className={`inline-block h-2 w-2 rotate-45 ${isDefault ? "bg-[#231f20]/30" : "bg-brand-yellow"}`}
+            />
             {isDefault ? "Usando a logo padrão do projeto." : "Usando uma logo personalizada."}
           </p>
         </div>
-        <div className="flex flex-wrap items-start gap-2">
+        <div className="flex shrink-0 flex-wrap items-start justify-end gap-2">
           <UploadButton
             accept={LOGO_ACCEPT}
             inputLabel={`Enviar ${config.title}`}
@@ -157,6 +169,7 @@ function LogoCard({
         frameClass="bg-brand-dark"
         imageUrl={logo.imageUrl}
         label={config.title}
+        tone="dark"
       />
 
       <div className="mt-4">

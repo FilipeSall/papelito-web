@@ -115,6 +115,22 @@ describe("placeOrder", () => {
     });
   });
 
+  it("does not show a hardcoded installment floor when the backend omits its message", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json({ code: "papelito_checkout_installment_below_minimum" }, { status: 422 }),
+      ),
+    );
+
+    await expect(placeOrder(baseInput)).resolves.toMatchObject({
+      ok: false,
+      error: {
+        code: "papelito_checkout_installment_below_minimum",
+        message: "Reduza as parcelas; o valor mínimo configurado por parcela não foi atingido.",
+      },
+    });
+  });
+
   it("returns invalid response when the success payload is incomplete", async () => {
     server.use(
       http.post("/api/checkout/place-order", () =>

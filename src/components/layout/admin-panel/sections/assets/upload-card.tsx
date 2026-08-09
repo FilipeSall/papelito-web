@@ -1,5 +1,6 @@
 "use client";
 
+import { HINT_CLASS, SUBPANEL_CLASS } from "./field-classes";
 import { PreviewImage } from "./preview-image";
 import { UploadButton } from "./upload-button";
 
@@ -10,22 +11,22 @@ export function UploadCard({
   label,
   onFileSelect,
   previewClass,
-}: {
+}: Readonly<{
   formatHint: string;
   imageUrl: string;
   isUploading: boolean;
   label: string;
   onFileSelect: (file: File) => void | Promise<void>;
   previewClass?: string;
-}) {
+}>) {
   return (
-    <div className="rounded-2xl border border-[#231f20]/12 bg-[#fffdf7] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#6a5f00]">
+    <div className={SUBPANEL_CLASS}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
             {label}
           </p>
-          <p className="mt-1 text-sm text-[#5e574c]">{formatHint}</p>
+          <p className={`mt-2 ${HINT_CLASS}`}>{formatHint}</p>
         </div>
         <UploadButton isUploading={isUploading} onFileSelect={onFileSelect} />
       </div>

@@ -8,7 +8,7 @@ export type {
   RichTextResolutionContext,
 } from "./tokens/context";
 export { getTokenDefinition, isKnownToken, listTokenDefinitions } from "./tokens/registry";
-export type { TokenDefinition, TokenParamKind } from "./tokens/registry";
+export type { TokenDefinition, TokenIcon, TokenParamKind } from "./tokens/registry";
 export { RICH_TEXT_MAX_NODES, RICH_TEXT_MAX_PLAIN_LENGTH } from "./types";
 export type {
   ResolvedRichTextNode,

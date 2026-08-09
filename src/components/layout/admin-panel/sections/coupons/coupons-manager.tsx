@@ -5,16 +5,20 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import type { Coupon, CouponInput, CouponListSnapshot } from "@/features/coupons/types/coupon";
+import type { PaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import { formatBRL } from "@/lib/format-currency";
 
 import { AdminToast, Panel } from "../../primitives";
 import { CouponDeleteModal } from "./coupon-delete-modal";
 import { CouponFormModal } from "./coupon-form-modal";
 import { FreeShippingThresholdSettings } from "./free-shipping-threshold-settings";
+import { InstallmentSettings } from "./installment-settings";
 
 type CouponsManagerProps = {
   initialFreeShippingIssue?: string;
   initialFreeShippingMinimumCents: number | null;
+  initialPaymentConfig: PaymentConfig | null;
+  initialPaymentIssue?: string;
   initialList: CouponListSnapshot;
   initialIssues: string[];
 };
@@ -58,6 +62,8 @@ function formatUsage(coupon: Coupon): string {
 export function CouponsManager({
   initialFreeShippingIssue,
   initialFreeShippingMinimumCents,
+  initialPaymentConfig,
+  initialPaymentIssue,
   initialList,
   initialIssues,
 }: CouponsManagerProps) {
@@ -249,6 +255,18 @@ export function CouponsManager({
           showToast({
             description: `Pedidos a partir de ${formatBRL(minimumOrderCents / 100)} já podem ser comunicados como elegíveis ao cupom manual.`,
             title: "Mínimo de frete grátis atualizado.",
+          });
+          startTransition(() => router.refresh());
+        }}
+      />
+
+      <InstallmentSettings
+        initialConfig={initialPaymentConfig}
+        initialIssue={initialPaymentIssue}
+        onSaved={(config) => {
+          showToast({
+            description: `Checkout configurado para até ${config.maxInstallments}x, com parcelas a partir de ${formatBRL(config.installmentMinimumCents / 100)}.`,
+            title: "Configuração de parcelamento atualizada.",
           });
           startTransition(() => router.refresh());
         }}

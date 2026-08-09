@@ -33,6 +33,7 @@ describe("HomeFeaturesSection", () => {
     );
 
     expect(screen.getByRole("button", { name: /salvar benefícios/i })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: /expandir benefício 1/i }));
     expect(screen.getByLabelText("Enviar ícone do benefício 1")).toHaveAttribute("accept", "image/svg+xml,.svg");
 
     await user.clear(document.getElementById("home-feature-title-one") as HTMLInputElement);
@@ -54,7 +55,7 @@ describe("HomeFeaturesSection", () => {
     expect(onChange).toHaveBeenCalledWith("one", { title: "" });
   });
 
-  it("resolve o token na prévia enquanto o editor mostra o chip", () => {
+  it("resolve o token na prévia enquanto o editor mostra o chip", async () => {
     const tokenItems = items.map((item) =>
       item.id === "one"
         ? {
@@ -69,6 +70,7 @@ describe("HomeFeaturesSection", () => {
         : item,
     );
 
+    const user = userEvent.setup();
     render(
       <HomeFeaturesSection
         richTextContext={{ ...EMPTY_RICH_TEXT_CONTEXT, freeShippingMinimumCents: 12550 }}
@@ -82,11 +84,12 @@ describe("HomeFeaturesSection", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: /expandir benefício 1/i }));
     expect(screen.getAllByText("Frete grátis cupom").length).toBeGreaterThan(0);
     expect(screen.getAllByText("A partir de R$ 125,50 com cupom").length).toBeGreaterThan(0);
   });
 
-  it("avisa que o benefício ficaria sem texto quando o dado dinâmico não existe", () => {
+  it("avisa que o benefício ficaria sem texto quando o dado dinâmico não existe", async () => {
     const tokenItems = items.map((item) =>
       item.id === "one"
         ? {
@@ -97,6 +100,7 @@ describe("HomeFeaturesSection", () => {
         : item,
     );
 
+    const user = userEvent.setup();
     render(
       <HomeFeaturesSection
         richTextContext={EMPTY_RICH_TEXT_CONTEXT}
@@ -110,6 +114,31 @@ describe("HomeFeaturesSection", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: /expandir benefício 1/i }));
     expect(screen.getAllByText(/esta mensagem ficaria oculta no site/i).length).toBeGreaterThan(0);
+  });
+
+  it("mantém o editor do benefício fechado até a expansão", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <HomeFeaturesSection
+        richTextContext={EMPTY_RICH_TEXT_CONTEXT}
+        isSaving={false}
+        issues={[]}
+        items={items}
+        onChange={vi.fn()}
+        onSave={vi.fn()}
+        onUploadIcon={vi.fn()}
+        uploadingId={null}
+      />,
+    );
+
+    const toggle = screen.getByRole("button", { name: /expandir benefício 1/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("region", { name: /editor do benefício 1/i })).toHaveAttribute("inert");
+
+    await user.click(toggle);
+    expect(screen.getByRole("button", { name: /recolher benefício 1/i })).toHaveAttribute("aria-expanded", "true");
   });
 });

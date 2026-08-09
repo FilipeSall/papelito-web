@@ -98,6 +98,7 @@ describe("PromoMarqueeSection", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /expandir faixa de avisos e promoções/i }));
+    await user.click(screen.getByRole("button", { name: /expandir mensagem 1/i }));
 
     expect(screen.getAllByText("Frete grátis cupom").length).toBeGreaterThan(0);
     expect(
@@ -130,8 +131,43 @@ describe("PromoMarqueeSection", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /expandir faixa de avisos e promoções/i }));
+    await user.click(screen.getByRole("button", { name: /expandir mensagem 1/i }));
 
     expect(screen.getAllByText(/esta mensagem ficaria oculta no site/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/a faixa ficará oculta sem mensagens ativas/i)).toBeInTheDocument();
+  });
+
+  it("mantém somente o resumo visível enquanto a mensagem está recolhida", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PromoMarqueeSection
+        featureItems={features}
+        featureIssues={[]}
+        featureUploadingId={null}
+        richTextContext={EMPTY_RICH_TEXT_CONTEXT}
+        isSaving={false}
+        isSavingFeatures={false}
+        issues={[]}
+        messages={messages}
+        onAdd={vi.fn()}
+        onChange={vi.fn()}
+        onFeatureChange={vi.fn()}
+        onFeatureSave={vi.fn()}
+        onFeatureUploadIcon={vi.fn()}
+        onMove={vi.fn()}
+        onRemove={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /expandir faixa de avisos e promoções/i }));
+    const toggle = screen.getByRole("button", { name: /expandir mensagem 1/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("region", { name: /editor da mensagem 1/i })).toHaveAttribute("inert");
+
+    await user.click(toggle);
+    expect(screen.getByRole("button", { name: /recolher mensagem 1/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("region", { name: /editor da mensagem 1/i })).not.toHaveAttribute("inert");
   });
 });

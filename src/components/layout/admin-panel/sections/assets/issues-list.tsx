@@ -1,7 +1,5 @@
+import { ALERT_WARNING_CLASS } from "./field-classes";
+
 export function IssuesList({ issues }: { issues: string[] }) {
-  return (
-    <div className="mb-4 rounded-[18px] border border-[#cfbf80] bg-[#fff6bf] px-4 py-4 text-sm leading-6 text-[#231f20]">
-      {issues.join(" ")}
-    </div>
-  );
+  return <div className={`mb-4 ${ALERT_WARNING_CLASS}`}>⚠ {issues.join(" ")}</div>;
 }

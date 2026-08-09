@@ -28,15 +28,6 @@ export const BRAZIL_STATES = [
   "TO",
 ] as const;
 
-export const INSTALLMENT_OPTIONS = [
-  "1x sem juros",
-  "2x sem juros",
-  "3x sem juros",
-  "4x sem juros",
-  "5x sem juros",
-  "6x sem juros",
-] as const;
-
 export const PAYMENT_METHOD_OPTIONS = [
   {
     id: "credit_card" as const,

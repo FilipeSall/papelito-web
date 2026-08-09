@@ -1,6 +1,6 @@
 "use client";
 
-import { Bold, Italic, Plus } from "lucide-react";
+import { Bold, Italic, Plus, Type } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -11,7 +11,7 @@ import {
   type RichTextResolutionContext,
 } from "@/features/rich-text";
 
-import { SECONDARY_BUTTON_CLASS } from "../field-classes";
+import { COMPACT_BUTTON_CLASS, ICON_BUTTON_CLASS } from "../field-classes";
 import { createChipElement } from "./token-chip";
 import { serializeEditor } from "./serialize";
 import { TokenPicker } from "./token-picker";
@@ -68,6 +68,7 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const paintedRef = useRef<string | null>(null);
+  const selectionRangeRef = useRef<Range | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const serializedValue = JSON.stringify(value);
 
@@ -100,6 +101,15 @@ export function RichTextEditor({
     emitChange();
   }
 
+  function captureSelection() {
+    const root = editorRef.current;
+    const selection = root?.ownerDocument.getSelection();
+
+    if (root && selection && selection.rangeCount > 0 && root.contains(selection.anchorNode)) {
+      selectionRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+  }
+
   function insertToken(token: string, params?: Record<string, string>) {
     const root = editorRef.current;
 
@@ -112,9 +122,10 @@ export function RichTextEditor({
     const chip = createChipElement(root.ownerDocument, token, params, product?.name);
     const selection = root.ownerDocument.getSelection();
     const range =
-      selection && selection.rangeCount > 0 && root.contains(selection.anchorNode)
+      selectionRangeRef.current ??
+      (selection && selection.rangeCount > 0 && root.contains(selection.anchorNode)
         ? selection.getRangeAt(0)
-        : null;
+        : null);
 
     if (range) {
       range.deleteContents();
@@ -128,7 +139,9 @@ export function RichTextEditor({
     }
 
     setIsPickerOpen(false);
+    selectionRangeRef.current = null;
     emitChange();
+    requestAnimationFrame(() => editorRef.current?.focus());
   }
 
   const plainLength = value.reduce(
@@ -141,43 +154,57 @@ export function RichTextEditor({
   );
 
   return (
-    <div>
-      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-none border-2 border-[#1a1a1a] bg-white">
+      <div className="flex flex-wrap items-center gap-2 border-b-2 border-[#1a1a1a]/14 bg-[#faf8f2] px-2 py-2">
+        <span className="inline-flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#231f20]/56">
+          <Type aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} /> Editor
+        </span>
+        <div aria-label="Formatação" className="flex items-center gap-1" role="toolbar">
         <button
           aria-label="Negrito"
-          className={SECONDARY_BUTTON_CLASS}
+          className={ICON_BUTTON_CLASS}
           disabled={disabled}
           onClick={() => applyMark("bold")}
           type="button"
         >
-          <Bold className="h-4 w-4" />
+          <Bold aria-hidden className="h-4 w-4" strokeWidth={2.4} />
         </button>
         <button
           aria-label="Itálico"
-          className={SECONDARY_BUTTON_CLASS}
+          className={ICON_BUTTON_CLASS}
           disabled={disabled}
           onClick={() => applyMark("italic")}
           type="button"
         >
-          <Italic className="h-4 w-4" />
+          <Italic aria-hidden className="h-4 w-4" strokeWidth={2.4} />
         </button>
+        </div>
+        <span aria-hidden className="h-5 w-0.5 bg-[#1a1a1a]/15" />
         <button
-          className={SECONDARY_BUTTON_CLASS}
+          className={COMPACT_BUTTON_CLASS}
           disabled={disabled}
-          onClick={() => setIsPickerOpen((open) => !open)}
+          onClick={() => {
+            captureSelection();
+            setIsPickerOpen(true);
+          }}
+          onMouseDown={captureSelection}
           type="button"
         >
-          <Plus className="h-4 w-4" />
+          <Plus aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
           Inserir dado dinâmico
         </button>
-        <span className="ml-auto text-xs text-[#6f6758]">
+        <span
+          aria-live="polite"
+          className="ml-auto px-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#231f20]/56"
+        >
           {plainLength}/{maxLength}
         </span>
       </div>
 
       <div
         aria-label={ariaLabel}
-        className="min-h-11 w-full rounded-xl border border-[#231f20]/15 bg-white px-3 py-2 text-sm text-[#1e1c10] outline-none focus:border-[#6a5f00] focus:ring-2 focus:ring-[#fee400]/70"
+        className="min-h-14 w-full px-3 py-3 text-sm text-[#1a1a1a] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1a1a1a]"
         contentEditable={!disabled}
         id={id}
         onBlur={emitChange}
@@ -187,25 +214,34 @@ export function RichTextEditor({
         suppressContentEditableWarning
         tabIndex={0}
       />
+      </div>
 
       {isPickerOpen ? (
         <TokenPicker
-          onCancel={() => setIsPickerOpen(false)}
+          onClose={() => {
+            selectionRangeRef.current = null;
+            setIsPickerOpen(false);
+          }}
           onSelect={insertToken}
           promotionProducts={promotionProducts}
         />
       ) : null}
 
-      <p className="mt-1.5 text-xs text-[#4b4731]">
-        Prévia:{" "}
+      <div className="border-2 border-[#1a1a1a]/14 bg-[#faf8f2] px-3 py-2.5">
+        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#231f20]/56">
+          <span aria-hidden className="inline-block h-2 w-2 rotate-45 bg-brand-yellow" />
+          Prévia desta mensagem
+        </p>
+        <div className="mt-1.5 text-sm text-[#1a1a1a]">
         {preview === null ? (
-          <span className="text-[#b91c1c]">
-            algum dado dinâmico não está disponível agora — esta mensagem ficaria oculta no site.
+          <span className="font-bold text-[#c0392b]">
+            ⚠ Algum dado dinâmico não está disponível agora — esta mensagem ficaria oculta no site.
           </span>
         ) : (
           <RichText nodes={preview} />
         )}
-      </p>
+        </div>
+      </div>
     </div>
   );
 }

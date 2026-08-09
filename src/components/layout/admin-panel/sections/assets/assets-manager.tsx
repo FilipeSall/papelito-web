@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ImagePlus, LoaderCircle, Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowDown, ArrowUp, ChevronDown, ImagePlus, LoaderCircle, Save, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
@@ -25,9 +25,17 @@ import type {
 } from "@/types/home-assets";
 
 import {
+  ALERT_ERROR_CLASS,
+  ALERT_SUCCESS_CLASS,
   BUTTON_CLASS,
+  CARD_CLASS,
+  CARD_HEADER_CLASS,
+  COMPACT_BUTTON_CLASS,
+  DESTRUCTIVE_BUTTON_CLASS,
+  ICON_BUTTON_CLASS,
   INPUT_CLASS,
   LABEL_CLASS,
+  MUTED_TEXT_CLASS,
   SECONDARY_BUTTON_CLASS,
   TEXTAREA_CLASS,
 } from "./field-classes";
@@ -169,11 +177,15 @@ export function AssetsManager({
     ),
   );
   const [heroIssues, setHeroIssues] = useState(initialHeroSnapshot.issues);
+  const [expandedHeroBannerIds, setExpandedHeroBannerIds] = useState<string[]>([]);
+  const [isHeroPanelOpen, setIsHeroPanelOpen] = useState(false);
+  const [pendingHeroBannerId, setPendingHeroBannerId] = useState<string | null>(null);
   const [partnerBanner, setPartnerBanner] = useState(() => ({
     ...initialPartnerSnapshot.banner,
     isActive: true,
   }));
   const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
+  const [isPartnerEditorOpen, setIsPartnerEditorOpen] = useState(false);
   const [promoMarquee, setPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
@@ -283,8 +295,34 @@ export function AssetsManager({
   }
 
   function addPromoMarqueeItem() {
-    setPromoMarquee((current) => [...current, createEmptyPromoMarqueeItem(current.length)]);
+    const item = createEmptyPromoMarqueeItem(promoMarquee.length);
+    setPromoMarquee((current) => [...current, item]);
+    return item.id;
   }
+
+  function addHeroBanner() {
+    const banner = createEmptyHeroBanner(heroBanners.length);
+    setHeroBanners((current) => [...current, banner]);
+    setExpandedHeroBannerIds((current) => [...current, banner.id]);
+    setIsHeroPanelOpen(true);
+    setPendingHeroBannerId(banner.id);
+  }
+
+  useEffect(() => {
+    if (!pendingHeroBannerId) {
+      return;
+    }
+
+    const card = document.getElementById(`hero-option-card-${pendingHeroBannerId}`);
+    const editor = document.getElementById(`hero-alt-${pendingHeroBannerId}`);
+    if (!card || !editor) {
+      return;
+    }
+
+    card.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    editor.focus({ preventScroll: true });
+    setPendingHeroBannerId(null);
+  }, [heroBanners, pendingHeroBannerId]);
 
   function movePromoMarqueeItem(id: string, direction: -1 | 1) {
     setPromoMarquee((current) => {
@@ -639,20 +677,17 @@ export function AssetsManager({
     <div className="space-y-5">
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-[#6f6758]">
+          <p className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
             <span>Papelito</span>
-            <span aria-hidden className="text-[#b2aa98]">/</span>
+            <span aria-hidden>·</span>
             <span>Admin</span>
-            <span aria-hidden className="text-[#b2aa98]">/</span>
-            <span className="font-semibold text-[#231f20]">Assets</span>
-          </div>
-          <h2
-            className="mt-3 text-[2.35rem] font-semibold leading-none tracking-[-0.04em] text-[#231f20]"
-            style={{ fontFamily: "var(--font-admin-display)" }}
-          >
-            Assets das paginas
+            <span aria-hidden>·</span>
+            <span className="text-[#1a1a1a]">Assets</span>
+          </p>
+          <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-[#1a1a1a] md:text-[2rem]">
+            Assets das páginas
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5e574c]">
+          <p className={`mt-2 max-w-3xl ${MUTED_TEXT_CLASS}`}>
             Configure as logos do site e as imagens públicas usadas na Hero Section, página de
             produtos, página Sobre, PDV Perfeito e página de revendedores. Abra uma seção para
             editar seus assets; nenhuma seção pode ser salva sem imagem.
@@ -662,14 +697,10 @@ export function AssetsManager({
 
       {notice ? (
         <div
-          className={
-            notice.tone === "success"
-              ? "rounded-[18px] border border-[#b7c77d] bg-[#f4f8e2] px-4 py-4 text-sm leading-6 text-[#24300c]"
-              : "rounded-[18px] border border-[#d59d9d] bg-[#fff1f1] px-4 py-4 text-sm leading-6 text-[#5c1f1f]"
-          }
+          className={notice.tone === "success" ? ALERT_SUCCESS_CLASS : ALERT_ERROR_CLASS}
           role="status"
         >
-          {notice.message}
+          {notice.tone === "success" ? "✓" : "⚠"} {notice.message}
         </div>
       ) : null}
 
@@ -709,10 +740,10 @@ export function AssetsManager({
           <>
             <button
               className={SECONDARY_BUTTON_CLASS}
-              onClick={() => setHeroBanners((current) => [...current, createEmptyHeroBanner(current.length)])}
+              onClick={addHeroBanner}
               type="button"
             >
-              <ImagePlus className="h-4 w-4" />
+              <ImagePlus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
               Nova opção
             </button>
             <button
@@ -721,7 +752,11 @@ export function AssetsManager({
               onClick={saveHeroBanners}
               type="button"
             >
-              {isSavingHero ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSavingHero ? (
+                <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+              )}
               Salvar Hero Section
             </button>
           </>
@@ -729,55 +764,90 @@ export function AssetsManager({
         description="Aparece no topo da home. Com uma opção vira banner fixo; com mais de uma vira carrossel. Sempre deve existir pelo menos uma opção."
         eyebrow="home"
         hint="Formato ideal: desktop 16:5 e mobile 1:2."
+        onOpenChange={setIsHeroPanelOpen}
+        open={isHeroPanelOpen}
         title="Hero Section"
       >
         {heroIssues.length > 0 ? <IssuesList issues={heroIssues} /> : null}
 
         <div className="space-y-4">
-          {heroBanners.map((banner, index) => (
-            <div
-              className="rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]"
-              key={banner.id}
-            >
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          {heroBanners.map((banner, index) => {
+            const isOpen = expandedHeroBannerIds.includes(banner.id);
+            const regionId = `hero-option-${banner.id}`;
+
+            return (
+            <article className={CARD_CLASS} id={`hero-option-card-${banner.id}`} key={banner.id}>
+              <header
+                className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${CARD_HEADER_CLASS}`}
+              >
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6a5f00]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
                     Opção {index + 1}
                   </p>
-                  <p className="mt-1 text-sm text-[#5e574c]">
+                  <p className={`mt-1.5 ${MUTED_TEXT_CLASS}`}>
                     Esta imagem aparece na área principal da home. Ordem {banner.order}.
                   </p>
                 </div>
+                <button
+                  aria-controls={regionId}
+                  aria-expanded={isOpen}
+                  aria-label={isOpen ? `Recolher opção ${index + 1}` : `Expandir opção ${index + 1}`}
+                  className={ICON_BUTTON_CLASS}
+                  onClick={() =>
+                    setExpandedHeroBannerIds((current) =>
+                      current.includes(banner.id)
+                        ? current.filter((id) => id !== banner.id)
+                        : [...current, banner.id],
+                    )
+                  }
+                  type="button"
+                >
+                  <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+              </header>
+
+              <div
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div
+                  aria-label={`Editor da opção ${index + 1}`}
+                  className="overflow-hidden"
+                  id={regionId}
+                  inert={!isOpen}
+                  role="region"
+                >
+                <div className="p-4">
                 <div className="flex flex-wrap gap-2">
                   <button
-                    className={SECONDARY_BUTTON_CLASS}
+                    className={COMPACT_BUTTON_CLASS}
                     disabled={index === 0}
                     onClick={() => moveHeroBanner(banner.id, -1)}
                     type="button"
                   >
-                    <ArrowUp className="h-4 w-4" />
+                    <ArrowUp aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
                     Subir
                   </button>
                   <button
-                    className={SECONDARY_BUTTON_CLASS}
+                    className={COMPACT_BUTTON_CLASS}
                     disabled={index === heroBanners.length - 1}
                     onClick={() => moveHeroBanner(banner.id, 1)}
                     type="button"
                   >
-                    <ArrowDown className="h-4 w-4" />
+                    <ArrowDown aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
                     Descer
                   </button>
                   <button
-                    className={SECONDARY_BUTTON_CLASS}
+                    className={DESTRUCTIVE_BUTTON_CLASS}
                     disabled={heroBanners.length <= 1}
                     onClick={() => removeHeroBanner(banner.id)}
                     type="button"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
                     Remover
                   </button>
                 </div>
-              </div>
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <UploadCard
@@ -797,7 +867,7 @@ export function AssetsManager({
                 />
               </div>
 
-              <div className="mt-4">
+                <div className="mt-4">
                 <div>
                   <label className={LABEL_CLASS} htmlFor={`hero-alt-${banner.id}`}>
                     Texto alternativo
@@ -812,8 +882,12 @@ export function AssetsManager({
                   />
                 </div>
               </div>
-            </div>
-          ))}
+                </div>
+              </div>
+              </div>
+            </article>
+            );
+          })}
         </div>
       </CollapsiblePanel>
 
@@ -825,7 +899,11 @@ export function AssetsManager({
             onClick={savePartnerBanner}
             type="button"
           >
-            {isSavingPartner ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isSavingPartner ? (
+              <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+            )}
             Salvar PDV Perfeito
           </button>
         }
@@ -835,6 +913,41 @@ export function AssetsManager({
       >
         {partnerIssues.length > 0 ? <IssuesList issues={partnerIssues} /> : null}
 
+        <article className={CARD_CLASS}>
+          <header className={`flex items-center justify-between gap-3 ${CARD_HEADER_CLASS}`}>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+                Bloco parceiro
+              </p>
+              <p className="mt-1.5 truncate text-sm font-black uppercase tracking-tight text-[#1a1a1a]">
+                {partnerBanner.tag || "Sem texto pequeno"}
+              </p>
+            </div>
+            <button
+              aria-controls="partner-banner-editor"
+              aria-expanded={isPartnerEditorOpen}
+              aria-label={isPartnerEditorOpen ? "Recolher bloco parceiro" : "Expandir bloco parceiro"}
+              className={ICON_BUTTON_CLASS}
+              onClick={() => setIsPartnerEditorOpen((current) => !current)}
+              type="button"
+            >
+              <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${isPartnerEditorOpen ? "rotate-180" : ""}`} />
+            </button>
+          </header>
+
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+              isPartnerEditorOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div
+              aria-label="Editor da Imagem do PDV Perfeito"
+              className="overflow-hidden"
+              id="partner-banner-editor"
+              inert={!isPartnerEditorOpen}
+              role="region"
+            >
+              <div className="p-4">
         <div className="grid gap-4 lg:grid-cols-2">
           <UploadCard
             formatHint="Desktop: foto horizontal, aproximadamente 5:3."
@@ -931,6 +1044,10 @@ export function AssetsManager({
         </div>
 
         <CatalogPdfManager />
+              </div>
+            </div>
+          </div>
+        </article>
       </CollapsiblePanel>
 
       <CollapsiblePanel
@@ -941,7 +1058,11 @@ export function AssetsManager({
             onClick={saveSiteImages}
             type="button"
           >
-            {isSavingSiteImages ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isSavingSiteImages ? (
+              <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+            )}
             Salvar imagens
           </button>
         }

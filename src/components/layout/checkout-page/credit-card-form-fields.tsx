@@ -1,6 +1,6 @@
 import { CheckoutCustomSelect } from "./checkout-custom-select";
 import { CheckoutField } from "./checkout-field";
-import { INSTALLMENT_OPTIONS } from "./checkout-constants";
+import { createInstallmentOptions } from "@/lib/installments";
 
 interface CreditCardFormFieldsProps {
   holderName: string;
@@ -72,7 +72,7 @@ export function CreditCardFormFields({
       <div className="md:col-span-2">
         <CheckoutCustomSelect
           label="Parcelamento"
-          options={INSTALLMENT_OPTIONS.slice(0, Math.max(0, maxInstallments))}
+          options={createInstallmentOptions(maxInstallments)}
           placeholder="Selecione as parcelas"
           value={installments}
           onChange={onInstallmentsChange}

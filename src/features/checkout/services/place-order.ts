@@ -30,7 +30,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   papelito_checkout_amount_below_minimum:
     "O total ficou abaixo do mínimo aceito para esta forma de pagamento.",
   papelito_checkout_installment_below_minimum:
-    "Reduza as parcelas; cada parcela precisa ser de pelo menos R$ 1,00.",
+    "Reduza as parcelas; o valor mínimo configurado por parcela não foi atingido.",
   papelito_checkout_installments_exceeded:
     "A quantidade de parcelas excedeu o limite permitido.",
   papelito_checkout_too_many_items:

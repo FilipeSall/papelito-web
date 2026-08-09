@@ -128,6 +128,18 @@ async function openPromoMarqueeSection(user: ReturnType<typeof userEvent.setup>)
   await user.click(screen.getByRole("button", { name: /expandir faixa de avisos e promoções/i }));
 }
 
+async function openHeroSection(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /expandir hero section/i }));
+}
+
+async function openPartnerSection(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /^expandir imagem do pdv perfeito$/i }));
+}
+
+async function openSiteImagesSection(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /expandir imagens das paginas/i }));
+}
+
 const fetchMock = vi.fn();
 
 beforeEach(() => {
@@ -140,6 +152,70 @@ afterEach(() => {
 });
 
 describe("AssetsManager - seção de logos", () => {
+  it("abre a Hero Section e a nova opção criada", async () => {
+    const user = userEvent.setup();
+    renderManager();
+
+    await user.click(screen.getByRole("button", { name: /nova opção/i }));
+
+    expect(screen.getByRole("button", { name: /recolher hero section/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /recolher opção 2/i })).toHaveAttribute("aria-expanded", "true");
+    await waitFor(() => expect((document.activeElement as HTMLElement).id).toMatch(/^hero-alt-/));
+  });
+
+  it("abre a faixa e a nova mensagem criada", async () => {
+    const user = userEvent.setup();
+    renderManager();
+
+    await user.click(screen.getByRole("button", { name: /nova mensagem/i }));
+
+    expect(screen.getByRole("button", { name: /recolher faixa de avisos e promoções/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /recolher mensagem 5/i })).toHaveAttribute("aria-expanded", "true");
+    await waitFor(() => expect((document.activeElement as HTMLElement).id).toMatch(/^promo-marquee-/));
+  });
+
+  it("mantém cada opção da Hero Section fechada até a expansão", async () => {
+    const user = userEvent.setup();
+    renderManager();
+    await openHeroSection(user);
+
+    const toggle = screen.getByRole("button", { name: /expandir opção 1/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("region", { name: /editor da opção 1/i })).toHaveAttribute("inert");
+
+    await user.click(toggle);
+    expect(screen.getByRole("button", { name: /recolher opção 1/i })).toHaveAttribute("aria-expanded", "true");
+    expect(document.getElementById("hero-alt-hero-1")).toHaveValue("Banner");
+  });
+
+  it("mantém o editor da Imagem do PDV Perfeito fechado até a expansão", async () => {
+    const user = userEvent.setup();
+    renderManager();
+    await openPartnerSection(user);
+
+    const toggle = screen.getByRole("button", { name: /expandir bloco parceiro/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("region", { name: /editor da imagem do pdv perfeito/i })).toHaveAttribute("inert");
+
+    await user.click(toggle);
+    expect(screen.getByRole("button", { name: /recolher bloco parceiro/i })).toHaveAttribute("aria-expanded", "true");
+    expect(document.getElementById("partner-alt")).toHaveValue("Parceiros");
+  });
+
+  it("mantém cada Imagem das paginas fechada até a expansão", async () => {
+    const user = userEvent.setup();
+    renderManager();
+    await openSiteImagesSection(user);
+
+    const toggle = screen.getByRole("button", { name: /expandir imagem de produtos/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("region", { name: /editor de imagem de produtos/i })).toHaveAttribute("inert");
+
+    await user.click(toggle);
+    expect(screen.getByRole("button", { name: /recolher imagem de produtos/i })).toHaveAttribute("aria-expanded", "true");
+    expect(document.getElementById("site-image-alt-productHero")).toHaveValue("Produtos");
+  });
+
   it("renders one card per managed logo with its own upload control", async () => {
     const user = userEvent.setup();
     renderManager();
@@ -316,6 +392,8 @@ describe("AssetsManager - faixa de avisos e promoções", () => {
     renderManager();
     await openPromoMarqueeSection(user);
     await user.click(screen.getByRole("button", { name: /nova mensagem/i }));
+
+    expect(screen.getByRole("button", { name: /recolher mensagem 5/i })).toHaveAttribute("aria-expanded", "true");
 
     const newInput = screen.getByLabelText("Mensagem 5");
     await user.type(newInput, "🎁 Nova mensagem");

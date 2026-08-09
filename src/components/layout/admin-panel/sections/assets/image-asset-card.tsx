@@ -1,8 +1,19 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+import { useId, useState } from "react";
+
 import type { ManagedImageAsset, SiteImageAssetKey } from "@/types/home-assets";
 
-import { INPUT_CLASS, LABEL_CLASS } from "./field-classes";
+import {
+  CARD_CLASS,
+  CARD_HEADER_CLASS,
+  HINT_CLASS,
+  ICON_BUTTON_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./field-classes";
 import { PreviewImage } from "./preview-image";
 import { UploadButton } from "./upload-button";
 
@@ -28,40 +39,70 @@ export function ImageAssetCard({
   onAltChange: (alt: string) => void;
   onFileSelect: (file: File) => void | Promise<void>;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const regionId = useId();
+
   return (
-    <div className="rounded-2xl border border-[#231f20]/12 bg-white p-4 shadow-[0_10px_24px_rgba(35,31,32,0.04)]">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6a5f00]">
+    <article className={CARD_CLASS}>
+      <header className={`flex items-center justify-between gap-3 ${CARD_HEADER_CLASS}`}>
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
             {config.eyebrow}
           </p>
-          <h4 className="mt-1 text-base font-semibold text-[#231f20]">{config.title}</h4>
-          <p className="mt-1 text-sm leading-6 text-[#5e574c]">{config.description}</p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6a5f00]">
-            {config.formatHint}
-          </p>
+          <h4 className="mt-1.5 text-base font-black uppercase tracking-tight text-[#1a1a1a]">
+            {config.title}
+          </h4>
         </div>
-        <UploadButton isUploading={isUploading} onFileSelect={onFileSelect} />
-      </div>
+        <button
+          aria-controls={regionId}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? `Recolher ${config.title}` : `Expandir ${config.title}`}
+          className={ICON_BUTTON_CLASS}
+          onClick={() => setIsOpen((current) => !current)}
+          type="button"
+        >
+          <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </header>
 
-      <PreviewImage
-        className={config.previewClass}
-        imageUrl={asset.imageUrl}
-        label={config.title}
-      />
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div
+          aria-label={`Editor de ${config.title}`}
+          className="overflow-hidden"
+          id={regionId}
+          inert={!isOpen}
+          role="region"
+        >
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={MUTED_TEXT_CLASS}>{config.description}</p>
+                <p className={`mt-2 ${HINT_CLASS}`}>{config.formatHint}</p>
+              </div>
+              <UploadButton isUploading={isUploading} onFileSelect={onFileSelect} />
+            </div>
 
-      <div className="mt-4">
-        <label className={LABEL_CLASS} htmlFor={`site-image-alt-${config.key}`}>
-          Texto alternativo
-        </label>
-        <input
-          className={INPUT_CLASS}
-          id={`site-image-alt-${config.key}`}
-          onChange={(event) => onAltChange(event.target.value)}
-          type="text"
-          value={asset.alt}
-        />
+            <PreviewImage className={config.previewClass} imageUrl={asset.imageUrl} label={config.title} />
+
+            <div className="mt-4">
+              <label className={LABEL_CLASS} htmlFor={`site-image-alt-${config.key}`}>
+                Texto alternativo
+              </label>
+              <input
+                className={INPUT_CLASS}
+                id={`site-image-alt-${config.key}`}
+                onChange={(event) => onAltChange(event.target.value)}
+                type="text"
+                value={asset.alt}
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

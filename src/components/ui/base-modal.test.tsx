@@ -68,6 +68,22 @@ describe("BaseModal", () => {
 });
 
 describe("BaseModal focus management", () => {
+  it("uses the supplied initial focus target", () => {
+    const FocusTarget = () => {
+      const ref = { current: null as HTMLInputElement | null };
+      return (
+        <BaseModal ariaLabelledBy="t" initialFocusRef={ref} onClose={() => {}} open>
+          <h2 id="t">Title</h2>
+          <input ref={ref} aria-label="Busca" />
+          <button type="button">Inside</button>
+        </BaseModal>
+      );
+    };
+
+    render(<FocusTarget />);
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Busca" }));
+  });
+
   it("moves focus into the dialog on open", () => {
     render(
       <BaseModal ariaLabelledBy="t" onClose={() => {}} open>
