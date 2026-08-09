@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
@@ -48,12 +48,29 @@ type AdminProductsResponse = {
   products?: Array<{ id?: number; name?: string; sku?: string }>;
 };
 
+const COUPON_FIELD_CLASS =
+  "mt-2 h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a] focus:ring-0";
+
 function CouponFieldLabel({ label, text }: { label: string; text: string }) {
   return (
-    <span className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase leading-none tracking-[0.18em] text-[#4b4731]">
-      <span className="leading-none">{label}</span>
+    <span className="flex h-4 items-center gap-1.5 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]">
+      <span>{label}</span>
       <InfoTooltip text={text} />
     </span>
+  );
+}
+
+function CouponSection({ children, title }: { children: React.ReactNode; title: string }) {
+  return (
+    <section className="border-t-2 border-[#1a1a1a]/10 pt-5 first:border-t-0 first:pt-0">
+      <div className="mb-4 flex items-center gap-2">
+        <span aria-hidden="true" className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+        <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
+          {title}
+        </h4>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -253,226 +270,246 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
   return (
     <div
+      aria-labelledby="coupon-form-title"
       aria-modal="true"
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-8"
-      role="dialog"
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8"
       onClick={onClose}
+      role="dialog"
     >
-      <div
-        className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl"
+      <form
+        className="relative w-full max-w-3xl border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
         onClick={(event) => event.stopPropagation()}
+        onSubmit={handleSubmit}
       >
-        <div className="flex items-center justify-between border-b border-[#231f20]/10 px-6 py-4">
-          <h3 className="text-lg font-semibold text-[#1e1c10]">
-            {coupon ? `Editar cupom ${coupon.code}` : "Novo cupom"}
-          </h3>
+        <div className="h-2 w-full bg-brand-yellow" />
+
+        <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
+              Painel admin · cupons
+            </p>
+            <h3
+              className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a]"
+              id="coupon-form-title"
+            >
+              {coupon ? `Editar cupom ${coupon.code}` : "Novo cupom"}
+            </h3>
+          </div>
           <button
-            type="button"
             aria-label="Fechar"
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#1e1c10] transition hover:bg-[#f6f1da]"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={submitting}
             onClick={onClose}
+            type="button"
           >
-            <X className="h-5 w-5" strokeWidth={2} />
+            <X className="h-5 w-5" strokeWidth={2.5} />
           </button>
         </div>
 
-        <form className="space-y-5 px-6 py-5" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label="Código"
-                text="Código único do cupom. Ele e digitado pelo cliente no carrinho ou checkout."
-              />
-              <input
-                type="text"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 font-mono text-sm uppercase outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                maxLength={50}
-                value={form.code}
-                onChange={(event) => update("code", event.target.value.toUpperCase())}
-                placeholder="EX: FERIAS20"
-                required
-              />
-            </label>
+        <div className="space-y-6 px-6 py-5">
+          <CouponSection title="Regras do cupom">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <CouponFieldLabel
+                  label="Código *"
+                  text="Código único do cupom. Ele e digitado pelo cliente no carrinho ou checkout."
+                />
+                <input
+                  className={`${COUPON_FIELD_CLASS} font-mono uppercase`}
+                  maxLength={50}
+                  onChange={(event) => update("code", event.target.value.toUpperCase())}
+                  placeholder="EX: FERIAS20"
+                  required
+                  type="text"
+                  value={form.code}
+                />
+              </label>
 
-            <AdminSelectField
-              helpText="Define se o cupom fica disponível para uso imediato ou salvo como rascunho."
-              label="Status"
-              onChange={(value) => update("status", value as CouponStatus)}
-              options={STATUS_OPTIONS}
-              placeholder="Selecione"
-              value={form.status}
-            />
+              <AdminSelectField
+                helpText="Define se o cupom fica disponível para uso imediato ou salvo como rascunho."
+                label="Status"
+                onChange={(value) => update("status", value as CouponStatus)}
+                options={STATUS_OPTIONS}
+                placeholder="Selecione"
+                value={form.status}
+                variant="vendor-create"
+              />
 
-            <AdminSelectField
-              helpText="Escolha entre desconto percentual sobre o pedido ou valor fixo abatido no total."
-              label="Tipo de desconto"
-              onChange={(value) => update("discountType", value as CouponDiscountType)}
-              options={DISCOUNT_TYPE_OPTIONS}
-              placeholder="Selecione"
-              value={form.discountType}
-            />
+              <AdminSelectField
+                helpText="Escolha entre desconto percentual sobre o pedido ou valor fixo abatido no total."
+                label="Tipo de desconto"
+                onChange={(value) => update("discountType", value as CouponDiscountType)}
+                options={DISCOUNT_TYPE_OPTIONS}
+                placeholder="Selecione"
+                value={form.discountType}
+                variant="vendor-create"
+              />
 
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label={`Valor ${form.discountType === "percent" ? "(%)" : "(R$)"}`}
-                text={
-                  form.discountType === "percent"
-                    ? "Percentual de desconto aplicado sobre os itens elegiveis do pedido."
-                    : "Valor fixo abatido do total elegível do pedido."
-                }
-              />
-              <input
-                type="number"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                min={0}
-                step={form.discountType === "percent" ? 1 : 0.01}
-                value={form.amount}
-                onChange={(event) => update("amount", Number(event.target.value))}
-                required
-              />
-            </label>
+              <label className="block">
+                <CouponFieldLabel
+                  label={`Valor ${form.discountType === "percent" ? "(%)" : "(R$)"} *`}
+                  text={
+                    form.discountType === "percent"
+                      ? "Percentual de desconto aplicado sobre os itens elegiveis do pedido."
+                      : "Valor fixo abatido do total elegível do pedido."
+                  }
+                />
+                <input
+                  className={COUPON_FIELD_CLASS}
+                  min={0}
+                  onChange={(event) => update("amount", Number(event.target.value))}
+                  required
+                  step={form.discountType === "percent" ? 1 : 0.01}
+                  type="number"
+                  value={form.amount}
+                />
+              </label>
 
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label="Validade"
-                text="Data limite para uso do cupom. Se ficar vazia, o cupom continua sem expiracao."
-              />
-              <input
-                type="date"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                value={form.dateExpires ?? ""}
-                onChange={(event) => update("dateExpires", event.target.value || null)}
-              />
-            </label>
+              <label className="block">
+                <CouponFieldLabel
+                  label="Validade"
+                  text="Data limite para uso do cupom. Se ficar vazia, o cupom continua sem expiracao."
+                />
+                <input
+                  className={COUPON_FIELD_CLASS}
+                  onChange={(event) => update("dateExpires", event.target.value || null)}
+                  type="date"
+                  value={form.dateExpires ?? ""}
+                />
+              </label>
 
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label="Subtotal mínimo (R$)"
-                text="Valor mínimo do subtotal do pedido para liberar o uso do cupom."
-              />
-              <input
-                type="number"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                min={0}
-                step={0.01}
-                value={form.minimumAmount}
-                onChange={(event) => update("minimumAmount", Number(event.target.value))}
-              />
-            </label>
+              <label className="block">
+                <CouponFieldLabel
+                  label="Subtotal mínimo (R$)"
+                  text="Valor mínimo do subtotal do pedido para liberar o uso do cupom."
+                />
+                <input
+                  className={COUPON_FIELD_CLASS}
+                  min={0}
+                  onChange={(event) => update("minimumAmount", Number(event.target.value))}
+                  step={0.01}
+                  type="number"
+                  value={form.minimumAmount}
+                />
+              </label>
 
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label="Limite total de usos (0 = ilimitado)"
-                text="Quantidade máxima de vezes que o cupom pode ser usado no total."
-              />
-              <input
-                type="number"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                min={0}
-                value={form.usageLimit}
-                onChange={(event) => update("usageLimit", Number(event.target.value))}
-              />
-            </label>
+              <label className="block">
+                <CouponFieldLabel
+                  label="Limite total de usos (0 = ilimitado)"
+                  text="Quantidade máxima de vezes que o cupom pode ser usado no total."
+                />
+                <input
+                  className={COUPON_FIELD_CLASS}
+                  min={0}
+                  onChange={(event) => update("usageLimit", Number(event.target.value))}
+                  type="number"
+                  value={form.usageLimit}
+                />
+              </label>
 
-            <label className="block text-sm">
-              <CouponFieldLabel
-                label="Limite por usuário (0 = ilimitado)"
-                text="Quantidade máxima de usos do mesmo cupom por cliente."
-              />
-              <input
-                type="number"
-                className="h-11 w-full rounded-xl border border-[#cec7aa] bg-[#fff9ea] px-4 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                min={0}
-                value={form.usageLimitPerUser}
-                onChange={(event) => update("usageLimitPerUser", Number(event.target.value))}
-              />
-            </label>
+              <label className="block">
+                <CouponFieldLabel
+                  label="Limite por usuário (0 = ilimitado)"
+                  text="Quantidade máxima de usos do mesmo cupom por cliente."
+                />
+                <input
+                  className={COUPON_FIELD_CLASS}
+                  min={0}
+                  onChange={(event) => update("usageLimitPerUser", Number(event.target.value))}
+                  type="number"
+                  value={form.usageLimitPerUser}
+                />
+              </label>
+            </div>
+          </CouponSection>
 
-          </div>
-
-          <fieldset className="rounded-xl border border-[#cec7aa] bg-[#fff9ea] p-4">
-            <legend className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4b4731]">
-              Restrições (vazio = todos)
-            </legend>
-
-            <div className="mt-3">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-semibold text-[#1e1c10]">Vendors permitidos</p>
+          <CouponSection title="Restrições (vazio = todos)">
+            <div>
+              <span className="flex h-4 items-center gap-1.5 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]">
+                <span>Vendors permitidos</span>
                 <InfoTooltip text="Se selecionar vendors, o cupom só vale para produtos vendidos por essas lojas." />
-              </div>
+              </span>
               <input
-                type="search"
-                className="mt-2 h-10 w-full rounded-lg border border-[#cec7aa] bg-white px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                placeholder="Buscar vendor por nome ou e-mail"
-                value={vendorSearch}
+                className={COUPON_FIELD_CLASS}
                 onChange={(event) => setVendorSearch(event.target.value)}
+                placeholder="Buscar vendor por nome ou e-mail"
+                type="search"
+                value={vendorSearch}
               />
-              <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-[#cec7aa] bg-white">
+              <div className="mt-2 max-h-40 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
                 {vendorLoading ? (
-                  <p className="px-3 py-2 text-xs text-[#4b4731]">Carregando vendors...</p>
+                  <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
+                    Carregando vendors...
+                  </p>
                 ) : vendorOptions.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-[#4b4731]">Nenhum vendor aprovado encontrado.</p>
+                  <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
+                    Nenhum vendor aprovado encontrado.
+                  </p>
                 ) : (
                   vendorOptions.map((vendor) => {
                     const checked = form.vendorIds.includes(vendor.id);
                     return (
                       <label
+                        className="flex cursor-pointer items-center gap-2 border-b-2 border-[#1a1a1a]/10 px-3 py-2 text-xs last:border-b-0 hover:bg-brand-yellow/30"
                         key={vendor.id}
-                        className="flex cursor-pointer items-center gap-2 border-b border-[#cec7aa] px-3 py-2 text-xs last:border-b-0 hover:bg-[#fff9ea]"
                       >
                         <input
-                          type="checkbox"
                           checked={checked}
+                          className="h-4 w-4 accent-[#1a1a1a]"
                           onChange={() => toggleVendor(vendor.id)}
+                          type="checkbox"
                         />
-                        <span className="font-semibold text-[#1e1c10]">{vendor.name}</span>
-                        <span className="text-[#4b4731]">{vendor.email}</span>
+                        <span className="font-black text-[#1a1a1a]">{vendor.name}</span>
+                        <span className="text-[#1a1a1a]/60">{vendor.email}</span>
                       </label>
                     );
                   })
                 )}
               </div>
               {form.vendorIds.length > 0 ? (
-                <p className="mt-1 text-xs text-[#4b4731]">
+                <p className="mt-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#1a1a1a]/60">
                   {form.vendorIds.length} vendor(s) selecionado(s)
                 </p>
               ) : null}
             </div>
 
-            <div className="mt-4">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-semibold text-[#1e1c10]">Produtos permitidos</p>
+            <div className="mt-5">
+              <span className="flex h-4 items-center gap-1.5 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]">
+                <span>Produtos permitidos</span>
                 <InfoTooltip text="Se selecionar produtos, o cupom só vale para esses itens específicos." />
-              </div>
+              </span>
               <input
-                type="search"
-                className="mt-2 h-10 w-full rounded-lg border border-[#cec7aa] bg-white px-3 text-sm outline-none focus:border-[#6a5f00] focus:ring-1 focus:ring-[#6a5f00]"
-                placeholder="Buscar produto por nome ou SKU"
-                value={productSearch}
+                className={COUPON_FIELD_CLASS}
                 onChange={(event) => setProductSearch(event.target.value)}
+                placeholder="Buscar produto por nome ou SKU"
+                type="search"
+                value={productSearch}
               />
               {productSearch.trim() ? (
-                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-[#cec7aa] bg-white">
+                <div className="mt-2 max-h-40 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
                   {productLoading ? (
-                    <p className="px-3 py-2 text-xs text-[#4b4731]">Buscando...</p>
+                    <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">Buscando...</p>
                   ) : productResults.length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-[#4b4731]">Nenhum produto encontrado.</p>
+                    <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
+                      Nenhum produto encontrado.
+                    </p>
                   ) : (
                     productResults.map((product) => {
                       const checked = form.productIds.includes(product.id);
                       return (
                         <label
+                          className="flex cursor-pointer items-center gap-2 border-b-2 border-[#1a1a1a]/10 px-3 py-2 text-xs last:border-b-0 hover:bg-brand-yellow/30"
                           key={product.id}
-                          className="flex cursor-pointer items-center gap-2 border-b border-[#cec7aa] px-3 py-2 text-xs last:border-b-0 hover:bg-[#fff9ea]"
                         >
                           <input
-                            type="checkbox"
                             checked={checked}
+                            className="h-4 w-4 accent-[#1a1a1a]"
                             onChange={() => toggleProduct(product.id)}
+                            type="checkbox"
                           />
-                          <span className="font-semibold text-[#1e1c10]">{product.name}</span>
+                          <span className="font-black text-[#1a1a1a]">{product.name}</span>
                           {product.sku ? (
-                            <span className="text-[#4b4731]">SKU {product.sku}</span>
+                            <span className="text-[#1a1a1a]/60">SKU {product.sku}</span>
                           ) : null}
                         </label>
                       );
@@ -481,18 +518,18 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
                 </div>
               ) : null}
               {form.productIds.length > 0 ? (
-                <ul className="mt-2 flex flex-wrap gap-1">
+                <ul className="mt-3 flex flex-wrap gap-2">
                   {form.productIds.map((id) => (
                     <li
+                      className="inline-flex items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-brand-yellow"
                       key={id}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#1e1c10] px-3 py-1 text-[10px] font-semibold text-[#fee400]"
                     >
                       {productLabels[id] ?? `Produto #${id}`}
                       <button
-                        type="button"
                         aria-label={`Remover produto ${id}`}
-                        className="cursor-pointer"
+                        className="cursor-pointer text-sm leading-none transition hover:text-white"
                         onClick={() => toggleProduct(id)}
+                        type="button"
                       >
                         ×
                       </button>
@@ -501,31 +538,42 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
                 </ul>
               ) : null}
             </div>
-          </fieldset>
+          </CouponSection>
 
           {error ? (
-            <p className="rounded-lg bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">{error}</p>
+            <div className="border-2 border-[#c0392b] bg-[#c0392b]/10 px-4 py-3">
+              <p className="text-sm font-bold text-[#c0392b]">⚠ {error}</p>
+            </div>
           ) : null}
+        </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-[#231f20]/10 pt-4">
-            <button
-              type="button"
-              className="inline-flex h-10 cursor-pointer items-center rounded-[12px] border border-[#cec7aa] bg-white px-4 text-xs font-semibold uppercase tracking-[0.06em] text-[#1e1c10] transition hover:bg-[#f6f1da]"
-              onClick={onClose}
-              disabled={submitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="inline-flex h-10 cursor-pointer items-center rounded-[12px] bg-[#1e1c10] px-5 text-xs font-semibold uppercase tracking-[0.06em] text-[#fee400] transition hover:bg-[#1e1c10]/90 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={submitting}
-            >
-              {submitting ? "Salvando..." : coupon ? "Atualizar" : "Criar"}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="flex items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
+          <button
+            className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={submitting}
+            onClick={onClose}
+            type="button"
+          >
+            Cancelar
+          </button>
+          <button
+            className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={submitting}
+            type="submit"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                Salvando...
+              </>
+            ) : coupon ? (
+              "Atualizar cupom"
+            ) : (
+              "Criar cupom"
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

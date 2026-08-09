@@ -143,7 +143,7 @@ export function InstallmentSettings({ initialConfig, initialIssue, onSaved }: In
               />
             </label>
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-[#1e1c10] px-4 text-xs font-semibold uppercase tracking-[0.06em] text-[#fee400] transition hover:bg-[#1e1c10]/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-[#1e1c10] px-4 text-xs font-semibold uppercase tracking-[0.06em] text-[#fee400] transition hover:bg-[#1e1c10]/90 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSaving}
               type="submit"
             >

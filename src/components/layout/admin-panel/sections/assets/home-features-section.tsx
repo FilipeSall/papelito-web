@@ -60,7 +60,7 @@ function HomeFeatureCard({
   promotionProducts,
   richTextContext,
   uploadingId,
-}: HomeFeatureCardProps) {
+}: Readonly<HomeFeatureCardProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const regionId = useId();
 
@@ -72,7 +72,7 @@ function HomeFeatureCard({
             <Image alt="" aria-hidden height={16} src={item.iconUrl} unoptimized width={16} />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/[.56]">
               Benefício {index + 1}
             </p>
             <p className="mt-1 truncate text-sm font-black uppercase tracking-tight text-[#1a1a1a]">
@@ -97,12 +97,11 @@ function HomeFeatureCard({
           isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div
+        <section
           aria-label={`Editor do benefício ${index + 1}`}
           className="overflow-hidden"
           id={regionId}
           inert={!isOpen}
-          role="region"
         >
           <div className="space-y-3 p-4">
             <div>
@@ -144,10 +143,10 @@ function HomeFeatureCard({
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#231f20]/10 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#231f20]/10 pt-4">
               <div className="min-w-0">
                 <p className={LABEL_CLASS}>Ícone SVG</p>
-                <p className="truncate text-xs text-[#231f20]/56">{item.iconUrl}</p>
+                <p className="truncate text-xs text-[#231f20]/[.56]">{item.iconUrl}</p>
               </div>
               <UploadButton
                 accept="image/svg+xml,.svg"
@@ -159,7 +158,7 @@ function HomeFeatureCard({
               />
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </article>
   );
@@ -174,7 +173,7 @@ export function HomeFeaturesSection({
   onSave,
   onUploadIcon,
   uploadingId,
-}: HomeFeaturesSectionProps) {
+}: Readonly<HomeFeaturesSectionProps>) {
   const validation = getHomeFeaturesValidation(items);
   const previewItems = items.map((item) => {
     const nodes = resolveRichTextDocument(
@@ -192,9 +191,9 @@ export function HomeFeaturesSection({
     <section className="mt-8 border-t-2 border-[#231f20]/10 pt-6" aria-labelledby="home-features-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+          <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/[.56]">
             <span aria-hidden className={DIAMOND_CLASS} />
-            Home
+            <span>Home</span>
           </p>
           <h4
             className="mt-2 text-xl font-black uppercase tracking-tight text-[#1a1a1a]"
@@ -247,9 +246,9 @@ export function HomeFeaturesSection({
       </div>
 
       <div className={`mt-5 ${SUBPANEL_CLASS}`}>
-        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/[.56]">
           <span aria-hidden className={DIAMOND_CLASS} />
-          Prévia
+          <span>Prévia</span>
         </p>
         <div className="mt-3 grid grid-cols-2 border-t-2 border-brand-yellow md:grid-cols-4">
           {previewItems.map((item, index) => (
@@ -257,12 +256,12 @@ export function HomeFeaturesSection({
               className={`flex min-h-20 items-center gap-3 px-3 py-3 ${index < previewItems.length - 1 ? "border-r border-[#f3f4f6]" : ""}`}
               key={`${item.id}-preview`}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffe500]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-yellow">
                 <Image alt="" aria-hidden height={14} src={item.iconUrl} unoptimized width={14} />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-black text-[#231f20]">{item.title}</p>
-                <p className="truncate text-[11px] text-[#99a1af]">{item.subtitle}</p>
+                <p className="truncate text-[11px] text-text-muted">{item.subtitle}</p>
               </div>
             </div>
           ))}

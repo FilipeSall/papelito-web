@@ -44,9 +44,10 @@ export function ProductSearchPicker({
   selectedIds,
   totalPages,
   totalProducts,
-}: ProductSearchPickerProps) {
+}: Readonly<ProductSearchPickerProps>) {
   const safeCurrentPage = Math.max(1, currentPage);
   const safeTotalPages = Math.max(1, totalPages);
+  const hasSearchTerm = filters.search.trim().length > 0;
   const categoryOptions = [
     { label: "Todas", value: "" },
     ...categories.map((category) => ({
@@ -66,59 +67,58 @@ export function ProductSearchPicker({
               Adicionar Produtos
             </h2>
           </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.1em] text-[#1a1a1a]/50">
+          <span className="text-[11px] font-black uppercase tracking-widest text-[#1a1a1a]/50">
             {totalProducts} {totalProducts === 1 ? "produto" : "produtos"}
           </span>
         </header>
 
         <form
-          className="space-y-2"
+          className="flex w-full max-w-md gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!hasSearchTerm) {
+              return;
+            }
             onApply();
           }}
         >
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a1a1a]/40"
-              strokeWidth={2}
-            />
-            <input
-              aria-label="Buscar produtos por nome, SKU ou ID"
-              className="h-11 w-full border-2 border-[#1a1a1a] bg-white pl-10 pr-4 text-sm leading-5 text-[#1a1a1a] outline-none transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSearching}
-              onChange={(event) => onFiltersChange({ search: event.target.value })}
-              placeholder={isSearching ? "Buscando..." : "Buscar por nome, SKU ou ID..."}
-              type="search"
-              value={filters.search}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <AdminSelectField
-                label="Categoria"
-                onChange={(value) => onFiltersChange({ category: value })}
-                options={categoryOptions}
-                placeholder="Todas"
-                value={filters.category}
-                variant="filter"
-              />
-            </div>
-            <button
-              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-1 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.1em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isSearching}
-              type="submit"
-            >
-              {isSearching ? "Filtrando..." : "Aplicar Filtros"}
-            </button>
-          </div>
+          <label className="sr-only" htmlFor="product-search">
+            Buscar produtos por nome, SKU ou ID
+          </label>
+          <input
+            className="h-10 min-w-0 flex-1 rounded-xl border border-[#231f20]/16 bg-white px-3 text-sm outline-none focus:border-[#231f20]/50 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSearching}
+            id="product-search"
+            name="search"
+            onChange={(event) => onFiltersChange({ search: event.target.value })}
+            placeholder="Nome, SKU ou ID"
+            type="search"
+            value={filters.search}
+          />
+          <button
+            className="shrink-0 rounded-xl bg-brand-yellow px-4 text-xs font-black uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSearching || !hasSearchTerm}
+            type="submit"
+          >
+            {isSearching ? "Buscando..." : "Buscar"}
+          </button>
         </form>
+
+        <div className="mt-2 w-full max-w-md">
+          <AdminSelectField
+            label="Categoria"
+            onChange={(value) => onFiltersChange({ category: value })}
+            options={categoryOptions}
+            placeholder="Todas"
+            value={filters.category}
+            variant="filter"
+          />
+        </div>
 
         {totalPages > 1 ? (
           <nav
             aria-label="Paginação de produtos"
-            className="mt-3 flex items-center justify-between gap-2 border-2 border-[#1a1a1a] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#1a1a1a]"
+            className="mt-3 flex items-center justify-between gap-2 border-2 border-[#1a1a1a] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1a1a1a]"
           >
             <span>
               Página {safeCurrentPage} de {safeTotalPages}
