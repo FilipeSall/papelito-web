@@ -1,6 +1,7 @@
 import type { ProductTypeId } from "../types/products-catalog";
 
 export type SpecificProductTypeId = Exclude<ProductTypeId, "todos">;
+type QueryParamValue = string | string[] | undefined;
 
 export const SPECIFIC_PRODUCT_TYPES: readonly SpecificProductTypeId[] = [
   "sedas",
@@ -77,7 +78,7 @@ export function resolveRootProductType(
   );
 }
 
-export function readSingleQueryParam(value: string | string[] | undefined) {
+export function readSingleQueryParam(value: QueryParamValue) {
   if (Array.isArray(value)) {
     return value[0];
   }
@@ -89,7 +90,7 @@ export function readSingleQueryParam(value: string | string[] | undefined) {
  * Lê `?tipo=`. Valor ausente, desconhecido ou inválido cai em `todos`.
  */
 export function normalizeProductTypeParam(
-  value: string | string[] | undefined,
+  value: QueryParamValue,
 ): ProductTypeId {
   const raw = normalizeTaxonomyText(readSingleQueryParam(value));
 
@@ -108,9 +109,14 @@ export function normalizeProductTypeParam(
  * Lê `?tipos=` (lista separada por vírgula). Entradas inválidas são descartadas.
  */
 export function normalizeSelectedTypesParam(
-  value: string | string[] | undefined,
+  value: QueryParamValue,
 ): SpecificProductTypeId[] {
-  const raw = Array.isArray(value) ? value : value ? [value] : [];
+  let raw: string[] = [];
+  if (Array.isArray(value)) {
+    raw = value;
+  } else if (value) {
+    raw = [value];
+  }
   const resolved = raw
     .flatMap((part) => part.split(","))
     .map((part) => QUERY_PARAM_LOOKUP.get(normalizeTaxonomyText(part)))
@@ -123,18 +129,18 @@ export function normalizeSelectedTypesParam(
  * Combina `?tipos=` (plural, aditivo) com `?tipo=` (singular, exclusivo).
  */
 export function resolveSelectedTypesFromParams(params: {
-  tipo?: string | string[];
-  tipos?: string | string[];
+  tipo?: QueryParamValue;
+  tipos?: QueryParamValue;
 }) {
   const queryType = normalizeProductTypeParam(params.tipo);
   const querySelectedTypes = normalizeSelectedTypesParam(params.tipos);
 
-  const selectedTypes =
-    querySelectedTypes.length > 0
-      ? querySelectedTypes
-      : queryType !== "todos"
-        ? [queryType as SpecificProductTypeId]
-        : [];
+  let selectedTypes: SpecificProductTypeId[] = [];
+  if (querySelectedTypes.length > 0) {
+    selectedTypes = querySelectedTypes;
+  } else if (queryType !== "todos") {
+    selectedTypes = [queryType as SpecificProductTypeId];
+  }
 
   return { queryType, selectedTypes };
 }

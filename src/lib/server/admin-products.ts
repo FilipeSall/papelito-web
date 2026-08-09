@@ -214,8 +214,9 @@ function normalizeTaxonomyKey(term: AdminProductTaxonomyTerm) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/&amp;/g, "e")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
 }
 
 function hasTaxonomyKey(term: AdminProductTaxonomyTerm, key: string) {
@@ -457,30 +458,64 @@ function buildProductsQuery(filters: AdminProductsFilters) {
   return params;
 }
 
-function buildWooProductPayload(payload: AdminProductPayload) {
-  const body: Record<string, unknown> = {};
+function setDefinedPayloadValue(
+  body: Record<string, unknown>,
+  key: string,
+  value: unknown,
+  transform: (value: unknown) => unknown = (value) => value,
+) {
+  if (value !== undefined) {
+    body[key] = transform(value);
+  }
+}
 
-  if (payload.name !== undefined) body.name = cleanText(payload.name);
-  if (payload.slug !== undefined) body.slug = cleanText(payload.slug);
-  if (payload.sku !== undefined) body.sku = cleanText(payload.sku);
-  if (payload.status !== undefined) body.status = cleanText(payload.status) || "draft";
-  if (payload.regularPrice !== undefined) body.regular_price = cleanText(payload.regularPrice);
-  if (payload.salePrice !== undefined) body.sale_price = cleanText(payload.salePrice);
-  if (payload.dateOnSaleFrom !== undefined) {
-    body.date_on_sale_from = payload.dateOnSaleFrom ? cleanText(payload.dateOnSaleFrom) : null;
+function cleanNullableText(value: unknown) {
+  return value ? cleanText(value) : null;
+}
+
+function finiteNumberOrNull(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function positiveIds(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
   }
-  if (payload.dateOnSaleTo !== undefined) {
-    body.date_on_sale_to = payload.dateOnSaleTo ? cleanText(payload.dateOnSaleTo) : null;
+
+  return value
+    .filter((id): id is number => Number.isInteger(id) && id > 0)
+    .map((id) => ({ id }));
+}
+
+function imagePayload(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
   }
-  if (payload.manageStock !== undefined) body.manage_stock = Boolean(payload.manageStock);
-  if (payload.stockQuantity !== undefined) {
-    body.stock_quantity =
-      typeof payload.stockQuantity === "number" && Number.isFinite(payload.stockQuantity)
-        ? payload.stockQuantity
-        : null;
-  }
-  if (payload.stockStatus !== undefined) body.stock_status = cleanText(payload.stockStatus);
-  if (payload.weight !== undefined) body.weight = cleanText(payload.weight);
+
+  return value
+    .filter((id): id is number => Number.isInteger(id) && id > 0)
+    .map((id, position) => ({ id, position }));
+}
+
+function addWooProductFields(body: Record<string, unknown>, payload: AdminProductPayload) {
+  setDefinedPayloadValue(body, "name", payload.name, cleanText);
+  setDefinedPayloadValue(body, "slug", payload.slug, cleanText);
+  setDefinedPayloadValue(body, "sku", payload.sku, cleanText);
+  setDefinedPayloadValue(body, "status", payload.status, (value) => cleanText(value) || "draft");
+  setDefinedPayloadValue(body, "regular_price", payload.regularPrice, cleanText);
+  setDefinedPayloadValue(body, "sale_price", payload.salePrice, cleanText);
+  setDefinedPayloadValue(body, "date_on_sale_from", payload.dateOnSaleFrom, cleanNullableText);
+  setDefinedPayloadValue(body, "date_on_sale_to", payload.dateOnSaleTo, cleanNullableText);
+}
+
+function addWooStockFields(body: Record<string, unknown>, payload: AdminProductPayload) {
+  setDefinedPayloadValue(body, "manage_stock", payload.manageStock, Boolean);
+  setDefinedPayloadValue(body, "stock_quantity", payload.stockQuantity, finiteNumberOrNull);
+  setDefinedPayloadValue(body, "stock_status", payload.stockStatus, cleanText);
+  setDefinedPayloadValue(body, "weight", payload.weight, cleanText);
+}
+
+function addWooDimensions(body: Record<string, unknown>, payload: AdminProductPayload) {
   if (payload.dimensions !== undefined) {
     body.dimensions = {
       height: cleanText(payload.dimensions.height),
@@ -488,27 +523,32 @@ function buildWooProductPayload(payload: AdminProductPayload) {
       width: cleanText(payload.dimensions.width),
     };
   }
-  if (payload.shortDescription !== undefined) {
-    body.short_description = payload.shortDescription;
-  }
-  if (payload.description !== undefined) {
-    body.description = payload.description;
-  }
-  if (payload.categories !== undefined) {
-    body.categories = payload.categories
-      .filter((id) => Number.isInteger(id) && id > 0)
-      .map((id) => ({ id }));
-  }
-  if (payload.tags !== undefined) {
-    body.tags = payload.tags
-      .filter((id) => Number.isInteger(id) && id > 0)
-      .map((id) => ({ id }));
-  }
-  if (payload.images !== undefined) {
-    body.images = payload.images
-      .filter((id) => Number.isInteger(id) && id > 0)
-      .map((id, position) => ({ id, position }));
-  }
+}
+
+function addWooProductContent(body: Record<string, unknown>, payload: AdminProductPayload) {
+  setDefinedPayloadValue(body, "short_description", payload.shortDescription);
+  setDefinedPayloadValue(body, "description", payload.description);
+}
+
+function addWooProductTaxonomies(body: Record<string, unknown>, payload: AdminProductPayload) {
+  setDefinedPayloadValue(body, "categories", payload.categories, positiveIds);
+  setDefinedPayloadValue(body, "tags", payload.tags, positiveIds);
+  setDefinedPayloadValue(
+    body,
+    "images",
+    payload.images,
+    imagePayload,
+  );
+}
+
+function buildWooProductPayload(payload: AdminProductPayload) {
+  const body: Record<string, unknown> = {};
+
+  addWooProductFields(body, payload);
+  addWooStockFields(body, payload);
+  addWooDimensions(body, payload);
+  addWooProductContent(body, payload);
+  addWooProductTaxonomies(body, payload);
 
   return body;
 }
