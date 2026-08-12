@@ -133,8 +133,10 @@ export function NotificationBell({ inverted = false }: Readonly<NotificationBell
       const result = await markAllNotificationsRead();
       setUnreadCount(result.unreadCount);
     } catch {
-      await refresh();
+      // O refresh abaixo restaura a contagem verdadeira.
     }
+
+    await refresh();
   }
 
   const badgeLabel = unreadCount > 9 ? "9+" : String(unreadCount);

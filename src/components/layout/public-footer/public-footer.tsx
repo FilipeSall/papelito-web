@@ -2,20 +2,12 @@ import { FooterLogo } from "./footer-logo";
 import { FooterNavColumn } from "./footer-nav-column";
 import { FooterCopyright } from "./footer-copyright";
 
+import { getPapelitoTaxonomy } from "@/features/catalog/services/get-papelito-categories";
 import type { ManagedImageAsset } from "@/types/home-assets";
 
 type PublicFooterProps = {
   logo?: ManagedImageAsset;
 };
-
-// TODO: Substituir por requisição ao backend — GET /api/navigation/footer
-// Links de produto, empresa e suporte devem ser configuráveis via CMS/backend.
-const productLinks = [
-  { label: "Sedas", href: "/produtos?tipo=sedas" },
-  { label: "Piteiras", href: "/produtos?tipo=piteiras" },
-  { label: "Filtros", href: "/produtos?tipo=filtros" },
-  { label: "Acessórios", href: "/produtos?tipo=acessorios" },
-];
 
 const companyLinks = [
   { label: "Site Oficial", href: "https://papelito.com.br" },
@@ -49,7 +41,13 @@ const supportLinks = [
  * <PublicFooter />
  * ```
  */
-export function PublicFooter({ logo }: PublicFooterProps) {
+export async function PublicFooter({ logo }: PublicFooterProps) {
+  const taxonomy = await getPapelitoTaxonomy();
+  const productLinks = taxonomy.categories.map((category) => ({
+    label: category.name,
+    href: `/produtos?tipo=${encodeURIComponent(category.slug)}`,
+  }));
+
   return (
     <footer className="w-full bg-brand-dark px-6 pb-0 pt-16 lg:px-43.5">
       <div className="mx-auto flex max-w-391 flex-col gap-12">

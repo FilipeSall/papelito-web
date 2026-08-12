@@ -63,7 +63,7 @@ export function CategoryEditorModal({
           </h3>
           <button
             aria-label="Fechar"
-            className="border-2 border-[#1a1a1a] bg-white p-1.5 text-[#1a1a1a] transition hover:bg-brand-yellow"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-white p-1.5 text-[#1a1a1a] transition hover:bg-brand-yellow"
             onClick={onClose}
             type="button"
           >
@@ -99,14 +99,14 @@ export function CategoryEditorModal({
 
         <div className="flex justify-end gap-3 border-t-2 border-[#1a1a1a] p-5">
           <button
-            className="border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow"
             onClick={onClose}
             type="button"
           >
             Cancelar
           </button>
           <button
-            className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffe500] shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:opacity-50"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffe500] shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             onClick={handleSubmit}
             type="button"

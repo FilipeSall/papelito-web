@@ -174,6 +174,29 @@ describe("useNotificationsPoll", () => {
     expect(getNotificationsMock).toHaveBeenCalledTimes(1);
   });
 
+  it("does not restore a stale unread count after the user marks all as read", async () => {
+    getUnreadNotificationCountMock.mockResolvedValue({ count: 3 });
+
+    const { rerender } = renderHook(() => useNotificationsPoll(), {
+      wrapper: createTestWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(useNotificationsStore.getState().unreadCount).toBe(3);
+    });
+
+    act(() => {
+      useNotificationsStore.getState().markAllRead();
+      useNotificationsStore.getState().setUnreadCount(0);
+    });
+
+    act(() => {
+      rerender();
+    });
+
+    expect(useNotificationsStore.getState().unreadCount).toBe(0);
+  });
+
   it("surfaces endpoint errors without breaking the UI", async () => {
     getUnreadNotificationCountMock.mockRejectedValue(new Error("boom"));
 

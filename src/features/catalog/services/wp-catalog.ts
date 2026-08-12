@@ -549,7 +549,6 @@ export function mapWpProductToHomeCard(
   product: WpProductNode,
   index: number,
 ): HomeProductCard {
-  const type = inferType(product);
   const prices = resolvePrices(product);
 
   return {

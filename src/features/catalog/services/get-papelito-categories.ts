@@ -106,9 +106,9 @@ export function resolveSubcategorySlugs(
 /**
  * Contagem por aba, a partir da taxonomia.
  *
- * A contagem usa a CATEGORIA PRINCIPAL, não a árvore: com `product_cat` um
- * produto pertencia à raiz e ao filho, e somar os dois dava `todos: 62` para 40
- * produtos. Aqui cada produto conta uma vez, por construção.
+ * A contagem usa a CATEGORIA PRINCIPAL, não a árvore: somar raiz e filho faria
+ * `todos` contar o mesmo produto duas vezes. Aqui cada produto conta uma vez,
+ * por construção.
  */
 export function buildTabCounts(taxonomy: PapelitoTaxonomy) {
   const counts: Record<string, number> = { todos: 0 };

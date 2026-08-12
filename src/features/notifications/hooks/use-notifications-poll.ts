@@ -42,6 +42,8 @@ export function useNotificationsPoll() {
     revalidateOnFocus: false,
   });
 
+  const mutateList = list.mutate;
+
   useEffect(() => {
     if (!count.data) {
       return;
@@ -50,11 +52,11 @@ export function useNotificationsPoll() {
     setUnreadCount(count.data.count);
 
     if (previousCountRef.current !== null && count.data.count > previousCountRef.current) {
-      void list.mutate();
+      void mutateList();
     }
 
     previousCountRef.current = count.data.count;
-  }, [count.data, list, setUnreadCount]);
+  }, [count.data, mutateList, setUnreadCount]);
 
   useEffect(() => {
     if (list.data) {

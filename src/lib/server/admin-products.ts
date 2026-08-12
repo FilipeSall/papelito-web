@@ -378,8 +378,7 @@ function buildProductsQuery(filters: AdminProductsFilters) {
   }
 
   // `papelito_category` é entendido pela REST do WooCommerce graças a um filtro
-  // registrado no plugin. Assim o painel nunca precisa saber que `product_cat`
-  // existe, e a paginação continua acontecendo no banco.
+  // registrado no plugin, preservando a paginação no banco.
   const category = toPositiveInt(filters.category, 0);
   if (category > 0) {
     params.set("papelito_category", String(category));
@@ -538,7 +537,7 @@ export async function getAdminProductsSnapshot(
   ]);
 
   if (productsResult.ok) {
-    // Os chips da lista vêm da taxonomia Papelito, não de `product_cat`.
+    // Os chips da lista vêm da taxonomia Papelito.
     const taxonomyByProduct = await getProductsTaxonomyMap(
       accessToken,
       rawProducts.map((product) => product.id),

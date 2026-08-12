@@ -141,8 +141,6 @@ export function buildPayload(
     !changedFields || changedFields.has(field);
   const payload: Record<string, unknown> = {};
 
-  // `categories` NÃO é enviado ao WooCommerce: quem escreve `product_cat` é o
-  // dual-write, a partir da taxonomia Papelito.
   if (hasChanged("dateOnSaleFrom")) payload.dateOnSaleFrom = draft.dateOnSaleFrom || null;
   if (hasChanged("dateOnSaleTo")) payload.dateOnSaleTo = draft.dateOnSaleTo || null;
   if (hasChanged("description")) payload.description = draft.description;

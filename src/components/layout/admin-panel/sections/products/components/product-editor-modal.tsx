@@ -144,7 +144,7 @@ export function ProductEditorModal({
         >
           <button
             aria-label="Fechar modal"
-            className="group absolute right-5 top-5 z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#231f20]/14 bg-white/92 text-[#231f20] shadow-[0_10px_24px_rgba(35,31,32,0.12)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-[#231f20]/28 hover:bg-[#231f20] hover:text-[#ffe500] hover:shadow-[0_16px_34px_rgba(35,31,32,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#231f20]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf7ef]"
+            className="group absolute right-5 top-5 z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#231f20]/14 bg-white/92 text-[#231f20] shadow-[0_10px_24px_rgba(35,31,32,0.12)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-[#231f20]/28 hover:bg-[#231f20] hover:text-brand-yellow hover:shadow-[0_16px_34px_rgba(35,31,32,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#231f20]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf7ef]"
             onClick={onClose}
             type="button"
           >
@@ -165,13 +165,12 @@ export function ProductEditorModal({
           />
 
           {notice ? (
-            <p
+            <output
               aria-live="polite"
               className="border-b border-[#d4c8a4] bg-white px-6 py-3 text-sm text-[#231f20]/78"
-              role="status"
             >
               {notice}
-            </p>
+            </output>
           ) : null}
 
           <div className="grid max-h-[calc(100vh-8rem)] gap-6 overflow-y-auto p-6 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
@@ -201,7 +200,7 @@ export function ProductEditorModal({
               />
 
               <ModalSection
-                helpText="A classificação da Papelito. O WooCommerce passa a ser sincronizado a partir daqui, não o contrário."
+                helpText="A classificação oficial do produto na Papelito."
                 title="Classificação"
               >
                 <TaxonomyPicker
@@ -249,7 +248,7 @@ function ModalHeader({
   onSave,
   selectedProduct,
   selectedProductId,
-}: {
+}: Readonly<{
   draftName: string;
   isCreatingTag: boolean;
   isSaving: boolean;
@@ -257,7 +256,7 @@ function ModalHeader({
   onSave: () => void | Promise<boolean>;
   selectedProduct: UseAdminProductsManagerReturn["selectedProduct"];
   selectedProductId: UseAdminProductsManagerReturn["selectedProductId"];
-}) {
+}>) {
   return (
     <div className="flex flex-col gap-4 border-b border-[#d4c8a4] px-6 py-5 pr-20 md:flex-row md:items-center md:justify-between">
       <div>
@@ -295,10 +294,10 @@ function ModalHeader({
 function BasicInfoSection({
   draft,
   updateDraft,
-}: {
+}: Readonly<{
   draft: ProductDraft;
   updateDraft: DraftUpdater;
-}) {
+}>) {
   return (
     <ModalSection title="Informações basicas">
       <div className="grid gap-4">
@@ -338,12 +337,12 @@ function PricingSection({
   isPromotionEnabled,
   onTogglePromotion,
   updateDraft,
-}: {
+}: Readonly<{
   draft: ProductDraft;
   isPromotionEnabled: boolean;
   onTogglePromotion: (isEnabled: boolean) => void;
   updateDraft: DraftUpdater;
-}) {
+}>) {
   const hasInvalidRegularPrice = shouldHighlightPriceField(draft.regularPrice);
   const hasInvalidSalePrice = Boolean(draft.salePrice.trim()) && !hasValidProductPrice(draft.salePrice);
 
@@ -400,16 +399,16 @@ function DimensionsSection({
   draft,
   highlights = { weight: false, length: false, width: false, height: false },
   updateDraft,
-}: {
+}: Readonly<{
   draft: ProductDraft;
-  highlights?: {
+  highlights?: Readonly<{
     weight: boolean;
     length: boolean;
     width: boolean;
     height: boolean;
-  };
+  }>;
   updateDraft: DraftUpdater;
-}) {
+}>) {
   const anyMissing =
     highlights.weight || highlights.length || highlights.width || highlights.height;
 
@@ -462,10 +461,10 @@ function DimensionsSection({
 function DescriptionsSection({
   draft,
   updateDraft,
-}: {
+}: Readonly<{
   draft: ProductDraft;
   updateDraft: DraftUpdater;
-}) {
+}>) {
   return (
     <ModalSection title="Descrições">
       <label className="grid gap-2">
@@ -494,13 +493,13 @@ function ImagesSection({
   onFileChange,
   onMoveToCover,
   onRemoveImage,
-}: {
+}: Readonly<{
   draft: ProductDraft;
   isUploading: boolean;
   onFileChange: (event: ChangeEvent<HTMLInputElement>, target: ImageUploadTarget) => void;
   onMoveToCover: (id: string) => void;
   onRemoveImage: (id: string) => void;
-}) {
+}>) {
   return (
     <ModalSection
       action={
@@ -554,8 +553,8 @@ function ImagesSection({
           {draft.images.slice(0, 4).map((image, index) => (
             <div
               className={[
-                "group relative aspect-square overflow-hidden rounded-[4px] border bg-[#f1ead9]",
-                index === 0 ? "border-2 border-[#ffe500]" : "border-[#c9bd96]",
+                "group relative aspect-square overflow-hidden rounded-sm border bg-[#f1ead9]",
+                index === 0 ? "border-2 border-brand-yellow" : "border-[#c9bd96]",
               ].join(" ")}
               key={`${image.id}-${image.src}-${index}`}
             >
@@ -572,7 +571,7 @@ function ImagesSection({
               {index > 0 ? (
                 <div className="absolute inset-x-1 bottom-1 hidden gap-1 group-hover:flex">
                   <button
-                    className="flex-1 cursor-pointer bg-[#ffe500] px-1 py-1 text-[9px] font-bold uppercase text-[#231f20]"
+                    className="flex-1 cursor-pointer bg-brand-yellow px-1 py-1 text-[9px] font-bold uppercase text-[#231f20]"
                     onClick={() => onMoveToCover(String(image.id))}
                     type="button"
                   >
@@ -600,12 +599,12 @@ function ImagesSection({
 function AdditionalImageInput({
   isUploading,
   onFileChange,
-}: {
+}: Readonly<{
   isUploading: boolean;
   onFileChange: (event: ChangeEvent<HTMLInputElement>, target: ImageUploadTarget) => void;
-}) {
+}>) {
   return (
-    <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[4px] border border-dashed border-[#c9bd96] bg-[#f6f0df] text-2xl font-light text-[#231f20] transition hover:border-[#231f20]">
+    <label className="flex aspect-square cursor-pointer items-center justify-center rounded-sm border border-dashed border-[#c9bd96] bg-[#f6f0df] text-2xl font-light text-[#231f20] transition hover:border-[#231f20]">
       {isUploading ? (
         <span
           aria-hidden

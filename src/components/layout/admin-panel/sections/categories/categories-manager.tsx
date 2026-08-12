@@ -19,7 +19,7 @@ function facetRank(facet: string) {
 
 type Notice = { text: string; tone: "error" | "success" } | null;
 
-export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapshot }) {
+export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxonomySnapshot }>) {
   const router = useRouter();
   const [notice, setNotice] = useState<Notice>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -163,7 +163,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
           </p>
         </div>
         <button
-          className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffe500] shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:opacity-50"
+          className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isBusy}
           onClick={() => setCategoryModal("new")}
           type="button"
@@ -182,17 +182,17 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
       ) : null}
 
       {notice ? (
-        <p
+        <output
+          aria-live="polite"
           className={[
             "border-2 bg-white px-4 py-3 text-sm font-semibold",
             notice.tone === "error"
               ? "border-[#c0392b] text-[#c0392b]"
               : "border-[#1a1a1a] text-[#1a1a1a]",
           ].join(" ")}
-          role="status"
         >
           {notice.text}
-        </p>
+        </output>
       ) : null}
 
       {categories.length === 0 ? (
@@ -235,7 +235,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       aria-label={`Subir ${category.name}`}
-                      className="border-2 border-[#1a1a1a] bg-white p-2 text-[#1a1a1a] transition hover:bg-brand-yellow disabled:opacity-30"
+                      className="cursor-pointer border-2 border-[#1a1a1a] bg-white p-2 text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-30"
                       disabled={isBusy || index === 0}
                       onClick={() => move(category.id, -1)}
                       type="button"
@@ -244,7 +244,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                     </button>
                     <button
                       aria-label={`Descer ${category.name}`}
-                      className="border-2 border-[#1a1a1a] bg-white p-2 text-[#1a1a1a] transition hover:bg-brand-yellow disabled:opacity-30"
+                      className="cursor-pointer border-2 border-[#1a1a1a] bg-white p-2 text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-30"
                       disabled={isBusy || index === categories.length - 1}
                       onClick={() => move(category.id, 1)}
                       type="button"
@@ -252,7 +252,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                       <ChevronDown aria-hidden className="h-4 w-4" />
                     </button>
                     <button
-                      className="border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:opacity-50"
+                      className="cursor-pointer border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isBusy}
                       onClick={() => setCategoryModal(category)}
                       type="button"
@@ -261,7 +261,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                     </button>
                     {isArchived ? (
                       <button
-                        className="flex items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:opacity-50"
+                        className="flex cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isBusy}
                         onClick={() =>
                           void run(
@@ -279,7 +279,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                       </button>
                     ) : (
                       <button
-                        className="flex items-center gap-2 border-2 border-[#c0392b] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:opacity-50"
+                        className="flex cursor-pointer items-center gap-2 border-2 border-[#c0392b] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isBusy}
                         onClick={() =>
                           void run(
@@ -329,10 +329,10 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                               </span>
                             </span>
                             <span className="flex shrink-0 gap-1">
-                              <button aria-label={`Editar ${subcategory.name}`} className="border-2 border-[#1a1a1a] p-1.5" disabled={isBusy || Boolean(subcategory.archivedAt)} onClick={() => setSubcategoryModal({ categoryId: category.id, categoryName: category.name, subcategory })} type="button"><Pencil aria-hidden className="h-3.5 w-3.5" /></button>
-                              <button aria-label={`Subir ${subcategory.name}`} className="border-2 border-[#1a1a1a] p-1.5" disabled={isBusy || subcategories.indexOf(subcategory) === 0} onClick={() => moveSubcategory(category, subcategory.id, -1)} type="button"><ChevronUp aria-hidden className="h-3.5 w-3.5" /></button>
-                              <button aria-label={`Descer ${subcategory.name}`} className="border-2 border-[#1a1a1a] p-1.5" disabled={isBusy || subcategories.indexOf(subcategory) === subcategories.length - 1} onClick={() => moveSubcategory(category, subcategory.id, 1)} type="button"><ChevronDown aria-hidden className="h-3.5 w-3.5" /></button>
-                              {!isSubArchived ? <button aria-label={`Arquivar ${subcategory.name}`} className="border-2 border-[#c0392b] p-1.5 text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:opacity-40" disabled={isBusy} onClick={() => void run(() => fetch(`/api/admin/subcategories/${subcategory.id}`, { method: "DELETE" }), "Subcategoria arquivada.")} type="button"><Trash2 aria-hidden className="h-3.5 w-3.5" /></button> : null}
+                              <button aria-label={`Editar ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || Boolean(subcategory.archivedAt)} onClick={() => setSubcategoryModal({ categoryId: category.id, categoryName: category.name, subcategory })} type="button"><Pencil aria-hidden className="h-3.5 w-3.5" /></button>
+                              <button aria-label={`Subir ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || subcategories.indexOf(subcategory) === 0} onClick={() => moveSubcategory(category, subcategory.id, -1)} type="button"><ChevronUp aria-hidden className="h-3.5 w-3.5" /></button>
+                              <button aria-label={`Descer ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || subcategories.indexOf(subcategory) === subcategories.length - 1} onClick={() => moveSubcategory(category, subcategory.id, 1)} type="button"><ChevronDown aria-hidden className="h-3.5 w-3.5" /></button>
+                              {!isSubArchived ? <button aria-label={`Arquivar ${subcategory.name}`} className="cursor-pointer border-2 border-[#c0392b] p-1.5 text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy} onClick={() => void run(() => fetch(`/api/admin/subcategories/${subcategory.id}`, { method: "DELETE" }), "Subcategoria arquivada.")} type="button"><Trash2 aria-hidden className="h-3.5 w-3.5" /></button> : null}
                             </span>
                           </li>
                         );
@@ -341,7 +341,7 @@ export function CategoriesManager({ snapshot }: { snapshot: AdminTaxonomySnapsho
                   )}
 
                   <button
-                    className="w-full border-2 border-dashed border-[#1a1a1a] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:opacity-50"
+                    className="w-full cursor-pointer border-2 border-dashed border-[#1a1a1a] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={isBusy}
                     onClick={() =>
                       setSubcategoryModal({

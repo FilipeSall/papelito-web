@@ -146,8 +146,8 @@ describe("getProductsCatalog — filtro por categoria", () => {
     expect(payload.items.every((item) => item.type === "sedas")).toBe(true);
     expect(payload.items.every((item) => item.name.startsWith("Seda"))).toBe(true);
 
-    // A query não filtra mais por categoria no WordPress: sem `product_cat`, a
-    // narrowing acontece em memória pela categoria Papelito do produto.
+    // A query não filtra mais por categoria no WordPress; o narrowing acontece
+    // em memória pela categoria Papelito do produto.
     expect(productsCall()?.variables).not.toHaveProperty("categoryIn");
   });
 

@@ -61,7 +61,7 @@ describe("tipo do produto pela taxonomia Papelito", () => {
     expect(item.type).toBe("sedas");
   });
 
-  it("ignora product_cat quando a categoria Papelito está presente", () => {
+  it("usa a categoria Papelito como identificador da interface", () => {
     const item = mapWpProductToCatalogItem(
       node({
         papelitoCategory: { databaseId: 2, name: "Piteiras", slug: "piteiras" },

@@ -196,8 +196,6 @@ describe("useAdminProductsManager", () => {
       subcategoryIds: [],
     });
 
-    // O produto não leva mais `categories`: quem escreve product_cat é o
-    // dual-write no WordPress, a partir da taxonomia.
     const [, productRequest] = productCalls(fetchMock)[0];
     expect(JSON.parse(String(productRequest.body))).not.toHaveProperty("categories");
   });

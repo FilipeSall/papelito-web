@@ -153,9 +153,6 @@ describe("pricing and shipping draft values", () => {
       taxonomySubcategoryIds: ["11"],
     };
 
-    // Quem escreve `product_cat` é o dual-write no WordPress, a partir da
-    // taxonomia Papelito. Dois writers para o mesmo dado é como a classificação
-    // dessincroniza.
     expect(buildPayload(draft)).not.toHaveProperty("categories");
     expect(buildPayload(draft, new Set(["name"]))).toEqual({ name: "Produto" });
   });

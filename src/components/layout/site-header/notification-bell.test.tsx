@@ -103,6 +103,10 @@ describe("NotificationBell", () => {
       expect(markAllNotificationsReadMock).toHaveBeenCalledTimes(1);
       expect(useNotificationsStore.getState().unreadCount).toBe(0);
     });
+
+    expect(screen.queryByText("9+")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Notificações" })).toBeInTheDocument();
+    expect(refreshMock).toHaveBeenCalled();
   });
 
   it("shows a blocking loader while redirecting from a notification", async () => {

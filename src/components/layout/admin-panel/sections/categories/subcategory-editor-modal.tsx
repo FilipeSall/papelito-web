@@ -33,18 +33,27 @@ export function SubcategoryEditorModal({
   isSaving,
   onClose,
   onSave,
-}: {
+}: Readonly<{
   categoryName: string;
   subcategory?: AdminSubcategory | null;
   isSaving: boolean;
   onClose: () => void;
   onSave: (values: SubcategoryFormValues) => void;
-}) {
+}>) {
   const [name, setName] = useState(subcategory?.name ?? "");
   const [slug, setSlug] = useState(subcategory?.slug ?? "");
   const [facet, setFacet] = useState(subcategory?.facet ?? "tipo");
   const [isActive, setIsActive] = useState(subcategory?.isActive ?? true);
   const [error, setError] = useState("");
+  let submitLabel = "Criar";
+
+  if (subcategory) {
+    submitLabel = "Salvar";
+  }
+
+  if (isSaving) {
+    submitLabel = "Salvando…";
+  }
 
   function handleSubmit() {
     if (!name.trim()) {
@@ -57,7 +66,7 @@ export function SubcategoryEditorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#231f20]/70 p-4">
+    <div className="fixed inset-0 z-80 flex items-center justify-center bg-[#231f20]/70 p-4">
       <div className="w-full max-w-md border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
         <div className="h-2 w-full bg-brand-yellow" />
         <div className="flex items-center justify-between gap-4 border-b-2 border-[#1a1a1a] p-5">
@@ -66,7 +75,7 @@ export function SubcategoryEditorModal({
           </h3>
           <button
             aria-label="Fechar"
-            className="border-2 border-[#1a1a1a] bg-white p-1.5 text-[#1a1a1a] transition hover:bg-brand-yellow"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-white p-1.5 text-[#1a1a1a] transition hover:bg-brand-yellow"
             onClick={onClose}
             type="button"
           >
@@ -120,7 +129,7 @@ export function SubcategoryEditorModal({
 
           <label className="flex items-center gap-2 text-sm font-semibold text-[#1a1a1a]">
             <input checked={isActive} onChange={(event) => setIsActive(event.target.checked)} type="checkbox" />
-            Subcategoria ativa
+            <span>Subcategoria ativa</span>
           </label>
 
           {error ? (
@@ -130,19 +139,19 @@ export function SubcategoryEditorModal({
 
         <div className="flex justify-end gap-3 border-t-2 border-[#1a1a1a] p-5">
           <button
-            className="border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow"
             onClick={onClose}
             type="button"
           >
             Cancelar
           </button>
           <button
-            className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffe500] shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:opacity-50"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             onClick={handleSubmit}
             type="button"
           >
-            {isSaving ? "Salvando…" : subcategory ? "Salvar" : "Criar"}
+            {submitLabel}
           </button>
         </div>
       </div>
