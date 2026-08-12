@@ -12,6 +12,7 @@ export interface CatalogSearchResponse {
 export interface CatalogSearchInput {
   search: string;
   categorySlugs: string[];
+  subcategorySlugs: string[];
   minPrice: number | null;
   maxPrice: number | null;
   page: number;
@@ -53,6 +54,9 @@ export async function searchCatalogProducts(
 
   if (input.categorySlugs.length > 0) {
     params.set("categories", input.categorySlugs.join(","));
+  }
+  if (input.subcategorySlugs.length > 0) {
+    params.set("subcategories", input.subcategorySlugs.join(","));
   }
   if (input.minPrice !== null) {
     params.set("preco_min", String(input.minPrice));

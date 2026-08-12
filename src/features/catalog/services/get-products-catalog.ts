@@ -5,10 +5,12 @@ import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
 import {
-  getCategoryFilterForTypes,
-  getCategoryTypeBySlug,
-  getTabCounts,
-} from "./get-wp-product-categories";
+  buildTabCounts,
+  getPapelitoTaxonomy,
+  resolveCategorySlugs,
+  resolveSubcategorySlugs,
+  type PapelitoCategory,
+} from "./get-papelito-categories";
 import {
   fetchAllWpProductsResult,
   fetchWpProductsResult,
@@ -18,7 +20,7 @@ import {
 import { searchCatalogProducts } from "./catalog-search";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
-import { SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
+import { isTaxonomySlug, SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
@@ -64,13 +66,14 @@ export interface GetProductsCatalogInput {
   type?: ProductTypeId;
   collection?: ProductCollectionId;
   selectedTypes?: Exclude<ProductTypeId, "todos">[];
+  selectedSubcategories?: string[];
   minPrice?: number | null;
   maxPrice?: number | null;
   perPage?: number;
   search?: string;
 }
 
-const TYPE_LABEL: Record<ProductTypeId, string> = {
+const TYPE_LABEL: Record<string, string> = {
   todos: "TODOS",
   sedas: "SEDAS",
   piteiras: "PITEIRAS",
@@ -78,7 +81,7 @@ const TYPE_LABEL: Record<ProductTypeId, string> = {
   acessorios: "ACESSÓRIOS",
 };
 
-const CATEGORY_LABEL: Record<Exclude<ProductTypeId, "todos">, string> = {
+const CATEGORY_LABEL: Record<string, string> = {
   sedas: "Seda",
   piteiras: "Piteira",
   filtros: "Filtro",
@@ -132,9 +135,7 @@ function normalizeSelectedTypes(
     const normalized = selectedTypes.filter(
       (item): item is Exclude<ProductTypeId, "todos"> =>
         typeof item === "string" &&
-        SPECIFIC_PRODUCT_TYPES.includes(
-          item as Exclude<ProductTypeId, "todos">,
-        ),
+        isTaxonomySlug(item) && item !== "todos",
     );
 
     return Array.from(new Set(normalized));
@@ -145,6 +146,23 @@ function normalizeSelectedTypes(
   }
 
   return [];
+}
+
+/**
+ * Subcategoria e slug livre: a lista vive no banco e cresce sem deploy. So o
+ * formato e validado aqui; o que nao existir simplesmente nao casa com nenhum
+ * produto, e o resultado vem vazio — fail-closed por construcao.
+ */
+function normalizeSelectedSubcategories(value: string[] | undefined) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalized = value
+    .map((slug) => (typeof slug === "string" ? slug.trim().toLowerCase() : ""))
+    .filter((slug) => /^[a-z0-9-]+$/.test(slug));
+
+  return Array.from(new Set(normalized));
 }
 
 function normalizeCollection(
@@ -296,6 +314,7 @@ function mapMockProductToCatalogItem(
   return {
     id: product.id,
     category: CATEGORY_LABEL[type],
+    subcategories: [],
     name,
     badge: inferBadge(product, type),
     originalPrice,
@@ -332,6 +351,7 @@ interface EmptyPayloadInput {
   minPrice: number | null;
   maxPrice: number | null;
   perPage: number;
+  selectedSubcategories: string[];
   sourceStatus?: CatalogSourceStatus;
 }
 
@@ -344,6 +364,7 @@ function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
     maxPrice: input.maxPrice,
     activeType: input.activeType,
     activeCollection: input.activeCollection,
+    selectedSubcategories: input.selectedSubcategories,
     totalItems: 0,
     totalPages: 1,
     currentPage: 1,
@@ -356,6 +377,7 @@ function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
 
 interface NormalizedCatalogInput {
   selectedTypes: Exclude<ProductTypeId, "todos">[];
+  selectedSubcategories: string[];
   activeCollection: ProductCollectionId;
   activeType: ProductTypeId;
   minPrice: number | null;
@@ -383,6 +405,7 @@ function normalizeCatalogInput(
 
   return {
     selectedTypes,
+    selectedSubcategories: normalizeSelectedSubcategories(input.selectedSubcategories),
     activeCollection: normalizeCollection(input.collection),
     activeType: selectedTypes.length === 1 ? selectedTypes[0] : "todos",
     minPrice,
@@ -394,32 +417,37 @@ function normalizeCatalogInput(
 }
 
 function buildTabs(
-  counts: Record<ProductTypeId, number>,
+  counts: Record<string, number>,
+  categories: PapelitoCategory[] = [],
 ): ProductsCatalogTab[] {
   return [
-    { id: "todos", label: TYPE_LABEL.todos, count: counts.todos },
-    ...SPECIFIC_PRODUCT_TYPES.map((type) => ({
-      id: type,
-      label: TYPE_LABEL[type],
-      count: counts[type],
+    { id: "todos", label: "TODOS", count: counts.todos ?? 0 },
+    ...categories.map((category) => ({
+      id: category.slug,
+      label: category.name.toLocaleUpperCase("pt-BR"),
+      count: counts[category.slug] ?? 0,
     })),
   ];
 }
 
 function buildMockTabs(items: ProductsCatalogItem[]): ProductsCatalogTab[] {
-  const counts: Record<ProductTypeId, number> = {
-    todos: items.length,
-    sedas: 0,
-    piteiras: 0,
-    filtros: 0,
-    acessorios: 0,
-  };
+  const counts: Record<string, number> = { todos: items.length };
+
+  for (const type of SPECIFIC_PRODUCT_TYPES) {
+    counts[type] = 0;
+  }
 
   for (const item of items) {
     counts[item.type] += 1;
   }
 
-  return buildTabs(counts);
+  return buildTabs(
+    counts,
+    SPECIFIC_PRODUCT_TYPES.map((slug) => ({
+      slug,
+      name: TYPE_LABEL[slug] ?? slug,
+    })) as PapelitoCategory[],
+  );
 }
 
 async function loadMockCatalog(): Promise<
@@ -456,6 +484,7 @@ function buildSearchPayload(
     maxPrice: input.maxPrice,
     activeType: input.activeType,
     activeCollection: input.activeCollection,
+    selectedSubcategories: input.selectedSubcategories,
     totalItems: searchResult.total,
     totalPages: Math.max(
       1,
@@ -472,13 +501,13 @@ function buildSearchPayload(
 async function loadSearchCatalog(
   input: NormalizedCatalogInput,
   categorySlugs: string[],
-  typeBySlug: Awaited<ReturnType<typeof getCategoryTypeBySlug>>,
   tabs: ProductsCatalogTab[],
   flashSaleCampaign: FlashSaleCampaign,
 ): Promise<ProductsCatalogPayload> {
   const searchResult = await searchCatalogProducts({
     search: input.search,
     categorySlugs: input.selectedTypes.length > 0 ? categorySlugs : [],
+    subcategorySlugs: input.selectedSubcategories,
     minPrice: input.minPrice,
     maxPrice: input.maxPrice,
     page: input.currentPage,
@@ -490,7 +519,7 @@ async function loadSearchCatalog(
   );
   const products = searchHydration.products.map((product, index) =>
     applyFlashSaleToCatalogItem(
-      mapWpProductToCatalogItem(product, index, typeBySlug),
+      mapWpProductToCatalogItem(product, index),
       flashSaleCampaign,
     ),
   );
@@ -520,8 +549,6 @@ function getCampaignProductIds(
 
 async function loadWpCatalogItems(
   input: NormalizedCatalogInput,
-  categorySlugs: string[],
-  typeBySlug: Awaited<ReturnType<typeof getCategoryTypeBySlug>>,
   flashSaleCampaign: FlashSaleCampaign,
 ): Promise<CatalogItemsResult> {
   const campaignProductIds = getCampaignProductIds(
@@ -532,7 +559,6 @@ async function loadWpCatalogItems(
   const [catalogResult, campaignResult] = await Promise.all([
     fetchAllWpProductsResult(
       {
-        categoryIn: input.selectedTypes.length > 0 ? categorySlugs : undefined,
         minPrice: input.minPrice,
         maxPrice: input.maxPrice,
       },
@@ -565,7 +591,7 @@ async function loadWpCatalogItems(
   const items = markNewArrivals(
     mergedProducts
       .map((product, index) =>
-        mapWpProductToCatalogItem(product, index, typeBySlug),
+        mapWpProductToCatalogItem(product, index),
       )
       .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign)),
   );
@@ -579,20 +605,28 @@ async function loadWpCatalogItems(
 async function loadWpCatalog(
   input: NormalizedCatalogInput,
 ): Promise<ProductsCatalogPayload> {
-  const [categoryFilter, typeBySlug, tabCounts, flashSaleCampaign] =
-    await Promise.all([
-      getCategoryFilterForTypes(input.selectedTypes),
-      getCategoryTypeBySlug(),
-      getTabCounts(),
-      getHomeFlashSale(),
-    ]);
-  const tabs = buildTabs(tabCounts);
+  const [taxonomy, flashSaleCampaign] = await Promise.all([
+    getPapelitoTaxonomy(),
+    getHomeFlashSale(),
+  ]);
+  const tabs = buildTabs(buildTabCounts(taxonomy), taxonomy.categories);
+  const categoryFilter = resolveCategorySlugs(taxonomy, input.selectedTypes);
+  const subcategoryFilter = categoryFilter.resolved.length === 1
+    ? resolveSubcategorySlugs(
+        taxonomy,
+        categoryFilter.resolved[0],
+        input.selectedSubcategories,
+      )
+    : { resolved: input.selectedSubcategories, unresolved: false };
 
-  if (categoryFilter.unresolved.length > 0) {
+  // Fail-closed: categoria pedida que não existe na taxonomia zera o catálogo, em
+  // vez de o filtro ser ignorado. Taxonomia indisponível é OUTRA coisa — vira
+  // `sourceStatus: unavailable`, não catálogo vazio.
+  if (categoryFilter.unresolved.length > 0 || subcategoryFilter.unresolved || !taxonomy.available) {
     console.warn(
-      categoryFilter.available
-        ? "[products-catalog] Categoria sem termo correspondente no WordPress; nenhum produto será listado."
-        : "[products-catalog] Taxonomia indisponível no WPGraphQL; listagem vai para estado de erro.",
+      taxonomy.available
+        ? "[products-catalog] Categoria inexistente na taxonomia; nenhum produto será listado."
+        : "[products-catalog] Taxonomia indisponível; listagem vai para estado de erro.",
       categoryFilter.unresolved.join(", "),
     );
 
@@ -601,30 +635,25 @@ async function loadWpCatalog(
       selectedTypes: input.selectedTypes,
       activeType: input.activeType,
       activeCollection: input.activeCollection,
+      selectedSubcategories: subcategoryFilter.resolved,
       minPrice: input.minPrice,
       maxPrice: input.maxPrice,
       perPage: input.perPage,
-      sourceStatus: categoryFilter.available ? "ok" : "unavailable",
+      sourceStatus: taxonomy.available ? "ok" : "unavailable",
     });
   }
 
-  if (input.search) {
-    return loadSearchCatalog(
-      input,
-      categoryFilter.slugs,
-      typeBySlug,
-      tabs,
-      flashSaleCampaign,
-    );
+  const scopedInput = {
+    ...input,
+    selectedSubcategories: subcategoryFilter.resolved,
+  };
+
+  if (scopedInput.search) {
+    return loadSearchCatalog(scopedInput, categoryFilter.resolved, tabs, flashSaleCampaign);
   }
 
-  const catalog = await loadWpCatalogItems(
-    input,
-    categoryFilter.slugs,
-    typeBySlug,
-    flashSaleCampaign,
-  );
-  return buildCatalogPayload(input, catalog.items, tabs, catalog.sourceStatus);
+  const catalog = await loadWpCatalogItems(scopedInput, flashSaleCampaign);
+  return buildCatalogPayload(scopedInput, catalog.items, tabs, catalog.sourceStatus, taxonomy);
 }
 
 function matchesCollection(
@@ -641,6 +670,7 @@ function matchesCollection(
 function filterCatalogItems(
   items: ProductsCatalogItem[],
   input: NormalizedCatalogInput,
+  taxonomy?: Awaited<ReturnType<typeof getPapelitoTaxonomy>>,
 ) {
   return items.filter((item) => {
     if (
@@ -651,6 +681,35 @@ function filterCatalogItems(
     }
     if (!matchesCollection(item, input.activeCollection)) {
       return false;
+    }
+    if (input.selectedSubcategories.length > 0) {
+      const category = taxonomy?.categories.find((candidate) => candidate.slug === item.type);
+
+      if (!category) {
+        // Mocks não carregam a árvore; preservam a semântica antiga apenas
+        // nesse modo de desenvolvimento.
+        if (!input.selectedSubcategories.some((slug) => item.subcategories.includes(slug))) {
+          return false;
+        }
+      } else {
+        const byFacet = new Map<string, string[]>();
+
+        for (const slug of input.selectedSubcategories) {
+          const subcategory = category.subcategories.find((candidate) => candidate.slug === slug);
+          if (subcategory) {
+            byFacet.set(subcategory.facet, [...(byFacet.get(subcategory.facet) ?? []), slug]);
+          }
+        }
+
+        // Uma subcategoria escolhida que não pertence a esta categoria não é
+        // um passe livre para o item: cada faceta aplicável precisa casar.
+        if (
+          byFacet.size === 0 ||
+          [...byFacet.values()].some((slugs) => !slugs.some((slug) => item.subcategories.includes(slug)))
+        ) {
+          return false;
+        }
+      }
     }
     if (input.minPrice !== null && item.price < input.minPrice) {
       return false;
@@ -667,8 +726,9 @@ function buildCatalogPayload(
   items: ProductsCatalogItem[],
   tabs: ProductsCatalogTab[],
   sourceStatus: CatalogSourceStatus,
+  taxonomy?: Awaited<ReturnType<typeof getPapelitoTaxonomy>>,
 ): ProductsCatalogPayload {
-  const filteredItems = filterCatalogItems(items, input);
+  const filteredItems = filterCatalogItems(items, input, taxonomy);
   const totalItems = filteredItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / input.perPage));
   const currentPage = clamp(input.currentPage, 1, totalPages);
@@ -682,6 +742,7 @@ function buildCatalogPayload(
     maxPrice: input.maxPrice,
     activeType: input.activeType,
     activeCollection: input.activeCollection,
+    selectedSubcategories: input.selectedSubcategories,
     totalItems,
     totalPages,
     currentPage,

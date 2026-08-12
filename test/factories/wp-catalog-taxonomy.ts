@@ -1,10 +1,97 @@
 /**
- * Taxonomia e produtos reais do catálogo Papelito, capturados do WPGraphQL.
+ * Taxonomia e produtos reais do catálogo Papelito.
  *
- * A raiz das sedas chama "Papel" e a dos filtros "Filtro" — nenhum termo casa com os ids
- * da UI (`sedas`/`filtros`). É exatamente esse desalinhamento que quebrou o filtro, então
- * os testes precisam rodar sobre os dados reais, não sobre nomes convenientes.
+ * A taxonomia própria eliminou o desalinhamento que quebrava o filtro: o slug da
+ * categoria É o id da UI. O fixture mantém os ids e as contagens reais para os
+ * testes rodarem sobre dados de produção, não sobre nomes convenientes.
  */
+
+export interface PapelitoCategoryFixture {
+  description: string;
+  iconUrl: null;
+  id: number;
+  name: string;
+  productCount: number;
+  seoDescription: string;
+  seoTitle: string;
+  slug: string;
+  sortOrder: number;
+  subcategories: {
+    facet: string;
+    id: number;
+    name: string;
+    slug: string;
+    sortOrder: number;
+  }[];
+}
+
+/** As 4 categorias da Papelito, com a contagem real de publicados. */
+export const PAPELITO_CATEGORIES: PapelitoCategoryFixture[] = [
+  {
+    description: "",
+    iconUrl: null,
+    id: 1,
+    name: "Sedas",
+    productCount: 20,
+    seoDescription: "",
+    seoTitle: "",
+    slug: "sedas",
+    sortOrder: 0,
+    subcategories: [
+      { facet: "material", id: 11, name: "Tradicional", slug: "tradicional", sortOrder: 0 },
+      { facet: "material", id: 12, name: "Brown", slug: "brown", sortOrder: 1 },
+      { facet: "formato", id: 13, name: "Slim", slug: "slim", sortOrder: 2 },
+      { facet: "formato", id: 14, name: "King Size", slug: "king-size", sortOrder: 3 },
+    ],
+  },
+  {
+    description: "",
+    iconUrl: null,
+    id: 2,
+    name: "Piteiras",
+    productCount: 6,
+    seoDescription: "",
+    seoTitle: "",
+    slug: "piteiras",
+    sortOrder: 1,
+    subcategories: [
+      { facet: "tamanho", id: 21, name: "Slim", slug: "slim", sortOrder: 0 },
+      { facet: "tamanho", id: 22, name: "Mega Longa", slug: "mega-longa", sortOrder: 1 },
+    ],
+  },
+  {
+    description: "",
+    iconUrl: null,
+    id: 3,
+    name: "Filtros",
+    productCount: 8,
+    seoDescription: "",
+    seoTitle: "",
+    slug: "filtros",
+    sortOrder: 2,
+    subcategories: [
+      { facet: "tipo", id: 31, name: "Bio", slug: "bio", sortOrder: 0 },
+    ],
+  },
+  {
+    description: "",
+    iconUrl: null,
+    id: 4,
+    name: "Acessórios",
+    productCount: 6,
+    seoDescription: "",
+    seoTitle: "",
+    slug: "acessorios",
+    sortOrder: 3,
+    subcategories: [
+      { facet: "tipo", id: 41, name: "Dichavador", slug: "dichavador", sortOrder: 0 },
+    ],
+  },
+];
+
+export function buildPapelitoTaxonomyResponse(categories = PAPELITO_CATEGORIES) {
+  return { categories, version: 1 };
+}
 
 export interface WpCategoryFixture {
   databaseId: number;
@@ -73,12 +160,14 @@ interface ProductFixtureInput {
   name: string;
   categorySlugs: string[];
   price?: string;
+  collections?: string[];
 }
 
 export function buildProductNode({
   databaseId,
   name,
   categorySlugs,
+  collections = [],
   price = "R$ 90,00",
 }: ProductFixtureInput) {
   return {
@@ -92,20 +181,27 @@ export function buildProductNode({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-"),
     image: { sourceUrl: `https://cdn.papelito.test/${databaseId}.jpg`, altText: name },
-    productCategories: {
-      nodes: categorySlugs.map((slug) => {
-        const category = WP_PRODUCT_CATEGORIES.find((entry) => entry.slug === slug);
+    // O primeiro slug é a CATEGORIA PRINCIPAL; os demais são subcategorias. É a
+    // cardinalidade real: exatamente uma categoria, N subcategorias.
+    papelitoCategory: (() => {
+      const category = PAPELITO_CATEGORIES.find((entry) => entry.slug === categorySlugs[0]);
 
-        return {
-          id: `cat:${slug}`,
-          databaseId: category?.databaseId ?? 0,
-          name: category?.name ?? slug,
-          slug,
-          count: category?.count ?? 0,
-          parentDatabaseId: category?.parentDatabaseId ?? null,
-        };
-      }),
-    },
+      return category
+        ? { databaseId: category.id, name: category.name, slug: category.slug }
+        : null;
+    })(),
+    papelitoSubcategories: categorySlugs.slice(1).map((slug) => {
+      const parent = PAPELITO_CATEGORIES.find((entry) => entry.slug === categorySlugs[0]);
+      const sub = parent?.subcategories.find((entry) => entry.slug === slug);
+
+      return {
+        databaseId: sub?.id ?? 0,
+        facet: sub?.facet ?? "geral",
+        name: sub?.name ?? slug,
+        slug,
+      };
+    }),
+    papelitoCollections: collections,
     price,
     regularPrice: price,
     salePrice: null,
@@ -127,11 +223,11 @@ export const WP_PRODUCTS = [
     "Seda Tradicional King Size",
     "Seda Tradicional Com Piteira",
   ].map((name, index) =>
-    buildProductNode({ databaseId: 11760 + index, name, categorySlugs: ["papel", "tradicional"] }),
+    buildProductNode({ databaseId: 11760 + index, name, categorySlugs: ["sedas", "tradicional"] }),
   ),
   ...["Seda Slim Mini Size", "Seda Slim Longa", "Seda Slim King Size", "Seda Slim Com Piteira"].map(
     (name, index) =>
-      buildProductNode({ databaseId: 11776 + index, name, categorySlugs: ["papel", "slim"] }),
+      buildProductNode({ databaseId: 11776 + index, name, categorySlugs: ["sedas", "slim"] }),
   ),
   ...[
     "Seda Pink King Size",
@@ -139,13 +235,13 @@ export const WP_PRODUCTS = [
     "Seda Insane Brown King Size",
     "Seda Alfafa King Size",
   ].map((name, index) =>
-    buildProductNode({ databaseId: 11792 + index, name, categorySlugs: ["papel", "premium"] }),
+    buildProductNode({ databaseId: 11792 + index, name, categorySlugs: ["sedas"], collections: ["premium"] }),
   ),
   ...["Seda Hemp Mini Size", "Seda Hemp King Size"].map((name, index) =>
-    buildProductNode({ databaseId: 11784 + index, name, categorySlugs: ["hemp", "papel"] }),
+    buildProductNode({ databaseId: 11784 + index, name, categorySlugs: ["sedas"] }),
   ),
   ...["Seda Brown Slim Mini Size", "Seda Brown Slim King Size"].map((name, index) =>
-    buildProductNode({ databaseId: 11788 + index, name, categorySlugs: ["brown-slim", "papel"] }),
+    buildProductNode({ databaseId: 11788 + index, name, categorySlugs: ["sedas", "brown", "slim"] }),
   ),
   ...[
     "Seda brown Mini Size",
@@ -153,25 +249,25 @@ export const WP_PRODUCTS = [
     "Seda Brown King Size",
     "Seda brown Com Piteira",
   ].map((name, index) =>
-    buildProductNode({ databaseId: 11768 + index, name, categorySlugs: ["brown", "papel"] }),
+    buildProductNode({ databaseId: 11768 + index, name, categorySlugs: ["sedas", "brown"] }),
   ),
   ...["Piteira Ultra Longa", "Piteira Mega Longa", "Piteira Longa"].map((name, index) =>
-    buildProductNode({ databaseId: 11806 + index, name, categorySlugs: ["longas", "piteiras"] }),
+    buildProductNode({ databaseId: 11806 + index, name, categorySlugs: ["piteiras", "mega-longa"] }),
   ),
   buildProductNode({
     databaseId: 11800,
     name: "Piteira Tradicional",
-    categorySlugs: ["piteiras", "tradicional-piteiras"],
+    categorySlugs: ["piteiras"],
   }),
   buildProductNode({
     databaseId: 11802,
     name: "Piteira Slim",
-    categorySlugs: ["piteiras", "slim-piteiras"],
+    categorySlugs: ["piteiras", "slim"],
   }),
   buildProductNode({
     databaseId: 11804,
     name: "Piteira Large",
-    categorySlugs: ["large", "piteiras"],
+    categorySlugs: ["piteiras"],
   }),
   ...[
     ["Filtro Ultra Longo", "ultra-longo"],
@@ -186,7 +282,7 @@ export const WP_PRODUCTS = [
     buildProductNode({
       databaseId: 11812 + index,
       name,
-      categorySlugs: ["filtro", subcategory],
+      categorySlugs: ["filtros", subcategory],
     }),
   ),
   ...["Dichavador Tradicional", "Dichavador Neon", "Dichavador Cores", "Dichavador Brilho"].map(
@@ -206,12 +302,12 @@ export const WP_PRODUCTS = [
   ),
 ];
 
-export function buildProductsResponse(categoryIn?: string[]) {
-  const nodes = categoryIn?.length
-    ? WP_PRODUCTS.filter((product) =>
-        product.productCategories.nodes.some((category) => categoryIn.includes(category.slug)),
-      )
-    : WP_PRODUCTS;
-
-  return { products: { nodes } };
+/**
+ * A query não filtra mais por categoria no WordPress.
+ *
+ * Sem `product_cat`, o catálogo varre e filtra em memória pela categoria
+ * Papelito — o mesmo caminho que já era a segunda barreira do pipeline.
+ */
+export function buildProductsResponse() {
+  return { products: { nodes: WP_PRODUCTS } };
 }

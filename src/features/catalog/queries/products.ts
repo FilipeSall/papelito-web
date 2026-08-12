@@ -4,7 +4,6 @@ export const PRODUCTS_QUERY = gql`
   query Products(
     $first: Int = 60
     $after: String
-    $categoryIn: [String]
     $include: [Int]
     $minPrice: Float
     $maxPrice: Float
@@ -14,7 +13,6 @@ export const PRODUCTS_QUERY = gql`
       after: $after
       where: {
         status: "publish"
-        categoryIn: $categoryIn
         include: $include
         minPrice: $minPrice
         maxPrice: $maxPrice
@@ -42,16 +40,9 @@ export const PRODUCTS_QUERY = gql`
             altText
           }
         }
-        productCategories(first: 20) {
-          nodes {
-            id
-            databaseId
-            name
-            slug
-            count
-            parentDatabaseId
-          }
-        }
+        papelitoCategory { databaseId slug name }
+        papelitoSubcategories { databaseId slug name facet }
+        papelitoCollections
         ... on SimpleProduct {
           price
           regularPrice
@@ -93,7 +84,6 @@ export const PRODUCTS_LIST_QUERY = gql`
   query ProductsList(
     $first: Int = 60
     $after: String
-    $categoryIn: [String]
     $include: [Int]
     $minPrice: Float
     $maxPrice: Float
@@ -103,7 +93,6 @@ export const PRODUCTS_LIST_QUERY = gql`
       after: $after
       where: {
         status: "publish"
-        categoryIn: $categoryIn
         include: $include
         minPrice: $minPrice
         maxPrice: $maxPrice
@@ -124,16 +113,9 @@ export const PRODUCTS_LIST_QUERY = gql`
           sourceUrl
           altText
         }
-        productCategories(first: 20) {
-          nodes {
-            id
-            databaseId
-            name
-            slug
-            count
-            parentDatabaseId
-          }
-        }
+        papelitoCategory { databaseId slug name }
+        papelitoSubcategories { databaseId slug name facet }
+        papelitoCollections
         ... on SimpleProduct {
           price
           regularPrice
@@ -187,16 +169,9 @@ export const PRODUCT_QUERY = gql`
           altText
         }
       }
-      productCategories(first: 20) {
-        nodes {
-          id
-          databaseId
-          name
-          slug
-          count
-          parentDatabaseId
-        }
-      }
+      papelitoCategory { databaseId slug name }
+      papelitoSubcategories { databaseId slug name facet }
+      papelitoCollections
       ... on SimpleProduct {
         price
         regularPrice

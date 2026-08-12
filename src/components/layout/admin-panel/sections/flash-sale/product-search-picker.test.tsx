@@ -2,34 +2,41 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AdminProduct } from "@/lib/server/admin-products";
+import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
 import { ProductSearchPicker } from "./product-search-picker";
 
-const product: AdminProduct = {
-  categories: [{ id: 7, name: "Papel", parent: 0, slug: "papel" }],
+const product: AdminFlashSaleCandidate = {
+  category: { id: 7, name: "Sedas", slug: "sedas" },
   dateModified: "",
-  dateOnSaleFrom: "",
-  dateOnSaleTo: "",
-  description: "",
-  dimensions: { height: "", length: "", width: "" },
   id: 11796,
   images: [],
-  manageStock: false,
   name: "Seda Slim King Size",
   permalink: "",
   price: "99.90",
   regularPrice: "121.00",
-  salePrice: "",
-  shortDescription: "",
   sku: "PP01070003",
-  slug: "seda-slim",
   status: "publish",
-  stockQuantity: null,
-  stockStatus: "instock",
   tags: [],
-  type: "simple",
-  weight: "1",
 };
+
+/** O picker agora recebe categorias da taxonomia Papelito, não termos do Woo. */
+const categorias = [
+  {
+    archivedAt: null,
+    description: "",
+    iconAttachmentId: null,
+    iconUrl: null,
+    id: 7,
+    isActive: true,
+    name: "Sedas",
+    productCount: { published: 20, total: 20 },
+    seoDescription: "",
+    seoTitle: "",
+    slug: "sedas",
+    sortOrder: 0,
+    subcategories: [],
+  },
+];
 
 describe("ProductSearchPicker", () => {
   it("keeps pagination visible above the scroll list and navigates to page two", async () => {
@@ -39,7 +46,7 @@ describe("ProductSearchPicker", () => {
     render(
       <ProductSearchPicker
         candidates={[product]}
-        categories={product.categories}
+        categories={categorias}
         currentPage={1}
         filters={{ category: "", search: "" }}
         isSearching={false}
@@ -70,7 +77,7 @@ describe("ProductSearchPicker", () => {
     render(
       <ProductSearchPicker
         candidates={[product]}
-        categories={product.categories}
+        categories={categorias}
         currentPage={2}
         filters={{ category: "", search: "PP01070003" }}
         isSearching={false}

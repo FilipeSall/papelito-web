@@ -65,6 +65,7 @@ describe("applyFlashSaleToProduct", () => {
         isNewArrival: false,
         isOnSale: true,
         isKit: false,
+        subcategories: [],
       },
       campaign,
     );
@@ -142,6 +143,7 @@ describe("applyFlashSaleToProduct", () => {
       isNewArrival: false,
       isOnSale: true,
       isKit: false,
+      subcategories: [],
     };
 
     expect(applyFlashSaleToCatalogItem(product, campaign)).toBe(product);

@@ -1,7 +1,6 @@
 import type { AdminProductImage } from "@/lib/server/admin-products";
 
 export type ProductDraft = {
-  categoryIds: string[];
   dateOnSaleFrom: string;
   dateOnSaleTo: string;
   description: string;
@@ -17,6 +16,12 @@ export type ProductDraft = {
   slug: string;
   status: string;
   tagIds: string[];
+  /** Coleções curadas da taxonomia Papelito (premium, kits). */
+  taxonomyCollections: string[];
+  /** Categoria principal da taxonomia Papelito. Vazio = produto não classificado. */
+  taxonomyCategoryId: string;
+  /** Subcategorias da taxonomia Papelito, todas da categoria principal. */
+  taxonomySubcategoryIds: string[];
   weight: string;
   width: string;
 };
@@ -34,4 +39,7 @@ export type SelectOption = {
 
 export type ImageUploadTarget = "cover" | "secondary";
 
-export type DraftTermKey = "categoryIds" | "tagIds";
+export type DraftTermKey =
+  | "tagIds"
+  | "taxonomyCollections"
+  | "taxonomySubcategoryIds";

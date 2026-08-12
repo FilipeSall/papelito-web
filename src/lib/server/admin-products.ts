@@ -2,6 +2,7 @@ import "server-only";
 
 import { getWpRestBase } from "@/lib/server/env";
 import { wpRest } from "@/lib/server/wp-rest";
+import { getProductsTaxonomyMap } from "@/lib/server/admin-taxonomy";
 
 export type AdminProductTaxonomyTerm = {
   id: number;
@@ -19,6 +20,7 @@ export type AdminProductImage = {
 
 export type AdminProduct = {
   categories: AdminProductTaxonomyTerm[];
+  subcategories?: { facet: string; id: number; name: string; slug: string }[];
   dateModified: string;
   dateOnSaleFrom: string;
   dateOnSaleTo: string;
@@ -48,7 +50,6 @@ export type AdminProduct = {
 };
 
 export type AdminProductsSnapshot = {
-  categories: AdminProductTaxonomyTerm[];
   currentPage: number;
   issues: string[];
   perPage: number;
@@ -154,44 +155,6 @@ type WpMediaResponse = {
 const DEFAULT_PER_PAGE = 20;
 const VALID_STATUSES = new Set(["publish", "draft", "pending", "private"]);
 const VALID_STOCK_STATUSES = new Set(["instock", "outofstock", "onbackorder"]);
-const OFFICIAL_CATEGORY_KEYS = new Set([
-  "papel",
-  "tradicional",
-  "brown",
-  "slim",
-  "hemp",
-  "brown-slim",
-  "premium",
-  "insane",
-  "pink",
-  "alfafa",
-  "piteiras",
-  "large",
-  "longas",
-  "longa",
-  "ultra-longa",
-  "mega-longa",
-  "filtro",
-  "longo",
-  "ultra-longo",
-  "slim-longo",
-  "mentol",
-  "bio",
-  "bio-longo",
-  "gomado",
-  "acessorios",
-  "dichavador",
-  "brilho",
-  "cores",
-  "neon",
-  "cristal",
-  "tubelito",
-  "bandeja-chaveiro",
-  "p-relax",
-  "p-amarelo",
-  "black",
-]);
-
 function toPositiveInt(value: string | undefined, fallback: number, max?: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -207,25 +170,6 @@ function cleanText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeTaxonomyKey(term: AdminProductTaxonomyTerm) {
-  const base = term.slug || term.name;
-  return base
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/&amp;/g, "e")
-    .replaceAll(/[^a-z0-9]+/g, "-")
-    .replace(/^-+/, "")
-    .replace(/-+$/, "");
-}
-
-function hasTaxonomyKey(term: AdminProductTaxonomyTerm, key: string) {
-  return (
-    normalizeTaxonomyKey(term) === key ||
-    normalizeTaxonomyKey({ ...term, slug: "" }) === key
-  );
-}
-
 function mapTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
   if (!term.id) {
     return null;
@@ -237,13 +181,6 @@ function mapTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
     parent: typeof term.parent === "number" ? term.parent : 0,
     slug: cleanText(term.slug),
   };
-}
-
-function isOfficialCategoryTerm(term: AdminProductTaxonomyTerm) {
-  return (
-    OFFICIAL_CATEGORY_KEYS.has(normalizeTaxonomyKey({ ...term, slug: "" })) ||
-    OFFICIAL_CATEGORY_KEYS.has(normalizeTaxonomyKey(term))
-  );
 }
 
 function mapProduct(product: WcProduct): AdminProduct {
@@ -369,62 +306,52 @@ function buildVariationPricingPayload(payload: AdminProductPayload) {
   return pricing;
 }
 
-function mapTaxonomyTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
-  return mapTerm(term);
+/**
+ * Chave normalizada de uma TAG, para achar tag equivalente antes de criar outra.
+ *
+ * Tag continua sendo do WooCommerce — é palavra-chave de busca, não classificação.
+ * A normalização aqui não tem nada a ver com a antiga whitelist de categorias.
+ */
+function normalizeTagKey(term: { name: string; slug: string }) {
+  const base = term.slug || term.name;
+  return base
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&amp;/g, "e")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-function dedupeTaxonomyTerms(
-  terms: AdminProductTaxonomyTerm[],
-  options: { allowedKeys?: Set<string> } = {},
-) {
-  const canonicalByKey = new Map<string, AdminProductTaxonomyTerm>();
-  const idMap = new Map<number, number>();
+function matchesTagKey(term: AdminProductTaxonomyTerm, key: string) {
+  return (
+    normalizeTagKey(term) === key || normalizeTagKey({ ...term, slug: "" }) === key
+  );
+}
+
+/**
+ * Junta as tags cadastradas com as que vieram nos produtos, sem repetir.
+ *
+ * Categoria não passa mais por aqui: ela vem da taxonomia Papelito, onde slug é
+ * único por escopo e duplicata não existe por construção.
+ */
+function dedupeTags(terms: AdminProductTaxonomyTerm[]) {
+  const byKey = new Map<string, AdminProductTaxonomyTerm>();
 
   for (const term of terms) {
-    const key = normalizeTaxonomyKey(term);
-
-    if (options.allowedKeys && !isOfficialCategoryTerm(term)) {
-      continue;
+    const key = normalizeTagKey(term);
+    if (!byKey.has(key)) {
+      byKey.set(key, term);
     }
-
-    const existing = canonicalByKey.get(key);
-
-    if (!existing) {
-      canonicalByKey.set(key, term);
-      idMap.set(term.id, term.id);
-      continue;
-    }
-
-    idMap.set(term.id, existing.id);
   }
 
-  return {
-    terms: Array.from(canonicalByKey.values()).sort((left, right) =>
-      left.name.localeCompare(right.name, "pt-BR"),
-    ),
-    idMap,
-  };
+  return Array.from(byKey.values()).sort((left, right) =>
+    left.name.localeCompare(right.name, "pt-BR"),
+  );
 }
 
-function remapProductTerms(
-  product: AdminProduct,
-  taxonomy: "categories" | "tags",
-  idMap: Map<number, number>,
-) {
-  const seen = new Set<number>();
-  const terms = product[taxonomy]
-    .filter((term) => taxonomy === "tags" || idMap.has(term.id))
-    .map((term) => ({ ...term, id: idMap.get(term.id) ?? term.id }))
-    .filter((term) => {
-      if (seen.has(term.id)) {
-        return false;
-      }
-
-      seen.add(term.id);
-      return true;
-    });
-
-  return { ...product, [taxonomy]: terms };
+function mapTaxonomyTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
+  return mapTerm(term);
 }
 
 function buildProductsQuery(filters: AdminProductsFilters) {
@@ -450,9 +377,12 @@ function buildProductsQuery(filters: AdminProductsFilters) {
     params.set("stock_status", stockStatus);
   }
 
+  // `papelito_category` é entendido pela REST do WooCommerce graças a um filtro
+  // registrado no plugin. Assim o painel nunca precisa saber que `product_cat`
+  // existe, e a paginação continua acontecendo no banco.
   const category = toPositiveInt(filters.category, 0);
   if (category > 0) {
-    params.set("category", String(category));
+    params.set("papelito_category", String(category));
   }
 
   return params;
@@ -562,8 +492,7 @@ export async function getAdminProductsSnapshot(
 
   if (!accessToken) {
     return {
-      categories: [],
-      currentPage: page,
+        currentPage: page,
       issues: ["Sessão sem access token para consultar produtos do WooCommerce."],
       perPage,
       products: [],
@@ -575,17 +504,14 @@ export async function getAdminProductsSnapshot(
 
   const productQuery = buildProductsQuery(filters);
   const headers = { Authorization: `Bearer ${accessToken}` };
-  const [productsResult, categoriesResult, tagsResult] = await Promise.all([
+  const [productsResult, tagsResult] = await Promise.all([
     wpRest<WcProduct[]>(`/wc/v3/products?${productQuery.toString()}`, {
       headers,
       revalidate: 300,
       tags: ["admin-products", "wp:products"],
     }),
-    wpRest<WcProductTerm[]>("/wc/v3/products/categories?per_page=100&orderby=name&order=asc", {
-      headers,
-      revalidate: 300,
-      tags: ["admin-product-taxonomies"],
-    }),
+    // Tag continua sendo do WooCommerce: é palavra-chave de busca, não
+    // classificação. Categoria vem da taxonomia Papelito.
     wpRest<WcProductTerm[]>("/wc/v3/products/tags?per_page=100&orderby=name&order=asc", {
       headers,
       revalidate: 300,
@@ -598,9 +524,6 @@ export async function getAdminProductsSnapshot(
   let totalProducts = 0;
   let totalPages = 0;
 
-  const rawCategories = categoriesResult.ok
-    ? categoriesResult.data.map(mapTaxonomyTerm).filter(Boolean) as AdminProductTaxonomyTerm[]
-    : [];
   const rawTags = tagsResult.ok
     ? tagsResult.data.map(mapTaxonomyTerm).filter(Boolean) as AdminProductTaxonomyTerm[]
     : [];
@@ -609,40 +532,40 @@ export async function getAdminProductsSnapshot(
         .map(mapProduct)
         .filter((product) => product.id > 0)
     : [];
-  const categoriesDedupe = dedupeTaxonomyTerms(rawCategories, {
-    allowedKeys: OFFICIAL_CATEGORY_KEYS,
-  });
-  const tagsDedupe = dedupeTaxonomyTerms([
+  const tags = dedupeTags([
     ...rawTags,
     ...rawProducts.flatMap((product) => product.tags),
   ]);
-  const categories = categoriesDedupe.terms;
-  const tags = tagsDedupe.terms;
 
   if (productsResult.ok) {
-    products = rawProducts
-      .map((product) =>
-        remapProductTerms(
-          remapProductTerms(product, "categories", categoriesDedupe.idMap),
-          "tags",
-          tagsDedupe.idMap,
-        ),
+    // Os chips da lista vêm da taxonomia Papelito, não de `product_cat`.
+    const taxonomyByProduct = await getProductsTaxonomyMap(
+      accessToken,
+      rawProducts.map((product) => product.id),
     );
+
+    products = rawProducts.map((product) => {
+      const entry = taxonomyByProduct[String(product.id)];
+
+      return {
+        ...product,
+        categories: entry?.category
+          ? [{ id: entry.category.id, name: entry.category.name, parent: 0, slug: entry.category.slug }]
+          : [],
+        subcategories: entry?.subcategories ?? [],
+      };
+    });
     totalProducts = Number.parseInt(productsResult.headers.get("X-WP-Total") ?? "0", 10) || products.length;
     totalPages = Number.parseInt(productsResult.headers.get("X-WP-TotalPages") ?? "0", 10) || 1;
   } else {
     issues.push(`[woo] products -> ${productsResult.error.message}`);
   }
 
-  if (!categoriesResult.ok) {
-    issues.push(`[woo] categories -> ${categoriesResult.error.message}`);
-  }
   if (!tagsResult.ok) {
     issues.push(`[woo] tags -> ${tagsResult.error.message}`);
   }
 
   return {
-    categories,
     currentPage: page,
     issues,
     perPage,
@@ -762,7 +685,7 @@ export async function createAdminProductTag(
     throw new Error("Nome da tag e obrigatório.");
   }
 
-  const tagKey = normalizeTaxonomyKey({ id: 0, name, parent: 0, slug: "" });
+  const tagKey = normalizeTagKey({ name, slug: "" });
   const tagSearch = new URLSearchParams({
     order: "asc",
     orderby: "name",
@@ -782,7 +705,7 @@ export async function createAdminProductTag(
     return existingResult.data
       .map(mapTaxonomyTerm)
       .filter(Boolean)
-      .find((term) => hasTaxonomyKey(term as AdminProductTaxonomyTerm, tagKey)) ?? null;
+      .find((term) => matchesTagKey(term as AdminProductTaxonomyTerm, tagKey)) ?? null;
   };
 
   const existingTag = await findExistingTag();

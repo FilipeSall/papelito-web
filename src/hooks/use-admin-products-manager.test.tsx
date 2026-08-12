@@ -32,7 +32,6 @@ const product = {
 };
 
 const snapshot: AdminProductsSnapshot = {
-  categories: [],
   currentPage: 1,
   issues: [],
   perPage: 20,
@@ -98,6 +97,12 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
       <button onClick={() => manager.toggleDraftTerm("tagIds", "8")} type="button">
         remover tag existente
       </button>
+      <button
+        onClick={() => manager.setTaxonomyCategory("7")}
+        type="button"
+      >
+        definir categoria
+      </button>
       <button onClick={() => void manager.handleSave()} type="button">
         salvar
       </button>
@@ -127,7 +132,76 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
   );
 }
 
+type FetchCall = [string, RequestInit];
+
+/**
+ * Salvar um produto agora dispara DUAS requisições: o produto vai para a REST do
+ * WooCommerce e a classificação vai para a taxonomia Papelito. As asserções olham
+ * só a primeira — contar fetch cru amarraria o teste à ordem das duas.
+ */
+function productCalls(fetchMock: { mock: { calls: unknown[][] } }): FetchCall[] {
+  return fetchMock.mock.calls.filter(
+    ([url]) => typeof url === "string" && !url.includes("/taxonomy"),
+  ) as FetchCall[];
+}
+
+/** Categoria principal é obrigatória para salvar; todo teste de save precisa dela. */
+function escolherCategoria() {
+  fireEvent.click(screen.getByRole("button", { name: "definir categoria" }));
+}
+
 describe("useAdminProductsManager", () => {
+  it("bloqueia o salvamento quando o produto não tem categoria principal", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ product })),
+    );
+
+    render(<ManagerHarness />);
+    fireEvent.change(screen.getByLabelText("sku"), { target: { value: "SKU-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("aviso")).toHaveTextContent(
+        "Escolha a categoria principal do produto.",
+      );
+    });
+
+    // Falha antes de gastar uma ida ao WooCommerce.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("envia a classificação em requisição própria depois de salvar o produto", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ product })),
+    );
+
+    render(<ManagerHarness />);
+    fireEvent.change(screen.getByLabelText("sku"), { target: { value: "SKU-1" } });
+    escolherCategoria();
+    fireEvent.click(screen.getByRole("button", { name: "salvar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("aviso")).toHaveTextContent("Produto salvo.");
+    });
+
+    const taxonomyCall = fetchMock.mock.calls.find(
+      ([url]) => typeof url === "string" && url.includes("/taxonomy"),
+    ) as [string, RequestInit];
+
+    expect(taxonomyCall[0]).toBe("/api/admin/products/123/taxonomy");
+    expect(taxonomyCall[1].method).toBe("PUT");
+    expect(JSON.parse(String(taxonomyCall[1].body))).toEqual({
+      categoryId: 7,
+      collections: [],
+      subcategoryIds: [],
+    });
+
+    // O produto não leva mais `categories`: quem escreve product_cat é o
+    // dual-write no WordPress, a partir da taxonomia.
+    const [, productRequest] = productCalls(fetchMock)[0];
+    expect(JSON.parse(String(productRequest.body))).not.toHaveProperty("categories");
+  });
+
   it("sends the latest dimensions on the first save and keeps the confirmed response", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
@@ -142,13 +216,14 @@ describe("useAdminProductsManager", () => {
     fireEvent.change(screen.getByLabelText("largura"), { target: { value: "5" } });
     fireEvent.change(screen.getByLabelText("altura"), { target: { value: "5" } });
 
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
       expect(screen.getByLabelText("aviso")).toHaveTextContent("Produto salvo.");
     });
 
-    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, request] = productCalls(fetchMock)[0];
     expect(JSON.parse(String(request.body)).dimensions).toEqual({ height: "5", length: "5", width: "5" });
     expect(screen.getByLabelText("comprimento")).toHaveValue("5");
     expect(screen.getByLabelText("largura")).toHaveValue("5");
@@ -163,6 +238,7 @@ describe("useAdminProductsManager", () => {
     render(<ManagerHarness />);
     fireEvent.change(screen.getByLabelText("comprimento"), { target: { value: "5" } });
 
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
@@ -197,7 +273,7 @@ describe("useAdminProductsManager", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("aviso")).toHaveTextContent("Imagem principal atualizada.");
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(productCalls(fetchMock)).toHaveLength(2);
   });
 
   it("sends only changed fields so a SKU update cannot clear existing prices", async () => {
@@ -211,13 +287,14 @@ describe("useAdminProductsManager", () => {
 
     render(<ManagerHarness initialSnapshot={initialSnapshot} />);
     fireEvent.change(screen.getByLabelText("sku"), { target: { value: "SKU-11856" } });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(productCalls(fetchMock)).toHaveLength(1);
     });
 
-    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, request] = productCalls(fetchMock)[0];
     expect(JSON.parse(String(request.body))).toEqual({ sku: "SKU-11856" });
   });
 
@@ -231,13 +308,14 @@ describe("useAdminProductsManager", () => {
     fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "150" } });
     fireEvent.change(screen.getByLabelText("preço promocional"), { target: { value: "120" } });
     fireEvent.change(screen.getByLabelText("peso"), { target: { value: "0.5" } });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(productCalls(fetchMock)).toHaveLength(1);
     });
 
-    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, request] = productCalls(fetchMock)[0];
     expect(JSON.parse(String(request.body))).toEqual({
       regularPrice: "150.00",
       salePrice: "120.00",
@@ -261,6 +339,7 @@ describe("useAdminProductsManager", () => {
 
     render(<ManagerHarness initialSnapshot={initialSnapshot} />);
     fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "150" } });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
@@ -269,12 +348,13 @@ describe("useAdminProductsManager", () => {
     });
 
     fireEvent.change(screen.getByLabelText("preço promocional"), { target: { value: "" } });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(productCalls(fetchMock)).toHaveLength(2);
     });
-    expect(JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body))).toEqual({
+    expect(JSON.parse(String(productCalls(fetchMock)[1][1].body))).toEqual({
       regularPrice: "150.00",
       salePrice: "",
     });
@@ -303,6 +383,7 @@ describe("useAdminProductsManager", () => {
 
     render(<ManagerHarness />);
     fireEvent.change(screen.getByLabelText("preço regular"), { target: { value: "invalido" } });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -326,13 +407,14 @@ describe("useAdminProductsManager", () => {
       expect(screen.getByLabelText("tags selecionadas")).toHaveTextContent("215");
     });
 
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(productCalls(fetchMock)).toHaveLength(2);
     });
 
-    const [, request] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const [, request] = productCalls(fetchMock)[1];
     expect(JSON.parse(String(request.body)).tags).toEqual([215]);
     expect(screen.getByLabelText("tags selecionadas")).toHaveTextContent("215");
   });
@@ -365,20 +447,22 @@ describe("useAdminProductsManager", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("tags selecionadas")).toHaveTextContent("8,215");
     });
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(productCalls(fetchMock)).toHaveLength(2);
     });
-    expect(JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)).tags).toEqual([8, 215]);
+    expect(JSON.parse(String(productCalls(fetchMock)[1][1].body)).tags).toEqual([8, 215]);
 
     fireEvent.click(screen.getByRole("button", { name: "remover tag existente" }));
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(productCalls(fetchMock)).toHaveLength(3);
     });
-    expect(JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body)).tags).toEqual([215]);
+    expect(JSON.parse(String(productCalls(fetchMock)[2][1].body)).tags).toEqual([215]);
   });
 
   it("preserves selected tags when the product save fails", async () => {
@@ -394,6 +478,7 @@ describe("useAdminProductsManager", () => {
       expect(screen.getByLabelText("tags selecionadas")).toHaveTextContent("8");
     });
 
+    escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
     await waitFor(() => {
@@ -411,7 +496,7 @@ describe("useAdminProductsManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "adicionar tag nova" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(productCalls(fetchMock)).toHaveLength(1);
       expect(screen.getByLabelText("nova tag")).toHaveValue("teste");
     });
   });

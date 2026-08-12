@@ -1,4 +1,5 @@
 export { AssetsContent } from "./assets-content";
+export { CategoriesContent } from "./categories-content";
 export { ConfigContent } from "./config-content";
 export { CouponsContent } from "./coupons-content";
 export { FlashSaleContent } from "./flash-sale-content";

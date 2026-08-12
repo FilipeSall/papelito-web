@@ -1,16 +1,20 @@
 import "server-only";
 
+import {
+  SPECIFIC_PRODUCT_TYPES,
+  normalizeTaxonomyText,
+  type SpecificProductTypeId,
+} from "../utils/product-type-taxonomy";
+
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
-import { getCategoryTypeBySlug } from "./get-wp-product-categories";
 import {
   fetchWpProductByDatabaseId,
   fetchWpProducts,
   mapWpProductToDetailItem,
 } from "./wp-catalog";
-import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type { ProductDetailItem } from "../types/product-detail";
 
@@ -122,6 +126,19 @@ function computePrices(product: MockCatalogProduct) {
   };
 }
 
+/**
+ * Tipo no caminho MOCKADO, onde não há taxonomia Papelito.
+ *
+ * Só existe para o mock local; a vitrine real lê `papelitoCategory`.
+ */
+function inferMockType(product: { category?: string | null; name: string }) {
+  const raw = normalizeTaxonomyText(product.category ?? "");
+
+  return SPECIFIC_PRODUCT_TYPES.includes(raw as SpecificProductTypeId)
+    ? (raw as SpecificProductTypeId)
+    : "acessorios";
+}
+
 function buildRelatedThumbs(
   currentId: string,
   type: ProductDetailItem["type"],
@@ -129,7 +146,7 @@ function buildRelatedThumbs(
 ) {
   return all
     .filter((item) => item.id !== currentId)
-    .filter((item) => inferProductTypeFromName(item.name) === type)
+    .filter((item) => inferMockType(item) === type)
     .slice(0, 4)
     .map((item) => ({
       id: item.id,
@@ -153,17 +170,16 @@ async function requestProductsMockFile() {
 
 export async function getProductDetail(id: string): Promise<ProductDetailItem | null> {
   if (!isMockDataEnabled()) {
-    const [product, allProducts, typeBySlug] = await Promise.all([
+    const [product, allProducts] = await Promise.all([
       fetchWpProductByDatabaseId(id),
       fetchWpProducts(64),
-      getCategoryTypeBySlug(),
     ]);
 
     if (!product) {
       return null;
     }
 
-    return mapWpProductToDetailItem(product, allProducts, typeBySlug);
+    return mapWpProductToDetailItem(product, allProducts);
   }
 
   const mockFile = await requestProductsMockFile();
@@ -174,7 +190,7 @@ export async function getProductDetail(id: string): Promise<ProductDetailItem | 
   }
 
   const name = product.homeData?.displayName || product.name;
-  const type = inferProductTypeFromName(product.name);
+  const type = inferMockType(product);
   const prices = computePrices(product);
   const description =
     typeof product.description === "string" && product.description.trim().length > 0

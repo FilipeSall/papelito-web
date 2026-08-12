@@ -1,5 +1,3 @@
-// TODO: Substituir por requisição ao backend — GET /api/categories
-// Os dados mockados abaixo (ícone, título, subtítulo com contagem) devem vir do CMS/backend.
 export const CATEGORIES_NAV_ITEMS = [
   {
     iconSrc: "/images/categorias/icons/kit.webp",
@@ -25,4 +23,4 @@ export const CATEGORIES_NAV_ITEMS = [
     subtitle: "Recém chegados",
     href: "/novidades",
   },
-];
+] as const;

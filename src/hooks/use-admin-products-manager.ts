@@ -9,7 +9,9 @@ import {
   PUBLISHED_PRODUCT_STATUS,
 } from "@/constants/admin-products";
 import {
+  applyTaxonomyToDraft,
   buildPayload,
+  buildTaxonomyPayload,
   findPromotionTag,
   hasValidProductPrice,
   isPromotionActive,
@@ -21,6 +23,7 @@ import type {
   AdminProductsSnapshot,
   AdminProductTaxonomyTerm,
 } from "@/lib/server/admin-products";
+import type { AdminTaxonomySnapshot, ProductTaxonomy } from "@/lib/server/admin-taxonomy";
 import type {
   DraftTermKey,
   ImageUploadTarget,
@@ -65,11 +68,19 @@ export function useAdminProductsManager(
   options: {
     initialFocusProductId?: number | null;
     onUploadError?: (message: string) => void;
+    taxonomy?: AdminTaxonomySnapshot;
   } = {},
 ) {
   const initialFocusProductId = options.initialFocusProductId ?? null;
+  const taxonomy = options.taxonomy ?? {
+    categories: [],
+    collections: [],
+    issues: [],
+    version: 0,
+  };
+  const [isTaxonomyLoading, setIsTaxonomyLoading] = useState(false);
+  const taxonomyRequestRef = useRef(0);
   const [products, setProducts] = useState(snapshot.products);
-  const [categories, setCategories] = useState(snapshot.categories);
   const [tags, setTags] = useState(snapshot.tags);
   const [issues, setIssues] = useState(snapshot.issues);
   const [page, setPage] = useState(snapshot.currentPage);
@@ -144,6 +155,46 @@ export function useAdminProductsManager(
     Boolean(draft.dateOnSaleFrom || draft.dateOnSaleTo) ||
     Boolean(promotionTag && draft.tagIds.includes(String(promotionTag.id)));
 
+  /**
+   * A listagem vem da REST do WooCommerce e não conhece a taxonomia Papelito, que
+   * mora em tabelas próprias. Ela é buscada quando o editor abre, por produto.
+   */
+  const loadProductTaxonomy = useCallback(async (productId: number) => {
+    const requestId = taxonomyRequestRef.current + 1;
+    taxonomyRequestRef.current = requestId;
+    setIsTaxonomyLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}/taxonomy`, {
+        cache: "no-store",
+      });
+      const json = (await response.json().catch(() => null)) as
+        | { taxonomy?: ProductTaxonomy }
+        | null;
+
+      if (!response.ok || !json?.taxonomy || taxonomyRequestRef.current !== requestId) {
+        return;
+      }
+
+      // Escreve direto no rascunho, sem passar por `updateDraftState`: carregar o
+      // estado existente NÃO pode marcar os campos como alterados, senão um
+      // salvamento parcial passaria a reenviar taxonomia que ninguém tocou.
+      const loaded = json.taxonomy;
+      setDraft((currentDraft) => {
+        const nextDraft = applyTaxonomyToDraft(currentDraft, loaded);
+        draftRef.current = nextDraft;
+        return nextDraft;
+      });
+    } catch {
+      // Falha de rede não pode travar a edição do produto: os campos ficam
+      // vazios e o gate de "salvar sem categoria" avisa o admin.
+    } finally {
+      if (taxonomyRequestRef.current === requestId) {
+        setIsTaxonomyLoading(false);
+      }
+    }
+  }, []);
+
   const openProduct = useCallback((product: AdminProduct) => {
     setSelectedProductId(product.id);
     setTags((currentTags) => mergeTags(currentTags, product.tags));
@@ -151,7 +202,8 @@ export function useAdminProductsManager(
     resetDraft(nextDraft);
     setNotice("");
     setIsEditorOpen(true);
-  }, [resetDraft]);
+    void loadProductTaxonomy(product.id);
+  }, [loadProductTaxonomy, resetDraft]);
 
   const selectProduct = useCallback(async (product: AdminProduct) => {
     if (product.type !== "variable") {
@@ -304,7 +356,6 @@ export function useAdminProductsManager(
 
       const nextSnapshot = json as AdminProductsSnapshot;
       setProducts(nextSnapshot.products);
-      setCategories(nextSnapshot.categories);
       setTags(nextSnapshot.tags);
       setIssues(nextSnapshot.issues);
       setPage(nextSnapshot.currentPage);
@@ -330,6 +381,13 @@ export function useAdminProductsManager(
 
     if (!draftToSave.name.trim()) {
       setNotice(PRODUCT_ERROR_MESSAGES.missingName);
+      return false;
+    }
+
+    // A regra "exatamente 1 categoria principal" é do banco, não da tela. Aqui é
+    // só experiência: falhar antes de gastar uma ida ao WooCommerce.
+    if (!draftToSave.taxonomyCategoryId) {
+      setNotice(PRODUCT_ERROR_MESSAGES.missingCategory);
       return false;
     }
 
@@ -375,6 +433,41 @@ export function useAdminProductsManager(
       }
 
       const savedProduct = json.product as AdminProduct;
+
+      const taxonomyResponse = await fetch(`/api/admin/products/${savedProduct.id}/taxonomy`, {
+        body: JSON.stringify(buildTaxonomyPayload(draftToSave)),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+
+      if (!taxonomyResponse.ok) {
+        const taxonomyJson = (await taxonomyResponse.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (selectedProductId === "new" && savedProduct.status === PUBLISHED_PRODUCT_STATUS) {
+          const rollbackResponse = await fetch(ADMIN_PRODUCTS_API.detail(savedProduct.id), {
+            body: JSON.stringify({ status: "draft" }),
+            headers: { "Content-Type": "application/json" },
+            method: "PATCH",
+          });
+
+          if (!rollbackResponse.ok) {
+            setNotice(
+              `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} Não foi possível reverter o produto para rascunho.`,
+            );
+            return false;
+          }
+        }
+
+        setNotice(
+          selectedProductId === "new"
+            ? `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} O produto foi mantido como rascunho.`
+            : `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} A classificação anterior foi preservada.`,
+        );
+        return false;
+      }
+
       setProducts((currentProducts) => {
         const exists = currentProducts.some((product) => product.id === savedProduct.id);
         if (exists) {
@@ -386,7 +479,11 @@ export function useAdminProductsManager(
       });
       setSelectedProductId(savedProduct.id);
       setTags((currentTags) => mergeTags(currentTags, savedProduct.tags));
-      const nextDraft = productToDraft(savedProduct);
+      const nextDraft = applyTaxonomyToDraft(productToDraft(savedProduct), {
+        category: { id: Number(draftToSave.taxonomyCategoryId) },
+        collections: draftToSave.taxonomyCollections,
+        subcategories: draftToSave.taxonomySubcategoryIds.map((id) => ({ id: Number(id) })),
+      });
       resetDraft(nextDraft);
       setNotice(PRODUCT_NOTICES.saved);
       return true;
@@ -587,6 +684,27 @@ export function useAdminProductsManager(
     }
   }
 
+  /**
+   * Trocar a categoria principal LIMPA as subcategorias.
+   *
+   * Elas pertenciam à categoria anterior; o backend recusaria o conjunto com
+   * `papelito_subcategory_foreign`. Limpar aqui evita o erro e deixa o efeito
+   * explícito para quem está editando.
+   */
+  function setTaxonomyCategory(categoryId: string) {
+    updateDraftState(
+      (currentDraft) =>
+        currentDraft.taxonomyCategoryId === categoryId
+          ? currentDraft
+          : {
+              ...currentDraft,
+              taxonomyCategoryId: categoryId,
+              taxonomySubcategoryIds: [],
+            },
+      ["taxonomyCategoryId", "taxonomySubcategoryIds"],
+    );
+  }
+
   function updateFilter<K extends keyof ProductFilters>(
     key: K,
     value: ProductFilters[K],
@@ -597,8 +715,10 @@ export function useAdminProductsManager(
   return {
     appliedFilters,
     catalogSummary,
-    categories,
     closeEditor,
+    isTaxonomyLoading,
+    setTaxonomyCategory,
+    taxonomy,
     draft,
     filters,
     handleCreateTag,

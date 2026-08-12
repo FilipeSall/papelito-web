@@ -81,9 +81,6 @@ export function SalesFiltersPanel({
                 type="date"
               />
             </label>
-            <span className="inline-flex min-h-9 items-center rounded-[8px] border border-[#231f20]/18 bg-[#f7f2e7] px-3 text-sm font-semibold text-[#231f20]/72">
-              granularidade: {filters.interval === "day" ? "dia" : "mes"}
-            </span>
             <button className="inline-flex min-h-9 items-center justify-center rounded-[8px] border border-[#231f20] bg-[#231f20] px-5 text-sm font-semibold text-[#ffe500] transition hover:bg-[#3a3536] md:ml-auto">
               aplicar filtro
             </button>

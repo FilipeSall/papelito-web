@@ -8,23 +8,11 @@ import type { HomeProductCard } from "../types/home-products";
 import type { ProductDetailItem, ProductDetailRelatedThumb } from "../types/product-detail";
 import type { ProductTypeId, ProductsCatalogItem } from "../types/products-catalog";
 import { PRODUCTS_LIST_QUERY, PRODUCT_QUERY } from "../queries/products";
-import { inferProductTypeFromName } from "../utils/infer-product-type-from-name";
-import {
-  normalizeTaxonomyText,
-  type SpecificProductTypeId,
-} from "../utils/product-type-taxonomy";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
 } from "../utils/resolve-product-image";
 import { hasPositiveDimension, hasPositiveWeight } from "@/utils/weight";
-
-interface WpProductCategoryNode {
-  id?: string | null;
-  databaseId?: number | null;
-  name?: string | null;
-  slug?: string | null;
-}
 
 export interface WpProductNode {
   __typename?: string | null;
@@ -44,9 +32,18 @@ export interface WpProductNode {
       altText?: string | null;
     } | null> | null;
   } | null;
-  productCategories?: {
-    nodes?: Array<WpProductCategoryNode | null> | null;
+  papelitoCategory?: {
+    databaseId?: number | null;
+    name?: string | null;
+    slug?: string | null;
   } | null;
+  papelitoSubcategories?: Array<{
+    databaseId?: number | null;
+    facet?: string | null;
+    name?: string | null;
+    slug?: string | null;
+  } | null> | null;
+  papelitoCollections?: Array<string | null> | null;
   price?: string | null;
   regularPrice?: string | null;
   salePrice?: string | null;
@@ -62,20 +59,6 @@ export interface WpProductNode {
       height?: string | null;
     } | null> | null;
   } | null;
-}
-
-const CATEGORY_LABEL: Record<Exclude<ProductTypeId, "todos">, string> = {
-  sedas: "Seda",
-  piteiras: "Piteira",
-  filtros: "Filtro",
-  acessorios: "Acessório",
-};
-
-function normalizeText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
 }
 
 function toMoney(value: number) {
@@ -202,45 +185,16 @@ function decodeHtmlEntity(_match: string, entity: string) {
   return namedEntities[normalizedEntity] ?? _match;
 }
 
-function getCategories(product: WpProductNode) {
-  return (product.productCategories?.nodes ?? [])
-    .filter((category): category is WpProductCategoryNode => Boolean(category))
-    .map((category) => ({
-      name: category.name?.trim() ?? "",
-      slug: category.slug?.trim() ?? "",
-    }))
-    .filter((category) => category.name || category.slug);
-}
-
-export type ProductTypeBySlug = ReadonlyMap<string, SpecificProductTypeId>;
-
 /**
- * A taxonomia manda: o tipo vem da categoria raiz do `product_cat` do produto.
- * O nome só entra quando nenhuma das categorias do produto está mapeada.
+ * O tipo vem da categoria principal da taxonomia Papelito.
  */
-function inferType(
-  product: WpProductNode,
-  typeBySlug?: ProductTypeBySlug,
-): Exclude<ProductTypeId, "todos"> {
-  const categories = getCategories(product);
+function inferType(product: WpProductNode): Exclude<ProductTypeId, "todos"> {
+  // A categoria Papelito é o dado, não uma heurística: o slug dela É o id da UI.
+  // Classificar por substring do nome era proibido e fazia toda categoria
+  // desconhecida cair em ACESSÓRIOS.
+  const slug = product.papelitoCategory?.slug;
 
-  if (typeBySlug) {
-    for (const category of categories) {
-      const fromTaxonomy =
-        typeBySlug.get(normalizeTaxonomyText(category.slug)) ??
-        typeBySlug.get(normalizeTaxonomyText(category.name));
-
-      if (fromTaxonomy) {
-        return fromTaxonomy;
-      }
-    }
-  }
-
-  const categoryText = categories
-    .map((category) => `${category.name} ${category.slug}`)
-    .join(" ");
-
-  return inferProductTypeFromName(`${product.name} ${categoryText}`.trim());
+  return typeof slug === "string" && slug.trim().length > 0 ? slug : "";
 }
 
 function resolvePrices(product: WpProductNode) {
@@ -266,19 +220,16 @@ function resolvePrices(product: WpProductNode) {
   };
 }
 
-function resolveBadge(product: WpProductNode, type: Exclude<ProductTypeId, "todos">) {
-  const [firstCategory] = getCategories(product);
+function resolveBadge(product: WpProductNode) {
+  const subcategory = (product.papelitoSubcategories ?? []).find(
+    (item) => typeof item?.name === "string" && item.name.trim().length > 0,
+  );
 
-  if (firstCategory?.name) {
-    return firstCategory.name;
-  }
-
-  return CATEGORY_LABEL[type];
+  return subcategory?.name?.trim() || product.papelitoCategory?.name?.trim() || "Produto";
 }
 
-function resolveCategoryLabel(product: WpProductNode, type: Exclude<ProductTypeId, "todos">) {
-  const [firstCategory] = getCategories(product);
-  return firstCategory?.name || CATEGORY_LABEL[type];
+function resolveCategoryLabel(product: WpProductNode) {
+  return product.papelitoCategory?.name?.trim() || "Produto";
 }
 
 function resolveImage(product: WpProductNode) {
@@ -314,13 +265,17 @@ function hasValidShippingData(product: WpProductNode) {
 }
 
 export function isCatalogProductVisible(product: WpProductNode) {
-  return hasValidShippingData(product) && resolvePrices(product).price > 0;
+  return (
+    typeof product.papelitoCategory?.slug === "string" &&
+    product.papelitoCategory.slug.trim().length > 0 &&
+    hasValidShippingData(product) &&
+    resolvePrices(product).price > 0
+  );
 }
 
 export interface FetchWpProductsInput {
   first?: number;
   after?: string | null;
-  categoryIn?: string[];
   include?: number[];
   minPrice?: number | null;
   maxPrice?: number | null;
@@ -367,15 +322,6 @@ async function requestWpProducts(
     variables.after = normalized.after;
   }
 
-  // `categoryIn` presente e vazio significa "nenhuma categoria corresponde", nunca
-  // "sem filtro": omitir a cláusula devolveria o catálogo inteiro sob a categoria errada.
-  if (normalized.categoryIn) {
-    if (normalized.categoryIn.length === 0) {
-      return { products: [], scanned: 0, hasNextPage: false, endCursor: null };
-    }
-
-    variables.categoryIn = normalized.categoryIn;
-  }
 
   if (normalized.include) {
     if (normalized.include.length === 0) {
@@ -535,44 +481,49 @@ export async function fetchWpProductByDatabaseId(id: string) {
   return product;
 }
 
-// Coleção é termo de `product_cat`, nunca substring do nome: classificar por nome já é
-// proibido para categoria (docs/context/rendering-and-performance.md) e mantinha /kits e
-// /premium permanentemente vazios.
-const PREMIUM_CATEGORY_SLUGS = ["premium"];
-const KIT_CATEGORY_SLUGS = ["kits", "kit"];
+/**
+ * Coleção curada, vinda do dado persistido.
+ *
+ * Classificar coleção por substring do nome mantinha `/kits` e `/premium`
+ * permanentemente errados: o produto entrava na coleção por acidente de nome.
+ */
+function hasCollection(product: WpProductNode, collection: string) {
+  return (product.papelitoCollections ?? []).some(
+    (slug) => typeof slug === "string" && slug === collection,
+  );
+}
 
-function hasCategorySlug(product: WpProductNode, slugs: string[]) {
-  return (product.productCategories?.nodes ?? []).some((node) => {
-    const slug = node?.slug;
-    return typeof slug === "string" && slugs.includes(normalizeText(slug));
-  });
+export function getPapelitoSubcategorySlugs(product: WpProductNode) {
+  return (product.papelitoSubcategories ?? [])
+    .map((node) => node?.slug)
+    .filter((slug): slug is string => typeof slug === "string" && slug.length > 0);
 }
 
 export function mapWpProductToCatalogItem(
   product: WpProductNode,
   index: number,
-  typeBySlug?: ProductTypeBySlug,
 ): ProductsCatalogItem {
-  const type = inferType(product, typeBySlug);
+  const type = inferType(product);
   const prices = resolvePrices(product);
 
   return {
     id: String(product.databaseId),
-    category: resolveCategoryLabel(product, type),
+    category: resolveCategoryLabel(product),
     name: product.name,
-    badge: resolveBadge(product, type),
+    badge: resolveBadge(product),
     originalPrice: prices.originalPrice,
     price: prices.price,
     rating: Number((4.1 + (index % 8) * 0.1).toFixed(1)),
     reviews: 32 + ((index * 19) % 480),
     image: resolveImage(product) ?? PRODUCT_FALLBACK_IMAGE,
     type,
-    isPremium: hasCategorySlug(product, PREMIUM_CATEGORY_SLUGS),
+    subcategories: getPapelitoSubcategorySlugs(product),
+    isPremium: hasCollection(product, "premium"),
     // Quem decide "novidade" é `markNewArrivals`, sobre a lista já ordenada por data:
     // dentro do mapper só existiria a posição no lote, que varia com perPage e page.
     isNewArrival: false,
     isOnSale: prices.discountPercent > 0,
-    isKit: hasCategorySlug(product, KIT_CATEGORY_SLUGS),
+    isKit: hasCollection(product, "kits"),
   };
 }
 
@@ -603,9 +554,9 @@ export function mapWpProductToHomeCard(
 
   return {
     id: String(product.databaseId),
-    category: resolveCategoryLabel(product, type),
+    category: resolveCategoryLabel(product),
     name: product.name,
-    badge: resolveBadge(product, type),
+    badge: resolveBadge(product),
     discount: prices.discountPercent,
     originalPrice: prices.originalPrice,
     price: prices.price,
@@ -663,9 +614,8 @@ function buildProductGallery(product: WpProductNode) {
 export function mapWpProductToDetailItem(
   product: WpProductNode,
   relatedProducts: WpProductNode[],
-  typeBySlug?: ProductTypeBySlug,
 ): ProductDetailItem {
-  const type = inferType(product, typeBySlug);
+  const type = inferType(product);
   const prices = resolvePrices(product);
   const galleryImages = buildProductGallery(product);
   const primaryImage = resolveImage(product) ?? galleryImages[0]?.image;
@@ -677,9 +627,9 @@ export function mapWpProductToDetailItem(
   return {
     id: String(product.databaseId),
     name: product.name,
-    category: resolveCategoryLabel(product, type),
+    category: resolveCategoryLabel(product),
     type,
-    badge: resolveBadge(product, type),
+    badge: resolveBadge(product),
     description,
     image: primaryImage,
     rating: 4.4,
@@ -690,7 +640,7 @@ export function mapWpProductToDetailItem(
     galleryImages,
     relatedThumbs: relatedProducts
       .filter((item) => item.databaseId !== product.databaseId)
-      .filter((item) => inferType(item, typeBySlug) === type)
+      .filter((item) => inferType(item) === type)
       .slice(0, 4)
       .map(mapWpProductToRelatedThumb),
   };

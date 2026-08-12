@@ -7,6 +7,7 @@ interface BuildProductsHrefInput {
   basePath?: string;
   collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
+  selectedSubcategories?: string[];
   minPrice: number | null;
   maxPrice: number | null;
   viewMode: ProductsViewMode;
@@ -19,6 +20,7 @@ export function buildProductsHref({
   basePath = "/produtos",
   collection = "todos",
   selectedTypes,
+  selectedSubcategories = [],
   minPrice,
   maxPrice,
   viewMode,
@@ -32,6 +34,10 @@ export function buildProductsHref({
     params.set("tipo", selectedTypes[0]);
   } else if (selectedTypes.length > 1) {
     params.set("tipos", selectedTypes.join(","));
+  }
+
+  if (selectedSubcategories.length > 0) {
+    params.set("subcategoria", selectedSubcategories.join(","));
   }
 
   if (collection !== "todos" || basePath !== "/produtos") {

@@ -18,10 +18,8 @@ const FAVORITE_PRODUCT_FIELDS = `
     sourceUrl
     altText
   }
-  productCategories(first: 1) {
-    nodes {
-      name
-    }
+  papelitoCategory {
+    name
   }
   ... on SimpleProduct {
     price
@@ -90,10 +88,8 @@ type FavoriteProductNode = {
   image?: {
     sourceUrl?: string | null;
   } | null;
-  productCategories?: {
-    nodes?: Array<{
-      name?: string | null;
-    } | null> | null;
+  papelitoCategory?: {
+    name?: string | null;
   } | null;
   price?: string | null;
   regularPrice?: string | null;
@@ -166,7 +162,7 @@ function mapFavoriteNode(node: FavoriteNode): FavoriteProductItem | null {
   const price = parseMoney(product.price);
   const currentPrice = salePrice > 0 ? salePrice : price > 0 ? price : regularPrice;
   const originalPrice = regularPrice > 0 ? regularPrice : currentPrice;
-  const category = product.productCategories?.nodes?.[0]?.name?.trim() || "Produto";
+  const category = product.papelitoCategory?.name?.trim() || "Produto";
 
   return {
     productId: String(productId),

@@ -18,7 +18,7 @@ export function AdminSalesGranularitySelect({
   const [value, setValue] = useState(defaultValue);
 
   return (
-    <div className="group relative z-40 w-35 shrink-0">
+    <div className="relative z-40 w-35 shrink-0">
       <input name="interval" type="hidden" value={value} />
       <div className="relative">
         <CheckoutCustomSelect
@@ -34,10 +34,6 @@ export function AdminSalesGranularitySelect({
             }
           }}
         />
-        <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-[#231f20] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-          granularidade
-          <span className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-[#231f20]" />
-        </span>
       </div>
     </div>
   );

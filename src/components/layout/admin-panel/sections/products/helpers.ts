@@ -58,7 +58,6 @@ export function normalizeShippingMeasure(value: string | null | undefined) {
 
 export function productToDraft(product: AdminProduct): ProductDraft {
   return {
-    categoryIds: product.categories.map((category) => String(category.id)),
     dateOnSaleFrom: toDateTimeLocal(product.dateOnSaleFrom),
     dateOnSaleTo: toDateTimeLocal(product.dateOnSaleTo),
     description: product.description,
@@ -74,14 +73,43 @@ export function productToDraft(product: AdminProduct): ProductDraft {
     slug: product.slug,
     status: product.status,
     tagIds: product.tags.map((tag) => String(tag.id)),
+    taxonomyCategoryId: "",
+    taxonomyCollections: [],
+    taxonomySubcategoryIds: [],
     weight: product.weight,
     width: product.dimensions.width,
   };
 }
 
+/**
+ * Aplica a taxonomia Papelito, carregada à parte, sobre um rascunho.
+ *
+ * A listagem vem da REST do WooCommerce e não conhece a taxonomia própria, então
+ * ela é buscada quando o editor abre. Enquanto não chega, os campos ficam vazios
+ * — e salvar sem categoria é bloqueado, não silenciosamente aceito.
+ */
+export function applyTaxonomyToDraft(
+  draft: ProductDraft,
+  taxonomy: {
+    category: { id: number } | null;
+    collections: string[];
+    subcategories: { id: number }[];
+  } | null,
+): ProductDraft {
+  if (!taxonomy) {
+    return draft;
+  }
+
+  return {
+    ...draft,
+    taxonomyCategoryId: taxonomy.category ? String(taxonomy.category.id) : "",
+    taxonomyCollections: [...taxonomy.collections],
+    taxonomySubcategoryIds: taxonomy.subcategories.map((item) => String(item.id)),
+  };
+}
+
 export function newProductDraft(): ProductDraft {
   return {
-    categoryIds: [],
     dateOnSaleFrom: "",
     dateOnSaleTo: "",
     description: "",
@@ -97,6 +125,9 @@ export function newProductDraft(): ProductDraft {
     slug: "",
     status: DEFAULT_PRODUCT_STATUS,
     tagIds: [],
+    taxonomyCategoryId: "",
+    taxonomyCollections: [],
+    taxonomySubcategoryIds: [],
     weight: "",
     width: "",
   };
@@ -110,7 +141,8 @@ export function buildPayload(
     !changedFields || changedFields.has(field);
   const payload: Record<string, unknown> = {};
 
-  if (hasChanged("categoryIds")) payload.categories = draft.categoryIds.map(Number);
+  // `categories` NÃO é enviado ao WooCommerce: quem escreve `product_cat` é o
+  // dual-write, a partir da taxonomia Papelito.
   if (hasChanged("dateOnSaleFrom")) payload.dateOnSaleFrom = draft.dateOnSaleFrom || null;
   if (hasChanged("dateOnSaleTo")) payload.dateOnSaleTo = draft.dateOnSaleTo || null;
   if (hasChanged("description")) payload.description = draft.description;
@@ -133,6 +165,20 @@ export function buildPayload(
   if (hasChanged("weight")) payload.weight = normalizeShippingMeasure(draft.weight);
 
   return payload;
+}
+
+/**
+ * Payload da taxonomia Papelito, enviado em requisição própria.
+ *
+ * Separado de `buildPayload` porque tem outro destino: o produto vai para a REST
+ * do WooCommerce, a classificação vai para `papelito/v1/admin/products/{id}/taxonomy`.
+ */
+export function buildTaxonomyPayload(draft: ProductDraft) {
+  return {
+    categoryId: Number(draft.taxonomyCategoryId),
+    collections: [...draft.taxonomyCollections],
+    subcategoryIds: draft.taxonomySubcategoryIds.map(Number).filter(Number.isInteger),
+  };
 }
 
 export function formatTermLabel(

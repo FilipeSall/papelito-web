@@ -45,8 +45,11 @@ export const PRODUCT_ERROR_MESSAGES = {
   createTag: "Não foi possível criar a tag.",
   invalidRegularPrice: "Informe um preço regular válido.",
   invalidSalePrice: "Informe um preço promocional válido ou deixe o campo vazio.",
+  missingCategory: "Escolha a categoria principal do produto.",
   missingName: "Informe o nome do produto.",
   missingTagName: "Informe o nome da tag.",
+  saveTaxonomy:
+    "O produto foi salvo, mas a classificação não. Reabra o produto e salve a categoria de novo.",
   promotionTagMissing:
     "Tag de promoção não encontrada. Crie ou mantenha uma tag chamada Promoções.",
 } as const;

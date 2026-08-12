@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  WP_PRODUCT_CATEGORIES,
-  buildCategoriesResponse,
+  PAPELITO_CATEGORIES,
+  buildPapelitoTaxonomyResponse,
   buildProductNode,
   buildProductsResponse,
 } from "../../../../test/factories/wp-catalog-taxonomy";
@@ -13,9 +13,17 @@ vi.mock("@/lib/server/wp-graphql", () => ({
   wpGraphqlRequest,
 }));
 
-vi.mock("@/lib/server/env", () => ({
+vi.mock(import("@/lib/server/env"), async (importOriginal) => ({
+  ...(await importOriginal()),
   isMockDataEnabled: () => false,
   getWpGraphqlEndpoint: () => "http://wordpress.test/graphql",
+}));
+
+const wpRest = vi.hoisted(() => vi.fn());
+
+// A taxonomia deixou de vir por GraphQL: agora é `GET /papelito/v1/categories`.
+vi.mock("@/lib/server/wp-rest", () => ({
+  wpRest,
 }));
 
 const activeFlashSale = vi.hoisted(() => ({
@@ -37,7 +45,7 @@ interface GraphqlCall {
 }
 
 let calls: GraphqlCall[] = [];
-let categories = WP_PRODUCT_CATEGORIES;
+let categories = PAPELITO_CATEGORIES;
 
 function fixturePrice(value: string) {
   return Number(value.replace(/[^\d,]/g, "").replace(",", "."));
@@ -52,11 +60,7 @@ function stubWordPress() {
     async (query: string, variables: Record<string, unknown> = {}) => {
       calls.push({ query, variables });
 
-      if (query.includes("query Categories")) {
-        return buildCategoriesResponse(categories);
-      }
-
-      const { products } = buildProductsResponse(variables.categoryIn as string[] | undefined);
+      const { products } = buildProductsResponse();
       const include = variables.include as number[] | undefined;
       const minPrice = variables.minPrice as number | undefined;
       const maxPrice = variables.maxPrice as number | undefined;
@@ -94,10 +98,15 @@ function productsCall() {
 beforeEach(() => {
   vi.resetModules();
   wpGraphqlRequest.mockReset();
+  wpRest.mockReset();
   calls = [];
-  categories = WP_PRODUCT_CATEGORIES;
+  categories = PAPELITO_CATEGORIES;
   activeFlashSale.current = null;
   stubWordPress();
+  wpRest.mockImplementation(async () => ({
+    ok: true,
+    data: buildPapelitoTaxonomyResponse(categories),
+  }));
 });
 
 describe("getProductsCatalog — filtro por categoria", () => {
@@ -124,7 +133,7 @@ describe("getProductsCatalog — filtro por categoria", () => {
     ]);
   });
 
-  it("SEDAS devolve só sedas e envia categoryIn na query (antes o filtro era omitido)", async () => {
+  it("SEDAS devolve só sedas", async () => {
     const getProductsCatalog = await loadCatalog();
 
     const payload = await getProductsCatalog({
@@ -137,10 +146,9 @@ describe("getProductsCatalog — filtro por categoria", () => {
     expect(payload.items.every((item) => item.type === "sedas")).toBe(true);
     expect(payload.items.every((item) => item.name.startsWith("Seda"))).toBe(true);
 
-    const variables = productsCall()?.variables;
-    expect(variables?.categoryIn).toBeDefined();
-    expect(variables?.categoryIn).toContain("papel");
-    expect(variables?.categoryIn).not.toContain("acessorios");
+    // A query não filtra mais por categoria no WordPress: sem `product_cat`, a
+    // narrowing acontece em memória pela categoria Papelito do produto.
+    expect(productsCall()?.variables).not.toHaveProperty("categoryIn");
   });
 
   it("cada categoria devolve um conjunto disjunto ao trocar de filtro", async () => {
@@ -202,7 +210,7 @@ describe("getProductsCatalog — filtro por categoria", () => {
     expect(productsCall()?.variables.categoryIn).toBeUndefined();
   });
 
-  it("tipo inexistente ou inválido não filtra nada e não vira acessórios", async () => {
+  it("tipo inexistente ou inválido falha fechado e não vira acessórios", async () => {
     const getProductsCatalog = await loadCatalog();
 
     const payload = await getProductsCatalog({
@@ -211,10 +219,9 @@ describe("getProductsCatalog — filtro por categoria", () => {
       perPage: 60,
     });
 
-    expect(payload.activeType).toBe("todos");
-    expect(payload.selectedTypes).toEqual([]);
-    expect(payload.totalItems).toBe(40);
-    expect(productsCall()?.variables.categoryIn).toBeUndefined();
+    expect(payload.activeType).toBe("nao-existe");
+    expect(payload.selectedTypes).toEqual(["nao-existe"]);
+    expect(payload.totalItems).toBe(0);
   });
 });
 
@@ -261,8 +268,8 @@ describe("getProductsCatalog — paginação com filtro", () => {
 });
 
 describe("getProductsCatalog — fail-closed", () => {
-  it("categoria sem termo no WordPress devolve vazio, nunca o catálogo inteiro", async () => {
-    categories = WP_PRODUCT_CATEGORIES.filter((category) => category.databaseId !== 156);
+  it("categoria inexistente na taxonomia devolve vazio, nunca o catálogo inteiro", async () => {
+    categories = PAPELITO_CATEGORIES.filter((category) => category.slug !== "acessorios");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const getProductsCatalog = await loadCatalog();
 
@@ -279,14 +286,13 @@ describe("getProductsCatalog — fail-closed", () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it("falha do WPGraphQL de categorias não abre o catálogo inteiro", async () => {
-    wpGraphqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes("query Categories")) {
-        throw new Error("boom");
-      }
-
-      return buildProductsResponse();
-    });
+  it("falha da taxonomia não abre o catálogo inteiro", async () => {
+    // A taxonomia vem por REST agora. Indisponibilidade dela NÃO pode virar
+    // catálogo sem filtro — tem de virar estado de erro.
+    wpRest.mockImplementation(async () => ({
+      ok: false,
+      error: { message: "boom" },
+    }));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const getProductsCatalog = await loadCatalog();
 
@@ -302,13 +308,7 @@ describe("getProductsCatalog — fail-closed", () => {
 
   it("categoria sem produtos não recai no catálogo inteiro", async () => {
     const getProductsCatalog = await loadCatalog();
-    wpGraphqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes("query Categories")) {
-        return buildCategoriesResponse(categories);
-      }
-
-      return { products: { nodes: [] } };
-    });
+    wpGraphqlRequest.mockImplementation(async () => ({ products: { nodes: [] } }));
 
     const payload = await getProductsCatalog({
       type: "filtros",
@@ -339,11 +339,7 @@ describe("getProductsCatalog — contagem das abas", () => {
 
 describe("getProductsCatalog — origem indisponível", () => {
   it("falha do WPGraphQL de produtos vira sourceStatus 'unavailable', não catálogo vazio", async () => {
-    wpGraphqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes("query Categories")) {
-        return buildCategoriesResponse(categories);
-      }
-
+    wpGraphqlRequest.mockImplementation(async () => {
       throw new TypeError("fetch failed");
     });
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -355,14 +351,11 @@ describe("getProductsCatalog — origem indisponível", () => {
     expect(payload.items).toEqual([]);
   });
 
-  it("falha da consulta de categorias com filtro de tipo ativo também é 'unavailable'", async () => {
-    wpGraphqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes("query Categories")) {
-        throw new TypeError("fetch failed");
-      }
-
-      return buildProductsResponse();
-    });
+  it("falha da taxonomia com filtro de tipo ativo também é 'unavailable'", async () => {
+    wpRest.mockImplementation(async () => ({
+      ok: false,
+      error: { message: "fetch failed" },
+    }));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const getProductsCatalog = await loadCatalog();
 
@@ -376,8 +369,8 @@ describe("getProductsCatalog — origem indisponível", () => {
     expect(payload.items).toEqual([]);
   });
 
-  it("termo ausente com WordPress saudável continua 'ok' (fail-closed, não erro)", async () => {
-    categories = WP_PRODUCT_CATEGORIES.filter((category) => category.databaseId !== 156);
+  it("categoria ausente com origem saudável continua 'ok' (fail-closed, não erro)", async () => {
+    categories = PAPELITO_CATEGORIES.filter((category) => category.slug !== "acessorios");
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const getProductsCatalog = await loadCatalog();
 
@@ -392,13 +385,7 @@ describe("getProductsCatalog — origem indisponível", () => {
   });
 
   it("catálogo legitimamente vazio continua sendo 'ok'", async () => {
-    wpGraphqlRequest.mockImplementation(async (query: string) => {
-      if (query.includes("query Categories")) {
-        return buildCategoriesResponse(categories);
-      }
-
-      return { products: { nodes: [] } };
-    });
+    wpGraphqlRequest.mockImplementation(async () => ({ products: { nodes: [] } }));
     const getProductsCatalog = await loadCatalog();
 
     const payload = await getProductsCatalog({ perPage: 9 });
@@ -426,7 +413,7 @@ describe("getProductsCatalog — varredura por cursor", () => {
       buildProductNode({
         databaseId: 20000 + index,
         name: `Seda Paginada ${index}`,
-        categorySlugs: ["papel"],
+        categorySlugs: ["sedas"],
       }),
     );
 
@@ -435,7 +422,7 @@ describe("getProductsCatalog — varredura por cursor", () => {
         calls.push({ query, variables });
 
         if (query.includes("query Categories")) {
-          return buildCategoriesResponse(categories);
+          return buildPapelitoTaxonomyResponse(categories);
         }
 
         const offset = variables.after ? Number(variables.after) : 0;

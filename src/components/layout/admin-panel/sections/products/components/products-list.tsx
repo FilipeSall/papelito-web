@@ -6,7 +6,7 @@ import type { AdminProduct } from "@/lib/server/admin-products";
 
 import { formatDateTimeLabel } from "../../../formatters";
 import { FramedPanel } from "../../../primitives";
-import { findPromotionTag, formatMoney, formatTermLabel, isPromotionActive } from "../helpers";
+import { findPromotionTag, formatMoney, isPromotionActive } from "../helpers";
 
 const TABLE_HEADERS = ["produto", "status", "preço", "promoção", "atualizado"];
 
@@ -150,12 +150,12 @@ export function ProductsList({
                           </p>
                           <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#a0947b]">
                             {product.categories.length > 0
-                              ? product.categories
-                                  .slice(0, 2)
-                                  .map((category) =>
-                                    formatTermLabel(category, product.categories),
-                                  )
-                                  .join(" · ")
+                              ? [
+                                  product.categories[0].name,
+                                  ...(product.subcategories ?? []).map(
+                                    (subcategory) => subcategory.name,
+                                  ),
+                                ].join(" · ")
                               : "Sem categoria"}
                           </p>
                         </div>

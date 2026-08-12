@@ -2,7 +2,7 @@ import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
 
-import type { AdminProduct, AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
+import type { AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
 
 type WcProductTerm = {
   id?: number;
@@ -61,7 +61,7 @@ type WpFlashSaleCandidate = {
   stockQuantity?: number | null;
   dateModified?: string;
   images?: Array<{ id?: number; src?: string; alt?: string; position?: number }>;
-  categories?: WcProductTerm[];
+  papelitoCategory?: { id?: number; name?: string; slug?: string } | null;
   tags?: WcProductTerm[];
 };
 
@@ -117,12 +117,26 @@ export type AdminFlashSalePayload = {
 };
 
 export type AdminFlashSaleProductsSnapshot = {
-  items: AdminProduct[];
+  items: AdminFlashSaleCandidate[];
   page: number;
   perPage: number;
   total: number;
   totalPages: number;
   issues: string[];
+};
+
+export type AdminFlashSaleCandidate = {
+  category: { id: number; name: string; slug: string } | null;
+  dateModified: string;
+  id: number;
+  images: Array<{ alt: string; id: number; position: number; src: string }>;
+  name: string;
+  permalink: string;
+  price: string;
+  regularPrice: string;
+  sku: string;
+  status: string;
+  tags: AdminProductTaxonomyTerm[];
 };
 
 export type AdminFlashSaleProductsFilters = {
@@ -220,19 +234,19 @@ function mapCandidateTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null 
   };
 }
 
-function mapCandidate(product: WpFlashSaleCandidate): AdminProduct | null {
+function mapCandidate(product: WpFlashSaleCandidate): AdminFlashSaleCandidate | null {
   const id = toNumber(product.id);
   if (id <= 0) return null;
 
   return {
-    categories: (product.categories ?? [])
-      .map(mapCandidateTerm)
-      .filter((term): term is AdminProductTaxonomyTerm => term !== null),
+    category: product.papelitoCategory && toNumber(product.papelitoCategory.id) > 0
+      ? {
+          id: toNumber(product.papelitoCategory.id),
+          name: cleanText(product.papelitoCategory.name),
+          slug: cleanText(product.papelitoCategory.slug),
+        }
+      : null,
     dateModified: cleanText(product.dateModified),
-    dateOnSaleFrom: "",
-    dateOnSaleTo: "",
-    description: "",
-    dimensions: { height: "", length: "", width: "" },
     id,
     images: (product.images ?? [])
       .map((image, position) => ({
@@ -242,23 +256,15 @@ function mapCandidate(product: WpFlashSaleCandidate): AdminProduct | null {
         src: cleanText(image.src),
       }))
       .filter((image) => image.id > 0 || image.src.length > 0),
-    manageStock: typeof product.stockQuantity === "number",
     name: cleanText(product.name) || "Produto sem nome",
     permalink: cleanText(product.permalink),
     price: cleanText(product.price),
     regularPrice: cleanText(product.regularPrice),
-    salePrice: "",
-    shortDescription: "",
     sku: cleanText(product.sku),
-    slug: "",
     status: cleanText(product.status) || "publish",
-    stockQuantity: typeof product.stockQuantity === "number" ? product.stockQuantity : null,
-    stockStatus: cleanText(product.stockStatus) || "instock",
     tags: (product.tags ?? [])
       .map(mapCandidateTerm)
       .filter((term): term is AdminProductTaxonomyTerm => term !== null),
-    type: cleanText(product.type) || "simple",
-    weight: cleanText(product.weight),
   };
 }
 
@@ -316,42 +322,6 @@ export async function saveAdminFlashSale(accessToken: string, payload: AdminFlas
   return mapSnapshot(result.data);
 }
 
-export async function getFlashSaleProductCategories(
-  accessToken: string | undefined,
-): Promise<AdminProductTaxonomyTerm[]> {
-  if (!accessToken) {
-    return [];
-  }
-
-  const result = await wpRest<WcProductTerm[]>(
-    "/wc/v3/products/categories?per_page=100&orderby=name&order=asc&hide_empty=true",
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      revalidate: 300,
-      tags: ["admin-product-categories-all"],
-    },
-  );
-
-  if (!result.ok) {
-    return [];
-  }
-
-  return result.data
-    .map((term) => {
-      const id = typeof term.id === "number" ? term.id : 0;
-      if (id <= 0) {
-        return null;
-      }
-      return {
-        id,
-        name: typeof term.name === "string" ? term.name : "",
-        parent: typeof term.parent === "number" ? term.parent : 0,
-        slug: typeof term.slug === "string" ? term.slug : "",
-      } satisfies AdminProductTaxonomyTerm;
-    })
-    .filter((term): term is AdminProductTaxonomyTerm => term !== null)
-    .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
-}
 
 export async function getAdminFlashSaleProducts(
   accessToken: string | undefined,
@@ -399,7 +369,7 @@ export async function getAdminFlashSaleProducts(
   return {
     items: (result.data.items ?? [])
       .map(mapCandidate)
-      .filter((item): item is AdminProduct => item !== null),
+      .filter((item): item is AdminFlashSaleCandidate => item !== null),
     page: toNumber(result.data.page) || page,
     perPage: toNumber(result.data.perPage) || perPage,
     total: toNumber(result.data.total),

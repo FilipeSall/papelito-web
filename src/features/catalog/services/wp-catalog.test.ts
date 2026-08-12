@@ -70,6 +70,7 @@ describe("isCatalogProductVisible", () => {
     name: "Produto",
     price: "R$ 10,00",
     slug: "produto",
+    papelitoCategory: { databaseId: 1, name: "Sedas", slug: "sedas" },
     weight: "0.4",
     width: "11",
   };
@@ -84,49 +85,41 @@ describe("isCatalogProductVisible", () => {
 });
 
 describe("mapWpProductToCatalogItem — tipo do produto", () => {
-  const typeBySlug = new Map<string, "sedas" | "piteiras" | "filtros" | "acessorios">([
-    ["papel", "sedas"],
-    ["hemp", "sedas"],
-    ["acessorios", "acessorios"],
-    ["tubelito", "acessorios"],
-  ]);
-
-  function buildNode(name: string, categorySlugs: string[]) {
+  function buildNode(name: string, categorySlug: string | null) {
     return {
       id: `gid://${name}`,
       databaseId: 1,
       name,
       slug: "produto",
       price: "R$ 90,00",
-      productCategories: {
-        nodes: categorySlugs.map((slug) => ({ slug, name: slug })),
-      },
+      papelitoCategory: categorySlug
+        ? { databaseId: 1, name: categorySlug, slug: categorySlug }
+        : null,
     };
   }
 
-  it("usa a taxonomia, não o nome do produto", () => {
-    const item = mapWpProductToCatalogItem(
-      buildNode("Seda Especial", ["acessorios", "tubelito"]),
-      0,
-      typeBySlug,
-    );
+  it("usa o slug da categoria Papelito, não o nome do produto", () => {
+    const item = mapWpProductToCatalogItem(buildNode("Seda Especial", "acessorios"), 0);
 
     expect(item.type).toBe("acessorios");
   });
 
-  it("classifica seda cadastrada na raiz Papel", () => {
-    const item = mapWpProductToCatalogItem(buildNode("Papel Fino", ["hemp", "papel"]), 0, typeBySlug);
+  it("classifica a seda pela categoria, não por substring", () => {
+    const item = mapWpProductToCatalogItem(buildNode("Papel Fino", "sedas"), 0);
 
     expect(item.type).toBe("sedas");
   });
 
-  it("cai no nome só quando nenhuma categoria do produto está mapeada", () => {
-    const item = mapWpProductToCatalogItem(
-      buildNode("Piteira Longa", ["sem-categoria"]),
-      0,
-      typeBySlug,
-    );
+  it("slug desconhecido não vira outra categoria por acidente", () => {
+    // Não existe mais inferência por nome: "Piteira Longa" com categoria
+    // desconhecida NÃO vira `piteiras`. Classificar por substring era proibido e
+    // fazia toda categoria nova cair em ACESSÓRIOS.
+    const item = mapWpProductToCatalogItem(buildNode("Piteira Longa", "bituqueiras"), 0);
 
-    expect(item.type).toBe("piteiras");
+    expect(item.type).toBe("bituqueiras");
+  });
+
+  it("produto sem categoria permanece sem classificação", () => {
+    expect(mapWpProductToCatalogItem(buildNode("Produto Solto", null), 0).type).toBe("");
   });
 });

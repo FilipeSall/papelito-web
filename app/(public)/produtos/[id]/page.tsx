@@ -82,7 +82,10 @@ export default async function ProdutoDetalhePage({
 
   return (
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
-      <ProductBreadcrumbs productName={product.name} />
+      <ProductBreadcrumbs
+        category={{ name: product.category, slug: product.type }}
+        productName={product.name}
+      />
       <ProductDetailMainSection
         product={displayedProduct}
         initialIsFavorite={initialIsFavorite}

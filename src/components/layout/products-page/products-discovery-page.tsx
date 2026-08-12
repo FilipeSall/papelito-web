@@ -5,6 +5,7 @@ import { useProductsCatalog } from "@/features/catalog";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   readSingleQueryParam,
+  normalizeSubcategoryParam,
   resolveSelectedTypesFromParams,
 } from "@/features/catalog/utils/product-type-taxonomy";
 import {
@@ -16,6 +17,7 @@ interface DiscoverySearchParams {
   tipo?: string | string[];
   tipos?: string | string[];
   colecao?: string | string[];
+  subcategoria?: string | string[];
   page?: string | string[];
   view?: string | string[];
   perPage?: string | string[];
@@ -83,6 +85,7 @@ export function ProductsDiscoveryPage({
     typeof rawCollection === "string" && rawCollection.trim().length > 0;
   const activeCollection = hasExplicitCollection ? collectionFromQuery : initialCollection;
 
+  const selectedSubcategories = normalizeSubcategoryParam(resolvedSearchParams.subcategoria);
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleQueryParam(resolvedSearchParams.view));
   const perPage = normalizeProductsPerPage(
@@ -98,6 +101,7 @@ export function ProductsDiscoveryPage({
         type: queryType,
         collection: activeCollection,
         selectedTypes,
+        selectedSubcategories,
         minPrice,
         maxPrice,
         page: currentPage,

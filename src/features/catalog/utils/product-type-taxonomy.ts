@@ -10,27 +10,31 @@ export const SPECIFIC_PRODUCT_TYPES: readonly SpecificProductTypeId[] = [
   "acessorios",
 ];
 
-/**
- * Nomes e slugs aceitos para cada categoria raiz do `product_cat`.
- *
- * Os ids da UI nunca foram slugs do WordPress: as gerações de import do catálogo
- * criaram as raízes como `seda`/`piteira`/`filtro` e depois `papel`/`piteiras`/`filtro`.
- * O mapa é a única fonte de verdade dessa tradução — sem ele, a classificação vira
- * heurística por substring e categorias novas caem na categoria errada.
- */
-const ROOT_CATEGORY_ALIASES: Record<SpecificProductTypeId, readonly string[]> = {
-  sedas: ["sedas", "seda", "papel", "papeis", "papel de fumo", "papeis de fumo"],
-  piteiras: ["piteiras", "piteira"],
-  filtros: ["filtros", "filtro"],
-  acessorios: ["acessorios", "acessorio"],
-};
+export function normalizeTaxonomySlug(value: string | null | undefined) {
+  if (typeof value !== "string") {
+    return "";
+  }
 
-const QUERY_PARAM_ALIASES: Record<SpecificProductTypeId, readonly string[]> = {
-  sedas: ["sedas", "seda"],
-  piteiras: ["piteiras", "piteira"],
-  filtros: ["filtros", "filtro"],
-  acessorios: ["acessorios", "acessorio"],
-};
+  // Não tente "consertar" uma rota: removê-la transformaria `../../etc/passwd`
+  // em um slug aparentemente legítimo.
+  if (value.includes("/") || value.includes("\\")) {
+    return "";
+  }
+
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function isTaxonomySlug(value: string): value is SpecificProductTypeId {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
 
 export function normalizeTaxonomyText(value: string | null | undefined) {
   if (typeof value !== "string") {
@@ -46,38 +50,6 @@ export function normalizeTaxonomyText(value: string | null | undefined) {
     .toLowerCase();
 }
 
-function buildLookup(source: Record<SpecificProductTypeId, readonly string[]>) {
-  const lookup = new Map<string, SpecificProductTypeId>();
-
-  for (const type of SPECIFIC_PRODUCT_TYPES) {
-    for (const alias of source[type]) {
-      lookup.set(normalizeTaxonomyText(alias), type);
-    }
-  }
-
-  return lookup;
-}
-
-const ROOT_LOOKUP = buildLookup(ROOT_CATEGORY_ALIASES);
-const QUERY_PARAM_LOOKUP = buildLookup(QUERY_PARAM_ALIASES);
-
-/**
- * Traduz uma categoria raiz do WordPress para o tipo exibido na UI.
- *
- * Retorna `null` quando a raiz não está mapeada — o produto fica visível apenas em TODOS,
- * nunca é absorvido por outra categoria.
- */
-export function resolveRootProductType(
-  name: string | null | undefined,
-  slug: string | null | undefined,
-): SpecificProductTypeId | null {
-  return (
-    ROOT_LOOKUP.get(normalizeTaxonomyText(name)) ??
-    ROOT_LOOKUP.get(normalizeTaxonomyText(slug)) ??
-    null
-  );
-}
-
 export function readSingleQueryParam(value: QueryParamValue) {
   if (Array.isArray(value)) {
     return value[0];
@@ -87,12 +59,13 @@ export function readSingleQueryParam(value: QueryParamValue) {
 }
 
 /**
- * Lê `?tipo=`. Valor ausente, desconhecido ou inválido cai em `todos`.
+ * Lê `?tipo=`. Categoria válida é resolvida contra a taxonomia no servidor;
+ * aqui só validamos o formato para não manter uma lista estática no bundle.
  */
 export function normalizeProductTypeParam(
   value: QueryParamValue,
 ): ProductTypeId {
-  const raw = normalizeTaxonomyText(readSingleQueryParam(value));
+  const raw = normalizeTaxonomySlug(readSingleQueryParam(value));
 
   if (!raw) {
     return "todos";
@@ -102,7 +75,7 @@ export function normalizeProductTypeParam(
     return "todos";
   }
 
-  return QUERY_PARAM_LOOKUP.get(raw) ?? "todos";
+  return isTaxonomySlug(raw) ? raw : "todos";
 }
 
 /**
@@ -119,8 +92,8 @@ export function normalizeSelectedTypesParam(
   }
   const resolved = raw
     .flatMap((part) => part.split(","))
-    .map((part) => QUERY_PARAM_LOOKUP.get(normalizeTaxonomyText(part)))
-    .filter((part): part is SpecificProductTypeId => Boolean(part));
+    .map((part) => normalizeTaxonomySlug(part))
+    .filter(isTaxonomySlug);
 
   return Array.from(new Set(resolved));
 }
@@ -143,4 +116,22 @@ export function resolveSelectedTypesFromParams(params: {
   }
 
   return { queryType, selectedTypes };
+}
+
+/**
+ * Le `?subcategoria=` (lista separada por virgula).
+ *
+ * Nao valida contra uma lista fixa: subcategoria vive no banco e nasce sem
+ * deploy. Slug inexistente simplesmente nao casa com produto nenhum.
+ */
+export function normalizeSubcategoryParam(
+  value: string | string[] | undefined,
+): string[] {
+  const raw = Array.isArray(value) ? value : value ? [value] : [];
+  const resolved = raw
+    .flatMap((part) => part.split(","))
+    .map((part) => normalizeTaxonomySlug(part))
+    .filter(isTaxonomySlug);
+
+  return Array.from(new Set(resolved));
 }

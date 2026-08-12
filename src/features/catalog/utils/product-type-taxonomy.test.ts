@@ -3,44 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeProductTypeParam,
   normalizeSelectedTypesParam,
-  resolveRootProductType,
   resolveSelectedTypesFromParams,
 } from "./product-type-taxonomy";
-
-describe("resolveRootProductType", () => {
-  it("mapeia as raizes reais do WordPress para os tipos da UI", () => {
-    expect(resolveRootProductType("Papel", "papel")).toBe("sedas");
-    expect(resolveRootProductType("Piteiras", "piteiras")).toBe("piteiras");
-    expect(resolveRootProductType("Filtro", "filtro")).toBe("filtros");
-    expect(resolveRootProductType("Acessórios", "acessorios")).toBe("acessorios");
-  });
-
-  it("aceita as raizes da geração anterior do import", () => {
-    expect(resolveRootProductType("Seda", "seda")).toBe("sedas");
-    expect(resolveRootProductType("Sedas", "sedas")).toBe("sedas");
-    expect(resolveRootProductType("Piteira", "piteira")).toBe("piteiras");
-    expect(resolveRootProductType("Filtros", "filtros")).toBe("filtros");
-  });
-
-  it("ignora acento e caixa", () => {
-    expect(resolveRootProductType("ACESSÓRIOS", "")).toBe("acessorios");
-    expect(resolveRootProductType("acessorios", "")).toBe("acessorios");
-    expect(resolveRootProductType("", "Papel")).toBe("sedas");
-  });
-
-  it("não tem catch-all: raiz desconhecida fica sem tipo", () => {
-    expect(resolveRootProductType("Sem categoria", "sem-categoria")).toBeNull();
-    expect(resolveRootProductType("Bandeja", "bandeja")).toBeNull();
-    expect(resolveRootProductType("Recompensas", "recompensas")).toBeNull();
-    expect(resolveRootProductType("Display da Sorte", "display-da-sorte")).toBeNull();
-  });
-
-  it("não casa por substring — subcategoria não vira raiz", () => {
-    expect(resolveRootProductType("Livretos de Seda", "livretos-de-seda")).toBeNull();
-    expect(resolveRootProductType("Com Piteira", "com-piteira")).toBeNull();
-    expect(resolveRootProductType("Slim", "slim-filtros")).toBeNull();
-  });
-});
 
 describe("normalizeProductTypeParam", () => {
   it("aceita os quatro tipos do menu", () => {
@@ -57,16 +21,22 @@ describe("normalizeProductTypeParam", () => {
     expect(normalizeProductTypeParam("todos")).toBe("todos");
   });
 
-  it("cai em todos quando o parametro é inválido", () => {
-    expect(normalizeProductTypeParam("xyz")).toBe("todos");
-    expect(normalizeProductTypeParam("papel")).toBe("todos");
+  it("preserva slug válido para a validação contra a taxonomia no servidor", () => {
+    expect(normalizeProductTypeParam("xyz")).toBe("xyz");
+    expect(normalizeProductTypeParam("papel")).toBe("papel");
     expect(normalizeProductTypeParam("../../etc/passwd")).toBe("todos");
   });
 
-  it("tolera acento, caixa e singular na URL", () => {
+  it("tolera acento e caixa na URL", () => {
     expect(normalizeProductTypeParam("Acessórios")).toBe("acessorios");
     expect(normalizeProductTypeParam("ACESSORIOS")).toBe("acessorios");
-    expect(normalizeProductTypeParam("seda")).toBe("sedas");
+  });
+
+  it("nao aceita mais apelido: o slug da categoria E o id da UI", () => {
+    // `seda` (singular) era apelido de `sedas` no mapa que desapareceu. Sem o
+    // mapa, o parametro tem de casar com o slug real da taxonomia.
+    expect(normalizeProductTypeParam("seda")).toBe("seda");
+    expect(normalizeProductTypeParam("papel")).toBe("papel");
   });
 
   it("usa o primeiro valor quando o parametro vem repetido", () => {
@@ -79,12 +49,13 @@ describe("normalizeSelectedTypesParam", () => {
     expect(normalizeSelectedTypesParam("sedas,filtros,sedas")).toEqual(["sedas", "filtros"]);
   });
 
-  it("descarta entradas inválidas sem invalidar a lista", () => {
+  it("preserva slugs válidos para resolver a lista dinâmica no servidor", () => {
     expect(normalizeSelectedTypesParam("sedas,xyz,acessorios")).toEqual([
       "sedas",
+      "xyz",
       "acessorios",
     ]);
-    expect(normalizeSelectedTypesParam("xyz")).toEqual([]);
+    expect(normalizeSelectedTypesParam("xyz")).toEqual(["xyz"]);
   });
 });
 
@@ -112,10 +83,10 @@ describe("resolveSelectedTypesFromParams", () => {
     });
   });
 
-  it("tipo inválido não vira filtro", () => {
+  it("tipo ainda desconhecido chega ao servidor para falhar fechado contra a taxonomia", () => {
     expect(resolveSelectedTypesFromParams({ tipo: "xyz" })).toEqual({
-      queryType: "todos",
-      selectedTypes: [],
+      queryType: "xyz",
+      selectedTypes: ["xyz"],
     });
   });
 });

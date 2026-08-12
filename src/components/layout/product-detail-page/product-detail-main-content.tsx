@@ -98,7 +98,7 @@ export function ProductDetailMainContent({
           </p>
 
           <div className="mt-5 flex items-end gap-2">
-            <span className="text-9 font-black leading-10 tracking-[0.369141px] text-brand-dark">
+            <span className="text-[36px] font-black leading-10 tracking-[0.369141px] text-brand-dark">
               {formatBRL(product.price)}
             </span>
             {hasDiscount ? (

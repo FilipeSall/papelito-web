@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
+  AdminFlashSaleCandidate,
   AdminFlashSaleProduct,
   AdminFlashSaleSnapshot,
 } from "@/lib/server/admin-flash-sale";
-import type {
-  AdminProduct,
-  AdminProductTaxonomyTerm,
-} from "@/lib/server/admin-products";
+import type { AdminCategory } from "@/lib/server/admin-taxonomy";
 import { messageFromError } from "@/utils/error-message";
 import { BaseModal } from "@/components/ui/base-modal";
 
@@ -38,8 +36,8 @@ import {
 } from "./utils";
 
 type FlashSaleManagerProps = {
-  initialCandidates: AdminProduct[];
-  initialCategories: AdminProductTaxonomyTerm[];
+  initialCandidates: AdminFlashSaleCandidate[];
+  initialCategories: AdminCategory[];
   initialIssues: string[];
   initialPage: number;
   initialPerPage: number;
@@ -70,7 +68,7 @@ type ToastState = {
 type ProductsApiResponse = {
   page?: number;
   issues?: string[];
-  items?: AdminProduct[];
+  items?: AdminFlashSaleCandidate[];
   message?: string;
   perPage?: number;
   total?: number;
@@ -91,8 +89,8 @@ export function FlashSaleManager({
   const [selectedProducts, setSelectedProducts] = useState<AdminFlashSaleProduct[]>(
     snapshot.selectedProducts,
   );
-  const [candidates, setCandidates] = useState<AdminProduct[]>(initialCandidates);
-  const [categories] = useState<AdminProductTaxonomyTerm[]>(initialCategories);
+  const [candidates, setCandidates] = useState<AdminFlashSaleCandidate[]>(initialCandidates);
+  const [categories] = useState<AdminCategory[]>(initialCategories);
   const [pickerFilters, setPickerFilters] = useState<ProductPickerFilters>({
     category: "",
     search: "",
@@ -373,7 +371,7 @@ export function FlashSaleManager({
     void fetchCandidates(nextPage, pickerFiltersRef.current);
   }
 
-  function addProduct(product: AdminProduct) {
+  function addProduct(product: AdminFlashSaleCandidate) {
     if (selectedProducts.some((item) => item.productId === product.id)) {
       return;
     }
@@ -385,7 +383,7 @@ export function FlashSaleManager({
       ...current,
       {
         badge: product.tags[0]?.name ?? "Destaque",
-        category: product.categories[0]?.name ?? "Produto",
+        category: product.category?.name ?? "Produto",
         discount: draft.discountPercent,
         hasImage: image.length > 0,
         id: String(product.id),

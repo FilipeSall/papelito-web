@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAdminProductsManager } from "@/hooks/use-admin-products-manager";
 import type { AdminProductsSnapshot } from "@/lib/server/admin-products";
+import type { AdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 
 import { AdminToast } from "../../primitives";
 import { ProductEditorModal } from "./components/product-editor-modal";
@@ -22,10 +23,12 @@ type ToastState = {
 export function ProductsManager({
   initialIssue = null,
   snapshot,
+  taxonomy,
   initialFocusProductId = null,
 }: {
   initialIssue?: "missing-weight" | "product-data-incomplete" | null;
   snapshot: AdminProductsSnapshot;
+  taxonomy: AdminTaxonomySnapshot;
   initialFocusProductId?: number | null;
 }) {
   const [toast, setToast] = useState<ToastState>(null);
@@ -76,6 +79,7 @@ export function ProductsManager({
 
   const manager = useAdminProductsManager(snapshot, {
     initialFocusProductId,
+    taxonomy,
     onUploadError: (description) => {
       showToast({
         description,
@@ -87,7 +91,6 @@ export function ProductsManager({
   const {
     appliedFilters,
     catalogSummary,
-    categories,
     closeEditor,
     filters,
     isEditorOpen,
@@ -150,7 +153,7 @@ export function ProductsManager({
         <div aria-hidden className="absolute left-0 top-0 h-1 w-full bg-[#231f20]/18" />
         <ProductsFilters
           appliedFilters={appliedFilters}
-          categories={categories}
+          categories={taxonomy.categories}
           filters={filters}
           isLoading={isLoading}
           onCreateNew={startNewProduct}
@@ -172,7 +175,6 @@ export function ProductsManager({
 
       {isEditorOpen ? (
         <ProductEditorModal
-          categories={manager.categories}
           draft={manager.draft}
           forceWeightErrorHighlight={
             initialIssue === "missing-weight" &&
@@ -183,6 +185,9 @@ export function ProductsManager({
           handleSave={handleProductSave}
           handleUpload={manager.handleUpload}
           isCreatingTag={manager.isCreatingTag}
+          isTaxonomyLoading={manager.isTaxonomyLoading}
+          setTaxonomyCategory={manager.setTaxonomyCategory}
+          taxonomy={manager.taxonomy}
           isPromotionEnabled={manager.isPromotionEnabled}
           isSaving={manager.isSaving}
           isUploading={manager.isUploading}

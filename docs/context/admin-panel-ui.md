@@ -52,6 +52,31 @@ Uma candidatura documental ainda não é um usuário: não existe `wp_user`, ses
 - Ação administrativa que muda estado exige confirmação, e a que rejeita algo exige motivo — o motivo é o que chega ao usuário afetado.
 - Estado fresco depois de uma ação vem do `router.refresh()`, não do corpo da resposta do POST — que é **deliberadamente descartado**. Para isso funcionar, o fetch de detalhe precisa continuar `no-store`.
 
+## Aba Categorias
+
+`/admin/categories` gerencia a taxonomia própria da Papelito — a entidade que substitui `product_cat` nas
+regras de catálogo. Plano completo em [`../../../docs/prompts/product-taxonomy/`](../../../docs/prompts/product-taxonomy/README.md).
+
+Decisões de interface que não são óbvias pelo código:
+
+- **Categoria é `select`, subcategoria é checkbox.** O controle comunica a cardinalidade sem texto
+  auxiliar: um produto tem exatamente uma categoria principal e quantas subcategorias fizerem sentido.
+- **Subcategorias aparecem só depois da categoria escolhida**, agrupadas por **faceta** (material, formato,
+  tamanho, tipo, linha). A faceta é o que faz o multivalor ter sentido — uma seda pode ser Brown e Slim ao
+  mesmo tempo.
+- **Trocar a categoria limpa as subcategorias.** Elas pertenciam à categoria anterior e o backend recusaria
+  o conjunto com `papelito_subcategory_foreign`.
+- **Subcategoria inativa some da lista, mas não do produto.** Se o produto já a tem, continua visível,
+  marcada como `inativa` e desabilitada. A API preserva somente esse vínculo preexistente; associação nova é recusada.
+- **Slug editável só enquanto a categoria não tem produto.**
+- **Sem lista de categorias hardcoded no frontend.** Falha ao carregar vira aviso na tela. Foi o silêncio
+  do antigo `OFFICIAL_CATEGORY_KEYS` que escondeu a categoria `Kits` do admin por meses.
+
+Salvar um produto continua em **duas requisições**: os campos comerciais vão para a REST do WooCommerce e
+a classificação para `papelito/v1/admin/products/{id}/taxonomy`. Salvar sem categoria é bloqueado antes da
+primeira. Se a classificação de uma criação falhar, produto publicado é compensado para rascunho; em edição,
+a classificação anterior é preservada. O editor não envia categorias WooCommerce e não existe dual-write.
+
 ## Pendências
 
 - Os botões de troca de papel de usuário ainda usam `window.confirm`, por decisão de escopo — não foram migrados para `BaseModal`.

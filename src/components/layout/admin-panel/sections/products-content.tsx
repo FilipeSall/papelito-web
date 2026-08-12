@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { getAdminProductsSnapshot } from "@/lib/server/admin-products";
+import { getAdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 import type { AdminSalesPageSearchParams } from "@/lib/server/admin-sales-filters";
 
 import { ProductsManager } from "./products/products-manager";
@@ -16,10 +17,10 @@ export async function ProductsContent({
   searchParams?: AdminSalesPageSearchParams;
 }) {
   const session = await getServerSession(authOptions);
-  const snapshot = await getAdminProductsSnapshot(session?.accessToken, {
-    page: "1",
-    perPage: "20",
-  });
+  const [snapshot, taxonomy] = await Promise.all([
+    getAdminProductsSnapshot(session?.accessToken, { page: "1", perPage: "20" }),
+    getAdminTaxonomySnapshot(session?.accessToken),
+  ]);
   const focusParam = firstString(searchParams?.focus);
   const issueParam = firstString(searchParams?.issue);
   const initialFocusProductId = Number.parseInt(focusParam ?? "", 10);
@@ -37,6 +38,7 @@ export async function ProductsContent({
       }
       initialIssue={initialIssue}
       snapshot={snapshot}
+      taxonomy={taxonomy}
     />
   );
 }

@@ -1,6 +1,7 @@
 import {
   BadgePercent,
   FileText,
+  FolderTree,
   Image,
   MessageSquare,
   Package,
@@ -15,6 +16,7 @@ import {
 export type AdminSectionKey =
   | "sales"
   | "products"
+  | "categories"
   | "flash-sale"
   | "vendors"
   | "users"
@@ -49,6 +51,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Produtos",
     shortLabel: "Produtos",
     description: "Catálogo e estoque",
+  },
+  {
+    key: "categories",
+    href: "/admin/categories",
+    icon: FolderTree,
+    label: "Categorias",
+    shortLabel: "Categorias",
+    description: "Taxonomia e subcategorias",
   },
   {
     key: "flash-sale",

@@ -8,6 +8,7 @@ interface KitsPageProps {
         tipo?: string | string[];
         tipos?: string | string[];
         colecao?: string | string[];
+        subcategoria?: string | string[];
         page?: string | string[];
         view?: string | string[];
         perPage?: string | string[];
@@ -18,6 +19,7 @@ interface KitsPageProps {
         tipo?: string | string[];
         tipos?: string | string[];
         colecao?: string | string[];
+        subcategoria?: string | string[];
         page?: string | string[];
         view?: string | string[];
         perPage?: string | string[];

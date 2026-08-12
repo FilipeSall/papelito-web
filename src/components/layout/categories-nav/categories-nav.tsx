@@ -1,6 +1,7 @@
 "use client";
 
 import useEmblaCarousel from "embla-carousel-react";
+
 import { CategoryNavItem } from "./category-nav-item";
 import { CATEGORIES_NAV_ITEMS } from "./constants";
 
@@ -22,8 +23,8 @@ export function CategoriesNav() {
         </div>
         <div
           ref={emblaRef}
+          aria-label="Carrossel de coleções"
           className="overflow-hidden px-0.5 pb-2 lg:hidden"
-          aria-label="Carrossel de categorias"
         >
           <div className="flex gap-4 pr-4">
             {CATEGORIES_NAV_ITEMS.map((item) => (
@@ -31,13 +32,7 @@ export function CategoriesNav() {
                 key={item.title}
                 className="min-w-0 shrink-0 basis-[78%] min-[480px]:basis-[46%]"
               >
-                <CategoryNavItem
-                  iconSrc={item.iconSrc}
-                  title={item.title}
-                  subtitle={item.subtitle}
-                  href={item.href}
-                  className="max-w-none"
-                />
+                <CategoryNavItem {...item} className="max-w-none" />
               </div>
             ))}
           </div>
@@ -45,13 +40,7 @@ export function CategoriesNav() {
 
         <div className="hidden grid-cols-4 gap-5 lg:grid">
           {CATEGORIES_NAV_ITEMS.map((item) => (
-            <CategoryNavItem
-              key={item.title}
-              iconSrc={item.iconSrc}
-              title={item.title}
-              subtitle={item.subtitle}
-              href={item.href}
-            />
+            <CategoryNavItem key={item.title} {...item} />
           ))}
         </div>
       </div>

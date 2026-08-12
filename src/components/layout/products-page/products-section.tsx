@@ -177,6 +177,7 @@ export function ProductsSection({
               viewMode={viewMode}
               perPage={perPage}
               search={search}
+              categories={tabs.map((tab) => ({ id: tab.id, label: tab.id === "todos" ? "Todos" : tab.label }))}
             />
 
             {/* Products Grid */}

@@ -4,6 +4,7 @@ import type { AdminSectionKey } from "./admin-config";
 import { SectionHeader } from "./section-header";
 import {
   AssetsContent,
+  CategoriesContent,
   ConfigContent,
   CouponsContent,
   FlashSaleContent,
@@ -24,6 +25,8 @@ function renderSection(
       return <SalesContent searchParams={searchParams} />;
     case "products":
       return <ProductsContent searchParams={searchParams} />;
+    case "categories":
+      return <CategoriesContent />;
     case "flash-sale":
       return <FlashSaleContent />;
     case "vendors":
@@ -56,6 +59,7 @@ export function AdminSectionPage({
     <div className="space-y-4 md:space-y-5">
       {section === "sales" ||
       section === "products" ||
+      section === "categories" ||
       section === "reports" ||
       section === "config" ||
       section === "flash-sale" ||

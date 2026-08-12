@@ -26,18 +26,18 @@ import {
 } from "./form-fields";
 import { LongDescriptionEditor } from "./long-description-editor";
 import { TagInputField } from "./tag-input-field";
-import { TermChecklist } from "./term-checklist";
+import { TaxonomyPicker } from "./taxonomy-picker";
 import type { UseAdminProductsManagerReturn } from "@/hooks/use-admin-products-manager";
 
 type ProductEditorModalProps = Pick<
   UseAdminProductsManagerReturn,
-  | "categories"
   | "draft"
   | "handleCreateTag"
   | "handleSave"
   | "handleUpload"
   | "isCreatingTag"
   | "isPromotionEnabled"
+  | "isTaxonomyLoading"
   | "isSaving"
   | "isUploading"
   | "moveImageToCover"
@@ -47,7 +47,9 @@ type ProductEditorModalProps = Pick<
   | "selectedProduct"
   | "selectedProductId"
   | "setNewTagName"
+  | "setTaxonomyCategory"
   | "tags"
+  | "taxonomy"
   | "toggleDraftTerm"
   | "togglePromotion"
   | "updateDraft"
@@ -57,7 +59,6 @@ type ProductEditorModalProps = Pick<
 };
 
 export function ProductEditorModal({
-  categories,
   draft,
   forceWeightErrorHighlight = false,
   handleCreateTag,
@@ -66,6 +67,7 @@ export function ProductEditorModal({
   isCreatingTag,
   isPromotionEnabled,
   isSaving,
+  isTaxonomyLoading,
   isUploading,
   moveImageToCover,
   newTagName,
@@ -75,7 +77,9 @@ export function ProductEditorModal({
   selectedProduct,
   selectedProductId,
   setNewTagName,
+  setTaxonomyCategory,
   tags,
+  taxonomy,
   toggleDraftTerm,
   togglePromotion,
   updateDraft,
@@ -196,12 +200,20 @@ export function ProductEditorModal({
                 onRemoveImage={removeImage}
               />
 
-              <ModalSection title="Categorias">
-                <TermChecklist
-                  label="Categorias"
-                  onToggle={(id) => toggleDraftTerm("categoryIds", id)}
-                  selectedIds={draft.categoryIds}
-                  terms={categories}
+              <ModalSection
+                helpText="A classificação da Papelito. O WooCommerce passa a ser sincronizado a partir daqui, não o contrário."
+                title="Classificação"
+              >
+                <TaxonomyPicker
+                  categories={taxonomy.categories}
+                  collections={taxonomy.collections}
+                  isLoading={isTaxonomyLoading}
+                  onCategoryChange={setTaxonomyCategory}
+                  onToggleCollection={(slug) => toggleDraftTerm("taxonomyCollections", slug)}
+                  onToggleSubcategory={(id) => toggleDraftTerm("taxonomySubcategoryIds", id)}
+                  selectedCategoryId={draft.taxonomyCategoryId}
+                  selectedCollections={draft.taxonomyCollections}
+                  selectedSubcategoryIds={draft.taxonomySubcategoryIds}
                 />
               </ModalSection>
 

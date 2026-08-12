@@ -54,9 +54,6 @@ export function VendorPeriodFilters({
             name="to"
             type="date"
           />
-          <span className="inline-flex min-h-9 items-center rounded-[8px] border border-brand-dark/18 bg-[#f7f2e7] px-3 text-sm font-semibold text-brand-dark/72">
-            granularidade: {filters.interval === "day" ? "dia" : "mes"}
-          </span>
           <button className="min-h-9 rounded-[8px] bg-brand-dark px-5 text-sm font-semibold text-brand-yellow">
             Aplicar
           </button>

@@ -1,14 +1,11 @@
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ImageOff, Plus, Search } from "lucide-react";
 
-import type {
-  AdminProduct,
-  AdminProductTaxonomyTerm,
-} from "@/lib/server/admin-products";
+import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
+import type { AdminCategory } from "@/lib/server/admin-taxonomy";
 import { formatBRL } from "@/lib/format-currency";
 
 import { AdminSelectField } from "../products/components/admin-select-field";
-import { formatTermLabel } from "../products/helpers";
 import { toMoney } from "./utils";
 
 export type ProductPickerFilters = {
@@ -17,12 +14,12 @@ export type ProductPickerFilters = {
 };
 
 type ProductSearchPickerProps = {
-  candidates: AdminProduct[];
-  categories: AdminProductTaxonomyTerm[];
+  candidates: AdminFlashSaleCandidate[];
+  categories: AdminCategory[];
   currentPage: number;
   filters: ProductPickerFilters;
   isSearching: boolean;
-  onAdd: (product: AdminProduct) => void;
+  onAdd: (product: AdminFlashSaleCandidate) => void;
   onApply: () => void;
   onFiltersChange: (patch: Partial<ProductPickerFilters>) => void;
   onPageChange: (page: number) => void;
@@ -51,7 +48,7 @@ export function ProductSearchPicker({
   const categoryOptions = [
     { label: "Todas", value: "" },
     ...categories.map((category) => ({
-      label: formatTermLabel(category, categories),
+      label: category.name,
       value: String(category.id),
     })),
   ];
@@ -185,7 +182,7 @@ export function ProductSearchPicker({
                         <p className="truncate text-[12px] leading-4.5 text-text-secondary">
                           SKU: {product.sku || "—"}
                           {basePrice > 0 ? ` • ${formatBRL(basePrice)}` : ""}
-                          {product.categories[0]?.name ? ` • ${product.categories[0].name}` : ""}
+                          {product.category?.name ? ` • ${product.category.name}` : ""}
                         </p>
                       </div>
                     </div>

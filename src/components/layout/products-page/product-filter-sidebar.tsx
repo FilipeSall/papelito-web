@@ -13,22 +13,11 @@ interface FilterCategory {
   label: string;
 }
 
-const SPECIFIC_CATEGORIES: SpecificType[] = [
-  "sedas",
-  "piteiras",
-  "filtros",
-  "acessorios",
-];
-
 /**
  * Lista de categorias padrão para o filtro.
  */
 const DEFAULT_CATEGORIES: FilterCategory[] = [
   { id: "todos", label: "Todos" },
-  { id: "sedas", label: "Sedas" },
-  { id: "piteiras", label: "Piteiras" },
-  { id: "filtros", label: "Filtros" },
-  { id: "acessorios", label: "Acessórios" },
 ];
 
 interface PriceRangeInputProps {
@@ -133,8 +122,7 @@ function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
     currentSet.add(target);
   }
 
-  const ordered = SPECIFIC_CATEGORIES.filter((item) => currentSet.has(item));
-  return ordered;
+  return Array.from(currentSet) as SpecificType[];
 }
 
 function buildHrefFromSelection(

@@ -1,9 +1,5 @@
-export type ProductTypeId =
-  | "todos"
-  | "sedas"
-  | "piteiras"
-  | "filtros"
-  | "acessorios";
+/** Slug da categoria Papelito; `todos` é a única opção reservada da UI. */
+export type ProductTypeId = string;
 
 export type ProductCollectionId =
   | "todos"
@@ -50,6 +46,8 @@ export interface ProductsCatalogItem {
   isNewArrival: boolean;
   isOnSale: boolean;
   isKit: boolean;
+  /** Slugs das subcategorias da taxonomia Papelito. Vazio antes da classificacao. */
+  subcategories: string[];
   promotionContext?: string;
   bestVendor?: CatalogBestVendor;
 }
@@ -68,6 +66,7 @@ export interface ProductsCatalogPayload {
   maxPrice: number | null;
   activeType: ProductTypeId;
   activeCollection: ProductCollectionId;
+  selectedSubcategories: string[];
   totalItems: number;
   totalPages: number;
   currentPage: number;

@@ -3,15 +3,14 @@
 import type { SubmitEvent } from "react";
 
 import { PRODUCT_STATUS_OPTIONS } from "@/constants/admin-products";
-import type { AdminProductTaxonomyTerm } from "@/lib/server/admin-products";
+import type { AdminCategory } from "@/lib/server/admin-taxonomy";
 import type { ProductFilters } from "@/types/admin-products-manager";
 
-import { formatTermLabel } from "../helpers";
 import { AdminSelectField } from "./admin-select-field";
 
 type ProductsFiltersProps = {
   appliedFilters: ProductFilters;
-  categories: AdminProductTaxonomyTerm[];
+  categories: AdminCategory[];
   filters: ProductFilters;
   isLoading: boolean;
   onCreateNew: () => void;
@@ -41,12 +40,16 @@ export function ProductsFilters({
     void onSubmit();
   }
 
+  // Categoria da taxonomia Papelito, não termo do WooCommerce. Categoria
+  // arquivada não é oferecida como filtro novo.
   const categoryOptions = [
     { label: "Todas", value: "" },
-    ...categories.map((category) => ({
-      label: formatTermLabel(category, categories),
-      value: String(category.id),
-    })),
+    ...categories
+      .filter((category) => category.isActive && !category.archivedAt)
+      .map((category) => ({
+        label: category.name,
+        value: String(category.id),
+      })),
   ];
 
   return (

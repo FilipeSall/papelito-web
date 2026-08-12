@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyTaxonomyToDraft,
   buildPayload,
+  buildTaxonomyPayload,
   hasValidProductPrice,
+  newProductDraft,
   normalizeProductPrice,
   normalizeShippingMeasure,
   shouldHighlightPriceField,
@@ -61,7 +64,6 @@ describe("pricing and shipping draft values", () => {
 
   it("sends canonical numeric dimensions in the first save payload", () => {
     const payload = buildPayload({
-      categoryIds: [],
       dateOnSaleFrom: "",
       dateOnSaleTo: "",
       description: "",
@@ -77,6 +79,9 @@ describe("pricing and shipping draft values", () => {
       slug: "",
       status: "publish",
       tagIds: [],
+      taxonomyCategoryId: "",
+      taxonomyCollections: [],
+      taxonomySubcategoryIds: [],
       weight: "0,4",
       width: "5",
     });
@@ -87,7 +92,6 @@ describe("pricing and shipping draft values", () => {
 
   it("keeps unrelated fields out of a partial update", () => {
     const draft = {
-      categoryIds: ["4"],
       dateOnSaleFrom: "",
       dateOnSaleTo: "",
       description: "Descrição",
@@ -103,6 +107,9 @@ describe("pricing and shipping draft values", () => {
       slug: "produto",
       status: "publish",
       tagIds: ["215"],
+      taxonomyCategoryId: "",
+      taxonomyCollections: [],
+      taxonomySubcategoryIds: [],
       weight: "0.4",
       width: "2",
     };
@@ -116,7 +123,6 @@ describe("pricing and shipping draft values", () => {
       buildPayload(
         draft,
         new Set([
-          "categoryIds",
           "description",
           "height",
           "imageIds",
@@ -129,7 +135,6 @@ describe("pricing and shipping draft values", () => {
         ]),
       ),
     ).toEqual({
-      categories: [4],
       description: "Descrição",
       dimensions: { height: "4", length: "3", width: "2" },
       images: [8],
@@ -137,6 +142,54 @@ describe("pricing and shipping draft values", () => {
       slug: "produto",
       status: "publish",
       tags: [215],
+    });
+  });
+
+  it("nunca envia `categories` ao WooCommerce", () => {
+    const draft = {
+      ...newProductDraft(),
+      name: "Produto",
+      taxonomyCategoryId: "3",
+      taxonomySubcategoryIds: ["11"],
+    };
+
+    // Quem escreve `product_cat` é o dual-write no WordPress, a partir da
+    // taxonomia Papelito. Dois writers para o mesmo dado é como a classificação
+    // dessincroniza.
+    expect(buildPayload(draft)).not.toHaveProperty("categories");
+    expect(buildPayload(draft, new Set(["name"]))).toEqual({ name: "Produto" });
+  });
+
+  it("monta o payload da taxonomia Papelito separado do produto", () => {
+    const draft = {
+      ...newProductDraft(),
+      taxonomyCategoryId: "3",
+      taxonomyCollections: ["premium"],
+      taxonomySubcategoryIds: ["11", "12"],
+    };
+
+    expect(buildTaxonomyPayload(draft)).toEqual({
+      categoryId: 3,
+      collections: ["premium"],
+      subcategoryIds: [11, 12],
+    });
+  });
+
+  it("aplica a taxonomia carregada à parte sobre o rascunho", () => {
+    const draft = newProductDraft();
+
+    expect(applyTaxonomyToDraft(draft, null)).toBe(draft);
+
+    expect(
+      applyTaxonomyToDraft(draft, {
+        category: { id: 3 },
+        collections: ["kits"],
+        subcategories: [{ id: 11 }, { id: 12 }],
+      }),
+    ).toMatchObject({
+      taxonomyCategoryId: "3",
+      taxonomyCollections: ["kits"],
+      taxonomySubcategoryIds: ["11", "12"],
     });
   });
 });

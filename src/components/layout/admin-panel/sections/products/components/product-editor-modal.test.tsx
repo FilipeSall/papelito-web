@@ -8,7 +8,6 @@ describe("ProductEditorModal", () => {
   it("disables save while a tag is being created", () => {
     render(
       <ProductEditorModal
-        categories={[]}
         draft={newProductDraft()}
         handleCreateTag={vi.fn()}
         handleSave={vi.fn()}
@@ -16,6 +15,7 @@ describe("ProductEditorModal", () => {
         isCreatingTag
         isPromotionEnabled={false}
         isSaving={false}
+        isTaxonomyLoading={false}
         isUploading={false}
         moveImageToCover={vi.fn()}
         newTagName="teste"
@@ -25,7 +25,9 @@ describe("ProductEditorModal", () => {
         selectedProduct={null}
         selectedProductId="new"
         setNewTagName={vi.fn()}
+        setTaxonomyCategory={vi.fn()}
         tags={[]}
+        taxonomy={{ categories: [], collections: [], issues: [], version: 0 }}
         toggleDraftTerm={vi.fn()}
         togglePromotion={vi.fn()}
         updateDraft={vi.fn()}

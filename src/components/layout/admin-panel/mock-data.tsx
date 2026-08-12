@@ -12,6 +12,11 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "estoque critico", value: "09" },
     { label: "promoções", value: "27" },
   ],
+  categories: [
+    { label: "categorias", value: "04" },
+    { label: "subcategorias", value: "32" },
+    { label: "sem classificação", value: "00" },
+  ],
   "flash-sale": [
     { label: "campanha live", value: "01" },
     { label: "janela", value: "48h" },
@@ -79,6 +84,14 @@ export const SECTION_META: Record<
     railLabel: "alerts",
     railValue: "09 low stock",
     signalTone: "warning",
+  },
+  categories: {
+    eyebrow: "Taxonomia do catálogo",
+    description:
+      "Categorias principais e subcategorias da Papelito. Um produto tem exatamente uma categoria principal; as subcategorias se somam por faceta.",
+    railLabel: "entidade",
+    railValue: "própria",
+    signalTone: "default",
   },
   "flash-sale": {
     eyebrow: "Campanha tatica",

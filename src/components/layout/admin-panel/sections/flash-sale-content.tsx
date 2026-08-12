@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { getAdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 import {
   getAdminFlashSaleProducts,
   getAdminFlashSaleSnapshot,
-  getFlashSaleProductCategories,
 } from "@/lib/server/admin-flash-sale";
 
 import { FlashSaleManager } from "./flash-sale";
@@ -17,13 +17,13 @@ export async function FlashSaleContent() {
       page: "1",
       perPage: "24",
     }),
-    getFlashSaleProductCategories(session?.accessToken),
+    getAdminTaxonomySnapshot(session?.accessToken),
   ]);
 
   return (
     <FlashSaleManager
       initialCandidates={productsSnapshot.items}
-      initialCategories={categories}
+      initialCategories={categories.categories}
       initialIssues={[...snapshot.issues, ...productsSnapshot.issues]}
       initialPage={productsSnapshot.page}
       initialPerPage={productsSnapshot.perPage}

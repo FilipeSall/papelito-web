@@ -23,6 +23,7 @@ describe("searchCatalogProducts", () => {
       searchCatalogProducts({
         search: "Seda trad",
         categorySlugs: ["papel", "hemp"],
+        subcategorySlugs: ["slim"],
         minPrice: 4.5,
         maxPrice: 12,
         page: 2,
@@ -31,7 +32,7 @@ describe("searchCatalogProducts", () => {
     ).resolves.toEqual({ ids: [12, 8], total: 2, page: 2, per_page: 9 });
 
     expect(wpRest).toHaveBeenCalledWith(
-      "/papelito/v1/catalog/search?busca=Seda+trad&page=2&per_page=9&categories=papel%2Chemp&preco_min=4.5&preco_max=12",
+      "/papelito/v1/catalog/search?busca=Seda+trad&page=2&per_page=9&categories=papel%2Chemp&subcategories=slim&preco_min=4.5&preco_max=12",
       { revalidate: 60, tags: ["wp:products"] },
     );
   });
@@ -43,6 +44,7 @@ describe("searchCatalogProducts", () => {
       searchCatalogProducts({
         search: "seda",
         categorySlugs: [],
+        subcategorySlugs: [],
         minPrice: null,
         maxPrice: null,
         page: 1,
