@@ -1,6 +1,7 @@
 import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
 import { ProductsList } from "./products-list";
 import type { ReactNode } from "react";
+import type { ProductCollectionId } from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsGridProps {
@@ -10,6 +11,7 @@ interface ProductsGridProps {
   emptyMessage?: string;
   emptyAction?: ReactNode;
   variant?: "default" | "collection";
+  activeCollection?: ProductCollectionId;
 }
 
 /**
@@ -30,6 +32,7 @@ export function ProductsGrid({
   emptyMessage = "Nenhum produto encontrado.",
   emptyAction,
   variant = "default",
+  activeCollection = "todos",
 }: Readonly<ProductsGridProps>) {
   if (products.length === 0) {
     return (
@@ -48,7 +51,9 @@ export function ProductsGrid({
     <div
       className={
         variant === "collection"
-          ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+          ? activeCollection === "todos"
+            ? "grid grid-cols-2 gap-3 sm:grid-cols-3"
+            : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
           : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       }
     >

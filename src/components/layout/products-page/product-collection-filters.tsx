@@ -77,8 +77,8 @@ export function ProductCollectionFilters({
             })}
             className={`group relative flex min-h-24 items-center gap-3 border-2 border-[#1a1a1a] px-3 py-3 text-brand-dark transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow ${
               isActive
-                ? "-translate-x-0.5 -translate-y-0.5 border-brand-yellow bg-brand-dark text-white shadow-[4px_4px_0px_#ffe500]"
-                : "bg-white hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-brand-yellow hover:shadow-[4px_4px_0px_#1a1a1a]"
+                ? "bg-brand-dark text-white after:absolute after:bottom-0 after:left-3 after:right-3 after:h-1 after:bg-brand-yellow"
+                : "bg-white hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-brand-yellow hover:shadow-[2px_2px_0px_#1a1a1a]"
             }`}
           >
             <Image
@@ -93,14 +93,14 @@ export function ProductCollectionFilters({
             <div className="relative z-10 min-w-0">
               <p
                 className={`truncate text-xs font-black uppercase tracking-[0.075em] ${
-                  isActive ? "text-brand-yellow" : "text-brand-dark"
+                  isActive ? "text-white" : "text-brand-dark"
                 }`}
               >
                 {collection.label}
               </p>
               <p
                 className={`mt-1 truncate text-[11px] ${
-                  isActive ? "text-white" : "text-text-muted"
+                  isActive ? "text-white/80" : "text-text-secondary group-hover:text-brand-dark"
                 }`}
               >
                 {collection.subtitle}

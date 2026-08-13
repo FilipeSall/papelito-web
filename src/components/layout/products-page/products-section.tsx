@@ -41,6 +41,7 @@ interface ProductsSectionProps {
   sourceStatus?: CatalogSourceStatus;
   search?: string;
   showSearch?: boolean;
+  visualVariant?: "default" | "collection";
 }
 
 /**
@@ -79,8 +80,9 @@ export function ProductsSection({
   sourceStatus = "ok",
   search = "",
   showSearch = false,
+  visualVariant,
 }: Readonly<ProductsSectionProps>) {
-  const visualVariant = showCategoryFilters ? "default" : "collection";
+  const resolvedVisualVariant = visualVariant ?? (showCategoryFilters ? "default" : "collection");
   const showCoverageWarning = coverageStatus === "unavailable";
   const isSourceUnavailable = sourceStatus === "unavailable";
   let emptyMessage = "Nenhum produto encontrado.";
@@ -111,7 +113,12 @@ export function ProductsSection({
 
           {showSearch ? (
             <div className="mb-6">
-              <ProductSearch basePath={basePath} initialValue={search} totalItems={totalItems} variant={visualVariant} />
+              <ProductSearch
+                basePath={basePath}
+                initialValue={search}
+                totalItems={totalItems}
+                variant={resolvedVisualVariant}
+              />
             </div>
           ) : null}
 
@@ -153,7 +160,7 @@ export function ProductsSection({
                 viewMode={viewMode}
                 perPage={perPage}
                 search={search}
-                variant={visualVariant}
+                variant={resolvedVisualVariant}
               />
               <ViewToggle
                 basePath={basePath}
@@ -164,7 +171,7 @@ export function ProductsSection({
                 maxPrice={maxPrice}
                 perPage={perPage}
                 search={search}
-                variant={visualVariant}
+                variant={resolvedVisualVariant}
               />
             </div>
           </div>
@@ -184,6 +191,7 @@ export function ProductsSection({
                   id: tab.id,
                   label: tab.id === "todos" ? "Todos" : tab.label,
                 }))}
+                variant={resolvedVisualVariant}
               />
             ) : null}
             <div className={showCategoryFilters ? "min-w-0 flex-1" : undefined}>
@@ -195,7 +203,8 @@ export function ProductsSection({
                     emptyMessage={emptyMessage}
                     emptyAction={search ? <ClearProductSearchButton basePath={basePath} /> : undefined}
                     products={products}
-                    variant={visualVariant}
+                    activeCollection={activeCollection}
+                    variant={resolvedVisualVariant}
                     viewMode={viewMode}
                   />
                   <ProductsPagination
@@ -209,7 +218,7 @@ export function ProductsSection({
                     viewMode={viewMode}
                     perPage={perPage}
                     search={search}
-                    variant={visualVariant}
+                    variant={resolvedVisualVariant}
                   />
                 </>
               )}

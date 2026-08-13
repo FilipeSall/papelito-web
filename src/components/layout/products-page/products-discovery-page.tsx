@@ -148,6 +148,7 @@ export function ProductsDiscoveryPage({
         search={search}
         showSearch
         showCategoryFilters={isAllCollection}
+        visualVariant={basePath === "/produtos" ? "default" : "collection"}
       />
     </main>
   );

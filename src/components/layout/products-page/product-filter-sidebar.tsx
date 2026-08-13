@@ -25,6 +25,7 @@ interface PriceRangeInputProps {
   value?: number | null;
   name: "precoMin" | "precoMax";
   placeholder: string;
+  variant: "default" | "collection";
 }
 
 /**
@@ -33,7 +34,7 @@ interface PriceRangeInputProps {
  * Campo de input numérico estilizado para inserção de valores
  * mínimos ou máximos de preço.
  */
-function PriceRangeInput({ label, value, name, placeholder }: PriceRangeInputProps) {
+function PriceRangeInput({ label, value, name, placeholder, variant }: PriceRangeInputProps) {
   return (
     <div className="flex-1">
       <label className="sr-only">{label}</label>
@@ -42,7 +43,11 @@ function PriceRangeInput({ label, value, name, placeholder }: PriceRangeInputPro
         type="text"
         defaultValue={typeof value === "number" ? String(value) : ""}
         placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent"
+        className={`w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
+          variant === "collection"
+            ? "border-2 border-[#1a1a1a] rounded-none focus:border-[#1a1a1a]"
+            : "border border-gray-200 rounded-lg focus:border-transparent"
+        }`}
       />
     </div>
   );
@@ -52,20 +57,23 @@ interface CategoryCheckboxProps {
   category: FilterCategory;
   checked: boolean;
   href: string;
+  variant: "default" | "collection";
 }
 
-function CheckboxIndicator({ checked }: { checked: boolean }) {
+function CheckboxIndicator({ checked, variant }: { checked: boolean; variant: "default" | "collection" }) {
   return (
     <span
-      className={`inline-flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+      className={`inline-flex h-4 w-4 items-center justify-center transition-colors ${
+        variant === "collection" ? "border-2 rounded-none" : "border rounded"
+      } ${
         checked
-          ? "border-brand-dark bg-brand-dark"
-          : "border-gray-300 bg-white group-hover:border-brand-dark"
+          ? variant === "collection" ? "border-[#1a1a1a] bg-brand-dark" : "border-brand-dark bg-brand-dark"
+          : variant === "collection" ? "border-[#1a1a1a] bg-white group-hover:bg-brand-yellow" : "border-gray-300 bg-white group-hover:border-brand-dark"
       }`}
       aria-hidden
     >
       {checked ? (
-        <svg viewBox="0 0 16 16" className="h-3 w-3 text-white" fill="none">
+        <svg viewBox="0 0 16 16" className={`h-3 w-3 ${variant === "collection" ? "text-brand-yellow" : "text-white"}`} fill="none">
           <path
             d="M3.2 8.2L6.2 11.2L12.8 4.8"
             stroke="currentColor"
@@ -82,11 +90,11 @@ function CheckboxIndicator({ checked }: { checked: boolean }) {
 /**
  * Checkbox de categoria com navegação server-side.
  */
-function CategoryCheckbox({ category, checked, href }: CategoryCheckboxProps) {
+function CategoryCheckbox({ category, checked, href, variant }: CategoryCheckboxProps) {
   return (
     <Link href={href} className="group flex items-center gap-2 cursor-pointer">
-      <CheckboxIndicator checked={checked} />
-      <span className="text-sm text-text-secondary group-hover:text-brand-dark transition-colors">
+      <CheckboxIndicator checked={checked} variant={variant} />
+      <span className={`text-sm text-text-secondary group-hover:text-brand-dark transition-colors ${variant === "collection" ? "font-bold" : ""}`}>
         {category.label}
       </span>
     </Link>
@@ -107,6 +115,7 @@ interface ProductFilterSidebarProps {
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
+  variant?: "default" | "collection";
 }
 
 function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
@@ -163,20 +172,21 @@ export function ProductFilterSidebar({
   viewMode,
   perPage,
   search,
+  variant = "default",
 }: ProductFilterSidebarProps) {
   const isTodosChecked = selectedTypes.length === 0;
 
   return (
     <aside className="w-full md:w-56 shrink-0">
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className={`bg-white p-4 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none" : "rounded-xl border border-gray-100"}`}>
         {/* Header */}
-        <h3 className="font-bold text-sm text-brand-dark uppercase tracking-wide">
+        <h3 className={`text-sm text-brand-dark uppercase tracking-wide ${variant === "collection" ? "font-black tracking-[0.12em]" : "font-bold"}`}>
           Filtros
         </h3>
 
         {/* Price Range */}
         <div className="mt-4">
-          <h4 className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2">
+          <h4 className={`text-xs text-text-muted uppercase tracking-wide mb-2 ${variant === "collection" ? "font-black" : "font-medium"}`}>
             Faixa de Preço
           </h4>
           <form method="GET" action={basePath} className="space-y-2">
@@ -199,17 +209,19 @@ export function ProductFilterSidebar({
                 name="precoMin"
                 value={minPrice}
                 placeholder="Min"
+                variant={variant}
               />
               <PriceRangeInput
                 label="Preço máximo"
                 name="precoMax"
                 value={maxPrice}
                 placeholder="Max"
+                variant={variant}
               />
             </div>
             <button
               type="submit"
-              className="w-full rounded-lg bg-brand-dark px-3 py-2 text-xs font-black text-white hover:opacity-90 transition-opacity"
+              className={`w-full bg-brand-dark px-3 py-2 text-xs font-black text-white transition-opacity hover:opacity-90 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none uppercase tracking-[0.08em] shadow-[3px_3px_0px_#ffe500]" : "rounded-lg"}`}
             >
               Aplicar preço
             </button>
@@ -217,11 +229,11 @@ export function ProductFilterSidebar({
         </div>
 
         {/* Divider */}
-        <hr className="my-4 border-gray-100" />
+        <hr className={`my-4 ${variant === "collection" ? "border-[#1a1a1a]" : "border-gray-100"}`} />
 
         {/* Categories */}
         <div>
-          <h4 className="text-xs font-medium text-text-muted uppercase tracking-wide mb-3">
+          <h4 className={`text-xs text-text-muted uppercase tracking-wide mb-3 ${variant === "collection" ? "font-black" : "font-medium"}`}>
             Categorias
           </h4>
           <div className="flex flex-col gap-2.5">
@@ -238,6 +250,7 @@ export function ProductFilterSidebar({
                   key={category.id}
                   category={category}
                   checked={checked}
+                  variant={variant}
                   href={buildHrefFromSelection(
                     basePath,
                     collection,
@@ -255,7 +268,7 @@ export function ProductFilterSidebar({
         </div>
 
         {/* Divider */}
-        <hr className="my-4 border-gray-100" />
+        <hr className={`my-4 ${variant === "collection" ? "border-[#1a1a1a]" : "border-gray-100"}`} />
 
         {/* Clear Filters */}
         <Link
@@ -269,7 +282,7 @@ export function ProductFilterSidebar({
             perPage,
             search,
           )}
-          className="text-sm text-text-muted hover:text-brand-dark transition-colors underline"
+          className={`text-sm text-text-muted hover:text-brand-dark transition-colors underline ${variant === "collection" ? "font-black uppercase tracking-[0.06em]" : ""}`}
         >
           Limpar filtros
         </Link>
