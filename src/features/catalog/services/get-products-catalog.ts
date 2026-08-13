@@ -21,6 +21,7 @@ import { searchCatalogProducts } from "./catalog-search";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
 import { isTaxonomySlug, SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
+import { calculateDiscountPercent } from "../utils/discount-percent";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
@@ -32,6 +33,7 @@ import type {
   ProductsCatalogItem,
   ProductsCatalogPayload,
   ProductsCatalogTab,
+  ProductsCollectionsSummary,
 } from "../types/products-catalog";
 import { normalizeProductSearch } from "../utils/product-search";
 
@@ -729,4 +731,40 @@ export async function getProductsCatalog(
   }
 
   return loadWpCatalog(normalizedInput);
+}
+
+/**
+ * Resumo das coleções para os cards de "Explore por coleção".
+ *
+ * Reaproveita a varredura já cacheada do catálogo e os mesmos predicados de coleção da
+ * listagem (`matchesCollection`), para o card não contar um universo diferente do que a
+ * página da coleção mostra. Origem indisponível devolve zeros, e o card cai no texto fixo.
+ */
+export async function getProductsCollectionsSummary(): Promise<ProductsCollectionsSummary> {
+  const catalog = isMockDataEnabled()
+    ? await loadMockCatalog()
+    : await loadWpCatalogItems(await getHomeFlashSale());
+
+  if (catalog.sourceStatus === "unavailable") {
+    return { kitsCount: 0, promotionsMaxDiscountPercent: 0 };
+  }
+
+  let kitsCount = 0;
+  let promotionsMaxDiscountPercent = 0;
+
+  for (const item of catalog.items) {
+    if (matchesCollection(item, "kits")) {
+      kitsCount += 1;
+    }
+
+    if (matchesCollection(item, "promocoes")) {
+      const discountPercent = calculateDiscountPercent(item.originalPrice, item.price);
+
+      if (discountPercent > promotionsMaxDiscountPercent) {
+        promotionsMaxDiscountPercent = discountPercent;
+      }
+    }
+  }
+
+  return { kitsCount, promotionsMaxDiscountPercent };
 }

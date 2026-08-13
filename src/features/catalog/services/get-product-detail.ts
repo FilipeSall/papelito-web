@@ -15,6 +15,7 @@ import {
   fetchWpProducts,
   mapWpProductToDetailItem,
 } from "./wp-catalog";
+import { calculateDiscountPercent } from "../utils/discount-percent";
 import { resolveProductImage } from "../utils/resolve-product-image";
 import type { ProductDetailItem } from "../types/product-detail";
 
@@ -114,10 +115,7 @@ function computePrices(product: MockCatalogProduct) {
       ? Math.max(0, Math.round(product.homeData.discountPercent))
       : null;
 
-  const calculatedDiscount =
-    originalPrice > 0 && price < originalPrice
-      ? Math.round(((originalPrice - price) / originalPrice) * 100)
-      : 0;
+  const calculatedDiscount = calculateDiscountPercent(originalPrice, price);
 
   return {
     originalPrice,

@@ -22,6 +22,7 @@ export type {
   ProductsCatalogItem,
   ProductsCatalogPayload,
   ProductsCatalogTab,
+  ProductsCollectionsSummary,
 } from "./types/products-catalog";
 export type {
   ProductAvailabilityEntry,

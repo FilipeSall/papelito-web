@@ -52,6 +52,17 @@ export interface ProductsCatalogItem {
   bestVendor?: CatalogBestVendor;
 }
 
+/**
+ * Números reais das coleções, para os textos auxiliares da navegação da home.
+ *
+ * Sai do mesmo catálogo que as páginas de coleção listam, então "disponível" aqui é
+ * exatamente o que `isCatalogProductVisible` já define — não uma segunda regra.
+ */
+export interface ProductsCollectionsSummary {
+  kitsCount: number;
+  promotionsMaxDiscountPercent: number;
+}
+
 export interface ProductsCatalogTab {
   id: ProductTypeId;
   label: string;

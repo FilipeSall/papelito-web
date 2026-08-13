@@ -8,6 +8,7 @@ import type { HomeProductCard } from "../types/home-products";
 import type { ProductDetailItem, ProductDetailRelatedThumb } from "../types/product-detail";
 import type { ProductTypeId, ProductsCatalogItem } from "../types/products-catalog";
 import { PRODUCTS_LIST_QUERY, PRODUCT_QUERY } from "../queries/products";
+import { calculateDiscountPercent } from "../utils/discount-percent";
 import {
   PRODUCT_FALLBACK_IMAGE,
   resolveProductImage,
@@ -208,10 +209,7 @@ function resolvePrices(product: WpProductNode) {
     parseMoney(product.price) ??
     parseMoney(product.regularPrice) ??
     regularPrice;
-  const discountPercent =
-    regularPrice > 0 && price < regularPrice
-      ? Math.round(((regularPrice - price) / regularPrice) * 100)
-      : 0;
+  const discountPercent = calculateDiscountPercent(regularPrice, price);
 
   return {
     originalPrice: regularPrice,

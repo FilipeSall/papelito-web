@@ -3,14 +3,25 @@
 import useEmblaCarousel from "embla-carousel-react";
 
 import { CategoryNavItem } from "./category-nav-item";
-import { CATEGORIES_NAV_ITEMS } from "./constants";
+import { CATEGORIES_NAV_ITEMS, resolveCategoryNavSubtitle } from "./constants";
+import type { ProductsCollectionsSummary } from "@/features/catalog";
 
-export function CategoriesNav() {
+interface CategoriesNavProps {
+  collectionsSummary?: ProductsCollectionsSummary | null;
+}
+
+export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProps>) {
   const [emblaRef] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
     dragFree: true,
   });
+  const items = CATEGORIES_NAV_ITEMS.map((item) => ({
+    iconSrc: item.iconSrc,
+    title: item.title,
+    subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
+    href: item.href,
+  }));
 
   return (
     <section className="w-full bg-[#f9fafb] py-6 sm:py-8 lg:py-10">
@@ -27,7 +38,7 @@ export function CategoriesNav() {
           className="overflow-hidden px-0.5 pb-2 lg:hidden"
         >
           <div className="flex gap-4 pr-4">
-            {CATEGORIES_NAV_ITEMS.map((item) => (
+            {items.map((item) => (
               <div
                 key={item.title}
                 className="min-w-0 shrink-0 basis-[78%] min-[480px]:basis-[46%]"
@@ -39,7 +50,7 @@ export function CategoriesNav() {
         </div>
 
         <div className="hidden grid-cols-4 gap-5 lg:grid">
-          {CATEGORIES_NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <CategoryNavItem key={item.title} {...item} />
           ))}
         </div>
