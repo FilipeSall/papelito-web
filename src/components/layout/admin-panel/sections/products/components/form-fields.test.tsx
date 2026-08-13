@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { ModalSection } from "./form-fields";
+import { ModalSection, PromotionToggle } from "./form-fields";
+import { hasValidProductPrice } from "../helpers";
 
 const HELP_TEXT = "A classificação da Papelito. O WooCommerce passa a ser sincronizado a partir daqui.";
 
@@ -68,5 +69,58 @@ describe("InfoTooltip", () => {
 
     await user.tab();
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+});
+
+describe("PromotionToggle", () => {
+  const label = "Agendar promoção (Sim/Não)";
+
+  function renderToggle(salePrice: string, isEnabled = false) {
+    const onChange = vi.fn();
+    render(
+      <PromotionToggle
+        isDisabled={!hasValidProductPrice(salePrice)}
+        isEnabled={isEnabled}
+        onChange={onChange}
+      />,
+    );
+
+    return { onChange, toggle: screen.getByLabelText(label) };
+  }
+
+  it("fica desabilitado sem preço promocional", async () => {
+    const user = userEvent.setup();
+    const { onChange, toggle } = renderToggle("");
+
+    expect(toggle).toBeDisabled();
+
+    await user.click(toggle);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("fica desabilitado com preço promocional zerado", () => {
+    expect(renderToggle("0").toggle).toBeDisabled();
+  });
+
+  it("fica desabilitado com preço promocional inválido", () => {
+    expect(renderToggle("de graça").toggle).toBeDisabled();
+  });
+
+  it("libera o agendamento com preço promocional maior que zero", async () => {
+    const user = userEvent.setup();
+    const { onChange, toggle } = renderToggle("12,50");
+
+    expect(toggle).toBeEnabled();
+
+    await user.click(toggle);
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it("explica por que o agendamento está bloqueado", () => {
+    renderToggle("");
+
+    expect(
+      screen.getByText("Informe um preço promocional maior que zero para agendar a promoção."),
+    ).toBeInTheDocument();
   });
 });

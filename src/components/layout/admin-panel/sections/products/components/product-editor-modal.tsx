@@ -374,7 +374,11 @@ function PricingSection({
           Informe um preço promocional válido ou deixe o campo vazio.
         </p>
       ) : null}
-      <PromotionToggle isEnabled={isPromotionEnabled} onChange={onTogglePromotion} />
+      <PromotionToggle
+        isDisabled={!hasValidProductPrice(draft.salePrice)}
+        isEnabled={isPromotionEnabled}
+        onChange={onTogglePromotion}
+      />
       {isPromotionEnabled ? (
         <div className="grid gap-4 md:grid-cols-2">
           <TextField

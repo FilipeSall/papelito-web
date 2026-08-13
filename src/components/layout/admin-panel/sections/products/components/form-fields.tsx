@@ -171,20 +171,37 @@ export function TextField({
 
 export function PromotionToggle({
   isEnabled,
+  isDisabled = false,
   onChange,
 }: Readonly<{
   isEnabled: boolean;
+  isDisabled?: boolean;
   onChange: (isEnabled: boolean) => void;
 }>) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 border-y border-[#c9bd96] py-4 text-sm font-medium text-[#231f20]">
-      <input
-        checked={isEnabled}
-        className="h-5 w-5 accent-brand-yellow"
-        onChange={(event) => onChange(event.target.checked)}
-        type="checkbox"
-      />
-      <span>Agendar promoção (Sim/Não)</span>
-    </label>
+    <div className="border-y border-[#c9bd96] py-4">
+      <label
+        className={[
+          "flex items-center gap-3 text-sm font-medium",
+          isDisabled
+            ? "cursor-not-allowed text-[#231f20]/45"
+            : "cursor-pointer text-[#231f20]",
+        ].join(" ")}
+      >
+        <input
+          checked={isEnabled}
+          className="h-5 w-5 accent-brand-yellow disabled:cursor-not-allowed"
+          disabled={isDisabled}
+          onChange={(event) => onChange(event.target.checked)}
+          type="checkbox"
+        />
+        <span>Agendar promoção (Sim/Não)</span>
+      </label>
+      {isDisabled ? (
+        <p className="mt-2 text-xs text-[#231f20]/60">
+          Informe um preço promocional maior que zero para agendar a promoção.
+        </p>
+      ) : null}
+    </div>
   );
 }
