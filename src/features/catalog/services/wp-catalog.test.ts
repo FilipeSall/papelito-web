@@ -4,7 +4,14 @@ import {
   isCatalogProductVisible,
   mapWpProductToCatalogItem,
   mapWpProductToDetailItem,
+  WP_GRAPHQL_MAX_FIRST,
 } from "./wp-catalog";
+
+describe("WP_GRAPHQL_MAX_FIRST", () => {
+  it("fica abaixo do limite efetivo da consulta de listagem em produção", () => {
+    expect(WP_GRAPHQL_MAX_FIRST).toBe(47);
+  });
+});
 
 function buildProduct(description: string) {
   return {

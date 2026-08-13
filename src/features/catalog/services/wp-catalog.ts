@@ -290,11 +290,11 @@ export interface FetchWpProductsResult {
 /**
  * Teto por requisição imposto pelo próprio WPGraphQL.
  *
- * `AbstractConnectionResolver::max_query_amount()` devolve 100 e nada no plugin sobrescreve o
- * filtro `graphql_connection_max_query_amount`. Pedir `first` acima disso é cortado em
- * silêncio pelo servidor, então quem precisa de mais tem que paginar por cursor.
+ * A consulta de listagem também traz as variações para validar as medidas de frete. Em produção,
+ * o WPGraphQL devolve uma conexão vazia a partir de 48 itens nessa combinação. Quem precisa de
+ * mais tem que paginar por cursor, em vez de pedir um lote acima do teto efetivo.
  */
-export const WP_GRAPHQL_MAX_FIRST = 100;
+export const WP_GRAPHQL_MAX_FIRST = 47;
 
 interface RequestWpProductsResult {
   products: WpProductNode[];
@@ -315,7 +315,7 @@ async function requestWpProducts(
     typeof input === "number" ? { first: input } : input;
 
   const variables: Record<string, unknown> = {
-    first: normalized.first ?? 60,
+    first: Math.min(normalized.first ?? 60, WP_GRAPHQL_MAX_FIRST),
   };
 
   if (normalized.after) {
