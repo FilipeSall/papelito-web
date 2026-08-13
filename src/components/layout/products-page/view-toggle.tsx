@@ -5,6 +5,8 @@ import { buildProductsHref } from "./products-query-helpers";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import {
   getDefaultPerPageForView,
+  getPerPageOptionsForView,
+  type ProductsGridLayout,
   type ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
 
@@ -19,6 +21,7 @@ interface ViewToggleProps {
   minPrice: number | null;
   maxPrice: number | null;
   perPage: number;
+  gridLayout?: ProductsGridLayout;
   search?: string;
   variant?: "default" | "collection";
 }
@@ -58,11 +61,12 @@ export function ViewToggle({
   minPrice,
   maxPrice,
   perPage,
+  gridLayout = "default",
   search,
   variant = "default",
 }: Readonly<ViewToggleProps>) {
-  const defaultGridPerPage = getDefaultPerPageForView("grid");
-  const defaultListPerPage = getDefaultPerPageForView("list");
+  const gridPerPageOptions = getPerPageOptionsForView("grid", gridLayout);
+  const listPerPageOptions = getPerPageOptionsForView("list");
   const isCollectionVariant = variant === "collection";
   const containerClassName = isCollectionVariant
     ? "flex items-center gap-1 border-2 border-[#1a1a1a] bg-white p-1"
@@ -81,10 +85,15 @@ export function ViewToggle({
     isCollectionVariant,
   );
 
-  // `>=`: no default da lista (18) o grid precisa cair para o default dele, senão o link de
-  // grade mantém um perPage fora das opções de grade e o seletor fica sem opção ativa.
-  const gridPerPage = perPage >= defaultListPerPage ? defaultGridPerPage : perPage;
-  const listPerPage = Math.max(perPage, defaultListPerPage);
+  // Trocar de visualização com um perPage fora das opções do destino deixa o seletor sem
+  // opção ativa e a URL divergente do que a interface mostra: cada link cai no default do
+  // seu próprio par visualização/grid quando o valor atual não serve lá.
+  const gridPerPage = gridPerPageOptions.includes(perPage)
+    ? perPage
+    : getDefaultPerPageForView("grid", gridLayout);
+  const listPerPage = listPerPageOptions.includes(perPage)
+    ? perPage
+    : getDefaultPerPageForView("list");
 
   return (
     <div className={containerClassName}>

@@ -3,6 +3,7 @@ import { buildProductsHref } from "./products-query-helpers";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import {
   getPerPageOptionsForView,
+  type ProductsGridLayout,
   type ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
 
@@ -15,6 +16,7 @@ interface ProductsPerPageSelectorProps {
   minPrice: number | null;
   maxPrice: number | null;
   viewMode: ProductsViewMode;
+  gridLayout?: ProductsGridLayout;
   perPage: number;
   search?: string;
   variant?: "default" | "collection";
@@ -27,11 +29,12 @@ export function ProductsPerPageSelector({
   minPrice,
   maxPrice,
   viewMode,
+  gridLayout = "default",
   perPage,
   search,
   variant = "default",
 }: ProductsPerPageSelectorProps) {
-  const options = getPerPageOptionsForView(viewMode);
+  const options = getPerPageOptionsForView(viewMode, gridLayout);
 
   return (
     <div className={variant === "collection" ? "flex items-center gap-1 border-2 border-[#1a1a1a] bg-white p-1" : "flex items-center gap-1 rounded-lg bg-gray-100 p-1"}>

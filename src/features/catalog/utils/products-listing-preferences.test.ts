@@ -5,6 +5,7 @@ import {
   getPerPageOptionsForView,
   normalizeProductsPerPage,
   normalizeProductsViewMode,
+  resolveProductsGridLayout,
 } from "./products-listing-preferences";
 
 describe("normalizeProductsPerPage", () => {
@@ -44,5 +45,45 @@ describe("normalizeProductsViewMode", () => {
     expect(normalizeProductsViewMode("grid")).toBe("grid");
     expect(normalizeProductsViewMode("lista")).toBe("grid");
     expect(normalizeProductsViewMode(undefined)).toBe("grid");
+  });
+});
+
+describe("resolveProductsGridLayout", () => {
+  it("só a coleção específica na variante de coleção usa o grid de 4 colunas", () => {
+    expect(resolveProductsGridLayout("collection", "promocoes")).toBe("collection");
+    expect(resolveProductsGridLayout("collection", "kits")).toBe("collection");
+  });
+
+  it("'todos' e a listagem geral seguem no layout padrão", () => {
+    expect(resolveProductsGridLayout("collection", "todos")).toBe("default");
+    expect(resolveProductsGridLayout("default", "todos")).toBe("default");
+    expect(resolveProductsGridLayout("default", "promocoes")).toBe("default");
+  });
+});
+
+describe("perPage do grid de coleção", () => {
+  it("oferece múltiplos das 4 colunas", () => {
+    expect(getPerPageOptionsForView("grid", "collection")).toEqual([12, 16, 20]);
+
+    for (const option of getPerPageOptionsForView("grid", "collection")) {
+      expect(option % 4).toBe(0);
+    }
+  });
+
+  it("recusa o 9 herdado do grid de 3 colunas (regressão: última linha com 1 produto)", () => {
+    expect(normalizeProductsPerPage("9", "grid", "collection")).toBe(12);
+    expect(getDefaultPerPageForView("grid", "collection")).toBe(12);
+  });
+
+  it("não muda a listagem geral nem a coleção 'todos'", () => {
+    expect(getPerPageOptionsForView("grid")).toEqual([9, 12, 15]);
+    expect(getPerPageOptionsForView("grid", "default")).toEqual([9, 12, 15]);
+    expect(getDefaultPerPageForView("grid", "default")).toBe(9);
+    expect(normalizeProductsPerPage("9", "grid", "default")).toBe(9);
+  });
+
+  it("a lista independe do grid da coleção", () => {
+    expect(getPerPageOptionsForView("list", "collection")).toEqual([18, 24, 30]);
+    expect(getDefaultPerPageForView("list", "collection")).toBe(18);
   });
 });

@@ -2,7 +2,10 @@ import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
 import { ProductsList } from "./products-list";
 import type { ReactNode } from "react";
 import type { ProductCollectionId } from "@/features/catalog";
-import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
+import {
+  resolveProductsGridLayout,
+  type ProductsViewMode,
+} from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsGridProps {
   /** Lista de produtos para exibir no grid */
@@ -47,16 +50,15 @@ export function ProductsGrid({
     return <ProductsList products={products} variant={variant} />;
   }
 
+  const gridClassName =
+    variant !== "collection"
+      ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      : resolveProductsGridLayout(variant, activeCollection) === "collection"
+        ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+        : "grid grid-cols-2 gap-3 sm:grid-cols-3";
+
   return (
-    <div
-      className={
-        variant === "collection"
-          ? activeCollection === "todos"
-            ? "grid grid-cols-2 gap-3 sm:grid-cols-3"
-            : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-          : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      }
-    >
+    <div className={gridClassName}>
       {products.map((product) => (
         <ProductGridCard key={product.id} product={product} variant={variant} />
       ))}

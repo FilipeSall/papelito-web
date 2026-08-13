@@ -552,6 +552,32 @@ describe("getProductsCatalog — coleções por termo", () => {
     expect(payload.sourceStatus).toBe("ok");
   });
 
+  it("pagina a coleção no perPage do grid de 4 colunas", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const [premium, primeira, segunda] = await Promise.all([
+      getProductsCatalog({ collection: "premium", perPage: 12 }),
+      getProductsCatalog({ collection: "todos", perPage: 12 }),
+      getProductsCatalog({ collection: "todos", perPage: 12, page: 2 }),
+    ]);
+
+    // Coleção que cabe na página não ganha uma segunda página.
+    expect(premium.totalItems).toBe(4);
+    expect(premium.totalPages).toBe(1);
+    expect(premium.items).toHaveLength(4);
+
+    expect(primeira.items).toHaveLength(12);
+    expect(primeira.totalPages).toBe(Math.ceil(primeira.totalItems / 12));
+
+    expect(segunda.currentPage).toBe(2);
+    expect(segunda.items).toHaveLength(12);
+    expect(
+      segunda.items.some((item) =>
+        primeira.items.some((first) => first.id === item.id),
+      ),
+    ).toBe(false);
+  });
+
   it("novidades é o mesmo conjunto para qualquer perPage e não depende da página", async () => {
     const getProductsCatalog = await loadCatalog();
 

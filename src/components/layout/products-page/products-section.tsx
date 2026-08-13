@@ -18,7 +18,10 @@ import type {
   ProductsCatalogItem,
   ProductsCatalogTab,
 } from "@/features/catalog";
-import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
+import {
+  resolveProductsGridLayout,
+  type ProductsViewMode,
+} from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsSectionProps {
   basePath?: string;
@@ -83,6 +86,7 @@ export function ProductsSection({
   visualVariant,
 }: Readonly<ProductsSectionProps>) {
   const resolvedVisualVariant = visualVariant ?? (showCategoryFilters ? "default" : "collection");
+  const gridLayout = resolveProductsGridLayout(resolvedVisualVariant, activeCollection);
   const showCoverageWarning = coverageStatus === "unavailable";
   const isSourceUnavailable = sourceStatus === "unavailable";
   let emptyMessage = "Nenhum produto encontrado.";
@@ -158,6 +162,7 @@ export function ProductsSection({
                 minPrice={minPrice}
                 maxPrice={maxPrice}
                 viewMode={viewMode}
+                gridLayout={gridLayout}
                 perPage={perPage}
                 search={search}
                 variant={resolvedVisualVariant}
@@ -170,6 +175,7 @@ export function ProductsSection({
                 minPrice={minPrice}
                 maxPrice={maxPrice}
                 perPage={perPage}
+                gridLayout={gridLayout}
                 search={search}
                 variant={resolvedVisualVariant}
               />

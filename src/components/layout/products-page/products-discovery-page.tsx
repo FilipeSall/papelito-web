@@ -12,6 +12,7 @@ import { normalizeProductSearch } from "@/features/catalog/utils/product-search"
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
+  resolveProductsGridLayout,
 } from "@/features/catalog/utils/products-listing-preferences";
 
 interface DiscoverySearchParams {
@@ -94,9 +95,12 @@ export function ProductsDiscoveryPage({
     : [];
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleQueryParam(resolvedSearchParams.view));
+  const visualVariant = basePath === "/produtos" ? "default" : "collection";
+  const gridLayout = resolveProductsGridLayout(visualVariant, activeCollection);
   const perPage = normalizeProductsPerPage(
     readSingleQueryParam(resolvedSearchParams.perPage),
     viewMode,
+    gridLayout,
   );
   const minPrice = activeCollection === "todos"
     ? normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin))
@@ -148,7 +152,7 @@ export function ProductsDiscoveryPage({
         search={search}
         showSearch
         showCategoryFilters={isAllCollection}
-        visualVariant={basePath === "/produtos" ? "default" : "collection"}
+        visualVariant={visualVariant}
       />
     </main>
   );
