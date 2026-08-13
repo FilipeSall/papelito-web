@@ -66,9 +66,11 @@ export function ProductListCard({ product, variant = "default" }: ProductListCar
                 <span className="text-base font-black text-brand-dark">
                   R$ {price.toFixed(2).replace(".", ",")}
                 </span>
-                <span className="text-xs text-text-muted line-through">
-                  R$ {originalPrice.toFixed(2).replace(".", ",")}
-                </span>
+                {originalPrice > price ? (
+                  <span className="text-xs text-text-muted line-through">
+                    R$ {originalPrice.toFixed(2).replace(".", ",")}
+                  </span>
+                ) : null}
               </div>
             </div>
           </Link>

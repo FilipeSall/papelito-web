@@ -126,9 +126,11 @@ export function ProductGridCard({
               <span className={variant === "collection" ? "text-sm font-black text-brand-dark" : "text-base font-bold text-brand-dark"}>
                 R$ {price.toFixed(2).replace(".", ",")}
               </span>
-              <span className={variant === "collection" ? "text-[10px] text-text-muted line-through" : "text-xs text-text-muted line-through"}>
-                R$ {originalPrice.toFixed(2).replace(".", ",")}
-              </span>
+              {originalPrice > price ? (
+                <span className={variant === "collection" ? "text-[10px] text-text-muted line-through" : "text-xs text-text-muted line-through"}>
+                  R$ {originalPrice.toFixed(2).replace(".", ",")}
+                </span>
+              ) : null}
             </div>
 
             <AddToCartButton
