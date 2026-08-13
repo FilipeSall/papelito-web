@@ -14,11 +14,15 @@ import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sal
 import { buildRichTextContext } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 
+import { getAdminBenefitGroupsSnapshot } from "@/lib/server/admin-product-benefits";
+import { getAdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
+
 import { AssetsManager } from "./assets/assets-manager";
+import { ProductBenefitsSection } from "./assets/product-benefits/product-benefits-section";
 
 export async function AssetsContent() {
   const session = await getServerSession(authOptions);
-  const [heroSnapshot, partnerSnapshot, siteImagesSnapshot, logosSnapshot, promoMarqueeSnapshot, featuresSnapshot, freeShipping, paymentConfig, flashSaleCampaign] = await Promise.all([
+  const [heroSnapshot, partnerSnapshot, siteImagesSnapshot, logosSnapshot, promoMarqueeSnapshot, featuresSnapshot, freeShipping, paymentConfig, flashSaleCampaign, benefitsSnapshot, taxonomy] = await Promise.all([
     getAdminHeroBannersSnapshot(session?.accessToken),
     getAdminPartnerBannerSnapshot(session?.accessToken),
     getAdminSiteImageAssetsSnapshot(session?.accessToken),
@@ -28,6 +32,8 @@ export async function AssetsContent() {
     getAdminFreeShippingThreshold(session?.accessToken),
     getPaymentConfig(),
     getHomeFlashSale(),
+    getAdminBenefitGroupsSnapshot(session?.accessToken),
+    getAdminTaxonomySnapshot(session?.accessToken),
   ]);
 
   const richTextContext = buildRichTextContext({
@@ -37,14 +43,22 @@ export async function AssetsContent() {
   });
 
   return (
-    <AssetsManager
-      richTextContext={richTextContext}
-      initialFeaturesSnapshot={featuresSnapshot}
-      initialHeroSnapshot={heroSnapshot}
-      initialLogosSnapshot={logosSnapshot}
-      initialPartnerSnapshot={partnerSnapshot}
-      initialPromoMarqueeSnapshot={promoMarqueeSnapshot}
-      initialSiteImagesSnapshot={siteImagesSnapshot}
-    />
+    <div className="space-y-5">
+      <AssetsManager
+        richTextContext={richTextContext}
+        initialFeaturesSnapshot={featuresSnapshot}
+        initialHeroSnapshot={heroSnapshot}
+        initialLogosSnapshot={logosSnapshot}
+        initialPartnerSnapshot={partnerSnapshot}
+        initialPromoMarqueeSnapshot={promoMarqueeSnapshot}
+        initialSiteImagesSnapshot={siteImagesSnapshot}
+      />
+
+      <ProductBenefitsSection
+        categories={taxonomy.categories}
+        richTextContext={richTextContext}
+        snapshot={benefitsSnapshot}
+      />
+    </div>
   );
 }

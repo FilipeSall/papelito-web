@@ -8,6 +8,7 @@ import {
   normalizeSubcategoryParam,
   resolveSelectedTypesFromParams,
 } from "@/features/catalog/utils/product-type-taxonomy";
+import { normalizeProductSearch } from "@/features/catalog/utils/product-search";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -23,6 +24,7 @@ interface DiscoverySearchParams {
   perPage?: string | string[];
   precoMin?: string | string[];
   precoMax?: string | string[];
+  busca?: string | string[];
 }
 
 interface ProductsDiscoveryPageProps {
@@ -78,22 +80,31 @@ export function ProductsDiscoveryPage({
   const resolvedSearchParams = use(Promise.resolve(searchParams ?? {}));
   const siteImagesPromise = getSiteImageAssets();
 
-  const { queryType, selectedTypes } = resolveSelectedTypesFromParams(resolvedSearchParams);
+  const { selectedTypes: selectedTypesFromParams } = resolveSelectedTypesFromParams(resolvedSearchParams);
   const rawCollection = readSingleQueryParam(resolvedSearchParams.colecao);
   const collectionFromQuery = normalizeCollection(rawCollection);
   const hasExplicitCollection =
     typeof rawCollection === "string" && rawCollection.trim().length > 0;
   const activeCollection = hasExplicitCollection ? collectionFromQuery : initialCollection;
+  const selectedTypes = activeCollection === "todos" ? selectedTypesFromParams : [];
+  const queryType = selectedTypes[0] ?? "todos";
 
-  const selectedSubcategories = normalizeSubcategoryParam(resolvedSearchParams.subcategoria);
+  const selectedSubcategories = activeCollection === "todos"
+    ? normalizeSubcategoryParam(resolvedSearchParams.subcategoria)
+    : [];
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleQueryParam(resolvedSearchParams.view));
   const perPage = normalizeProductsPerPage(
     readSingleQueryParam(resolvedSearchParams.perPage),
     viewMode,
   );
-  const minPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin));
-  const maxPrice = normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMax));
+  const minPrice = activeCollection === "todos"
+    ? normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin))
+    : null;
+  const maxPrice = activeCollection === "todos"
+    ? normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMax))
+    : null;
+  const search = normalizeProductSearch(readSingleQueryParam(resolvedSearchParams.busca));
 
   const [catalog, siteImages] = use(
     Promise.all([
@@ -106,10 +117,12 @@ export function ProductsDiscoveryPage({
         maxPrice,
         page: currentPage,
         perPage,
+        search,
       }),
       siteImagesPromise,
     ]),
   );
+  const isAllCollection = catalog.activeCollection === "todos";
 
   return (
     <main className="flex flex-col bg-white">
@@ -132,6 +145,9 @@ export function ProductsDiscoveryPage({
         coverageCep={catalog.coverageCep}
         coverageStatus={catalog.coverageStatus}
         sourceStatus={catalog.sourceStatus}
+        search={search}
+        showSearch
+        showCategoryFilters={isAllCollection}
       />
     </main>
   );

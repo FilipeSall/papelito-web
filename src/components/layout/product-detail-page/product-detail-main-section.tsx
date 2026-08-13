@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
+import type { ResolvedProductBenefit } from "@/components/layout/product-benefits-bar";
 import { ProductDetailMainContent } from "./product-detail-main-content";
 
 interface ProductDetailMainSectionProps {
@@ -11,7 +12,8 @@ interface ProductDetailMainSectionProps {
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
   regionBlock?: RegionBlock | null;
-  freeShippingMinimumCents?: number | null;
+  /** Benefícios já resolvidos para este produto, na ordem definida pelo Admin. */
+  benefitItems?: ResolvedProductBenefit[];
 }
 
 /**
@@ -25,7 +27,7 @@ export function ProductDetailMainSection({
   activeVendor = null,
   selectedVendorStockQty = null,
   regionBlock = null,
-  freeShippingMinimumCents = null,
+  benefitItems = [],
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -61,7 +63,7 @@ export function ProductDetailMainSection({
             activeVendor={activeVendor}
             selectedVendorStockQty={selectedVendorStockQty}
             regionBlock={regionBlock}
-            freeShippingMinimumCents={freeShippingMinimumCents}
+            benefitItems={benefitItems}
           />
         </div>
       </div>

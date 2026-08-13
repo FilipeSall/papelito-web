@@ -1,51 +1,61 @@
+import Image from "next/image";
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
-import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
+import type { ProductCollectionId } from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
-
-type SpecificType = Exclude<ProductTypeId, "todos">;
 
 interface ProductCollectionFiltersProps {
   basePath: string;
   activeCollection: ProductCollectionId;
-  selectedTypes: SpecificType[];
-  minPrice: number | null;
-  maxPrice: number | null;
   viewMode: ProductsViewMode;
   perPage: number;
+  search?: string;
 }
 
 const COLLECTION_FILTERS: Array<{
   id: ProductCollectionId;
-  emoji: string;
+  iconSrc: string;
   label: string;
   subtitle: string;
 }> = [
-  { id: "todos", emoji: "🧭", label: "Tudo", subtitle: "Catálogo completo" },
-  { id: "premium", emoji: "⭐", label: "Premium", subtitle: "Linha premium" },
+  {
+    id: "todos",
+    iconSrc: "/images/categorias/icons/tudo.webp",
+    label: "Tudo",
+    subtitle: "Catálogo completo",
+  },
+  {
+    id: "premium",
+    iconSrc: "/images/categorias/icons/premium.webp",
+    label: "Premium",
+    subtitle: "Linha premium",
+  },
   {
     id: "novidades",
-    emoji: "🔥",
+    iconSrc: "/images/categorias/icons/novidades.webp",
     label: "Recém Chegados",
     subtitle: "Chegaram agora",
   },
   {
     id: "promocoes",
-    emoji: "💥",
+    iconSrc: "/images/categorias/icons/promocoes.webp",
     label: "Promoções",
     subtitle: "Ofertas ativas",
   },
-  { id: "kits", emoji: "🎁", label: "Kits", subtitle: "Combos exclusivos" },
+  {
+    id: "kits",
+    iconSrc: "/images/categorias/icons/kit.webp",
+    label: "Kits",
+    subtitle: "Combos exclusivos",
+  },
 ];
 
 export function ProductCollectionFilters({
   basePath,
   activeCollection,
-  selectedTypes,
-  minPrice,
-  maxPrice,
   viewMode,
   perPage,
+  search,
 }: ProductCollectionFiltersProps) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
@@ -58,37 +68,43 @@ export function ProductCollectionFilters({
             href={buildProductsHref({
               basePath,
               collection: collection.id,
-              selectedTypes,
-              minPrice,
-              maxPrice,
+              selectedTypes: [],
+              minPrice: null,
+              maxPrice: null,
               viewMode,
               perPage,
+              search,
             })}
-            className={`group relative overflow-hidden rounded-2xl border px-4 py-3 transition-all ${
+            className={`group relative flex min-h-24 items-center gap-3 border-2 border-[#1a1a1a] px-3 py-3 text-brand-dark transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow ${
               isActive
-                ? "border-brand-dark bg-brand-dark text-white shadow-[0_14px_28px_rgba(35,31,32,0.2)]"
-                : "border-gray-200 bg-white text-brand-dark hover:-translate-y-0.5 hover:border-brand-dark/25 hover:shadow-[0_10px_20px_rgba(17,17,17,0.1)]"
+                ? "-translate-x-0.5 -translate-y-0.5 border-brand-yellow bg-brand-dark text-white shadow-[4px_4px_0px_#ffe500]"
+                : "bg-white hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-brand-yellow hover:shadow-[4px_4px_0px_#1a1a1a]"
             }`}
           >
-            <div
-              className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity ${
-                isActive ? "bg-[radial-gradient(circle_at_85%_10%,#fef08a_0,transparent_56%)]" : ""
-              }`}
+            <Image
+              alt=""
+              aria-hidden
+              className="relative z-10 h-[52px] w-[52px] shrink-0 object-contain"
+              height={52}
+              src={collection.iconSrc}
+              unoptimized
+              width={52}
             />
-            <div className="relative flex items-start gap-2">
-              <span className="text-lg leading-none">{collection.emoji}</span>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-black uppercase tracking-[0.9px]">
-                  {collection.label}
-                </p>
-                <p
-                  className={`truncate text-[11px] ${
-                    isActive ? "text-white/75" : "text-text-muted"
-                  }`}
-                >
-                  {collection.subtitle}
-                </p>
-              </div>
+            <div className="relative z-10 min-w-0">
+              <p
+                className={`truncate text-xs font-black uppercase tracking-[0.075em] ${
+                  isActive ? "text-brand-yellow" : "text-brand-dark"
+                }`}
+              >
+                {collection.label}
+              </p>
+              <p
+                className={`mt-1 truncate text-[11px] ${
+                  isActive ? "text-white" : "text-text-muted"
+                }`}
+              >
+                {collection.subtitle}
+              </p>
             </div>
           </Link>
         );

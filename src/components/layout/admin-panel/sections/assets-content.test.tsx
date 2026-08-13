@@ -16,8 +16,24 @@ vi.mock("@/lib/server/admin-home-assets", () => ({
   getAdminSiteLogosSnapshot: vi.fn().mockResolvedValue({ logos: {}, issues: [] }),
 }));
 
+vi.mock("@/lib/server/admin-product-benefits", () => ({
+  getAdminBenefitGroupsSnapshot: vi
+    .fn()
+    .mockResolvedValue({ groups: [], collections: [], issues: [] }),
+}));
+
+vi.mock("@/lib/server/admin-taxonomy", () => ({
+  getAdminTaxonomySnapshot: vi
+    .fn()
+    .mockResolvedValue({ categories: [], collections: [], issues: [], version: 0 }),
+}));
+
 vi.mock("./assets/assets-manager", () => ({
   AssetsManager: () => <div data-testid="assets-manager" />,
+}));
+
+vi.mock("./assets/product-benefits/product-benefits-section", () => ({
+  ProductBenefitsSection: () => <div data-testid="product-benefits-section" />,
 }));
 
 import { AssetsContent } from "./assets-content";
@@ -27,5 +43,11 @@ describe("AssetsContent", () => {
     render(await AssetsContent());
 
     expect(screen.getByTestId("assets-manager")).toBeInTheDocument();
+  });
+
+  it("mostra os benefícios do produto na mesma página, sem rota própria", async () => {
+    render(await AssetsContent());
+
+    expect(screen.getByTestId("product-benefits-section")).toBeInTheDocument();
   });
 });

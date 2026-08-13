@@ -124,6 +124,7 @@ export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProp
         sourceStatus={catalog.sourceStatus}
         search={search}
         showSearch
+        showCategoryFilters
       />
     </main>
   );

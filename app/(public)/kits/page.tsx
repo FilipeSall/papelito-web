@@ -14,6 +14,7 @@ interface KitsPageProps {
         perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
+        busca?: string | string[];
       }>
     | {
         tipo?: string | string[];
@@ -25,6 +26,7 @@ interface KitsPageProps {
         perPage?: string | string[];
         precoMin?: string | string[];
         precoMax?: string | string[];
+        busca?: string | string[];
       };
 }
 

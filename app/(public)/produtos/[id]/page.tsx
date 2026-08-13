@@ -17,6 +17,10 @@ import {
 } from "@/features/catalog/types/region-block";
 import { getActiveVendor } from "@/features/active-vendor/server";
 import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
+import { getProductBenefits } from "@/features/catalog/services/get-product-benefits";
+import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
+import { buildRichTextContext } from "@/features/rich-text";
+import { resolveProductBenefits } from "@/components/layout/product-benefits-bar";
 import { authOptions } from "@/lib/auth";
 
 interface ProdutoDetalhePageProps {
@@ -36,12 +40,22 @@ export default async function ProdutoDetalhePage({
 }: ProdutoDetalhePageProps) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  const [product, flashSaleCampaign, initialIsFavorite, activeVendorResult, freeShippingThreshold] = await Promise.all([
+  const [
+    product,
+    flashSaleCampaign,
+    initialIsFavorite,
+    activeVendorResult,
+    freeShippingThreshold,
+    paymentConfig,
+    productBenefits,
+  ] = await Promise.all([
     getProductDetail(id),
     getHomeFlashSale(),
     fetchProductFavoriteStatus(id, session?.accessToken),
     session?.user ? getActiveVendor() : Promise.resolve(null),
     getFreeShippingThreshold(),
+    getPaymentConfig(),
+    getProductBenefits(id),
   ]);
 
   if (!product) {
@@ -49,6 +63,15 @@ export default async function ProdutoDetalhePage({
   }
 
   const displayedProduct = applyFlashSaleToProductDetail(product, flashSaleCampaign);
+
+  const benefitItems = resolveProductBenefits(
+    productBenefits.items,
+    buildRichTextContext({
+      freeShippingMinimumCents: freeShippingThreshold?.minimumOrderCents ?? null,
+      flashSaleCampaign,
+      paymentConfig,
+    }),
+  );
 
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
@@ -92,7 +115,7 @@ export default async function ProdutoDetalhePage({
         activeVendor={activeVendor}
         selectedVendorStockQty={selectedVendorStockQty}
         regionBlock={regionBlock}
-        freeShippingMinimumCents={freeShippingThreshold?.minimumOrderCents ?? null}
+        benefitItems={benefitItems}
       />
       <AddToCartToastHost />
     </main>

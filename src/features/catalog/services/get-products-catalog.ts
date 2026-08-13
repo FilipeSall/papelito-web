@@ -512,6 +512,7 @@ async function loadSearchCatalog(
     maxPrice: input.maxPrice,
     page: input.currentPage,
     perPage: input.perPage,
+    collection: input.activeCollection,
   });
   const searchHydration = await fetchWpProductsResult(
     { first: Math.max(1, searchResult.ids.length), include: searchResult.ids },
@@ -533,45 +534,13 @@ async function loadSearchCatalog(
   );
 }
 
-function getCampaignProductIds(
-  flashSaleCampaign: FlashSaleCampaign,
-  minPrice: number | null,
-  maxPrice: number | null,
-) {
-  if ((minPrice === null && maxPrice === null) || !flashSaleCampaign) {
-    return [];
-  }
-
-  return flashSaleCampaign.products
-    .map((product) => Number(product.id))
-    .filter((id) => Number.isInteger(id) && id > 0);
-}
-
 async function loadWpCatalogItems(
-  input: NormalizedCatalogInput,
   flashSaleCampaign: FlashSaleCampaign,
 ): Promise<CatalogItemsResult> {
-  const campaignProductIds = getCampaignProductIds(
-    flashSaleCampaign,
-    input.minPrice,
-    input.maxPrice,
-  );
-  const [catalogResult, campaignResult] = await Promise.all([
-    fetchAllWpProductsResult(
-      {
-        minPrice: input.minPrice,
-        maxPrice: input.maxPrice,
-      },
-      CATALOG_SCAN_LIMIT,
-      "products-catalog",
-    ),
-    campaignProductIds.length > 0
-      ? fetchWpProductsResult(
-          { first: campaignProductIds.length, include: campaignProductIds },
-          "products-catalog-flash-sale",
-        )
-      : Promise.resolve({ products: [], ok: true, truncated: false }),
-  ]);
+  // O recorte de preço acontece depois da varredura completa. Isso mantém a
+  // coleção de novidades como os oito produtos globais mais recentes, mesmo
+  // quando a página também recebe uma faixa de preço.
+  const catalogResult = await fetchAllWpProductsResult({}, CATALOG_SCAN_LIMIT, "products-catalog");
 
   if (catalogResult.truncated) {
     console.warn(
@@ -579,17 +548,8 @@ async function loadWpCatalogItems(
     );
   }
 
-  const knownIds = new Set(
-    catalogResult.products.map((product) => product.databaseId),
-  );
-  const mergedProducts = [
-    ...catalogResult.products,
-    ...campaignResult.products.filter(
-      (product) => !knownIds.has(product.databaseId),
-    ),
-  ];
   const items = markNewArrivals(
-    mergedProducts
+    catalogResult.products
       .map((product, index) =>
         mapWpProductToCatalogItem(product, index),
       )
@@ -652,7 +612,7 @@ async function loadWpCatalog(
     return loadSearchCatalog(scopedInput, categoryFilter.resolved, tabs, flashSaleCampaign);
   }
 
-  const catalog = await loadWpCatalogItems(scopedInput, flashSaleCampaign);
+  const catalog = await loadWpCatalogItems(flashSaleCampaign);
   return buildCatalogPayload(scopedInput, catalog.items, tabs, catalog.sourceStatus, taxonomy);
 }
 

@@ -3,9 +3,10 @@ import type { ProductGridItem } from "./product-grid-card";
 
 interface ProductsListProps {
   products: ProductGridItem[];
+  variant?: "default" | "collection";
 }
 
-export function ProductsList({ products }: ProductsListProps) {
+export function ProductsList({ products, variant = "default" }: Readonly<ProductsListProps>) {
   if (products.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -17,7 +18,7 @@ export function ProductsList({ products }: ProductsListProps) {
   return (
     <div className="flex flex-col gap-3.5">
       {products.map((product) => (
-        <ProductListCard key={product.id} product={product} />
+        <ProductListCard key={product.id} product={product} variant={variant} />
       ))}
     </div>
   );

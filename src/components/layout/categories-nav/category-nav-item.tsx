@@ -23,15 +23,15 @@ export function CategoryNavItem({
     >
       <span aria-hidden className="absolute right-0 top-0 h-16 w-16 -translate-y-8 translate-x-8 rotate-45 bg-white/[0.035]" />
       <div className="relative flex items-start justify-between gap-4">
-        <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105 sm:h-14 sm:w-14">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105 sm:h-18 sm:w-18">
           <Image
             alt=""
             aria-hidden
-            className="h-10 w-10 object-contain sm:h-11 sm:w-11"
-            height={40}
+            className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+            height={64}
             src={iconSrc}
             unoptimized
-            width={40}
+            width={64}
           />
         </div>
         <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white transition-colors duration-200 group-hover:border-brand-yellow group-hover:bg-brand-yellow group-hover:text-brand-dark group-focus-visible:border-brand-yellow group-focus-visible:bg-brand-yellow group-focus-visible:text-brand-dark">

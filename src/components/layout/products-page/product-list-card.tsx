@@ -8,9 +8,10 @@ import type { ProductGridItem } from "./product-grid-card";
 
 interface ProductListCardProps {
   product: ProductGridItem;
+  variant?: "default" | "collection";
 }
 
-export function ProductListCard({ product }: ProductListCardProps) {
+export function ProductListCard({ product, variant = "default" }: ProductListCardProps) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     category,
@@ -22,15 +23,25 @@ export function ProductListCard({ product }: ProductListCardProps) {
   } = product;
 
   return (
-    <article className="group/availability relative rounded-2xl border border-gray-100 bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+    <article className={`group/availability relative bg-white p-4 ${
+      variant === "collection"
+        ? "border-2 border-[#1a1a1a] transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1a1a1a]"
+        : "rounded-2xl border border-gray-100 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+    }`}>
       <div className={isUnavailable ? "opacity-45 transition-opacity" : undefined}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href={`/produtos/${product.id}`}
             aria-label={`Ver produto ${name}`}
-            className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+            className={`group flex min-w-0 flex-1 items-center gap-3 ${
+              variant === "collection"
+                ? "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow"
+                : "rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+            }`}
           >
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-bg-light p-2">
+            <div className={`relative h-24 w-24 shrink-0 overflow-hidden p-2 ${
+              variant === "collection" ? "border-2 border-[#1a1a1a] bg-[#faf8f2]" : "rounded-xl bg-bg-light"
+            }`}>
               {image ? (
                 <ImageWithSkeleton
                   src={image}
@@ -46,8 +57,8 @@ export function ProductListCard({ product }: ProductListCardProps) {
             </div>
 
             <div className="min-w-0">
-              <p className="text-xs text-text-muted">{category}</p>
-              <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-5 text-brand-dark group-hover:underline">
+              <p className={variant === "collection" ? "text-[10px] font-black uppercase tracking-[0.12em] text-text-muted" : "text-xs text-text-muted"}>{category}</p>
+              <h3 className={variant === "collection" ? "mt-1 line-clamp-2 text-sm font-black uppercase leading-5 text-brand-dark group-hover:underline" : "mt-0.5 line-clamp-2 text-sm font-black leading-5 text-brand-dark group-hover:underline"}>
                 {name}
               </h3>
               <p className="mt-1.5 text-xs text-text-muted">{stockLabel}</p>
@@ -65,6 +76,7 @@ export function ProductListCard({ product }: ProductListCardProps) {
           <div className="sm:pl-4">
             <ProductListCartControls
               disabledReason={disabledReason}
+              variant={variant}
               product={{
                 id: product.id,
                 category,

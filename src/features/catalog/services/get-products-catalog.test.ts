@@ -51,10 +51,7 @@ function fixturePrice(value: string) {
   return Number(value.replace(/[^\d,]/g, "").replace(",", "."));
 }
 
-/**
- * O WordPress filtra faixa de preço pelo preço regular e ignora o desconto da campanha:
- * o stub precisa reproduzir isso para o teste do filtro valer alguma coisa.
- */
+/** O stub aceita os mesmos filtros de preço do WordPress para cobrir chamadas de busca. */
 function stubWordPress() {
   wpGraphqlRequest.mockImplementation(
     async (query: string, variables: Record<string, unknown> = {}) => {
@@ -568,6 +565,54 @@ describe("getProductsCatalog — coleções por termo", () => {
     expect(segunda.totalItems).toBe(8);
     expect(trinta.items.map((item) => item.id)).toEqual(
       expect.arrayContaining(nove.items.map((item) => item.id)),
+    );
+  });
+
+  it("preserva os oito mais recentes antes de aplicar a faixa de preço", async () => {
+    const { products } = buildProductsResponse();
+    const newest = products.nodes[0];
+    const productsWithExpensiveNewest = products.nodes.map((product, index) =>
+      index === 0
+        ? { ...product, price: "R$ 120,00", regularPrice: "R$ 120,00" }
+        : product,
+    );
+
+    wpGraphqlRequest.mockImplementation(
+      async (query: string, variables: Record<string, unknown> = {}) => {
+        calls.push({ query, variables });
+
+        if (query.includes("query Categories")) {
+          return buildPapelitoTaxonomyResponse(categories);
+        }
+
+        return {
+          products: {
+            nodes: productsWithExpensiveNewest.filter((product) => {
+              const price = fixturePrice(product.regularPrice);
+              const minPrice = variables.minPrice as number | undefined;
+              const maxPrice = variables.maxPrice as number | undefined;
+
+              return (
+                (typeof minPrice !== "number" || price >= minPrice) &&
+                (typeof maxPrice !== "number" || price <= maxPrice)
+              );
+            }),
+          },
+        };
+      },
+    );
+
+    const getProductsCatalog = await loadCatalog();
+    const payload = await getProductsCatalog({
+      collection: "novidades",
+      maxPrice: 90,
+      perPage: 60,
+    });
+
+    expect(payload.totalItems).toBe(7);
+    expect(payload.items.some((item) => item.id === String(newest.databaseId))).toBe(false);
+    expect(payload.items.map((item) => item.id)).toEqual(
+      products.nodes.slice(1, 8).map((product) => String(product.databaseId)),
     );
   });
 });

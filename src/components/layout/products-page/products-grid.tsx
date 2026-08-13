@@ -9,13 +9,15 @@ interface ProductsGridProps {
   viewMode: ProductsViewMode;
   emptyMessage?: string;
   emptyAction?: ReactNode;
+  variant?: "default" | "collection";
 }
 
 /**
  * Grid de produtos da página de listagem.
  *
  * Componente molecular que organiza os cards de produtos em um layout
- * responsivo de grid. Exibe 1 coluna em mobile, 2 em tablets e 3 em desktop.
+ * responsivo de grid. A vitrine principal mantém seu grid espaçado; as
+ * coleções usam uma composição mais densa, chegando a quatro colunas.
  *
  * @example
  * ```tsx
@@ -27,6 +29,7 @@ export function ProductsGrid({
   viewMode,
   emptyMessage = "Nenhum produto encontrado.",
   emptyAction,
+  variant = "default",
 }: Readonly<ProductsGridProps>) {
   if (products.length === 0) {
     return (
@@ -38,13 +41,19 @@ export function ProductsGrid({
   }
 
   if (viewMode === "list") {
-    return <ProductsList products={products} />;
+    return <ProductsList products={products} variant={variant} />;
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={
+        variant === "collection"
+          ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+          : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      }
+    >
       {products.map((product) => (
-        <ProductGridCard key={product.id} product={product} />
+        <ProductGridCard key={product.id} product={product} variant={variant} />
       ))}
     </div>
   );

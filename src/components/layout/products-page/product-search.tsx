@@ -5,16 +5,23 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface ProductSearchProps {
+  basePath?: string;
+  variant?: "default" | "collection";
   initialValue: string;
   totalItems: number;
 }
 
-function buildSearchHref(params: URLSearchParams) {
+function buildSearchHref(basePath: string, params: URLSearchParams) {
   const query = params.toString();
-  return query ? `/produtos?${query}` : "/produtos";
+  return query ? `${basePath}?${query}` : basePath;
 }
 
-export function ProductSearch({ initialValue, totalItems }: ProductSearchProps) {
+export function ProductSearch({
+  basePath = "/produtos",
+  variant = "default",
+  initialValue,
+  totalItems,
+}: ProductSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(initialValue);
@@ -46,7 +53,7 @@ export function ProductSearch({ initialValue, totalItems }: ProductSearchProps) 
     params.delete("page");
 
     startTransition(() => {
-      router.replace(buildSearchHref(params), { scroll: false });
+      router.replace(buildSearchHref(basePath, params), { scroll: false });
     });
   };
 
@@ -102,7 +109,11 @@ export function ProductSearch({ initialValue, totalItems }: ProductSearchProps) 
       />
       <input
         aria-describedby="products-search-status"
-        className="h-12 w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-12 text-sm text-brand-dark outline-none transition-colors placeholder:text-text-muted focus-visible:border-brand-dark focus-visible:ring-2 focus-visible:ring-brand-yellow"
+        className={`h-12 w-full bg-white py-3 pl-12 pr-12 text-sm text-brand-dark outline-none transition-colors placeholder:text-text-muted ${
+          variant === "collection"
+            ? "border-2 border-gray-200 focus:border-[#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow"
+            : "rounded-xl border border-gray-200 focus-visible:border-brand-dark focus-visible:ring-2 focus-visible:ring-brand-yellow"
+        }`}
         id="products-search"
         maxLength={100}
         onChange={(event) => {
@@ -117,7 +128,9 @@ export function ProductSearch({ initialValue, totalItems }: ProductSearchProps) 
       {hasSearch ? (
         <button
           aria-label="Limpar busca"
-          className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-gray-100 hover:text-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+          className={`absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center text-text-muted transition-colors hover:text-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow ${
+            variant === "collection" ? "hover:bg-brand-yellow" : "rounded-lg hover:bg-gray-100"
+          }`}
           onClick={clearSearch}
           type="button"
         >
@@ -137,7 +150,7 @@ export function ProductSearch({ initialValue, totalItems }: ProductSearchProps) 
   );
 }
 
-export function ClearProductSearchButton() {
+export function ClearProductSearchButton({ basePath = "/produtos" }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -148,7 +161,7 @@ export function ClearProductSearchButton() {
         const params = new URLSearchParams(searchParams.toString());
         params.delete("busca");
         params.delete("page");
-        router.replace(buildSearchHref(params), { scroll: false });
+        router.replace(buildSearchHref(basePath, params), { scroll: false });
       }}
       type="button"
     >

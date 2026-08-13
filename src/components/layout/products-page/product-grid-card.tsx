@@ -26,6 +26,7 @@ export interface ProductGridItem {
 
 interface ProductGridCardProps {
   product: ProductGridItem;
+  variant?: "default" | "collection";
 }
 
 /**
@@ -50,7 +51,10 @@ interface ProductGridCardProps {
  * />
  * ```
  */
-export function ProductGridCard({ product }: Readonly<ProductGridCardProps>) {
+export function ProductGridCard({
+  product,
+  variant = "default",
+}: Readonly<ProductGridCardProps>) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
     category,
@@ -62,17 +66,31 @@ export function ProductGridCard({ product }: Readonly<ProductGridCardProps>) {
   } = product;
 
   return (
-    <div className="group/availability relative cursor-pointer overflow-visible rounded-xl bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md">
+    <article className={`group/availability relative cursor-pointer overflow-visible bg-white ${
+      variant === "collection"
+        ? "border-2 border-[#1a1a1a] transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1a1a1a]"
+        : "rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md"
+    }`}>
       <div
-        className={`overflow-hidden rounded-xl ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
+        className={`overflow-hidden ${variant === "default" ? "rounded-xl " : ""}${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
       >
         <Link
           href={`/produtos/${product.id}`}
           aria-label={`Ver produto ${name}`}
-          className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+          className={`absolute inset-0 z-10 ${
+            variant === "collection"
+              ? "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow"
+              : "rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+          }`}
         />
         {/* Image container */}
-        <div className="relative aspect-square bg-bg-light p-4">
+        <div
+          className={`relative ${
+            variant === "collection"
+              ? "aspect-[4/3] border-b-2 border-[#1a1a1a] bg-[#faf8f2] p-2.5"
+              : "aspect-square bg-bg-light p-4"
+          }`}
+        >
           {/* Product Image */}
           <div className="relative w-full h-full">
             {image ? (
@@ -91,32 +109,33 @@ export function ProductGridCard({ product }: Readonly<ProductGridCardProps>) {
         </div>
 
         {/* Product Info */}
-        <div className="p-4">
+        <div className={variant === "collection" ? "p-3" : "p-4"}>
           {/* Category */}
-          <span className="text-xs text-text-muted">{category}</span>
+          <span className={variant === "collection" ? "text-[9px] font-black uppercase tracking-[0.1em] text-text-muted" : "text-xs text-text-muted"}>{category}</span>
 
           {/* Name */}
-          <h3 className="font-bold text-sm text-brand-dark mt-0.5 line-clamp-1">
+          <h3 className={variant === "collection" ? "mt-1 line-clamp-1 text-xs font-black uppercase text-brand-dark" : "mt-0.5 line-clamp-1 text-sm font-bold text-brand-dark"}>
             {name}
           </h3>
 
-          <p className="mt-1.5 text-xs text-text-muted">{stockLabel}</p>
+          <p className={variant === "collection" ? "mt-1 text-[10px] text-text-muted" : "mt-1.5 text-xs text-text-muted"}>{stockLabel}</p>
 
           {/* Price and Add Button */}
-          <div className="flex items-center justify-between mt-3">
+          <div className={variant === "collection" ? "mt-2 flex items-center justify-between gap-2" : "mt-3 flex items-center justify-between"}>
             <div className="flex flex-col">
-              <span className="text-base font-bold text-brand-dark">
+              <span className={variant === "collection" ? "text-sm font-black text-brand-dark" : "text-base font-bold text-brand-dark"}>
                 R$ {price.toFixed(2).replace(".", ",")}
               </span>
-              <span className="text-xs text-text-muted line-through">
+              <span className={variant === "collection" ? "text-[10px] text-text-muted line-through" : "text-xs text-text-muted line-through"}>
                 R$ {originalPrice.toFixed(2).replace(".", ",")}
               </span>
             </div>
 
             <AddToCartButton
               label="Adicionar"
-              className="relative z-20 min-w-26 w-auto px-3"
+              className={variant === "collection" ? "relative z-20 h-7 min-w-0 w-auto px-2" : "relative z-20 min-w-26 w-auto px-3"}
               disabledReason={disabledReason}
+              variant={variant}
               product={{
                 id: product.id,
                 category,
@@ -138,6 +157,6 @@ export function ProductGridCard({ product }: Readonly<ProductGridCardProps>) {
           {disabledReason}
         </span>
       ) : null}
-    </div>
+    </article>
   );
 }

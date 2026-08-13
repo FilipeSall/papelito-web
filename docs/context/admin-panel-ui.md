@@ -77,6 +77,31 @@ a classificação para `papelito/v1/admin/products/{id}/taxonomy`. Salvar sem ca
 primeira. Se a classificação de uma criação falhar, produto publicado é compensado para rascunho; em edição,
 a classificação anterior é preservada. O editor não envia categorias WooCommerce e não existe dual-write.
 
+## Benefícios do produto ficam em Assets, não em rota própria
+
+A faixa de benefícios da página de produto é editada num painel recolhível dentro de `/admin/assets`
+(`sections/assets/product-benefits/`). **Não existe `/admin/beneficios`**: apesar de a tela ser um CRUD
+com modal e picker, o que ela edita é conteúdo editorial do site, igual aos banners, à faixa de avisos e
+aos benefícios da Home — todos já morando em Assets. Uma entrada de menu para isso seria cosmética e
+fragmentaria o mesmo domínio em dois lugares.
+
+Decisões de interface que não são óbvias pelo código:
+
+- **A prévia reusa o componente real** (`ProductBenefitsBar`), em vez de imitar o layout com marcação
+  própria. A prévia dos benefícios da Home desenha à mão a faixa horizontal abaixo do header, que é um
+  layout diferente: a faixa do produto é centralizada, com o ícone acima do título. Reusando o componente,
+  ícone, título, texto e número de colunas não têm como divergir do que o cliente vê. A prévia da Home
+  ficou intocada.
+- **A configuração global aparece primeiro, com selo `global`, sem botão de excluir.** Ela é o padrão de
+  todo produto sem configuração mais específica, e o backend recusa excluí-la ou desativá-la.
+- **Ordenação por setas ↑↓**, como no restante do painel — o projeto não usa drag-and-drop em lugar nenhum.
+- **Ícone é emoji ou SVG**, nunca um campo de HTML. O emoji tem paleta de atalho mas o campo é livre; a
+  barreira real é o WordPress, que recusa alfanumérico ASCII e caracteres de markup.
+- **A busca de produto reusa `/api/admin/flash-sale/products`.** Apesar do nome, é uma busca paginada
+  genérica de produtos; criar um segundo endpoint idêntico só para trocar o rótulo seria duplicação.
+- **Alvo já usado por outro grupo devolve erro com o nome do grupo atual**, porque a PK do banco impede
+  dois donos para o mesmo produto, coleção ou categoria.
+
 ## Pendências
 
 - Os botões de troca de papel de usuário ainda usam `window.confirm`, por decisão de escopo — não foram migrados para `BaseModal`.

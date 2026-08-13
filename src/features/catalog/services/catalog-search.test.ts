@@ -28,11 +28,12 @@ describe("searchCatalogProducts", () => {
         maxPrice: 12,
         page: 2,
         perPage: 9,
+        collection: "todos",
       }),
     ).resolves.toEqual({ ids: [12, 8], total: 2, page: 2, per_page: 9 });
 
     expect(wpRest).toHaveBeenCalledWith(
-      "/papelito/v1/catalog/search?busca=Seda+trad&page=2&per_page=9&categories=papel%2Chemp&subcategories=slim&preco_min=4.5&preco_max=12",
+      "/papelito/v1/catalog/search?busca=Seda+trad&page=2&per_page=9&collection=todos&categories=papel%2Chemp&subcategories=slim&preco_min=4.5&preco_max=12",
       { revalidate: 60, tags: ["wp:products"] },
     );
   });
@@ -47,6 +48,7 @@ describe("searchCatalogProducts", () => {
         subcategorySlugs: [],
         minPrice: null,
         maxPrice: null,
+        collection: "todos",
         page: 1,
         perPage: 9,
       }),

@@ -17,6 +17,7 @@ interface ProductsPerPageSelectorProps {
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
+  variant?: "default" | "collection";
 }
 
 export function ProductsPerPageSelector({
@@ -28,12 +29,13 @@ export function ProductsPerPageSelector({
   viewMode,
   perPage,
   search,
+  variant = "default",
 }: ProductsPerPageSelectorProps) {
   const options = getPerPageOptionsForView(viewMode);
 
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
-      <span className="px-2 text-xs font-semibold text-text-muted">Itens/página</span>
+    <div className={variant === "collection" ? "flex items-center gap-1 border-2 border-[#1a1a1a] bg-white p-1" : "flex items-center gap-1 rounded-lg bg-gray-100 p-1"}>
+      <span className={variant === "collection" ? "px-1 text-[10px] font-black uppercase tracking-[0.08em] text-text-muted" : "px-2 text-xs font-semibold text-text-muted"}>{variant === "collection" ? "Itens" : "Itens/página"}</span>
       {options.map((option) => {
         const isActive = option === perPage;
 
@@ -50,8 +52,12 @@ export function ProductsPerPageSelector({
               perPage: option,
               search,
             })}
-            className={`min-w-10 rounded-md px-2 py-1 text-center text-xs font-black transition-colors ${
-              isActive ? "bg-white text-brand-dark shadow-sm" : "text-text-secondary hover:bg-gray-200"
+            className={`px-2 py-1 text-center text-xs font-black transition-colors ${
+              variant === "collection" ? "min-w-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow" : "min-w-10 rounded-md"
+            } ${
+              isActive
+                ? variant === "collection" ? "bg-brand-dark text-brand-yellow" : "bg-white text-brand-dark shadow-sm"
+                : variant === "collection" ? "text-text-secondary hover:bg-brand-yellow hover:text-brand-dark" : "text-text-secondary hover:bg-gray-200"
             }`}
           >
             {option}

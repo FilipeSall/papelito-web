@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { ActiveVendorSummary } from "@/components/active-vendor";
+import {
+  ProductBenefitsBar,
+  type ResolvedProductBenefit,
+} from "@/components/layout/product-benefits-bar";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { formatBRL } from "@/lib/format-currency";
-import { formatFreeShippingCouponCopy } from "@/features/shipping/utils/free-shipping-copy";
 import { ProductDetailDescriptionSection } from "./product-detail-description-section";
 import { ProductDetailCepAvailability } from "./product-detail-cep-availability";
 import { ProductDetailGallery } from "./product-detail-gallery";
@@ -30,7 +33,8 @@ interface ProductDetailMainContentProps {
   activeVendor?: ActiveVendor | null;
   selectedVendorStockQty?: number | null;
   regionBlock?: RegionBlock | null;
-  freeShippingMinimumCents?: number | null;
+  /** Benefícios já resolvidos para este produto, na ordem definida pelo Admin. */
+  benefitItems?: ResolvedProductBenefit[];
 }
 
 const MAX_RELATED_PRODUCTS = 4;
@@ -46,7 +50,7 @@ export function ProductDetailMainContent({
   activeVendor = null,
   selectedVendorStockQty = null,
   regionBlock = null,
-  freeShippingMinimumCents = null,
+  benefitItems = [],
 }: Readonly<ProductDetailMainContentProps>) {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const { status, role } = useAuthSession();
@@ -157,35 +161,7 @@ export function ProductDetailMainContent({
             </div>
           ) : null}
 
-          <div className="mt-6 grid grid-cols-3 rounded-2xl bg-[#F9FAFB] px-4 py-4 text-center">
-            <div className="flex flex-col items-center">
-              <div className="text-2xl leading-none">🚚</div>
-              <div className="mt-1 text-sm font-black leading-4 text-brand-dark">
-                Frete Grátis
-              </div>
-              <div className="mt-1 text-sm font-normal leading-4 text-[#99A1AF]">
-                {formatFreeShippingCouponCopy(freeShippingMinimumCents)}
-              </div>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="text-2xl leading-none">↩️</div>
-              <div className="mt-1 text-sm font-black leading-4 text-brand-dark">
-                30 Dias
-              </div>
-              <div className="mt-1 text-sm font-normal leading-4 text-[#99A1AF]">
-                Troca grátis
-              </div>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="text-2xl leading-none">🔒</div>
-              <div className="mt-1 text-sm font-black leading-4 text-brand-dark">
-                Pagamento
-              </div>
-              <div className="mt-1 text-sm font-normal leading-4 text-[#99A1AF]">
-                100% seguro
-              </div>
-            </div>
-          </div>
+          <ProductBenefitsBar items={benefitItems} />
         </div>
       </div>
 

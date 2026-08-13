@@ -1,6 +1,6 @@
 import { ProductFilterTabs } from "./product-filter-tabs";
-import { ProductFilterSidebar } from "./product-filter-sidebar";
 import { ProductCollectionFilters } from "./product-collection-filters";
+import { ProductFilterSidebar } from "./product-filter-sidebar";
 import { ProductsGrid } from "./products-grid";
 import { ProductsPagination } from "./products-pagination";
 import { ProductsPerPageSelector } from "./products-per-page-selector";
@@ -24,6 +24,7 @@ interface ProductsSectionProps {
   basePath?: string;
   activeCollection?: ProductCollectionId;
   showCollectionFilters?: boolean;
+  showCategoryFilters?: boolean;
   products: ProductsCatalogItem[];
   tabs: ProductsCatalogTab[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
@@ -48,11 +49,9 @@ interface ProductsSectionProps {
  * Organismo que compõe a estrutura completa da área de produtos:
  * - Barra de abas de filtro por categoria
  * - Contador de produtos, seletor de itens por página e alternador de visualização
- * - Sidebar de filtros (preço e categorias)
  * - Listagem de produtos em grid ou lista
  *
- * Os filtros são exibidos de forma responsiva: em dispositivos móveis
- * ficam acima do grid, em desktop ficam na lateral esquerda.
+ * Os filtros de coleção e categoria ficam acima da listagem em todos os breakpoints.
  *
  * @example
  * ```tsx
@@ -63,6 +62,7 @@ export function ProductsSection({
   basePath = "/produtos",
   activeCollection = "todos",
   showCollectionFilters = false,
+  showCategoryFilters = true,
   products,
   tabs,
   selectedTypes,
@@ -80,6 +80,7 @@ export function ProductsSection({
   search = "",
   showSearch = false,
 }: Readonly<ProductsSectionProps>) {
+  const visualVariant = showCategoryFilters ? "default" : "collection";
   const showCoverageWarning = coverageStatus === "unavailable";
   const isSourceUnavailable = sourceStatus === "unavailable";
   let emptyMessage = "Nenhum produto encontrado.";
@@ -96,39 +97,39 @@ export function ProductsSection({
         <AddToCartToastHost />
         <CoverageWarningToastHost shouldShow={showCoverageWarning} />
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          {showSearch ? (
-            <div className="mb-6">
-              <ProductSearch initialValue={search} totalItems={totalItems} />
-            </div>
-          ) : null}
-          {/* Filter Tabs */}
           {showCollectionFilters ? (
             <div className="mb-4">
               <ProductCollectionFilters
                 basePath={basePath}
                 activeCollection={activeCollection}
-                selectedTypes={selectedTypes}
-                minPrice={minPrice}
-                maxPrice={maxPrice}
                 viewMode={viewMode}
                 perPage={perPage}
+                search={search}
               />
             </div>
           ) : null}
 
-          <div className="mb-6">
-            <ProductFilterTabs
-              basePath={basePath}
-              collection={activeCollection}
-              activeTab={activeType}
-              tabs={tabs}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              viewMode={viewMode}
-              perPage={perPage}
-              search={search}
-            />
-          </div>
+          {showSearch ? (
+            <div className="mb-6">
+              <ProductSearch basePath={basePath} initialValue={search} totalItems={totalItems} variant={visualVariant} />
+            </div>
+          ) : null}
+
+          {showCategoryFilters ? (
+            <div className="mb-6">
+              <ProductFilterTabs
+                basePath={basePath}
+                collection={activeCollection}
+                activeTab={activeType}
+                tabs={tabs}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                viewMode={viewMode}
+                perPage={perPage}
+                search={search}
+              />
+            </div>
+          ) : null}
 
           {/* Products count and view toggle */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -151,6 +152,8 @@ export function ProductsSection({
                 maxPrice={maxPrice}
                 viewMode={viewMode}
                 perPage={perPage}
+                search={search}
+                variant={visualVariant}
               />
               <ViewToggle
                 basePath={basePath}
@@ -161,35 +164,38 @@ export function ProductsSection({
                 maxPrice={maxPrice}
                 perPage={perPage}
                 search={search}
+                variant={visualVariant}
               />
             </div>
           </div>
 
-          {/* Main content: Sidebar + Grid */}
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Sidebar */}
-            <ProductFilterSidebar
-              basePath={basePath}
-              collection={activeCollection}
-              selectedTypes={selectedTypes}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              viewMode={viewMode}
-              perPage={perPage}
-              search={search}
-              categories={tabs.map((tab) => ({ id: tab.id, label: tab.id === "todos" ? "Todos" : tab.label }))}
-            />
-
-            {/* Products Grid */}
-            <div className="flex-1">
+          <div className={showCategoryFilters ? "flex flex-col gap-6 md:flex-row" : undefined}>
+            {showCategoryFilters ? (
+              <ProductFilterSidebar
+                basePath={basePath}
+                collection={activeCollection}
+                selectedTypes={selectedTypes}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                viewMode={viewMode}
+                perPage={perPage}
+                search={search}
+                categories={tabs.map((tab) => ({
+                  id: tab.id,
+                  label: tab.id === "todos" ? "Todos" : tab.label,
+                }))}
+              />
+            ) : null}
+            <div className={showCategoryFilters ? "min-w-0 flex-1" : undefined}>
               {isSourceUnavailable ? (
                 <CatalogUnavailableNotice />
               ) : (
                 <>
                   <ProductsGrid
                     emptyMessage={emptyMessage}
-                    emptyAction={search ? <ClearProductSearchButton /> : undefined}
+                    emptyAction={search ? <ClearProductSearchButton basePath={basePath} /> : undefined}
                     products={products}
+                    variant={visualVariant}
                     viewMode={viewMode}
                   />
                   <ProductsPagination
@@ -203,6 +209,7 @@ export function ProductsSection({
                     viewMode={viewMode}
                     perPage={perPage}
                     search={search}
+                    variant={visualVariant}
                   />
                 </>
               )}

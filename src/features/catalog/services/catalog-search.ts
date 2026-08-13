@@ -1,6 +1,7 @@
 import "server-only";
 
 import { wpRest } from "@/lib/server/wp-rest";
+import type { ProductCollectionId } from "../types/products-catalog";
 
 export interface CatalogSearchResponse {
   ids: number[];
@@ -17,6 +18,7 @@ export interface CatalogSearchInput {
   maxPrice: number | null;
   page: number;
   perPage: number;
+  collection: ProductCollectionId;
 }
 
 function toPositiveInteger(value: unknown) {
@@ -50,6 +52,7 @@ export async function searchCatalogProducts(
     busca: input.search,
     page: String(input.page),
     per_page: String(input.perPage),
+    collection: input.collection,
   });
 
   if (input.categorySlugs.length > 0) {

@@ -20,6 +20,23 @@ interface ViewToggleProps {
   maxPrice: number | null;
   perPage: number;
   search?: string;
+  variant?: "default" | "collection";
+}
+
+function getViewStateClassName(
+  view: ProductsViewMode,
+  activeView: ProductsViewMode,
+  isCollectionVariant: boolean,
+) {
+  const isActive = view === activeView;
+
+  if (isCollectionVariant) {
+    if (isActive) return "bg-brand-dark";
+    return "hover:bg-brand-yellow";
+  }
+
+  if (isActive) return "bg-white shadow-sm";
+  return "hover:bg-gray-200";
 }
 
 /**
@@ -42,9 +59,27 @@ export function ViewToggle({
   maxPrice,
   perPage,
   search,
+  variant = "default",
 }: Readonly<ViewToggleProps>) {
   const defaultGridPerPage = getDefaultPerPageForView("grid");
   const defaultListPerPage = getDefaultPerPageForView("list");
+  const isCollectionVariant = variant === "collection";
+  const containerClassName = isCollectionVariant
+    ? "flex items-center gap-1 border-2 border-[#1a1a1a] bg-white p-1"
+    : "flex items-center gap-1 rounded-lg bg-gray-100 p-1";
+  const itemClassName = isCollectionVariant
+    ? "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+    : "rounded-md";
+  const gridStateClassName = getViewStateClassName(
+    "grid",
+    activeView,
+    isCollectionVariant,
+  );
+  const listStateClassName = getViewStateClassName(
+    "list",
+    activeView,
+    isCollectionVariant,
+  );
 
   // `>=`: no default da lista (18) o grid precisa cair para o default dele, senão o link de
   // grade mantém um perPage fora das opções de grade e o seletor fica sem opção ativa.
@@ -52,7 +87,7 @@ export function ViewToggle({
   const listPerPage = Math.max(perPage, defaultListPerPage);
 
   return (
-    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+    <div className={containerClassName}>
       <Link
         aria-label="Visualização em grade"
         href={buildProductsHref({
@@ -65,11 +100,9 @@ export function ViewToggle({
           perPage: gridPerPage,
           search,
         })}
-        className={`p-1.5 rounded-md transition-colors ${
-          activeView === "grid" ? "bg-white shadow-sm" : "hover:bg-gray-200"
-        }`}
+        className={`p-1.5 transition-colors ${itemClassName} ${gridStateClassName}`}
       >
-        <ViewToggleGridIcon active={activeView === "grid"} />
+        <ViewToggleGridIcon active={activeView === "grid"} variant={variant} />
       </Link>
       <Link
         aria-label="Visualização em lista"
@@ -83,11 +116,9 @@ export function ViewToggle({
           perPage: listPerPage,
           search,
         })}
-        className={`p-1.5 rounded-md transition-colors ${
-          activeView === "list" ? "bg-white shadow-sm" : "hover:bg-gray-200"
-        }`}
+        className={`p-1.5 transition-colors ${itemClassName} ${listStateClassName}`}
       >
-        <ViewToggleListIcon active={activeView === "list"} />
+        <ViewToggleListIcon active={activeView === "list"} variant={variant} />
       </Link>
     </div>
   );
