@@ -102,6 +102,7 @@ export function useAdminProductsManager(
   const [isUploading, setIsUploading] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [isPromotionScheduled, setIsPromotionScheduled] = useState(false);
   const [notice, setNotice] = useState("");
   const handledInitialFocusRef = useRef(false);
   const selectionRequestRef = useRef(0);
@@ -109,6 +110,9 @@ export function useAdminProductsManager(
   const resetDraft = useCallback((nextDraft: ProductDraft) => {
     draftRef.current = nextDraft;
     changedFieldsRef.current = new Set();
+    // Trocar de produto zera a intenção; o agendamento do produto carregado volta a
+    // sair das datas e da tag dele.
+    setIsPromotionScheduled(false);
     setDraft(nextDraft);
   }, []);
 
@@ -150,8 +154,15 @@ export function useAdminProductsManager(
   }, [products, tags]);
 
   const promotionTag = useMemo(() => findPromotionTag(tags), [tags]);
+  /**
+   * Preço promocional preenchido NÃO marca o agendamento sozinho.
+   *
+   * Digitar o preço só habilita o toggle; agendar continua sendo uma decisão de quem
+   * edita. Derivar de `salePrice` marcava a opção no meio da digitação e abria os campos
+   * de data por conta própria.
+   */
   const isPromotionEnabled =
-    Boolean(draft.salePrice.trim()) ||
+    isPromotionScheduled ||
     Boolean(draft.dateOnSaleFrom || draft.dateOnSaleTo) ||
     Boolean(promotionTag && draft.tagIds.includes(String(promotionTag.id)));
 
@@ -665,6 +676,10 @@ export function useAdminProductsManager(
   }
 
   function togglePromotion(isEnabled: boolean) {
+    // Marcar precisa valer por si: sem a tag de promoção no WooCommerce e com as datas
+    // ainda vazias, não sobraria nada de onde derivar o estado marcado.
+    setIsPromotionScheduled(isEnabled);
+
     updateDraftState((currentDraft) => {
       const promotionTagId = promotionTag ? String(promotionTag.id) : "";
       const nextTagIds =
@@ -672,12 +687,15 @@ export function useAdminProductsManager(
           ? Array.from(new Set([...currentDraft.tagIds, promotionTagId]))
           : currentDraft.tagIds.filter((id) => id !== promotionTagId);
 
+      // Desmarcar cancela o agendamento, não o preço: `salePrice` tem campo próprio e
+      // é o que habilita o toggle — limpá-lo aqui desabilitaria a opção que acabou de
+      // ser desmarcada, sem o preço de volta.
       return {
         ...currentDraft,
         tagIds: nextTagIds,
-        ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "", salePrice: "" }),
+        ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "" }),
       };
-    }, isEnabled ? ["tagIds"] : ["tagIds", "dateOnSaleFrom", "dateOnSaleTo", "salePrice"]);
+    }, isEnabled ? ["tagIds"] : ["tagIds", "dateOnSaleFrom", "dateOnSaleTo"]);
 
     if (isEnabled && !promotionTag) {
       setNotice(PRODUCT_ERROR_MESSAGES.promotionTagMissing);

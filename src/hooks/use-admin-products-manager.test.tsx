@@ -82,6 +82,16 @@ function ManagerHarness({ initialSnapshot = snapshot }: { initialSnapshot?: Admi
         value={manager.draft.weight}
       />
       <output aria-label="tags selecionadas">{manager.draft.tagIds.join(",")}</output>
+      <output aria-label="agendamento">
+        {manager.isPromotionEnabled ? "marcado" : "desmarcado"}
+      </output>
+      <output aria-label="inicio da promoção">{manager.draft.dateOnSaleFrom}</output>
+      <input
+        aria-label="agendar promoção"
+        checked={manager.isPromotionEnabled}
+        onChange={(event) => manager.togglePromotion(event.target.checked)}
+        type="checkbox"
+      />
       <output aria-label="aviso">{manager.notice}</output>
       <input
         aria-label="nova tag"
@@ -149,6 +159,81 @@ function productCalls(fetchMock: { mock: { calls: unknown[][] } }): FetchCall[] 
 function escolherCategoria() {
   fireEvent.click(screen.getByRole("button", { name: "definir categoria" }));
 }
+
+describe("useAdminProductsManager — agendamento de promoção", () => {
+  const agendamento = () => screen.getByLabelText("agendamento");
+  const checkbox = () => screen.getByLabelText("agendar promoção");
+
+  it("digitar o preço promocional não marca o agendamento", () => {
+    render(<ManagerHarness />);
+
+    expect(agendamento()).toHaveTextContent("desmarcado");
+
+    fireEvent.change(screen.getByLabelText("preço promocional"), {
+      target: { value: "8,50" },
+    });
+
+    expect(agendamento()).toHaveTextContent("desmarcado");
+    expect(checkbox()).not.toBeChecked();
+  });
+
+  it("marcar continua valendo sem a tag de promoção no WooCommerce", () => {
+    render(<ManagerHarness />);
+
+    fireEvent.change(screen.getByLabelText("preço promocional"), {
+      target: { value: "8,50" },
+    });
+    fireEvent.click(checkbox());
+
+    expect(agendamento()).toHaveTextContent("marcado");
+  });
+
+  it("desmarcar cancela o agendamento sem apagar o preço promocional", () => {
+    render(<ManagerHarness />);
+
+    fireEvent.change(screen.getByLabelText("preço promocional"), {
+      target: { value: "8,50" },
+    });
+    fireEvent.click(checkbox());
+    fireEvent.click(checkbox());
+
+    expect(agendamento()).toHaveTextContent("desmarcado");
+    expect(screen.getByLabelText("preço promocional")).toHaveValue("8,50");
+    expect(screen.getByLabelText("inicio da promoção")).toHaveTextContent("");
+  });
+
+  it("produto que já tem promoção agendada abre marcado", () => {
+    render(
+      <ManagerHarness
+        initialSnapshot={{
+          ...snapshot,
+          products: [
+            {
+              ...product,
+              dateOnSaleFrom: "2026-08-20T10:00:00",
+              salePrice: "8.50",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(agendamento()).toHaveTextContent("marcado");
+  });
+
+  it("produto só com preço promocional, sem janela, abre desmarcado", () => {
+    render(
+      <ManagerHarness
+        initialSnapshot={{
+          ...snapshot,
+          products: [{ ...product, salePrice: "8.50" }],
+        }}
+      />,
+    );
+
+    expect(agendamento()).toHaveTextContent("desmarcado");
+  });
+});
 
 describe("useAdminProductsManager", () => {
   it("bloqueia o salvamento quando o produto não tem categoria principal", async () => {
