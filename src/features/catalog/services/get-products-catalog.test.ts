@@ -6,6 +6,7 @@ import {
   buildProductNode,
   buildProductsResponse,
 } from "../../../../test/factories/wp-catalog-taxonomy";
+import { WP_GRAPHQL_MAX_FIRST } from "./wp-catalog";
 
 const wpGraphqlRequest = vi.hoisted(() => vi.fn());
 
@@ -440,7 +441,7 @@ describe("getProductsCatalog — varredura por cursor", () => {
     );
   }
 
-  it("pagina além do teto de 100 do WPGraphQL e conta o catálogo inteiro", async () => {
+  it("pagina além do teto efetivo da listagem e conta o catálogo inteiro", async () => {
     stubCappedWordPress(250);
     const getProductsCatalog = await loadCatalog();
 
@@ -450,8 +451,8 @@ describe("getProductsCatalog — varredura por cursor", () => {
     expect(payload.totalPages).toBe(Math.ceil(250 / 9));
 
     const productPages = calls.filter((call) => call.query.includes("query ProductsList"));
-    expect(productPages.length).toBe(3);
-    expect(productPages.every((call) => Number(call.variables.first) <= 100)).toBe(true);
+    expect(productPages.length).toBe(Math.ceil(250 / WP_GRAPHQL_MAX_FIRST));
+    expect(productPages.every((call) => Number(call.variables.first) <= WP_GRAPHQL_MAX_FIRST)).toBe(true);
   });
 
   it("não pagina quando a primeira página já esgota o catálogo", async () => {
