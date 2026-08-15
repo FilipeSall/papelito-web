@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { getAdminApiSession } from "@/lib/server/admin-api-auth";
-import { reorderSubcategories } from "@/lib/server/admin-taxonomy";
+import { reorderSubcategories, taxonomyErrorResponse } from "@/lib/server/admin-taxonomy";
 
 export async function PUT(
   request: Request,
@@ -27,9 +27,7 @@ export async function PUT(
     revalidateTag("wp:categories", "max");
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { message: error instanceof Error ? error.message : "Não foi possível reordenar as subcategorias." },
-      { status: 500 },
-    );
+    const response = taxonomyErrorResponse(error, "Não foi possível reordenar as subcategorias.");
+    return NextResponse.json(response.body, { status: response.status });
   }
 }

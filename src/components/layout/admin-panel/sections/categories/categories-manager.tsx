@@ -30,6 +30,13 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
     subcategory?: AdminSubcategory;
   } | null>(null);
 
+  /**
+   * O `notice` da página fica embaixo do modal (`fixed inset-0`) e some da
+   * viewport quando a lista está rolada. Falha vinda de um modal aberto precisa
+   * aparecer dentro dele, senão salvar parece não fazer nada.
+   */
+  const [modalError, setModalError] = useState("");
+
   const categories = useMemo(
     () =>
       [...snapshot.categories].sort(
@@ -38,7 +45,10 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
     [snapshot.categories],
   );
 
-  async function run(action: () => Promise<Response>, successText: string) {
+  async function run(
+    action: () => Promise<Response>,
+    successText: string,
+  ): Promise<{ ok: true } | { message: string; ok: false }> {
     setIsBusy(true);
     setNotice(null);
 
@@ -52,13 +62,26 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
 
       setNotice({ text: `✓ ${successText}`, tone: "success" });
       router.refresh();
-      return true;
+      return { ok: true };
     } catch (error) {
-      setNotice({ text: `⚠ ${messageFromError(error, "Falha na ação.")}`, tone: "error" });
-      return false;
+      const message = messageFromError(error, "Falha na ação.");
+      setNotice({ text: `⚠ ${message}`, tone: "error" });
+      return { message, ok: false };
     } finally {
       setIsBusy(false);
     }
+  }
+
+  function openCategoryModal(target: AdminCategory | "new" | null) {
+    setModalError("");
+    setCategoryModal(target);
+  }
+
+  function openSubcategoryModal(
+    target: { categoryId: number; categoryName: string; subcategory?: AdminSubcategory } | null,
+  ) {
+    setModalError("");
+    setSubcategoryModal(target);
   }
 
   function move(categoryId: number, direction: -1 | 1) {
@@ -85,7 +108,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
 
   async function saveCategory(values: CategoryFormValues) {
     const isNew = categoryModal === "new";
-    const ok = await run(
+    const result = await run(
       () =>
         fetch(
           isNew
@@ -100,9 +123,12 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
       isNew ? "Categoria criada." : "Categoria salva.",
     );
 
-    if (ok) {
-      setCategoryModal(null);
+    if (result.ok) {
+      openCategoryModal(null);
+      return;
     }
+
+    setModalError(result.message);
   }
 
   async function saveSubcategory(values: SubcategoryFormValues) {
@@ -110,7 +136,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
       return;
     }
 
-    const ok = await run(
+    const result = await run(
       () =>
         fetch(
           subcategoryModal.subcategory
@@ -125,9 +151,12 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
       subcategoryModal.subcategory ? "Subcategoria salva." : "Subcategoria criada.",
     );
 
-    if (ok) {
-      setSubcategoryModal(null);
+    if (result.ok) {
+      openSubcategoryModal(null);
+      return;
     }
+
+    setModalError(result.message);
   }
 
   function moveSubcategory(category: AdminCategory, subcategoryId: number, direction: -1 | 1) {
@@ -165,7 +194,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
         <button
           className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isBusy}
-          onClick={() => setCategoryModal("new")}
+          onClick={() => openCategoryModal("new")}
           type="button"
         >
           <span className="flex items-center gap-2">
@@ -254,7 +283,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
                     <button
                       className="cursor-pointer border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isBusy}
-                      onClick={() => setCategoryModal(category)}
+                      onClick={() => openCategoryModal(category)}
                       type="button"
                     >
                       Editar
@@ -329,7 +358,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
                               </span>
                             </span>
                             <span className="flex shrink-0 gap-1">
-                              <button aria-label={`Editar ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || Boolean(subcategory.archivedAt)} onClick={() => setSubcategoryModal({ categoryId: category.id, categoryName: category.name, subcategory })} type="button"><Pencil aria-hidden className="h-3.5 w-3.5" /></button>
+                              <button aria-label={`Editar ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || Boolean(subcategory.archivedAt)} onClick={() => openSubcategoryModal({ categoryId: category.id, categoryName: category.name, subcategory })} type="button"><Pencil aria-hidden className="h-3.5 w-3.5" /></button>
                               <button aria-label={`Subir ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || subcategories.indexOf(subcategory) === 0} onClick={() => moveSubcategory(category, subcategory.id, -1)} type="button"><ChevronUp aria-hidden className="h-3.5 w-3.5" /></button>
                               <button aria-label={`Descer ${subcategory.name}`} className="cursor-pointer border-2 border-[#1a1a1a] p-1.5 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy || subcategories.indexOf(subcategory) === subcategories.length - 1} onClick={() => moveSubcategory(category, subcategory.id, 1)} type="button"><ChevronDown aria-hidden className="h-3.5 w-3.5" /></button>
                               {!isSubArchived ? <button aria-label={`Arquivar ${subcategory.name}`} className="cursor-pointer border-2 border-[#c0392b] p-1.5 text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={isBusy} onClick={() => void run(() => fetch(`/api/admin/subcategories/${subcategory.id}`, { method: "DELETE" }), "Subcategoria arquivada.")} type="button"><Trash2 aria-hidden className="h-3.5 w-3.5" /></button> : null}
@@ -344,7 +373,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
                     className="w-full cursor-pointer border-2 border-dashed border-[#1a1a1a] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={isBusy}
                     onClick={() =>
-                      setSubcategoryModal({
+                      openSubcategoryModal({
                         categoryId: category.id,
                         categoryName: category.name,
                       })
@@ -364,8 +393,9 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
         <CategoryEditorModal
           category={categoryModal === "new" ? null : categoryModal}
           isSaving={isBusy}
-          onClose={() => setCategoryModal(null)}
+          onClose={() => openCategoryModal(null)}
           onSave={saveCategory}
+          submitError={modalError}
         />
       ) : null}
 
@@ -373,9 +403,10 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
         <SubcategoryEditorModal
           categoryName={subcategoryModal.categoryName}
           isSaving={isBusy}
-          onClose={() => setSubcategoryModal(null)}
+          onClose={() => openSubcategoryModal(null)}
           onSave={saveSubcategory}
           subcategory={subcategoryModal.subcategory}
+          submitError={modalError}
         />
       ) : null}
     </div>

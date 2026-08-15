@@ -16,11 +16,13 @@ export type CategoryFormValues = {
 export function CategoryEditorModal({
   category,
   isSaving,
+  submitError,
   onClose,
   onSave,
 }: {
   category: AdminCategory | null;
   isSaving: boolean;
+  submitError?: string;
   onClose: () => void;
   onSave: (values: CategoryFormValues) => void;
 }) {
@@ -92,8 +94,10 @@ export function CategoryEditorModal({
             value={seoDescription}
           />
 
-          {error ? (
-            <p className="text-sm font-semibold text-[#c0392b]">⚠ {error}</p>
+          {error || submitError ? (
+            <p className="text-sm font-semibold text-[#c0392b]" role="alert">
+              ⚠ {error || submitError}
+            </p>
           ) : null}
         </div>
 

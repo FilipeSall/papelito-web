@@ -31,12 +31,14 @@ export function SubcategoryEditorModal({
   categoryName,
   subcategory,
   isSaving,
+  submitError,
   onClose,
   onSave,
 }: Readonly<{
   categoryName: string;
   subcategory?: AdminSubcategory | null;
   isSaving: boolean;
+  submitError?: string;
   onClose: () => void;
   onSave: (values: SubcategoryFormValues) => void;
 }>) {
@@ -45,6 +47,13 @@ export function SubcategoryEditorModal({
   const [facet, setFacet] = useState(subcategory?.facet ?? "tipo");
   const [isActive, setIsActive] = useState(subcategory?.isActive ?? true);
   const [error, setError] = useState("");
+
+  /**
+   * Mesma trava do editor de categoria: o WordPress recusa mudar o slug de uma
+   * subcategoria que já tem produto vinculado. Sem bloquear aqui, o admin edita
+   * o slug, o `PUT` é rejeitado inteiro e nem o nome é gravado.
+   */
+  const isSlugLocked = Boolean(subcategory && subcategory.productCount > 0);
   let submitLabel = "Criar";
 
   if (subcategory) {
@@ -62,7 +71,12 @@ export function SubcategoryEditorModal({
     }
 
     setError("");
-    onSave({ facet, isActive, name: name.trim(), ...(slug.trim() ? { slug: slug.trim() } : {}) });
+    onSave({
+      facet,
+      isActive,
+      name: name.trim(),
+      ...(!isSlugLocked && slug.trim() ? { slug: slug.trim() } : {}),
+    });
   }
 
   return (
@@ -101,15 +115,17 @@ export function SubcategoryEditorModal({
               Slug
             </span>
             <input
-              className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition focus:outline-2 focus:outline-brand-yellow"
+              className="h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition focus:outline-2 focus:outline-brand-yellow disabled:bg-[#efeade] disabled:text-[#231f20]/50"
+              disabled={isSlugLocked}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="derivado do nome"
               type="text"
               value={slug}
             />
             <span className="text-[11px] font-semibold text-[#231f20]/60">
-              O slug é único dentro da categoria — o mesmo &quot;slim&quot; pode existir em
-              Sedas, Piteiras e Filtros.
+              {isSlugLocked
+                ? "Bloqueado: a subcategoria já tem produtos vinculados e o slug é referência pública."
+                : "O slug é único dentro da categoria — o mesmo “slim” pode existir em Sedas, Piteiras e Filtros."}
             </span>
           </label>
 
@@ -132,8 +148,10 @@ export function SubcategoryEditorModal({
             <span>Subcategoria ativa</span>
           </label>
 
-          {error ? (
-            <p className="text-sm font-semibold text-[#c0392b]">⚠ {error}</p>
+          {error || submitError ? (
+            <p className="text-sm font-semibold text-[#c0392b]" role="alert">
+              ⚠ {error || submitError}
+            </p>
           ) : null}
         </div>
 

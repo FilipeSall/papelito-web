@@ -165,6 +165,14 @@ type MutationInit = {
   method: "DELETE" | "POST" | "PUT";
 };
 
+/**
+ * O erro do WordPress precisa chegar tipado até a rota.
+ *
+ * Um `Error` cru faz `taxonomyErrorResponse()` cair no fallback e transformar
+ * regra de negócio (409 de slug travado, 409 de subcategoria em uso, 404) num
+ * 500 genérico — o painel passa a dizer "não foi possível salvar" sem motivo, e
+ * a edição parece falhar sozinha.
+ */
 async function taxonomyMutation<T>(
   accessToken: string | undefined,
   path: string,
@@ -177,7 +185,11 @@ async function taxonomyMutation<T>(
   });
 
   if (!result.ok) {
-    throw new Error(result.error.message);
+    throw new WpTaxonomyError(
+      result.error.code,
+      result.error.message,
+      result.status || result.error.data?.status || 500,
+    );
   }
 
   return result.data;
@@ -243,7 +255,7 @@ export function reorderSubcategories(
   categoryId: number,
   ids: number[],
 ) {
-  return taxonomyMutation<{ subcategories: AdminSubcategory[] }>(
+  return taxonomyMutation<AdminSubcategory[]>(
     accessToken,
     `/papelito/v1/admin/categories/${categoryId}/subcategories/reorder`,
     { json: { ids }, method: "PUT" },

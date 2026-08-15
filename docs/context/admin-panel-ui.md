@@ -68,7 +68,11 @@ Decisões de interface que não são óbvias pelo código:
   o conjunto com `papelito_subcategory_foreign`.
 - **Subcategoria inativa some da lista, mas não do produto.** Se o produto já a tem, continua visível,
   marcada como `inativa` e desabilitada. A API preserva somente esse vínculo preexistente; associação nova é recusada.
-- **Slug editável só enquanto a categoria não tem produto.**
+- **Slug editável só enquanto não há produto vinculado** — vale para categoria e para subcategoria. O
+  WordPress recusa a troca com `papelito_category_slug_locked` / `papelito_subcategory_slug_locked`, e a
+  recusa derruba o `PUT` inteiro: sem a trava no formulário, quem só queria renomear perde também o nome.
+- **Falha de save aparece dentro do modal.** O aviso da página fica embaixo do overlay `fixed inset-0` e
+  fora da viewport quando a lista está rolada — mensagem de erro só ali equivale a falhar em silêncio.
 - **Sem lista de categorias hardcoded no frontend.** Falha ao carregar vira aviso na tela. Foi o silêncio
   do antigo `OFFICIAL_CATEGORY_KEYS` que escondeu a categoria `Kits` do admin por meses.
 

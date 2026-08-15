@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { getAdminApiSession } from "@/lib/server/admin-api-auth";
-import { restoreCategory } from "@/lib/server/admin-taxonomy";
+import { restoreCategory, taxonomyErrorResponse } from "@/lib/server/admin-taxonomy";
 
 export async function POST(
   _request: Request,
@@ -26,8 +26,7 @@ export async function POST(
     revalidateTag("wp:categories", "max");
     return NextResponse.json({ category });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Não foi possível restaurar a categoria.";
-    return NextResponse.json({ message }, { status: 500 });
+    const response = taxonomyErrorResponse(error, "Não foi possível restaurar a categoria.");
+    return NextResponse.json(response.body, { status: response.status });
   }
 }
