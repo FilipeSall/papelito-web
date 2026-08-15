@@ -161,6 +161,24 @@ export function ProductAvailabilityProvider({
   );
 }
 
+/**
+ * Rótulo por status, exaustivo por construção.
+ *
+ * `unavailable` é falha da CONSULTA, não do produto: nesse estado a compra segue liberada de
+ * propósito (a disponibilidade regional é camada progressiva), então afirmar "indisponível" ali
+ * contradizia o botão habilitado no mesmo card. Um `Record` completo também impede que um status
+ * novo caia num `else` genérico sem ninguém perceber.
+ */
+const AVAILABILITY_FALLBACK_LABELS: Record<ProductAvailabilityStatus, string> = {
+  idle: "Consulte o CEP no produto",
+  loading: "Consultando estoque",
+  ok: "Estoque por região",
+  not_applicable: "Consulte o CEP no produto",
+  missing_cep: "Cadastre seu CEP para consultar",
+  no_vendor: "Indisponível na sua região",
+  unavailable: "Não foi possível consultar",
+};
+
 export function useProductAvailability(productId: string) {
   const context = useContext(ProductAvailabilityContext);
   const entry = context.products[productId];
@@ -182,9 +200,7 @@ export function useProductAvailability(productId: string) {
       ? stockQty > 0
         ? `${stockQty} em estoque`
         : "Sem estoque"
-      : context.status === "loading"
-        ? "Consultando estoque"
-        : "Estoque por região";
+      : AVAILABILITY_FALLBACK_LABELS[context.status];
 
   return {
     status: context.status,

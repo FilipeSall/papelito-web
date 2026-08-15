@@ -234,7 +234,9 @@ export function useProductPurchase({
 
     switch (gate.action) {
       case "signin":
-        router.push("/entrar");
+        router.push(
+          `/entrar?feedback=cart_login_required&callbackUrl=${encodeURIComponent(`/produtos/${product.id}`)}`,
+        );
         return false;
       case "blocked":
         applyPurchaseBlock(gate, onQuantityClamp);

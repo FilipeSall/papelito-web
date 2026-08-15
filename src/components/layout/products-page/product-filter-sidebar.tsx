@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
+import { toCategoryDisplayLabel } from "@/features/catalog/utils/category-label";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
@@ -20,9 +21,12 @@ const DEFAULT_CATEGORIES: FilterCategory[] = [
   { id: "todos", label: "Todos" },
 ];
 
+const PRICE_ERROR_ID = "filtro-preco-erro";
+
 interface PriceRangeInputProps {
   label: string;
-  value?: number | null;
+  value?: string | number | null;
+  invalid?: boolean;
   name: "precoMin" | "precoMax";
   placeholder: string;
   variant: "default" | "collection";
@@ -34,14 +38,16 @@ interface PriceRangeInputProps {
  * Campo de input numérico estilizado para inserção de valores
  * mínimos ou máximos de preço.
  */
-function PriceRangeInput({ label, value, name, placeholder, variant }: PriceRangeInputProps) {
+function PriceRangeInput({ label, value, invalid, name, placeholder, variant }: PriceRangeInputProps) {
   return (
     <div className="flex-1">
       <label className="sr-only">{label}</label>
       <input
         name={name}
         type="text"
-        defaultValue={typeof value === "number" ? String(value) : ""}
+        defaultValue={typeof value === "number" ? String(value) : value ?? ""}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? PRICE_ERROR_ID : undefined}
         placeholder={placeholder}
         className={`w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
           variant === "collection"
@@ -95,7 +101,7 @@ function CategoryCheckbox({ category, checked, href, variant }: CategoryCheckbox
     <Link href={href} className="group flex items-center gap-2 cursor-pointer">
       <CheckboxIndicator checked={checked} variant={variant} />
       <span className={`text-sm text-text-secondary group-hover:text-brand-dark transition-colors ${variant === "collection" ? "font-bold" : ""}`}>
-        {category.label}
+        {toCategoryDisplayLabel(category.label)}
       </span>
     </Link>
   );
@@ -108,6 +114,10 @@ interface ProductFilterSidebarProps {
   minPrice?: number | null;
   /** Valor máximo do filtro de preço */
   maxPrice?: number | null;
+  priceError?: string;
+  /** Valores crus da URL, exibidos quando `priceError` impede de derivar números. */
+  rawMinPrice?: string | null;
+  rawMaxPrice?: string | null;
   /** Lista de categorias para filtro */
   categories?: FilterCategory[];
   /** Categorias selecionadas via query params */
@@ -167,6 +177,9 @@ export function ProductFilterSidebar({
   collection = "todos",
   minPrice = null,
   maxPrice = null,
+  priceError,
+  rawMinPrice,
+  rawMaxPrice,
   categories = DEFAULT_CATEGORIES,
   selectedTypes,
   viewMode,
@@ -207,18 +220,25 @@ export function ProductFilterSidebar({
               <PriceRangeInput
                 label="Preço mínimo"
                 name="precoMin"
-                value={minPrice}
+                value={priceError ? rawMinPrice : minPrice}
+                invalid={Boolean(priceError)}
                 placeholder="Min"
                 variant={variant}
               />
               <PriceRangeInput
                 label="Preço máximo"
                 name="precoMax"
-                value={maxPrice}
+                value={priceError ? rawMaxPrice : maxPrice}
+                invalid={Boolean(priceError)}
                 placeholder="Max"
                 variant={variant}
               />
             </div>
+            {priceError ? (
+              <p className="text-xs font-medium text-red-700" id={PRICE_ERROR_ID} role="alert">
+                {priceError}
+              </p>
+            ) : null}
             <button
               type="submit"
               className={`w-full bg-brand-dark px-3 py-2 text-xs font-black text-white transition-opacity hover:opacity-90 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none uppercase tracking-[0.08em] shadow-[3px_3px_0px_#ffe500]" : "rounded-lg"}`}

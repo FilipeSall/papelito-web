@@ -75,8 +75,24 @@ describe("useProductAvailability", () => {
 
     await waitFor(() => {
       expect(screen.getByText("unavailable")).toBeInTheDocument();
+      expect(screen.getByText("Não foi possível consultar")).toBeInTheDocument();
+    });
+  });
+
+  it("keeps a neutral label when the response omits the stock quantity", async () => {
+    server.use(
+      http.get("/api/catalog/availability", () =>
+        HttpResponse.json({ status: "ok", products: { "2": { available: true } } }),
+      ),
+    );
+
+    renderWithProviders(<Consumer productId="2" />, { productIds: ["2"] });
+
+    await waitFor(() => {
       expect(screen.getByText("Estoque por região")).toBeInTheDocument();
     });
+
+    expect(screen.getByText("available")).toBeInTheDocument();
   });
 
   it("blocks the region when no vendor covers the account CEP", async () => {
@@ -125,8 +141,13 @@ describe("useProductAvailability", () => {
 
     expect(screen.getByText("not_applicable")).toBeInTheDocument();
     expect(screen.getByText("region-open")).toBeInTheDocument();
+    expect(screen.getByText("Consulte o CEP no produto")).toBeInTheDocument();
   });
 
+  /**
+   * O rótulo não pode contradizer o estado de compra: com a consulta fora do ar a região segue
+   * aberta, então o card não pode afirmar que o produto está indisponível.
+   */
   it("keeps the region open when the availability lookup fails", async () => {
     server.use(
       http.get("/api/catalog/availability", () => HttpResponse.json({}, { status: 500 })),
@@ -137,6 +158,10 @@ describe("useProductAvailability", () => {
     await waitFor(() => {
       expect(screen.getByText("unavailable")).toBeInTheDocument();
     });
+
+    expect(screen.getByText("region-open")).toBeInTheDocument();
+    expect(screen.getByText("no-reason")).toBeInTheDocument();
+    expect(screen.getByText("Não foi possível consultar")).toBeInTheDocument();
 
     expect(screen.getByText("region-open")).toBeInTheDocument();
   });

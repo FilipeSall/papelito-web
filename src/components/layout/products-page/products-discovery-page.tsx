@@ -9,6 +9,7 @@ import {
   resolveSelectedTypesFromParams,
 } from "@/features/catalog/utils/product-type-taxonomy";
 import { normalizeProductSearch } from "@/features/catalog/utils/product-search";
+import { EMPTY_PRICE_RANGE, resolvePriceRange } from "@/features/catalog/utils/price-range";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -59,20 +60,6 @@ function normalizePage(value: string | undefined) {
   return Math.floor(parsed);
 }
 
-function normalizePrice(value: string | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  const normalized = value.replace(",", ".");
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
 export function ProductsDiscoveryPage({
   basePath,
   searchParams,
@@ -102,12 +89,13 @@ export function ProductsDiscoveryPage({
     viewMode,
     gridLayout,
   );
-  const minPrice = activeCollection === "todos"
-    ? normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMin))
-    : null;
-  const maxPrice = activeCollection === "todos"
-    ? normalizePrice(readSingleQueryParam(resolvedSearchParams.precoMax))
-    : null;
+  const priceRange = activeCollection === "todos"
+    ? resolvePriceRange(
+      readSingleQueryParam(resolvedSearchParams.precoMin),
+      readSingleQueryParam(resolvedSearchParams.precoMax),
+    )
+    : EMPTY_PRICE_RANGE;
+  const { minPrice, maxPrice } = priceRange;
   const search = normalizeProductSearch(readSingleQueryParam(resolvedSearchParams.busca));
 
   const [catalog, siteImages] = use(
@@ -144,6 +132,9 @@ export function ProductsDiscoveryPage({
         selectedTypes={catalog.selectedTypes}
         minPrice={catalog.minPrice}
         maxPrice={catalog.maxPrice}
+        priceError={priceRange.kind === "invalid" ? priceRange.message : undefined}
+        rawMinPrice={priceRange.rawMinimum}
+        rawMaxPrice={priceRange.rawMaximum}
         viewMode={viewMode}
         perPage={catalog.perPage}
         coverageCep={catalog.coverageCep}
@@ -152,6 +143,7 @@ export function ProductsDiscoveryPage({
         search={search}
         showSearch
         showCategoryFilters={isAllCollection}
+        showCategoryTabs={false}
         visualVariant={visualVariant}
       />
     </main>

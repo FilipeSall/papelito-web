@@ -28,11 +28,15 @@ interface ProductsSectionProps {
   activeCollection?: ProductCollectionId;
   showCollectionFilters?: boolean;
   showCategoryFilters?: boolean;
+  showCategoryTabs?: boolean;
   products: ProductsCatalogItem[];
   tabs: ProductsCatalogTab[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
   minPrice: number | null;
   maxPrice: number | null;
+  priceError?: string;
+  rawMinPrice?: string | null;
+  rawMaxPrice?: string | null;
   totalItems: number;
   totalPages: number;
   currentPage: number;
@@ -67,11 +71,15 @@ export function ProductsSection({
   activeCollection = "todos",
   showCollectionFilters = false,
   showCategoryFilters = true,
+  showCategoryTabs = true,
   products,
   tabs,
   selectedTypes,
   minPrice,
   maxPrice,
+  priceError,
+  rawMinPrice,
+  rawMaxPrice,
   totalItems,
   totalPages,
   currentPage,
@@ -126,7 +134,7 @@ export function ProductsSection({
             </div>
           ) : null}
 
-          {showCategoryFilters ? (
+          {showCategoryFilters && showCategoryTabs ? (
             <div className="mb-6">
               <ProductFilterTabs
                 basePath={basePath}
@@ -154,7 +162,7 @@ export function ProductsSection({
                 </>
               )}
             </p>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-stretch gap-2">
               <ProductsPerPageSelector
                 basePath={basePath}
                 collection={activeCollection}
@@ -190,6 +198,9 @@ export function ProductsSection({
                 selectedTypes={selectedTypes}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
+                priceError={priceError}
+                rawMinPrice={rawMinPrice}
+                rawMaxPrice={rawMaxPrice}
                 viewMode={viewMode}
                 perPage={perPage}
                 search={search}
