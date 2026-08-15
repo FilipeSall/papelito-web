@@ -27,11 +27,11 @@ export function RevendedorCtaButton({
   type = "button",
   variant = "yellow",
 }: RevendedorCtaButtonProps) {
-  const sizeClass = compact ? "h-11 px-6 text-sm" : "h-13 px-8 text-sm";
+  const sizeClass = compact ? "h-11 px-6 text-sm" : "h-11.5 px-8 text-sm";
   const variantClass =
     variant === "outline"
       ? "border-2 border-brand-dark bg-transparent text-brand-dark hover:bg-brand-dark hover:text-white"
-      : "bg-brand-yellow text-brand-dark shadow-[0px_10px_15px_0px_rgba(255,229,0,0.2),0px_4px_6px_0px_rgba(255,229,0,0.2)] hover:brightness-95";
+      : "bg-brand-yellow text-brand-dark hover:brightness-95";
   const shouldUseExternalIcon = target === "_blank";
 
   const content = (

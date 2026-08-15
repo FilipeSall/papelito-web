@@ -79,12 +79,12 @@ export function RevendedorHeroSection({
 
   return (
     <section className="bg-brand-dark">
-      <div className="mx-auto max-w-391 px-4 py-16 lg:px-12 lg:py-24 2xl:px-59.5">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,520px)_minmax(0,520px)] lg:justify-between">
+      <div className="mx-auto max-w-[1088px] px-4 py-16 lg:px-0 lg:py-24">
+        <div className="grid items-start gap-10 lg:grid-cols-[520px_520px] lg:gap-12">
           <RevendedorHeroIllustration />
 
           <div id="revendedor-form" className="mx-auto w-full max-w-130 scroll-mt-32 lg:max-w-none">
-            <div className="rounded-2xl bg-white p-6 shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] lg:px-8 lg:py-8">
+            <div className="rounded-2xl bg-white p-6 shadow-[0px_25px_25px_0px_rgba(0,0,0,0.25)] lg:px-8 lg:py-8">
               <div>
                 <h2 className="text-xl font-black uppercase tracking-[-0.4492px] text-brand-dark">
                   {wasSubmitted ? "Triagem recebida" : "Envie sua triagem"}

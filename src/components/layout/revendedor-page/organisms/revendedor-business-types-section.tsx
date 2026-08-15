@@ -25,8 +25,8 @@ export function RevendedorBusinessTypesSection({
 
   return (
     <section className="bg-bg-light py-20">
-      <div className="mx-auto max-w-391 px-4 lg:px-12 2xl:px-59.5">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,516px)_minmax(0,516px)] lg:justify-between">
+      <div className="mx-auto max-w-[1088px] px-4 md:px-8 lg:px-0">
+        <div className="grid items-center gap-10 lg:grid-cols-[516px_516px] lg:gap-14">
           <div className="relative mx-auto grid w-full max-w-129 gap-4 md:grid-cols-[250px_250px] md:grid-rows-[200px_200px] lg:mx-0">
             <div className="relative min-h-100 overflow-hidden rounded-2xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] md:row-span-2">
               <Image

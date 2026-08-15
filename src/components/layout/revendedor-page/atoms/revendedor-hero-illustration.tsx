@@ -10,14 +10,14 @@ export function RevendedorHeroIllustration() {
     <div className="mx-auto flex w-full max-w-130 flex-col pt-4 lg:pt-33">
       <Image
         alt=""
-        className="w-full max-w-107"
+        className="w-full max-w-107 lg:-ml-6.5"
         height={325}
         priority
         src="/images/revendedor/hero-storefront.svg"
         width={428}
       />
 
-      <div className="mt-12 max-w-96">
+      <div className="mt-12 max-w-96 lg:mt-2">
         <div className="text-4xl font-black uppercase leading-[1.1] tracking-[0.3516px] text-white lg:text-5xl lg:leading-12">
           <span className="block">{REVENDEDOR_HERO_CONTENT.titlePrefix}</span>
           <span className="block text-brand-yellow">

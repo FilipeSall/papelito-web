@@ -42,7 +42,7 @@ export const RevendedorTextInput = forwardRef<
 
   return (
     <div
-      className={`flex h-12 items-center rounded-xl border px-4 transition ${containerClass} ${borderClass} ${disabledClass} ${className}`.trim()}
+      className={`flex h-11.5 items-center rounded-3.5 border px-4 transition ${containerClass} ${borderClass} ${disabledClass} ${className}`.trim()}
     >
       {prefixContent ? (
         <span className={`mr-2 text-sm ${prefixClass}`}>{prefixContent}</span>

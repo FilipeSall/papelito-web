@@ -12,7 +12,7 @@ import { RevendedorTestimonialCard } from "../molecules/revendedor-testimonial-c
 export function RevendedorTestimonialsSection() {
   return (
     <section className="bg-brand-dark py-20">
-      <div className="mx-auto max-w-391 px-4 lg:px-12 2xl:px-59.5">
+      <div className="mx-auto max-w-[1088px] px-4 md:px-8 lg:px-0">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-194.25">
             <RevendedorSectionEyebrow tone="light">

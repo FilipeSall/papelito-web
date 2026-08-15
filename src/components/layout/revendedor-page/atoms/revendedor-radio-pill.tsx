@@ -25,7 +25,7 @@ export function RevendedorRadioPill({
 
   return (
     <label
-      className={`flex h-12 flex-1 cursor-pointer items-center justify-center rounded-3.5 border-2 transition-colors ${
+      className={`flex h-11.5 flex-1 cursor-pointer items-center justify-center rounded-3.5 border-2 transition-colors ${
         checked
           ? "border-brand-yellow bg-brand-yellow text-brand-dark"
           : uncheckedClasses
