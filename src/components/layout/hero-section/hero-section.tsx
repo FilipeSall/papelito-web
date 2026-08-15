@@ -218,16 +218,29 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
                 }}
                 aria-label={`Ir para slide ${i + 1}`}
                 style={{
-                  width: i === activeIndex ? 28 : 8,
-                  height: 8,
-                  borderRadius: 9999,
-                  background: i === activeIndex ? "#FFE500" : "#FFE50055",
+                  width: 24,
+                  height: 24,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  transition: "width 0.3s ease, background 0.3s ease",
                   padding: 0,
                 }}
-              />
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: i === activeIndex ? 28 : 8,
+                    height: 8,
+                    borderRadius: 9999,
+                    background: i === activeIndex ? "#FFE500" : "#FFE500",
+                    opacity: i === activeIndex ? 1 : 0.72,
+                    transition: "width 0.3s ease, opacity 0.3s ease",
+                  }}
+                />
+              </button>
             ))}
           </div>
         ) : null}
