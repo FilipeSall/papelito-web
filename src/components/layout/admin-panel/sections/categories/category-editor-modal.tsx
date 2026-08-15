@@ -19,13 +19,13 @@ export function CategoryEditorModal({
   submitError,
   onClose,
   onSave,
-}: {
+}: Readonly<{
   category: AdminCategory | null;
   isSaving: boolean;
   submitError?: string;
   onClose: () => void;
   onSave: (values: CategoryFormValues) => void;
-}) {
+}>) {
   const [name, setName] = useState(category?.name ?? "");
   const [slug, setSlug] = useState(category?.slug ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
@@ -56,7 +56,7 @@ export function CategoryEditorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#231f20]/70 p-4">
+    <div className="fixed inset-0 z-80 flex items-center justify-center bg-[#231f20]/70 p-4">
       <div className="max-h-[90vh] w-full max-w-xl overflow-auto border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
         <div className="h-2 w-full bg-brand-yellow" />
         <div className="flex items-center justify-between gap-4 border-b-2 border-[#1a1a1a] p-5">
@@ -110,7 +110,7 @@ export function CategoryEditorModal({
             Cancelar
           </button>
           <button
-            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffe500] shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             onClick={handleSubmit}
             type="button"
@@ -129,13 +129,13 @@ function Field({
   label,
   onChange,
   value,
-}: {
+}: Readonly<{
   disabled?: boolean;
   helpText?: string;
   label: string;
   onChange: (value: string) => void;
   value: string;
-}) {
+}>) {
   return (
     <label className="grid gap-2">
       <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
