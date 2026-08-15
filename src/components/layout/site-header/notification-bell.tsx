@@ -2,7 +2,7 @@
 
 import { Bell } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { Suspense, startTransition, useEffect, useRef, useState } from "react";
 
 import { NotificationDropdown } from "./notification-dropdown";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
@@ -25,7 +25,7 @@ type RedirectState = {
   to: string;
 };
 
-export function NotificationBell({ inverted = false }: Readonly<NotificationBellProps>) {
+function NotificationBellContent({ inverted = false }: Readonly<NotificationBellProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -191,5 +191,18 @@ export function NotificationBell({ inverted = false }: Readonly<NotificationBell
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * O boundary é obrigatório: este componente chama `useSearchParams()` e, sem ele, o `next build`
+ * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
+ * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
+ */
+export function NotificationBell(props: React.ComponentProps<typeof NotificationBellContent>) {
+  return (
+    <Suspense fallback={null}>
+      <NotificationBellContent {...props} />
+    </Suspense>
   );
 }

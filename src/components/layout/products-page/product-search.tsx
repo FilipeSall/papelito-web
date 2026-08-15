@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface ProductSearchProps {
@@ -16,7 +16,7 @@ function buildSearchHref(basePath: string, params: URLSearchParams) {
   return query ? `${basePath}?${query}` : basePath;
 }
 
-export function ProductSearch({
+function ProductSearchContent({
   basePath = "/produtos",
   variant = "default",
   initialValue,
@@ -150,7 +150,7 @@ export function ProductSearch({
   );
 }
 
-export function ClearProductSearchButton({ basePath = "/produtos" }: { basePath?: string }) {
+function ClearProductSearchButtonContent({ basePath = "/produtos" }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -167,5 +167,28 @@ export function ClearProductSearchButton({ basePath = "/produtos" }: { basePath?
     >
       Limpar busca
     </button>
+  );
+}
+
+/**
+ * O boundary é obrigatório: este componente chama `useSearchParams()` e, sem ele, o `next build`
+ * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
+ * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
+ */
+export function ProductSearch(props: React.ComponentProps<typeof ProductSearchContent>) {
+  return (
+    <Suspense fallback={null}>
+      <ProductSearchContent {...props} />
+    </Suspense>
+  );
+}
+
+export function ClearProductSearchButton(
+  props: React.ComponentProps<typeof ClearProductSearchButtonContent>,
+) {
+  return (
+    <Suspense fallback={null}>
+      <ClearProductSearchButtonContent {...props} />
+    </Suspense>
   );
 }

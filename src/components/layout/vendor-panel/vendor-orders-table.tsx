@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { startTransition, type ReactNode, type SubmitEvent, useMemo, useOptimistic } from "react";
+import { Suspense, startTransition, type ReactNode, type SubmitEvent, useMemo, useOptimistic } from "react";
 import useSWR from "swr";
 
 import { Panel } from "@/components/layout/operational-panel";
@@ -67,7 +67,7 @@ interface VendorOrdersTableProps {
   initialSnapshot: VendorOrdersSnapshot;
 }
 
-export function VendorOrdersTable({
+function VendorOrdersTableContent({
   initialFilters,
   initialSnapshot,
 }: Readonly<VendorOrdersTableProps>) {
@@ -258,5 +258,18 @@ export function VendorOrdersTable({
         </div>
       </div>
     </Panel>
+  );
+}
+
+/**
+ * O boundary é obrigatório: este componente chama `useSearchParams()` e, sem ele, o `next build`
+ * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
+ * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
+ */
+export function VendorOrdersTable(props: React.ComponentProps<typeof VendorOrdersTableContent>) {
+  return (
+    <Suspense fallback={null}>
+      <VendorOrdersTableContent {...props} />
+    </Suspense>
   );
 }
