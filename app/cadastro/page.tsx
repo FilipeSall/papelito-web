@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type ChangeEvent, type SubmitEvent, useEffect, useRef, useState } from "react";
+import { Suspense, type ChangeEvent, type SubmitEvent, useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
@@ -11,10 +11,12 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/atoms";
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { ToastCloseButton } from "@/components/ui/toast-close-button";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
 import { getMaximumAdultBirthDate, validateAdultBirthDate } from "@/lib/validation/birth-date";
+import { validateFullName, validatePhone } from "@/lib/validation/person";
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
@@ -77,13 +79,15 @@ function validateStep1(
 ): CadastroStep1Errors {
   const errors: CadastroStep1Errors = {};
 
-  if (!payload.name) errors.name = "Informe seu nome completo.";
+  const nameError = validateFullName(payload.name);
+  if (nameError) errors.name = nameError;
   if (!payload.email) {
     errors.email = "Informe seu e-mail.";
   } else if (emailIsInvalid) {
     errors.email = "Informe um e-mail válido.";
   }
-  if (!payload.phone) errors.phone = "Informe seu telefone.";
+  const phoneError = validatePhone(payload.phone);
+  if (phoneError) errors.phone = phoneError;
   if (!isValidCpf(payload.cpf)) errors.cpf = "Informe um CPF válido.";
   if (!isValidCnpj(payload.cnpj)) errors.cnpj = "Informe um CNPJ válido.";
   if (!payload.birthDate) {
@@ -96,7 +100,7 @@ function validateStep1(
   return errors;
 }
 
-export default function CadastroPage() {
+function CadastroPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
@@ -498,5 +502,27 @@ function GoogleAccountFeedbackToast({ onClose }: Readonly<{ onClose: () => void 
         </div>
       </div>
     </aside>
+  );
+}
+
+function CadastroPageFallback() {
+  return (
+    <main className="min-h-screen bg-brand-dark">
+      <LogoSpinnerLoader className="min-h-[70vh]" label="Carregando" message="Preparando seu cadastro." />
+    </main>
+  );
+}
+
+/**
+ * O boundary de Suspense é obrigatório, não decorativo: esta página chama `useSearchParams()` e,
+ * sem ele, o `next build` falha no prerender com `missing-suspense-with-csr-bailout`. O
+ * `app/loading.tsx` da raiz cobria isso por acidente; ele saiu para não brigar com o
+ * `NavigationLoader`, então o boundary passa a ficar onde a exigência realmente está.
+ */
+export default function CadastroPage() {
+  return (
+    <Suspense fallback={<CadastroPageFallback />}>
+      <CadastroPageContent />
+    </Suspense>
   );
 }

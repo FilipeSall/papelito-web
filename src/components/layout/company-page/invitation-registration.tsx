@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { validateNamePart } from "@/lib/validation/person";
+
 type Invitation = { invitedEmail: string; companyName: string };
 
 export function InvitationRegistration() {
@@ -26,6 +28,15 @@ export function InvitationRegistration() {
     event.preventDefault();
     if (!invitation || submitting) return;
     const form = new FormData(event.currentTarget);
+    const firstName = String(form.get("firstName") ?? "");
+    const lastName = String(form.get("lastName") ?? "");
+    const nameError =
+      validateNamePart(firstName, "Informe o seu nome.") ??
+      validateNamePart(lastName, "Informe o seu sobrenome.");
+    if (nameError) {
+      setError(nameError);
+      return;
+    }
     const password = String(form.get("password") ?? "");
     if (password !== String(form.get("passwordConfirmation") ?? "")) {
       setError("As senhas não coincidem.");
@@ -38,8 +49,8 @@ export function InvitationRegistration() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: invitation.invitedEmail,
-        first_name: String(form.get("firstName") ?? ""),
-        last_name: String(form.get("lastName") ?? ""),
+        first_name: firstName,
+        last_name: lastName,
         password,
       }),
     });

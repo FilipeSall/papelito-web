@@ -23,7 +23,10 @@ export async function GET(_request: Request, { params }: Ctx) {
   }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);
 
   if (!result.ok) {
-    return NextResponse.json(result.error, { status: result.status || 404 });
+    return NextResponse.json(
+      { code: "papelito_invitation_invalid", message: "Este convite não é válido ou expirou." },
+      { status: result.status || 404 },
+    );
   }
 
   const response = NextResponse.json(result.data);

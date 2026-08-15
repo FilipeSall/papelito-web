@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { Suspense, startTransition, useEffect, useRef, useState } from "react";
 
 import {
   ArrowRightIcon,
   AuthSubmitButton,
 } from "@/components/auth/atoms";
 import { AuthPasswordField, AuthSelectField, AuthTextField } from "@/components/auth/molecules";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import {
   formatCep,
@@ -80,7 +81,7 @@ function readStep2Draft(): CadastroStep2Draft {
   }
 }
 
-export default function CadastroEtapa2Page() {
+function CadastroEtapa2PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step1, setStep1] = useState<CadastroStep1Data | null>(null);
@@ -575,5 +576,27 @@ function CheckIcon({ className }: Readonly<{ className?: string }>) {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function CadastroEtapa2PageFallback() {
+  return (
+    <main className="min-h-screen bg-brand-dark">
+      <LogoSpinnerLoader className="min-h-[70vh]" label="Carregando" message="Preparando seus dados." />
+    </main>
+  );
+}
+
+/**
+ * O boundary de Suspense é obrigatório, não decorativo: esta página chama `useSearchParams()` e,
+ * sem ele, o `next build` falha no prerender com `missing-suspense-with-csr-bailout`. O
+ * `app/loading.tsx` da raiz cobria isso por acidente; ele saiu para não brigar com o
+ * `NavigationLoader`, então o boundary passa a ficar onde a exigência realmente está.
+ */
+export default function CadastroEtapa2Page() {
+  return (
+    <Suspense fallback={<CadastroEtapa2PageFallback />}>
+      <CadastroEtapa2PageContent />
+    </Suspense>
   );
 }

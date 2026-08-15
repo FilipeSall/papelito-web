@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { AuthWelcomePanel } from "@/components/auth";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 
 type VerificationViewState = "idle" | "verifying" | "verified" | "error";
 
@@ -15,7 +16,7 @@ type ApiErrorResponse = {
 
 type FeedbackTone = "success" | "error";
 
-export default function ConfirmarEmailPage() {
+function ConfirmarEmailPageContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email")?.trim() ?? "";
   const token = searchParams.get("token")?.trim() ?? "";
@@ -110,7 +111,7 @@ export default function ConfirmarEmailPage() {
         ? "Estamos validando o link enviado para sua caixa de entrada."
         : email
           ? `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`
-          : "Abra o link enviado para seu e-mail para concluir a ativacao da conta.";
+          : "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
 
   return (
     <div className="flex min-h-screen">
@@ -119,7 +120,7 @@ export default function ConfirmarEmailPage() {
       <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-md">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-yellow/80">
-            Ativacao de conta
+            Ativação de conta
           </p>
           <h1 className="mt-4 text-3xl font-black uppercase tracking-wide text-white">
             {title}
@@ -173,5 +174,27 @@ export default function ConfirmarEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ConfirmarEmailPageFallback() {
+  return (
+    <main className="min-h-screen bg-brand-dark">
+      <LogoSpinnerLoader className="min-h-[70vh]" label="Carregando" message="Verificando seu link." />
+    </main>
+  );
+}
+
+/**
+ * O boundary de Suspense é obrigatório, não decorativo: esta página chama `useSearchParams()` e,
+ * sem ele, o `next build` falha no prerender com `missing-suspense-with-csr-bailout`. O
+ * `app/loading.tsx` da raiz cobria isso por acidente; ele saiu para não brigar com o
+ * `NavigationLoader`, então o boundary passa a ficar onde a exigência realmente está.
+ */
+export default function ConfirmarEmailPage() {
+  return (
+    <Suspense fallback={<ConfirmarEmailPageFallback />}>
+      <ConfirmarEmailPageContent />
+    </Suspense>
   );
 }
