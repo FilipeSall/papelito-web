@@ -1,5 +1,7 @@
 import "server-only";
 
+import { resolveWpGraphqlEndpoint, resolveWpRestBase } from "@/lib/wp-endpoints";
+
 type EnvKey =
   | "APP_URL"
   | "NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT"
@@ -10,17 +12,6 @@ type EnvKey =
   | "GOOGLE_CLIENT_SECRET";
 
 const requiredServerEnv: EnvKey[] = ["NEXTAUTH_SECRET", "NEXTAUTH_URL"];
-
-const LOCAL_WP_GRAPHQL_ENDPOINT = "http://localhost:8080/graphql";
-const LOCAL_WP_REST_BASE = "http://localhost:8080/wp-json";
-
-function isPlaceholderValue(value: string | undefined) {
-  if (!value) {
-    return true;
-  }
-
-  return value.includes("seusite.com");
-}
 
 export function getServerEnv() {
   const missing = requiredServerEnv.filter((key) => !process.env[key]);
@@ -40,31 +31,12 @@ export function getServerEnv() {
   };
 }
 
-function ensureAbsoluteUrl(endpoint: string): string {
-  if (endpoint.startsWith("//")) {
-    return `https:${endpoint}`;
-  }
-  return endpoint;
-}
-
 export function getWpGraphqlEndpoint(): string {
-  const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT;
-
-  if (!endpoint || isPlaceholderValue(endpoint)) {
-    return LOCAL_WP_GRAPHQL_ENDPOINT;
-  }
-
-  return ensureAbsoluteUrl(endpoint);
+  return resolveWpGraphqlEndpoint();
 }
 
 export function getWpRestBase(): string {
-  const endpoint = process.env.NEXT_PUBLIC_WP_REST_BASE;
-
-  if (!endpoint || isPlaceholderValue(endpoint)) {
-    return LOCAL_WP_REST_BASE;
-  }
-
-  return ensureAbsoluteUrl(endpoint);
+  return resolveWpRestBase();
 }
 
 export function isMockDataEnabled() {

@@ -124,6 +124,13 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 - NextAuth v4: callbacks `authorize`, `signIn`, `jwt`, `session`. JWT-only.
 - Bun local, `npm ci` no CI → `bun.lock` e `package-lock.json` andam juntos. Ver [`../../../docs/development.md`](../../../docs/development.md#toolchain-híbrido--a-armadilha-do-lockfile).
 
+## Cabeçalhos de segurança
+
+Definidos em `next.config.ts` (`headers()` para `/(.*)`), cobertos por `test/security-headers.test.ts`. Tabela completa em [`docs/integration-contracts.md`](../../../docs/integration-contracts.md#cabeçalhos-de-segurança-do-frontend). Dois pontos que precisam estar claros para quem mexer aqui:
+
+- **A CSP não mitiga XSS, e isso é deliberado.** `script-src` mantém `'unsafe-inline'` porque o bootstrap do App Router é inline e o nonce teria de sair do middleware — e o matcher de `proxy.ts` cobre só rotas autenticadas, então a vitrine pública ficaria sem CSP nenhuma. O que a política fecha é clickjacking, `<base>` injetada, plugins e destino de rede não previsto. Não trate a presença do header como "XSS resolvido".
+- **`connect-src` é allowlist, não `https:` genérico.** Inclui a origem real do WordPress derivada de `NEXT_PUBLIC_WP_REST_BASE`/`NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT` — em local, `http://localhost:8080`, que um `https:` genérico bloquearia e derrubaria o upload direto do navegador. Código novo que fale direto com host externo a partir do cliente **precisa entrar nessa lista**, senão o navegador bloqueia em silêncio.
+
 ## Variáveis de ambiente (`.env.local`)
 
 | Variável | Obrigatória | Descrição |
