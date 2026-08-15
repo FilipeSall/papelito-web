@@ -53,7 +53,6 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string;
     accessTokenExpires?: number;
-    refreshToken?: string;
     authError?: string;
     authIdentityError?: boolean;
     profileComplete?: boolean;

@@ -102,7 +102,7 @@ describe("AuthResetPasswordForm", () => {
 
     render(<AuthResetPasswordForm />);
 
-    expect(screen.getByText("Link de redefinicao inválido ou incompleto.")).toBeInTheDocument();
+    expect(screen.getByText("Link de redefinição inválido ou incompleto.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /alterar senha/i })).toBeDisabled();
   });
 });

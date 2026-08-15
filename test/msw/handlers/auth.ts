@@ -17,6 +17,16 @@ export const authHandlers = [
     };
 
     if (body.query?.includes("mutation Login")) {
+      // Rate limit estourado: o WordPress responde 200 com `errors[]`, e NÃO 429, para o motivo
+      // sobreviver até o proxy Next em vez de virar "serviço indisponível".
+      if (body.variables?.u === "muitas-tentativas@papelito.com") {
+        return HttpResponse.json({
+          errors: [
+            { message: "papelito_login_rate_limited" },
+          ],
+        });
+      }
+
       if (body.variables?.u === "nao-verificado@papelito.com") {
         return HttpResponse.json({
           errors: [{ message: "Confirme seu e-mail antes de entrar." }],

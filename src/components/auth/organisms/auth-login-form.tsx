@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { startTransition, useState } from "react";
+import { Suspense, startTransition, useState } from "react";
 
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { clearPreviousSessionBeforeSignIn } from "@/features/auth/client/logout";
 import { buildPostAuthUrl } from "@/features/company/onboarding";
 
@@ -16,7 +17,7 @@ import { AuthPasswordField } from "../molecules/auth-password-field";
 import { AuthSocialDivider } from "../molecules/auth-social-divider";
 import { AuthTextField } from "../molecules/auth-text-field";
 
-export function AuthLoginForm() {
+function AuthLoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export function AuthLoginForm() {
   const authUnavailable =
     searchParams.get("error") === "papelito_auth_unavailable" ||
     searchParams.get("error") === "papelito_auth_context_unavailable";
+  const cartLoginRequired = searchParams.get("feedback") === "cart_login_required";
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,6 +71,13 @@ export function AuthLoginForm() {
           return;
         }
 
+        if (result?.error === "papelito_auth_rate_limited") {
+          setErrorMessage(
+            "Muitas tentativas de login. Aguarde alguns minutos e tente de novo.",
+          );
+          return;
+        }
+
         if (
           result?.error === "papelito_auth_unavailable" ||
           result?.error === "papelito_auth_context_unavailable"
@@ -92,6 +101,12 @@ export function AuthLoginForm() {
     <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
       <div className="w-full max-w-md">
         <AuthLoginHeader />
+
+        {cartLoginRequired ? (
+          <p className="mt-6 rounded-md border border-brand-yellow/50 bg-brand-yellow/10 px-3 py-2 text-sm text-brand-yellow" role="status">
+            Entre na sua conta para adicionar produtos ao carrinho.
+          </p>
+        ) : null}
 
         <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
           <fieldset className="space-y-6" disabled={isSubmitting}>
@@ -155,5 +170,26 @@ export function AuthLoginForm() {
         />
       </div>
     </div>
+  );
+}
+
+function AuthLoginFormFallback() {
+  return (
+    <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
+      <LogoSpinnerLoader label="" />
+    </div>
+  );
+}
+
+/**
+ * O boundary é obrigatório: este componente chama `useSearchParams()` e, sem ele, o `next build`
+ * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
+ * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
+ */
+export function AuthLoginForm() {
+  return (
+    <Suspense fallback={<AuthLoginFormFallback />}>
+      <AuthLoginFormContent />
+    </Suspense>
   );
 }

@@ -2,6 +2,17 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
+import type { WpB2bContext } from "@/lib/server/auth-jwt";
+import {
+  applySignedInUser,
+  ensureFreshAccessToken,
+  getAccessTokenExpiresAt,
+  hasClearedAuthState,
+  resolveSessionRole,
+  revalidateStaleIdentity,
+  syncRequestedB2bContext,
+  wpFetchAuthenticatedIdentity,
+} from "@/lib/server/auth-jwt";
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
 import { createGoogleRegistrationTicket } from "@/lib/server/google-registration-ticket";
 import { wpRest } from "@/lib/server/wp-rest";
@@ -22,14 +33,6 @@ const WP_LOGIN_MUTATION = `
   }
 `;
 
-const WP_REFRESH_TOKEN_MUTATION = `
-  mutation Refresh($r: String!) {
-    refreshJwtAuthToken(input: { jwtRefreshToken: $r }) {
-      authToken
-    }
-  }
-`;
-
 type WpAuthResponse = {
   authToken: string;
   refreshToken: string;
@@ -40,73 +43,6 @@ type WpAuthResponse = {
     lastName?: string;
   };
   profileComplete: boolean;
-};
-
-type WpRefreshResponse = {
-  authToken: string;
-};
-
-type WpRefreshGraphqlResponse = {
-  data?: {
-    refreshJwtAuthToken?: WpRefreshResponse | null;
-  };
-  errors?: Array<{ message?: string }>;
-};
-
-type RefreshAuthTokenError =
-  | "invalid_refresh_token"
-  | "missing_refresh_token"
-  | "token_refresh_failed";
-
-type RefreshAuthTokenResult =
-  | { ok: true; accessToken: string }
-  | { ok: false; error: RefreshAuthTokenError };
-
-type WpAuthIdentityResponse = {
-  user?: {
-    role?: string | null;
-    profileComplete?: boolean | null;
-  } | null;
-  b2b?: {
-		isB2bCohort?: boolean;
-    canPurchase?: boolean;
-		purchaseBlockReason?: string | null;
-		requiresB2bOnboarding?: boolean;
-		userContextType?: "internal_admin" | "vendor" | "customer" | "hybrid";
-		isInternalAdmin?: boolean;
-		isVendor?: boolean;
-		hasCustomerContext?: boolean;
-    companyId?: number | null;
-    companyOwnershipStatus?: string | null;
-    companyRegistryStatus?: string | null;
-    companyStatus?: string | null;
-    purchaseMode?: "b2b" | "not_buyer" | "blocked";
-    isLegacyCohort?: boolean;
-    legacyMigrationStatus?: string | null;
-    legacyGraceEndsAt?: string | null;
-    legacyWarningLevel?: "none" | "info" | "warning" | "urgent";
-    legacyCanPurchaseDuringGrace?: boolean;
-    identityStatus?: string;
-    membershipRole?: string | null;
-    membershipStatus?: string | null;
-    onboardingStatus?: string;
-    ownerApplication?: {
-      applicationId: number;
-      companyId: number;
-      attemptNumber: number;
-      status:
-        | "document_required"
-        | "pending_manual_review"
-        | "auto_approved"
-        | "approved"
-        | "rejected";
-      fileName: string | null;
-      submittedAt: string | null;
-      decidedAt: string | null;
-      canUpload: boolean;
-      canRestart: boolean;
-    };
-  } | null;
 };
 
 type WpGraphqlError = {
@@ -127,30 +63,6 @@ type WpLoginResult = {
   errorMessage?: string;
   unavailable?: boolean;
 };
-
-const ROLE_REVALIDATE_INTERVAL_MS = 5 * 60 * 1000;
-
-function normalizeRole(role: unknown): string | undefined {
-  return typeof role === "string" ? role.trim().toLowerCase() : undefined;
-}
-
-function shouldRevalidateRole(token: {
-  role?: unknown;
-  roleCheckedAt?: unknown;
-}): boolean {
-  if (!token.role) {
-    return true;
-  }
-
-  const checkedAt =
-    typeof token.roleCheckedAt === "number" ? token.roleCheckedAt : undefined;
-
-  if (checkedAt === undefined) {
-    return true;
-  }
-
-  return Date.now() - checkedAt >= ROLE_REVALIDATE_INTERVAL_MS;
-}
 
 async function wpLogin(username: string, password: string): Promise<WpLoginResult> {
   try {
@@ -202,6 +114,17 @@ function isEmailVerificationError(message: string | undefined) {
   return message === "Confirme seu e-mail antes de entrar.";
 }
 
+/**
+ * Espelha `PAPELITO_LOGIN_RATE_LIMIT_MESSAGE` do `papelito-hardening.php`.
+ *
+ * O WordPress devolve isso como erro GraphQL em HTTP 200, e não como 429, justamente para o motivo
+ * sobreviver até aqui: antes o rate limit matava a requisição com HTML e virava "indisponível",
+ * indistinguível de uma queda do backend.
+ */
+function isLoginRateLimitError(message: string | undefined) {
+  return message === "papelito_login_rate_limited";
+}
+
 type WpGoogleExchangeResult =
   | { ok: true; data: WpAuthResponse }
   | { ok: false; code: string };
@@ -218,143 +141,6 @@ async function wpExchangeGoogleToken(idToken: string): Promise<WpGoogleExchangeR
   }
 
   return { ok: true, data: result.data };
-}
-
-function clearInvalidAuthState(
-  token: {
-    accessToken?: string;
-    accessTokenExpires?: number;
-    refreshToken?: string;
-    authError?: string;
-    authIdentityError?: boolean;
-    role?: string;
-    roleCheckedAt?: number;
-  },
-  authError: RefreshAuthTokenError,
-) {
-  delete token.accessToken;
-  delete token.accessTokenExpires;
-  delete token.refreshToken;
-  delete token.role;
-  delete token.roleCheckedAt;
-  delete token.authIdentityError;
-  token.authError = authError;
-}
-
-function getRefreshErrorCode(errors: Array<{ message?: string }> | undefined): RefreshAuthTokenError {
-  const message = errors?.[0]?.message?.toLowerCase() ?? "";
-
-  if (message.includes("refresh token") && message.includes("invalid")) {
-    return "invalid_refresh_token";
-  }
-
-  return "token_refresh_failed";
-}
-
-async function wpRefreshAuthToken(refreshToken: string): Promise<RefreshAuthTokenResult> {
-  try {
-    const response = await fetch(getWpGraphqlEndpoint(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: WP_REFRESH_TOKEN_MUTATION,
-        variables: {
-          r: refreshToken,
-        },
-      }),
-    });
-
-    const text = await response.text();
-    let json: WpRefreshGraphqlResponse | null = null;
-
-    if (text) {
-      try {
-        json = JSON.parse(text) as WpRefreshGraphqlResponse;
-      } catch {
-        console.error("[auth] JWT refresh returned non-JSON response", response.status);
-        return { ok: false, error: "token_refresh_failed" };
-      }
-    }
-
-    if (!response.ok || json?.errors?.length || !json?.data?.refreshJwtAuthToken?.authToken) {
-      const errorCode = getRefreshErrorCode(json?.errors);
-      const logger = errorCode === "invalid_refresh_token" ? console.warn : console.error;
-      logger("[auth] JWT refresh failed", response.status, json?.errors);
-      return { ok: false, error: errorCode };
-    }
-
-    return {
-      ok: true,
-      accessToken: json.data.refreshJwtAuthToken.authToken,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[auth] JWT refresh request failed", message);
-    return { ok: false, error: "token_refresh_failed" };
-  }
-}
-
-type WpAuthenticatedIdentity = {
-  ok: boolean;
-  profileComplete?: boolean;
-  role?: string;
-  b2b?: NonNullable<WpAuthIdentityResponse["b2b"]>;
-};
-
-async function wpFetchAuthenticatedIdentity(accessToken: string): Promise<WpAuthenticatedIdentity> {
-  try {
-    const identity = await wpRest<WpAuthIdentityResponse>("/papelito/v1/auth/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (identity.ok) {
-      return {
-        ok: true,
-        role: normalizeRole(identity.data.user?.role),
-        profileComplete:
-          typeof identity.data.user?.profileComplete === "boolean"
-            ? identity.data.user.profileComplete
-            : undefined,
-        b2b: identity.data.b2b ?? undefined,
-      };
-    }
-
-    console.error("[auth] identity lookup /auth/me failed", identity.status, identity.error);
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : String(cause);
-    console.error("[auth] identity lookup /auth/me threw", message);
-  }
-
-  return { ok: false, role: undefined, b2b: undefined };
-}
-
-function getAccessTokenExpiresAt(accessToken?: string) {
-  if (!accessToken) {
-    return undefined;
-  }
-
-  try {
-    const [, payload] = accessToken.split(".");
-
-    if (!payload) {
-      return undefined;
-    }
-
-    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decodedPayload = JSON.parse(
-      Buffer.from(normalizedPayload, "base64").toString("utf-8"),
-    ) as { exp?: number };
-
-    return typeof decodedPayload.exp === "number"
-      ? decodedPayload.exp * 1000
-      : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 const providers = [];
@@ -389,6 +175,10 @@ providers.push(
 
       if (isEmailVerificationError(errorMessage)) {
         throw new Error("papelito_email_not_verified");
+      }
+
+      if (isLoginRateLimitError(errorMessage)) {
+        throw new Error("papelito_auth_rate_limited");
       }
 
       if (errorMessage) {
@@ -459,7 +249,7 @@ export const authOptions: NextAuthOptions = {
         profileComplete?: boolean;
         id?: string;
         role?: string;
-        b2b?: NonNullable<WpAuthIdentityResponse["b2b"]>;
+        b2b?: WpB2bContext;
       };
 
       userWithTokens.id = String(wpIdentity.user.databaseId);
@@ -479,94 +269,17 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.picture = user.image;
-        token.accessToken = (user as { accessToken?: string }).accessToken;
-        token.accessTokenExpires = (user as { accessTokenExpires?: number }).accessTokenExpires;
-        token.refreshToken = (user as { refreshToken?: string }).refreshToken;
-        delete token.authError;
-        delete token.authIdentityError;
-        token.profileComplete = (user as { profileComplete?: boolean }).profileComplete;
-        token.role = (user as { role?: string }).role;
-        token.b2b = (user as { b2b?: NonNullable<WpAuthIdentityResponse["b2b"]> }).b2b;
-        token.roleCheckedAt = Date.now();
+        applySignedInUser(token, user);
       }
 
-      if (typeof token.authError === "string" && !token.accessToken) {
+      if (hasClearedAuthState(token)) {
         return token;
       }
 
-      // update({ refreshB2b: true }) no cliente força refresh imediato do contexto B2B (aceite de
-      // convite, troca de empresa, mudança de papel, aprovação/suspensão) — a sessão não pode ficar
-      // stale. Só dispara com o flag explícito, para não re-buscar /auth/me a cada update().
-      if (
-        trigger === "update" &&
-        (session as { refreshB2b?: boolean } | undefined)?.refreshB2b === true &&
-        typeof token.accessToken === "string"
-      ) {
-        const identity = await wpFetchAuthenticatedIdentity(token.accessToken);
-        if (identity.ok) {
-          token.role = identity.role;
-          token.b2b = identity.b2b;
-          if (typeof identity.profileComplete === "boolean") {
-            token.profileComplete = identity.profileComplete;
-          }
-          token.roleCheckedAt = Date.now();
-          delete token.authIdentityError;
-        }
-      }
+      await syncRequestedB2bContext(token, trigger, session);
+      await revalidateStaleIdentity(token);
 
-      if (typeof token.accessToken === "string" && shouldRevalidateRole(token)) {
-        const identity = await wpFetchAuthenticatedIdentity(token.accessToken);
-
-        if (identity.ok) {
-          token.role = identity.role;
-          token.b2b = identity.b2b;
-          token.roleCheckedAt = Date.now();
-          delete token.authIdentityError;
-        } else {
-          token.authIdentityError = true;
-        }
-      }
-
-      const accessTokenExpires =
-        typeof token.accessTokenExpires === "number"
-          ? token.accessTokenExpires
-          : getAccessTokenExpiresAt(token.accessToken);
-
-      if (!accessTokenExpires || Date.now() < accessTokenExpires - 30_000) {
-        token.accessTokenExpires = accessTokenExpires;
-        return token;
-      }
-
-      if (typeof token.refreshToken !== "string") {
-        clearInvalidAuthState(token, "missing_refresh_token");
-        return token;
-      }
-
-      const refreshedToken = await wpRefreshAuthToken(token.refreshToken);
-
-      if (!refreshedToken.ok) {
-        clearInvalidAuthState(token, refreshedToken.error);
-        return token;
-      }
-
-      token.accessToken = refreshedToken.accessToken;
-      token.accessTokenExpires = getAccessTokenExpiresAt(refreshedToken.accessToken);
-      const refreshedIdentity = await wpFetchAuthenticatedIdentity(refreshedToken.accessToken);
-      if (refreshedIdentity.ok) {
-        token.role = refreshedIdentity.role;
-        token.b2b = refreshedIdentity.b2b;
-        token.roleCheckedAt = Date.now();
-        delete token.authIdentityError;
-      } else {
-        token.authIdentityError = true;
-      }
-      delete token.authError;
-
-      return token;
+      return ensureFreshAccessToken(token);
     },
     session({ session, token }) {
       if (session.user) {
@@ -577,18 +290,11 @@ export const authOptions: NextAuthOptions = {
         typeof token.accessToken === "string" ? token.accessToken : undefined;
       session.accessTokenExpires =
         typeof token.accessTokenExpires === "number" ? token.accessTokenExpires : undefined;
-      session.refreshToken =
-        typeof token.refreshToken === "string" ? token.refreshToken : undefined;
       session.authError = typeof token.authError === "string" ? token.authError : undefined;
       session.authIdentityError = token.authIdentityError === true ? true : undefined;
       session.profileComplete =
         typeof token.profileComplete === "boolean" ? token.profileComplete : undefined;
-      session.role =
-        token.authIdentityError === true
-          ? undefined
-          : typeof token.role === "string"
-            ? token.role
-            : undefined;
+      session.role = resolveSessionRole(token);
       session.b2b = token.authIdentityError === true ? undefined : (token.b2b as typeof session.b2b | undefined);
 
       return session;

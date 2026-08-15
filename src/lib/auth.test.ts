@@ -322,11 +322,11 @@ describe("authOptions callbacks", () => {
       user: { id: "42" },
       accessToken: "token",
       accessTokenExpires: 123,
-      refreshToken: "refresh",
       authError: "invalid_refresh_token",
       profileComplete: false,
       role: "seller",
     });
+    expect(session).not.toHaveProperty("refreshToken");
   });
 
   it("does not expose a stale role when the identity lookup failed", async () => {
@@ -394,6 +394,20 @@ describe("authOptions callbacks", () => {
           password: "senha-incorreta",
         }),
       ).rejects.toThrow("papelito_invalid_credentials");
+    });
+
+    /**
+     * O rate limit chega como erro GraphQL em HTTP 200. Se voltasse como 429 (era o caso quando o
+     * WordPress usava `wp_die`), `wpLogin` marcaria `unavailable` e o motivo se perderia — o
+     * usuário leria "serviço indisponível" e o aviso de e-mail não confirmado também sumiria.
+     */
+    it("distinguishes a rate limited login from a backend outage", async () => {
+      await expect(
+        getCredentialsAuthorize()({
+          username: "muitas-tentativas@papelito.com",
+          password: "senha-incorreta",
+        }),
+      ).rejects.toThrow("papelito_auth_rate_limited");
     });
 
     it("does not create a partial session when the canonical identity cannot load", async () => {

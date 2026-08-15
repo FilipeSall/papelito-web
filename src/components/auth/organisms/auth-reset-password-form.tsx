@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { startTransition, useState } from "react";
+import { Suspense, startTransition, useState } from "react";
 
 import { ArrowRightIcon } from "../atoms/auth-icons";
 import { AuthSubmitButton } from "../atoms/auth-submit-button";
 import { AuthPasswordField } from "../molecules/auth-password-field";
+import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 
 type ResetPasswordApiResponse = {
   message?: string;
@@ -17,13 +18,13 @@ type FieldErrors = {
   confirmPassword?: string;
 };
 
-export function AuthResetPasswordForm() {
+function AuthResetPasswordFormContent() {
   const searchParams = useSearchParams();
   const login = searchParams.get("login")?.trim() ?? "";
   const key = searchParams.get("key")?.trim() ?? "";
   const hasResetLink = Boolean(login && key);
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    hasResetLink ? null : "Link de redefinicao inválido ou incompleto.",
+    hasResetLink ? null : "Link de redefinição inválido ou incompleto.",
   );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -48,7 +49,7 @@ export function AuthResetPasswordForm() {
     event.preventDefault();
 
     if (!hasResetLink) {
-      setErrorMessage("Link de redefinicao inválido ou incompleto.");
+      setErrorMessage("Link de redefinição inválido ou incompleto.");
       return;
     }
 
@@ -178,5 +179,26 @@ export function AuthResetPasswordForm() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function AuthResetPasswordFormFallback() {
+  return (
+    <div className="flex w-full items-center justify-center bg-brand-dark px-6 py-12 lg:w-1/2">
+      <LogoSpinnerLoader label="" />
+    </div>
+  );
+}
+
+/**
+ * O boundary é obrigatório: este componente chama `useSearchParams()` e, sem ele, o `next build`
+ * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
+ * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
+ */
+export function AuthResetPasswordForm() {
+  return (
+    <Suspense fallback={<AuthResetPasswordFormFallback />}>
+      <AuthResetPasswordFormContent />
+    </Suspense>
   );
 }

@@ -18,7 +18,6 @@ export function buildSession(
     expires: "2099-01-01T00:00:00.000Z",
     accessToken: "access-token",
     accessTokenExpires: Date.now() + 60 * 60 * 1000,
-    refreshToken: "refresh-token",
     authError: undefined,
     profileComplete: true,
     role: "customer",

@@ -66,7 +66,7 @@ export function AuthForgotPasswordForm() {
 
         setSuccessMessage(GENERIC_SUCCESS_MESSAGE);
       } catch {
-        setErrorMessage("Erro de rede ao solicitar a redefinicao de senha. Tente novamente.");
+        setErrorMessage("Erro de rede ao solicitar a redefinição de senha. Tente novamente.");
       } finally {
         setIsSubmitting(false);
       }
