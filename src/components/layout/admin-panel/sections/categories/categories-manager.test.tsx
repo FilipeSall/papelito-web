@@ -165,4 +165,26 @@ describe("CategoriesManager - edição de subcategoria", () => {
 
     expect(within(modal()).queryByRole("alert")).toBeNull();
   });
+  it("confirma o salvamento do nome com aviso de sucesso e modal fechado", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ subcategory: subcategory({ name: "Média" }) }), {
+        status: 200,
+      }),
+    );
+
+    render(<CategoriesManager snapshot={snapshot([subcategory()])} />);
+    await user.click(screen.getByRole("button", { name: "Editar M" }));
+
+    const name = screen.getByLabelText(/nome/i);
+    await user.clear(name);
+    await user.type(name, "Média");
+    await user.click(screen.getByRole("button", { name: /salvar/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: /subcategoria em acessórios/i })).toBeNull(),
+    );
+    expect(screen.getByText("✓ Subcategoria salva.")).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalled();
+  });
 });

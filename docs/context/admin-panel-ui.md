@@ -81,6 +81,25 @@ a classificação para `papelito/v1/admin/products/{id}/taxonomy`. Salvar sem ca
 primeira. Se a classificação de uma criação falhar, produto publicado é compensado para rascunho; em edição,
 a classificação anterior é preservada. O editor não envia categorias WooCommerce e não existe dual-write.
 
+## Aba Cupons
+
+`/admin/coupons` edita cupons com restrição opcional por vendor e por produto. Decisões que não são
+óbvias pelo código:
+
+- **As duas listas de restrição carregam sozinhas.** Vendors vêm de `/api/admin/coupons/vendor-options`
+  e produtos de `/api/admin/coupons/product-options`, ambos no mount — o campo de texto só filtra. Um
+  seletor que só existe depois de alguém digitar parece um seletor vazio, e foi assim que o de produtos
+  foi reportado como quebrado.
+- **`product-options` é uma rota enxuta de propósito.** Ela pede `id,name,sku` à REST do WooCommerce e
+  nada mais. `/api/admin/products` traz tags e taxonomia junto, três idas ao WordPress por consulta —
+  caro demais para um campo que dispara a cada pausa de digitação. Com `?ids=` ela também resolve o
+  rótulo dos produtos já vinculados ao cupom em uma chamada, em vez de uma por produto.
+- **Restrição por vendor não filtra a busca de produto.** São restrições independentes do cupom: o
+  seletor lista o catálogo inteiro mesmo com vendors marcados.
+- **Erro de API aparece na própria caixa**, com o status HTTP quando a resposta não é o JSON da rota
+  (502/504 de gateway, função que estourou tempo). Sem isso, qualquer falha vira "Nenhum produto
+  encontrado." e fica indistinguível de zero resultados.
+
 ## Benefícios do produto ficam em Assets, não em rota própria
 
 A faixa de benefícios da página de produto é editada num painel recolhível dentro de `/admin/assets`

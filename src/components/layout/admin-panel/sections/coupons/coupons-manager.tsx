@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { Coupon, CouponInput, CouponListSnapshot } from "@/features/coupons/types/coupon";
 import type { PaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import { formatBRL } from "@/lib/format-currency";
+import { messageFromError, messageFromResponse } from "@/utils/error-message";
 
 import { AdminToast, Panel } from "../../primitives";
 import { CouponDeleteModal } from "./coupon-delete-modal";
@@ -66,7 +67,7 @@ export function CouponsManager({
   initialPaymentIssue,
   initialList,
   initialIssues,
-}: CouponsManagerProps) {
+}: Readonly<CouponsManagerProps>) {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialList.items);
   const [issues] = useState<string[]>(initialIssues);
@@ -167,9 +168,8 @@ export function CouponsManager({
         body: JSON.stringify(payload),
       });
 
-      const body = await response.json().catch(() => ({}) as { message?: string });
       if (!response.ok) {
-        return body?.message || "Falha ao salvar cupom.";
+        return await messageFromResponse(response, "Falha ao salvar cupom.");
       }
 
       showToast(
@@ -190,7 +190,7 @@ export function CouponsManager({
       });
       return null;
     } catch (error) {
-      return error instanceof Error ? error.message : "Erro inesperado.";
+      return messageFromError(error, "Erro inesperado.");
     }
   }
 
@@ -237,10 +237,9 @@ export function CouponsManager({
         return;
       }
 
-      const body = (await response.json().catch(() => ({}))) as { message?: string };
-      setDeleteError(body?.message || "Falha ao remover cupom.");
+      setDeleteError(await messageFromResponse(response, "Falha ao remover cupom."));
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : "Erro inesperado.");
+      setDeleteError(messageFromError(error, "Erro inesperado."));
     } finally {
       setDeleting(false);
     }

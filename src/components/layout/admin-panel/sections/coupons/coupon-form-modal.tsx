@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   Coupon,
@@ -10,6 +10,7 @@ import type {
   CouponStatus,
 } from "@/features/coupons/types/coupon";
 import type { SelectOption } from "@/types/admin-products-manager";
+import { messageFromError, messageFromResponse } from "@/utils/error-message";
 
 import { InfoTooltip } from "../products/components/form-fields";
 import { AdminSelectField } from "../products/components/admin-select-field";
@@ -44,9 +45,25 @@ type AdminProductRow = {
   sku: string;
 };
 
-type AdminProductsResponse = {
-  products?: Array<{ id?: number; name?: string; sku?: string }>;
+type ProductOptionsResponse = {
+  items?: Array<{ id?: number; name?: string; sku?: string }>;
 };
+
+const PRODUCT_OPTIONS_ENDPOINT = "/api/admin/coupons/product-options";
+
+function mapProductRows(payload: ProductOptionsResponse): AdminProductRow[] {
+  if (!Array.isArray(payload.items)) {
+    return [];
+  }
+
+  return payload.items
+    .map((item) => ({
+      id: typeof item.id === "number" ? item.id : 0,
+      name: typeof item.name === "string" ? item.name : "",
+      sku: typeof item.sku === "string" ? item.sku : "",
+    }))
+    .filter((item): item is AdminProductRow => item.id > 0 && item.name.length > 0);
+}
 
 const COUPON_FIELD_CLASS =
   "mt-2 h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a] focus:ring-0";
@@ -116,10 +133,15 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
   const [vendorSearch, setVendorSearch] = useState("");
   const [vendorLoading, setVendorLoading] = useState(false);
 
-  const [productResults, setProductResults] = useState<AdminProductRow[]>([]);
+  const [vendorError, setVendorError] = useState<string | null>(null);
+
+  const [productOptions, setProductOptions] = useState<AdminProductRow[]>([]);
   const [productSearch, setProductSearch] = useState("");
-  const [productLoading, setProductLoading] = useState(false);
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState<string | null>(null);
   const [productLabels, setProductLabels] = useState<Record<number, string>>({});
+  const productRequestRef = useRef(0);
+  const requestedLabelsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     setForm(initial);
@@ -133,9 +155,17 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
       const response = await fetch(`/api/admin/coupons/vendor-options?${params.toString()}`, {
         cache: "no-store",
       });
-      if (!response.ok) return;
+
+      if (!response.ok) {
+        setVendorError(await messageFromResponse(response, "Não foi possível carregar os vendors."));
+        return;
+      }
+
       const data = (await response.json()) as { items?: VendorOption[] };
+      setVendorError(null);
       setVendorOptions(data.items ?? []);
+    } catch (error) {
+      setVendorError(messageFromError(error, "Não foi possível carregar os vendors."));
     } finally {
       setVendorLoading(false);
     }
@@ -152,73 +182,102 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
     return () => window.clearTimeout(handle);
   }, [vendorSearch, loadVendors]);
 
-  useEffect(() => {
-    if (form.productIds.length === 0) return;
-    const missing = form.productIds.filter((id) => !productLabels[id]);
-    if (missing.length === 0) return;
-
-    void (async () => {
-      const updates: Record<number, string> = {};
-      for (const id of missing) {
-        try {
-          const response = await fetch(`/wp-json/wp/v2/product/${id}?_fields=id,title`, {
-            cache: "force-cache",
-          });
-          if (response.ok) {
-            const product = (await response.json()) as { title?: { rendered?: string } };
-            if (product?.title?.rendered) updates[id] = product.title.rendered;
-          }
-        } catch {
-          // ignore
-        }
+  const rememberLabels = useCallback((rows: AdminProductRow[]) => {
+    if (rows.length === 0) return;
+    setProductLabels((prev) => {
+      const next = { ...prev };
+      for (const row of rows) {
+        next[row.id] = row.name;
       }
-      if (Object.keys(updates).length > 0) {
-        setProductLabels((prev) => ({ ...prev, ...updates }));
-      }
-    })();
-  }, [form.productIds, productLabels]);
+      return next;
+    });
+  }, []);
 
-  useEffect(() => {
-    if (!productSearch.trim()) {
-      setProductResults([]);
-      return;
-    }
+  /**
+   * A lista vem pronta na abertura, como a de vendors: o campo de texto só filtra.
+   * Enquanto a resposta de um termo novo não chega, a caixa continua mostrando o
+   * que já foi carregado — piscar vazio é o que fazia o seletor parecer quebrado.
+   */
+  const loadProducts = useCallback(async (search: string) => {
+    const requestId = productRequestRef.current + 1;
+    productRequestRef.current = requestId;
     setProductLoading(true);
-    const handle = window.setTimeout(async () => {
-      try {
-        const params = new URLSearchParams({
-          search: productSearch.trim(),
-          perPage: "20",
-          status: "publish",
-        });
-        const response = await fetch(`/api/admin/products?${params.toString()}`, {
-          cache: "no-store",
-        });
-        if (!response.ok) return;
-        const data = (await response.json()) as AdminProductsResponse;
-        const rows: AdminProductRow[] = Array.isArray(data.products)
-          ? data.products
-              .map((p) => ({
-                id: typeof p.id === "number" ? p.id : 0,
-                name: typeof p.name === "string" ? p.name : "",
-                sku: typeof p.sku === "string" ? p.sku : "",
-              }))
-              .filter((p): p is AdminProductRow => p.id > 0 && p.name.length > 0)
-          : [];
-        setProductResults(rows);
-        setProductLabels((prev) => {
-          const next = { ...prev };
-          for (const row of rows) {
-            next[row.id] = row.name;
-          }
-          return next;
-        });
-      } finally {
+
+    try {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      const query = params.toString();
+      const response = await fetch(
+        query ? `${PRODUCT_OPTIONS_ENDPOINT}?${query}` : PRODUCT_OPTIONS_ENDPOINT,
+        { cache: "no-store" },
+      );
+
+      if (productRequestRef.current !== requestId) return;
+
+      if (!response.ok) {
+        setProductError(await messageFromResponse(response, "Não foi possível carregar os produtos."));
+        return;
+      }
+
+      const rows = mapProductRows((await response.json()) as ProductOptionsResponse);
+      if (productRequestRef.current !== requestId) return;
+
+      setProductError(null);
+      setProductOptions(rows);
+      rememberLabels(rows);
+    } catch (error) {
+      if (productRequestRef.current !== requestId) return;
+      setProductError(messageFromError(error, "Não foi possível carregar os produtos."));
+    } finally {
+      if (productRequestRef.current === requestId) {
         setProductLoading(false);
       }
+    }
+  }, [rememberLabels]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      void loadProducts(productSearch);
     }, 250);
     return () => window.clearTimeout(handle);
-  }, [productSearch]);
+  }, [productSearch, loadProducts]);
+
+  useEffect(() => {
+    const missing = form.productIds.filter(
+      (id) => !productLabels[id] && !requestedLabelsRef.current.has(id),
+    );
+    if (missing.length === 0) return;
+
+    for (const id of missing) {
+      requestedLabelsRef.current.add(id);
+    }
+
+    void (async () => {
+      try {
+        const response = await fetch(
+          `${PRODUCT_OPTIONS_ENDPOINT}?ids=${missing.join(",")}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) return;
+        rememberLabels(mapProductRows((await response.json()) as ProductOptionsResponse));
+      } catch {
+        // O chip cai para "Produto #id"; o erro do seletor já é reportado na caixa.
+      }
+    })();
+  }, [form.productIds, productLabels, rememberLabels]);
+
+  const visibleProducts = useMemo(() => {
+    const term = productSearch.trim().toLowerCase();
+
+    if (!term || !productLoading) {
+      return productOptions;
+    }
+
+    return productOptions.filter(
+      (product) =>
+        product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term),
+    );
+  }, [productOptions, productLoading, productSearch]);
 
   function toggleVendor(id: number) {
     setForm((prev) => ({
@@ -437,7 +496,9 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
                 value={vendorSearch}
               />
               <div className="mt-2 max-h-40 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
-                {vendorLoading ? (
+                {vendorError ? (
+                  <p className="px-3 py-2 text-xs font-bold text-[#c0392b]">⚠ {vendorError}</p>
+                ) : vendorLoading && vendorOptions.length === 0 ? (
                   <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
                     Carregando vendors...
                   </p>
@@ -485,38 +546,40 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
                 type="search"
                 value={productSearch}
               />
-              {productSearch.trim() ? (
-                <div className="mt-2 max-h-40 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
-                  {productLoading ? (
-                    <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">Buscando...</p>
-                  ) : productResults.length === 0 ? (
-                    <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
-                      Nenhum produto encontrado.
-                    </p>
-                  ) : (
-                    productResults.map((product) => {
-                      const checked = form.productIds.includes(product.id);
-                      return (
-                        <label
-                          className="flex cursor-pointer items-center gap-2 border-b-2 border-[#1a1a1a]/10 px-3 py-2 text-xs last:border-b-0 hover:bg-brand-yellow/30"
-                          key={product.id}
-                        >
-                          <input
-                            checked={checked}
-                            className="h-4 w-4 accent-[#1a1a1a]"
-                            onChange={() => toggleProduct(product.id)}
-                            type="checkbox"
-                          />
-                          <span className="font-black text-[#1a1a1a]">{product.name}</span>
-                          {product.sku ? (
-                            <span className="text-[#1a1a1a]/60">SKU {product.sku}</span>
-                          ) : null}
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              ) : null}
+              <div className="mt-2 max-h-40 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
+                {productError ? (
+                  <p className="px-3 py-2 text-xs font-bold text-[#c0392b]">⚠ {productError}</p>
+                ) : productLoading && visibleProducts.length === 0 ? (
+                  <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
+                    Carregando produtos...
+                  </p>
+                ) : visibleProducts.length === 0 ? (
+                  <p className="px-3 py-2 text-xs font-bold text-[#1a1a1a]/60">
+                    Nenhum produto encontrado.
+                  </p>
+                ) : (
+                  visibleProducts.map((product) => {
+                    const checked = form.productIds.includes(product.id);
+                    return (
+                      <label
+                        className="flex cursor-pointer items-center gap-2 border-b-2 border-[#1a1a1a]/10 px-3 py-2 text-xs last:border-b-0 hover:bg-brand-yellow/30"
+                        key={product.id}
+                      >
+                        <input
+                          checked={checked}
+                          className="h-4 w-4 accent-[#1a1a1a]"
+                          onChange={() => toggleProduct(product.id)}
+                          type="checkbox"
+                        />
+                        <span className="font-black text-[#1a1a1a]">{product.name}</span>
+                        {product.sku ? (
+                          <span className="text-[#1a1a1a]/60">SKU {product.sku}</span>
+                        ) : null}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
               {form.productIds.length > 0 ? (
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {form.productIds.map((id) => (
