@@ -11,6 +11,7 @@ const getCachedProductsCatalog = cache(
     type: GetProductsCatalogInput["type"],
     collection: GetProductsCatalogInput["collection"],
     selectedTypesKey: string,
+    selectedSubcategoriesKey: string,
     minPrice: number | null,
     maxPrice: number | null,
     perPage: number,
@@ -27,6 +28,8 @@ const getCachedProductsCatalog = cache(
               "todos"
             >[])
           : [],
+      selectedSubcategories:
+        selectedSubcategoriesKey.length > 0 ? selectedSubcategoriesKey.split(",") : [],
       minPrice,
       maxPrice,
       perPage,
@@ -39,6 +42,9 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
   const type = input.type ?? "todos";
   const collection = input.collection ?? "todos";
   const selectedTypesKey = [...(input.selectedTypes ?? [])].sort().join(",");
+  // A subcategoria entra na chave do cache: sem ela, duas listagens diferentes
+  // dividem a mesma entrada e o filtro é descartado em silêncio.
+  const selectedSubcategoriesKey = [...(input.selectedSubcategories ?? [])].sort().join(",");
   const minPrice =
     typeof input.minPrice === "number" && Number.isFinite(input.minPrice)
       ? input.minPrice
@@ -55,6 +61,7 @@ export async function useProductsCatalog(input: GetProductsCatalogInput = {}) {
     type,
     collection,
     selectedTypesKey,
+    selectedSubcategoriesKey,
     minPrice,
     maxPrice,
     perPage,

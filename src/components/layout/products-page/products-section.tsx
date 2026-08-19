@@ -15,6 +15,7 @@ import type {
   CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
+  ProductsCatalogCategory,
   ProductsCatalogItem,
   ProductsCatalogTab,
 } from "@/features/catalog";
@@ -31,7 +32,9 @@ interface ProductsSectionProps {
   showCategoryTabs?: boolean;
   products: ProductsCatalogItem[];
   tabs: ProductsCatalogTab[];
+  categoryTree?: ProductsCatalogCategory[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
+  selectedSubcategories?: string[];
   minPrice: number | null;
   maxPrice: number | null;
   priceError?: string;
@@ -74,7 +77,9 @@ export function ProductsSection({
   showCategoryTabs = true,
   products,
   tabs,
+  categoryTree = [],
   selectedTypes,
+  selectedSubcategories = [],
   minPrice,
   maxPrice,
   priceError,
@@ -166,6 +171,7 @@ export function ProductsSection({
               <ProductsPerPageSelector
                 basePath={basePath}
                 collection={activeCollection}
+                selectedSubcategories={selectedSubcategories}
                 selectedTypes={selectedTypes}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
@@ -179,6 +185,7 @@ export function ProductsSection({
                 basePath={basePath}
                 collection={activeCollection}
                 activeView={viewMode}
+                selectedSubcategories={selectedSubcategories}
                 selectedTypes={selectedTypes}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
@@ -194,7 +201,9 @@ export function ProductsSection({
             {showCategoryFilters ? (
               <ProductFilterSidebar
                 basePath={basePath}
+                categoryTree={categoryTree}
                 collection={activeCollection}
+                selectedSubcategories={selectedSubcategories}
                 selectedTypes={selectedTypes}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
@@ -229,6 +238,7 @@ export function ProductsSection({
                     collection={activeCollection}
                     currentPage={currentPage}
                     totalPages={totalPages}
+                    selectedSubcategories={selectedSubcategories}
                     selectedTypes={selectedTypes}
                     minPrice={minPrice}
                     maxPrice={maxPrice}

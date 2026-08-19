@@ -18,6 +18,7 @@ interface ViewToggleProps {
   basePath?: string;
   collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
+  selectedSubcategories?: string[];
   minPrice: number | null;
   maxPrice: number | null;
   perPage: number;
@@ -58,6 +59,7 @@ export function ViewToggle({
   basePath = "/produtos",
   collection = "todos",
   selectedTypes,
+  selectedSubcategories = [],
   minPrice,
   maxPrice,
   perPage,
@@ -103,6 +105,7 @@ export function ViewToggle({
           basePath,
           collection,
           selectedTypes,
+          selectedSubcategories,
           minPrice,
           maxPrice,
           viewMode: "grid",
@@ -119,6 +122,7 @@ export function ViewToggle({
           basePath,
           collection,
           selectedTypes,
+          selectedSubcategories,
           minPrice,
           maxPrice,
           viewMode: "list",

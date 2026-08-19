@@ -77,9 +77,12 @@ export function ProductsDiscoveryPage({
   const selectedTypes = activeCollection === "todos" ? selectedTypesFromParams : [];
   const queryType = selectedTypes[0] ?? "todos";
 
-  const selectedSubcategories = activeCollection === "todos"
-    ? normalizeSubcategoryParam(resolvedSearchParams.subcategoria)
-    : [];
+  // Sem categoria marcada não há o que refinar; cada categoria marcada carrega o
+  // próprio escopo em `categoria.subcategoria`.
+  const selectedSubcategories =
+    activeCollection === "todos" && selectedTypes.length > 0
+      ? normalizeSubcategoryParam(resolvedSearchParams.subcategoria)
+      : [];
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleQueryParam(resolvedSearchParams.view));
   const visualVariant = basePath === "/produtos" ? "default" : "collection";
@@ -129,6 +132,8 @@ export function ProductsDiscoveryPage({
         totalPages={catalog.totalPages}
         currentPage={catalog.currentPage}
         activeType={catalog.activeType}
+        categoryTree={catalog.categories}
+        selectedSubcategories={catalog.selectedSubcategories}
         selectedTypes={catalog.selectedTypes}
         minPrice={catalog.minPrice}
         maxPrice={catalog.maxPrice}

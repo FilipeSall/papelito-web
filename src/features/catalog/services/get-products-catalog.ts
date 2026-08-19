@@ -21,6 +21,10 @@ import { searchCatalogProducts } from "./catalog-search";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
 import { isTaxonomySlug, SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
+import {
+  parseScopedSubcategories,
+  SUBCATEGORY_SCOPE_SEPARATOR,
+} from "../utils/subcategory-selection";
 import { calculateDiscountPercent } from "../utils/discount-percent";
 import {
   PRODUCT_FALLBACK_IMAGE,
@@ -30,6 +34,7 @@ import type {
   CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
+  ProductsCatalogCategory,
   ProductsCatalogItem,
   ProductsCatalogPayload,
   ProductsCatalogTab,
@@ -154,15 +159,32 @@ function normalizeSelectedTypes(
  * Subcategoria e slug livre: a lista vive no banco e cresce sem deploy. So o
  * formato e validado aqui; o que nao existir simplesmente nao casa com nenhum
  * produto, e o resultado vem vazio — fail-closed por construcao.
+ *
+ * Aceita `categoria.subcategoria` (o escopo que a vitrine emite) e o slug solto de
+ * links antigos, que continua sendo resolvido dentro da categoria do produto.
  */
 function normalizeSelectedSubcategories(value: string[] | undefined) {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const normalized = value
-    .map((slug) => (typeof slug === "string" ? slug.trim().toLowerCase() : ""))
-    .filter((slug) => /^[a-z0-9-]+$/.test(slug));
+  const normalized = value.flatMap((entry) => {
+    if (typeof entry !== "string") {
+      return [];
+    }
+
+    const token = entry.trim().toLowerCase();
+    const separator = token.indexOf(SUBCATEGORY_SCOPE_SEPARATOR);
+
+    if (separator < 0) {
+      return /^[a-z0-9-]+$/.test(token) ? [token] : [];
+    }
+
+    // Token escopado, mesmo com metade inválida, segue adiante: descartar
+    // transformaria filtro quebrado em filtro ausente, e quem fecha a listagem é
+    // `parseScopedSubcategories`, que o marca como pedido inválido.
+    return [token];
+  });
 
   return Array.from(new Set(normalized));
 }
@@ -347,6 +369,7 @@ async function requestProductsCatalogMockFile() {
 
 interface EmptyPayloadInput {
   tabs: ProductsCatalogTab[];
+  categories: ProductsCatalogCategory[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
   activeType: ProductTypeId;
   activeCollection: ProductCollectionId;
@@ -361,6 +384,7 @@ function buildEmptyPayload(input: EmptyPayloadInput): ProductsCatalogPayload {
   return {
     items: [],
     tabs: input.tabs,
+    categories: input.categories,
     selectedTypes: input.selectedTypes,
     minPrice: input.minPrice,
     maxPrice: input.maxPrice,
@@ -432,6 +456,26 @@ function buildTabs(
   ];
 }
 
+/**
+ * Árvore que o filtro lateral renderiza.
+ *
+ * Sai da mesma taxonomia que já alimenta as abas, para categoria e subcategoria
+ * nunca discordarem sobre o que existe.
+ */
+function buildCategoryTree(
+  categories: PapelitoCategory[] = [],
+): ProductsCatalogCategory[] {
+  return categories.map((category) => ({
+    slug: category.slug,
+    name: category.name,
+    subcategories: (category.subcategories ?? []).map((subcategory) => ({
+      slug: subcategory.slug,
+      name: subcategory.name,
+      facet: subcategory.facet,
+    })),
+  }));
+}
+
 function buildMockTabs(items: ProductsCatalogItem[]): ProductsCatalogTab[] {
   const counts: Record<string, number> = { todos: items.length };
 
@@ -469,6 +513,7 @@ async function loadMockCatalog(): Promise<
 function buildSearchPayload(
   input: NormalizedCatalogInput,
   tabs: ProductsCatalogTab[],
+  categories: ProductsCatalogCategory[],
   searchResult: Awaited<ReturnType<typeof searchCatalogProducts>>,
   products: ProductsCatalogItem[],
   sourceStatus: CatalogSourceStatus,
@@ -481,6 +526,7 @@ function buildSearchPayload(
       return item ? [item] : [];
     }),
     tabs,
+    categories,
     selectedTypes: input.selectedTypes,
     minPrice: input.minPrice,
     maxPrice: input.maxPrice,
@@ -504,6 +550,7 @@ async function loadSearchCatalog(
   input: NormalizedCatalogInput,
   categorySlugs: string[],
   tabs: ProductsCatalogTab[],
+  categories: ProductsCatalogCategory[],
   flashSaleCampaign: FlashSaleCampaign,
 ): Promise<ProductsCatalogPayload> {
   const searchResult = await searchCatalogProducts({
@@ -530,6 +577,7 @@ async function loadSearchCatalog(
   return buildSearchPayload(
     input,
     tabs,
+    categories,
     searchResult,
     products,
     searchHydration.ok ? "ok" : "unavailable",
@@ -564,6 +612,51 @@ async function loadWpCatalogItems(
   };
 }
 
+/**
+ * Valida `?subcategoria=` contra a taxonomia, escopo por escopo.
+ *
+ * Fail-closed: escopo que aponta para categoria ou subcategoria inexistente zera o
+ * catálogo, em vez de o filtro ser ignorado — categoria renomeada não pode virar
+ * "mostre tudo". O slug solto de link antigo continua sendo resolvido pela categoria
+ * do produto, então só o formato é validado aqui.
+ */
+function resolveScopedSubcategories(
+  taxonomy: Awaited<ReturnType<typeof getPapelitoTaxonomy>>,
+  categorySlugs: string[],
+  tokens: string[],
+) {
+  const scoped = parseScopedSubcategories(tokens);
+  const resolved: string[] = [];
+  let unresolved = scoped.invalid;
+
+  for (const [category, slugs] of scoped.byCategory) {
+    // Refinar uma categoria que não está selecionada não é pedido válido: o escopo
+    // veio de uma URL montada à mão ou de uma categoria que acabou de sair.
+    if (!categorySlugs.includes(category)) {
+      unresolved = true;
+      continue;
+    }
+
+    const branch = resolveSubcategorySlugs(taxonomy, category, slugs);
+    unresolved = unresolved || branch.unresolved;
+    resolved.push(
+      ...branch.resolved.map(
+        (slug) => `${category}${SUBCATEGORY_SCOPE_SEPARATOR}${slug}`,
+      ),
+    );
+  }
+
+  if (scoped.bare.length > 0 && categorySlugs.length === 1) {
+    const branch = resolveSubcategorySlugs(taxonomy, categorySlugs[0], scoped.bare);
+    unresolved = unresolved || branch.unresolved;
+    resolved.push(...branch.resolved);
+  } else {
+    resolved.push(...scoped.bare);
+  }
+
+  return { resolved, unresolved };
+}
+
 async function loadWpCatalog(
   input: NormalizedCatalogInput,
 ): Promise<ProductsCatalogPayload> {
@@ -572,14 +665,13 @@ async function loadWpCatalog(
     getHomeFlashSale(),
   ]);
   const tabs = buildTabs(buildTabCounts(taxonomy), taxonomy.categories);
+  const categoryTree = buildCategoryTree(taxonomy.categories);
   const categoryFilter = resolveCategorySlugs(taxonomy, input.selectedTypes);
-  const subcategoryFilter = categoryFilter.resolved.length === 1
-    ? resolveSubcategorySlugs(
-        taxonomy,
-        categoryFilter.resolved[0],
-        input.selectedSubcategories,
-      )
-    : { resolved: input.selectedSubcategories, unresolved: false };
+  const subcategoryFilter = resolveScopedSubcategories(
+    taxonomy,
+    categoryFilter.resolved,
+    input.selectedSubcategories,
+  );
 
   // Fail-closed: categoria pedida que não existe na taxonomia zera o catálogo, em
   // vez de o filtro ser ignorado. Taxonomia indisponível é OUTRA coisa — vira
@@ -594,10 +686,14 @@ async function loadWpCatalog(
 
     return buildEmptyPayload({
       tabs,
+      categories: categoryTree,
       selectedTypes: input.selectedTypes,
       activeType: input.activeType,
       activeCollection: input.activeCollection,
-      selectedSubcategories: subcategoryFilter.resolved,
+      // Ecoa o que foi PEDIDO, não o que sobrou: devolver a lista podada apagaria o
+      // filtro inválido dos controles da página, e a interação seguinte sairia do
+      // resultado vazio para a categoria inteira sem ninguém ter desmarcado nada.
+      selectedSubcategories: input.selectedSubcategories,
       minPrice: input.minPrice,
       maxPrice: input.maxPrice,
       perPage: input.perPage,
@@ -611,11 +707,24 @@ async function loadWpCatalog(
   };
 
   if (scopedInput.search) {
-    return loadSearchCatalog(scopedInput, categoryFilter.resolved, tabs, flashSaleCampaign);
+    return loadSearchCatalog(
+      scopedInput,
+      categoryFilter.resolved,
+      tabs,
+      categoryTree,
+      flashSaleCampaign,
+    );
   }
 
   const catalog = await loadWpCatalogItems(flashSaleCampaign);
-  return buildCatalogPayload(scopedInput, catalog.items, tabs, catalog.sourceStatus, taxonomy);
+  return buildCatalogPayload(
+    scopedInput,
+    catalog.items,
+    tabs,
+    categoryTree,
+    catalog.sourceStatus,
+    taxonomy,
+  );
 }
 
 function matchesCollection(
@@ -627,6 +736,73 @@ function matchesCollection(
   if (collection === "promocoes") return item.isOnSale;
   if (collection === "kits") return item.isKit;
   return true;
+}
+
+/**
+ * Confere o refinamento por subcategoria da categoria DO PRODUTO.
+ *
+ * Cada categoria é refinada de forma independente: quem não recebeu escopo nenhum
+ * passa inteira. Sem isso, refinar Sedas apagaria Piteiras da listagem.
+ */
+function matchesSubcategories(
+  item: ProductsCatalogItem,
+  input: NormalizedCatalogInput,
+  taxonomy?: Awaited<ReturnType<typeof getPapelitoTaxonomy>>,
+) {
+  const scoped = parseScopedSubcategories(input.selectedSubcategories);
+
+  if (scoped.invalid) {
+    return false;
+  }
+
+  const category = taxonomy?.categories.find((candidate) => candidate.slug === item.type);
+
+  if (!category) {
+    // Mocks não carregam a árvore; preservam a semântica antiga apenas nesse modo
+    // de desenvolvimento.
+    const wanted = scoped.byCategory.get(item.type) ?? scoped.bare;
+    return wanted.length === 0 || wanted.some((slug) => item.subcategories.includes(slug));
+  }
+
+  const branch = scoped.byCategory.get(category.slug);
+  const known = new Set(category.subcategories.map((subcategory) => subcategory.slug));
+
+  // Categoria sem escopo e sem slug solto não está sendo refinada — passa inteira.
+  if (!branch && scoped.bare.length === 0) {
+    return true;
+  }
+
+  // O slug solto vale para a categoria só se TODOS resolverem dentro dela. É a
+  // regra que o WordPress aplica no ramo (`papelito_taxonomy_category_branch`);
+  // filtrar o subconjunto conhecido faria a mesma URL responder diferente com e
+  // sem busca, porque só a busca passa pelo WordPress.
+  if (!branch && !scoped.bare.every((slug) => known.has(slug))) {
+    return false;
+  }
+
+  const wanted = branch ?? scoped.bare;
+
+  if (wanted.length === 0) {
+    return false;
+  }
+
+  const byFacet = new Map<string, string[]>();
+
+  for (const slug of wanted) {
+    const subcategory = category.subcategories.find((candidate) => candidate.slug === slug);
+    if (subcategory) {
+      byFacet.set(subcategory.facet, [...(byFacet.get(subcategory.facet) ?? []), slug]);
+    }
+  }
+
+  // Uma subcategoria escolhida que não pertence a esta categoria não é um passe
+  // livre para o item: cada faceta aplicável precisa casar.
+  return (
+    byFacet.size > 0 &&
+    [...byFacet.values()].every((slugs) =>
+      slugs.some((slug) => item.subcategories.includes(slug)),
+    )
+  );
 }
 
 function filterCatalogItems(
@@ -644,34 +820,8 @@ function filterCatalogItems(
     if (!matchesCollection(item, input.activeCollection)) {
       return false;
     }
-    if (input.selectedSubcategories.length > 0) {
-      const category = taxonomy?.categories.find((candidate) => candidate.slug === item.type);
-
-      if (!category) {
-        // Mocks não carregam a árvore; preservam a semântica antiga apenas
-        // nesse modo de desenvolvimento.
-        if (!input.selectedSubcategories.some((slug) => item.subcategories.includes(slug))) {
-          return false;
-        }
-      } else {
-        const byFacet = new Map<string, string[]>();
-
-        for (const slug of input.selectedSubcategories) {
-          const subcategory = category.subcategories.find((candidate) => candidate.slug === slug);
-          if (subcategory) {
-            byFacet.set(subcategory.facet, [...(byFacet.get(subcategory.facet) ?? []), slug]);
-          }
-        }
-
-        // Uma subcategoria escolhida que não pertence a esta categoria não é
-        // um passe livre para o item: cada faceta aplicável precisa casar.
-        if (
-          byFacet.size === 0 ||
-          [...byFacet.values()].some((slugs) => !slugs.some((slug) => item.subcategories.includes(slug)))
-        ) {
-          return false;
-        }
-      }
+    if (input.selectedSubcategories.length > 0 && !matchesSubcategories(item, input, taxonomy)) {
+      return false;
     }
     if (input.minPrice !== null && item.price < input.minPrice) {
       return false;
@@ -687,6 +837,7 @@ function buildCatalogPayload(
   input: NormalizedCatalogInput,
   items: ProductsCatalogItem[],
   tabs: ProductsCatalogTab[],
+  categories: ProductsCatalogCategory[],
   sourceStatus: CatalogSourceStatus,
   taxonomy?: Awaited<ReturnType<typeof getPapelitoTaxonomy>>,
 ): ProductsCatalogPayload {
@@ -699,6 +850,7 @@ function buildCatalogPayload(
   return {
     items: filteredItems.slice(start, start + input.perPage),
     tabs,
+    categories,
     selectedTypes: input.selectedTypes,
     minPrice: input.minPrice,
     maxPrice: input.maxPrice,
@@ -726,6 +878,7 @@ export async function getProductsCatalog(
       normalizedInput,
       catalog.items,
       catalog.tabs,
+      [],
       catalog.sourceStatus,
     );
   }

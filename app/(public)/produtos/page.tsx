@@ -6,6 +6,7 @@ import {
 import { useProductsCatalog } from "@/features/catalog";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
+  normalizeSubcategoryParam,
   readSingleQueryParam,
   resolveSelectedTypesFromParams,
 } from "@/features/catalog/utils/product-type-taxonomy";
@@ -21,6 +22,7 @@ interface ProdutosPageProps {
     | Promise<{
         tipo?: string | string[];
         tipos?: string | string[];
+        subcategoria?: string | string[];
         page?: string | string[];
         view?: string | string[];
         perPage?: string | string[];
@@ -31,6 +33,7 @@ interface ProdutosPageProps {
     | {
         tipo?: string | string[];
         tipos?: string | string[];
+        subcategoria?: string | string[];
         page?: string | string[];
         view?: string | string[];
         perPage?: string | string[];
@@ -76,6 +79,12 @@ export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProp
   const siteImagesPromise = getSiteImageAssets();
 
   const { queryType, selectedTypes } = resolveSelectedTypesFromParams(resolvedSearchParams);
+  // Sem categoria marcada não há o que refinar; cada categoria marcada carrega o
+  // próprio escopo em `categoria.subcategoria`.
+  const selectedSubcategories =
+    selectedTypes.length > 0
+      ? normalizeSubcategoryParam(resolvedSearchParams.subcategoria)
+      : [];
 
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(
@@ -94,6 +103,7 @@ export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProp
       useProductsCatalog({
         type: queryType,
         selectedTypes,
+        selectedSubcategories,
         minPrice,
         maxPrice,
         page: currentPage,
@@ -114,6 +124,8 @@ export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProp
         totalPages={catalog.totalPages}
         currentPage={catalog.currentPage}
         activeType={catalog.activeType}
+        categoryTree={catalog.categories}
+        selectedSubcategories={catalog.selectedSubcategories}
         selectedTypes={catalog.selectedTypes}
         minPrice={catalog.minPrice}
         maxPrice={catalog.maxPrice}

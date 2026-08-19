@@ -1,4 +1,5 @@
 import type { ProductTypeId } from "../types/products-catalog";
+import { SUBCATEGORY_SCOPE_SEPARATOR } from "./subcategory-selection";
 
 export type SpecificProductTypeId = Exclude<ProductTypeId, "todos">;
 type QueryParamValue = string | string[] | undefined;
@@ -121,8 +122,13 @@ export function resolveSelectedTypesFromParams(params: {
 /**
  * Le `?subcategoria=` (lista separada por virgula).
  *
- * Nao valida contra uma lista fixa: subcategoria vive no banco e nasce sem
- * deploy. Slug inexistente simplesmente nao casa com produto nenhum.
+ * Cada item é `categoria.subcategoria` — o slug de subcategoria é único dentro da
+ * categoria, não no catálogo, então sem o escopo refinar Sedas mexeria em Piteiras.
+ * O item sem escopo é aceito para não quebrar link antigo; o item escopado com
+ * metade vazia é preservado como pedido inválido, para a listagem cair fechada.
+ *
+ * Não valida contra uma lista fixa: subcategoria vive no banco e nasce sem deploy.
+ * Slug inexistente simplesmente não casa com produto nenhum.
  */
 export function normalizeSubcategoryParam(
   value: string | string[] | undefined,
@@ -130,8 +136,21 @@ export function normalizeSubcategoryParam(
   const raw = Array.isArray(value) ? value : value ? [value] : [];
   const resolved = raw
     .flatMap((part) => part.split(","))
-    .map((part) => normalizeTaxonomySlug(part))
-    .filter(isTaxonomySlug);
+    .flatMap((part) => {
+      const separator = part.indexOf(SUBCATEGORY_SCOPE_SEPARATOR);
+
+      if (separator < 0) {
+        const slug = normalizeTaxonomySlug(part);
+        return isTaxonomySlug(slug) ? [slug] : [];
+      }
+
+      const category = normalizeTaxonomySlug(part.slice(0, separator));
+      const slug = normalizeTaxonomySlug(part.slice(separator + 1));
+
+      // Metade vazia sobrevive de propósito, com o separador: é o que faz o
+      // servidor cair fechado em vez de tratar filtro quebrado como filtro ausente.
+      return [`${category}${SUBCATEGORY_SCOPE_SEPARATOR}${slug}`];
+    });
 
   return Array.from(new Set(resolved));
 }

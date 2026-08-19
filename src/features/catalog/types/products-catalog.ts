@@ -63,6 +63,26 @@ export interface ProductsCollectionsSummary {
   promotionsMaxDiscountPercent: number;
 }
 
+/** Subcategoria da taxonomia Papelito, no recorte que a vitrine precisa. */
+export interface ProductsCatalogSubcategory {
+  slug: string;
+  name: string;
+  /** Agrupador da subcategoria. Filtro aplica OR dentro da faceta e AND entre facetas. */
+  facet: string;
+}
+
+/**
+ * Categoria com a árvore de subcategorias, para a UI montar o filtro hierárquico.
+ *
+ * Vem da taxonomia Papelito, não de uma lista no bundle: subcategoria nasce no
+ * banco e não pode exigir deploy para aparecer no filtro.
+ */
+export interface ProductsCatalogCategory {
+  slug: string;
+  name: string;
+  subcategories: ProductsCatalogSubcategory[];
+}
+
 export interface ProductsCatalogTab {
   id: ProductTypeId;
   label: string;
@@ -72,6 +92,7 @@ export interface ProductsCatalogTab {
 export interface ProductsCatalogPayload {
   items: ProductsCatalogItem[];
   tabs: ProductsCatalogTab[];
+  categories: ProductsCatalogCategory[];
   selectedTypes: Exclude<ProductTypeId, "todos">[];
   minPrice: number | null;
   maxPrice: number | null;

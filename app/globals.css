@@ -179,7 +179,49 @@ a:hover .menu-underline path:nth-child(3),
     }
 }
 
+/**
+ * Revelação das subcategorias: a lista cresce de cima para baixo em vez de aparecer
+ * de uma vez. `grid-template-rows: 0fr -> 1fr` anima altura sem depender de JS nem
+ * de altura fixa, o que importa porque o filtro é renderizado no servidor.
+ */
+@keyframes filter-subtree-open {
+    from {
+        grid-template-rows: 0fr;
+    }
+    to {
+        grid-template-rows: 1fr;
+    }
+}
+
+@keyframes filter-subtree-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @layer utilities {
+    .animate-filter-subtree {
+        display: grid;
+        grid-template-rows: 1fr;
+        animation: filter-subtree-open 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .animate-filter-subtree > * {
+        animation: filter-subtree-reveal 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .animate-filter-subtree,
+        .animate-filter-subtree > * {
+            animation: none;
+        }
+    }
+
     .animate-marquee {
         animation: marquee 50s linear infinite;
     }

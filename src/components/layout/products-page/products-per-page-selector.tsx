@@ -13,6 +13,7 @@ interface ProductsPerPageSelectorProps {
   basePath?: string;
   collection?: ProductCollectionId;
   selectedTypes: SpecificType[];
+  selectedSubcategories?: string[];
   minPrice: number | null;
   maxPrice: number | null;
   viewMode: ProductsViewMode;
@@ -26,6 +27,7 @@ export function ProductsPerPageSelector({
   basePath = "/produtos",
   collection = "todos",
   selectedTypes,
+  selectedSubcategories = [],
   minPrice,
   maxPrice,
   viewMode,
@@ -49,6 +51,7 @@ export function ProductsPerPageSelector({
               basePath,
               collection,
               selectedTypes,
+              selectedSubcategories,
               minPrice,
               maxPrice,
               viewMode,

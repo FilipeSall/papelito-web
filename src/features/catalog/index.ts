@@ -19,8 +19,10 @@ export type {
   CatalogSourceStatus,
   ProductCollectionId,
   ProductTypeId,
+  ProductsCatalogCategory,
   ProductsCatalogItem,
   ProductsCatalogPayload,
+  ProductsCatalogSubcategory,
   ProductsCatalogTab,
   ProductsCollectionsSummary,
 } from "./types/products-catalog";

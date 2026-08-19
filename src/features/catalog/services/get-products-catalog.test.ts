@@ -711,3 +711,208 @@ describe("getProductsCatalog — campanha relâmpago", () => {
     expect(payload.items.every((item) => item.price === 90)).toBe(true);
   });
 });
+
+describe("árvore de categorias no payload", () => {
+  it("expõe as subcategorias da taxonomia, para o filtro lateral montar a hierarquia", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({});
+    const sedas = payload.categories.find((category) => category.slug === "sedas");
+
+    expect(sedas?.name).toBe("Sedas");
+    expect(sedas?.subcategories).toEqual([
+      { facet: "material", name: "Tradicional", slug: "tradicional" },
+      { facet: "material", name: "Brown", slug: "brown" },
+      { facet: "formato", name: "Slim", slug: "slim" },
+      { facet: "formato", name: "King Size", slug: "king-size" },
+    ]);
+  });
+
+  it("categoria sem subcategoria vem com lista vazia, não ausente", async () => {
+    categories = PAPELITO_CATEGORIES.map((category) =>
+      category.slug === "acessorios" ? { ...category, subcategories: [] } : category,
+    );
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({});
+
+    expect(
+      payload.categories.find((category) => category.slug === "acessorios")?.subcategories,
+    ).toEqual([]);
+  });
+
+  it("a árvore acompanha as abas, mesmo quando o filtro zera a listagem", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({ selectedTypes: ["nao-existe"] });
+
+    expect(payload.totalItems).toBe(0);
+    expect(payload.categories.map((category) => category.slug)).toEqual(
+      payload.tabs.filter((tab) => tab.id !== "todos").map((tab) => tab.id),
+    );
+  });
+
+  it("filtra por subcategoria dentro da categoria pedida", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const semFiltro = await getProductsCatalog({ perPage: 60, selectedTypes: ["sedas"] });
+    const comFiltro = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["sedas.brown"],
+    });
+
+    expect(comFiltro.selectedSubcategories).toEqual(["sedas.brown"]);
+    expect(comFiltro.totalItems).toBeLessThanOrEqual(semFiltro.totalItems);
+    expect(comFiltro.items.every((item) => item.subcategories.includes("brown"))).toBe(true);
+  });
+});
+
+describe("refinamento por subcategoria com várias categorias", () => {
+  /**
+   * `slim` existe em Sedas e em Piteiras. Sem o escopo por categoria, refinar uma
+   * apagaria a outra da listagem — ou, pior, refinaria as duas pelo mesmo slug.
+   */
+  it("refinar uma categoria preserva a outra inteira", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const duas = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas", "piteiras"],
+    });
+    const refinada = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas", "piteiras"],
+      selectedSubcategories: ["sedas.brown"],
+    });
+
+    const piteirasAntes = duas.items.filter((item) => item.type === "piteiras");
+    const piteirasDepois = refinada.items.filter((item) => item.type === "piteiras");
+
+    expect(piteirasDepois.map((item) => item.id)).toEqual(
+      piteirasAntes.map((item) => item.id),
+    );
+    expect(
+      refinada.items
+        .filter((item) => item.type === "sedas")
+        .every((item) => item.subcategories.includes("brown")),
+    ).toBe(true);
+  });
+
+  it("cada categoria é refinada pelo próprio escopo", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas", "piteiras"],
+      selectedSubcategories: ["sedas.brown", "piteiras.slim"],
+    });
+
+    expect(payload.selectedSubcategories).toEqual(["sedas.brown", "piteiras.slim"]);
+    expect(
+      payload.items.every((item) =>
+        item.type === "sedas"
+          ? item.subcategories.includes("brown")
+          : item.subcategories.includes("slim"),
+      ),
+    ).toBe(true);
+  });
+
+  it("escopo de categoria não selecionada zera o catálogo", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["piteiras.slim"],
+    });
+
+    // Fail-closed: pedido inválido não pode virar "mostre tudo".
+    expect(payload.totalItems).toBe(0);
+  });
+
+  it("escopo com subcategoria inexistente zera o catálogo", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["sedas.nao-existe"],
+    });
+
+    expect(payload.totalItems).toBe(0);
+  });
+
+  it("escopo malformado zera o catálogo em vez de abrir o filtro", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["sedas."],
+    });
+
+    expect(payload.totalItems).toBe(0);
+  });
+
+  /**
+   * O estado inválido precisa sobreviver à próxima interação: ecoar a lista podada
+   * apagaria o filtro dos controles, e aplicar preço sairia do resultado vazio para
+   * a categoria inteira sem ninguém ter desmarcado nada.
+   */
+  it("o payload vazio ecoa o filtro pedido, não o que sobrou dele", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["sedas.nao-existe"],
+    });
+
+    expect(payload.totalItems).toBe(0);
+    expect(payload.selectedSubcategories).toEqual(["sedas.nao-existe"]);
+  });
+
+  /**
+   * O WordPress derruba o ramo inteiro quando um slug solto não resolve na
+   * categoria. Filtrar só o subconjunto conhecido faria a MESMA URL responder
+   * diferente com e sem busca, porque só a busca passa pelo WordPress.
+   */
+  it("slug sem escopo só vale para a categoria que resolve todos eles", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const payload = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas", "piteiras"],
+      selectedSubcategories: ["brown", "slim"],
+    });
+
+    // `brown` não existe em Piteiras: o ramo dela cai fora inteiro, como no SQL.
+    expect(payload.items.every((item) => item.type === "sedas")).toBe(true);
+    expect(
+      payload.items.every(
+        (item) =>
+          item.subcategories.includes("brown") && item.subcategories.includes("slim"),
+      ),
+    ).toBe(true);
+  });
+
+  /** Link antigo, sem escopo, continua resolvendo dentro da categoria pedida. */
+  it("aceita o slug sem escopo do formato antigo", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const antigo = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["brown"],
+    });
+    const novo = await getProductsCatalog({
+      perPage: 60,
+      selectedTypes: ["sedas"],
+      selectedSubcategories: ["sedas.brown"],
+    });
+
+    expect(antigo.items.map((item) => item.id)).toEqual(novo.items.map((item) => item.id));
+  });
+});
+

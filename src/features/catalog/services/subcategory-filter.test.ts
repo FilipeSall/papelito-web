@@ -27,10 +27,23 @@ describe("parâmetro de subcategoria no catálogo", () => {
 
   it("descarta slug com formato inválido", async () => {
     const payload = await getProductsCatalog({
-      selectedSubcategories: ["brown", "NÃO VALE", "../etc", "king_size", ""],
+      selectedSubcategories: ["brown", "NÃO VALE", "king_size", ""],
     });
 
     expect(payload.selectedSubcategories).toEqual(["brown"]);
+  });
+
+  /**
+   * Escopo quebrado é pedido inválido, não item a ignorar: descartar devolveria a
+   * categoria inteira, que é o oposto do fail-closed.
+   */
+  it("escopo malformado zera o catálogo em vez de abrir o filtro", async () => {
+    const payload = await getProductsCatalog({
+      selectedSubcategories: ["brown", "../etc"],
+    });
+
+    expect(payload.totalItems).toBe(0);
+    expect(payload.selectedSubcategories).toContain("../etc");
   });
 
   it("normaliza caixa e espaço", async () => {

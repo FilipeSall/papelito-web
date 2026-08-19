@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { buildProductsHref } from "./products-query-helpers";
-import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
-import { toCategoryDisplayLabel } from "@/features/catalog/utils/category-label";
+import { CategoryFilterTree, type CategoryFilterOption } from "./category-filter-tree";
+import type {
+  ProductCollectionId,
+  ProductTypeId,
+  ProductsCatalogCategory,
+} from "@/features/catalog";
 import type { ProductsViewMode } from "@/features/catalog/utils/products-listing-preferences";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
@@ -9,10 +13,7 @@ type SpecificType = Exclude<ProductTypeId, "todos">;
 /**
  * Categoria de filtro disponível.
  */
-interface FilterCategory {
-  id: ProductTypeId;
-  label: string;
-}
+type FilterCategory = CategoryFilterOption;
 
 /**
  * Lista de categorias padrão para o filtro.
@@ -59,54 +60,6 @@ function PriceRangeInput({ label, value, invalid, name, placeholder, variant }: 
   );
 }
 
-interface CategoryCheckboxProps {
-  category: FilterCategory;
-  checked: boolean;
-  href: string;
-  variant: "default" | "collection";
-}
-
-function CheckboxIndicator({ checked, variant }: { checked: boolean; variant: "default" | "collection" }) {
-  return (
-    <span
-      className={`inline-flex h-4 w-4 items-center justify-center transition-colors ${
-        variant === "collection" ? "border-2 rounded-none" : "border rounded"
-      } ${
-        checked
-          ? variant === "collection" ? "border-[#1a1a1a] bg-brand-dark" : "border-brand-dark bg-brand-dark"
-          : variant === "collection" ? "border-[#1a1a1a] bg-white group-hover:bg-brand-yellow" : "border-gray-300 bg-white group-hover:border-brand-dark"
-      }`}
-      aria-hidden
-    >
-      {checked ? (
-        <svg viewBox="0 0 16 16" className={`h-3 w-3 ${variant === "collection" ? "text-brand-yellow" : "text-white"}`} fill="none">
-          <path
-            d="M3.2 8.2L6.2 11.2L12.8 4.8"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
-    </span>
-  );
-}
-
-/**
- * Checkbox de categoria com navegação server-side.
- */
-function CategoryCheckbox({ category, checked, href, variant }: CategoryCheckboxProps) {
-  return (
-    <Link href={href} className="group flex items-center gap-2 cursor-pointer">
-      <CheckboxIndicator checked={checked} variant={variant} />
-      <span className={`text-sm text-text-secondary group-hover:text-brand-dark transition-colors ${variant === "collection" ? "font-bold" : ""}`}>
-        {toCategoryDisplayLabel(category.label)}
-      </span>
-    </Link>
-  );
-}
-
 interface ProductFilterSidebarProps {
   basePath?: string;
   collection?: ProductCollectionId;
@@ -120,28 +73,16 @@ interface ProductFilterSidebarProps {
   rawMaxPrice?: string | null;
   /** Lista de categorias para filtro */
   categories?: FilterCategory[];
+  /** Árvore de subcategorias por categoria, vinda da taxonomia Papelito. */
+  categoryTree?: ProductsCatalogCategory[];
   /** Categorias selecionadas via query params */
   selectedTypes: SpecificType[];
+  /** Subcategorias selecionadas via `?subcategoria=` */
+  selectedSubcategories?: string[];
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
   variant?: "default" | "collection";
-}
-
-function getToggledSelection(current: SpecificType[], target: ProductTypeId) {
-  if (target === "todos") {
-    return [] as SpecificType[];
-  }
-
-  const currentSet = new Set(current);
-
-  if (currentSet.has(target)) {
-    currentSet.delete(target);
-  } else {
-    currentSet.add(target);
-  }
-
-  return Array.from(currentSet) as SpecificType[];
 }
 
 function buildHrefFromSelection(
@@ -181,14 +122,14 @@ export function ProductFilterSidebar({
   rawMinPrice,
   rawMaxPrice,
   categories = DEFAULT_CATEGORIES,
+  categoryTree = [],
   selectedTypes,
+  selectedSubcategories = [],
   viewMode,
   perPage,
   search,
   variant = "default",
 }: ProductFilterSidebarProps) {
-  const isTodosChecked = selectedTypes.length === 0;
-
   return (
     <aside className="w-full md:w-56 shrink-0">
       <div className={`bg-white p-4 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none" : "rounded-xl border border-gray-100"}`}>
@@ -211,6 +152,9 @@ export function ProductFilterSidebar({
             ) : null}
             {selectedTypes.length > 1 ? (
               <input type="hidden" name="tipos" value={selectedTypes.join(",")} />
+            ) : null}
+            {selectedSubcategories.length > 0 ? (
+              <input type="hidden" name="subcategoria" value={selectedSubcategories.join(",")} />
             ) : null}
             {viewMode === "list" ? <input type="hidden" name="view" value="list" /> : null}
             <input type="hidden" name="perPage" value={String(perPage)} />
@@ -256,35 +200,20 @@ export function ProductFilterSidebar({
           <h4 className={`text-xs text-text-muted uppercase tracking-wide mb-3 ${variant === "collection" ? "font-black" : "font-medium"}`}>
             Categorias
           </h4>
-          <div className="flex flex-col gap-2.5">
-            {categories.map((category) => {
-              const checked =
-                category.id === "todos"
-                  ? isTodosChecked
-                  : selectedTypes.includes(category.id as SpecificType);
-
-              const nextSelection = getToggledSelection(selectedTypes, category.id);
-
-              return (
-                <CategoryCheckbox
-                  key={category.id}
-                  category={category}
-                  checked={checked}
-                  variant={variant}
-                  href={buildHrefFromSelection(
-                    basePath,
-                    collection,
-                    nextSelection,
-                    minPrice,
-                    maxPrice,
-                    viewMode,
-                    perPage,
-                    search,
-                  )}
-                />
-              );
-            })}
-          </div>
+          <CategoryFilterTree
+            basePath={basePath}
+            categoryTree={categoryTree}
+            collection={collection}
+            maxPrice={maxPrice}
+            minPrice={minPrice}
+            options={categories}
+            perPage={perPage}
+            search={search}
+            selectedSubcategories={selectedSubcategories}
+            selectedTypes={selectedTypes}
+            variant={variant}
+            viewMode={viewMode}
+          />
         </div>
 
         {/* Divider */}

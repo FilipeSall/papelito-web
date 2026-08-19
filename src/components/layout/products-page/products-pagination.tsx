@@ -9,6 +9,7 @@ interface ProductsPaginationProps {
   currentPage: number;
   totalPages: number;
   selectedTypes: Exclude<ProductTypeId, "todos">[];
+  selectedSubcategories?: string[];
   minPrice: number | null;
   maxPrice: number | null;
   viewMode: ProductsViewMode;
@@ -61,6 +62,7 @@ export function ProductsPagination({
   currentPage,
   totalPages,
   selectedTypes,
+  selectedSubcategories = [],
   minPrice,
   maxPrice,
   viewMode,
@@ -89,6 +91,7 @@ export function ProductsPagination({
                 collection,
                 page: currentPage - 1,
                 selectedTypes,
+                selectedSubcategories,
                 minPrice,
                 maxPrice,
                 viewMode,
@@ -128,6 +131,7 @@ export function ProductsPagination({
               collection,
               page: item,
               selectedTypes,
+              selectedSubcategories,
               minPrice,
               maxPrice,
               viewMode,
@@ -154,6 +158,7 @@ export function ProductsPagination({
                 collection,
                 page: currentPage + 1,
                 selectedTypes,
+                selectedSubcategories,
                 minPrice,
                 maxPrice,
                 viewMode,
