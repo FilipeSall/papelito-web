@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { AddToCartButton, ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
+import {
+  AddToCartButton,
+  ImageWithSkeleton,
+  ProductImageFallback,
+} from "@/components/ui";
 import { useProductAvailability } from "@/features/catalog/hooks/use-product-availability";
 
 /**
@@ -21,6 +25,7 @@ export interface ProductGridItem {
   price: number;
   /** Caminho da imagem */
   image?: string;
+  href?: string;
   promotionContext?: string;
 }
 
@@ -55,27 +60,32 @@ export function ProductGridCard({
   product,
   variant = "default",
 }: Readonly<ProductGridCardProps>) {
-  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
+  const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(
+    product.id,
+  );
   const {
     category,
     name,
     originalPrice,
     price,
     image,
+    href,
     promotionContext,
   } = product;
 
   return (
-    <article className={`group/availability relative cursor-pointer overflow-visible bg-white ${
-      variant === "collection"
-        ? "border-2 border-[#1a1a1a] transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1a1a1a]"
-        : "rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md"
-    }`}>
+    <article
+      className={`group/availability relative cursor-pointer overflow-visible bg-white ${
+        variant === "collection"
+          ? "border-2 border-[#1a1a1a] transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1a1a1a]"
+          : "rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition-shadow hover:shadow-md"
+      }`}
+    >
       <div
         className={`overflow-hidden ${variant === "default" ? "rounded-xl " : ""}${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
       >
         <Link
-          href={`/produtos/${product.id}`}
+          href={href ?? `/produtos/${product.id}`}
           aria-label={`Ver produto ${name}`}
           className={`absolute inset-0 z-10 ${
             variant === "collection"
@@ -111,23 +121,63 @@ export function ProductGridCard({
         {/* Product Info */}
         <div className={variant === "collection" ? "p-3" : "p-4"}>
           {/* Category */}
-          <span className={variant === "collection" ? "text-[9px] font-black uppercase tracking-[0.1em] text-text-muted" : "text-xs text-text-muted"}>{category}</span>
+          <span
+            className={
+              variant === "collection"
+                ? "text-[9px] font-black uppercase tracking-[0.1em] text-text-muted"
+                : "text-xs text-text-muted"
+            }
+          >
+            {category}
+          </span>
 
           {/* Name */}
-          <h3 className={variant === "collection" ? "mt-1 line-clamp-1 text-xs font-black uppercase text-brand-dark" : "mt-0.5 line-clamp-1 text-sm font-bold text-brand-dark"}>
+          <h3
+            className={
+              variant === "collection"
+                ? "mt-1 line-clamp-1 text-xs font-black uppercase text-brand-dark"
+                : "mt-0.5 line-clamp-1 text-sm font-bold text-brand-dark"
+            }
+          >
             {name}
           </h3>
 
-          <p className={variant === "collection" ? "mt-1 text-[10px] text-text-muted" : "mt-1.5 text-xs text-text-muted"}>{stockLabel}</p>
+          <p
+            className={
+              variant === "collection"
+                ? "mt-1 text-[10px] text-text-muted"
+                : "mt-1.5 text-xs text-text-muted"
+            }
+          >
+            {stockLabel}
+          </p>
 
           {/* Price and Add Button */}
-          <div className={variant === "collection" ? "mt-2 flex items-center justify-between gap-2" : "mt-3 flex items-center justify-between"}>
+          <div
+            className={
+              variant === "collection"
+                ? "mt-2 flex items-center justify-between gap-2"
+                : "mt-3 flex items-center justify-between"
+            }
+          >
             <div className="flex flex-col">
-              <span className={variant === "collection" ? "text-sm font-black text-brand-dark" : "text-base font-bold text-brand-dark"}>
+              <span
+                className={
+                  variant === "collection"
+                    ? "text-sm font-black text-brand-dark"
+                    : "text-base font-bold text-brand-dark"
+                }
+              >
                 R$ {price.toFixed(2).replace(".", ",")}
               </span>
               {originalPrice > price ? (
-                <span className={variant === "collection" ? "text-[10px] text-text-muted line-through" : "text-xs text-text-muted line-through"}>
+                <span
+                  className={
+                    variant === "collection"
+                      ? "text-[10px] text-text-muted line-through"
+                      : "text-xs text-text-muted line-through"
+                  }
+                >
                   R$ {originalPrice.toFixed(2).replace(".", ",")}
                 </span>
               ) : null}
@@ -135,7 +185,11 @@ export function ProductGridCard({
 
             <AddToCartButton
               label="Adicionar"
-              className={variant === "collection" ? "relative z-20 h-7 min-w-0 w-auto px-2" : "relative z-20 min-w-26 w-auto px-3"}
+              className={
+                variant === "collection"
+                  ? "relative z-20 h-7 min-w-0 w-auto px-2"
+                  : "relative z-20 min-w-26 w-auto px-3"
+              }
               disabledReason={disabledReason}
               variant={variant}
               product={{

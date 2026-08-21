@@ -48,6 +48,6 @@ describe("ProductCollectionFilters", () => {
 
     const kits = screen.getByRole("link", { name: /kits/i });
 
-    expect(kits).toHaveAttribute("href", "/produtos?colecao=kits&perPage=24");
+    expect(kits).toHaveAttribute("href", "/kits");
   });
 });

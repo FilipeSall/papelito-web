@@ -65,7 +65,7 @@ export function ProductCollectionFilters({
         return (
           <Link
             key={collection.id}
-            href={buildProductsHref({
+            href={collection.id === "kits" ? "/kits" : buildProductsHref({
               basePath,
               collection: collection.id,
               selectedTypes: [],

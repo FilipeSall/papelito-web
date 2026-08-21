@@ -17,7 +17,6 @@ const FACET_LABELS: Record<string, string> = {
 };
 
 const COLLECTION_LABELS: Record<string, string> = {
-  kits: "Kits",
   premium: "Premium",
 };
 
@@ -181,7 +180,7 @@ export function TaxonomyPicker({
             label="Coleções"
           />
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            {collections.map((slug) => (
+            {collections.filter((slug) => slug === "premium").map((slug) => (
               <label
                 className="flex cursor-pointer items-center gap-2 text-sm leading-5 text-[#231f20] transition hover:text-[#8b3f2d]"
                 key={slug}

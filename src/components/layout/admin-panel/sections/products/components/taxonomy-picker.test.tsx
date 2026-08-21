@@ -156,11 +156,11 @@ describe("TaxonomyPicker", () => {
     expect(onToggleSubcategory).toHaveBeenCalledWith("12");
   });
 
-  it("lista as coleções curadas", () => {
+  it("mantém apenas Premium entre as coleções curadas", () => {
     renderPicker({ selectedCategoryId: "1" });
 
     expect(screen.getByRole("checkbox", { name: "Premium" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Kits" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /kits/i })).not.toBeInTheDocument();
   });
 
   it("não oferece categoria arquivada", () => {
