@@ -17,6 +17,10 @@ describe("mapStatus (customer order status)", () => {
     expect(mapStatus("aguardando_envio")).toBe("awaiting_shipment");
   });
 
+  it("shows a paid order without a renewed stock reservation as under review", () => {
+    expect(mapStatus("aguardando_estoque")).toBe("stock_review");
+  });
+
   it("preserves the downstream fulfillment statuses", () => {
     expect(mapStatus("em_separacao")).toBe("picking");
     expect(mapStatus("enviado")).toBe("shipped");

@@ -26,6 +26,7 @@ import { VendorOrdersTableRow } from "./vendor-orders-table-row";
 const statusFilters: Array<[VendorOrderStatus | "all", string]> = [
   ["all", "Todos"],
   ["aguardando_pagamento", "Aguardando pagamento"],
+  ["aguardando_estoque", "Análise de estoque"],
   ["aguardando_envio", "Aguardando envio"],
   ["em_separacao", "Separação"],
   ["enviado", "Enviados"],

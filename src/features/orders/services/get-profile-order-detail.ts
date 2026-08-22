@@ -14,6 +14,7 @@ import type {
 } from "../types/profile-order-detail";
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
+import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 
 type WpProfileShipment = {
   id?: number;
@@ -88,6 +89,8 @@ type WpProfileOrdersList = {
 
 export function mapStatus(status: string | undefined): OrderStatus {
   switch (status) {
+    case "aguardando_estoque":
+      return "stock_review";
     case "aguardando_envio":
       return "awaiting_shipment";
     case "em_separacao":
@@ -201,6 +204,29 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
         id: "cancelled",
         state: "current",
         title: "Atendimento cancelado",
+      },
+    ];
+  }
+
+  if (status === "stock_review") {
+    return [
+      {
+        description: "O pedido foi registrado na plataforma.",
+        id: "received",
+        state: "done",
+        title: "Pedido realizado",
+      },
+      {
+        description: "Pagamento confirmado.",
+        id: "payment",
+        state: "done",
+        title: "Pagamento confirmado",
+      },
+      {
+        description: "O estoque está sendo confirmado para definir o próximo passo do atendimento.",
+        id: "stock_review",
+        state: "current",
+        title: "Análise de estoque",
       },
     ];
   }
@@ -325,7 +351,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
           code: trackingCode,
           estimatedDeliveryLabel:
             Number(order.delivery_time_days) > 0
-              ? `${Number(order.delivery_time_days)} dias úteis`
+              ? formatBusinessDays(Number(order.delivery_time_days))
               : "Prazo não informado",
         }
       : null,

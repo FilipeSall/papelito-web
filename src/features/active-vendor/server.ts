@@ -1,6 +1,6 @@
 import "server-only";
 
-export { getActiveVendor } from "./services/get-active-vendor";
+export { getActiveVendor, getActiveVendorFresh } from "./services/get-active-vendor";
 export type { ActiveVendorResult } from "./services/get-active-vendor";
 export { setActiveVendor } from "./services/set-active-vendor";
 export type { SetActiveVendorResult } from "./services/set-active-vendor";

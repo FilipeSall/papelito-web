@@ -128,6 +128,12 @@ function normalizePersistedItem(value: unknown): CartItem | null {
       typeof value.promotionContext === "string" && value.promotionContext.length > 0
         ? value.promotionContext
         : undefined,
+    pricingDiscountSource:
+      value.pricingDiscountSource === "coupon" ||
+      value.pricingDiscountSource === "flash_sale" ||
+      value.pricingDiscountSource === "none"
+        ? value.pricingDiscountSource
+        : undefined,
   };
 }
 
@@ -173,8 +179,15 @@ function normalizePersistedState(value: unknown): Partial<CartState> {
         .filter((item): item is CartItem => item !== null)
     : [];
   const coupon = normalizePersistedCoupon(value.coupon);
+  const normalizedItems = coupon
+    ? items.map((item) =>
+        item.pricingDiscountSource === undefined && item.originalPrice !== undefined && item.price < item.originalPrice
+          ? { ...item, price: item.originalPrice, pricingDiscountSource: "none" as const }
+          : item,
+      )
+    : items;
 
-  return { items, coupon };
+  return { items: normalizedItems, coupon };
 }
 
 function buildCartItemsPayload(items: CartItem[]) {
@@ -193,6 +206,18 @@ function buildCartItemsPayload(items: CartItem[]) {
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 }
 
+function clearCouponLinePrices(items: CartItem[]): CartItem[] {
+  return items.map((item) =>
+    item.pricingDiscountSource === "coupon"
+      ? {
+          ...item,
+          price: item.originalPrice ?? item.price,
+          pricingDiscountSource: "none",
+        }
+      : item,
+  );
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -208,13 +233,13 @@ export const useCartStore = create<CartState>()(
         };
 
         set((state) => ({
-          items: upsertItem(state.items, normalizedProduct, quantity),
+          items: upsertItem(clearCouponLinePrices(state.items), normalizedProduct, quantity),
           pricing: null,
         }));
       },
       applyVendorToCart: (vendor) => {
         set((state) => ({
-          items: state.items.map((item) => ({
+          items: clearCouponLinePrices(state.items).map((item) => ({
             ...item,
             ...vendor,
           })),
@@ -223,7 +248,7 @@ export const useCartStore = create<CartState>()(
       },
       decreaseItem: (productId) => {
         set((state) => ({
-          items: state.items
+          items: clearCouponLinePrices(state.items)
             .map((item) =>
               item.id === productId
                 ? { ...item, quantity: Math.max(0, item.quantity - 1) }
@@ -242,7 +267,7 @@ export const useCartStore = create<CartState>()(
         }
 
         set((state) => ({
-          items: state.items.map((currentItem) =>
+          items: clearCouponLinePrices(state.items).map((currentItem) =>
             currentItem.id === productId
               ? { ...currentItem, quantity: safeQuantity }
               : currentItem,
@@ -254,7 +279,7 @@ export const useCartStore = create<CartState>()(
       },
       removeItem: (productId) => {
         set((state) => ({
-          items: state.items.filter((item) => item.id !== productId),
+          items: clearCouponLinePrices(state.items).filter((item) => item.id !== productId),
           pricing: null,
         }));
       },
@@ -270,7 +295,7 @@ export const useCartStore = create<CartState>()(
       applyCoupon: async (code) => {
         const trimmed = code.trim();
         if (!trimmed) {
-          set({ coupon: null });
+          set((state) => ({ coupon: null, items: clearCouponLinePrices(state.items), pricing: null }));
           return {
             ok: false,
             status: 422,
@@ -282,7 +307,7 @@ export const useCartStore = create<CartState>()(
         const result = await applyCouponClient(trimmed, buildCartItemsPayload(get().items));
 
         if (result.ok) {
-          set({
+          set((state) => ({
             coupon: {
               code: result.code,
               discountValue: result.discountValue,
@@ -291,10 +316,11 @@ export const useCartStore = create<CartState>()(
               applied: result.applied ?? (result.discountValue > 0),
               message: result.message,
             },
+            items: clearCouponLinePrices(state.items),
             pricing: null,
-          });
+          }));
         } else {
-          set({ coupon: null });
+          set((state) => ({ coupon: null, items: clearCouponLinePrices(state.items), pricing: null }));
         }
 
         return result;
@@ -307,14 +333,14 @@ export const useCartStore = create<CartState>()(
 
         const cartItems = buildCartItemsPayload(get().items);
         if (cartItems.length === 0) {
-          set({ coupon: null });
+          set((state) => ({ coupon: null, items: clearCouponLinePrices(state.items), pricing: null }));
           return { revalidated: true, removed: true, reason: "empty_cart" };
         }
 
         const result = await applyCouponClient(current.code, cartItems);
 
         if (result.ok) {
-          set({
+          set((state) => ({
             coupon: {
               code: result.code,
               discountValue: result.discountValue,
@@ -323,16 +349,21 @@ export const useCartStore = create<CartState>()(
               applied: result.applied ?? (result.discountValue > 0),
               message: result.message,
             },
+            items: clearCouponLinePrices(state.items),
             pricing: null,
-          });
+          }));
           return { revalidated: true, removed: false };
         }
 
-        set({ coupon: null });
+        set((state) => ({ coupon: null, items: clearCouponLinePrices(state.items), pricing: null }));
         return { revalidated: true, removed: true, reason: result.errorCode };
       },
       removeCoupon: () => {
-        set({ coupon: null, pricing: null });
+        set((state) => ({
+          coupon: null,
+          items: clearCouponLinePrices(state.items),
+          pricing: null,
+        }));
       },
       applyPricingQuote: (quote) => {
         const linesByProductId = new Map(
@@ -350,6 +381,7 @@ export const useCartStore = create<CartState>()(
               ...item,
               price: line.totalCents / Math.max(1, line.qty) / 100,
               originalPrice: line.subtotalCents / Math.max(1, line.qty) / 100,
+              pricingDiscountSource: line.discountSource,
               promotionContext: line.promotionContext || undefined,
             };
           }),
@@ -378,7 +410,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "papelito-cart-store",
-      version: 4,
+      version: 5,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)

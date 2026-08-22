@@ -14,6 +14,7 @@ import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutField } from "./checkout-field";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
+import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 
 type ShippingStatus = "idle" | "loading" | "success" | "error";
 type ShippingQuoteKey = readonly [
@@ -169,6 +170,15 @@ export function CheckoutAddressStepContent({
   const shouldBlockForShipping =
     shouldQuoteShipping && (shippingStatus !== "success" || !selectedShippingQuote);
   const showShippingLoadingFeedback = shouldQuoteShipping && shippingStatus === "loading";
+  // Botão desabilitado sem explicação deixava o comprador olhando para um controle cinza sem
+  // saber o que faltava — endereço incompleto e frete não escolhido são indistinguíveis.
+  const blockedReason = !isFormValid
+    ? "Preencha CEP, rua, número, bairro, cidade e estado para continuar."
+    : shouldBlockForShipping
+      ? showShippingLoadingFeedback
+        ? "Aguarde a cotação do frete terminar."
+        : "Escolha uma opção de entrega para continuar."
+      : null;
 
   async function handleAdvance() {
     router.push("/checkout/pagamento");
@@ -296,7 +306,7 @@ export function CheckoutAddressStepContent({
                           ) : null}
                           <span className="block text-xs text-text-tertiary">
                             {option.deliveryTime
-                              ? `${option.deliveryTime} dias úteis`
+                              ? formatBusinessDays(option.deliveryTime)
                               : "Prazo sob consulta"}
                           </span>
                         </span>
@@ -318,6 +328,12 @@ export function CheckoutAddressStepContent({
                 message="Carregando opções de entrega..."
                 size="sm"
               />
+            ) : null}
+
+            {blockedReason ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                {blockedReason}
+              </p>
             ) : null}
 
             <button

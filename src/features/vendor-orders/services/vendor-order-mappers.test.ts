@@ -15,6 +15,7 @@ describe("isVendorOrderStatus", () => {
   it("accepts every known vendor order status", () => {
     for (const status of [
       "aguardando_pagamento",
+      "aguardando_estoque",
       "aguardando_envio",
       "em_separacao",
       "enviado",

@@ -37,7 +37,7 @@ export function computeDeliveryCountdown({
   deliveryTimeDays: number;
   now: number;
 }): DeliveryCountdown {
-  if (status === "cancelado") return { kind: "hidden" };
+  if (status === "cancelado" || status === "aguardando_estoque") return { kind: "hidden" };
   // A partir do envio a responsabilidade passa para a transportadora: o vendor
   // cumpriu o prazo dele, entao o contador para de correr e mostra "Concluido".
   if (status === "enviado" || status === "entregue") return { kind: "done" };

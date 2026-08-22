@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { updateProfileCustomer } from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import { isValidCpf } from "@/lib/validation/brazilian-documents";
 
 type DocumentPayload = {
   document?: string;
@@ -23,6 +24,10 @@ export async function PATCH(request: Request) {
       { message: "Informe um CPF ou CNPJ válido." },
       { status: 422 },
     );
+  }
+
+  if (digits.length === 11 && !isValidCpf(digits)) {
+    return NextResponse.json({ message: "Informe um CPF válido." }, { status: 422 });
   }
 
   const metaKey = digits.length === 14 ? "cnpj" : "cpf";

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
+import { getActiveVendorFresh } from "@/features/active-vendor/server";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { authOptions } from "@/lib/auth";
 import { wpRest } from "@/lib/server/wp-rest";
@@ -121,6 +122,26 @@ function getCurrentVendorId(currentItems: ResolveVendorCurrentItem[]) {
   const vendorIds = new Set(currentItems.map((item) => item.vendorId));
 
   return vendorIds.size === 1 ? currentItems[0].vendorId : null;
+}
+
+/**
+ * Vendor que o comprador escolheu em /produtos/[id]/escolher-vendor ou em /perfil/configuracoes.
+ *
+ * O carrinho é single-vendor, então trocar de vendor esvazia o carrinho — e é justamente com o
+ * carrinho vazio que a escolha precisa valer. Sem esta preferência, o primeiro item adicionado
+ * caía sempre no vendor mais próximo e a troca não tinha efeito nenhum no pedido.
+ *
+ * Best-effort de propósito: sem CEP, sem cobertura ou com o WordPress fora do ar, adicionar ao
+ * carrinho continua funcionando pela ordenação por distância.
+ */
+async function getPreferredVendorId(): Promise<number | null> {
+  try {
+    const result = await getActiveVendorFresh();
+
+    return result.ok ? result.vendor.vendorId : null;
+  } catch {
+    return null;
+  }
 }
 
 function mapVendor(vendor: WpCoverageVendor): ResolvedVendor | null {
@@ -333,10 +354,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const vendor = resolvePreferredVendor(
-    coverageByProduct,
-    getCurrentVendorId(currentItems),
-  );
+  // Precedência: o vendor dos itens já no carrinho (invariante single-vendor) vem antes da
+  // preferência da conta, que por sua vez vem antes do desempate por distância.
+  const currentVendorId = getCurrentVendorId(currentItems);
+  const preferredVendorId = currentVendorId ?? (await getPreferredVendorId());
+  const vendor = resolvePreferredVendor(coverageByProduct, preferredVendorId);
 
   if (!vendor) {
     return NextResponse.json({

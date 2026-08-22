@@ -11,6 +11,7 @@ export function parseStockFilter(value: string | null | undefined): AdminVendorS
 
 export function parseVendorOrderStatus(value: string | null | undefined): VendorOrderStatus | "all" {
   return value === "aguardando_pagamento" ||
+    value === "aguardando_estoque" ||
     value === "aguardando_envio" ||
     value === "em_separacao" ||
     value === "enviado" ||

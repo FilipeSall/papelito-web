@@ -3,6 +3,7 @@ import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-or
 
 export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
   aguardando_pagamento: "Aguardando pagamento",
+  aguardando_estoque: "Aguardando análise de estoque",
   aguardando_envio: "Aguardando envio",
   cancelado: "Cancelado",
   em_separacao: "Em separação",
@@ -12,6 +13,7 @@ export const vendorStatusLabel: Record<VendorOrderStatus, string> = {
 
 const vendorStatusTone: Record<VendorOrderStatus, StatusBadgeTone> = {
   aguardando_pagamento: "warning",
+  aguardando_estoque: "warning",
   aguardando_envio: "default",
   cancelado: "critical",
   em_separacao: "warning",

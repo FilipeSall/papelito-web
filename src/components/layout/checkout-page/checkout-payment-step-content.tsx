@@ -240,6 +240,13 @@ export function CheckoutPaymentStepContent() {
               </p>
             ) : null}
 
+            {!canContinue && !pending ? (
+              <p className="mt-4 rounded-[12px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                Informe nome impresso, número do cartão, validade, CVV e o
+                parcelamento para continuar.
+              </p>
+            ) : null}
+
             <button
               type="button"
               className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-yellow text-base font-black uppercase tracking-[-0.3125px] text-brand-dark transition enabled:cursor-pointer enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"

@@ -15,6 +15,7 @@ import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
 import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-orders";
 import { formatBRLIntl } from "@/lib/format-currency";
+import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 
 function currentTimestamp() {
   return Date.now();
@@ -133,7 +134,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
             <p className="mt-3 text-sm leading-6 text-brand-dark/74">{address(order)}</p>
             <p className="mt-3 text-sm text-brand-dark/62">
               {order.shippingService || "Serviço de entrega não informado"}
-              {order.deliveryTimeDays > 0 ? ` - prazo estimado ${order.deliveryTimeDays} dias úteis` : ""}
+              {order.deliveryTimeDays > 0 ? ` - prazo estimado ${formatBusinessDays(order.deliveryTimeDays)}` : ""}
             </p>
           </div>
           {order.logistics.shipments.length > 0 ? (

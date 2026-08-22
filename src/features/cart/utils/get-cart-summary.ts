@@ -48,16 +48,28 @@ export function getCartSummary(
   pricing?: CartPricingQuote | null,
   freeShippingMinimumCents?: number | null,
 ): CartSummary {
-  const subtotal = pricing
-    ? roundMoney(pricing.totals.subtotalCents / 100)
-    : roundMoney(items.reduce((acc, item) => acc + item.price * item.quantity, 0));
+  // Contrato de `CartItem`, escrito por `applyPricingQuote`: `price` é o unitário JÁ com todos os
+  // descontos e `originalPrice` é o de tabela. Enquanto nenhuma cotação chegou os dois são iguais.
+  const listSubtotal = roundMoney(
+    items.reduce((acc, item) => acc + (item.originalPrice ?? item.price) * item.quantity, 0),
+  );
+  const netSubtotal = roundMoney(
+    items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+  );
+  // Desconto que já está embutido nos preços das linhas. Somar o cupom por cima disso descontava
+  // duas vezes e mostrava um total menor do que o efetivamente cobrado no checkout.
+  const embeddedDiscount = roundMoney(Math.max(0, listSubtotal - netSubtotal));
+
+  const subtotal = pricing ? roundMoney(pricing.totals.subtotalCents / 100) : listSubtotal;
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const discount = pricing
     ? roundMoney(pricing.totals.discountCents / 100)
-    : coupon
-      ? roundMoney(Math.min(coupon.discountValue, subtotal))
-      : 0;
+    : embeddedDiscount > 0
+      ? embeddedDiscount
+      : coupon
+        ? roundMoney(Math.min(coupon.discountValue, subtotal))
+        : 0;
 
   const hasItems = subtotal > 0;
   const validFreeShippingMinimumCents =

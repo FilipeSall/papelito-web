@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 
 import { fetchProfileCustomer, updateProfileCustomer } from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
+import { isValidCpf } from "@/lib/validation/brazilian-documents";
 
 type AccountPayload = {
   firstName?: string;
@@ -14,7 +16,6 @@ type AccountPayload = {
   cnpj?: string;
   cpf?: string;
   instagram?: string;
-  role?: string;
 };
 
 export async function PATCH(request: Request) {
@@ -39,13 +40,26 @@ export async function PATCH(request: Request) {
   const cnpj = String(payload.cnpj ?? "").trim();
   const cpf = String(payload.cpf ?? "").trim();
   const instagram = String(payload.instagram ?? "").trim();
-  const role = String(payload.role ?? "customer").trim().toLowerCase();
-
   if (!firstName || !lastName || !email) {
     return NextResponse.json(
       { message: "Nome, sobrenome e e-mail são obrigatórios." },
       { status: 422 },
     );
+  }
+
+  const role = await fetchCurrentUserRole(session.accessToken).catch(() => undefined);
+
+  if (!role) {
+    return NextResponse.json(
+      { message: "Não foi possível confirmar as permissões da conta." },
+      { status: 503 },
+    );
+  }
+
+  // O cadastro empresarial já valida o CPF; sem esta guarda o mesmo dado entrava sem verificação
+  // pela porta do perfil e ficava gravado sujo em `wp_usermeta`.
+  if (role !== "seller" && cpf && !isValidCpf(cpf)) {
+    return NextResponse.json({ message: "Informe um CPF válido." }, { status: 422 });
   }
 
   try {

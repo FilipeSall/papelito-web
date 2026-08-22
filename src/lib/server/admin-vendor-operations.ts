@@ -99,6 +99,7 @@ function normalizeStockReason(reason: unknown) {
 
 function normalizeOrderStatus(value: unknown): VendorOrderStatus {
   return value === "aguardando_pagamento" ||
+    value === "aguardando_estoque" ||
     value === "aguardando_envio" ||
     value === "em_separacao" ||
     value === "enviado" ||

@@ -17,6 +17,7 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
+import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 
 function getPaymentLabel(method: "credit_card" | "pix" | "boleto") {
   if (method === "credit_card") return "Cartao de credito";
@@ -383,7 +384,7 @@ export function CheckoutReviewStepContent() {
                       <p>{formatBRL(selectedShippingQuote.price)}</p>
                       <p>
                         {selectedShippingQuote.deliveryTime
-                          ? `${selectedShippingQuote.deliveryTime} dias úteis`
+                          ? formatBusinessDays(selectedShippingQuote.deliveryTime)
                           : "Prazo sob consulta"}
                       </p>
                     </div>

@@ -81,6 +81,27 @@ function getCachedActiveVendor(accountId: string, accessToken: string) {
   )();
 }
 
+/**
+ * Lê o vendor ativo sem passar pelo cache de 60s.
+ *
+ * `getActiveVendor()` é cacheado por tag e a invalidação do `revalidateTag` é eventualmente
+ * consistente entre route handlers — logo depois de trocar de vendor a leitura cacheada ainda
+ * devolve o anterior. Onde o valor decide a qual vendor um item do carrinho (e depois o pedido)
+ * fica preso, servir o vendor antigo é o próprio bug que se quer evitar.
+ */
+export const getActiveVendorFresh = cache(async (): Promise<ActiveVendorResult> => {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user || !session.accessToken) {
+    return {
+      ok: false,
+      error: { reason: "unauthenticated", message: "Usuário não autenticado." },
+    };
+  }
+
+  return fetchActiveVendor(session.accessToken);
+});
+
 export const getActiveVendor = cache(async (): Promise<ActiveVendorResult> => {
   const session = await getServerSession(authOptions);
 

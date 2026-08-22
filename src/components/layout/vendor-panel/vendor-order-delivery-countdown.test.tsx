@@ -55,6 +55,10 @@ describe("computeDeliveryCountdown", () => {
     expect(compute({ status: "cancelado" }).kind).toBe("hidden");
   });
 
+  it("hides the counter while a paid order awaits stock review", () => {
+    expect(compute({ status: "aguardando_estoque" }).kind).toBe("hidden");
+  });
+
   it("hides when there is no delivery estimate or no start date", () => {
     expect(compute({ deliveryTimeDays: 0 }).kind).toBe("hidden");
     expect(compute({ paidAt: "" }).kind).toBe("pending_payment");

@@ -3,6 +3,7 @@ import type {
   ProductDetailItem,
 } from "@/features/catalog/types/product-detail";
 import { parseDescriptionParagraphs } from "@/utils/html";
+import { getStockLabel } from "@/features/active-vendor";
 
 export interface DescriptionParagraph {
   id: string;
@@ -62,13 +63,20 @@ export function increaseQuantity(current: number, availableStock: number | null)
   return availableStock === null ? current + 1 : Math.min(availableStock, current + 1);
 }
 
+/**
+ * Faixa qualitativa, nunca o saldo exato.
+ *
+ * O número cru do estoque de cada vendor regional é informação comercial e era legível por
+ * qualquer visitante, inclusive anônimo, produto a produto. `getStockLabel` já é a regra usada
+ * na escolha de vendor: Em estoque (> 5), Poucas unidades (<= 5), Últimas N (<= 3).
+ */
 export function resolveStockLabel(stockQty: number | null | undefined): string {
   if (typeof stockQty !== "number") {
     return "Estoque regional não consultado";
   }
 
   if (stockQty > 0) {
-    return `${stockQty} em estoque`;
+    return getStockLabel(stockQty).text;
   }
 
   return "Sem estoque no vendor selecionado";

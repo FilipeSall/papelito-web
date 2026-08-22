@@ -16,6 +16,7 @@ import type {
   ProductAvailabilityStatus,
 } from "../types/product-availability";
 import { REGION_BLOCK_MESSAGES } from "../types/region-block";
+import { getStockLabel } from "@/features/active-vendor";
 
 const STORAGE_PREFIX = "papelito:catalog-availability:v3:";
 const STORAGE_TTL_MS = 5 * 60 * 1000;
@@ -215,7 +216,7 @@ export function useProductAvailability(productId: string) {
   const stockLabel =
     context.status === "ok" && stockQty !== null
       ? stockQty > 0
-        ? `${stockQty} em estoque`
+        ? getStockLabel(stockQty).text
         : "Sem estoque"
       : AVAILABILITY_FALLBACK_LABELS[context.status];
 

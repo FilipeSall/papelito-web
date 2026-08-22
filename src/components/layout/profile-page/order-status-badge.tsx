@@ -1,5 +1,6 @@
 export type OrderStatus =
   | "awaiting_payment"
+  | "stock_review"
   | "expired"
   | "awaiting_shipment"
   | "picking"
@@ -16,6 +17,11 @@ const statusConfig: Record<OrderStatus, { label: string; bgColor: string; textCo
     label: "Aguardando pagamento",
     bgColor: "bg-gray-500/20",
     textColor: "text-gray-500",
+  },
+  stock_review: {
+    label: "Pagamento em análise",
+    bgColor: "bg-yellow-500/20",
+    textColor: "text-yellow-700",
   },
   expired: {
     label: "Pagamento expirado",

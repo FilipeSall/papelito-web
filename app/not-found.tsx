@@ -82,10 +82,10 @@ function StoreIcon() {
 function DecorativeCircle({
   size,
   className,
-}: {
+}: Readonly<{
   size: number;
   className?: string;
-}) {
+}>) {
   return (
     <div
       className={`absolute rounded-full bg-brand-yellow opacity-5 ${className}`}
@@ -182,7 +182,7 @@ export default function NotFound() {
           <Link href="/carrinho" className="hover:text-white/60 transition-colors">
             Carrinho
           </Link>
-          <Link href="/pedidos" className="hover:text-white/60 transition-colors">
+          <Link href="/perfil" className="hover:text-white/60 transition-colors">
             Pedidos
           </Link>
         </div>

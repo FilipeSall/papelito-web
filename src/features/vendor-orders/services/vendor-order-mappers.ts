@@ -83,6 +83,7 @@ export type WpVendorOrdersList = {
 
 const statuses = new Set<VendorOrderStatus>([
   "aguardando_pagamento",
+  "aguardando_estoque",
   "aguardando_envio",
   "em_separacao",
   "enviado",

@@ -12,6 +12,7 @@ import { formatVendorDateTime } from "./vendor-detail-format";
 const ORDER_STATUSES: Array<[VendorOrderStatus | "all", string]> = [
   ["all", "Todos"],
   ["aguardando_pagamento", "Aguardando pagamento"],
+  ["aguardando_estoque", "Análise de estoque"],
   ["aguardando_envio", "Aguardando envio"],
   ["em_separacao", "Separação"],
   ["enviado", "Enviados"],
@@ -23,6 +24,8 @@ function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
   const label =
     status === "aguardando_pagamento"
       ? "Aguardando pagamento"
+      : status === "aguardando_estoque"
+        ? "Aguardando análise de estoque"
       : status === "aguardando_envio"
         ? "Aguardando envio"
         : status === "em_separacao"
@@ -39,6 +42,8 @@ function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
         ? "bg-[#f3e3df] text-[#7a3428]"
         : status === "aguardando_pagamento"
           ? "bg-[#e7e7ea] text-[#4a4a52]"
+          : status === "aguardando_estoque"
+            ? "bg-[#f4edd3] text-[#5d4d1b]"
           : "bg-[#f4edd3] text-[#5d4d1b]";
 
   return (

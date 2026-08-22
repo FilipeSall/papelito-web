@@ -41,6 +41,22 @@ function CancelledState({ reason }: { reason?: string }) {
   );
 }
 
+function StockReviewState() {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-[#dfc979] bg-[#f8f0cf] px-5 py-4">
+      <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[#6a5310] text-[#f8f0cf]">
+        <svg aria-hidden className="size-4" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+          <path d="M12 8v4m0 4h.01M10.2 4.5 3.8 16a2 2 0 0 0 1.75 3h12.9a2 2 0 0 0 1.75-3L13.8 4.5a2 2 0 0 0-3.6 0Z" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <div>
+        <p className="text-sm font-black uppercase tracking-[0.12em] text-[#6a5310]">Análise de estoque necessária</p>
+        <p className="mt-1 text-sm text-[#6a5310]/80">O pagamento foi confirmado, mas não há estoque reservado para este pedido. A equipe Papelito irá orientar a próxima etapa.</p>
+      </div>
+    </div>
+  );
+}
+
 export function VendorOrderStatusStepper({
   status,
   cancelReason,
@@ -50,6 +66,10 @@ export function VendorOrderStatusStepper({
 }) {
   if (status === "cancelado") {
     return <CancelledState reason={cancelReason} />;
+  }
+
+  if (status === "aguardando_estoque") {
+    return <StockReviewState />;
   }
 
   const currentIndex = stepIndex(status);

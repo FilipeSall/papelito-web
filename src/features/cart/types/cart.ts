@@ -5,6 +5,7 @@ export interface CartProductInput {
   image?: string;
   price: number;
   originalPrice?: number;
+  pricingDiscountSource?: "coupon" | "flash_sale" | "none";
   promotionContext?: string;
 }
 
