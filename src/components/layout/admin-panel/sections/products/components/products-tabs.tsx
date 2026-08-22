@@ -1,16 +1,35 @@
 import Link from "next/link";
-import { Box, Package } from "lucide-react";
+import { Box, Gift, Package } from "lucide-react";
 
-export type ProductsTab = "products" | "kits";
+export type ProductsTab = "products" | "kits" | "benefits";
 
 const tabs = [
-  { id: "products" as const, label: "Produtos", href: "/admin/products", icon: Box },
-  { id: "kits" as const, label: "Kits", href: "/admin/products?tab=kits", icon: Package },
+  {
+    id: "products" as const,
+    label: "Produtos",
+    href: "/admin/products",
+    icon: Box,
+  },
+  {
+    id: "kits" as const,
+    label: "Kits",
+    href: "/admin/products?tab=kits",
+    icon: Package,
+  },
+  {
+    id: "benefits" as const,
+    label: "Benefícios",
+    href: "/admin/products?tab=benefits",
+    icon: Gift,
+  },
 ];
 
 export function ProductsTabs({ activeTab }: { activeTab: ProductsTab }) {
   return (
-    <nav aria-label="Seções de produtos" className="overflow-x-auto border-b-2 border-[#1a1a1a]">
+    <nav
+      aria-label="Seções de produtos"
+      className="overflow-x-auto border-b-2 border-[#1a1a1a]"
+    >
       <div className="flex min-w-max gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;

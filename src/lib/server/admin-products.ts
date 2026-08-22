@@ -61,6 +61,7 @@ export type AdminProductsSnapshot = {
 
 export type AdminProductsFilters = {
   category?: string;
+  exclude?: number[];
   page?: string;
   perPage?: string;
   search?: string;
@@ -155,7 +156,11 @@ type WpMediaResponse = {
 const DEFAULT_PER_PAGE = 20;
 const VALID_STATUSES = new Set(["publish", "draft", "pending", "private"]);
 const VALID_STOCK_STATUSES = new Set(["instock", "outofstock", "onbackorder"]);
-function toPositiveInt(value: string | undefined, fallback: number, max?: number) {
+function toPositiveInt(
+  value: string | undefined,
+  fallback: number,
+  max?: number,
+) {
   const parsed = Number.parseInt(value ?? "", 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     return fallback;
@@ -185,7 +190,9 @@ function mapTerm(term: WcProductTerm): AdminProductTaxonomyTerm | null {
 
 function mapProduct(product: WcProduct): AdminProduct {
   return {
-    categories: (product.categories ?? []).map(mapTerm).filter(Boolean) as AdminProductTaxonomyTerm[],
+    categories: (product.categories ?? [])
+      .map(mapTerm)
+      .filter(Boolean) as AdminProductTaxonomyTerm[],
     dateModified: product.date_modified ?? "",
     dateOnSaleFrom: product.date_on_sale_from ?? "",
     dateOnSaleTo: product.date_on_sale_to ?? "",
@@ -214,9 +221,14 @@ function mapProduct(product: WcProduct): AdminProduct {
     sku: product.sku ?? "",
     slug: product.slug ?? "",
     status: product.status ?? "draft",
-    stockQuantity: typeof product.stock_quantity === "number" ? product.stock_quantity : null,
+    stockQuantity:
+      typeof product.stock_quantity === "number"
+        ? product.stock_quantity
+        : null,
     stockStatus: product.stock_status ?? "instock",
-    tags: (product.tags ?? []).map(mapTerm).filter(Boolean) as AdminProductTaxonomyTerm[],
+    tags: (product.tags ?? [])
+      .map(mapTerm)
+      .filter(Boolean) as AdminProductTaxonomyTerm[],
     type: product.type ?? "simple",
     weight: product.weight ?? "",
   };
@@ -224,7 +236,8 @@ function mapProduct(product: WcProduct): AdminProduct {
 
 function uniformVariationValue(
   variations: WcProduct[],
-  field: "regular_price" | "sale_price" | "date_on_sale_from" | "date_on_sale_to",
+  field:
+    "regular_price" | "sale_price" | "date_on_sale_from" | "date_on_sale_to",
 ) {
   if (variations.length === 0) {
     return null;
@@ -255,7 +268,10 @@ function mapProductWithVariations(product: WcProduct, variations: WcProduct[]) {
   };
 }
 
-async function getAdminProductVariations(accessToken: string, productId: number) {
+async function getAdminProductVariations(
+  accessToken: string,
+  productId: number,
+) {
   const result = await wpRest<WcProduct[]>(
     `/wc/v3/products/${productId}/variations?per_page=100&orderby=id&order=asc`,
     {
@@ -280,7 +296,9 @@ function hasVariablePricingChange(payload: AdminProductPayload) {
   );
 }
 
-function omitVariablePricing(payload: AdminProductPayload): AdminProductPayload {
+function omitVariablePricing(
+  payload: AdminProductPayload,
+): AdminProductPayload {
   const productPayload = { ...payload };
 
   delete productPayload.dateOnSaleFrom;
@@ -294,13 +312,19 @@ function omitVariablePricing(payload: AdminProductPayload): AdminProductPayload 
 function buildVariationPricingPayload(payload: AdminProductPayload) {
   const pricing: Record<string, string | null> = {};
 
-  if (payload.regularPrice !== undefined) pricing.regular_price = cleanText(payload.regularPrice);
-  if (payload.salePrice !== undefined) pricing.sale_price = cleanText(payload.salePrice);
+  if (payload.regularPrice !== undefined)
+    pricing.regular_price = cleanText(payload.regularPrice);
+  if (payload.salePrice !== undefined)
+    pricing.sale_price = cleanText(payload.salePrice);
   if (payload.dateOnSaleFrom !== undefined) {
-    pricing.date_on_sale_from = payload.dateOnSaleFrom ? cleanText(payload.dateOnSaleFrom) : null;
+    pricing.date_on_sale_from = payload.dateOnSaleFrom
+      ? cleanText(payload.dateOnSaleFrom)
+      : null;
   }
   if (payload.dateOnSaleTo !== undefined) {
-    pricing.date_on_sale_to = payload.dateOnSaleTo ? cleanText(payload.dateOnSaleTo) : null;
+    pricing.date_on_sale_to = payload.dateOnSaleTo
+      ? cleanText(payload.dateOnSaleTo)
+      : null;
   }
 
   return pricing;
@@ -325,7 +349,8 @@ function normalizeTagKey(term: { name: string; slug: string }) {
 
 function matchesTagKey(term: AdminProductTaxonomyTerm, key: string) {
   return (
-    normalizeTagKey(term) === key || normalizeTagKey({ ...term, slug: "" }) === key
+    normalizeTagKey(term) === key ||
+    normalizeTagKey({ ...term, slug: "" }) === key
   );
 }
 
@@ -384,6 +409,13 @@ function buildProductsQuery(filters: AdminProductsFilters) {
     params.set("papelito_category", String(category));
   }
 
+  const excludedIds = Array.from(
+    new Set((filters.exclude ?? []).filter((id) => Number.isInteger(id) && id > 0)),
+  );
+  if (excludedIds.length > 0) {
+    params.set("exclude", excludedIds.join(","));
+  }
+
   return params;
 }
 
@@ -426,25 +458,59 @@ function imagePayload(value: unknown) {
     .map((id, position) => ({ id, position }));
 }
 
-function addWooProductFields(body: Record<string, unknown>, payload: AdminProductPayload) {
+function addWooProductFields(
+  body: Record<string, unknown>,
+  payload: AdminProductPayload,
+) {
   setDefinedPayloadValue(body, "name", payload.name, cleanText);
   setDefinedPayloadValue(body, "slug", payload.slug, cleanText);
   setDefinedPayloadValue(body, "sku", payload.sku, cleanText);
-  setDefinedPayloadValue(body, "status", payload.status, (value) => cleanText(value) || "draft");
-  setDefinedPayloadValue(body, "regular_price", payload.regularPrice, cleanText);
+  setDefinedPayloadValue(
+    body,
+    "status",
+    payload.status,
+    (value) => cleanText(value) || "draft",
+  );
+  setDefinedPayloadValue(
+    body,
+    "regular_price",
+    payload.regularPrice,
+    cleanText,
+  );
   setDefinedPayloadValue(body, "sale_price", payload.salePrice, cleanText);
-  setDefinedPayloadValue(body, "date_on_sale_from", payload.dateOnSaleFrom, cleanNullableText);
-  setDefinedPayloadValue(body, "date_on_sale_to", payload.dateOnSaleTo, cleanNullableText);
+  setDefinedPayloadValue(
+    body,
+    "date_on_sale_from",
+    payload.dateOnSaleFrom,
+    cleanNullableText,
+  );
+  setDefinedPayloadValue(
+    body,
+    "date_on_sale_to",
+    payload.dateOnSaleTo,
+    cleanNullableText,
+  );
 }
 
-function addWooStockFields(body: Record<string, unknown>, payload: AdminProductPayload) {
+function addWooStockFields(
+  body: Record<string, unknown>,
+  payload: AdminProductPayload,
+) {
   setDefinedPayloadValue(body, "manage_stock", payload.manageStock, Boolean);
-  setDefinedPayloadValue(body, "stock_quantity", payload.stockQuantity, finiteNumberOrNull);
+  setDefinedPayloadValue(
+    body,
+    "stock_quantity",
+    payload.stockQuantity,
+    finiteNumberOrNull,
+  );
   setDefinedPayloadValue(body, "stock_status", payload.stockStatus, cleanText);
   setDefinedPayloadValue(body, "weight", payload.weight, cleanText);
 }
 
-function addWooDimensions(body: Record<string, unknown>, payload: AdminProductPayload) {
+function addWooDimensions(
+  body: Record<string, unknown>,
+  payload: AdminProductPayload,
+) {
   if (payload.dimensions !== undefined) {
     body.dimensions = {
       height: cleanText(payload.dimensions.height),
@@ -454,20 +520,21 @@ function addWooDimensions(body: Record<string, unknown>, payload: AdminProductPa
   }
 }
 
-function addWooProductContent(body: Record<string, unknown>, payload: AdminProductPayload) {
+function addWooProductContent(
+  body: Record<string, unknown>,
+  payload: AdminProductPayload,
+) {
   setDefinedPayloadValue(body, "short_description", payload.shortDescription);
   setDefinedPayloadValue(body, "description", payload.description);
 }
 
-function addWooProductTaxonomies(body: Record<string, unknown>, payload: AdminProductPayload) {
+function addWooProductTaxonomies(
+  body: Record<string, unknown>,
+  payload: AdminProductPayload,
+) {
   setDefinedPayloadValue(body, "categories", payload.categories, positiveIds);
   setDefinedPayloadValue(body, "tags", payload.tags, positiveIds);
-  setDefinedPayloadValue(
-    body,
-    "images",
-    payload.images,
-    imagePayload,
-  );
+  setDefinedPayloadValue(body, "images", payload.images, imagePayload);
 }
 
 function buildWooProductPayload(payload: AdminProductPayload) {
@@ -491,8 +558,10 @@ export async function getAdminProductsSnapshot(
 
   if (!accessToken) {
     return {
-        currentPage: page,
-      issues: ["Sessão sem access token para consultar produtos do WooCommerce."],
+      currentPage: page,
+      issues: [
+        "Sessão sem access token para consultar produtos do WooCommerce.",
+      ],
       perPage,
       products: [],
       tags: [],
@@ -511,11 +580,14 @@ export async function getAdminProductsSnapshot(
     }),
     // Tag continua sendo do WooCommerce: é palavra-chave de busca, não
     // classificação. Categoria vem da taxonomia Papelito.
-    wpRest<WcProductTerm[]>("/wc/v3/products/tags?per_page=100&orderby=name&order=asc", {
-      headers,
-      revalidate: 300,
-      tags: ["admin-product-taxonomies"],
-    }),
+    wpRest<WcProductTerm[]>(
+      "/wc/v3/products/tags?per_page=100&orderby=name&order=asc",
+      {
+        headers,
+        revalidate: 300,
+        tags: ["admin-product-taxonomies"],
+      },
+    ),
   ]);
 
   const issues: string[] = [];
@@ -524,12 +596,12 @@ export async function getAdminProductsSnapshot(
   let totalPages = 0;
 
   const rawTags = tagsResult.ok
-    ? tagsResult.data.map(mapTaxonomyTerm).filter(Boolean) as AdminProductTaxonomyTerm[]
+    ? (tagsResult.data
+        .map(mapTaxonomyTerm)
+        .filter(Boolean) as AdminProductTaxonomyTerm[])
     : [];
   const rawProducts = productsResult.ok
-    ? productsResult.data
-        .map(mapProduct)
-        .filter((product) => product.id > 0)
+    ? productsResult.data.map(mapProduct).filter((product) => product.id > 0)
     : [];
   const tags = dedupeTags([
     ...rawTags,
@@ -549,13 +621,26 @@ export async function getAdminProductsSnapshot(
       return {
         ...product,
         categories: entry?.category
-          ? [{ id: entry.category.id, name: entry.category.name, parent: 0, slug: entry.category.slug }]
+          ? [
+              {
+                id: entry.category.id,
+                name: entry.category.name,
+                parent: 0,
+                slug: entry.category.slug,
+              },
+            ]
           : [],
         subcategories: entry?.subcategories ?? [],
       };
     });
-    totalProducts = Number.parseInt(productsResult.headers.get("X-WP-Total") ?? "0", 10) || products.length;
-    totalPages = Number.parseInt(productsResult.headers.get("X-WP-TotalPages") ?? "0", 10) || 1;
+    totalProducts =
+      Number.parseInt(productsResult.headers.get("X-WP-Total") ?? "0", 10) ||
+      products.length;
+    totalPages =
+      Number.parseInt(
+        productsResult.headers.get("X-WP-TotalPages") ?? "0",
+        10,
+      ) || 1;
   } else {
     issues.push(`[woo] products -> ${productsResult.error.message}`);
   }
@@ -575,7 +660,10 @@ export async function getAdminProductsSnapshot(
   };
 }
 
-export async function createAdminProduct(accessToken: string, payload: AdminProductPayload) {
+export async function createAdminProduct(
+  accessToken: string,
+  payload: AdminProductPayload,
+) {
   const result = await wpRest<WcProduct>("/wc/v3/products", {
     headers: { Authorization: `Bearer ${accessToken}` },
     json: buildWooProductPayload(payload),
@@ -613,17 +701,22 @@ export async function updateAdminProduct(
   productId: number,
   payload: AdminProductPayload,
 ) {
-  const existingResult = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    revalidate: 0,
-  });
+  const existingResult = await wpRest<WcProduct>(
+    `/wc/v3/products/${productId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      revalidate: 0,
+    },
+  );
 
   if (!existingResult.ok) {
     throw new Error(existingResult.error.message);
   }
 
   const isVariableProduct = mapProduct(existingResult.data).type === "variable";
-  const productPayload = isVariableProduct ? omitVariablePricing(payload) : payload;
+  const productPayload = isVariableProduct
+    ? omitVariablePricing(payload)
+    : payload;
   const hasProductChanges = Object.keys(productPayload).length > 0;
   let updatedProduct = existingResult.data;
 
@@ -658,7 +751,9 @@ export async function updateAdminProduct(
       headers: { Authorization: `Bearer ${accessToken}` },
       json: {
         update: variations
-          .filter((variation) => typeof variation.id === "number" && variation.id > 0)
+          .filter(
+            (variation) => typeof variation.id === "number" && variation.id > 0,
+          )
           .map((variation) => ({ id: variation.id, ...variationPricing })),
       },
       method: "PUT",
@@ -701,10 +796,14 @@ export async function createAdminProductTag(
       throw new Error(existingResult.error.message);
     }
 
-    return existingResult.data
-      .map(mapTaxonomyTerm)
-      .filter(Boolean)
-      .find((term) => matchesTagKey(term as AdminProductTaxonomyTerm, tagKey)) ?? null;
+    return (
+      existingResult.data
+        .map(mapTaxonomyTerm)
+        .filter(Boolean)
+        .find((term) =>
+          matchesTagKey(term as AdminProductTaxonomyTerm, tagKey),
+        ) ?? null
+    );
   };
 
   const existingTag = await findExistingTag();
@@ -782,15 +881,17 @@ export async function uploadAdminProductMedia(
   });
 
   const json = (await response.json().catch(() => null)) as
-    | WpMediaResponse
-    | { code?: string; message?: string }
-    | null;
+    WpMediaResponse | { code?: string; message?: string } | null;
 
   if (!response.ok) {
     throw new AdminProductMediaUploadError(
       response.status,
-      json && "code" in json && typeof json.code === "string" ? json.code : null,
-      json && "message" in json && typeof json.message === "string" ? json.message : null,
+      json && "code" in json && typeof json.code === "string"
+        ? json.code
+        : null,
+      json && "message" in json && typeof json.message === "string"
+        ? json.message
+        : null,
     );
   }
 
@@ -801,4 +902,16 @@ export async function uploadAdminProductMedia(
     id: typeof media?.id === "number" ? media.id : 0,
     src: media?.source_url ?? "",
   };
+}
+
+export async function deleteAdminMedia(accessToken: string, mediaIds: number[]) {
+  const result = await wpRest<unknown>("/papelito/v1/admin/media/cleanup", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    json: { ids: mediaIds },
+    method: "POST",
+  });
+
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
 }

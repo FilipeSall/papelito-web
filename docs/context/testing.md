@@ -56,6 +56,22 @@ As regras de negócio verificadas por teste estão catalogadas em [`../../../doc
 3. Ele depende de sessão? Use a factory `test/factories/session.ts`.
 4. Ele depende de store? Garanta o reset — senão o teste passa isolado e falha na suíte.
 
+## Paralelismo: `maxWorkers` limitado fora do CI
+
+`vitest.config.ts` fixa `maxWorkers: "50%"` em máquina de desenvolvimento e deixa o padrão no CI.
+O motivo é concreto: com o padrão do Vitest (um worker por core menos um), uma máquina de 16 cores
+sobe ~15 ambientes jsdom simultâneos e a memória vira o gargalo. Os testes mais pesados — os de
+`admin-panel/sections/assets/*`, que renderizam a árvore inteira do gerenciador com `userEvent` —
+estouram o `testTimeout` de 5s por inanição, não por defeito. O sintoma é enganoso: o conjunto de
+arquivos que falha **muda a cada execução** e todo arquivo passa quando rodado sozinho.
+
+Com metade dos workers a suíte fica verde **e mais rápida** (81s contra 139s), porque some o
+thrashing. No CI o padrão já é baixo — runner de 2 a 4 cores nunca chega perto da contenção — e
+limitar lá só deixaria o PR mais lento.
+
+Se um teste voltar a estourar 5s, investigue o teste antes de mexer no timeout: elevar
+`testTimeout` esconde lentidão real, e foi justamente o timeout apertado que expôs a contenção.
+
 ## Verificação completa antes de um PR
 
 ```bash

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image as ImageIcon,
   LoaderCircle,
@@ -18,6 +18,8 @@ import type {
   AdminKitPayload,
 } from "@/lib/server/admin-kits";
 import { formatBRL } from "@/lib/format-currency";
+import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
+import { uploadDirectFile } from "@/lib/client/direct-upload";
 
 import { AdminSelectField } from "./components/admin-select-field";
 
@@ -35,8 +37,13 @@ const presets = [
   },
 ];
 
-type Draft = AdminKitPayload & { id?: number; imageUrl: string };
-type UploadTarget = "kit" | `merchandise:${number}`;
+type DraftMerchandise = AdminKitMerchandise & { clientId: string };
+type Draft = Omit<AdminKitPayload, "merchandise"> & {
+  id?: number;
+  imageUrl: string;
+  merchandise: DraftMerchandise[];
+};
+type UploadTarget = "kit" | `merchandise:${string}`;
 
 const statusOptions = [
   { label: "Rascunho", value: "draft" },
@@ -56,6 +63,19 @@ function blankDraft(): Draft {
   };
 }
 
+function newDraftMerchandise(
+  merchandise: Omit<AdminKitMerchandise, "id"> = {
+    name: "",
+    quantity: 1,
+    weight: "",
+    length: "",
+    width: "",
+    height: "",
+  },
+): DraftMerchandise {
+  return { ...merchandise, clientId: crypto.randomUUID() };
+}
+
 function fromKit(kit: AdminKit): Draft {
   return {
     id: kit.id,
@@ -70,7 +90,7 @@ function fromKit(kit: AdminKit): Draft {
       productId,
       quantity,
     })),
-    merchandise: kit.merchandise,
+    merchandise: kit.merchandise.map((item) => newDraftMerchandise(item)),
   };
 }
 
@@ -94,6 +114,14 @@ export function KitsManager({
   const [error, setError] = useState("");
   const [uploadNotice, setUploadNotice] = useState("");
   const [uploadingTargets, setUploadingTargets] = useState<UploadTarget[]>([]);
+  const editorSession = useRef(0);
+  const temporaryMedia = useTemporaryAdminMedia();
+
+  useEffect(() => {
+    return () => {
+      editorSession.current += 1;
+    };
+  }, []);
 
   const selected = useMemo(
     () =>
@@ -123,6 +151,31 @@ export function KitsManager({
     setDraft((current) => (current ? { ...current, ...patch } : current));
   }
 
+  function openDraft(nextDraft: Draft) {
+    editorSession.current += 1;
+    setError("");
+    setUploadNotice("");
+    setDraft(nextDraft);
+  }
+
+  function closeDraft() {
+    if (saving) return;
+    editorSession.current += 1;
+    setDraft(null);
+    setUploadNotice("");
+    void temporaryMedia.discardAllExcept().catch(() => undefined);
+  }
+
+  function draftAttachmentIds(currentDraft: Draft) {
+    return [
+      currentDraft.imageAttachmentId,
+      ...currentDraft.merchandise.map((item) => item.imageAttachmentId),
+    ].filter(
+      (id): id is number =>
+        typeof id === "number" && Number.isInteger(id) && id > 0,
+    );
+  }
+
   function addProduct(product: AdminFlashSaleCandidate) {
     if (!draft || selected.has(product.id)) return;
     patch({ items: [...draft.items, { productId: product.id, quantity: 1 }] });
@@ -141,61 +194,71 @@ export function KitsManager({
 
   function addMerchandise() {
     if (!draft) return;
-    const merchandise: AdminKitMerchandise = {
-      name: "",
-      quantity: 1,
-      weight: "",
-      length: "",
-      width: "",
-      height: "",
-    };
+    const merchandise = newDraftMerchandise();
     patch({ merchandise: [...draft.merchandise, merchandise] });
   }
 
-  function patchMerchandise(index: number, next: Partial<AdminKitMerchandise>) {
-    if (!draft) return;
-    patch({
-      merchandise: draft.merchandise.map((item, current) =>
-        current === index ? { ...item, ...next } : item,
-      ),
-    });
+  function patchMerchandise(clientId: string, next: Partial<AdminKitMerchandise>) {
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            merchandise: current.merchandise.map((item) =>
+              item.clientId === clientId ? { ...item, ...next } : item,
+            ),
+          }
+        : current,
+    );
   }
 
   async function uploadImage(file: File, target: UploadTarget) {
+    const session = editorSession.current;
     setError("");
     setUploadNotice("");
     setUploadingTargets((current) => [...current, target]);
-    const form = new FormData();
-    form.set("file", file);
     try {
-      const response = await fetch("/api/admin/products/media", {
-        method: "POST",
-        body: form,
-      });
-      const payload = (await response.json().catch(() => null)) as {
+      const payload = await uploadDirectFile<{
         media?: { id: number; src: string };
-        message?: string;
-      } | null;
-      if (!response.ok || !payload?.media) {
-        setError(payload?.message ?? "Não foi possível enviar a imagem.");
+      }>("media", file);
+      if (!payload.media) throw new Error("Não foi possível enviar a imagem.");
+
+      if (session !== editorSession.current) {
+        void temporaryMedia.discard([payload.media.id]).catch(() => undefined);
         return;
       }
 
+      temporaryMedia.track(payload.media.id);
+
       if (target === "kit") {
+        const previousId = draft?.imageAttachmentId;
         patch({
           imageSource: "custom",
           imageAttachmentId: payload.media.id,
           imageUrl: payload.media.src,
         });
+        if (temporaryMedia.isTracked(previousId)) {
+          void temporaryMedia.discard([previousId!]).catch(() => undefined);
+        }
         setUploadNotice("Imagem do Kit enviada.");
         return;
       }
 
-      const merchandiseIndex = Number(target.replace("merchandise:", ""));
-      patchMerchandise(merchandiseIndex, {
-        imageAttachmentId: payload.media.id,
-        imageUrl: payload.media.src,
+      const merchandiseId = target.replace("merchandise:", "");
+      let previousId: number | undefined;
+      setDraft((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          merchandise: current.merchandise.map((item) => {
+            if (item.clientId !== merchandiseId) return item;
+            previousId = item.imageAttachmentId;
+            return { ...item, imageAttachmentId: payload.media!.id, imageUrl: payload.media!.src };
+          }),
+        };
       });
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
       setUploadNotice("Imagem do brinde enviada.");
     } finally {
       setUploadingTargets((current) =>
@@ -207,16 +270,30 @@ export function KitsManager({
   async function save() {
     if (!draft) return;
     setSaving(true);
+    temporaryMedia.beginSave();
     setError("");
     try {
-      const { id, imageUrl, ...payload } = draft;
+      const { id, imageUrl, merchandise, ...payload } = draft;
       void imageUrl;
       const response = await fetch(
         id ? `/api/admin/kits/${id}` : "/api/admin/kits",
         {
           method: id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            ...payload,
+            merchandise: merchandise.map((item) => ({
+              height: item.height,
+              id: item.id,
+              imageAttachmentId: item.imageAttachmentId,
+              imageUrl: item.imageUrl,
+              length: item.length,
+              name: item.name,
+              quantity: item.quantity,
+              weight: item.weight,
+              width: item.width,
+            })),
+          }),
         },
       );
       const body = (await response.json().catch(() => null)) as {
@@ -232,11 +309,16 @@ export function KitsManager({
           ? current.map((kit) => (kit.id === body.kit?.id ? body.kit : kit))
           : [body.kit!, ...current],
       );
+      void temporaryMedia
+        .discardAllExcept(draftAttachmentIds(draft))
+        .catch(() => undefined);
       setDraft(null);
+      editorSession.current += 1;
     } catch {
       setError("Falha de rede ao salvar o Kit. Tente novamente.");
     } finally {
       setSaving(false);
+      temporaryMedia.endSave();
     }
   }
 
@@ -263,7 +345,7 @@ export function KitsManager({
         </div>
         <button
           className="inline-flex h-11 items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-brand-yellow px-4 text-[11px] font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_#1a1a1a] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-          onClick={() => setDraft(blankDraft())}
+          onClick={() => openDraft(blankDraft())}
           type="button"
         >
           <PackagePlus className="size-4" />
@@ -316,7 +398,7 @@ export function KitsManager({
                   <td className="px-4 py-3 text-right">
                     <button
                       className="border-b-2 border-[#1a1a1a] text-[10px] font-black uppercase tracking-widest hover:bg-brand-yellow"
-                      onClick={() => setDraft(fromKit(kit))}
+                      onClick={() => openDraft(fromKit(kit))}
                       type="button"
                     >
                       Editar
@@ -353,7 +435,8 @@ export function KitsManager({
               <button
                 aria-label="Fechar editor de Kit"
                 className="grid size-10 place-items-center border-2 border-[#1a1a1a] bg-white hover:bg-brand-yellow"
-                onClick={() => setDraft(null)}
+                disabled={saving}
+                onClick={closeDraft}
                 type="button"
               >
                 <X className="size-5" />
@@ -477,69 +560,24 @@ export function KitsManager({
                     Brindes não aparecem na vitrine, mas entram no peso e nas
                     dimensões do pacote.
                   </p>
-                  <div className="space-y-3">
+                  <div className="mt-3 space-y-4">
                     {draft.merchandise.map((item, index) => (
-                      <div
-                        className="grid gap-3 border-2 border-[#1a1a1a] bg-white p-3 md:grid-cols-[7rem_repeat(5,minmax(0,1fr))_auto]"
-                        key={index}
+                      <article
+                        className="border-2 border-[#1a1a1a] bg-white"
+                        key={item.clientId}
                       >
-                        <MerchandiseImageUpload
-                          imageUrl={item.imageUrl}
-                          isUploading={uploadingTargets.includes(
-                            `merchandise:${index}`,
-                          )}
-                          onChange={(file) =>
-                            void uploadImage(file, `merchandise:${index}`)
-                          }
-                        />
-                        <Field
-                          label="Nome"
-                          value={item.name}
-                          onChange={(name) => patchMerchandise(index, { name })}
-                        />
-                        <NumberField
-                          label="Qtd."
-                          value={item.quantity}
-                          onChange={(quantity) =>
-                            patchMerchandise(index, { quantity })
-                          }
-                        />
-                        <Field
-                          label="Peso kg"
-                          value={item.weight}
-                          onChange={(weight) =>
-                            patchMerchandise(index, { weight })
-                          }
-                        />
-                        <Field
-                          label="Comp. cm"
-                          value={item.length}
-                          onChange={(length) =>
-                            patchMerchandise(index, { length })
-                          }
-                        />
-                        <Field
-                          label="Larg. cm"
-                          value={item.width}
-                          onChange={(width) =>
-                            patchMerchandise(index, { width })
-                          }
-                        />
-                        <div className="flex items-end gap-2">
-                          <Field
-                            label="Alt. cm"
-                            value={item.height}
-                            onChange={(height) =>
-                              patchMerchandise(index, { height })
-                            }
-                          />
+                        <header className="flex items-center justify-between gap-3 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-3 py-2">
+                          <p className="text-[10px] font-black uppercase tracking-[.18em]">
+                            Brinde {index + 1}
+                          </p>
                           <button
-                            aria-label="Remover brinde"
-                            className="mb-0 grid h-11 size-11 place-items-center border-2 border-[#1a1a1a] hover:bg-[#c0392b] hover:text-white"
+                            aria-label={`Remover brinde ${index + 1}`}
+                            className="grid size-8 place-items-center border-2 border-[#1a1a1a] bg-white hover:bg-[#c0392b] hover:text-white"
+                            disabled={saving}
                             onClick={() =>
                               patch({
                                 merchandise: draft.merchandise.filter(
-                                  (_, current) => current !== index,
+                                  (current) => current.clientId !== item.clientId,
                                 ),
                               })
                             }
@@ -547,8 +585,65 @@ export function KitsManager({
                           >
                             <Trash2 className="size-4" />
                           </button>
+                        </header>
+                        <div className="grid gap-4 p-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
+                          <MerchandiseImageUpload
+                            imageUrl={item.imageUrl}
+                            isUploading={uploadingTargets.includes(
+                              `merchandise:${item.clientId}`,
+                            )}
+                            onChange={(file) =>
+                              void uploadImage(file, `merchandise:${item.clientId}`)
+                            }
+                          />
+                          <div className="grid content-start gap-3">
+                            <Field
+                              label="Nome"
+                              value={item.name}
+                              onChange={(name) =>
+                                  patchMerchandise(item.clientId, { name })
+                              }
+                            />
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                              <NumberField
+                                label="Qtd."
+                                value={item.quantity}
+                                onChange={(quantity) =>
+                                  patchMerchandise(item.clientId, { quantity })
+                                }
+                              />
+                              <Field
+                                label="Peso kg"
+                                value={item.weight}
+                                onChange={(weight) =>
+                                  patchMerchandise(item.clientId, { weight })
+                                }
+                              />
+                              <Field
+                                label="Comp. cm"
+                                value={item.length}
+                                onChange={(length) =>
+                                  patchMerchandise(item.clientId, { length })
+                                }
+                              />
+                              <Field
+                                label="Larg. cm"
+                                value={item.width}
+                                onChange={(width) =>
+                                  patchMerchandise(item.clientId, { width })
+                                }
+                              />
+                              <Field
+                                label="Alt. cm"
+                                value={item.height}
+                                onChange={(height) =>
+                                  patchMerchandise(item.clientId, { height })
+                                }
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                   <button
@@ -559,89 +654,6 @@ export function KitsManager({
                     <Plus className="size-4" />
                     Adicionar brinde
                   </button>
-                </KitSection>
-                <KitSection title="Estoque de brindes por vendor">
-                  <p className="mb-3 text-xs leading-5 text-[#5e574c]">
-                    Informe o ID e o saldo físico de cada vendor. O Kit só fica
-                    disponível quando o mesmo vendor também tiver todos os
-                    produtos.
-                  </p>
-                  <div className="space-y-3">
-                    {draft.merchandise.map((item, merchandiseIndex) => (
-                      <div
-                        className="border-2 border-[#1a1a1a] bg-white p-3"
-                        key={`stock-${merchandiseIndex}`}
-                      >
-                        <p className="text-xs font-black uppercase">
-                          {item.name || `Brinde ${merchandiseIndex + 1}`}
-                        </p>
-                        {(item.stocks ?? []).map((stock, stockIndex) => (
-                          <div
-                            className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2"
-                            key={stockIndex}
-                          >
-                            <NonNegativeNumberField
-                              label="Vendor ID"
-                              value={stock.vendorId}
-                              onChange={(vendorId) =>
-                                patchMerchandise(merchandiseIndex, {
-                                  stocks: (item.stocks ?? []).map(
-                                    (current, currentIndex) =>
-                                      currentIndex === stockIndex
-                                        ? { ...current, vendorId }
-                                        : current,
-                                  ),
-                                })
-                              }
-                            />
-                            <NumberField
-                              label="Saldo"
-                              value={stock.qty}
-                              onChange={(qty) =>
-                                patchMerchandise(merchandiseIndex, {
-                                  stocks: (item.stocks ?? []).map(
-                                    (current, currentIndex) =>
-                                      currentIndex === stockIndex
-                                        ? { ...current, qty }
-                                        : current,
-                                  ),
-                                })
-                              }
-                            />
-                            <button
-                              aria-label="Remover estoque de vendor"
-                              className="mt-auto grid size-11 place-items-center border-2 border-[#1a1a1a] hover:bg-[#c0392b] hover:text-white"
-                              onClick={() =>
-                                patchMerchandise(merchandiseIndex, {
-                                  stocks: (item.stocks ?? []).filter(
-                                    (_, currentIndex) =>
-                                      currentIndex !== stockIndex,
-                                  ),
-                                })
-                              }
-                              type="button"
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          className="mt-3 border-2 border-dashed border-[#1a1a1a] px-2 py-1 text-[10px] font-black uppercase hover:bg-brand-yellow"
-                          onClick={() =>
-                            patchMerchandise(merchandiseIndex, {
-                              stocks: [
-                                ...(item.stocks ?? []),
-                                { vendorId: 1, qty: 0 },
-                              ],
-                            })
-                          }
-                          type="button"
-                        >
-                          Adicionar saldo
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </KitSection>
               </div>
               <aside className="space-y-6">
@@ -766,7 +778,8 @@ export function KitsManager({
             <footer className="flex justify-end gap-3 border-t-2 border-[#1a1a1a] bg-white px-5 py-4">
               <button
                 className="h-11 border-2 border-[#1a1a1a] px-4 text-[10px] font-black uppercase tracking-widest"
-                onClick={() => setDraft(null)}
+                disabled={saving}
+                onClick={closeDraft}
                 type="button"
               >
                 Cancelar
@@ -797,7 +810,7 @@ function MerchandiseImageUpload({
   onChange: (file: File) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="grid content-start gap-1">
       <p className="text-[9px] font-black uppercase tracking-[.12em]">
         Imagem *
       </p>
@@ -816,14 +829,14 @@ function MerchandiseImageUpload({
       </div>
       <label
         aria-busy={isUploading}
-        className="flex min-h-10 cursor-pointer items-center justify-center gap-1 border-2 border-dashed border-[#1a1a1a] px-2 text-center text-[9px] font-black uppercase leading-3 hover:bg-brand-yellow has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
+        className="mt-1 flex min-h-9 cursor-pointer flex-wrap items-center justify-center gap-1 border-2 border-dashed border-[#1a1a1a] px-2 py-1 text-center text-[9px] font-black uppercase leading-[1.2] hover:bg-brand-yellow has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
       >
         {isUploading ? (
           <LoaderCircle className="size-3 animate-spin" />
         ) : (
           <ImageIcon className="size-3" />
         )}
-        {isUploading ? "Enviando…" : "Enviar imagem"}
+        {isUploading ? "Enviando…" : imageUrl ? "Trocar" : "Enviar"}
         <input
           accept="image/png,image/jpeg,image/webp"
           className="sr-only"
@@ -887,35 +900,12 @@ function NumberField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="grid gap-1 text-[9px] font-black uppercase tracking-[.12em]">
+    <label className="grid min-w-0 gap-1 text-[9px] font-black uppercase tracking-[.12em]">
       {label}
       <input
-        className="h-11 border-2 border-[#1a1a1a] px-3 text-sm normal-case"
+        className="h-11 min-w-0 border-2 border-[#1a1a1a] bg-white px-3 text-sm font-medium normal-case tracking-normal"
         min="1"
         onChange={(event) => onChange(Math.max(1, Number(event.target.value)))}
-        type="number"
-        value={value}
-      />
-    </label>
-  );
-}
-
-function NonNegativeNumberField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="grid gap-1 text-[9px] font-black uppercase tracking-[.12em]">
-      {label}
-      <input
-        className="h-11 border-2 border-[#1a1a1a] px-3 text-sm normal-case"
-        min="0"
-        onChange={(event) => onChange(Math.max(0, Number(event.target.value)))}
         type="number"
         value={value}
       />

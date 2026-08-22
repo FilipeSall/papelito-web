@@ -25,16 +25,20 @@ export function ProductsManager({
   snapshot,
   taxonomy,
   initialFocusProductId = null,
+  excludedProductIds = [],
 }: {
   initialIssue?: "missing-weight" | "product-data-incomplete" | null;
   snapshot: AdminProductsSnapshot;
   taxonomy: AdminTaxonomySnapshot;
   initialFocusProductId?: number | null;
+  excludedProductIds?: number[];
 }) {
   const [toast, setToast] = useState<ToastState>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const toastEnterFrameRef = useRef<number | null>(null);
   useEffect(() => {
     return () => {
@@ -79,6 +83,7 @@ export function ProductsManager({
 
   const manager = useAdminProductsManager(snapshot, {
     initialFocusProductId,
+    excludedProductIds,
     taxonomy,
     onUploadError: (description) => {
       showToast({
@@ -139,72 +144,75 @@ export function ProductsManager({
   return (
     <>
       <div className="space-y-5">
-      <ProductsHeader />
+        <ProductsHeader />
 
-      <CatalogStats
-        page={page}
-        promotions={catalogSummary.promotions}
-        published={catalogSummary.published}
-        totalPages={totalPages}
-        totalProducts={totalProducts}
-      />
+        <CatalogStats
+          page={page}
+          promotions={catalogSummary.promotions}
+          published={catalogSummary.published}
+          totalPages={totalPages}
+          totalProducts={totalProducts}
+        />
 
-      <section className="animate-admin-panel-enter relative z-30 overflow-visible rounded-[12px] border border-[#231f20]/18 bg-white p-4 text-[#231f20]">
-        <div aria-hidden className="absolute left-0 top-0 h-1 w-full bg-[#231f20]/18" />
-        <ProductsFilters
-          appliedFilters={appliedFilters}
-          categories={taxonomy.categories}
-          filters={filters}
+        <section className="animate-admin-panel-enter relative z-30 overflow-visible rounded-[12px] border border-[#231f20]/18 bg-white p-4 text-[#231f20]">
+          <div
+            aria-hidden
+            className="absolute left-0 top-0 h-1 w-full bg-[#231f20]/18"
+          />
+          <ProductsFilters
+            appliedFilters={appliedFilters}
+            categories={taxonomy.categories}
+            filters={filters}
+            isLoading={isLoading}
+            onCreateNew={startNewProduct}
+            onSubmit={() => loadProducts(1, filters)}
+            onUpdateFilter={updateFilter}
+          />
+        </section>
+
+        <ProductsList
           isLoading={isLoading}
-          onCreateNew={startNewProduct}
-          onSubmit={() => loadProducts(1, filters)}
-          onUpdateFilter={updateFilter}
+          onChangePage={(nextPage) => loadProducts(nextPage, appliedFilters)}
+          onSelectProduct={selectProduct}
+          page={page}
+          perPage={perPage}
+          products={products}
+          totalProducts={totalProducts}
+          totalPages={totalPages}
         />
-      </section>
 
-      <ProductsList
-        isLoading={isLoading}
-        onChangePage={(nextPage) => loadProducts(nextPage, appliedFilters)}
-        onSelectProduct={selectProduct}
-        page={page}
-        perPage={perPage}
-        products={products}
-        totalProducts={totalProducts}
-        totalPages={totalPages}
-      />
-
-      {isEditorOpen ? (
-        <ProductEditorModal
-          draft={manager.draft}
-          forceWeightErrorHighlight={
-            initialIssue === "missing-weight" &&
-            typeof initialFocusProductId === "number" &&
-            manager.selectedProductId === initialFocusProductId
-          }
-          handleCreateTag={manager.handleCreateTag}
-          handleSave={handleProductSave}
-          handleUpload={manager.handleUpload}
-          isCreatingTag={manager.isCreatingTag}
-          isTaxonomyLoading={manager.isTaxonomyLoading}
-          setTaxonomyCategory={manager.setTaxonomyCategory}
-          taxonomy={manager.taxonomy}
-          isPromotionEnabled={manager.isPromotionEnabled}
-          isSaving={manager.isSaving}
-          isUploading={manager.isUploading}
-          moveImageToCover={manager.moveImageToCover}
-          newTagName={manager.newTagName}
-          notice={manager.notice}
-          onClose={closeEditor}
-          removeImage={manager.removeImage}
-          selectedProduct={manager.selectedProduct}
-          selectedProductId={manager.selectedProductId}
-          setNewTagName={manager.setNewTagName}
-          tags={manager.tags}
-          toggleDraftTerm={manager.toggleDraftTerm}
-          togglePromotion={manager.togglePromotion}
-          updateDraft={manager.updateDraft}
-        />
-      ) : null}
+        {isEditorOpen ? (
+          <ProductEditorModal
+            draft={manager.draft}
+            forceWeightErrorHighlight={
+              initialIssue === "missing-weight" &&
+              typeof initialFocusProductId === "number" &&
+              manager.selectedProductId === initialFocusProductId
+            }
+            handleCreateTag={manager.handleCreateTag}
+            handleSave={handleProductSave}
+            handleUpload={manager.handleUpload}
+            isCreatingTag={manager.isCreatingTag}
+            isTaxonomyLoading={manager.isTaxonomyLoading}
+            setTaxonomyCategory={manager.setTaxonomyCategory}
+            taxonomy={manager.taxonomy}
+            isPromotionEnabled={manager.isPromotionEnabled}
+            isSaving={manager.isSaving}
+            isUploading={manager.isUploading}
+            moveImageToCover={manager.moveImageToCover}
+            newTagName={manager.newTagName}
+            notice={manager.notice}
+            onClose={closeEditor}
+            removeImage={manager.removeImage}
+            selectedProduct={manager.selectedProduct}
+            selectedProductId={manager.selectedProductId}
+            setNewTagName={manager.setNewTagName}
+            tags={manager.tags}
+            toggleDraftTerm={manager.toggleDraftTerm}
+            togglePromotion={manager.togglePromotion}
+            updateDraft={manager.updateDraft}
+          />
+        ) : null}
       </div>
 
       {toast ? (
@@ -226,9 +234,13 @@ function ProductsHeader() {
       <div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-[#6f6758]">
           <span>Papelito</span>
-          <span aria-hidden className="text-[#b2aa98]">/</span>
+          <span aria-hidden className="text-[#b2aa98]">
+            /
+          </span>
           <span>Admin</span>
-          <span aria-hidden className="text-[#b2aa98]">/</span>
+          <span aria-hidden className="text-[#b2aa98]">
+            /
+          </span>
           <span className="font-semibold text-[#231f20]">Produtos</span>
         </div>
         <h2
@@ -261,10 +273,26 @@ function CatalogStats({
   totalProducts,
 }: CatalogStatsProps) {
   const items = [
-    { description: "total no WooCommerce", label: "Produtos", value: totalProducts },
-    { description: "navegacao atual", label: "Página", value: `${page}/${Math.max(totalPages, 1)}` },
-    { description: "visíveis no catálogo", label: "Publicados na lista", value: published },
-    { description: "campanhas em vitrine", label: "Promoções ativas", value: promotions },
+    {
+      description: "total no WooCommerce",
+      label: "Produtos",
+      value: totalProducts,
+    },
+    {
+      description: "navegacao atual",
+      label: "Página",
+      value: `${page}/${Math.max(totalPages, 1)}`,
+    },
+    {
+      description: "visíveis no catálogo",
+      label: "Publicados na lista",
+      value: published,
+    },
+    {
+      description: "campanhas em vitrine",
+      label: "Promoções ativas",
+      value: promotions,
+    },
   ];
 
   return (
@@ -275,7 +303,10 @@ function CatalogStats({
           key={item.label}
           style={{ animationDelay: `${index * 80}ms` }}
         >
-          <div aria-hidden className="absolute left-0 top-0 h-1 w-full bg-[#231f20]/18" />
+          <div
+            aria-hidden
+            className="absolute left-0 top-0 h-1 w-full bg-[#231f20]/18"
+          />
           <p className="text-sm font-semibold text-[#231f20]/82">
             {item.label}
           </p>

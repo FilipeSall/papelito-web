@@ -1,18 +1,23 @@
 "use client";
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { RichTextResolutionContext } from "@/features/rich-text";
 import type { AdminCategory } from "@/lib/server/admin-taxonomy";
-import type { AdminBenefitGroup, AdminBenefitGroupsSnapshot } from "@/types/product-benefits";
+import type {
+  AdminBenefitGroup,
+  AdminBenefitGroupsSnapshot,
+} from "@/types/product-benefits";
 import { messageFromError } from "@/utils/error-message";
-
-import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
+import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 
 import { uploadMedia } from "../upload-media";
-import { GroupEditorModal, type BenefitGroupFormValues } from "./group-editor-modal";
+import {
+  GroupEditorModal,
+  type BenefitGroupFormValues,
+} from "./group-editor-modal";
 import { ProductBenefitsPreview } from "./product-benefits-preview";
 
 const GROUPS_API = "/api/admin/benefit-groups";
@@ -55,13 +60,25 @@ export function ProductBenefitsSection({
   const [isBusy, setIsBusy] = useState(false);
   const [modal, setModal] = useState<AdminBenefitGroup | "new" | null>(null);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<AdminBenefitGroup | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AdminBenefitGroup | null>(
+    null,
+  );
+  const editorSession = useRef(0);
+  const uploadedIconIds = useRef(new Map<string, number>());
+  const temporaryMedia = useTemporaryAdminMedia();
+
+  useEffect(() => {
+    return () => {
+      editorSession.current += 1;
+    };
+  }, []);
 
   // Global primeiro: é o padrão de todo o catálogo e precisa ser o mais visível.
   const groups = useMemo(
     () =>
       [...snapshot.groups].sort(
-        (left, right) => Number(right.isGlobal) - Number(left.isGlobal) || left.id - right.id,
+        (left, right) =>
+          Number(right.isGlobal) - Number(left.isGlobal) || left.id - right.id,
       ),
     [snapshot.groups],
   );
@@ -72,7 +89,9 @@ export function ProductBenefitsSection({
 
     try {
       const response = await action();
-      const json = (await response.json().catch(() => null)) as { message?: string } | null;
+      const json = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
 
       if (!response.ok) {
         throw new Error(json?.message ?? "Não foi possível concluir a ação.");
@@ -82,7 +101,10 @@ export function ProductBenefitsSection({
       router.refresh();
       return true;
     } catch (error) {
-      setNotice({ text: `⚠ ${messageFromError(error, "Falha na ação.")}`, tone: "error" });
+      setNotice({
+        text: `⚠ ${messageFromError(error, "Falha na ação.")}`,
+        tone: "error",
+      });
       return false;
     } finally {
       setIsBusy(false);
@@ -90,10 +112,26 @@ export function ProductBenefitsSection({
   }
 
   async function handleUploadIcon(key: string, file: File) {
+    const session = editorSession.current;
     setUploadingKey(key);
 
     try {
-      return await uploadMedia(file);
+      const media = await uploadMedia(file);
+
+      if (session !== editorSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return null;
+      }
+
+      const previousId = uploadedIconIds.current.get(key);
+      temporaryMedia.track(media.id);
+      uploadedIconIds.current.set(key, media.id);
+
+      if (previousId && temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId]).catch(() => undefined);
+      }
+
+      return media;
     } catch (error) {
       setNotice({
         text: `⚠ ${messageFromError(error, "Não foi possível enviar o ícone.")}`,
@@ -136,8 +174,27 @@ export function ProductBenefitsSection({
     );
 
     if (ok) {
+      const persistedIds = values.items
+        .map((item) => item.iconAttachmentId)
+        .filter((id): id is number => Number.isInteger(id) && id > 0);
+      void temporaryMedia.discardAllExcept(persistedIds).catch(() => undefined);
+      uploadedIconIds.current.clear();
       setModal(null);
+      editorSession.current += 1;
     }
+  }
+
+  function openModal(nextModal: AdminBenefitGroup | "new") {
+    editorSession.current += 1;
+    uploadedIconIds.current.clear();
+    setModal(nextModal);
+  }
+
+  function closeModal() {
+    editorSession.current += 1;
+    uploadedIconIds.current.clear();
+    setModal(null);
+    void temporaryMedia.discardAllExcept().catch(() => undefined);
   }
 
   async function remove(group: AdminBenefitGroup) {
@@ -152,24 +209,35 @@ export function ProductBenefitsSection({
   }
 
   return (
-    <CollapsiblePanel
-      actions={
-        <button
-          className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={isBusy}
-          onClick={() => setModal("new")}
-          type="button"
-        >
-          <span className="flex items-center gap-2">
-            <Plus aria-hidden className="h-4 w-4" />
-            Nova configuração
-          </span>
-        </button>
-      }
-      description="A faixa de benefícios da página de produto. Cada configuração tem seus próprios itens e é aplicada a produtos, coleções ou categorias. A precedência é produto, depois coleção, depois categoria, depois a global."
-      eyebrow="página de produto"
-      title="Benefícios do produto"
-    >
+    <section className="space-y-6">
+      <header className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+        <div className="h-2 bg-brand-yellow" />
+        <div className="flex flex-col gap-5 p-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6f6758]">
+              Produtos / Configuração de vitrine
+            </p>
+            <h2 className="mt-2 text-3xl font-black uppercase tracking-[-0.03em] text-[#1a1a1a]">
+              Benefícios do produto
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#5e574c]">
+              Configure a faixa exibida na página de produto. A prioridade é
+              produto, coleção, categoria e, por último, a configuração global.
+            </p>
+          </div>
+          <button
+            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isBusy}
+            onClick={() => openModal("new")}
+            type="button"
+          >
+            <span className="flex items-center gap-2">
+              <Plus aria-hidden className="h-4 w-4" />
+              Nova configuração
+            </span>
+          </button>
+        </div>
+      </header>
       {snapshot.issues.length > 0 ? (
         <p className="border-2 border-[#c0392b] bg-white px-4 py-3 text-sm font-semibold text-[#c0392b]">
           ⚠ {snapshot.issues.join(" · ")}
@@ -216,8 +284,8 @@ export function ProductBenefitsSection({
                     )}
                   </h4>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#231f20]/60">
-                    {activeItems.length} de {group.items.length} benefício(s) ativo(s) ·{" "}
-                    {targetSummary(group)}
+                    {activeItems.length} de {group.items.length} benefício(s)
+                    ativo(s) · {targetSummary(group)}
                   </p>
                 </div>
 
@@ -225,7 +293,7 @@ export function ProductBenefitsSection({
                   <button
                     className="cursor-pointer border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={isBusy}
-                    onClick={() => setModal(group)}
+                    onClick={() => openModal(group)}
                     type="button"
                   >
                     <span className="flex items-center gap-2">
@@ -251,7 +319,10 @@ export function ProductBenefitsSection({
               </div>
 
               <div className="p-5">
-                <ProductBenefitsPreview items={group.items} richTextContext={richTextContext} />
+                <ProductBenefitsPreview
+                  items={group.items}
+                  richTextContext={richTextContext}
+                />
               </div>
             </li>
           );
@@ -264,7 +335,7 @@ export function ProductBenefitsSection({
           collections={snapshot.collections}
           group={modal === "new" ? null : modal}
           isSaving={isBusy}
-          onClose={() => setModal(null)}
+          onClose={closeModal}
           onSave={save}
           onUploadIcon={handleUploadIcon}
           productNames={{}}
@@ -280,8 +351,8 @@ export function ProductBenefitsSection({
               Excluir configuração
             </h3>
             <p className="mt-3 text-sm text-[#231f20]/70">
-              &quot;{confirmDelete.name}&quot; será removida. Os produtos que ela atendia voltam a
-              usar a configuração global.
+              &quot;{confirmDelete.name}&quot; será removida. Os produtos que
+              ela atendia voltam a usar a configuração global.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -304,6 +375,6 @@ export function ProductBenefitsSection({
           </div>
         </div>
       )}
-    </CollapsiblePanel>
+    </section>
   );
 }

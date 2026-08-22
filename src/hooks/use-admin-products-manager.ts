@@ -23,7 +23,10 @@ import type {
   AdminProductsSnapshot,
   AdminProductTaxonomyTerm,
 } from "@/lib/server/admin-products";
-import type { AdminTaxonomySnapshot, ProductTaxonomy } from "@/lib/server/admin-taxonomy";
+import type {
+  AdminTaxonomySnapshot,
+  ProductTaxonomy,
+} from "@/lib/server/admin-taxonomy";
 import type {
   DraftTermKey,
   ImageUploadTarget,
@@ -67,11 +70,16 @@ export function useAdminProductsManager(
   snapshot: AdminProductsSnapshot,
   options: {
     initialFocusProductId?: number | null;
+    excludedProductIds?: number[];
     onUploadError?: (message: string) => void;
     taxonomy?: AdminTaxonomySnapshot;
   } = {},
 ) {
   const initialFocusProductId = options.initialFocusProductId ?? null;
+  const excludedProductIds = useMemo(
+    () => new Set(options.excludedProductIds ?? []),
+    [options.excludedProductIds],
+  );
   const taxonomy = options.taxonomy ?? {
     categories: [],
     collections: [],
@@ -87,12 +95,15 @@ export function useAdminProductsManager(
   const [totalPages, setTotalPages] = useState(snapshot.totalPages);
   const [totalProducts, setTotalProducts] = useState(snapshot.totalProducts);
   const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<ProductFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] =
+    useState<ProductFilters>(EMPTY_FILTERS);
   const [selectedProductId, setSelectedProductId] = useState<number | "new">(
     snapshot.products[0]?.id ?? "new",
   );
   const [draft, setDraft] = useState<ProductDraft>(
-    snapshot.products[0] ? productToDraft(snapshot.products[0]) : newProductDraft(),
+    snapshot.products[0]
+      ? productToDraft(snapshot.products[0])
+      : newProductDraft(),
   );
   const draftRef = useRef(draft);
   const changedFieldsRef = useRef<Set<keyof ProductDraft>>(new Set());
@@ -145,7 +156,9 @@ export function useAdminProductsManager(
     const published = products.filter(
       (product) => product.status === PUBLISHED_PRODUCT_STATUS,
     ).length;
-    const drafts = products.filter((product) => product.status === "draft").length;
+    const drafts = products.filter(
+      (product) => product.status === "draft",
+    ).length;
     const promotionTag = findPromotionTag(tags);
     const promotions = products.filter((product) =>
       isPromotionActive(product, promotionTag?.id),
@@ -176,14 +189,21 @@ export function useAdminProductsManager(
     setIsTaxonomyLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/products/${productId}/taxonomy`, {
-        cache: "no-store",
-      });
-      const json = (await response.json().catch(() => null)) as
-        | { taxonomy?: ProductTaxonomy }
-        | null;
+      const response = await fetch(
+        `/api/admin/products/${productId}/taxonomy`,
+        {
+          cache: "no-store",
+        },
+      );
+      const json = (await response.json().catch(() => null)) as {
+        taxonomy?: ProductTaxonomy;
+      } | null;
 
-      if (!response.ok || !json?.taxonomy || taxonomyRequestRef.current !== requestId) {
+      if (
+        !response.ok ||
+        !json?.taxonomy ||
+        taxonomyRequestRef.current !== requestId
+      ) {
         return;
       }
 
@@ -206,60 +226,74 @@ export function useAdminProductsManager(
     }
   }, []);
 
-  const openProduct = useCallback((product: AdminProduct) => {
-    setSelectedProductId(product.id);
-    setTags((currentTags) => mergeTags(currentTags, product.tags));
-    const nextDraft = productToDraft(product);
-    resetDraft(nextDraft);
-    setNotice("");
-    setIsEditorOpen(true);
-    void loadProductTaxonomy(product.id);
-  }, [loadProductTaxonomy, resetDraft]);
+  const openProduct = useCallback(
+    (product: AdminProduct) => {
+      setSelectedProductId(product.id);
+      setTags((currentTags) => mergeTags(currentTags, product.tags));
+      const nextDraft = productToDraft(product);
+      resetDraft(nextDraft);
+      setNotice("");
+      setIsEditorOpen(true);
+      void loadProductTaxonomy(product.id);
+    },
+    [loadProductTaxonomy, resetDraft],
+  );
 
-  const selectProduct = useCallback(async (product: AdminProduct) => {
-    if (product.type !== "variable") {
-      openProduct(product);
-      return;
-    }
-
-    const requestId = selectionRequestRef.current + 1;
-    selectionRequestRef.current = requestId;
-    setIsLoading(true);
-    setNotice("");
-
-    try {
-      const response = await fetch(ADMIN_PRODUCTS_API.detail(product.id), {
-        cache: "no-store",
-      });
-      const json = (await response.json().catch(() => null)) as
-        | { message?: string; product?: AdminProduct }
-        | null;
-
-      if (!response.ok || !json?.product) {
-        throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
-      }
-
-      if (selectionRequestRef.current !== requestId) {
+  const selectProduct = useCallback(
+    async (product: AdminProduct) => {
+      if (product.type !== "variable") {
+        openProduct(product);
         return;
       }
 
-      const detailedProduct = json.product;
-      setProducts((currentProducts) =>
-        currentProducts.map((currentProduct) =>
-          currentProduct.id === detailedProduct.id ? detailedProduct : currentProduct,
-        ),
-      );
-      openProduct(detailedProduct);
-    } catch (error) {
-      if (selectionRequestRef.current === requestId) {
-        setNotice(messageFromError(error, "Não foi possível carregar os preços do produto."));
+      const requestId = selectionRequestRef.current + 1;
+      selectionRequestRef.current = requestId;
+      setIsLoading(true);
+      setNotice("");
+
+      try {
+        const response = await fetch(ADMIN_PRODUCTS_API.detail(product.id), {
+          cache: "no-store",
+        });
+        const json = (await response.json().catch(() => null)) as {
+          message?: string;
+          product?: AdminProduct;
+        } | null;
+
+        if (!response.ok || !json?.product) {
+          throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
+        }
+
+        if (selectionRequestRef.current !== requestId) {
+          return;
+        }
+
+        const detailedProduct = json.product;
+        setProducts((currentProducts) =>
+          currentProducts.map((currentProduct) =>
+            currentProduct.id === detailedProduct.id
+              ? detailedProduct
+              : currentProduct,
+          ),
+        );
+        openProduct(detailedProduct);
+      } catch (error) {
+        if (selectionRequestRef.current === requestId) {
+          setNotice(
+            messageFromError(
+              error,
+              "Não foi possível carregar os preços do produto.",
+            ),
+          );
+        }
+      } finally {
+        if (selectionRequestRef.current === requestId) {
+          setIsLoading(false);
+        }
       }
-    } finally {
-      if (selectionRequestRef.current === requestId) {
-        setIsLoading(false);
-      }
-    }
-  }, [openProduct]);
+    },
+    [openProduct],
+  );
 
   function startNewProduct() {
     setSelectedProductId("new");
@@ -279,7 +313,9 @@ export function useAdminProductsManager(
     }
 
     handledInitialFocusRef.current = true;
-    const existingProduct = products.find((product) => product.id === initialFocusProductId);
+    const existingProduct = products.find(
+      (product) => product.id === initialFocusProductId,
+    );
 
     if (existingProduct) {
       void selectProduct(existingProduct);
@@ -294,12 +330,16 @@ export function useAdminProductsManager(
       setNotice("");
 
       try {
-        const response = await fetch(ADMIN_PRODUCTS_API.detail(focusedProductId), {
-          cache: "no-store",
-        });
-        const json = (await response.json().catch(() => null)) as
-          | { message?: string; product?: AdminProduct }
-          | null;
+        const response = await fetch(
+          ADMIN_PRODUCTS_API.detail(focusedProductId),
+          {
+            cache: "no-store",
+          },
+        );
+        const json = (await response.json().catch(() => null)) as {
+          message?: string;
+          product?: AdminProduct;
+        } | null;
 
         if (!response.ok || !json?.product) {
           throw new Error(json?.message ?? PRODUCT_ERROR_MESSAGES.load);
@@ -311,8 +351,15 @@ export function useAdminProductsManager(
           return;
         }
 
+        if (excludedProductIds.has(focusedProduct.id)) {
+          setNotice("Este produto é gerenciado na aba Kits.");
+          return;
+        }
+
         setProducts((currentProducts) => {
-          if (currentProducts.some((product) => product.id === focusedProduct.id)) {
+          if (
+            currentProducts.some((product) => product.id === focusedProduct.id)
+          ) {
             return currentProducts;
           }
 
@@ -325,7 +372,12 @@ export function useAdminProductsManager(
         setIsEditorOpen(true);
       } catch (error) {
         if (!cancelled) {
-          setNotice(messageFromError(error, "Não foi possível abrir o produto da notificação."));
+          setNotice(
+            messageFromError(
+              error,
+              "Não foi possível abrir o produto da notificação.",
+            ),
+          );
         }
       } finally {
         if (!cancelled) {
@@ -339,7 +391,7 @@ export function useAdminProductsManager(
     return () => {
       cancelled = true;
     };
-  }, [initialFocusProductId, products, resetDraft, selectProduct]);
+  }, [excludedProductIds, initialFocusProductId, products, resetDraft, selectProduct]);
 
   async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
     setIsLoading(true);
@@ -351,14 +403,23 @@ export function useAdminProductsManager(
         page: String(nextPage),
         perPage: String(snapshot.perPage),
       });
+      if (excludedProductIds.size > 0) {
+        params.set("exclude", Array.from(excludedProductIds).join(","));
+      }
 
-      if (normalizedFilters.search) params.set("search", normalizedFilters.search);
-      if (normalizedFilters.status) params.set("status", normalizedFilters.status);
-      if (normalizedFilters.category) params.set("category", normalizedFilters.category);
+      if (normalizedFilters.search)
+        params.set("search", normalizedFilters.search);
+      if (normalizedFilters.status)
+        params.set("status", normalizedFilters.status);
+      if (normalizedFilters.category)
+        params.set("category", normalizedFilters.category);
 
-      const response = await fetch(`${ADMIN_PRODUCTS_API.list}?${params.toString()}`, {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `${ADMIN_PRODUCTS_API.list}?${params.toString()}`,
+        {
+          cache: "no-store",
+        },
+      );
       const json = await response.json();
 
       if (!response.ok) {
@@ -366,7 +427,10 @@ export function useAdminProductsManager(
       }
 
       const nextSnapshot = json as AdminProductsSnapshot;
-      setProducts(nextSnapshot.products);
+      const visibleProducts = nextSnapshot.products.filter(
+        (product) => !excludedProductIds.has(product.id),
+      );
+      setProducts(visibleProducts);
       setTags(nextSnapshot.tags);
       setIssues(nextSnapshot.issues);
       setPage(nextSnapshot.currentPage);
@@ -374,9 +438,9 @@ export function useAdminProductsManager(
       setTotalProducts(nextSnapshot.totalProducts);
       setAppliedFilters(normalizedFilters);
 
-      setSelectedProductId(nextSnapshot.products[0]?.id ?? "new");
-      const nextDraft = nextSnapshot.products[0]
-        ? productToDraft(nextSnapshot.products[0])
+      setSelectedProductId(visibleProducts[0]?.id ?? "new");
+      const nextDraft = visibleProducts[0]
+        ? productToDraft(visibleProducts[0])
         : newProductDraft();
       resetDraft(nextDraft);
       setIsEditorOpen(false);
@@ -445,23 +509,32 @@ export function useAdminProductsManager(
 
       const savedProduct = json.product as AdminProduct;
 
-      const taxonomyResponse = await fetch(`/api/admin/products/${savedProduct.id}/taxonomy`, {
-        body: JSON.stringify(buildTaxonomyPayload(draftToSave)),
-        headers: { "Content-Type": "application/json" },
-        method: "PUT",
-      });
+      const taxonomyResponse = await fetch(
+        `/api/admin/products/${savedProduct.id}/taxonomy`,
+        {
+          body: JSON.stringify(buildTaxonomyPayload(draftToSave)),
+          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+        },
+      );
 
       if (!taxonomyResponse.ok) {
-        const taxonomyJson = (await taxonomyResponse.json().catch(() => null)) as
-          | { message?: string }
-          | null;
+        const taxonomyJson = (await taxonomyResponse
+          .json()
+          .catch(() => null)) as { message?: string } | null;
 
-        if (selectedProductId === "new" && savedProduct.status === PUBLISHED_PRODUCT_STATUS) {
-          const rollbackResponse = await fetch(ADMIN_PRODUCTS_API.detail(savedProduct.id), {
-            body: JSON.stringify({ status: "draft" }),
-            headers: { "Content-Type": "application/json" },
-            method: "PATCH",
-          });
+        if (
+          selectedProductId === "new" &&
+          savedProduct.status === PUBLISHED_PRODUCT_STATUS
+        ) {
+          const rollbackResponse = await fetch(
+            ADMIN_PRODUCTS_API.detail(savedProduct.id),
+            {
+              body: JSON.stringify({ status: "draft" }),
+              headers: { "Content-Type": "application/json" },
+              method: "PATCH",
+            },
+          );
 
           if (!rollbackResponse.ok) {
             setNotice(
@@ -479,8 +552,10 @@ export function useAdminProductsManager(
         return false;
       }
 
-      setProducts((currentProducts) => {
-        const exists = currentProducts.some((product) => product.id === savedProduct.id);
+        setProducts((currentProducts) => {
+        const exists = currentProducts.some(
+          (product) => product.id === savedProduct.id,
+        );
         if (exists) {
           return currentProducts.map((product) =>
             product.id === savedProduct.id ? savedProduct : product,
@@ -493,7 +568,9 @@ export function useAdminProductsManager(
       const nextDraft = applyTaxonomyToDraft(productToDraft(savedProduct), {
         category: { id: Number(draftToSave.taxonomyCategoryId) },
         collections: draftToSave.taxonomyCollections,
-        subcategories: draftToSave.taxonomySubcategoryIds.map((id) => ({ id: Number(id) })),
+        subcategories: draftToSave.taxonomySubcategoryIds.map((id) => ({
+          id: Number(id),
+        })),
       });
       resetDraft(nextDraft);
       setNotice(PRODUCT_NOTICES.saved);
@@ -511,50 +588,54 @@ export function useAdminProductsManager(
     setNotice("");
 
     try {
-      const json = await uploadDirectFile<{ media?: { alt: string; id: number; src: string } }>(
-        "media",
-        file,
-      );
+      const json = await uploadDirectFile<{
+        media?: { alt: string; id: number; src: string };
+      }>("media", file);
       if (!json.media) {
         throw new Error(PRODUCT_ERROR_MESSAGES.upload);
       }
 
       const media = json.media;
-      updateDraftState((currentDraft) => ({
-        ...currentDraft,
-        imageIds:
-          target === "cover"
-            ? [
-                String(media.id),
-                ...currentDraft.imageIds.filter((_, index) => index > 0),
-              ]
-            : [...currentDraft.imageIds, String(media.id)],
-        images:
-          target === "cover"
-            ? [
-                {
-                  alt: media.alt,
-                  id: media.id,
-                  position: 0,
-                  src: media.src,
-                },
-                ...currentDraft.images.slice(1).map((image, index) => ({
-                  ...image,
-                  position: index + 1,
-                })),
-              ]
-            : [
-                ...currentDraft.images,
-                {
-                  alt: media.alt,
-                  id: media.id,
-                  position: currentDraft.images.length,
-                  src: media.src,
-                },
-              ],
-      }), ["imageIds"]);
+      updateDraftState(
+        (currentDraft) => ({
+          ...currentDraft,
+          imageIds:
+            target === "cover"
+              ? [
+                  String(media.id),
+                  ...currentDraft.imageIds.filter((_, index) => index > 0),
+                ]
+              : [...currentDraft.imageIds, String(media.id)],
+          images:
+            target === "cover"
+              ? [
+                  {
+                    alt: media.alt,
+                    id: media.id,
+                    position: 0,
+                    src: media.src,
+                  },
+                  ...currentDraft.images.slice(1).map((image, index) => ({
+                    ...image,
+                    position: index + 1,
+                  })),
+                ]
+              : [
+                  ...currentDraft.images,
+                  {
+                    alt: media.alt,
+                    id: media.id,
+                    position: currentDraft.images.length,
+                    src: media.src,
+                  },
+                ],
+        }),
+        ["imageIds"],
+      );
       setNotice(
-        target === "cover" ? PRODUCT_NOTICES.coverUpdated : PRODUCT_NOTICES.secondaryAdded,
+        target === "cover"
+          ? PRODUCT_NOTICES.coverUpdated
+          : PRODUCT_NOTICES.secondaryAdded,
       );
     } catch (error) {
       const message = messageFromError(error, PRODUCT_ERROR_MESSAGES.upload);
@@ -579,12 +660,15 @@ export function useAdminProductsManager(
 
     if (existingTag) {
       if (shouldSelect) {
-        updateDraftState((currentDraft) => ({
-          ...currentDraft,
-          tagIds: currentDraft.tagIds.includes(String(existingTag.id))
-            ? currentDraft.tagIds
-            : [...currentDraft.tagIds, String(existingTag.id)],
-        }), ["tagIds"]);
+        updateDraftState(
+          (currentDraft) => ({
+            ...currentDraft,
+            tagIds: currentDraft.tagIds.includes(String(existingTag.id))
+              ? currentDraft.tagIds
+              : [...currentDraft.tagIds, String(existingTag.id)],
+          }),
+          ["tagIds"],
+        );
       }
       setNewTagName("");
       setNotice(PRODUCT_NOTICES.tagApplied);
@@ -609,12 +693,15 @@ export function useAdminProductsManager(
       const tag = json.tag as AdminProductTaxonomyTerm;
       setTags((currentTags) => mergeTags(currentTags, [tag]));
       if (shouldSelect) {
-        updateDraftState((currentDraft) => ({
-          ...currentDraft,
-          tagIds: currentDraft.tagIds.includes(String(tag.id))
-            ? currentDraft.tagIds
-            : [...currentDraft.tagIds, String(tag.id)],
-        }), ["tagIds"]);
+        updateDraftState(
+          (currentDraft) => ({
+            ...currentDraft,
+            tagIds: currentDraft.tagIds.includes(String(tag.id))
+              ? currentDraft.tagIds
+              : [...currentDraft.tagIds, String(tag.id)],
+          }),
+          ["tagIds"],
+        );
       }
       setNewTagName("");
       setNotice(PRODUCT_NOTICES.tagCreated);
@@ -625,54 +712,73 @@ export function useAdminProductsManager(
     }
   }
 
-  function updateDraft<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
-    updateDraftState((currentDraft) => ({ ...currentDraft, [key]: value }), [key]);
+  function updateDraft<K extends keyof ProductDraft>(
+    key: K,
+    value: ProductDraft[K],
+  ) {
+    updateDraftState(
+      (currentDraft) => ({ ...currentDraft, [key]: value }),
+      [key],
+    );
   }
 
   function removeImage(imageId: string) {
-    updateDraftState((currentDraft) => ({
-      ...currentDraft,
-      imageIds: currentDraft.imageIds.filter((id) => id !== imageId),
-      images: currentDraft.images.filter((image) => String(image.id) !== imageId),
-    }), ["imageIds"]);
+    updateDraftState(
+      (currentDraft) => ({
+        ...currentDraft,
+        imageIds: currentDraft.imageIds.filter((id) => id !== imageId),
+        images: currentDraft.images.filter(
+          (image) => String(image.id) !== imageId,
+        ),
+      }),
+      ["imageIds"],
+    );
   }
 
   function moveImageToCover(imageId: string) {
-    updateDraftState((currentDraft) => {
-      const targetImage = currentDraft.images.find(
-        (image) => String(image.id) === imageId,
-      );
+    updateDraftState(
+      (currentDraft) => {
+        const targetImage = currentDraft.images.find(
+          (image) => String(image.id) === imageId,
+        );
 
-      if (!targetImage) {
-        return currentDraft;
-      }
+        if (!targetImage) {
+          return currentDraft;
+        }
 
-      const nextImages = [
-        targetImage,
-        ...currentDraft.images.filter((image) => String(image.id) !== imageId),
-      ].map((image, position) => ({ ...image, position }));
-      const nextImageIds = nextImages
-        .map((image) => String(image.id))
-        .filter((id) => id !== "0");
+        const nextImages = [
+          targetImage,
+          ...currentDraft.images.filter(
+            (image) => String(image.id) !== imageId,
+          ),
+        ].map((image, position) => ({ ...image, position }));
+        const nextImageIds = nextImages
+          .map((image) => String(image.id))
+          .filter((id) => id !== "0");
 
-      return {
-        ...currentDraft,
-        imageIds: nextImageIds,
-        images: nextImages,
-      };
-    }, ["imageIds"]);
+        return {
+          ...currentDraft,
+          imageIds: nextImageIds,
+          images: nextImages,
+        };
+      },
+      ["imageIds"],
+    );
   }
 
   function toggleDraftTerm(key: DraftTermKey, id: string) {
-    updateDraftState((currentDraft) => {
-      const currentIds = currentDraft[key];
-      return {
-        ...currentDraft,
-        [key]: currentIds.includes(id)
-          ? currentIds.filter((currentId) => currentId !== id)
-          : [...currentIds, id],
-      };
-    }, [key]);
+    updateDraftState(
+      (currentDraft) => {
+        const currentIds = currentDraft[key];
+        return {
+          ...currentDraft,
+          [key]: currentIds.includes(id)
+            ? currentIds.filter((currentId) => currentId !== id)
+            : [...currentIds, id],
+        };
+      },
+      [key],
+    );
   }
 
   function togglePromotion(isEnabled: boolean) {
@@ -680,22 +786,25 @@ export function useAdminProductsManager(
     // ainda vazias, não sobraria nada de onde derivar o estado marcado.
     setIsPromotionScheduled(isEnabled);
 
-    updateDraftState((currentDraft) => {
-      const promotionTagId = promotionTag ? String(promotionTag.id) : "";
-      const nextTagIds =
-        isEnabled && promotionTagId
-          ? Array.from(new Set([...currentDraft.tagIds, promotionTagId]))
-          : currentDraft.tagIds.filter((id) => id !== promotionTagId);
+    updateDraftState(
+      (currentDraft) => {
+        const promotionTagId = promotionTag ? String(promotionTag.id) : "";
+        const nextTagIds =
+          isEnabled && promotionTagId
+            ? Array.from(new Set([...currentDraft.tagIds, promotionTagId]))
+            : currentDraft.tagIds.filter((id) => id !== promotionTagId);
 
-      // Desmarcar cancela o agendamento, não o preço: `salePrice` tem campo próprio e
-      // é o que habilita o toggle — limpá-lo aqui desabilitaria a opção que acabou de
-      // ser desmarcada, sem o preço de volta.
-      return {
-        ...currentDraft,
-        tagIds: nextTagIds,
-        ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "" }),
-      };
-    }, isEnabled ? ["tagIds"] : ["tagIds", "dateOnSaleFrom", "dateOnSaleTo"]);
+        // Desmarcar cancela o agendamento, não o preço: `salePrice` tem campo próprio e
+        // é o que habilita o toggle — limpá-lo aqui desabilitaria a opção que acabou de
+        // ser desmarcada, sem o preço de volta.
+        return {
+          ...currentDraft,
+          tagIds: nextTagIds,
+          ...(isEnabled ? {} : { dateOnSaleFrom: "", dateOnSaleTo: "" }),
+        };
+      },
+      isEnabled ? ["tagIds"] : ["tagIds", "dateOnSaleFrom", "dateOnSaleTo"],
+    );
 
     if (isEnabled && !promotionTag) {
       setNotice(PRODUCT_ERROR_MESSAGES.promotionTagMissing);
@@ -772,4 +881,6 @@ export function useAdminProductsManager(
   };
 }
 
-export type UseAdminProductsManagerReturn = ReturnType<typeof useAdminProductsManager>;
+export type UseAdminProductsManagerReturn = ReturnType<
+  typeof useAdminProductsManager
+>;

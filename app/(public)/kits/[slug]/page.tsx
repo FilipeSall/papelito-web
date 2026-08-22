@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 
-import {
-  AddToCartButton,
-  ImageWithSkeleton,
-  ProductImageFallback,
-} from "@/components/ui";
+import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { getKitsCatalog } from "@/features/catalog/services/get-kits-catalog";
+import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
+
+import { KitDetailAddToCart } from "./kit-detail-add-to-cart";
 
 export const revalidate = 60;
 
@@ -58,18 +57,16 @@ export default async function KitDetailPage({
               </p>
             ) : null}
           </div>
-          <AddToCartButton
-            className="mt-7 h-12 px-5"
-            label="Adicionar ao carrinho"
-            product={{
-              id: kit.id,
-              category: kit.category,
-              image: kit.image,
-              name: kit.name,
-              originalPrice: kit.originalPrice,
-              price: kit.price,
-            }}
-          />
+          <ProductAvailabilityProvider productIds={[kit.id]}>
+            <KitDetailAddToCart
+              category={kit.category}
+              id={kit.id}
+              image={kit.image}
+              name={kit.name}
+              originalPrice={kit.originalPrice}
+              price={kit.price}
+            />
+          </ProductAvailabilityProvider>
         </div>
       </div>
     </main>

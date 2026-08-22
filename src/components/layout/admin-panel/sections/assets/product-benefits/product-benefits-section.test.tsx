@@ -67,10 +67,6 @@ function renderManager(data = snapshot()) {
   );
 }
 
-async function openSection(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /expandir benefícios do produto/i }));
-}
-
 function okResponse(body: unknown = {}) {
   return { ok: true, json: async () => body } as unknown as Response;
 }
@@ -87,19 +83,15 @@ afterEach(() => {
 });
 
 describe("ProductBenefitsSection", () => {
-  it("vive como painel recolhível da página de assets", async () => {
-    const user = userEvent.setup();
+  it("vive como aba própria de Produtos, sempre expandida", () => {
     renderManager();
 
-    const toggle = screen.getByRole("button", { name: /expandir benefícios do produto/i });
-
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(toggle);
-
     expect(
-      screen.getByRole("button", { name: /recolher benefícios do produto/i }),
-    ).toHaveAttribute("aria-expanded", "true");
+      screen.getByRole("heading", { name: /benefícios do produto/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /expandir benefícios do produto/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("mostra a prévia com o layout da página de produto, não com o da faixa da Home", () => {
@@ -141,7 +133,6 @@ describe("ProductBenefitsSection", () => {
   it("cria uma configuração com os itens e alvos escolhidos", async () => {
     const user = userEvent.setup();
     renderManager();
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /nova configuração/i }));
     await user.type(screen.getByLabelText(/nome interno/i), "Premium");
@@ -167,7 +158,6 @@ describe("ProductBenefitsSection", () => {
   it("edita a configuração existente pelo id", async () => {
     const user = userEvent.setup();
     renderManager(snapshot({ groups: [group({ id: 9, isGlobal: false, name: "Premium" })] }));
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /editar/i }));
     await user.click(screen.getByRole("button", { name: /^salvar$/i }));
@@ -196,7 +186,6 @@ describe("ProductBenefitsSection", () => {
         ],
       }),
     );
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /editar/i }));
     await user.click(screen.getByRole("button", { name: /subir benefício 2/i }));
@@ -217,7 +206,6 @@ describe("ProductBenefitsSection", () => {
     renderManager(
       snapshot({ groups: [group({ id: 9, isGlobal: false, items: [benefitItem({ id: 1 })] })] }),
     );
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /editar/i }));
     await user.click(screen.getByRole("checkbox", { name: /^ativo$/i }));
@@ -243,7 +231,6 @@ describe("ProductBenefitsSection", () => {
         ],
       }),
     );
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /editar/i }));
     await user.click(screen.getByRole("button", { name: /remover benefício 2/i }));
@@ -259,7 +246,6 @@ describe("ProductBenefitsSection", () => {
   it("exclui a configuração depois da confirmação", async () => {
     const user = userEvent.setup();
     renderManager(snapshot({ groups: [group({ id: 9, isGlobal: false, name: "Premium" })] }));
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /excluir/i }));
     expect(fetchMock).not.toHaveBeenCalled();
@@ -285,7 +271,6 @@ describe("ProductBenefitsSection", () => {
     } as unknown as Response);
 
     renderManager(snapshot({ groups: [group({ id: 9, isGlobal: false })] }));
-    await openSection(user);
 
     await user.click(screen.getByRole("button", { name: /editar/i }));
     await user.click(screen.getByRole("button", { name: /^salvar$/i }));

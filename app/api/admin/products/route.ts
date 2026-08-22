@@ -19,6 +19,10 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const filters = {
     category: url.searchParams.get("category") ?? undefined,
+    exclude: (url.searchParams.get("exclude") ?? "")
+      .split(",")
+      .map((id) => Number.parseInt(id, 10))
+      .filter((id) => Number.isInteger(id) && id > 0),
     page: url.searchParams.get("page") ?? undefined,
     perPage: url.searchParams.get("perPage") ?? undefined,
     search: url.searchParams.get("search") ?? undefined,

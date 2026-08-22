@@ -103,6 +103,25 @@ async function availabilityFetcher(url: string): Promise<ProductAvailabilityResp
   return response.json() as Promise<ProductAvailabilityResponse>;
 }
 
+function availabilityUrls(ids: string[]) {
+  const urls: string[] = [];
+  for (let index = 0; index < ids.length; index += 120) {
+    urls.push(
+      `/api/catalog/availability?productIds=${encodeURIComponent(ids.slice(index, index + 120).join(","))}`,
+    );
+  }
+  return urls;
+}
+
+async function availabilityBatchFetcher(urls: string[]) {
+  const responses = await Promise.all(urls.map(availabilityFetcher));
+  const status = responses.find((response) => response.status !== "ok")?.status ?? "ok";
+  return {
+    products: Object.assign({}, ...responses.map((response) => response.products)),
+    status,
+  } satisfies ProductAvailabilityResponse;
+}
+
 export function ProductAvailabilityProvider({
   productIds,
   children,
@@ -117,12 +136,10 @@ export function ProductAvailabilityProvider({
     () => (shouldFetch ? readCachedAvailability(storageKey) : undefined),
     [shouldFetch, storageKey],
   );
-  const requestUrl = shouldFetch
-    ? `/api/catalog/availability?productIds=${encodeURIComponent(idsKey)}`
-    : null;
+  const requestUrls = shouldFetch ? availabilityUrls(normalizedIds) : null;
 
   const { data, error, isLoading: isAvailabilityLoading } =
-    useSWR<ProductAvailabilityResponse>(requestUrl, availabilityFetcher, {
+    useSWR<ProductAvailabilityResponse>(requestUrls, availabilityBatchFetcher, {
       dedupingInterval: 60_000,
       fallbackData,
       revalidateOnFocus: false,

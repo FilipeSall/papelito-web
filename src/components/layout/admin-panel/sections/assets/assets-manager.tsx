@@ -1,7 +1,15 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChevronDown, ImagePlus, LoaderCircle, Save, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ImagePlus,
+  LoaderCircle,
+  Save,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
@@ -9,6 +17,7 @@ import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
 import type { RichTextResolutionContext } from "@/features/rich-text";
 import { messageFromError } from "@/utils/error-message";
+import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 import type {
   AdminHeroBannersSnapshot,
   AdminHomeFeaturesSnapshot,
@@ -76,7 +85,8 @@ const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
     key: "productHero",
     eyebrow: "Produtos",
     title: "Imagem de produtos",
-    description: "Banner do topo da página /produtos, atrás do título Nossos Produtos.",
+    description:
+      "Banner do topo da página /produtos, atrás do título Nossos Produtos.",
     formatHint: "Formato ideal: horizontal largo, aproximadamente 3.5:1.",
   },
   {
@@ -90,14 +100,16 @@ const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
     key: "aboutStory",
     eyebrow: "Sobre",
     title: "Imagem da história",
-    description: 'Foto ao lado do bloco "Mais de uma década de história" na página /sobre.',
+    description:
+      'Foto ao lado do bloco "Mais de uma década de história" na página /sobre.',
     formatHint: "Formato ideal: foto horizontal 3:2 com assunto central.",
   },
   {
     key: "revendedorBusinessMain",
     eyebrow: "Revendedor",
     title: "Imagem principal dos negócios",
-    description: 'Foto grande ao lado do título "Atendemos Diferentes Tipos de Negócios!" em /revendedor.',
+    description:
+      'Foto grande ao lado do título "Atendemos Diferentes Tipos de Negócios!" em /revendedor.',
     formatHint: "Formato ideal: foto vertical 2:3 com foco no centro.",
   },
   {
@@ -105,14 +117,17 @@ const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
     eyebrow: "Revendedor",
     title: "Imagem secundária dos negócios",
     description: "Foto menor do mosaico de negócios atendidos em /revendedor.",
-    formatHint: "Formato ideal: foto horizontal ou vertical com crop seguro no centro.",
+    formatHint:
+      "Formato ideal: foto horizontal ou vertical com crop seguro no centro.",
   },
   {
     key: "revendedorBusinessIllustration",
     eyebrow: "Revendedor",
     title: "Ilustração do card amarelo",
-    description: "Imagem do card amarelo no mosaico de negócios atendidos em /revendedor.",
-    formatHint: "Formato ideal: quadrado 1:1, PNG ou SVG com fundo transparente.",
+    description:
+      "Imagem do card amarelo no mosaico de negócios atendidos em /revendedor.",
+    formatHint:
+      "Formato ideal: quadrado 1:1, PNG ou SVG com fundo transparente.",
     previewClass: "object-contain bg-brand-yellow",
   },
 ];
@@ -173,18 +188,26 @@ export function AssetsManager({
 }: AssetsManagerProps) {
   const [heroBanners, setHeroBanners] = useState(() =>
     normalizeHeroOrder(
-      initialHeroSnapshot.banners.length > 0 ? initialHeroSnapshot.banners : [createEmptyHeroBanner(0)],
+      initialHeroSnapshot.banners.length > 0
+        ? initialHeroSnapshot.banners
+        : [createEmptyHeroBanner(0)],
     ),
   );
   const [heroIssues, setHeroIssues] = useState(initialHeroSnapshot.issues);
-  const [expandedHeroBannerIds, setExpandedHeroBannerIds] = useState<string[]>([]);
+  const [expandedHeroBannerIds, setExpandedHeroBannerIds] = useState<string[]>(
+    [],
+  );
   const [isHeroPanelOpen, setIsHeroPanelOpen] = useState(false);
-  const [pendingHeroBannerId, setPendingHeroBannerId] = useState<string | null>(null);
+  const [pendingHeroBannerId, setPendingHeroBannerId] = useState<string | null>(
+    null,
+  );
   const [partnerBanner, setPartnerBanner] = useState(() => ({
     ...initialPartnerSnapshot.banner,
     isActive: true,
   }));
-  const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
+  const [partnerIssues, setPartnerIssues] = useState(
+    initialPartnerSnapshot.issues,
+  );
   const [isPartnerEditorOpen, setIsPartnerEditorOpen] = useState(false);
   const [promoMarquee, setPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
@@ -192,20 +215,29 @@ export function AssetsManager({
   const [persistedPromoMarquee, setPersistedPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
-  const [promoMarqueeIssues, setPromoMarqueeIssues] = useState(initialPromoMarqueeSnapshot.issues);
+  const [promoMarqueeIssues, setPromoMarqueeIssues] = useState(
+    initialPromoMarqueeSnapshot.issues,
+  );
   const [features, setFeatures] = useState<HomeFeatureItem[]>(() =>
     initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
       ? initialFeaturesSnapshot.items
       : FEATURES_BAR_ITEMS,
   );
-  const [persistedFeatures, setPersistedFeatures] = useState<HomeFeatureItem[]>(() =>
-    initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
-      ? initialFeaturesSnapshot.items
-      : FEATURES_BAR_ITEMS,
+  const [persistedFeatures, setPersistedFeatures] = useState<HomeFeatureItem[]>(
+    () =>
+      initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
+        ? initialFeaturesSnapshot.items
+        : FEATURES_BAR_ITEMS,
   );
-  const [featureIssues, setFeatureIssues] = useState(initialFeaturesSnapshot.issues);
-  const [siteImages, setSiteImages] = useState(initialSiteImagesSnapshot.images);
-  const [siteImageIssues, setSiteImageIssues] = useState(initialSiteImagesSnapshot.issues);
+  const [featureIssues, setFeatureIssues] = useState(
+    initialFeaturesSnapshot.issues,
+  );
+  const [siteImages, setSiteImages] = useState(
+    initialSiteImagesSnapshot.images,
+  );
+  const [siteImageIssues, setSiteImageIssues] = useState(
+    initialSiteImagesSnapshot.issues,
+  );
   const [logos, setLogos] = useState(initialLogosSnapshot.logos);
   const [logoIssues, setLogoIssues] = useState(initialLogosSnapshot.issues);
   const [notice, setNotice] = useState<NoticeState | null>(null);
@@ -215,8 +247,18 @@ export function AssetsManager({
   const [isSavingFeatures, setIsSavingFeatures] = useState(false);
   const [isSavingSiteImages, setIsSavingSiteImages] = useState(false);
   const [isSavingLogos, setIsSavingLogos] = useState(false);
-  const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(null);
+  const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(
+    null,
+  );
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const temporaryMedia = useTemporaryAdminMedia();
+  const assetsSession = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      assetsSession.current += 1;
+    };
+  }, []);
 
   function showNotice(tone: NoticeTone, message: string) {
     setNotice({ message, tone });
@@ -225,7 +267,9 @@ export function AssetsManager({
   function updateHeroBanner(id: string, patch: Partial<HeroBanner>) {
     setHeroBanners((current) =>
       normalizeHeroOrder(
-        current.map((banner) => (banner.id === id ? { ...banner, ...patch } : banner)),
+        current.map((banner) =>
+          banner.id === id ? { ...banner, ...patch } : banner,
+        ),
       ),
     );
   }
@@ -252,9 +296,20 @@ export function AssetsManager({
   }
 
   function removeHeroBanner(id: string) {
+    const removed = heroBanners.find((banner) => banner.id === id);
+    const removedIds = [removed?.desktopImageId, removed?.mobileImageId].filter(
+      (mediaId): mediaId is number => temporaryMedia.isTracked(mediaId),
+    );
+    if (removedIds.length > 0) {
+      void temporaryMedia.discard(removedIds).catch(() => undefined);
+    }
+
     setHeroBanners((current) => {
       if (current.length <= 1) {
-        showNotice("error", "A Hero Section precisa manter pelo menos uma opção.");
+        showNotice(
+          "error",
+          "A Hero Section precisa manter pelo menos uma opção.",
+        );
         return current;
       }
 
@@ -262,7 +317,10 @@ export function AssetsManager({
     });
   }
 
-  function updateSiteImage(key: SiteImageAssetKey, patch: Partial<ManagedImageAsset>) {
+  function updateSiteImage(
+    key: SiteImageAssetKey,
+    patch: Partial<ManagedImageAsset>,
+  ) {
     setSiteImages((current) => ({
       ...current,
       [key]: {
@@ -282,9 +340,14 @@ export function AssetsManager({
     }));
   }
 
-  function updatePromoMarqueeItem(id: string, patch: Partial<PromoMarqueeItem>) {
+  function updatePromoMarqueeItem(
+    id: string,
+    patch: Partial<PromoMarqueeItem>,
+  ) {
     setPromoMarquee((current) =>
-      current.map((message) => (message.id === id ? { ...message, ...patch } : message)),
+      current.map((message) =>
+        message.id === id ? { ...message, ...patch } : message,
+      ),
     );
   }
 
@@ -313,7 +376,9 @@ export function AssetsManager({
       return;
     }
 
-    const card = document.getElementById(`hero-option-card-${pendingHeroBannerId}`);
+    const card = document.getElementById(
+      `hero-option-card-${pendingHeroBannerId}`,
+    );
     const editor = document.getElementById(`hero-alt-${pendingHeroBannerId}`);
     if (!card || !editor) {
       return;
@@ -350,35 +415,74 @@ export function AssetsManager({
       return;
     }
 
-    setPromoMarquee((current) => normalizePromoMarqueeOrder(current.filter((message) => message.id !== id)));
+    setPromoMarquee((current) =>
+      normalizePromoMarqueeOrder(
+        current.filter((message) => message.id !== id),
+      ),
+    );
   }
 
-  async function handleHeroUpload(id: string, field: "desktop" | "mobile", file: File) {
+  async function handleHeroUpload(
+    id: string,
+    field: "desktop" | "mobile",
+    file: File,
+  ) {
+    const session = assetsSession.current;
     const uploadSlot = `hero:${id}:${field}`;
     setUploadingKey(uploadSlot);
 
     try {
       const media = await uploadMedia(file);
+      if (session !== assetsSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return;
+      }
+      const current = heroBanners.find((banner) => banner.id === id);
+      const previousId =
+        field === "desktop" ? current?.desktopImageId : current?.mobileImageId;
+      temporaryMedia.track(media.id);
       updateHeroBanner(id, {
         ...(field === "desktop"
           ? { desktopImageId: media.id, desktopImageUrl: media.src }
           : { mobileImageId: media.id, mobileImageUrl: media.src }),
-        alt: media.alt || heroBanners.find((banner) => banner.id === id)?.alt || "",
+        alt:
+          media.alt ||
+          heroBanners.find((banner) => banner.id === id)?.alt ||
+          "",
       });
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
       showNotice("success", "Imagem da Hero Section enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem da Hero Section."));
+      showNotice(
+        "error",
+        messageFromError(
+          error,
+          "Não foi possível enviar a imagem da Hero Section.",
+        ),
+      );
     } finally {
       setUploadingKey(null);
     }
   }
 
   async function handlePartnerUpload(field: "desktop" | "mobile", file: File) {
+    const session = assetsSession.current;
     const uploadSlot = `partner:${field}`;
     setUploadingKey(uploadSlot);
 
     try {
       const media = await uploadMedia(file);
+      if (session !== assetsSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return;
+      }
+      const previousId =
+        field === "desktop"
+          ? partnerBanner.desktopImageId
+          : partnerBanner.mobileImageId;
+      temporaryMedia.track(media.id);
       setPartnerBanner((current) => ({
         ...current,
         ...(field === "desktop"
@@ -387,53 +491,89 @@ export function AssetsManager({
         alt: media.alt || current.alt,
         isActive: true,
       }));
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
       showNotice("success", "Imagem do PDV Perfeito enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem do PDV Perfeito."));
+      showNotice(
+        "error",
+        messageFromError(
+          error,
+          "Não foi possível enviar a imagem do PDV Perfeito.",
+        ),
+      );
     } finally {
       setUploadingKey(null);
     }
   }
 
   async function handleSiteImageUpload(key: SiteImageAssetKey, file: File) {
+    const session = assetsSession.current;
     const uploadSlot = `site:${key}`;
     setUploadingKey(uploadSlot);
 
     try {
       const media = await uploadMedia(file);
+      if (session !== assetsSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return;
+      }
+      const previousId = siteImages[key].imageId;
+      temporaryMedia.track(media.id);
       updateSiteImage(key, {
         imageId: media.id,
         imageUrl: media.src,
         alt: media.alt || siteImages[key].alt,
       });
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
       showNotice("success", "Imagem enviada com sucesso.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível enviar a imagem."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível enviar a imagem."),
+      );
     } finally {
       setUploadingKey(null);
     }
   }
 
   async function handleLogoUpload(key: SiteLogoKey, file: File) {
+    const session = assetsSession.current;
     const uploadSlot = `logo:${key}`;
     setUploadingKey(uploadSlot);
 
     try {
       const media = await uploadMedia(file);
+      if (session !== assetsSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return;
+      }
+      const previousId = logos[key].imageId;
+      temporaryMedia.track(media.id);
       updateLogo(key, {
         imageId: media.id,
         imageUrl: media.src,
         alt: media.alt || logos[key].alt,
       });
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
       showNotice("success", "Logo enviada com sucesso. Salve para publicar.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível enviar a logo."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível enviar a logo."),
+      );
     } finally {
       setUploadingKey(null);
     }
   }
 
   async function handleFeatureIconUpload(id: string, file: File) {
+    const session = assetsSession.current;
     const isSvg = file.name.toLowerCase().endsWith(".svg");
     const validMime = !file.type || file.type === "image/svg+xml";
 
@@ -451,10 +591,28 @@ export function AssetsManager({
 
     try {
       const media = await uploadMedia(file);
+      if (session !== assetsSession.current) {
+        void temporaryMedia.discard([media.id]).catch(() => undefined);
+        return;
+      }
+      const previousId = features.find((item) => item.id === id)?.iconId;
+      temporaryMedia.track(media.id);
       updateFeatureItem(id, { iconId: media.id, iconUrl: media.src });
-      showNotice("success", "Ícone do benefício enviado. Salve os benefícios para publicar.");
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId!]).catch(() => undefined);
+      }
+      showNotice(
+        "success",
+        "Ícone do benefício enviado. Salve os benefícios para publicar.",
+      );
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível enviar o ícone do benefício."));
+      showNotice(
+        "error",
+        messageFromError(
+          error,
+          "Não foi possível enviar o ícone do benefício.",
+        ),
+      );
     } finally {
       setUploadingKey(null);
     }
@@ -462,6 +620,7 @@ export function AssetsManager({
 
   async function saveHeroBanners() {
     setIsSavingHero(true);
+    temporaryMedia.beginSave();
 
     try {
       const response = await fetch(HERO_API, {
@@ -471,24 +630,39 @@ export function AssetsManager({
         },
         method: "PUT",
       });
-      const json = await parseJson<AdminHeroBannersSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminHeroBannersSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível salvar a Hero Section.");
+        throw new Error(
+          json?.message ?? "Não foi possível salvar a Hero Section.",
+        );
       }
 
       setHeroBanners(normalizeHeroOrder(json.banners));
+      temporaryMedia.commit(
+        json.banners.flatMap((banner) => [
+          banner.desktopImageId,
+          banner.mobileImageId,
+        ]),
+      );
       setHeroIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Hero Section atualizada.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível salvar a Hero Section."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível salvar a Hero Section."),
+      );
     } finally {
       setIsSavingHero(false);
+      temporaryMedia.endSave();
     }
   }
 
   async function savePartnerBanner() {
     setIsSavingPartner(true);
+    temporaryMedia.beginSave();
 
     try {
       const response = await fetch(PARTNER_API, {
@@ -498,24 +672,40 @@ export function AssetsManager({
         },
         method: "PUT",
       });
-      const json = await parseJson<AdminPartnerBannerSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminPartnerBannerSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível salvar a imagem do PDV Perfeito.");
+        throw new Error(
+          json?.message ?? "Não foi possível salvar a imagem do PDV Perfeito.",
+        );
       }
 
       setPartnerBanner({ ...json.banner, isActive: true });
+      temporaryMedia.commit([
+        json.banner.desktopImageId,
+        json.banner.mobileImageId,
+      ]);
       setPartnerIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Imagem do PDV Perfeito atualizada.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível salvar a imagem do PDV Perfeito."));
+      showNotice(
+        "error",
+        messageFromError(
+          error,
+          "Não foi possível salvar a imagem do PDV Perfeito.",
+        ),
+      );
     } finally {
       setIsSavingPartner(false);
+      temporaryMedia.endSave();
     }
   }
 
   async function saveSiteImages() {
     setIsSavingSiteImages(true);
+    temporaryMedia.beginSave();
 
     try {
       const response = await fetch(SITE_IMAGES_API, {
@@ -525,24 +715,34 @@ export function AssetsManager({
         },
         method: "PUT",
       });
-      const json = await parseJson<AdminSiteImageAssetsSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminSiteImageAssetsSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
         throw new Error(json?.message ?? "Não foi possível salvar as imagens.");
       }
 
       setSiteImages(json.images);
+      temporaryMedia.commit(
+        Object.values(json.images).map((image) => image.imageId),
+      );
       setSiteImageIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Imagens das paginas atualizadas.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível salvar as imagens."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível salvar as imagens."),
+      );
     } finally {
       setIsSavingSiteImages(false);
+      temporaryMedia.endSave();
     }
   }
 
   async function saveLogos() {
     setIsSavingLogos(true);
+    temporaryMedia.beginSave();
 
     try {
       const response = await fetch(LOGOS_API, {
@@ -552,19 +752,28 @@ export function AssetsManager({
         },
         method: "PUT",
       });
-      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminSiteLogosSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
         throw new Error(json?.message ?? "Não foi possível salvar as logos.");
       }
 
       setLogos(json.logos);
+      temporaryMedia.commit(
+        Object.values(json.logos).map((logo) => logo.imageId),
+      );
       setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Logos do site atualizadas.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível salvar as logos."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível salvar as logos."),
+      );
     } finally {
       setIsSavingLogos(false);
+      temporaryMedia.endSave();
     }
   }
 
@@ -585,16 +794,22 @@ export function AssetsManager({
 
     try {
       const response = await fetch(PROMO_MARQUEE_API, {
-        body: JSON.stringify({ messages: normalizePromoMarqueeOrder(promoMarquee) }),
+        body: JSON.stringify({
+          messages: normalizePromoMarqueeOrder(promoMarquee),
+        }),
         headers: {
           "Content-Type": "application/json",
         },
         method: "PUT",
       });
-      const json = await parseJson<AdminPromoMarqueeSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminPromoMarqueeSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível salvar a faixa de avisos.");
+        throw new Error(
+          json?.message ?? "Não foi possível salvar a faixa de avisos.",
+        );
       }
 
       const confirmedMessages = normalizePromoMarqueeOrder(json.messages);
@@ -604,7 +819,10 @@ export function AssetsManager({
       showNotice("success", "Faixa de avisos atualizada.");
     } catch (error) {
       setPromoMarquee(previousPersistedPromoMarquee);
-      showNotice("error", messageFromError(error, "Não foi possível salvar a faixa de avisos."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível salvar a faixa de avisos."),
+      );
     } finally {
       setIsSavingPromoMarquee(false);
     }
@@ -624,6 +842,7 @@ export function AssetsManager({
 
     const previousPersistedFeatures = persistedFeatures;
     setIsSavingFeatures(true);
+    temporaryMedia.beginSave();
 
     try {
       const response = await fetch(HOME_FEATURES_API, {
@@ -631,43 +850,72 @@ export function AssetsManager({
         headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<AdminHomeFeaturesSnapshot & { message?: string }>(response);
+      const json = await parseJson<
+        AdminHomeFeaturesSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível salvar os benefícios da Home.");
+        throw new Error(
+          json?.message ?? "Não foi possível salvar os benefícios da Home.",
+        );
       }
 
-      const confirmedItems = json.items.length === FEATURES_BAR_ITEMS.length ? json.items : FEATURES_BAR_ITEMS;
+      const confirmedItems =
+        json.items.length === FEATURES_BAR_ITEMS.length
+          ? json.items
+          : FEATURES_BAR_ITEMS;
       setFeatures(confirmedItems);
       setPersistedFeatures(confirmedItems);
+      temporaryMedia.commit(confirmedItems.map((item) => item.iconId));
       setFeatureIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Benefícios comerciais atualizados.");
     } catch (error) {
       setFeatures(previousPersistedFeatures);
-      showNotice("error", messageFromError(error, "Não foi possível salvar os benefícios da Home."));
+      showNotice(
+        "error",
+        messageFromError(
+          error,
+          "Não foi possível salvar os benefícios da Home.",
+        ),
+      );
     } finally {
       setIsSavingFeatures(false);
+      temporaryMedia.endSave();
     }
   }
 
   async function restoreLogo(key: SiteLogoKey) {
+    const previousId = logos[key].imageId;
     setRestoringLogoKey(key);
 
     try {
-      const response = await fetch(`${LOGOS_API}?key=${encodeURIComponent(key)}`, {
-        method: "DELETE",
-      });
-      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
+      const response = await fetch(
+        `${LOGOS_API}?key=${encodeURIComponent(key)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      const json = await parseJson<
+        AdminSiteLogosSnapshot & { message?: string }
+      >(response);
 
       if (!response.ok || !json) {
-        throw new Error(json?.message ?? "Não foi possível restaurar a logo padrão.");
+        throw new Error(
+          json?.message ?? "Não foi possível restaurar a logo padrão.",
+        );
       }
 
       setLogos(json.logos);
+      if (temporaryMedia.isTracked(previousId)) {
+        void temporaryMedia.discard([previousId]).catch(() => undefined);
+      }
       setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
       showNotice("success", "Logo padrão restaurada.");
     } catch (error) {
-      showNotice("error", messageFromError(error, "Não foi possível restaurar a logo padrão."));
+      showNotice(
+        "error",
+        messageFromError(error, "Não foi possível restaurar a logo padrão."),
+      );
     } finally {
       setRestoringLogoKey(null);
     }
@@ -688,16 +936,19 @@ export function AssetsManager({
             Assets das páginas
           </h2>
           <p className={`mt-2 max-w-3xl ${MUTED_TEXT_CLASS}`}>
-            Configure as logos do site e as imagens públicas usadas na Hero Section, página de
-            produtos, página Sobre, PDV Perfeito e página de revendedores. Abra uma seção para
-            editar seus assets; nenhuma seção pode ser salva sem imagem.
+            Configure as logos do site e as imagens públicas usadas na Hero
+            Section, página de produtos, página Sobre, PDV Perfeito e página de
+            revendedores. Abra uma seção para editar seus assets; nenhuma seção
+            pode ser salva sem imagem.
           </p>
         </div>
       </section>
 
       {notice ? (
         <div
-          className={notice.tone === "success" ? ALERT_SUCCESS_CLASS : ALERT_ERROR_CLASS}
+          className={
+            notice.tone === "success" ? ALERT_SUCCESS_CLASS : ALERT_ERROR_CLASS
+          }
           role="status"
         >
           {notice.tone === "success" ? "✓" : "⚠"} {notice.message}
@@ -720,7 +971,11 @@ export function AssetsManager({
         featureItems={features}
         featureIssues={featureIssues}
         richTextContext={richTextContext}
-        featureUploadingId={uploadingKey?.startsWith("feature:") ? uploadingKey.slice("feature:".length) : null}
+        featureUploadingId={
+          uploadingKey?.startsWith("feature:")
+            ? uploadingKey.slice("feature:".length)
+            : null
+        }
         isSaving={isSavingPromoMarquee}
         isSavingFeatures={isSavingFeatures}
         issues={promoMarqueeIssues}
@@ -776,116 +1031,157 @@ export function AssetsManager({
             const regionId = `hero-option-${banner.id}`;
 
             return (
-            <article className={CARD_CLASS} id={`hero-option-card-${banner.id}`} key={banner.id}>
-              <header
-                className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${CARD_HEADER_CLASS}`}
+              <article
+                className={CARD_CLASS}
+                id={`hero-option-card-${banner.id}`}
+                key={banner.id}
               >
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
-                    Opção {index + 1}
-                  </p>
-                  <p className={`mt-1.5 ${MUTED_TEXT_CLASS}`}>
-                    Esta imagem aparece na área principal da home. Ordem {banner.order}.
-                  </p>
-                </div>
-                <button
-                  aria-controls={regionId}
-                  aria-expanded={isOpen}
-                  aria-label={isOpen ? `Recolher opção ${index + 1}` : `Expandir opção ${index + 1}`}
-                  className={ICON_BUTTON_CLASS}
-                  onClick={() =>
-                    setExpandedHeroBannerIds((current) =>
-                      current.includes(banner.id)
-                        ? current.filter((id) => id !== banner.id)
-                        : [...current, banner.id],
-                    )
-                  }
-                  type="button"
+                <header
+                  className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${CARD_HEADER_CLASS}`}
                 >
-                  <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-              </header>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
+                      Opção {index + 1}
+                    </p>
+                    <p className={`mt-1.5 ${MUTED_TEXT_CLASS}`}>
+                      Esta imagem aparece na área principal da home. Ordem{" "}
+                      {banner.order}.
+                    </p>
+                  </div>
+                  <button
+                    aria-controls={regionId}
+                    aria-expanded={isOpen}
+                    aria-label={
+                      isOpen
+                        ? `Recolher opção ${index + 1}`
+                        : `Expandir opção ${index + 1}`
+                    }
+                    className={ICON_BUTTON_CLASS}
+                    onClick={() =>
+                      setExpandedHeroBannerIds((current) =>
+                        current.includes(banner.id)
+                          ? current.filter((id) => id !== banner.id)
+                          : [...current, banner.id],
+                      )
+                    }
+                    type="button"
+                  >
+                    <ChevronDown
+                      aria-hidden
+                      className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                </header>
 
-              <div
-                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                }`}
-              >
                 <div
-                  aria-label={`Editor da opção ${index + 1}`}
-                  className="overflow-hidden"
-                  id={regionId}
-                  inert={!isOpen}
-                  role="region"
+                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+                    isOpen
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
+                  }`}
                 >
-                <div className="p-4">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className={COMPACT_BUTTON_CLASS}
-                    disabled={index === 0}
-                    onClick={() => moveHeroBanner(banner.id, -1)}
-                    type="button"
+                  <div
+                    aria-label={`Editor da opção ${index + 1}`}
+                    className="overflow-hidden"
+                    id={regionId}
+                    inert={!isOpen}
+                    role="region"
                   >
-                    <ArrowUp aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    Subir
-                  </button>
-                  <button
-                    className={COMPACT_BUTTON_CLASS}
-                    disabled={index === heroBanners.length - 1}
-                    onClick={() => moveHeroBanner(banner.id, 1)}
-                    type="button"
-                  >
-                    <ArrowDown aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    Descer
-                  </button>
-                  <button
-                    className={DESTRUCTIVE_BUTTON_CLASS}
-                    disabled={heroBanners.length <= 1}
-                    onClick={() => removeHeroBanner(banner.id)}
-                    type="button"
-                  >
-                    <Trash2 aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    Remover
-                  </button>
-                </div>
+                    <div className="p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          className={COMPACT_BUTTON_CLASS}
+                          disabled={index === 0}
+                          onClick={() => moveHeroBanner(banner.id, -1)}
+                          type="button"
+                        >
+                          <ArrowUp
+                            aria-hidden
+                            className="h-3.5 w-3.5"
+                            strokeWidth={2.4}
+                          />
+                          Subir
+                        </button>
+                        <button
+                          className={COMPACT_BUTTON_CLASS}
+                          disabled={index === heroBanners.length - 1}
+                          onClick={() => moveHeroBanner(banner.id, 1)}
+                          type="button"
+                        >
+                          <ArrowDown
+                            aria-hidden
+                            className="h-3.5 w-3.5"
+                            strokeWidth={2.4}
+                          />
+                          Descer
+                        </button>
+                        <button
+                          className={DESTRUCTIVE_BUTTON_CLASS}
+                          disabled={heroBanners.length <= 1}
+                          onClick={() => removeHeroBanner(banner.id)}
+                          type="button"
+                        >
+                          <Trash2
+                            aria-hidden
+                            className="h-3.5 w-3.5"
+                            strokeWidth={2.4}
+                          />
+                          Remover
+                        </button>
+                      </div>
 
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <UploadCard
-                  formatHint="Desktop: banner largo 16:5."
-                  imageUrl={banner.desktopImageUrl}
-                  isUploading={uploadingKey === `hero:${banner.id}:desktop`}
-                  label="Imagem desktop"
-                  onFileSelect={(file) => handleHeroUpload(banner.id, "desktop", file)}
-                />
-                <UploadCard
-                  formatHint="Mobile: arte vertical 1:2."
-                  imageUrl={banner.mobileImageUrl}
-                  isUploading={uploadingKey === `hero:${banner.id}:mobile`}
-                  label="Imagem mobile"
-                  onFileSelect={(file) => handleHeroUpload(banner.id, "mobile", file)}
-                  previewClass="object-contain object-top"
-                />
-              </div>
+                      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                        <UploadCard
+                          formatHint="Desktop: banner largo 16:5."
+                          imageUrl={banner.desktopImageUrl}
+                          isUploading={
+                            uploadingKey === `hero:${banner.id}:desktop`
+                          }
+                          label="Imagem desktop"
+                          onFileSelect={(file) =>
+                            handleHeroUpload(banner.id, "desktop", file)
+                          }
+                        />
+                        <UploadCard
+                          formatHint="Mobile: arte vertical 1:2."
+                          imageUrl={banner.mobileImageUrl}
+                          isUploading={
+                            uploadingKey === `hero:${banner.id}:mobile`
+                          }
+                          label="Imagem mobile"
+                          onFileSelect={(file) =>
+                            handleHeroUpload(banner.id, "mobile", file)
+                          }
+                          previewClass="object-contain object-top"
+                        />
+                      </div>
 
-                <div className="mt-4">
-                <div>
-                  <label className={LABEL_CLASS} htmlFor={`hero-alt-${banner.id}`}>
-                    Texto alternativo
-                  </label>
-                  <input
-                    className={INPUT_CLASS}
-                    id={`hero-alt-${banner.id}`}
-                    onChange={(event) => updateHeroBanner(banner.id, { alt: event.target.value })}
-                    placeholder="Ex: Banner de piteiras Papelito"
-                    type="text"
-                    value={banner.alt}
-                  />
+                      <div className="mt-4">
+                        <div>
+                          <label
+                            className={LABEL_CLASS}
+                            htmlFor={`hero-alt-${banner.id}`}
+                          >
+                            Texto alternativo
+                          </label>
+                          <input
+                            className={INPUT_CLASS}
+                            id={`hero-alt-${banner.id}`}
+                            onChange={(event) =>
+                              updateHeroBanner(banner.id, {
+                                alt: event.target.value,
+                              })
+                            }
+                            placeholder="Ex: Banner de piteiras Papelito"
+                            type="text"
+                            value={banner.alt}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-                </div>
-              </div>
-              </div>
-            </article>
+              </article>
             );
           })}
         </div>
@@ -911,10 +1207,14 @@ export function AssetsManager({
         eyebrow="home"
         title="Imagem do PDV Perfeito"
       >
-        {partnerIssues.length > 0 ? <IssuesList issues={partnerIssues} /> : null}
+        {partnerIssues.length > 0 ? (
+          <IssuesList issues={partnerIssues} />
+        ) : null}
 
         <article className={CARD_CLASS}>
-          <header className={`flex items-center justify-between gap-3 ${CARD_HEADER_CLASS}`}>
+          <header
+            className={`flex items-center justify-between gap-3 ${CARD_HEADER_CLASS}`}
+          >
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
                 Bloco parceiro
@@ -926,18 +1226,27 @@ export function AssetsManager({
             <button
               aria-controls="partner-banner-editor"
               aria-expanded={isPartnerEditorOpen}
-              aria-label={isPartnerEditorOpen ? "Recolher bloco parceiro" : "Expandir bloco parceiro"}
+              aria-label={
+                isPartnerEditorOpen
+                  ? "Recolher bloco parceiro"
+                  : "Expandir bloco parceiro"
+              }
               className={ICON_BUTTON_CLASS}
               onClick={() => setIsPartnerEditorOpen((current) => !current)}
               type="button"
             >
-              <ChevronDown aria-hidden className={`h-4 w-4 transition-transform ${isPartnerEditorOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                aria-hidden
+                className={`h-4 w-4 transition-transform ${isPartnerEditorOpen ? "rotate-180" : ""}`}
+              />
             </button>
           </header>
 
           <div
             className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-              isPartnerEditorOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              isPartnerEditorOpen
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
             }`}
           >
             <div
@@ -948,102 +1257,122 @@ export function AssetsManager({
               role="region"
             >
               <div className="p-4">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <UploadCard
-            formatHint="Desktop: foto horizontal, aproximadamente 5:3."
-            imageUrl={partnerBanner.desktopImageUrl}
-            isUploading={uploadingKey === "partner:desktop"}
-            label="Imagem desktop"
-            onFileSelect={(file) => handlePartnerUpload("desktop", file)}
-          />
-          <UploadCard
-            formatHint="Mobile: foto vertical 2:3."
-            imageUrl={partnerBanner.mobileImageUrl}
-            isUploading={uploadingKey === "partner:mobile"}
-            label="Imagem mobile"
-            onFileSelect={(file) => handlePartnerUpload("mobile", file)}
-          />
-        </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <UploadCard
+                    formatHint="Desktop: foto horizontal, aproximadamente 5:3."
+                    imageUrl={partnerBanner.desktopImageUrl}
+                    isUploading={uploadingKey === "partner:desktop"}
+                    label="Imagem desktop"
+                    onFileSelect={(file) =>
+                      handlePartnerUpload("desktop", file)
+                    }
+                  />
+                  <UploadCard
+                    formatHint="Mobile: foto vertical 2:3."
+                    imageUrl={partnerBanner.mobileImageUrl}
+                    isUploading={uploadingKey === "partner:mobile"}
+                    label="Imagem mobile"
+                    onFileSelect={(file) => handlePartnerUpload("mobile", file)}
+                  />
+                </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div>
-            <label className={LABEL_CLASS} htmlFor="partner-alt">
-              Texto alternativo
-            </label>
-            <input
-              className={INPUT_CLASS}
-              id="partner-alt"
-              onChange={(event) => setPartnerBanner((current) => ({ ...current, alt: event.target.value }))}
-              placeholder="Parceiros no espaco PDV Perfeito"
-              type="text"
-              value={partnerBanner.alt}
-            />
-          </div>
-          <div>
-            <label className={LABEL_CLASS} htmlFor="partner-href">
-              Link interno do botão
-            </label>
-            <input
-              className={INPUT_CLASS}
-              id="partner-href"
-              onChange={(event) => setPartnerBanner((current) => ({ ...current, href: event.target.value }))}
-              placeholder="/revendedor"
-              type="text"
-              value={partnerBanner.href}
-            />
-          </div>
-        </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className={LABEL_CLASS} htmlFor="partner-alt">
+                      Texto alternativo
+                    </label>
+                    <input
+                      className={INPUT_CLASS}
+                      id="partner-alt"
+                      onChange={(event) =>
+                        setPartnerBanner((current) => ({
+                          ...current,
+                          alt: event.target.value,
+                        }))
+                      }
+                      placeholder="Parceiros no espaco PDV Perfeito"
+                      type="text"
+                      value={partnerBanner.alt}
+                    />
+                  </div>
+                  <div>
+                    <label className={LABEL_CLASS} htmlFor="partner-href">
+                      Link interno do botão
+                    </label>
+                    <input
+                      className={INPUT_CLASS}
+                      id="partner-href"
+                      onChange={(event) =>
+                        setPartnerBanner((current) => ({
+                          ...current,
+                          href: event.target.value,
+                        }))
+                      }
+                      placeholder="/revendedor"
+                      type="text"
+                      value={partnerBanner.href}
+                    />
+                  </div>
+                </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div>
-            <label className={LABEL_CLASS} htmlFor="partner-tag">
-              Texto pequeno
-            </label>
-            <input
-              className={INPUT_CLASS}
-              id="partner-tag"
-              onChange={(event) => setPartnerBanner((current) => ({ ...current, tag: event.target.value }))}
-              placeholder="Seja um parceiro"
-              type="text"
-              value={partnerBanner.tag}
-            />
-          </div>
-          <div>
-            <label className={LABEL_CLASS} htmlFor="partner-cta">
-              Texto do botão
-            </label>
-            <input
-              className={INPUT_CLASS}
-              id="partner-cta"
-              onChange={(event) =>
-                setPartnerBanner((current) => ({ ...current, ctaLabel: event.target.value }))
-              }
-              placeholder="Quero ser um parceiro"
-              type="text"
-              value={partnerBanner.ctaLabel}
-            />
-          </div>
-        </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className={LABEL_CLASS} htmlFor="partner-tag">
+                      Texto pequeno
+                    </label>
+                    <input
+                      className={INPUT_CLASS}
+                      id="partner-tag"
+                      onChange={(event) =>
+                        setPartnerBanner((current) => ({
+                          ...current,
+                          tag: event.target.value,
+                        }))
+                      }
+                      placeholder="Seja um parceiro"
+                      type="text"
+                      value={partnerBanner.tag}
+                    />
+                  </div>
+                  <div>
+                    <label className={LABEL_CLASS} htmlFor="partner-cta">
+                      Texto do botão
+                    </label>
+                    <input
+                      className={INPUT_CLASS}
+                      id="partner-cta"
+                      onChange={(event) =>
+                        setPartnerBanner((current) => ({
+                          ...current,
+                          ctaLabel: event.target.value,
+                        }))
+                      }
+                      placeholder="Quero ser um parceiro"
+                      type="text"
+                      value={partnerBanner.ctaLabel}
+                    />
+                  </div>
+                </div>
 
-        <div className="mt-4">
-          <label className={LABEL_CLASS} htmlFor="partner-description">
-            Descrição
-          </label>
-          <textarea
-            className={TEXTAREA_CLASS}
-            id="partner-description"
-            onChange={(event) =>
-              setPartnerBanner((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-            placeholder="Copy principal do bloco PDV Perfeito."
-            value={partnerBanner.description}
-          />
-        </div>
+                <div className="mt-4">
+                  <label className={LABEL_CLASS} htmlFor="partner-description">
+                    Descrição
+                  </label>
+                  <textarea
+                    className={TEXTAREA_CLASS}
+                    id="partner-description"
+                    onChange={(event) =>
+                      setPartnerBanner((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    placeholder="Copy principal do bloco PDV Perfeito."
+                    value={partnerBanner.description}
+                  />
+                </div>
 
-        <CatalogPdfManager />
+                <CatalogPdfManager />
               </div>
             </div>
           </div>
@@ -1070,7 +1399,9 @@ export function AssetsManager({
         eyebrow="produtos / sobre / revendedor"
         title="Imagens das paginas"
       >
-        {siteImageIssues.length > 0 ? <IssuesList issues={siteImageIssues} /> : null}
+        {siteImageIssues.length > 0 ? (
+          <IssuesList issues={siteImageIssues} />
+        ) : null}
 
         <div className="grid gap-4 xl:grid-cols-2">
           {SITE_IMAGE_FIELDS.map((field) => (

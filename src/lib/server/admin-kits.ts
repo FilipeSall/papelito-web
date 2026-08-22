@@ -21,7 +21,6 @@ export type AdminKitMerchandise = {
   length: string;
   width: string;
   height: string;
-  stocks?: Array<{ vendorId: number; qty: number }>;
 };
 
 export type AdminKit = {
