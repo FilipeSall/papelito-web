@@ -541,14 +541,14 @@ function CadastroEtapa2PageContent() {
                 </p>
               ) : null}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
                 <Link
                   href="/cadastro"
-                  className="flex h-14 flex-1 items-center justify-center rounded-full border border-white/20 font-black uppercase tracking-wide text-white transition hover:bg-white/5"
+                  className="flex h-14 items-center justify-center rounded-full border border-white/20 px-8 font-black uppercase leading-none tracking-wide text-white transition hover:bg-white/5"
                 >
                   Voltar
                 </Link>
-                <div className="flex-1">
+                <div className="sm:flex-1">
                   <AuthSubmitButton
                     icon={!isSubmitting ? <ArrowRightIcon className="h-4 w-4" /> : undefined}
                     disabled={!acceptTerms || isSubmitting || !step1}
