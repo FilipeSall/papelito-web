@@ -54,7 +54,7 @@ describe("buildOrganizationJsonLd", () => {
 
     expect(contactPoint).toHaveLength(1);
     expect(contactPoint[0].contactType).toBe("sales");
-    expect(contactPoint[0].telephone).toBe("+55 61 99973-3064");
+    expect(contactPoint[0].telephone).toBe("+55 61 9836-4920");
     expect(contactPoint[0].areaServed).toBe("BR");
   });
 
