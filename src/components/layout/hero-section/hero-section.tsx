@@ -166,7 +166,7 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
                 src={isMobileOnly ? slide.mobileSrc : slide.desktopSrc}
                 alt={slide.alt}
                 fill
-                priority={i === 0}
+                loading={i === activeIndex ? "eager" : "lazy"}
                 className={isMobileOnly ? "object-contain object-top" : "object-cover"}
                 sizes="100vw"
               />
