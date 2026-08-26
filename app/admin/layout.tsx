@@ -7,6 +7,9 @@ import { PrivateHeader } from "@/components/layout/private-header";
 import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
 import { authOptions } from "@/lib/auth";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Administração");
 
 const adminDisplay = Chakra_Petch({
   subsets: ["latin"],

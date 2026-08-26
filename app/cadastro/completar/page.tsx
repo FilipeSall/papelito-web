@@ -12,6 +12,9 @@ import { fetchCompanyContext } from "@/lib/server/company-api";
 
 import type { CadastroIntent, CadastroPrefill } from "../shared";
 import { CompletarCadastroForm } from "./completar-cadastro-form";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Completar cadastro");
 
 export const dynamic = "force-dynamic";
 

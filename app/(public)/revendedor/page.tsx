@@ -7,6 +7,14 @@ import { fetchVendorInterest } from "@/features/revendedor/server/vendor-interes
 import { normalizeStep1Data } from "@/features/revendedor/utils/revendedor-registration";
 import { authOptions } from "@/lib/auth";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Seja revendedor — fornecedor B2B para todo o Brasil",
+  description:
+    "Cadastre sua empresa e compre sedas, piteiras, filtros e acessórios Papelito para revenda. Para distribuidores, atacadistas, tabacarias, headshops, lojas de conveniência e comércio em geral.",
+  path: "/revendedor",
+});
 
 export default async function RevendedorRoutePage() {
   const session = await getServerSession(authOptions);

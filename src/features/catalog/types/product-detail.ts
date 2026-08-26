@@ -20,6 +20,7 @@ export interface ProductDetailItem {
   type: Exclude<ProductTypeId, "todos">;
   badge: string;
   description: string;
+  sku?: string;
   image?: string;
   rating: number;
   reviews: number;

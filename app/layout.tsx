@@ -1,10 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/lib/apollo/provider";
 import { MissingCepModalHost } from "@/components/layout/profile-page";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { NavigationLoader } from "@/components/ui/navigation-loader";
+import { JsonLd, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo/json-ld";
+import { resolveRobots } from "@/lib/seo/metadata";
+import { PAPELITO_COMPANY } from "@/lib/seo/company";
+import {
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_THEME_COLOR,
+  SITE_TITLE_DEFAULT,
+  SITE_TWITTER_HANDLE,
+  SITE_URL,
+} from "@/lib/seo/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,9 +24,58 @@ const inter = Inter({
   display: "swap",
 });
 
+/**
+ * `theme-color` e `color-scheme`.
+ *
+ * Em App Router isso é o export `viewport`, não `metadata`: declarar `themeColor` dentro de
+ * `metadata` é ignorado e o Next avisa no build.
+ */
+export const viewport: Viewport = {
+  themeColor: SITE_THEME_COLOR,
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "Papelito Web",
-  description: "Projeto Front-end Headless para o ecossistema Papelito.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE_DEFAULT,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: PAPELITO_COMPANY.officialSiteUrl }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "Comércio atacadista",
+  robots: resolveRobots(),
+  // O telefone da empresa não está no corpo das páginas; sem isso o iOS transforma qualquer
+  // sequência numérica (SKU, CEP, CNPJ) em link de ligação.
+  formatDetection: { telephone: false, address: false, email: false },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
+  // Preenchida só quando a propriedade for verificada no Search Console; sem token, nenhuma
+  // meta é emitida — tag de verificação inventada não verifica nada.
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
+  openGraph: {
+    type: "website",
+    locale: SITE_LOCALE,
+    siteName: SITE_NAME,
+    title: SITE_TITLE_DEFAULT,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: "/web-app-manifest-512x512.png", width: 512, height: 512, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: SITE_TWITTER_HANDLE,
+    creator: SITE_TWITTER_HANDLE,
+    title: SITE_TITLE_DEFAULT,
+    description: SITE_DESCRIPTION,
+    images: ["/web-app-manifest-512x512.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", type: "image/x-icon" },
@@ -38,6 +99,8 @@ export default function RootLayout({
           rel="manifest"
           href="/site.webmanifest"
         />
+        <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd data={buildWebSiteJsonLd()} />
       </head>
       <body className="font-sans" suppressHydrationWarning>
         <NavigationLoader />

@@ -1,5 +1,8 @@
 import { VendorOrderStatusStepper } from "@/components/layout/vendor-panel/vendor-order-status-stepper";
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Verificação interna");
 
 const statuses: VendorOrderStatus[] = [
   "aguardando_pagamento",

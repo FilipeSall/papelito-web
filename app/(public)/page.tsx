@@ -27,6 +27,14 @@ import {
   RichText,
 } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import { SITE_DESCRIPTION } from "@/lib/seo/site";
+
+export const metadata = buildPageMetadata({
+  title: "Marketplace B2B de sedas, piteiras, filtros e acessórios",
+  description: SITE_DESCRIPTION,
+  path: "/",
+});
 
 export const revalidate = 60;
 

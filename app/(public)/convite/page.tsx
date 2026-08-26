@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { InvitationLanding } from "@/components/layout/company-page";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Convite");
 
 export const dynamic = "force-dynamic";
 

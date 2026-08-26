@@ -10,6 +10,7 @@ import {
 } from "@/features/catalog/utils/product-type-taxonomy";
 import { normalizeProductSearch } from "@/features/catalog/utils/product-search";
 import { EMPTY_PRICE_RANGE, resolvePriceRange } from "@/features/catalog/utils/price-range";
+import { JsonLd, buildItemListJsonLd } from "@/lib/seo/json-ld";
 import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -34,6 +35,14 @@ interface ProductsDiscoveryPageProps {
   searchParams?: Promise<DiscoverySearchParams> | DiscoverySearchParams;
   initialCollection?: ProductCollectionId;
 }
+
+const COLLECTION_LIST_NAMES: Record<ProductCollectionId, string> = {
+  todos: "Catálogo Papelito",
+  premium: "Linha Premium Papelito",
+  novidades: "Novidades Papelito",
+  promocoes: "Promoções Papelito",
+  kits: "Kits Papelito",
+};
 
 function normalizeCollection(value: string | undefined): ProductCollectionId {
   const normalized = value?.toLowerCase();
@@ -121,6 +130,12 @@ export function ProductsDiscoveryPage({
 
   return (
     <main className="flex flex-col bg-white">
+      <JsonLd
+        data={buildItemListJsonLd(
+          COLLECTION_LIST_NAMES[catalog.activeCollection],
+          catalog.items.map((item) => ({ name: item.name, path: `/produtos/${item.id}` })),
+        )}
+      />
       <ProductsHeroBanner image={siteImages.productHero} />
       <ProductsSection
         basePath={basePath}

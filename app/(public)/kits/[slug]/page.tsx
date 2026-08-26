@@ -4,9 +4,34 @@ import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
 import { getKitsCatalog } from "@/features/catalog/services/get-kits-catalog";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 
+import {
+  JsonLd,
+  buildBreadcrumbJsonLd,
+  buildProductJsonLd,
+} from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
 import { KitDetailAddToCart } from "./kit-detail-add-to-cart";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: Readonly<{ params: Promise<{ slug: string }> }>) {
+  const { slug } = await params;
+  const kit = (await getKitsCatalog()).find((item) => item.href === `/kits/${slug}`);
+
+  if (!kit) {
+    return { title: "Kit não encontrado", robots: { index: false, follow: false } };
+  }
+
+  return buildPageMetadata({
+    title: `${kit.name} — kit para revenda no atacado`,
+    description: `${kit.name}: kit Papelito com preço fechado para lojistas, distribuidores e revendedores. Compra B2B com CNPJ e entrega por revendedor regional em todo o Brasil.`,
+    path: `/kits/${slug}`,
+    ...(kit.image ? { image: { url: kit.image, alt: kit.name } } : {}),
+  });
+}
 
 export default async function KitDetailPage({
   params,
@@ -22,6 +47,22 @@ export default async function KitDetailPage({
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-12 md:px-12">
+      <JsonLd
+        data={buildProductJsonLd({
+          name: kit.name,
+          image: kit.image,
+          category: "Kit",
+          price: kit.price,
+          path: `/kits/${slug}`,
+        })}
+      />
+      <JsonLd
+        data={buildBreadcrumbJsonLd([
+          { name: "Início", path: "/" },
+          { name: "Kits", path: "/kits" },
+          { name: kit.name },
+        ])}
+      />
       <div className="grid gap-10 md:grid-cols-2">
         <div className="relative aspect-square border-2 border-[#1a1a1a] bg-[#faf8f2] p-6 shadow-[8px_8px_0_#1a1a1a]">
           {kit.image ? (

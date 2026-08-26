@@ -3,6 +3,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { requireCheckoutCustomer } from "@/features/checkout/server/require-checkout-customer";
 import { getProfileOrderDetail } from "@/features/orders";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Pedido confirmado");
 
 type CheckoutSuccessPageProps = {
   params: Promise<{ orderId: string }>;

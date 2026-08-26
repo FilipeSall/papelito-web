@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { CheckoutPendingPayment } from "@/components/layout/checkout-page/checkout-pending-payment";
 import { getProfileOrderDetail } from "@/features/orders";
 import { requireCheckoutCustomer } from "@/features/checkout/server/require-checkout-customer";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Pagamento do pedido");
 
 type CheckoutPendingPaymentPageProps = {
   params: Promise<{ orderId: string }>;

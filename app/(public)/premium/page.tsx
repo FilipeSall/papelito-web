@@ -1,4 +1,6 @@
 import { ProductsDiscoveryPage } from "@/components/layout/products-page";
+import { buildListingMetadata } from "@/lib/seo/metadata";
+
 
 export const revalidate = 60;
 
@@ -38,4 +40,14 @@ export default function PremiumPage({ searchParams }: PremiumPageProps) {
       searchParams={searchParams}
     />
   );
+}
+
+export async function generateMetadata({ searchParams }: PremiumPageProps) {
+  return buildListingMetadata({
+    basePath: "/premium",
+    title: "Linha Premium para revenda",
+    description:
+      "Sedas e acessórios da linha Premium Papelito para tabacarias, headshops e lojas especializadas. Compra no atacado para empresas com CNPJ.",
+    searchParams,
+  });
 }

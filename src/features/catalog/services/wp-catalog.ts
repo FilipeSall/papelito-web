@@ -45,6 +45,7 @@ export interface WpProductNode {
     slug?: string | null;
   } | null> | null;
   papelitoCollections?: Array<string | null> | null;
+  sku?: string | null;
   price?: string | null;
   regularPrice?: string | null;
   salePrice?: string | null;
@@ -628,6 +629,7 @@ export function mapWpProductToDetailItem(
     type,
     badge: resolveBadge(product),
     description,
+    ...(product.sku?.trim() ? { sku: product.sku.trim() } : {}),
     image: primaryImage,
     rating: 4.4,
     reviews: 678,

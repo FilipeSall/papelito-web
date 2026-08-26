@@ -14,6 +14,8 @@ import {
   normalizeProductsPerPage,
   normalizeProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
+import { JsonLd, buildItemListJsonLd } from "@/lib/seo/json-ld";
+import { buildListingMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 60;
 
@@ -41,6 +43,16 @@ interface ProdutosPageProps {
         precoMax?: string | string[];
         busca?: string | string[];
       };
+}
+
+export async function generateMetadata({ searchParams }: Readonly<ProdutosPageProps>) {
+  return buildListingMetadata({
+    basePath: "/produtos",
+    title: "Catálogo completo — sedas, piteiras, filtros e acessórios no atacado",
+    description:
+      "Catálogo B2B completo da Papelito para tabacarias, headshops, distribuidores, lojistas e revendedores. Preço de revenda, compra com CNPJ e entrega por revendedor regional em todo o Brasil.",
+    searchParams,
+  });
 }
 
 function normalizePage(value: string | undefined) {
@@ -116,6 +128,12 @@ export default function ProdutosPage({ searchParams }: Readonly<ProdutosPageProp
 
   return (
     <main className="flex flex-col bg-white">
+      <JsonLd
+        data={buildItemListJsonLd(
+          "Catálogo Papelito",
+          catalog.items.map((item) => ({ name: item.name, path: `/produtos/${item.id}` })),
+        )}
+      />
       <ProductsHeroBanner image={siteImages.productHero} />
       <ProductsSection
         products={catalog.items}

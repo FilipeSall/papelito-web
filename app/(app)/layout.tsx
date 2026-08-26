@@ -3,6 +3,9 @@ import { PrivateHeader } from "@/components/layout/private-header";
 import { AccountCepNotice } from "@/components/layout/profile-page";
 import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
 import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Minha conta");
 
 export default async function AppAreaLayout({
   children,

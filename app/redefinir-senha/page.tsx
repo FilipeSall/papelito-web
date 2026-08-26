@@ -1,4 +1,7 @@
 import { AuthResetPasswordForm, AuthWelcomePanel } from "@/components/auth";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Redefinir senha");
 
 export default function RedefinirSenhaPage() {
   return (

@@ -22,11 +22,55 @@ import { getPaymentConfig } from "@/features/rich-text/services/get-payment-conf
 import { buildRichTextContext } from "@/features/rich-text";
 import { resolveProductBenefits } from "@/components/layout/product-benefits-bar";
 import { authOptions } from "@/lib/auth";
+import {
+  JsonLd,
+  buildBreadcrumbJsonLd,
+  buildProductJsonLd,
+} from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 interface ProdutoDetalhePageProps {
   params: Promise<{
     id: string;
   }>;
+}
+
+/**
+ * Título, descrição e cartão social do produto.
+ *
+ * Reaproveita `getProductDetail`, que já é cacheado por 5 minutos com a tag `wp:product:{id}` —
+ * o metadata não custa uma consulta a mais ao WordPress.
+ */
+export async function generateMetadata({ params }: Readonly<ProdutoDetalhePageProps>) {
+  const { id } = await params;
+  const product = await getProductDetail(id);
+
+  if (!product) {
+    return { title: "Produto não encontrado", robots: { index: false, follow: false } };
+  }
+
+  return buildPageMetadata({
+    title: `${product.name} — ${product.category} para revenda`,
+    description: buildProductDescription(product.name, product.category, product.description),
+    path: `/produtos/${product.id}`,
+    ...(product.image ? { image: { url: product.image, alt: product.name } } : {}),
+  });
+}
+
+/**
+ * Descrição curta para busca e cartão social.
+ *
+ * Prefere a descrição real do produto, limpa de markup, e só cai no texto de posicionamento
+ * quando o cadastro não tem descrição — nunca inventa característica de produto.
+ */
+function buildProductDescription(name: string, category: string, description: string) {
+  const plain = description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+  if (plain.length >= 60) {
+    return plain.length > 300 ? `${plain.slice(0, 297).trimEnd()}...` : plain;
+  }
+
+  return `${name} (${category}) no catálogo B2B da Papelito. Compra para empresas com CNPJ, preço de revenda e entrega por revendedor regional em todo o Brasil.`;
 }
 
 /**
@@ -105,6 +149,25 @@ export default async function ProdutoDetalhePage({
 
   return (
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
+      <JsonLd
+        data={buildProductJsonLd({
+          name: displayedProduct.name,
+          description: displayedProduct.description,
+          image: displayedProduct.image,
+          category: displayedProduct.category,
+          sku: displayedProduct.sku,
+          price: displayedProduct.price,
+          path: `/produtos/${displayedProduct.id}`,
+        })}
+      />
+      <JsonLd
+        data={buildBreadcrumbJsonLd([
+          { name: "Início", path: "/" },
+          { name: "Produtos", path: "/produtos" },
+          { name: product.category, path: `/categorias/${product.type}` },
+          { name: product.name },
+        ])}
+      />
       <ProductBreadcrumbs
         category={{ name: product.category, slug: product.type }}
         productName={product.name}

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Produto não encontrado");
 
 export default function ProductNotFound() {
   return (

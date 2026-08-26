@@ -26,5 +26,6 @@ Documentos de referência pontual:
 | Qual a regra de negócio deste cálculo de carrinho? | [`../../docs/business-rules.md`](../../docs/business-rules.md) |
 | Como a disponibilidade regional decide o que fica opaco? | [`../../docs/flows/catalog-and-availability.md`](../../docs/flows/catalog-and-availability.md) |
 | Como subo o ambiente e abro um PR? | [`../../docs/development.md`](../../docs/development.md) |
+| Esta rota pode ser indexada? Onde fica o canonical, o sitemap e o JSON-LD? | [`../../docs/seo-and-discoverability.md`](../../docs/seo-and-discoverability.md) |
 
 > A `brand/identidade-visual.md` é a fonte canônica da skill `papelito-branding`. **Não mova esse arquivo** sem atualizar `.claude/skills/papelito-branding/SKILL.md`.

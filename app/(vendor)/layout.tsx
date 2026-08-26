@@ -6,6 +6,9 @@ import { VendorShell } from "@/components/layout/vendor-panel";
 import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
 import { authOptions } from "@/lib/auth";
 import { isCurrentUserSeller } from "@/lib/server/current-user-role";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Painel do vendor");
 
 const vendorDisplay = Chakra_Petch({
   subsets: ["latin"],

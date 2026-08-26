@@ -1,6 +1,10 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "Papelito Brasil — Marketplace B2B",
+  "short_name": "Papelito",
+  "description": "Marketplace B2B de sedas, piteiras, filtros e acessórios Papelito para empresas em todo o Brasil.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +19,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
+  "theme_color": "#231f20",
   "background_color": "#ffffff",
   "display": "standalone"
 }

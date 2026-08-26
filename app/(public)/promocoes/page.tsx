@@ -1,4 +1,6 @@
 import { ProductsDiscoveryPage } from "@/components/layout/products-page";
+import { buildListingMetadata } from "@/lib/seo/metadata";
+
 
 export const revalidate = 60;
 
@@ -38,4 +40,14 @@ export default function PromocoesPage({ searchParams }: PromocoesPageProps) {
       searchParams={searchParams}
     />
   );
+}
+
+export async function generateMetadata({ searchParams }: PromocoesPageProps) {
+  return buildListingMetadata({
+    basePath: "/promocoes",
+    title: "Promoções do catálogo",
+    description:
+      "Ofertas vigentes em sedas, piteiras, filtros e acessórios Papelito para lojistas, distribuidores e revendedores.",
+    searchParams,
+  });
 }

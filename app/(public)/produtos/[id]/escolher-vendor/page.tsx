@@ -9,6 +9,9 @@ import { getAccountCoverageCepContext } from "@/features/catalog/services/get-ac
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
 import { getActiveVendor, getProductVendorOptions } from "@/features/active-vendor/server";
 import { authOptions } from "@/lib/auth";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Escolher vendor");
 
 interface EscolherVendorPageProps {
   params: Promise<{ id: string }>;

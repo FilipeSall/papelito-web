@@ -3,6 +3,7 @@ import { FooterNavColumn } from "./footer-nav-column";
 import { FooterCopyright } from "./footer-copyright";
 
 import { getPapelitoTaxonomy } from "@/features/catalog/services/get-papelito-categories";
+import { PAPELITO_COMPANY } from "@/lib/seo/company";
 import type { ManagedImageAsset } from "@/types/home-assets";
 
 type PublicFooterProps = {
@@ -10,7 +11,7 @@ type PublicFooterProps = {
 };
 
 const companyLinks = [
-  { label: "Site Oficial", href: "https://papelito.com.br" },
+  { label: "Site Oficial", href: PAPELITO_COMPANY.officialSiteUrl },
   { label: "Seja PDV Perfeito", href: "/revendedor" },
 ];
 
@@ -19,7 +20,7 @@ const supportLinks = [
   { label: "Meus Pedidos", href: "/perfil" },
   { label: "Política de Privacidade", href: "/privacidade" },
   { label: "Termos de Uso", href: "/termos" },
-  { label: "Fale Conosco", href: "mailto:contato@papelito.com.br" },
+  { label: "Fale Conosco", href: PAPELITO_COMPANY.contactPageUrl },
 ];
 
 /**

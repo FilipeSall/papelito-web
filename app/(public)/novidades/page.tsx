@@ -1,4 +1,6 @@
 import { ProductsDiscoveryPage } from "@/components/layout/products-page";
+import { buildListingMetadata } from "@/lib/seo/metadata";
+
 
 export const revalidate = 60;
 
@@ -38,4 +40,14 @@ export default function NovidadesPage({ searchParams }: NovidadesPageProps) {
       searchParams={searchParams}
     />
   );
+}
+
+export async function generateMetadata({ searchParams }: NovidadesPageProps) {
+  return buildListingMetadata({
+    basePath: "/novidades",
+    title: "Novidades do catálogo",
+    description:
+      "Últimos lançamentos de sedas, piteiras, filtros e acessórios Papelito disponíveis para revenda no atacado em todo o Brasil.",
+    searchParams,
+  });
 }

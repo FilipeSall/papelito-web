@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
+import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata = buildPrivatePageMetadata("Cadastro de revendedor");
 
 export default async function RevendedorCadastroPage({
   searchParams,

@@ -20,14 +20,12 @@ export function PromoCardsSection() {
     <section className="w-full bg-bg-light py-5">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="mx-auto grid w-full max-w-304 grid-cols-1 gap-5 lg:grid-cols-2">
-          {/* TODO: Substituir por requisição ao backend — GET /api/promotions/cards
-              Conteúdo dos cards promocionais (título, imagem, link, badge) deve vir do CMS/backend. */}
           {/* Dark card - PDV Materials */}
           <PromoCard
             variant="dark"
             title={"MATERIAIS\nEXCLUSIVOS\nDE MERCHANDISING"}
             linkText={"SEJA PDV\nPERFEITO"}
-            href="/pdv"
+      href="/revendedor"
             image="/images/promo/mobile-livreto-premium.png"
             imageAlt="Materiais de merchandising Papelito"
           />

@@ -16,16 +16,54 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Reprovada",
 };
 
+const EVIDENCE_LABELS: Record<string, string> = {
+  qsa_available: "QSA disponível",
+  qsa_sufficient: "QSA suficiente",
+  cpf_mask_match: "CPF mascarado confere",
+  name_match: "Nome confere",
+  age_band_match: "Faixa etária confere",
+  mei_confirmed: "MEI confirmado",
+  provider: "Fonte da consulta",
+  checked_at: "Consulta realizada em",
+};
+
+function formatEvidenceLabel(key: string) {
+  return EVIDENCE_LABELS[key] ?? key.replaceAll("_", " ");
+}
+
+function formatEvidenceValue(value: unknown) {
+  if (value === "unknown") return "Não informado pela consulta";
+  if (value === true) return "Sim";
+  if (value === false) return "Não";
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value) || "—";
+  } catch {
+    return "Dados não disponíveis";
+  }
+}
+
 function formatDate(value: string | null) {
   if (!value) return "—";
-  const date = new Date(value.replace(" ", "T") + "Z");
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("pt-BR", {
-        dateStyle: "short",
-        timeStyle: "short",
-        timeZone: "America/Sao_Paulo",
-      }).format(date);
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value);
+  const date = new Date(hasTimezone ? value : `${value.replace(" ", "T")}Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  const time = new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+  const day = new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+  return `${time}, ${day}`;
 }
 
 function formatBytes(value: number | null) {
@@ -33,19 +71,19 @@ function formatBytes(value: number | null) {
   return `${(value / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function DataCard({ label, value }: { label: string; value: unknown }) {
-  const text = value === true ? "Sim" : value === false ? "Não" : String(value ?? "—");
+function DataCard({ label, value }: Readonly<{ label: string; value: unknown }>) {
+  const text = formatEvidenceValue(value);
   return (
     <div className="border-2 border-[#1a1a1a] bg-white p-3">
       <dt className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/48">
         {label}
       </dt>
-      <dd className="mt-2 break-words text-sm text-[#1a1a1a]">{text || "—"}</dd>
+      <dd className="mt-2 wrap-break-word text-sm text-[#1a1a1a]">{text || "—"}</dd>
     </div>
   );
 }
 
-function DocumentViewer({ mime, url }: { mime: string | null; url: string }) {
+function DocumentViewer({ mime, url }: Readonly<{ mime: string | null; url: string }>) {
   const [zoom, setZoom] = useState(100);
   const isImage = mime?.startsWith("image/") ?? false;
   const zoomIn = () => setZoom((current) => Math.min(200, current + 25));
@@ -82,7 +120,7 @@ function DocumentViewer({ mime, url }: { mime: string | null; url: string }) {
         </button>
       </div>
 
-      <div className="h-[560px] overflow-auto border-2 border-[#1a1a1a] bg-[#f2f2f2]">
+      <div className="h-140 overflow-auto border-2 border-[#1a1a1a] bg-[#f2f2f2]">
         {isImage ? (
           <Image
             alt="Documento privado da candidatura"
@@ -105,7 +143,7 @@ function DocumentViewer({ mime, url }: { mime: string | null; url: string }) {
   );
 }
 
-function ApplicationHistory({ items }: { items: AdminOwnerApplicationDetail[] }) {
+function ApplicationHistory({ items }: Readonly<{ items: AdminOwnerApplicationDetail[] }>) {
   return (
     <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
       <h2 className="text-xs font-black uppercase tracking-[0.2em]">Histórico de candidaturas</h2>
@@ -150,7 +188,7 @@ export function CompanyApplicationReview({
   const current = data.current;
 
   async function decide(action: "approve" | "reject") {
-    if (!current || current.application.status !== "pending_manual_review") return;
+    if (current?.application.status !== "pending_manual_review") return;
     if (action === "reject" && !reason.trim()) {
       setMessage("Informe o motivo interno da reprovação.");
       return;
@@ -271,7 +309,7 @@ export function CompanyApplicationReview({
           </h3>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             {Object.entries(evidence).map(([key, value]) => (
-              <DataCard key={key} label={key.replaceAll("_", " ")} value={value} />
+              <DataCard key={key} label={formatEvidenceLabel(key)} value={value} />
             ))}
           </dl>
         </section>
@@ -343,9 +381,9 @@ export function CompanyApplicationReview({
       ) : null}
 
       {message ? (
-        <p className="border-2 border-[#1a1a1a] bg-white p-4 text-sm font-bold" role="status">
+        <output className="block border-2 border-[#1a1a1a] bg-white p-4 text-sm font-bold">
           {message}
-        </p>
+        </output>
       ) : null}
 
       <ApplicationHistory items={data.history} />
