@@ -5,6 +5,8 @@ import { FooterCopyright } from "./footer-copyright";
 import { getPapelitoTaxonomy } from "@/features/catalog/services/get-papelito-categories";
 import { PAPELITO_COMPANY } from "@/lib/seo/company";
 import type { ManagedImageAsset } from "@/types/home-assets";
+import { contactPhoneHref } from "@/features/site-contact/contact-phone";
+import { getContactConfig } from "@/features/site-contact/services/contact-config";
 
 type PublicFooterProps = {
   logo?: ManagedImageAsset;
@@ -19,7 +21,6 @@ const supportLinks = [
   { label: "Minha Conta", href: "/perfil/dados" },
   { label: "Meus Pedidos", href: "/perfil" },
   { label: "Política de Privacidade", href: "/privacidade" },
-  { label: "Fale Conosco", href: PAPELITO_COMPANY.contactPageUrl },
 ];
 
 /**
@@ -43,6 +44,8 @@ const supportLinks = [
  */
 export async function PublicFooter({ logo }: PublicFooterProps) {
   const taxonomy = await getPapelitoTaxonomy();
+  const contact = await getContactConfig();
+  const footerSupportLinks = [...supportLinks, { label: "Fale Conosco", href: contactPhoneHref(contact.phone) }];
   const productLinks = taxonomy.categories.map((category) => ({
     label: category.name,
     href: `/produtos?tipo=${encodeURIComponent(category.slug)}`,
@@ -56,7 +59,7 @@ export async function PublicFooter({ logo }: PublicFooterProps) {
           <FooterLogo logo={logo} />
           <FooterNavColumn title="Produtos" links={productLinks} />
           <FooterNavColumn title="Empresa" links={companyLinks} />
-          <FooterNavColumn title="Atendimento" links={supportLinks} />
+          <FooterNavColumn title="Atendimento" links={footerSupportLinks} />
         </div>
 
         {/* Copyright */}

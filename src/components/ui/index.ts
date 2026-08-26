@@ -8,6 +8,7 @@ export { FavoriteToggleButton } from "./favorite-toggle-button";
 export { Tag } from "./tag";
 export { BaseModal } from "./base-modal";
 export { ToastCloseButton } from "./toast-close-button";
+export { PhoneInput } from "./phone-input";
 
 export * from "./icons";
 export * from "./badges";

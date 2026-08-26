@@ -9,9 +9,9 @@
 export const PAPELITO_COMPANY = {
   legalName: "Papelito Brasil",
   officialSiteUrl: "https://papelito.com",
-  contactPageUrl: "https://papelito.com/fale-conosco",
+  contactPageUrl: "tel:+556198364920",
   taxId: "14.536.755/0001-10",
-  telephone: "+55 61 99973-3064",
+  telephone: "+55 61 9836-4920",
   whatsappUrl: "https://wa.me/5561999733064",
   address: {
     streetAddress: "SIA Trecho 4",
