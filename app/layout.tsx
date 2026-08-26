@@ -102,9 +102,8 @@ export default function RootLayout({
         />
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
-      </head>
-      <Script id="google-tag-manager" strategy="beforeInteractive">
-        {`(function(w,d,s,l,i){
+        <Script id="google-tag-manager" strategy="beforeInteractive">
+          {`(function(w,d,s,l,i){
   w[l]=w[l]||[];
   w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
   var f=d.getElementsByTagName(s)[0],
@@ -114,7 +113,8 @@ export default function RootLayout({
   j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
   f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-TP7NRSBT');`}
-      </Script>
+        </Script>
+      </head>
       <body className="font-sans" suppressHydrationWarning>
         <noscript>
           <iframe
