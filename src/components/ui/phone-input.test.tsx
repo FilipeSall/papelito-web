@@ -99,4 +99,33 @@ describe("PhoneInput", () => {
 
     expect(screen.getByRole("button", { name: /🇵🇹/ })).toBeInTheDocument();
   });
+
+  it("masks other Brazilian area codes as the user types", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(phoneField(), "11987654321");
+
+    expect(phoneField()).toHaveValue("(11) 98765-4321");
+    expect(screen.getByTestId("stored")).toHaveTextContent("+5511987654321");
+  });
+
+  it("loads a foreign E.164 value with its own calling code and mask", () => {
+    render(<Harness initialValue="+14155550132" />);
+
+    expect(phoneField()).toHaveValue("(415) 555-0132");
+    expect(screen.getByRole("button", { name: /\+1/ })).toBeInTheDocument();
+  });
+
+  it("stores the E.164 value of the country picked before typing", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(screen.getByRole("button", { name: /\+55/ }));
+    await user.click(screen.getByRole("button", { name: /Espanha/ }));
+    await user.type(phoneField(), "612345678");
+
+    expect(phoneField()).toHaveValue("612 34 56 78");
+    expect(screen.getByTestId("stored")).toHaveTextContent("+34612345678");
+  });
 });

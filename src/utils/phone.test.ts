@@ -104,4 +104,82 @@ describe("phone", () => {
     expect(findPhoneCountry("ZZ").code).toBe("BR");
     expect(findPhoneCountry(undefined).code).toBe("BR");
   });
+
+  it("applies the mask of other Brazilian area codes", () => {
+    expect(formatNationalPhone("11987654321", "BR")).toBe("(11) 98765-4321");
+    expect(formatNationalPhone("2122223333", "BR")).toBe("(21) 2222-3333");
+    expect(formatNationalPhone("4832221111", "BR")).toBe("(48) 3222-1111");
+  });
+
+  it("applies the national grouping of other countries", () => {
+    expect(formatNationalPhone("4155550132", "US")).toBe("(415) 555-0132");
+    expect(formatNationalPhone("612345678", "ES")).toBe("612 34 56 78");
+    expect(formatNationalPhone("1123456789", "AR")).toBe("11 2345-6789");
+    expect(formatNationalPhone("3123456789", "IT")).toBe("312 345 6789");
+  });
+
+  it("keeps digits unmasked where the national format depends on a trunk prefix", () => {
+    expect(formatNationalPhone("612345678", "FR")).toBe("612345678");
+    expect(formatNationalPhone("15112345678", "DE")).toBe("15112345678");
+    expect(formatNationalPhone("9012345678", "JP")).toBe("9012345678");
+  });
+
+  it("still normalizes to E.164 for those countries", () => {
+    expect(toE164("612345678", "FR")).toBe("+33612345678");
+    expect(toE164("15112345678", "DE")).toBe("+4915112345678");
+    expect(toE164("9012345678", "JP")).toBe("+819012345678");
+    expect(toE164("1123456789", "AR")).toBe("+541123456789");
+    expect(toE164("3123456789", "IT")).toBe("+393123456789");
+  });
+
+  it("tells apart countries that share the +1 calling code", () => {
+    expect(parsePhoneValue("+14155550132")).toEqual({
+      country: "US",
+      nationalNumber: "4155550132",
+    });
+    expect(parsePhoneValue("+14165550123")).toEqual({
+      country: "CA",
+      nationalNumber: "4165550123",
+    });
+  });
+
+  it("reads back E.164 values of other countries", () => {
+    expect(parsePhoneValue("+5511987654321")).toEqual({
+      country: "BR",
+      nationalNumber: "11987654321",
+    });
+    expect(parsePhoneValue("+34612345678")).toEqual({ country: "ES", nationalNumber: "612345678" });
+    expect(parsePhoneValue("+819012345678")).toEqual({
+      country: "JP",
+      nationalNumber: "9012345678",
+    });
+  });
+
+  it("reads legacy Brazilian values of other area codes", () => {
+    expect(parsePhoneValue("(11) 98765-4321")).toEqual({
+      country: "BR",
+      nationalNumber: "11987654321",
+    });
+    expect(parsePhoneValue("+55 (11) 98765-4321")).toEqual({
+      country: "BR",
+      nationalNumber: "11987654321",
+    });
+    expect(parsePhoneValue("552122223333")).toEqual({
+      country: "BR",
+      nationalNumber: "2122223333",
+    });
+  });
+
+  it("discounts the calling code length from the E.164 ceiling", () => {
+    expect(limitNationalDigits("1".repeat(30), "US")).toHaveLength(14);
+    expect(limitNationalDigits("1".repeat(30), "PT")).toHaveLength(12);
+  });
+
+  it("validates numbers of other countries against their own rules", () => {
+    expect(isValidPhone("11987654321", "BR")).toBe(true);
+    expect(isValidPhone("4155550132", "US")).toBe(true);
+    expect(isValidPhone("912345678", "PT")).toBe(true);
+    expect(isValidPhone("202", "US")).toBe(false);
+    expect(isValidPhone("61999999999", "PT")).toBe(false);
+  });
 });
