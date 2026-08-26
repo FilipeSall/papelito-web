@@ -66,7 +66,7 @@ ${PAPELITO_AUDIENCE_SEGMENTS.map((segment) => `- ${segment}`).join("\n")}
 - [Seja revendedor](${absoluteUrl("/revendedor")}): cadastro de empresas interessadas em revender.
 - [PDV Perfeito](${absoluteUrl("/pdv")}): materiais de merchandising para o ponto de venda.
 - [Quem somos](${absoluteUrl("/sobre")}): história, valores e posicionamento da indústria.
-- [Termos de uso](${absoluteUrl("/termos")}) e [Política de privacidade](${absoluteUrl("/privacidade")}).
+- [Política de privacidade](${absoluteUrl("/privacidade")}).
 
 ## Empresa
 

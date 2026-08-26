@@ -452,10 +452,6 @@ export function LegalPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-[14px] font-medium text-slate-500">
-            <Link className="underline-offset-2 hover:text-slate-700 hover:underline" href="/termos">
-              Termos de Uso
-            </Link>
-            <span aria-hidden>•</span>
             <Link
               className="underline-offset-2 hover:text-slate-700 hover:underline"
               href="/privacidade"

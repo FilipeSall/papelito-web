@@ -513,23 +513,14 @@ function CadastroEtapa2PageContent() {
                   {acceptTerms ? <CheckIcon className="h-2.5 w-2.5 text-brand-dark" /> : null}
                 </button>
                 <p className="text-xs font-medium leading-relaxed text-white/60">
-                  Confirmo que tenho 18 anos ou mais e concordo com os{" "}
-                  <Link
-                    href="/termos"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-brand-yellow hover:underline"
-                  >
-                    Termos de Uso
-                  </Link>{" "}
-                  e{" "}
+                  Confirmo que tenho 18 anos ou mais e concordo com a{" "}
                   <Link
                     href="/privacidade"
                     target="_blank"
                     rel="noreferrer"
                     className="text-brand-yellow hover:underline"
                   >
-                    Política de Privacidade
+                  Política de Privacidade
                   </Link>
                   .
                 </p>

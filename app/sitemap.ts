@@ -32,7 +32,6 @@ const STATIC_ENTRIES: StaticEntry[] = [
   { path: "/colecoes", changeFrequency: "weekly", priority: 0.6 },
   { path: "/pdv", changeFrequency: "monthly", priority: 0.6 },
   { path: "/sobre", changeFrequency: "monthly", priority: 0.5 },
-  { path: "/termos", changeFrequency: "yearly", priority: 0.2 },
   { path: "/privacidade", changeFrequency: "yearly", priority: 0.2 },
 ];
 

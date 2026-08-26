@@ -19,7 +19,6 @@ const supportLinks = [
   { label: "Minha Conta", href: "/perfil/dados" },
   { label: "Meus Pedidos", href: "/perfil" },
   { label: "Política de Privacidade", href: "/privacidade" },
-  { label: "Termos de Uso", href: "/termos" },
   { label: "Fale Conosco", href: PAPELITO_COMPANY.contactPageUrl },
 ];
 
