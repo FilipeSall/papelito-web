@@ -178,6 +178,7 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
           <>
             {/* Botão anterior */}
             <button
+              type="button"
               onClick={prev}
               style={{ ...NAV_BTN, left: 16 }}
               aria-label="Slide anterior"
@@ -187,6 +188,7 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
 
             {/* Botão próximo */}
             <button
+              type="button"
               onClick={next}
               style={{ ...NAV_BTN, right: 16 }}
               aria-label="Próximo slide"
@@ -211,6 +213,7 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
           >
             {slides.map((slide, i) => (
               <button
+                type="button"
                 key={slide.id}
                 onClick={() => {
                   setCurrent(i);
@@ -235,7 +238,7 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
                     width: i === activeIndex ? 28 : 8,
                     height: 8,
                     borderRadius: 9999,
-                    background: i === activeIndex ? "#FFE500" : "#FFE500",
+                    background: "#FFE500",
                     opacity: i === activeIndex ? 1 : 0.72,
                     transition: "width 0.3s ease, opacity 0.3s ease",
                   }}
