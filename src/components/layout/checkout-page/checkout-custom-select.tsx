@@ -7,7 +7,9 @@ import { ChevronRightIcon } from "@/components/ui/icons";
 type CheckoutCustomSelectOption =
   | string
   | {
-      label: string;
+      label: ReactNode;
+      searchText?: string;
+      triggerLabel?: ReactNode;
       value: string;
     };
 
@@ -27,6 +29,9 @@ export interface CheckoutCustomSelectProps {
   iconClassName?: string;
   listClassName?: string;
   optionClassName?: string;
+  searchable?: boolean;
+  searchInputClassName?: string;
+  searchPlaceholder?: string;
   selectedOptionClassName?: string;
   unselectedOptionClassName?: string;
   wrapperClassName?: string;
@@ -48,24 +53,38 @@ export function CheckoutCustomSelect({
   iconClassName = "text-text-muted",
   listClassName = "",
   optionClassName = "",
+  searchable = false,
+  searchInputClassName = "h-9 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3 text-sm outline-none focus:border-brand-dark/25",
+  searchPlaceholder = "Buscar...",
   selectedOptionClassName = "bg-brand-dark text-white",
   unselectedOptionClassName = "text-brand-dark hover:bg-bg-light",
   wrapperClassName = "",
 }: CheckoutCustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
   const selectedOption = options.find((option) => getOptionValue(option) === value);
+  const visibleOptions = searchable ? filterOptions(options, query) : options;
+
+  function close() {
+    setIsOpen(false);
+    setQuery("");
+  }
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!wrapperRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
+        setQuery("");
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsOpen(false);
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        setQuery("");
+      }
     }
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -108,11 +127,12 @@ export function CheckoutCustomSelect({
               return;
             }
 
+            setQuery("");
             setIsOpen((current) => !current);
           }}
         >
           <span className={value ? selectedValueClassName : placeholderClassName}>
-            {selectedOption ? getOptionLabel(selectedOption) : placeholder}
+            {selectedOption ? getOptionTriggerLabel(selectedOption) : placeholder}
           </span>
           <ChevronRightIcon
             className={`h-4 w-4 transition-transform ${iconClassName} ${
@@ -127,7 +147,36 @@ export function CheckoutCustomSelect({
             id={listboxId}
             role="listbox"
           >
-            {options.map((option) => {
+            {searchable ? (
+              <li className="sticky top-0 z-10 bg-white px-2 pb-1 pt-1">
+                <input
+                  aria-label={searchPlaceholder}
+                  autoFocus
+                  className={searchInputClassName}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      const first = visibleOptions[0];
+
+                      if (first) {
+                        onChange(getOptionValue(first));
+                        close();
+                      }
+                    }
+                  }}
+                  placeholder={searchPlaceholder}
+                  type="search"
+                  value={query}
+                />
+              </li>
+            ) : null}
+
+            {searchable && visibleOptions.length === 0 ? (
+              <li className="px-4 py-3 text-sm text-black/50">Nenhum resultado.</li>
+            ) : null}
+
+            {visibleOptions.map((option) => {
               const optionValue = getOptionValue(option);
               const optionLabel = getOptionLabel(option);
               const isSelected = value === optionValue;
@@ -145,7 +194,7 @@ export function CheckoutCustomSelect({
                       }
 
                       onChange(optionValue);
-                      setIsOpen(false);
+                      close();
                     }}
                   >
                     {optionLabel}
@@ -166,10 +215,33 @@ export function CheckoutCustomSelect({
   );
 }
 
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
+function getOptionSearchText(option: CheckoutCustomSelectOption) {
+  if (typeof option === "string") return option;
+  if (option.searchText) return option.searchText;
+  return typeof option.label === "string" ? option.label : option.value;
+}
+
+function filterOptions(options: readonly CheckoutCustomSelectOption[], query: string) {
+  const term = normalizeSearchText(query.trim());
+
+  return term === ""
+    ? options
+    : options.filter((option) => normalizeSearchText(getOptionSearchText(option)).includes(term));
+}
+
 function getOptionValue(option: CheckoutCustomSelectOption) {
   return typeof option === "string" ? option : option.value;
 }
 
 function getOptionLabel(option: CheckoutCustomSelectOption) {
   return typeof option === "string" ? option : option.label;
+}
+
+function getOptionTriggerLabel(option: CheckoutCustomSelectOption) {
+  if (typeof option === "string") return option;
+  return option.triggerLabel ?? option.label;
 }
