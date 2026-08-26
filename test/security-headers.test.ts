@@ -81,4 +81,13 @@ describe("cabeçalhos de segurança", () => {
       expect(connect).toContain(origin);
     }
   });
+
+  it("autoriza o Google Tag Manager", async () => {
+    const headers = await loadSecurityHeaders();
+    const csp = headers["Content-Security-Policy"];
+
+    expect(directive(csp, "script-src")).toContain("https://www.googletagmanager.com");
+    expect(directive(csp, "connect-src")).toContain("https://www.googletagmanager.com");
+    expect(directive(csp, "frame-src")).toContain("https://www.googletagmanager.com");
+  });
 });

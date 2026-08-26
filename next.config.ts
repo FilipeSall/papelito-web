@@ -51,11 +51,11 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "form-action 'self'",
   "img-src 'self' https: data: blob:",
-  `script-src 'self' 'unsafe-inline'${developmentScriptSource} https://accounts.google.com`,
+  `script-src 'self' 'unsafe-inline'${developmentScriptSource} https://accounts.google.com https://www.googletagmanager.com`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  `connect-src 'self' ${browserConnectOrigins()}${developmentConnectSource}`,
-  "frame-src 'self' https://accounts.google.com",
+  `connect-src 'self' ${browserConnectOrigins()} https://www.googletagmanager.com${developmentConnectSource}`,
+  "frame-src 'self' https://accounts.google.com https://www.googletagmanager.com",
 ].join("; ");
 
 const nextConfig: NextConfig = {
