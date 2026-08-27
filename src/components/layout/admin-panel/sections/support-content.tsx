@@ -3,17 +3,44 @@ import { firstParam } from "@/lib/search-params";
 
 import { Panel } from "../primitives";
 
+type MessageThread = Awaited<ReturnType<typeof getMessageThread>>;
+
+async function resolveSelectedThread(
+  requestedId: number | null,
+  requestedThread: MessageThread | null,
+  fallbackId: number | null,
+): Promise<MessageThread | null> {
+  if (requestedId) {
+    return requestedThread;
+  }
+
+  return fallbackId ? getMessageThread(fallbackId) : null;
+}
+
 export async function SupportContent({
   searchParams,
-}: {
+}: Readonly<{
   searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const threads = await getMessageThreads();
+}>) {
   const selectedValue = firstParam(searchParams?.thread);
-  const selectedId = selectedValue && /^\d+$/.test(selectedValue)
+  const requestedId = selectedValue && /^\d+$/.test(selectedValue)
     ? Number.parseInt(selectedValue, 10)
-    : threads.items[0]?.threadId ?? null;
-  const selectedThread = selectedId ? await getMessageThread(selectedId) : null;
+    : null;
+
+  // Com a thread na URL, as duas cargas são independentes e saem juntas — cada ida
+  // ao WordPress custa cerca de 1s. Sem ela, a thread aberta é a primeira da lista,
+  // então a segunda carga só pode começar depois que a lista chegar.
+  const [threads, requestedThread] = await Promise.all([
+    getMessageThreads(),
+    requestedId ? getMessageThread(requestedId) : null,
+  ]);
+
+  const selectedId = requestedId ?? threads.items[0]?.threadId ?? null;
+  const selectedThread = await resolveSelectedThread(
+    requestedId,
+    requestedThread,
+    selectedId,
+  );
 
   return (
     <div className="space-y-5">
