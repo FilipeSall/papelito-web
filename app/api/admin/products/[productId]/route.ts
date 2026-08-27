@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 import {
   getAdminProduct,
@@ -49,12 +49,6 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ productId: string }> },
 ) {
-  const auth = await getAdminApiSession();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const { productId } = await params;
   const parsedProductId = Number.parseInt(productId, 10);
 
@@ -63,8 +57,15 @@ export async function GET(
   }
 
   try {
-    const product = await getAdminProduct(auth.accessToken, parsedProductId);
-    return NextResponse.json({ product });
+    const result = await readWithAdminApiSession((accessToken) =>
+      getAdminProduct(accessToken, parsedProductId),
+    );
+
+    if ("error" in result) {
+      return NextResponse.json({ message: result.error }, { status: result.status });
+    }
+
+    return NextResponse.json({ product: result.data });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível carregar o produto.";
     return NextResponse.json({ message }, { status: 500 });

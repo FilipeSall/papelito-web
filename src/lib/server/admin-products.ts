@@ -268,17 +268,21 @@ function mapProductWithVariations(product: WcProduct, variations: WcProduct[]) {
   };
 }
 
-async function getAdminProductVariations(
-  accessToken: string,
-  productId: number,
-) {
-  const result = await wpRest<WcProduct[]>(
+function requestAdminProductVariations(accessToken: string, productId: number) {
+  return wpRest<WcProduct[]>(
     `/wc/v3/products/${productId}/variations?per_page=100&orderby=id&order=asc`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
       revalidate: 0,
     },
   );
+}
+
+async function getAdminProductVariations(
+  accessToken: string,
+  productId: number,
+) {
+  const result = await requestAdminProductVariations(accessToken, productId);
 
   if (!result.ok) {
     throw new Error(result.error.message);
@@ -344,7 +348,8 @@ function normalizeTagKey(term: { name: string; slug: string }) {
     .toLowerCase()
     .replace(/&amp;/g, "e")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^-+/, "")
+    .replace(/-$/, "");
 }
 
 function matchesTagKey(term: AdminProductTaxonomyTerm, key: string) {
@@ -677,10 +682,16 @@ export async function createAdminProduct(
 }
 
 export async function getAdminProduct(accessToken: string, productId: number) {
-  const result = await wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    revalidate: 0,
-  });
+  // Cada round-trip ao WordPress custa ~1s de bootstrap, então produto e variações
+  // saem juntos: só o tipo do produto diria se as variações são necessárias, e
+  // esperar por ele para só então pedi-las dobra a espera do editor.
+  const [result, variationsResult] = await Promise.all([
+    wpRest<WcProduct>(`/wc/v3/products/${productId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      revalidate: 0,
+    }),
+    requestAdminProductVariations(accessToken, productId),
+  ]);
 
   if (!result.ok) {
     throw new Error(result.error.message);
@@ -692,8 +703,11 @@ export async function getAdminProduct(accessToken: string, productId: number) {
     return product;
   }
 
-  const variations = await getAdminProductVariations(accessToken, productId);
-  return mapProductWithVariations(result.data, variations);
+  if (!variationsResult.ok) {
+    throw new Error(variationsResult.error.message);
+  }
+
+  return mapProductWithVariations(result.data, variationsResult.data);
 }
 
 export async function updateAdminProduct(
@@ -863,7 +877,7 @@ export async function uploadAdminProductMedia(
   options: { contentType?: string; fileName?: string } = {},
 ) {
   const safeName =
-    options.fileName ?? (file.name.replace(/[^\w.\-]+/g, "-") || "produto.jpg");
+    options.fileName ?? (file.name.replace(/[^\w.-]+/g, "-") || "produto.jpg");
   const upload =
     options.contentType && options.contentType !== file.type
       ? new File([file], safeName, { type: options.contentType })

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAdminProductsManager } from "@/hooks/use-admin-products-manager";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import type { AdminProductsSnapshot } from "@/lib/server/admin-products";
 import type { AdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 
@@ -26,13 +27,13 @@ export function ProductsManager({
   taxonomy,
   initialFocusProductId = null,
   excludedProductIds = [],
-}: {
+}: Readonly<{
   initialIssue?: "missing-weight" | "product-data-incomplete" | null;
   snapshot: AdminProductsSnapshot;
   taxonomy: AdminTaxonomySnapshot;
   initialFocusProductId?: number | null;
   excludedProductIds?: number[];
-}) {
+}>) {
   const [toast, setToast] = useState<ToastState>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,6 +101,7 @@ export function ProductsManager({
     filters,
     isEditorOpen,
     isLoading,
+    isOpeningProduct,
     loadProducts,
     page,
     perPage,
@@ -180,6 +182,8 @@ export function ProductsManager({
           totalProducts={totalProducts}
           totalPages={totalPages}
         />
+
+        {isOpeningProduct ? <LoadingOverlay /> : null}
 
         {isEditorOpen ? (
           <ProductEditorModal
@@ -271,7 +275,7 @@ function CatalogStats({
   published,
   totalPages,
   totalProducts,
-}: CatalogStatsProps) {
+}: Readonly<CatalogStatsProps>) {
   const items = [
     {
       description: "total no WooCommerce",

@@ -66,6 +66,133 @@ function mergeTags(
   );
 }
 
+function productSaveValidationError(
+  draft: ProductDraft,
+  changedFields: Set<keyof ProductDraft>,
+) {
+  if (!draft.name.trim()) {
+    return PRODUCT_ERROR_MESSAGES.missingName;
+  }
+
+  // A regra "exatamente 1 categoria principal" é do banco, não da tela. Aqui é
+  // só experiência: falhar antes de gastar uma ida ao WooCommerce.
+  if (!draft.taxonomyCategoryId) {
+    return PRODUCT_ERROR_MESSAGES.missingCategory;
+  }
+
+  if (
+    changedFields.has("regularPrice") &&
+    !hasValidProductPrice(draft.regularPrice)
+  ) {
+    return PRODUCT_ERROR_MESSAGES.invalidRegularPrice;
+  }
+
+  if (
+    changedFields.has("salePrice") &&
+    draft.salePrice.trim() &&
+    !hasValidProductPrice(draft.salePrice)
+  ) {
+    return PRODUCT_ERROR_MESSAGES.invalidSalePrice;
+  }
+
+  return null;
+}
+
+async function saveAdminProduct(
+  selectedProductId: number | "new",
+  draft: ProductDraft,
+  changedFields: Set<keyof ProductDraft>,
+) {
+  const isNewProduct = selectedProductId === "new";
+  const endpoint = isNewProduct
+    ? ADMIN_PRODUCTS_API.list
+    : ADMIN_PRODUCTS_API.detail(selectedProductId);
+  const response = await fetch(endpoint, {
+    body: JSON.stringify(
+      buildPayload(draft, isNewProduct ? undefined : changedFields),
+    ),
+    headers: { "Content-Type": "application/json" },
+    method: isNewProduct ? "POST" : "PATCH",
+  });
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message ?? PRODUCT_ERROR_MESSAGES.save);
+  }
+
+  return json.product as AdminProduct;
+}
+
+async function saveAdminProductTaxonomy(
+  selectedProductId: number | "new",
+  savedProduct: AdminProduct,
+  draft: ProductDraft,
+): Promise<{ ok: true } | { message: string; ok: false }> {
+  const response = await fetch(
+    `/api/admin/products/${savedProduct.id}/taxonomy`,
+    {
+      body: JSON.stringify(buildTaxonomyPayload(draft)),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    },
+  );
+
+  if (response.ok) {
+    return { ok: true };
+  }
+
+  const json = (await response.json().catch(() => null)) as {
+    message?: string;
+  } | null;
+  const errorMessage = json?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy;
+
+  if (
+    selectedProductId === "new" &&
+    savedProduct.status === PUBLISHED_PRODUCT_STATUS
+  ) {
+    const rollbackResponse = await fetch(
+      ADMIN_PRODUCTS_API.detail(savedProduct.id),
+      {
+        body: JSON.stringify({ status: "draft" }),
+        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    if (!rollbackResponse.ok) {
+      return {
+        message: `${errorMessage} Não foi possível reverter o produto para rascunho.`,
+        ok: false,
+      };
+    }
+  }
+
+  return {
+    message:
+      selectedProductId === "new"
+        ? `${errorMessage} O produto foi mantido como rascunho.`
+        : `${errorMessage} A classificação anterior foi preservada.`,
+    ok: false,
+  };
+}
+
+function upsertAdminProduct(
+  currentProducts: AdminProduct[],
+  savedProduct: AdminProduct,
+) {
+  const exists = currentProducts.some(
+    (product) => product.id === savedProduct.id,
+  );
+
+  if (exists) {
+    return currentProducts.map((product) =>
+      product.id === savedProduct.id ? savedProduct : product,
+    );
+  }
+
+  return [savedProduct, ...currentProducts];
+}
+
 export function useAdminProductsManager(
   snapshot: AdminProductsSnapshot,
   options: {
@@ -108,6 +235,7 @@ export function useAdminProductsManager(
   const draftRef = useRef(draft);
   const changedFieldsRef = useRef<Set<keyof ProductDraft>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpeningProduct, setIsOpeningProduct] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -249,6 +377,7 @@ export function useAdminProductsManager(
       const requestId = selectionRequestRef.current + 1;
       selectionRequestRef.current = requestId;
       setIsLoading(true);
+      setIsOpeningProduct(true);
       setNotice("");
 
       try {
@@ -289,6 +418,7 @@ export function useAdminProductsManager(
       } finally {
         if (selectionRequestRef.current === requestId) {
           setIsLoading(false);
+          setIsOpeningProduct(false);
         }
       }
     },
@@ -327,6 +457,7 @@ export function useAdminProductsManager(
 
     async function loadFocusedProduct() {
       setIsLoading(true);
+      setIsOpeningProduct(true);
       setNotice("");
 
       try {
@@ -382,6 +513,7 @@ export function useAdminProductsManager(
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          setIsOpeningProduct(false);
         }
       }
     }
@@ -454,32 +586,12 @@ export function useAdminProductsManager(
   async function handleSave() {
     const draftToSave = draftRef.current;
 
-    if (!draftToSave.name.trim()) {
-      setNotice(PRODUCT_ERROR_MESSAGES.missingName);
-      return false;
-    }
-
-    // A regra "exatamente 1 categoria principal" é do banco, não da tela. Aqui é
-    // só experiência: falhar antes de gastar uma ida ao WooCommerce.
-    if (!draftToSave.taxonomyCategoryId) {
-      setNotice(PRODUCT_ERROR_MESSAGES.missingCategory);
-      return false;
-    }
-
-    if (
-      changedFieldsRef.current.has("regularPrice") &&
-      !hasValidProductPrice(draftToSave.regularPrice)
-    ) {
-      setNotice(PRODUCT_ERROR_MESSAGES.invalidRegularPrice);
-      return false;
-    }
-
-    if (
-      changedFieldsRef.current.has("salePrice") &&
-      draftToSave.salePrice.trim() &&
-      !hasValidProductPrice(draftToSave.salePrice)
-    ) {
-      setNotice(PRODUCT_ERROR_MESSAGES.invalidSalePrice);
+    const validationError = productSaveValidationError(
+      draftToSave,
+      changedFieldsRef.current,
+    );
+    if (validationError) {
+      setNotice(validationError);
       return false;
     }
 
@@ -487,82 +599,25 @@ export function useAdminProductsManager(
     setNotice("");
 
     try {
-      const endpoint =
-        selectedProductId === "new"
-          ? ADMIN_PRODUCTS_API.list
-          : ADMIN_PRODUCTS_API.detail(selectedProductId);
-      const response = await fetch(endpoint, {
-        body: JSON.stringify(
-          buildPayload(
-            draftToSave,
-            selectedProductId === "new" ? undefined : changedFieldsRef.current,
-          ),
-        ),
-        headers: { "Content-Type": "application/json" },
-        method: selectedProductId === "new" ? "POST" : "PATCH",
-      });
-      const json = await response.json();
-
-      if (!response.ok) {
-        throw new Error(json.message ?? PRODUCT_ERROR_MESSAGES.save);
-      }
-
-      const savedProduct = json.product as AdminProduct;
-
-      const taxonomyResponse = await fetch(
-        `/api/admin/products/${savedProduct.id}/taxonomy`,
-        {
-          body: JSON.stringify(buildTaxonomyPayload(draftToSave)),
-          headers: { "Content-Type": "application/json" },
-          method: "PUT",
-        },
+      const savedProduct = await saveAdminProduct(
+        selectedProductId,
+        draftToSave,
+        changedFieldsRef.current,
+      );
+      const taxonomyResult = await saveAdminProductTaxonomy(
+        selectedProductId,
+        savedProduct,
+        draftToSave,
       );
 
-      if (!taxonomyResponse.ok) {
-        const taxonomyJson = (await taxonomyResponse
-          .json()
-          .catch(() => null)) as { message?: string } | null;
-
-        if (
-          selectedProductId === "new" &&
-          savedProduct.status === PUBLISHED_PRODUCT_STATUS
-        ) {
-          const rollbackResponse = await fetch(
-            ADMIN_PRODUCTS_API.detail(savedProduct.id),
-            {
-              body: JSON.stringify({ status: "draft" }),
-              headers: { "Content-Type": "application/json" },
-              method: "PATCH",
-            },
-          );
-
-          if (!rollbackResponse.ok) {
-            setNotice(
-              `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} Não foi possível reverter o produto para rascunho.`,
-            );
-            return false;
-          }
-        }
-
-        setNotice(
-          selectedProductId === "new"
-            ? `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} O produto foi mantido como rascunho.`
-            : `${taxonomyJson?.message ?? PRODUCT_ERROR_MESSAGES.saveTaxonomy} A classificação anterior foi preservada.`,
-        );
+      if (!taxonomyResult.ok) {
+        setNotice(taxonomyResult.message);
         return false;
       }
 
-        setProducts((currentProducts) => {
-        const exists = currentProducts.some(
-          (product) => product.id === savedProduct.id,
-        );
-        if (exists) {
-          return currentProducts.map((product) =>
-            product.id === savedProduct.id ? savedProduct : product,
-          );
-        }
-        return [savedProduct, ...currentProducts];
-      });
+      setProducts((currentProducts) =>
+        upsertAdminProduct(currentProducts, savedProduct),
+      );
       setSelectedProductId(savedProduct.id);
       setTags((currentTags) => mergeTags(currentTags, savedProduct.tags));
       const nextDraft = applyTaxonomyToDraft(productToDraft(savedProduct), {
@@ -854,6 +909,7 @@ export function useAdminProductsManager(
     isCreatingTag,
     isEditorOpen,
     isLoading,
+    isOpeningProduct,
     isPromotionEnabled,
     isSaving,
     isUploading,
