@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import {
   getAdminFreeShippingThreshold,
   saveAdminFreeShippingThreshold,
@@ -23,13 +23,12 @@ function getMinimumOrderCents(payload: unknown): number | null {
 }
 
 export async function GET() {
-  const auth = await getAdminApiSession();
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   try {
-    const result = await getAdminFreeShippingThreshold(auth.accessToken);
+    const session = await readWithAdminApiSession(getAdminFreeShippingThreshold);
+    if ("error" in session) {
+      return NextResponse.json({ message: session.error }, { status: session.status });
+    }
+    const result = session.data;
     if (!result.threshold) {
       return NextResponse.json({ message: result.issues[0] ?? "Não foi possível consultar o mínimo." }, { status: 502 });
     }

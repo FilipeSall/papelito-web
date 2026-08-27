@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { wpRest } from "@/lib/server/wp-rest";
 
 type WcProductOption = {
@@ -44,12 +44,6 @@ function mapOption(product: WcProductOption): ProductOption | null {
 }
 
 export async function GET(request: Request) {
-  const auth = await getAdminApiSession();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const url = new URL(request.url);
   const ids = parseIds(url.searchParams.get("ids"));
   const search = (url.searchParams.get("search") ?? "").trim();
@@ -74,9 +68,17 @@ export async function GET(request: Request) {
     }
   }
 
-  const result = await wpRest<WcProductOption[]>(`/wc/v3/products?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
+  const session = await readWithAdminApiSession((accessToken) =>
+    wpRest<WcProductOption[]>(`/wc/v3/products?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const result = session.data;
 
   if (!result.ok) {
     return NextResponse.json(

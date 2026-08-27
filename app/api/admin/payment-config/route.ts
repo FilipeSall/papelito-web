@@ -6,7 +6,7 @@ import {
   saveAdminPaymentConfig,
   type PaymentConfig,
 } from "@/features/rich-text/services/get-payment-config";
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 function getPaymentConfig(payload: unknown): PaymentConfig | null {
   if (
@@ -31,12 +31,12 @@ function getPaymentConfig(payload: unknown): PaymentConfig | null {
 }
 
 export async function GET() {
-  const auth = await getAdminApiSession();
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  const session = await readWithAdminApiSession(getAdminPaymentConfig);
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
   }
 
-  const result = await getAdminPaymentConfig(auth.accessToken);
+  const result = session.data;
   return result.config
     ? NextResponse.json(result.config)
     : NextResponse.json({ message: result.issues[0] ?? "Não foi possível consultar a configuração." }, { status: 502 });

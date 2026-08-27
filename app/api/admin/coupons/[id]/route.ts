@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 import { deleteCoupon, DeleteCouponError } from "@/features/coupons/services/delete-coupon";
 import { getAdminCoupon } from "@/features/coupons/services/get-admin-coupon";
@@ -18,17 +18,19 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getAdminApiSession();
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const id = await resolveId(params);
   if (!id) return NextResponse.json({ message: "ID inválido." }, { status: 422 });
 
   try {
-    const coupon = await getAdminCoupon(auth.accessToken, id);
-    return NextResponse.json({ coupon });
+    const result = await readWithAdminApiSession((accessToken) =>
+      getAdminCoupon(accessToken, id),
+    );
+
+    if ("error" in result) {
+      return NextResponse.json({ message: result.error }, { status: result.status });
+    }
+
+    return NextResponse.json({ coupon: result.data });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Cupom não encontrado.";
     return NextResponse.json({ message }, { status: 404 });

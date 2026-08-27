@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { parseStockFilter } from "@/lib/server/admin-vendor-filters";
 import { getAdminVendorStock } from "@/lib/server/admin-vendor-operations";
 
@@ -13,11 +13,6 @@ function escapeCsv(value: unknown) {
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = await getAdminApiSession();
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
@@ -28,13 +23,21 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const filter = parseStockFilter(url.searchParams.get("filter"));
   const search = url.searchParams.get("search")?.trim() ?? "";
 
-  const snapshot = await getAdminVendorStock(auth.accessToken, vendorId, {
-    filter,
-    page: 1,
-    paginate: false,
-    perPage: 100,
-    search,
-  });
+  const session = await readWithAdminApiSession((accessToken) =>
+    getAdminVendorStock(accessToken, vendorId, {
+      filter,
+      page: 1,
+      paginate: false,
+      perPage: 100,
+      search,
+    }),
+  );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const snapshot = session.data;
 
   const lines = [
     "\uFEFFproduct_name;sku;qty;updated_at",

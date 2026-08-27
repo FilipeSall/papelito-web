@@ -11,15 +11,9 @@ import {
   parseVendorOrdersSearch,
 } from "@/features/vendor-orders/utils/vendor-order-filters";
 
-import { requireVendorAccessToken } from "../_lib/require-vendor-session";
+import { readWithVendorAccessToken } from "../_lib/require-vendor-session";
 
 export async function GET(request: Request) {
-  const auth = await requireVendorAccessToken();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const url = new URL(request.url);
   const page = parseVendorOrdersPage(url.searchParams.get("page"));
   const search = parseVendorOrdersSearch(url.searchParams.get("search"));
@@ -34,9 +28,17 @@ export async function GET(request: Request) {
     params.set("search", search);
   }
 
-  const result = await wpRest<WpVendorOrdersList>(`/papelito/v1/vendor/me/orders?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
+  const session = await readWithVendorAccessToken((accessToken) =>
+    wpRest<WpVendorOrdersList>(`/papelito/v1/vendor/me/orders?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const result = session.data;
 
   return result.ok
     ? NextResponse.json(mapVendorOrdersSnapshot(result.data))

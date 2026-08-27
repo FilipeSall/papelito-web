@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getProductTaxonomy, saveProductTaxonomy } from "@/lib/server/admin-taxonomy";
 
 function parseId(value: string) {
@@ -13,19 +13,21 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ productId: string }> },
 ) {
-  const auth = await getAdminApiSession();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const productId = parseId((await params).productId);
 
   if (productId === null) {
     return NextResponse.json({ message: "Produto inválido." }, { status: 422 });
   }
 
-  const taxonomy = await getProductTaxonomy(auth.accessToken, productId);
+  const session = await readWithAdminApiSession((accessToken) =>
+    getProductTaxonomy(accessToken, productId),
+  );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const taxonomy = session.data;
 
   if (!taxonomy) {
     return NextResponse.json(

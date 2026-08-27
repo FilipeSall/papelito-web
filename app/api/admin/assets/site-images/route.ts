@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 import {
   getAdminSiteImageAssetsSnapshot,
@@ -10,15 +10,15 @@ import {
 import type { SiteImageAssets } from "@/types/home-assets";
 
 export async function GET() {
-  const auth = await getAdminApiSession();
+  const result = await readWithAdminApiSession(getAdminSiteImageAssetsSnapshot);
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in result) {
+    return NextResponse.json({ message: result.error }, { status: result.status });
   }
 
-  const snapshot = await getAdminSiteImageAssetsSnapshot(auth.accessToken);
-  return NextResponse.json(snapshot);
+  return NextResponse.json(result.data);
 }
+
 
 export async function PUT(request: Request) {
   const auth = await getAdminApiSession();

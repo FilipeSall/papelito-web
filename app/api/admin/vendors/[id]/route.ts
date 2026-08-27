@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getAdminVendorDetail } from "@/lib/server/admin-vendors";
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = await getAdminApiSession();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
 
@@ -17,7 +11,15 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
     return NextResponse.json({ message: "ID inválido." }, { status: 400 });
   }
 
-  const detail = await getAdminVendorDetail(auth.accessToken, vendorId);
+  const session = await readWithAdminApiSession((accessToken) =>
+    getAdminVendorDetail(accessToken, vendorId),
+  );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const detail = session.data;
 
   if (!detail) {
     return NextResponse.json({ message: "Vendor não encontrado." }, { status: 404 });

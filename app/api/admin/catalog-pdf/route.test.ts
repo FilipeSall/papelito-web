@@ -6,6 +6,10 @@ const wpRestMock = vi.fn();
 
 vi.mock("@/lib/server/admin-api-auth", () => ({
   getAdminApiSession: () => getAdminApiSessionMock(),
+  readWithAdminApiSession: async (load: (accessToken: string) => Promise<unknown>) => {
+    const auth = await getAdminApiSessionMock();
+    return "error" in auth ? auth : { data: await load(auth.accessToken) };
+  },
 }));
 
 vi.mock("@/lib/server/env", () => ({

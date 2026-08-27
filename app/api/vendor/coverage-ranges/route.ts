@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
 
-import { requireVendorAccessToken } from "../_lib/require-vendor-session";
+import { readWithVendorAccessToken, requireVendorAccessToken } from "../_lib/require-vendor-session";
 
 type RangePayload = {
   maxCep?: string;
@@ -11,15 +11,17 @@ type RangePayload = {
 };
 
 export async function GET() {
-  const auth = await requireVendorAccessToken();
+  const session = await readWithVendorAccessToken((accessToken) =>
+    wpRest<unknown>("/papelito/v1/vendor/me/coverage-ranges", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  );
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
   }
 
-  const result = await wpRest<unknown>("/papelito/v1/vendor/me/coverage-ranges", {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
+  const result = session.data;
 
   return result.ok
     ? NextResponse.json(result.data)

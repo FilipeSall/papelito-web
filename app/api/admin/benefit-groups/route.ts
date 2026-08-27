@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import {
   benefitsErrorResponse,
   createBenefitGroup,
@@ -10,14 +10,15 @@ import {
 import { invalidateBenefits } from "./invalidate";
 
 export async function GET() {
-  const auth = await getAdminApiSession();
+  const result = await readWithAdminApiSession(getAdminBenefitGroupsSnapshot);
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in result) {
+    return NextResponse.json({ message: result.error }, { status: result.status });
   }
 
-  return NextResponse.json(await getAdminBenefitGroupsSnapshot(auth.accessToken));
+  return NextResponse.json(result.data);
 }
+
 
 export async function POST(request: Request) {
   const auth = await getAdminApiSession();

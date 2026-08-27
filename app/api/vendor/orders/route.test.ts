@@ -5,6 +5,10 @@ const wpRestMock = vi.fn();
 
 vi.mock("../_lib/require-vendor-session", () => ({
   requireVendorAccessToken: () => requireVendorAccessTokenMock(),
+  readWithVendorAccessToken: async (load: (accessToken: string) => Promise<unknown>) => {
+    const auth = await requireVendorAccessTokenMock();
+    return "error" in auth ? auth : { data: await load(auth.accessToken) };
+  },
 }));
 
 vi.mock("@/lib/server/wp-rest", () => ({

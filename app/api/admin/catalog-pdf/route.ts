@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import type { CatalogPdfSnapshot } from "@/lib/server/catalog-pdf";
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getWpRestBase } from "@/lib/server/env";
 import { wpRest } from "@/lib/server/wp-rest";
 
@@ -60,16 +60,18 @@ async function parseWpResponse(response: Response) {
 }
 
 export async function GET() {
-  const auth = await getAdminApiSession();
+  const session = await readWithAdminApiSession((accessToken) =>
+    wpRest<CatalogPdfSnapshot>("/papelito/v1/catalog-pdf-info", {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  );
 
-  if ("error" in auth) {
-    return jsonError(auth.error, auth.status);
+  if ("error" in session) {
+    return jsonError(session.error, session.status);
   }
 
-  const result = await wpRest<CatalogPdfSnapshot>("/papelito/v1/catalog-pdf-info", {
-    cache: "no-store",
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
+  const result = session.data;
 
   if (!result.ok) {
     return jsonError(result.error.message, result.status || 502);

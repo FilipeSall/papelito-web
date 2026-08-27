@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 import {
   createAdminProduct,
@@ -10,12 +10,6 @@ import {
 } from "@/lib/server/admin-products";
 
 export async function GET(request: Request) {
-  const auth = await getAdminApiSession();
-
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const url = new URL(request.url);
   const filters = {
     category: url.searchParams.get("category") ?? undefined,
@@ -32,7 +26,15 @@ export async function GET(request: Request) {
 
   console.info("[api/admin/products][GET] incoming", filters);
 
-  const snapshot = await getAdminProductsSnapshot(auth.accessToken, filters);
+  const result = await readWithAdminApiSession((accessToken) =>
+    getAdminProductsSnapshot(accessToken, filters),
+  );
+
+  if ("error" in result) {
+    return NextResponse.json({ message: result.error }, { status: result.status });
+  }
+
+  const snapshot = result.data;
 
   console.info("[api/admin/products][GET] result", {
     currentPage: snapshot.currentPage,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { parseStockFilter } from "@/lib/server/admin-vendor-filters";
 import { wpRest } from "@/lib/server/wp-rest";
 
@@ -11,11 +11,6 @@ type StockUpdatePayload = {
 };
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = await getAdminApiSession();
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  }
-
   const { id } = await context.params;
   const vendorId = Number.parseInt(id, 10);
   if (!Number.isFinite(vendorId) || vendorId <= 0) {
@@ -37,12 +32,17 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     params.set("search", search);
   }
 
-  const result = await wpRest<unknown>(
-    `/papelito/v1/admin/vendors/${vendorId}/stock?${params.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    },
+  const session = await readWithAdminApiSession((accessToken) =>
+    wpRest<unknown>(`/papelito/v1/admin/vendors/${vendorId}/stock?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
   );
+
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
+  }
+
+  const result = session.data;
 
   if (!result.ok) {
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 
 import { createCoupon } from "@/features/coupons/services/create-coupon";
 import { getAdminCouponsSnapshot } from "@/features/coupons/services/get-admin-coupons";
@@ -22,16 +22,16 @@ function parseFilters(url: URL): CouponListFilters {
 }
 
 export async function GET(request: Request) {
-  const auth = await getAdminApiSession();
+  const filters = parseFilters(new URL(request.url));
+  const result = await readWithAdminApiSession((accessToken) =>
+    getAdminCouponsSnapshot(accessToken, filters),
+  );
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in result) {
+    return NextResponse.json({ message: result.error }, { status: result.status });
   }
 
-  const filters = parseFilters(new URL(request.url));
-  const snapshot = await getAdminCouponsSnapshot(auth.accessToken, filters);
-
-  return NextResponse.json(snapshot);
+  return NextResponse.json(result.data);
 }
 
 export async function POST(request: Request) {

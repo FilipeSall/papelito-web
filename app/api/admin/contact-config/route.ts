@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getContactConfig, saveContactConfig } from "@/features/site-contact/services/contact-config";
-export async function GET() { const auth = await getAdminApiSession(); if ("error" in auth) return NextResponse.json({ message: auth.error }, { status: auth.status }); return NextResponse.json(await getContactConfig(auth.accessToken)); }
+export async function GET() { const result = await readWithAdminApiSession(getContactConfig); if ("error" in result) return NextResponse.json({ message: result.error }, { status: result.status }); return NextResponse.json(result.data); }
 export async function PUT(request: Request) { const auth = await getAdminApiSession(); if ("error" in auth) return NextResponse.json({ message: auth.error }, { status: auth.status }); const body = await request.json().catch(() => null); if (!body || typeof body.phone !== "string") return NextResponse.json({ message: "Informe um telefone válido." }, { status: 400 }); try { return NextResponse.json(await saveContactConfig(auth.accessToken ?? "", { phone: body.phone })); } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : "Não foi possível salvar." }, { status: 502 }); } }

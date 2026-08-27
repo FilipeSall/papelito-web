@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import {
   getAdminKitsSnapshot,
   saveAdminKit,
@@ -10,12 +10,10 @@ import {
 } from "@/lib/server/admin-kits";
 
 export async function GET() {
-  const auth = await getAdminApiSession();
-  if ("error" in auth)
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
-  return NextResponse.json({
-    items: await getAdminKitsSnapshot(auth.accessToken),
-  });
+  const result = await readWithAdminApiSession(getAdminKitsSnapshot);
+  if ("error" in result)
+    return NextResponse.json({ message: result.error }, { status: result.status });
+  return NextResponse.json({ items: result.data });
 }
 
 export async function POST(request: Request) {

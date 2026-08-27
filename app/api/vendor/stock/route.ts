@@ -3,19 +3,21 @@ import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
 
-import { requireVendorAccessToken } from "../_lib/require-vendor-session";
+import { readWithVendorAccessToken, requireVendorAccessToken } from "../_lib/require-vendor-session";
 
 export async function GET(request: Request) {
-  const auth = await requireVendorAccessToken();
+  const params = new URL(request.url).searchParams.toString();
+  const session = await readWithVendorAccessToken((accessToken) =>
+    wpRest<unknown>(`/papelito/v1/vendor/me/stock${params ? `?${params}` : ""}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+  );
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in session) {
+    return NextResponse.json({ message: session.error }, { status: session.status });
   }
 
-  const params = new URL(request.url).searchParams.toString();
-  const result = await wpRest<unknown>(`/papelito/v1/vendor/me/stock${params ? `?${params}` : ""}`, {
-    headers: { Authorization: `Bearer ${auth.accessToken}` },
-  });
+  const result = session.data;
 
   return result.ok
     ? NextResponse.json(result.data)

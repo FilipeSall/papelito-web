@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
 import {
   getAdminPromoMarqueeSnapshot,
   saveAdminPromoMarquee,
@@ -9,15 +9,15 @@ import {
 import type { PromoMarqueeItem } from "@/types/home-assets";
 
 export async function GET() {
-  const auth = await getAdminApiSession();
+  const result = await readWithAdminApiSession(getAdminPromoMarqueeSnapshot);
 
-  if ("error" in auth) {
-    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  if ("error" in result) {
+    return NextResponse.json({ message: result.error }, { status: result.status });
   }
 
-  const snapshot = await getAdminPromoMarqueeSnapshot(auth.accessToken);
-  return NextResponse.json(snapshot);
+  return NextResponse.json(result.data);
 }
+
 
 export async function PUT(request: Request) {
   const auth = await getAdminApiSession();
