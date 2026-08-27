@@ -27,9 +27,6 @@ export async function SupportContent({
     ? Number.parseInt(selectedValue, 10)
     : null;
 
-  // Com a thread na URL, as duas cargas são independentes e saem juntas — cada ida
-  // ao WordPress custa cerca de 1s. Sem ela, a thread aberta é a primeira da lista,
-  // então a segunda carga só pode começar depois que a lista chegar.
   const [threads, requestedThread] = await Promise.all([
     getMessageThreads(),
     requestedId ? getMessageThread(requestedId) : null,

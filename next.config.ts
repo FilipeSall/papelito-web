@@ -13,8 +13,6 @@ import { resolveWpGraphqlEndpoint, resolveWpRestBase } from "./src/lib/wp-endpoi
 function browserConnectOrigins() {
   const origins = new Set<string>();
 
-  // A mesma resolução que a aplicação usa, incluindo o fallback para localhost: ler `process.env`
-  // cru deixaria a CSP fora de sincronia com o endpoint que o navegador realmente chama.
   for (const endpoint of [resolveWpRestBase(), resolveWpGraphqlEndpoint()]) {
     try {
       origins.add(new URL(endpoint).origin);
@@ -23,11 +21,24 @@ function browserConnectOrigins() {
     }
   }
 
-  // Consultadas direto do cliente: CEP no checkout e tokenização de cartão (que não pode passar
-  // pelo nosso servidor, sob pena de trazer o número do cartão para dentro do escopo PCI).
   origins.add("https://viacep.com.br");
   origins.add("https://brasilapi.com.br");
   origins.add("https://api.pagar.me");
+
+  return [...origins].join(" ");
+}
+
+function browserImageOrigins() {
+  const origins = new Set<string>();
+
+  for (const endpoint of [resolveWpRestBase(), resolveWpGraphqlEndpoint()]) {
+    try {
+      const origin = new URL(endpoint).origin;
+      if (origin.startsWith("http://")) origins.add(origin);
+    } catch {
+      // Endpoint mal formado: a build não é o lugar de falhar por isso.
+    }
+  }
 
   return [...origins].join(" ");
 }
@@ -50,7 +61,7 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
   "object-src 'none'",
   "form-action 'self'",
-  "img-src 'self' https: data: blob:",
+  `img-src 'self' https: data: blob: ${browserImageOrigins()}`,
   `script-src 'self' 'unsafe-inline'${developmentScriptSource} https://accounts.google.com https://www.googletagmanager.com`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",

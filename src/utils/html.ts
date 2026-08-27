@@ -76,13 +76,13 @@ export function parseDescriptionParagraphs(value: string) {
           .map((paragraph) => paragraph.trim())
           .filter(Boolean);
 
-  const paragraphs = rawParagraphs.map((paragraph) =>
-    decodeHtmlEntities(
-      removeTrailingSpacesBeforeNewlines(
-        stripHtmlTags(paragraph.replace(/<br\s*\/?>/gi, "\n")),
-      ).trim(),
-    ),
-  );
+  const paragraphs = rawParagraphs.map((paragraph) => {
+    const cleaned = removeTrailingSpacesBeforeNewlines(
+      stripHtmlTags(paragraph.replace(/<br\s*\/?>/gi, "\n")),
+    );
+
+    return decodeHtmlEntities(paragraphMatches.length > 0 ? cleaned : cleaned.trim());
+  });
 
   return paragraphs.length > 0 ? paragraphs : [""];
 }
@@ -92,7 +92,7 @@ export function buildDescriptionHtml(paragraphs: string[]) {
     .map((paragraph) => {
       const lines = paragraph
         .split(/\n+/)
-        .map((line) => escapeHtml(line.trim()))
+        .map((line) => escapeHtml(line))
         .filter(Boolean);
 
       return lines.length > 0 ? `<p>${lines.join("<br />\n")}</p>` : "<p></p>";

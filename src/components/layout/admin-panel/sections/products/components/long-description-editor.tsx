@@ -11,7 +11,7 @@ type LongDescriptionEditorProps = {
   value: string;
 };
 
-export function LongDescriptionEditor({ onChange, value }: LongDescriptionEditorProps) {
+export function LongDescriptionEditor({ onChange, value }: Readonly<LongDescriptionEditorProps>) {
   const paragraphs = useMemo(() => parseDescriptionParagraphs(value), [value]);
   const textareaValue = paragraphs.join("\n");
 
