@@ -10,7 +10,10 @@ interface ProductDetailGalleryProps {
 }
 
 export function ProductDetailGallery({ product }: Readonly<ProductDetailGalleryProps>) {
-  const thumbnails = useMemo(() => resolveThumbnails(product), [product]);
+  const thumbnails = useMemo(
+    () => resolveThumbnails(product, product.isKit ? Number.POSITIVE_INFINITY : undefined),
+    [product],
+  );
   const [selectedThumbId, setSelectedThumbId] = useState<string | null>(null);
 
   const selectedThumb = thumbnails.find((thumb) => thumb.id === selectedThumbId) ?? thumbnails[0];

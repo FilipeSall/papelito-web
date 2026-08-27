@@ -50,6 +50,7 @@ interface UseProductPurchaseOptions {
   availableStock: number | null;
   regionBlock: RegionBlock | null;
   onQuantityClamp: (quantity: number) => void;
+  detailPath?: string;
 }
 
 const RESOLVE_FAILURE_TITLES: Record<ResolveCartVendorFailure["status"], string> = {
@@ -208,6 +209,7 @@ export function useProductPurchase({
   availableStock,
   regionBlock,
   onQuantityClamp,
+  detailPath = `/produtos/${product.id}`,
 }: UseProductPurchaseOptions) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
@@ -235,7 +237,7 @@ export function useProductPurchase({
     switch (gate.action) {
       case "signin":
         router.push(
-          `/entrar?feedback=cart_login_required&callbackUrl=${encodeURIComponent(`/produtos/${product.id}`)}`,
+          `/entrar?feedback=cart_login_required&callbackUrl=${encodeURIComponent(detailPath)}`,
         );
         return false;
       case "blocked":

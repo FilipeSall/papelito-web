@@ -35,6 +35,8 @@ interface ProductDetailMainContentProps {
   regionBlock?: RegionBlock | null;
   /** Benefícios já resolvidos para este produto, na ordem definida pelo Admin. */
   benefitItems?: ResolvedProductBenefit[];
+  detailPath?: string;
+  showRelatedProducts?: boolean;
 }
 
 const MAX_RELATED_PRODUCTS = 4;
@@ -51,12 +53,15 @@ export function ProductDetailMainContent({
   selectedVendorStockQty = null,
   regionBlock = null,
   benefitItems = [],
+  detailPath,
+  showRelatedProducts = true,
 }: Readonly<ProductDetailMainContentProps>) {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const { status, role } = useAuthSession();
 
   const availableStock = resolveAvailableStock(selectedVendorStockQty);
-  const quantity = clampQuantity(selectedQuantity, availableStock);
+  const quantity = product.isKit ? 1 : clampQuantity(selectedQuantity, availableStock);
+  const quantitySelectorStock = product.isKit ? 1 : availableStock;
   const hasDiscount = product.originalPrice > product.price;
   const showPublicCepAvailability =
     status === "unauthenticated" ||
@@ -67,6 +72,10 @@ export function ProductDetailMainContent({
   const descriptionParagraphs = useMemo(
     () => buildDescriptionParagraphs(product.description),
     [product.description],
+  );
+  const longDescriptionParagraphs = useMemo(
+    () => buildDescriptionParagraphs(product.longDescription ?? product.description),
+    [product.description, product.longDescription],
   );
   const relatedProducts = useMemo(
     () => product.relatedThumbs.slice(0, MAX_RELATED_PRODUCTS),
@@ -79,6 +88,7 @@ export function ProductDetailMainContent({
     availableStock,
     regionBlock,
     onQuantityClamp: setSelectedQuantity,
+    detailPath,
   });
 
   const vendorSummary = purchase.isOutOfStock ? activeVendor : null;
@@ -131,7 +141,7 @@ export function ProductDetailMainContent({
 
           <ProductDetailQuantitySelector
             quantity={quantity}
-            availableStock={availableStock}
+            availableStock={quantitySelectorStock}
             disabled={purchase.isPurchaseDisabled}
             onQuantityChange={setSelectedQuantity}
           />
@@ -156,7 +166,7 @@ export function ProductDetailMainContent({
             <div className="mt-4">
               <ActiveVendorSummary
                 vendor={vendorSummary}
-                changeHref={`/produtos/${product.id}/escolher-vendor`}
+                changeHref={`${detailPath ?? `/produtos/${product.id}`}/escolher-vendor`}
               />
             </div>
           ) : null}
@@ -165,13 +175,13 @@ export function ProductDetailMainContent({
         </div>
       </div>
 
-      <ProductDetailDescriptionSection paragraphs={descriptionParagraphs} />
+      <ProductDetailDescriptionSection paragraphs={longDescriptionParagraphs} />
 
       {showPublicCepAvailability ? (
         <ProductDetailCepAvailability productId={product.id} />
       ) : null}
 
-      <ProductDetailRelatedSection products={relatedProducts} />
+      {showRelatedProducts ? <ProductDetailRelatedSection products={relatedProducts} /> : null}
     </div>
   );
 }

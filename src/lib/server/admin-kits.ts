@@ -33,6 +33,13 @@ export type AdminKit = {
   salePrice: string;
   imageUrl: string;
   imageSource: "fallback" | "kit" | "premium" | "custom";
+  shortDescription: string;
+  description: string;
+  packageDimensions: {
+    length: string;
+    width: string;
+    height: string;
+  } | null;
   items: AdminKitItem[];
   merchandise: AdminKitMerchandise[];
   referencePriceCents: number;
@@ -46,6 +53,13 @@ export type AdminKitPayload = {
   salePrice?: string;
   imageSource: AdminKit["imageSource"];
   imageAttachmentId?: number;
+  shortDescription: string;
+  description: string;
+  packageDimensions: {
+    length: string;
+    width: string;
+    height: string;
+  };
   items: Array<Pick<AdminKitItem, "productId" | "quantity">>;
   merchandise: AdminKitMerchandise[];
 };

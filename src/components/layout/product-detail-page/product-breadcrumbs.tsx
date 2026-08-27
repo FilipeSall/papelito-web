@@ -2,7 +2,7 @@ import { BreadcrumbChevronIcon } from "./atoms/breadcrumb-chevron-icon";
 import { ProductBreadcrumbLink } from "./atoms/product-breadcrumb-link";
 
 interface ProductBreadcrumbsProps {
-  category?: { name: string; slug: string };
+  category?: { name: string; slug: string; href?: string };
   /** Nome do produto exibido no último nível do breadcrumb. */
   productName: string;
 }
@@ -27,7 +27,7 @@ export function ProductBreadcrumbs({ category, productName }: ProductBreadcrumbs
           {category ? (
             <>
               <BreadcrumbChevronIcon />
-              <ProductBreadcrumbLink label={category.name} href={`/produtos?tipo=${encodeURIComponent(category.slug)}`} />
+              <ProductBreadcrumbLink label={category.name} href={category.href ?? `/produtos?tipo=${encodeURIComponent(category.slug)}`} />
             </>
           ) : null}
           <BreadcrumbChevronIcon />

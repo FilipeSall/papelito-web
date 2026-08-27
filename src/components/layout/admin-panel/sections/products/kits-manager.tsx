@@ -22,6 +22,8 @@ import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 import { uploadDirectFile } from "@/lib/client/direct-upload";
 
 import { AdminSelectField } from "./components/admin-select-field";
+import { FieldLabel } from "./components/form-fields";
+import { LongDescriptionEditor } from "./components/long-description-editor";
 
 const presets = [
   {
@@ -60,6 +62,9 @@ function blankDraft(): Draft {
     imageUrl: presets[0].src,
     items: [],
     merchandise: [],
+    shortDescription: "",
+    description: "",
+    packageDimensions: { length: "", width: "", height: "" },
   };
 }
 
@@ -91,6 +96,9 @@ function fromKit(kit: AdminKit): Draft {
       quantity,
     })),
     merchandise: kit.merchandise.map((item) => newDraftMerchandise(item)),
+    shortDescription: kit.shortDescription,
+    description: kit.description,
+    packageDimensions: kit.packageDimensions ?? { length: "", width: "", height: "" },
   };
 }
 
@@ -141,10 +149,9 @@ export function KitsManager({
       );
     }, 0);
   }, [draft, initialProducts, products]);
-  const filteredProducts = products.filter((product) =>
-    `${product.name} ${product.sku}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
+  const filteredProducts = products.filter(
+    (product) =>
+      `${product.name} ${product.sku}`.toLowerCase().includes(search.toLowerCase()),
   );
 
   function patch(patch: Partial<Draft>) {
@@ -555,6 +562,59 @@ export function KitsManager({
                     })}
                   </div>
                 </KitSection>
+                <KitSection title="Embalagem e logística">
+                  <p className="text-xs leading-5 text-[#5e574c]">
+                    O peso é calculado automaticamente pelos produtos e brindes. Informe apenas a embalagem final de uma unidade do Kit.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <KitPackageDimensionField
+                      label="Comprimento (cm)"
+                      value={draft.packageDimensions.length}
+                      onChange={(length) =>
+                        patch({
+                          packageDimensions: { ...draft.packageDimensions, length },
+                        })
+                      }
+                    />
+                    <KitPackageDimensionField
+                      label="Largura (cm)"
+                      value={draft.packageDimensions.width}
+                      onChange={(width) =>
+                        patch({
+                          packageDimensions: { ...draft.packageDimensions, width },
+                        })
+                      }
+                    />
+                    <KitPackageDimensionField
+                      label="Altura (cm)"
+                      value={draft.packageDimensions.height}
+                      onChange={(height) =>
+                        patch({
+                          packageDimensions: { ...draft.packageDimensions, height },
+                        })
+                      }
+                    />
+                  </div>
+                </KitSection>
+                <KitSection title="Descrições">
+                  <label className="grid gap-2">
+                    <FieldLabel
+                      helpText="Resumo curto exibido nas áreas compactas da página do Kit."
+                      label="Descrição Curta"
+                    />
+                    <textarea
+                      className="min-h-24 resize-y border-2 border-[#1a1a1a] bg-white px-3 py-2 text-sm leading-6 outline-none"
+                      onChange={(event) => patch({ shortDescription: event.target.value })}
+                      value={draft.shortDescription}
+                    />
+                  </label>
+                  <div className="mt-4">
+                    <LongDescriptionEditor
+                      onChange={(description) => patch({ description })}
+                      value={draft.description}
+                    />
+                  </div>
+                </KitSection>
                 <KitSection title="Merchandise e Brindes">
                   <p className="text-xs leading-5 text-[#5e574c]">
                     Brindes não aparecem na vitrine, mas entram no peso e nas
@@ -907,6 +967,31 @@ function NumberField({
         min="1"
         onChange={(event) => onChange(Math.max(1, Number(event.target.value)))}
         type="number"
+        value={value}
+      />
+    </label>
+  );
+}
+
+function KitPackageDimensionField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="grid min-w-0 gap-1">
+      <FieldLabel
+        helpText="Os Correios calculam o frete pelas medidas da embalagem final já pronta para envio. Informe comprimento, largura e altura da caixa/pacote do Kit; não some as dimensões dos produtos internos."
+        label={label}
+      />
+      <input
+        className="h-11 min-w-0 border-2 border-[#1a1a1a] bg-white px-3 text-sm"
+        inputMode="decimal"
+        onChange={(event) => onChange(event.target.value)}
         value={value}
       />
     </label>

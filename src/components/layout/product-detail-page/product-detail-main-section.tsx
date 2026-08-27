@@ -14,6 +14,8 @@ interface ProductDetailMainSectionProps {
   regionBlock?: RegionBlock | null;
   /** Benefícios já resolvidos para este produto, na ordem definida pelo Admin. */
   benefitItems?: ResolvedProductBenefit[];
+  detailPath?: string;
+  showRelatedProducts?: boolean;
 }
 
 /**
@@ -28,6 +30,8 @@ export function ProductDetailMainSection({
   selectedVendorStockQty = null,
   regionBlock = null,
   benefitItems = [],
+  detailPath,
+  showRelatedProducts = true,
 }: ProductDetailMainSectionProps) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
@@ -64,6 +68,8 @@ export function ProductDetailMainSection({
             selectedVendorStockQty={selectedVendorStockQty}
             regionBlock={regionBlock}
             benefitItems={benefitItems}
+            detailPath={detailPath}
+            showRelatedProducts={showRelatedProducts}
           />
         </div>
       </div>

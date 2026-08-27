@@ -190,20 +190,24 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     case "product_data_incomplete": {
       const productName = stringValue(payload, "product_name") || "Produto";
       const productId = numberValue(payload, "product_id");
+      const isKit = stringValue(payload, "entity_type") === "kit";
       const missingPrice = payload.missing_price === true;
       const missingWeight = payload.missing_weight === true;
-      const missingDetails = missingPrice && missingWeight
-        ? "sem preço e sem peso"
-        : missingPrice
-          ? "sem preço"
-          : "sem peso";
+      const missingDimensions = payload.missing_dimensions === true;
+      const missingDetails = [
+        missingPrice ? "sem preço" : "",
+        missingWeight ? "sem peso" : "",
+        missingDimensions ? "sem dimensões da embalagem" : "",
+      ].filter(Boolean).join(" e ");
 
       return {
         icon: "package",
-        title: "Cadastro de produto incompleto",
-        body: `O produto “${productName}” está ${missingDetails}. Atualize essas informações para que ele possa ser exibido e utilizado corretamente no cálculo de frete.`,
+        title: isKit ? "Cadastro de Kit incompleto" : "Cadastro de produto incompleto",
+        body: `O ${isKit ? "Kit" : "produto"} “${productName}” está ${missingDetails || "incompleto"}. Atualize essas informações para que ele possa ser utilizado corretamente no cálculo de frete.`,
         href:
-          Number.isInteger(productId) && productId > 0
+          isKit
+            ? "/admin/products?tab=kits"
+            : Number.isInteger(productId) && productId > 0
             ? `/admin/products?focus=${productId}&issue=product-data-incomplete`
             : "/admin/products",
       };

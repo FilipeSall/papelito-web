@@ -92,6 +92,25 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/admin/products?focus=321&issue=product-data-incomplete");
   });
 
+  it("formats a Kit logistics notification without treating it as a regular product", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "product_data_incomplete",
+        payload: {
+          entity_type: "kit",
+          missing_dimensions: true,
+          missing_weight: false,
+          product_id: 321,
+          product_name: "Kit Escritório",
+        },
+      }),
+    );
+
+    expect(formatted.title).toBe("Cadastro de Kit incompleto");
+    expect(formatted.body).toContain("sem dimensões da embalagem");
+    expect(formatted.href).toBe("/admin/products?tab=kits");
+  });
+
   it("links a vendor interest notification to its detail inside Vendors", () => {
     const formatted = formatNotification(
       buildNotification({

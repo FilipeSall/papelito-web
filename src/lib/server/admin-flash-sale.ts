@@ -136,6 +136,7 @@ export type AdminFlashSaleCandidate = {
   regularPrice: string;
   sku: string;
   status: string;
+  type?: string;
   tags: AdminProductTaxonomyTerm[];
 };
 
@@ -262,6 +263,7 @@ function mapCandidate(product: WpFlashSaleCandidate): AdminFlashSaleCandidate | 
     regularPrice: cleanText(product.regularPrice),
     sku: cleanText(product.sku),
     status: cleanText(product.status) || "publish",
+    type: cleanText(product.type) || "simple",
     tags: (product.tags ?? [])
       .map(mapCandidateTerm)
       .filter((term): term is AdminProductTaxonomyTerm => term !== null),

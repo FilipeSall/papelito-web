@@ -20,6 +20,7 @@ export interface ProductDetailItem {
   type: Exclude<ProductTypeId, "todos">;
   badge: string;
   description: string;
+  longDescription?: string;
   sku?: string;
   image?: string;
   rating: number;
@@ -27,6 +28,7 @@ export interface ProductDetailItem {
   price: number;
   originalPrice: number;
   discountPercent: number;
+  isKit?: boolean;
   promotionContext?: string;
   galleryImages: ProductDetailGalleryImage[];
   relatedThumbs: ProductDetailRelatedThumb[];

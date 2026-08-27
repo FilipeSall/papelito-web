@@ -1,115 +1,91 @@
+import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
 
-import { ImageWithSkeleton, ProductImageFallback } from "@/components/ui";
-import { getKitsCatalog } from "@/features/catalog/services/get-kits-catalog";
-import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
-
-import {
-  JsonLd,
-  buildBreadcrumbJsonLd,
-  buildProductJsonLd,
-} from "@/lib/seo/json-ld";
+import { ProductBreadcrumbs, ProductDetailMainSection } from "@/components/layout/product-detail-page";
+import { resolveProductBenefits } from "@/components/layout/product-benefits-bar";
+import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
+import { getActiveVendor } from "@/features/active-vendor/server";
+import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
+import { getCoverage } from "@/features/catalog/services/get-coverage";
+import { getKitDetail } from "@/features/catalog/services/get-kit-detail";
+import { getProductBenefits } from "@/features/catalog/services/get-product-benefits";
+import { createRegionBlock, type RegionBlock } from "@/features/catalog/types/region-block";
+import { fetchProductFavoriteStatus } from "@/features/favorites";
+import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
+import { buildRichTextContext } from "@/features/rich-text";
+import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
+import { authOptions } from "@/lib/auth";
+import { JsonLd, buildBreadcrumbJsonLd, buildProductJsonLd } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-
-import { KitDetailAddToCart } from "./kit-detail-add-to-cart";
 
 export const revalidate = 60;
 
-export async function generateMetadata({
-  params,
-}: Readonly<{ params: Promise<{ slug: string }> }>) {
+export async function generateMetadata({ params }: Readonly<{ params: Promise<{ slug: string }> }>) {
   const { slug } = await params;
-  const kit = (await getKitsCatalog()).find((item) => item.href === `/kits/${slug}`);
-
-  if (!kit) {
-    return { title: "Kit não encontrado", robots: { index: false, follow: false } };
-  }
+  const kit = await getKitDetail(slug);
+  if (!kit) return { title: "Kit não encontrado", robots: { index: false, follow: false } };
 
   return buildPageMetadata({
     title: `${kit.name} — kit para revenda no atacado`,
-    description: `${kit.name}: kit Papelito com preço fechado para lojistas, distribuidores e revendedores. Compra B2B com CNPJ e entrega por revendedor regional em todo o Brasil.`,
+    description: kit.description || `${kit.name}: kit Papelito para revenda.`,
     path: `/kits/${slug}`,
     ...(kit.image ? { image: { url: kit.image, alt: kit.name } } : {}),
   });
 }
 
-export default async function KitDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function KitDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const kit = (await getKitsCatalog()).find(
-    (item) => item.href === `/kits/${slug}`,
-  );
-
+  const session = await getServerSession(authOptions);
+  const [kit, activeVendorResult, freeShippingThreshold, paymentConfig] = await Promise.all([
+    getKitDetail(slug),
+    session?.user ? getActiveVendor() : Promise.resolve(null),
+    getFreeShippingThreshold(),
+    getPaymentConfig(),
+  ]);
   if (!kit) notFound();
 
+  const [initialIsFavorite, benefits] = await Promise.all([
+    fetchProductFavoriteStatus(kit.id, session?.accessToken),
+    getProductBenefits(kit.id),
+  ]);
+  const benefitItems = resolveProductBenefits(
+    benefits.items,
+    buildRichTextContext({ freeShippingMinimumCents: freeShippingThreshold?.minimumOrderCents ?? null, flashSaleCampaign: null, paymentConfig }),
+  );
+  const activeVendor = activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
+  let selectedVendorStockQty: number | null = null;
+  let regionBlock: RegionBlock | null = null;
+
+  if (activeVendorResult && !activeVendorResult.ok) {
+    regionBlock = createRegionBlock(activeVendorResult.error.reason === "no_vendor_available" ? "no_vendor" : "missing_cep");
+  }
+  if (activeVendor) {
+    const { cep } = await getAccountCoverageCepContext();
+    if (!cep) {
+      regionBlock = createRegionBlock("missing_cep");
+    } else {
+      const coverage = await getCoverage(cep, [kit.id], activeVendor.vendorId).catch(() => null);
+      selectedVendorStockQty = coverage?.[kit.id]?.bestVendor?.qty ?? null;
+      if (coverage?.[kit.id]?.hasCoverage === false) regionBlock = createRegionBlock("no_product_coverage");
+    }
+  }
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-12 md:px-12">
-      <JsonLd
-        data={buildProductJsonLd({
-          name: kit.name,
-          image: kit.image,
-          category: "Kit",
-          price: kit.price,
-          path: `/kits/${slug}`,
-        })}
+    <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
+      <JsonLd data={buildProductJsonLd({ name: kit.name, description: kit.description, image: kit.image, category: kit.category, price: kit.price, path: `/kits/${slug}` })} />
+      <JsonLd data={buildBreadcrumbJsonLd([{ name: "Início", path: "/" }, { name: "Kits", path: "/kits" }, { name: kit.name }])} />
+      <ProductBreadcrumbs category={{ name: "Kits", slug: "kits", href: "/kits" }} productName={kit.name} />
+      <ProductDetailMainSection
+        product={kit}
+        initialIsFavorite={initialIsFavorite}
+        activeVendor={activeVendor}
+        selectedVendorStockQty={selectedVendorStockQty}
+        regionBlock={regionBlock}
+        benefitItems={benefitItems}
+        detailPath={`/kits/${slug}`}
+        showRelatedProducts={false}
       />
-      <JsonLd
-        data={buildBreadcrumbJsonLd([
-          { name: "Início", path: "/" },
-          { name: "Kits", path: "/kits" },
-          { name: kit.name },
-        ])}
-      />
-      <div className="grid gap-10 md:grid-cols-2">
-        <div className="relative aspect-square border-2 border-[#1a1a1a] bg-[#faf8f2] p-6 shadow-[8px_8px_0_#1a1a1a]">
-          {kit.image ? (
-            <ImageWithSkeleton
-              alt={kit.name}
-              fallback={<ProductImageFallback className="size-full" />}
-              fill
-              imageClassName="object-contain p-6"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              src={kit.image}
-            />
-          ) : (
-            <ProductImageFallback className="size-full" />
-          )}
-        </div>
-        <div className="self-center">
-          <p className="text-[11px] font-black uppercase tracking-[.18em] text-[#6f6758]">
-            Kit Papelito
-          </p>
-          <h1 className="mt-2 text-4xl font-black uppercase text-[#231f20]">
-            {kit.name}
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-[#5e574c]">
-            Produtos selecionados para comprar juntos, com preço próprio.
-          </p>
-          <div className="mt-7">
-            <p className="text-3xl font-black text-[#231f20]">
-              R$ {kit.price.toFixed(2).replace(".", ",")}
-            </p>
-            {kit.originalPrice > kit.price ? (
-              <p className="mt-1 text-sm text-[#6f6758] line-through">
-                R$ {kit.originalPrice.toFixed(2).replace(".", ",")}
-              </p>
-            ) : null}
-          </div>
-          <ProductAvailabilityProvider productIds={[kit.id]}>
-            <KitDetailAddToCart
-              category={kit.category}
-              id={kit.id}
-              image={kit.image}
-              name={kit.name}
-              originalPrice={kit.originalPrice}
-              price={kit.price}
-            />
-          </ProductAvailabilityProvider>
-        </div>
-      </div>
+      <AddToCartToastHost />
     </main>
   );
 }

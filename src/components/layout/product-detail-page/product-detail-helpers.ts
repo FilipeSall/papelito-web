@@ -12,14 +12,17 @@ export interface DescriptionParagraph {
 
 const MAX_THUMBNAILS = 4;
 
-export function resolveThumbnails(product: ProductDetailItem): ProductDetailGalleryImage[] {
+export function resolveThumbnails(
+  product: ProductDetailItem,
+  limit = MAX_THUMBNAILS,
+): ProductDetailGalleryImage[] {
   const galleryImages = product.galleryImages ?? [];
   const source =
     galleryImages.length > 0
       ? galleryImages
       : [{ id: `${product.id}:primary`, name: product.name, image: product.image }];
 
-  return source.filter((thumb) => Boolean(thumb.image?.trim())).slice(0, MAX_THUMBNAILS);
+  return source.filter((thumb) => Boolean(thumb.image?.trim())).slice(0, limit);
 }
 
 export function buildDescriptionParagraphs(description: string): DescriptionParagraph[] {

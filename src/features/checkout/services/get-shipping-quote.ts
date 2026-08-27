@@ -89,6 +89,12 @@ function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
   if (payload.code === "papelito_shipping_product_dimensions_missing") {
     return "Um produto do carrinho ainda não tem peso e dimensões cadastrados para cotar frete. Remova o item ou escolha outro produto.";
   }
+  if (payload.code === "papelito_shipping_kit_package_not_supported") {
+    return "Compre uma unidade do Kit por vez, sem produtos adicionais no carrinho, para cotar a embalagem corretamente.";
+  }
+  if (payload.code === "papelito_kit_package_dimensions_missing") {
+    return "Este Kit ainda não tem as dimensões da embalagem final cadastradas.";
+  }
 
   const data =
     payload.data && typeof payload.data === "object"
