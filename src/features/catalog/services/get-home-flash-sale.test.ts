@@ -76,4 +76,26 @@ describe("getHomeFlashSale", () => {
 
     await expect(getHomeFlashSale()).resolves.toBeNull();
   });
+
+  it("devolve null quando o estado vazio chega como 200 — é esse status que substitui a campanha no Data Cache", async () => {
+    wpRest.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { campaign: null, products: [] },
+      headers: new Headers(),
+    });
+
+    await expect(getHomeFlashSale()).resolves.toBeNull();
+  });
+
+  it("cacheia com revalidate curto e tag própria, para o painel poder invalidar na hora", async () => {
+    wpRest.mockResolvedValue(campaignResponse());
+
+    await getHomeFlashSale();
+
+    expect(wpRest).toHaveBeenCalledWith("/papelito/v1/home/flash-sale", {
+      revalidate: 60,
+      tags: ["wp:home-flash-sale"],
+    });
+  });
 });

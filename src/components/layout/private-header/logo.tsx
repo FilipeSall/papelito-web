@@ -19,11 +19,11 @@ export function PrivateHeaderLogo({ logo }: Readonly<PrivateHeaderLogoProps>) {
     >
       <Image
         alt={resolved.alt}
-        height={73}
+        height={1352}
         className="h-9 w-auto md:h-18.25"
         priority
         src={resolved.imageUrl}
-        width={123}
+        width={2121}
       />
     </Link>
   );

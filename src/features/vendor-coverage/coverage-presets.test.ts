@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CUSTOM_COVERAGE_PRESET_ID,
+  EMPTY_COVERAGE_PRESET_ID,
   buildCoverageBlocksFromRanges,
   findCoveragePresetByRanges,
   validateCoverageRanges,
@@ -34,6 +35,12 @@ describe("coverage-presets", () => {
     const blocks = buildCoverageBlocksFromRanges([{ minCep: "71500-000", maxCep: "71599-999" }]);
 
     expect(blocks).toMatchObject([{ presetId: CUSTOM_COVERAGE_PRESET_ID }]);
+  });
+
+  it("keeps an empty selection separate from a custom range", () => {
+    expect(buildCoverageBlocksFromRanges([])).toEqual([
+      { presetId: EMPTY_COVERAGE_PRESET_ID, ranges: [] },
+    ]);
   });
 
   it("validates invalid custom ranges", () => {

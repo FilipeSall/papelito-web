@@ -19,6 +19,7 @@ export type CoverageBlock = {
 };
 
 export const CUSTOM_COVERAGE_PRESET_ID = "custom";
+export const EMPTY_COVERAGE_PRESET_ID = "empty";
 
 export const COVERAGE_TOOLTIP_TEXT =
   "Selecione uma regiao para preencher automaticamente o CEP mínimo e máximo da cobertura. Caso precise atender uma área específica, escolha a opção de faixa personalizada.";
@@ -118,7 +119,7 @@ export function buildCoverageBlocksFromRanges(
   const nonEmptyRanges = normalizedRanges.filter((range) => range.minCep || range.maxCep);
 
   if (nonEmptyRanges.length === 0) {
-    return [{ presetId: CUSTOM_COVERAGE_PRESET_ID, ranges: [createEmptyCoverageRange()] }];
+    return [{ presetId: EMPTY_COVERAGE_PRESET_ID, ranges: [] }];
   }
 
   if (mode === "single") {

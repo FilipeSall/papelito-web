@@ -39,6 +39,7 @@ export async function PUT(request: Request) {
     const snapshot = await saveAdminFlashSale(auth.accessToken, payload);
     revalidateTag("admin-flash-sale", "max");
     revalidateTag("wp:home-flash-sale", "max");
+    revalidateTag("wp:products", "max");
     revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {
@@ -59,6 +60,7 @@ export async function DELETE() {
     const snapshot = await deleteAdminFlashSale(auth.accessToken);
     revalidateTag("admin-flash-sale", "max");
     revalidateTag("wp:home-flash-sale", "max");
+    revalidateTag("wp:products", "max");
     revalidatePath("/");
     return NextResponse.json(snapshot);
   } catch (error) {

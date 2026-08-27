@@ -21,8 +21,8 @@ describe("LongDescriptionEditor", () => {
       "Descreva os materiais, diferenciais e detalhes comerciais do produto.",
     );
 
-    await user.type(textarea, "Kit verde especial");
+    await user.type(textarea, "Kit verde especial ");
 
-    expect(textarea).toHaveValue("Kit verde especial");
+    expect(textarea).toHaveValue("Kit verde especial ");
   });
 });

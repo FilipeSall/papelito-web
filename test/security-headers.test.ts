@@ -77,9 +77,40 @@ describe("cabeçalhos de segurança", () => {
   it("mantém as origens que o cliente contata sem passar pelo proxy", async () => {
     const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
 
-    for (const origin of ["'self'", "https://viacep.com.br", "https://brasilapi.com.br", "https://api.pagar.me"]) {
+    for (const origin of [
+      "'self'",
+      "https://viacep.com.br",
+      "https://brasilapi.com.br",
+      "https://api.pagar.me",
+    ]) {
       expect(connect).toContain(origin);
     }
+  });
+
+  /**
+   * O GA4 não fala com um host só: além de `www.google-analytics.com` ele usa
+   * `region1.google-analytics.com` e `analytics.google.com`. Host exato obriga a persegui-los um a
+   * um — e a CSP não tem curinga implícito, então cada host faltante é beacon perdido.
+   */
+  it("autoriza os hosts de coleta do GA4 por curinga de subdomínio", async () => {
+    const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
+
+    expect(connect).toContain("https://*.google-analytics.com");
+    expect(connect).toContain("https://*.analytics.google.com");
+  });
+
+  /**
+   * Decisão deliberada: o ping de Google Signals/Ads (`www.google.<TLD>/g/collect`,
+   * `*.g.doubleclick.net`) segue bloqueado. Liberá-lo custaria abrir `*.google.com` inteiro numa
+   * CSP que já não mitiga XSS por causa do `unsafe-inline`; o preço é público de remarketing, não
+   * evento de analytics.
+   */
+  it("não abre os hosts de Ads e Signals", async () => {
+    const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
+
+    expect(connect).not.toContain("google.com.br");
+    expect(connect).not.toContain("doubleclick");
+    expect(connect?.split(" ")).not.toContain("https://*.google.com");
   });
 
   it("autoriza o Google Tag Manager", async () => {

@@ -24,6 +24,8 @@ function browserConnectOrigins() {
   origins.add("https://viacep.com.br");
   origins.add("https://brasilapi.com.br");
   origins.add("https://api.pagar.me");
+  origins.add("https://*.google-analytics.com");
+  origins.add("https://*.analytics.google.com");
 
   return [...origins].join(" ");
 }

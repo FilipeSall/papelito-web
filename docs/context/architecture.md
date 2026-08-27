@@ -126,10 +126,12 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 
 ## Cabeçalhos de segurança
 
-Definidos em `next.config.ts` (`headers()` para `/(.*)`), cobertos por `test/security-headers.test.ts`. Tabela completa em [`docs/integration-contracts.md`](../../../docs/integration-contracts.md#cabeçalhos-de-segurança-do-frontend). Dois pontos que precisam estar claros para quem mexer aqui:
+Definidos em `next.config.ts` (`headers()` para `/(.*)`), cobertos por `test/security-headers.test.ts`. Tabela completa em [`docs/integration-contracts.md`](../../../docs/integration-contracts.md#cabeçalhos-de-segurança-do-frontend). Quatro pontos que precisam estar claros para quem mexer aqui:
 
 - **A CSP não mitiga XSS, e isso é deliberado.** `script-src` mantém `'unsafe-inline'` porque o bootstrap do App Router é inline e o nonce teria de sair do middleware — e o matcher de `proxy.ts` cobre só rotas autenticadas, então a vitrine pública ficaria sem CSP nenhuma. O que a política fecha é clickjacking, `<base>` injetada, plugins e destino de rede não previsto. Não trate a presença do header como "XSS resolvido".
 - **`connect-src` é allowlist, não `https:` genérico.** Inclui a origem real do WordPress derivada de `NEXT_PUBLIC_WP_REST_BASE`/`NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT` — em local, `http://localhost:8080`, que um `https:` genérico bloquearia e derrubaria o upload direto do navegador. Código novo que fale direto com host externo a partir do cliente **precisa entrar nessa lista**, senão o navegador bloqueia em silêncio.
+- **Os hosts do GA4 entram por curinga de subdomínio, não host exato.** O GA4 não fala com um host só: além de `www.google-analytics.com` ele usa `region1.google-analytics.com` e `analytics.google.com`. Como a CSP não tem curinga implícito, allowlist por host exato obriga a persegui-los um a um a cada console cheio de `Refused to connect` — daí `https://*.google-analytics.com` e `https://*.analytics.google.com`.
+- **O ping de Google Signals/Ads segue bloqueado, de propósito.** `www.google.<TLD>/g/collect` e `*.g.doubleclick.net` continuam fora: liberá-los exigiria abrir `*.google.com` inteiro numa política que já não mitiga XSS. O custo é público de remarketing, não evento de analytics — o hit de coleta passa. Se o marketing pedir Signals, é decisão consciente de ampliar a superfície, não bug a corrigir.
 
 ## Variáveis de ambiente (`.env.local`)
 
@@ -143,6 +145,7 @@ Definidos em `next.config.ts` (`headers()` para `/(.*)`), cobertos por `test/sec
 | `GOOGLE_CLIENT_ID` | opcional | habilita o botão Google; **mesmo valor** de `PAPELITO_GOOGLE_CLIENT_ID` no WP |
 | `GOOGLE_CLIENT_SECRET` | opcional | par do id acima |
 | `USE_MOCK_DATA` | opcional | `true` usa `mock/` sem chamar o WordPress |
+| `NEXT_PUBLIC_GTM_ID` | **sim em Production** | container do Google Tag Manager (`GTM-TP7NRSBT`). Sem ela o GTM não carrega — é assim que `localhost` fica fora da propriedade de Analytics de produção e para de mandar URL de rota autenticada ao Google. Como é `NEXT_PUBLIC_*`, é inlinada no build: definir na Vercel exige **redeploy**, e esquecer dela mata a coleta em silêncio |
 | `NEXT_PUBLIC_PAGARME_PUBLIC_KEY` | quando pagamento ligado | tokeniza cartão no browser; **nunca** trafega PAN ao backend |
 | `PAPELITO_FRONT_PROXY_TOKEN` | recomendado em produção | segredo compartilhado com o WordPress para chamadas internas do proxy; permite rate limit de frete por comprador sem confiar em header público |
 

@@ -9,6 +9,7 @@ import {
   type CoverageBlock,
   type CoverageRangeValue,
   CUSTOM_COVERAGE_PRESET_ID,
+  EMPTY_COVERAGE_PRESET_ID,
   BRAZIL_COVERAGE_PRESETS,
   COVERAGE_PRESET_OPTIONS,
   COVERAGE_TOOLTIP_TEXT,
@@ -97,7 +98,7 @@ export function VendorCoverageRangesField({
 
   function removeBlock(blockIndex: number) {
     const nextBlocks = blocks.filter((_, currentIndex) => currentIndex !== blockIndex);
-    updateBlocks(nextBlocks.length > 0 ? nextBlocks : [{ presetId: CUSTOM_COVERAGE_PRESET_ID, ranges: [createEmptyCoverageRange()] }]);
+    updateBlocks(nextBlocks.length > 0 ? nextBlocks : [{ presetId: EMPTY_COVERAGE_PRESET_ID, ranges: [] }]);
   }
 
   return (
@@ -192,7 +193,7 @@ function CoveragePresetSelect({
         onChange={(presetId) => onChange(blockIndex, presetId)}
         optionClassName="tracking-normal"
         options={COVERAGE_PRESET_OPTIONS}
-        placeholder="Selecione"
+        placeholder="Selecione uma região"
         selectedValueClassName="text-[#1a1a1a]"
         triggerClassName="!h-11 w-full rounded-none !border-2 !border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a] focus:!border-[#1a1a1a]"
         value={value}
@@ -215,7 +216,7 @@ function CoveragePresetSelect({
         onChange={(presetId) => onChange(blockIndex, presetId)}
         optionClassName="rounded-none"
         options={COVERAGE_PRESET_OPTIONS}
-        placeholder="Selecione"
+        placeholder="Selecione uma região"
         placeholderClassName="text-white/45"
         selectedOptionClassName="!bg-brand-yellow !text-brand-dark"
         selectedValueClassName="text-white"
@@ -238,7 +239,7 @@ function CoveragePresetSelect({
       listClassName="z-[90] rounded-[14px] border border-brand-dark/12 bg-white shadow-[0_12px_28px_rgba(35,31,32,0.12)]"
       onChange={(presetId) => onChange(blockIndex, presetId)}
       options={COVERAGE_PRESET_OPTIONS}
-      placeholder="Selecione"
+      placeholder="Selecione uma região"
       triggerClassName="h-12 rounded-[12px] border border-brand-dark/12 bg-[#fbf7ef] px-4 text-sm font-semibold text-brand-dark focus:border-brand-dark"
       value={value}
     />

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { GTM_CONTAINER_ID } from "@/lib/analytics/gtm";
 import { ApolloAppProvider } from "@/lib/apollo/provider";
 import { MissingCepModalHost } from "@/components/layout/profile-page";
 import { SessionProvider } from "@/components/providers/session-provider";
@@ -102,8 +103,9 @@ export default function RootLayout({
         />
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
-        <Script id="google-tag-manager" strategy="beforeInteractive">
-          {`(function(w,d,s,l,i){
+        {GTM_CONTAINER_ID ? (
+          <Script id="google-tag-manager" strategy="beforeInteractive">
+            {`(function(w,d,s,l,i){
   w[l]=w[l]||[];
   w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
   var f=d.getElementsByTagName(s)[0],
@@ -112,19 +114,22 @@ export default function RootLayout({
   j.async=true;
   j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
   f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-TP7NRSBT');`}
-        </Script>
+})(window,document,'script','dataLayer','${GTM_CONTAINER_ID}');`}
+          </Script>
+        ) : null}
       </head>
       <body className="font-sans" suppressHydrationWarning>
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-TP7NRSBT"
-            height="0"
-            width="0"
-            title="Google Tag Manager"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
+        {GTM_CONTAINER_ID ? (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+              height="0"
+              width="0"
+              title="Google Tag Manager"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        ) : null}
         <NavigationLoader />
         <SessionProvider>
           <ApolloAppProvider>
