@@ -82,6 +82,10 @@ export type PlaceOrderInput = {
     billingAddress?: PaymentBillingAddress;
   };
   couponCode?: string | null;
+  analytics?: {
+    clientId?: string;
+    sessionId?: string;
+  };
 };
 
 export type PlaceOrderPaymentResult = {

@@ -124,6 +124,23 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 - NextAuth v4: callbacks `authorize`, `signIn`, `jwt`, `session`. JWT-only.
 - Bun local, `npm ci` no CI → `bun.lock` e `package-lock.json` andam juntos. Ver [`../../../docs/development.md`](../../../docs/development.md#toolchain-híbrido--a-armadilha-do-lockfile).
 
+## Analytics de ecommerce
+
+`src/lib/analytics/` publica os eventos que o GTM escuta. Três coisas que não são óbvias ao ler os
+arquivos:
+
+- **`add_to_cart` sai da store do carrinho, não dos botões.** Há mais de um caminho para adicionar
+  item (`AddToCartButton` e `useProductPurchase`), e todos passam por `useCartStore.addItem`. Um
+  ponto de emissão só, impossível de esquecer num caminho novo.
+- **`purchase` não existe no frontend.** Ele nasce no WordPress, na confirmação do pagamento, porque
+  a página de sucesso só abre com pagamento aprovado e quem paga por Pix não volta. O checkout só
+  carrega os identificadores da sessão do GA4 junto com o pedido.
+- **`value` nunca é passado de fora**: `pushEcommerceEvent()` deriva dos `items`, para não existir
+  caminho em que o total diverge da lista.
+
+Arquitetura completa, invariantes e limitações em
+[docs/analytics-and-attribution.md](../../../docs/analytics-and-attribution.md).
+
 ## Cabeçalhos de segurança
 
 Definidos em `next.config.ts` (`headers()` para `/(.*)`), cobertos por `test/security-headers.test.ts`. Tabela completa em [`docs/integration-contracts.md`](../../../docs/integration-contracts.md#cabeçalhos-de-segurança-do-frontend). Quatro pontos que precisam estar claros para quem mexer aqui:

@@ -7,6 +7,7 @@ import { placeOrder } from "./place-order";
 type PlaceOrderRequestPayload = {
   checkout_attempt_id?: string;
 	expected_company_id?: number;
+  analytics?: { client_id?: string; session_id?: string };
 };
 
 const baseInput = {
@@ -85,6 +86,40 @@ describe("placeOrder", () => {
     );
     await placeOrder({ ...baseInput, expectedCompanyId: 44 });
     expect(payload).toMatchObject({ expected_company_id: 44 });
+  });
+
+  it("sends the GA identifiers so the purchase lands on the campaign session", async () => {
+    let payload: PlaceOrderRequestPayload | null = null;
+    server.use(
+      http.post("/api/checkout/place-order", async ({ request }) => {
+        payload = (await request.json()) as PlaceOrderRequestPayload;
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+      }),
+    );
+
+    await placeOrder({
+      ...baseInput,
+      analytics: { clientId: "1189418253.1777895566", sessionId: "1787849320" },
+    });
+
+    expect(payload).toMatchObject({
+      analytics: { client_id: "1189418253.1777895566", session_id: "1787849320" },
+    });
+  });
+
+  /** Sem cookie do GA4 — bloqueador, ou consentimento recusado — o pedido segue sem o bloco. */
+  it("omits the analytics block when the browser has no GA identifiers", async () => {
+    let payload: PlaceOrderRequestPayload | null = null;
+    server.use(
+      http.post("/api/checkout/place-order", async ({ request }) => {
+        payload = (await request.json()) as PlaceOrderRequestPayload;
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+      }),
+    );
+
+    await placeOrder({ ...baseInput, analytics: {} });
+
+    expect(payload).not.toHaveProperty("analytics");
   });
 
   it("prefers the backend message over the friendly fallback map", async () => {

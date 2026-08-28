@@ -307,6 +307,22 @@ export function LegalPage() {
                 ]}
               />
               <LegalParagraph>
+                Utilizamos o Google Analytics, por meio do Google Tag Manager, para
+                entender como a loja é usada e de qual origem chegam as visitas. Essa
+                ferramenta grava em seu navegador um identificador aleatório, que não
+                revela seu nome nem qualquer documento seu, e o utiliza para reconhecer
+                visitas do mesmo navegador. O Google atua como operador desses dados e
+                os trata conforme as políticas próprias dele.
+              </LegalParagraph>
+              <LegalParagraph>
+                Quando um pedido é concluído, esse identificador é associado ao pedido e
+                enviado ao Google junto com o valor e os itens comprados, para que
+                possamos medir o resultado das nossas campanhas de divulgação. Não
+                enviamos ao Google seu nome, e-mail, CPF, CNPJ ou endereço. Você pode
+                solicitar a exclusão desse identificador a qualquer momento pelos canais
+                de contato indicados nesta política, sem que isso afete seus pedidos.
+              </LegalParagraph>
+              <LegalParagraph>
                 Caso não deseje que suas informações sejam coletadas por meio de
                 cookies, há um procedimento simples na maior parte dos navegadores que
                 permite que os cookies sejam automaticamente rejeitados, ou oferece a

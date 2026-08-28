@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { pushEcommerceEvent } from "@/lib/analytics/data-layer";
+import { toGa4Item } from "@/lib/analytics/ga4-ecommerce";
 import { applyCouponClient } from "@/features/coupons/services/apply-coupon";
 import type { CouponApplyResult } from "@/features/coupons/types/coupon";
 
@@ -236,6 +238,16 @@ export const useCartStore = create<CartState>()(
           items: upsertItem(clearCouponLinePrices(state.items), normalizedProduct, quantity),
           pricing: null,
         }));
+
+        pushEcommerceEvent("add_to_cart", [
+          toGa4Item({
+            id: normalizedProduct.id,
+            name: normalizedProduct.name,
+            category: normalizedProduct.category,
+            price: normalizedProduct.price,
+            quantity,
+          }),
+        ]);
       },
       applyVendorToCart: (vendor) => {
         set((state) => ({

@@ -12,6 +12,7 @@ import {
 } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
+import { readGaIdentifiers } from "@/lib/analytics/ga-cookies";
 import { formatBRL } from "@/lib/format-currency";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { CheckoutEmptyCart } from "./checkout-empty-cart";
@@ -192,6 +193,7 @@ export function CheckoutReviewStepContent() {
       try {
         const currentCheckoutAttemptId = syncCheckoutAttempt(checkoutAttemptFingerprint);
         const result = await placeOrder({
+          analytics: readGaIdentifiers(),
           checkoutAttemptId: currentCheckoutAttemptId,
 			expectedCompanyId: b2b?.companyId ?? undefined,
           items: placeOrderItems,

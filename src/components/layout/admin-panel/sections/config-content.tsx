@@ -8,6 +8,7 @@ import { FormFeedback, type FormFeedbackState } from "@/components/ui/feedback";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { DEFAULT_CONTACT_PHONE } from "@/features/site-contact/contact-phone";
+import { IntegrationSecretsContent } from "./integration-secrets-content";
 
 type FeedbackState = FormFeedbackState;
 
@@ -195,6 +196,7 @@ export function ConfigContent() {
         </div>
       </form>
       </Panel>
+      <IntegrationSecretsContent />
     </div>
   );
 }

@@ -10,6 +10,8 @@ import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { toGa4Item } from "@/lib/analytics/ga4-ecommerce";
+import { useEcommerceEventOnce } from "@/lib/analytics/use-ecommerce-event-once";
 import { formatBRL } from "@/lib/format-currency";
 import { ProductDetailDescriptionSection } from "./product-detail-description-section";
 import { ProductDetailCepAvailability } from "./product-detail-cep-availability";
@@ -81,6 +83,20 @@ export function ProductDetailMainContent({
     () => product.relatedThumbs.slice(0, MAX_RELATED_PRODUCTS),
     [product.relatedThumbs],
   );
+
+  const viewItemPayload = useMemo(
+    () => [
+      toGa4Item({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+      }),
+    ],
+    [product.category, product.id, product.name, product.price],
+  );
+
+  useEcommerceEventOnce("view_item", viewItemPayload, product.id);
 
   const purchase = useProductPurchase({
     product,

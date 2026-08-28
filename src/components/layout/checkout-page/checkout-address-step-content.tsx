@@ -7,6 +7,8 @@ import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { useCartStore } from "@/features/cart";
 import { getShippingQuote, useCheckoutAddressForm, useCheckoutStore } from "@/features/checkout";
+import { toGa4Item } from "@/lib/analytics/ga4-ecommerce";
+import { useEcommerceEventOnce } from "@/lib/analytics/use-ecommerce-event-once";
 import { formatBRL } from "@/lib/format-currency";
 import { BRAZIL_STATES } from "./checkout-constants";
 import { CheckoutCustomSelect } from "./checkout-custom-select";
@@ -48,6 +50,26 @@ export function CheckoutAddressStepContent({
 }: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+
+  const beginCheckoutPayload = useMemo(
+    () =>
+      items.map((item) =>
+        toGa4Item({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          quantity: item.quantity,
+        }),
+      ),
+    [items],
+  );
+
+  useEcommerceEventOnce(
+    "begin_checkout",
+    beginCheckoutPayload,
+    items.length > 0 ? "checkout" : null,
+  );
   const shippingQuoteState = useCheckoutStore((state) => state.shippingQuote);
   const selectedShippingQuote = shippingQuoteState.selectedOption;
   const currentShippingQuote = shippingQuoteState.quote;

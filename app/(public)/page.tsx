@@ -30,11 +30,14 @@ import { getPaymentConfig } from "@/features/rich-text/services/get-payment-conf
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SITE_DESCRIPTION } from "@/lib/seo/site";
 
-export const metadata = buildPageMetadata({
-  title: "Marketplace B2B de sedas, piteiras, filtros e acessórios",
-  description: SITE_DESCRIPTION,
-  path: "/",
-});
+export const metadata = {
+  ...buildPageMetadata({
+    title: "Papelito Marketplace",
+    description: SITE_DESCRIPTION,
+    path: "/",
+  }),
+  title: { absolute: "Papelito Marketplace" },
+};
 
 export const revalidate = 60;
 

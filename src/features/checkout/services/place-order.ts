@@ -129,6 +129,13 @@ export async function placeOrder(
             : undefined,
         },
         coupon_code: input.couponCode ?? undefined,
+        analytics:
+          input.analytics?.clientId || input.analytics?.sessionId
+            ? {
+                client_id: input.analytics.clientId,
+                session_id: input.analytics.sessionId,
+              }
+            : undefined,
       }),
     });
   } catch {

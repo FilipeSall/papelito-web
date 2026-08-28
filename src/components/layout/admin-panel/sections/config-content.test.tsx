@@ -1,6 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import {
   getContactConfigPhone,
@@ -42,5 +46,13 @@ describe("ConfigContent", () => {
 
     expect(await screen.findByText("Telefone salvo.")).toBeInTheDocument();
     expect(getContactConfigPhone()).toBe("+556133334444");
+  });
+
+  it("shows only masked integration metadata", async () => {
+    render(<ConfigContent />);
+
+    expect(await screen.findByText("ID de medição do GA4")).toBeInTheDocument();
+    expect(screen.getByText(/termina em 1234/i)).toBeInTheDocument();
+    expect(screen.queryByText("GA4_MEASUREMENT_ID")).not.toBeInTheDocument();
   });
 });
