@@ -1,7 +1,21 @@
-import { ProductsGrid, ProductsHeroBanner } from "@/components/layout/products-page";
+import {
+  ProductCollectionFilters,
+  ProductSearch,
+  ProductsGrid,
+  ProductsHeroBanner,
+  ProductsPerPageSelector,
+  ViewToggle,
+} from "@/components/layout/products-page";
 import { getKitsCatalog } from "@/features/catalog/services/get-kits-catalog";
 import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
+import { filterKits } from "@/features/catalog/utils/kits-filter";
+import { normalizeProductSearch } from "@/features/catalog/utils/product-search";
+import { readSingleQueryParam } from "@/features/catalog/utils/product-type-taxonomy";
+import {
+  normalizeProductsPerPage,
+  normalizeProductsViewMode,
+} from "@/features/catalog/utils/products-listing-preferences";
 import { JsonLd, buildItemListJsonLd } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -14,16 +28,115 @@ export const metadata = buildPageMetadata({
 
 export const revalidate = 60;
 
-export default async function KitsPage() {
-  const [kits, siteImages] = await Promise.all([getKitsCatalog(), getSiteImageAssets()]);
-  return <main className="flex flex-col bg-white">
-    <JsonLd
-      data={buildItemListJsonLd(
-        "Kits Papelito",
-        kits.map((kit) => ({ name: kit.name, path: kit.href ?? `/produtos/${kit.id}` })),
-      )}
-    />
-    <ProductsHeroBanner image={siteImages.productHero} />
-    <section className="mx-auto w-full max-w-7xl px-6 py-10 md:px-12"><div className="mb-7 border-l-4 border-brand-yellow pl-4"><p className="text-[11px] font-black uppercase tracking-[.18em] text-[#5e574c]">Composição Papelito</p><h1 className="mt-1 text-3xl font-black uppercase text-[#231f20]">Kits</h1><p className="mt-2 text-sm text-[#5e574c]">Produtos selecionados para comprar juntos, com preço próprio.</p></div><ProductAvailabilityProvider productIds={kits.map((kit) => kit.id)}><ProductsGrid activeCollection="kits" emptyMessage="Nenhum Kit disponível no momento." products={kits} variant="collection" viewMode="grid" /></ProductAvailabilityProvider></section>
-  </main>;
+interface KitsPageProps {
+  searchParams?:
+    | Promise<{
+        busca?: string | string[];
+        perPage?: string | string[];
+        view?: string | string[];
+      }>
+    | {
+        busca?: string | string[];
+        perPage?: string | string[];
+        view?: string | string[];
+      };
+}
+
+export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>) {
+  const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
+  const search = normalizeProductSearch(
+    readSingleQueryParam(resolvedSearchParams.busca),
+  );
+  const viewMode = normalizeProductsViewMode(
+    readSingleQueryParam(resolvedSearchParams.view),
+  );
+  const perPage = normalizeProductsPerPage(
+    readSingleQueryParam(resolvedSearchParams.perPage),
+    viewMode,
+    "collection",
+  );
+
+  const [allKits, siteImages] = await Promise.all([
+    getKitsCatalog(),
+    getSiteImageAssets(),
+  ]);
+  const kits = filterKits(allKits, search);
+
+  return (
+    <main className="flex flex-col bg-white">
+      <JsonLd
+        data={buildItemListJsonLd(
+          "Kits Papelito",
+          kits.map((kit) => ({ name: kit.name, path: kit.href ?? `/produtos/${kit.id}` })),
+        )}
+      />
+      <ProductsHeroBanner image={siteImages.productHero} />
+      <section className="mx-auto w-full max-w-7xl px-6 py-10 md:px-12">
+        <div className="mb-4">
+          <ProductCollectionFilters
+            activeCollection="kits"
+            basePath="/produtos"
+            perPage={perPage}
+            search={search}
+            viewMode={viewMode}
+          />
+        </div>
+
+        <div className="mb-6">
+          <ProductSearch
+            basePath="/kits"
+            initialValue={search}
+            totalItems={kits.length}
+            variant="collection"
+          />
+        </div>
+
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-text-secondary">
+            <span className="font-bold text-brand-dark">{kits.length}</span> kits
+            encontrados
+          </p>
+          <div className="flex flex-wrap items-stretch gap-2">
+            <ProductsPerPageSelector
+              basePath="/kits"
+              gridLayout="collection"
+              maxPrice={null}
+              minPrice={null}
+              perPage={perPage}
+              search={search}
+              selectedTypes={[]}
+              totalItems={kits.length}
+              variant="collection"
+              viewMode={viewMode}
+            />
+            <ViewToggle
+              activeView={viewMode}
+              basePath="/kits"
+              gridLayout="collection"
+              maxPrice={null}
+              minPrice={null}
+              perPage={perPage}
+              search={search}
+              selectedTypes={[]}
+              variant="collection"
+            />
+          </div>
+        </div>
+
+        <ProductAvailabilityProvider productIds={kits.map((kit) => kit.id)}>
+          <ProductsGrid
+            activeCollection="kits"
+            emptyMessage={
+              search
+                ? "Nenhum Kit encontrado para essa busca."
+                : "Nenhum Kit disponível no momento."
+            }
+            products={kits}
+            variant="collection"
+            viewMode={viewMode}
+          />
+        </ProductAvailabilityProvider>
+      </section>
+    </main>
+  );
 }

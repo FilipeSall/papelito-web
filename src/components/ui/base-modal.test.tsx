@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BaseModal } from "./base-modal";
@@ -125,5 +126,38 @@ describe("BaseModal focus management", () => {
     );
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("BaseModal — foco durante a digitação", () => {
+  function Harness() {
+    const [valor, setValor] = useState("");
+
+    return (
+      <BaseModal
+        ariaLabelledBy="titulo"
+        onClose={() => setValor("")}
+        open
+      >
+        <h2 id="titulo">Formulário</h2>
+        <button onClick={() => setValor("")} type="button">
+          Fechar
+        </button>
+        <input
+          aria-label="nome"
+          onChange={(event) => setValor(event.target.value)}
+          value={valor}
+        />
+      </BaseModal>
+    );
+  }
+
+  it("não rouba o foco do campo quando o onClose muda de identidade a cada render", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.type(screen.getByLabelText("nome"), "Fulano");
+
+    expect(screen.getByLabelText("nome")).toHaveValue("Fulano");
   });
 });

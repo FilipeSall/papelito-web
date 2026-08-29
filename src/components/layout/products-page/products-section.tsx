@@ -179,6 +179,7 @@ export function ProductsSection({
                 gridLayout={gridLayout}
                 perPage={perPage}
                 search={search}
+                totalItems={totalItems}
                 variant={resolvedVisualVariant}
               />
               <ViewToggle

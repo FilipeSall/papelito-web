@@ -3,6 +3,7 @@ import { buildProductsHref } from "./products-query-helpers";
 import type { ProductCollectionId, ProductTypeId } from "@/features/catalog";
 import {
   getPerPageOptionsForView,
+  isPerPageOptionEnabled,
   type ProductsGridLayout,
   type ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
@@ -20,6 +21,7 @@ interface ProductsPerPageSelectorProps {
   gridLayout?: ProductsGridLayout;
   perPage: number;
   search?: string;
+  totalItems?: number;
   variant?: "default" | "collection";
 }
 
@@ -34,6 +36,7 @@ export function ProductsPerPageSelector({
   gridLayout = "default",
   perPage,
   search,
+  totalItems,
   variant = "default",
 }: ProductsPerPageSelectorProps) {
   const options = getPerPageOptionsForView(viewMode, gridLayout);
@@ -43,6 +46,25 @@ export function ProductsPerPageSelector({
       <span className={variant === "collection" ? "px-1 text-[10px] font-black uppercase tracking-[0.08em] text-text-muted" : "px-2 text-xs font-semibold text-text-muted"}>{variant === "collection" ? "Itens" : "Itens/página"}</span>
       {options.map((option) => {
         const isActive = option === perPage;
+        const isEnabled =
+          isActive ||
+          typeof totalItems !== "number" ||
+          isPerPageOptionEnabled(options, option, totalItems);
+
+        if (!isEnabled) {
+          return (
+            <span
+              aria-disabled="true"
+              className={`min-w-8 cursor-not-allowed px-2 py-1 text-center text-xs font-black text-text-muted/40 ${
+                variant === "collection" ? "" : "min-w-10 rounded-md"
+              }`}
+              key={option}
+              title="Não há produtos suficientes para esta opção"
+            >
+              {option}
+            </span>
+          );
+        }
 
         return (
           <Link

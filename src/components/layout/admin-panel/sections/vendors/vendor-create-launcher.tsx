@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { BaseModal } from "@/components/ui/base-modal";
+import { PasswordRevealButton } from "@/components/ui/password-reveal-button";
 import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
 import {
   ADMIN_BANK_OPTIONS,
@@ -32,7 +34,6 @@ import {
   formatCpf,
 } from "@/features/revendedor/utils/revendedor-registration";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
-import { useEscapeKey } from "@/hooks/use-escape-key";
 import { AdminSelectField } from "../products/components/admin-select-field";
 import { InfoTooltip } from "../products/components/form-fields";
 
@@ -48,6 +49,11 @@ type CreatedVendor = {
   email?: string;
   id?: number;
   storeName?: string;
+};
+
+type CepStatus = {
+  tone: "error" | "info";
+  message: string;
 };
 
 export type VendorCreateSourceUser = {
@@ -167,13 +173,22 @@ function digits(value: string, max?: number) {
 }
 
 function fieldClass(hasError = false, disabled = false) {
+  const stateClass = disabled
+    ? "cursor-not-allowed border-dashed border-[#1a1a1a]/25 bg-[#1a1a1a]/5 text-[#1a1a1a]/40 placeholder:text-[#1a1a1a]/30"
+    : "bg-white text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a]";
+  let borderClass = "border-[#1a1a1a]";
+
+  if (disabled) {
+    borderClass = "";
+  } else if (hasError) {
+    borderClass = "border-[#c0392b]";
+  }
+
   return [
     "mt-2 h-11 w-full rounded-none border-2 px-3 text-sm outline-none transition",
     "focus:ring-0",
-    disabled
-      ? "cursor-not-allowed border-dashed border-[#1a1a1a]/25 bg-[#1a1a1a]/5 text-[#1a1a1a]/40 placeholder:text-[#1a1a1a]/30"
-      : "bg-white text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a]",
-    disabled ? "" : hasError ? "border-[#c0392b]" : "border-[#1a1a1a]",
+    stateClass,
+    borderClass,
   ].join(" ");
 }
 
@@ -190,7 +205,7 @@ function Field({
   required = false,
   type = "text",
   value,
-}: {
+}: Readonly<{
   autoComplete?: string;
   disabled?: boolean;
   error?: string;
@@ -203,7 +218,10 @@ function Field({
   required?: boolean;
   type?: string;
   value: string;
-}) {
+}>) {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const isPassword = type === "password";
+
   return (
     <label className="block">
       <span className="flex h-4 items-center gap-1.5 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]">
@@ -213,16 +231,25 @@ function Field({
         </span>
         {helpText ? <InfoTooltip text={helpText} /> : null}
       </span>
-      <input
-        autoComplete={autoComplete}
-        className={fieldClass(Boolean(error), disabled)}
-        disabled={disabled}
-        inputMode={inputMode}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        type={type}
-        value={value}
-      />
+      <div className="relative">
+        <input
+          autoComplete={autoComplete}
+          className={`${fieldClass(Boolean(error), disabled)} ${isPassword ? "pr-12" : ""}`}
+          disabled={disabled}
+          inputMode={inputMode}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          type={isPassword && isPasswordVisible ? "text" : type}
+          value={value}
+        />
+        {isPassword ? (
+          <PasswordRevealButton
+            disabled={disabled}
+            isVisible={isPasswordVisible}
+            onToggle={() => setIsPasswordVisible((current) => !current)}
+          />
+        ) : null}
+      </div>
       {error ? <span className="mt-1 block text-[11px] font-semibold text-[#c0392b]">{error}</span> : null}
       {!error && helperText ? (
         <span className="mt-1 block text-[11px] text-[#1a1a1a]/50">{helperText}</span>
@@ -231,7 +258,7 @@ function Field({
   );
 }
 
-function Section({ children, title }: { children: React.ReactNode; title: string }) {
+function Section({ children, title }: Readonly<{ children: React.ReactNode; title: string }>) {
   return (
     <section className="border-t-2 border-[#1a1a1a]/10 pt-5 first:border-t-0 first:pt-0">
       <div className="mb-4 flex items-center gap-2">
@@ -243,6 +270,26 @@ function Section({ children, title }: { children: React.ReactNode; title: string
       {children}
     </section>
   );
+}
+
+function getBankSelectValue(useCustomBankCode: boolean, selectedBankOption: { value: string } | undefined) {
+  if (useCustomBankCode) {
+    return OTHER_BANK_OPTION_VALUE;
+  }
+
+  return selectedBankOption?.value ?? "";
+}
+
+function getCepHelperText(isLookingUp: boolean, status: CepStatus | null) {
+  if (isLookingUp) {
+    return "Buscando endereço pelo CEP...";
+  }
+
+  if (status?.tone === "info") {
+    return status.message;
+  }
+
+  return undefined;
 }
 
 function validateForm(form: VendorCreateForm): string | null {
@@ -333,13 +380,15 @@ function buildPayload(form: VendorCreateForm): AdminVendorCreatePayload {
   };
 }
 
-export function VendorCreateLauncher({
-  initialOpen = false,
-  sourceUser = null,
-}: {
+type VendorCreateLauncherProps = Readonly<{
   initialOpen?: boolean;
   sourceUser?: VendorCreateSourceUser | null;
-}) {
+}>;
+
+function useVendorCreateForm({
+  initialOpen = false,
+  sourceUser = null,
+}: VendorCreateLauncherProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] = useState<VendorCreateForm>(() => createFormFromSourceUser(sourceUser));
@@ -350,17 +399,15 @@ export function VendorCreateLauncher({
   const [prefillSource, setPrefillSource] = useState<VendorCreateSourceUser | null>(
     initialOpen ? sourceUser : null,
   );
-  const [cepStatus, setCepStatus] = useState<{
-    tone: "error" | "info";
-    message: string;
-  } | null>(null);
+  const [cepStatus, setCepStatus] = useState<CepStatus | null>(null);
   const [isCepLookingUp, setIsCepLookingUp] = useState(false);
   const cepLookupRequestIdRef = useRef(0);
+  const managingPartnerCepLookupRequestIdRef = useRef(0);
   const autoOpenedRef = useRef(false);
   const bankCode = form.bankAccount.bankCode.trim();
   const branchHasCheckDigit = bankHasBranchCheckDigit(bankCode);
   const selectedBankOption = findBankOptionByCode(bankCode);
-  const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : (selectedBankOption?.value ?? "");
+  const bankSelectValue = getBankSelectValue(useCustomBankCode, selectedBankOption);
 
   useEffect(() => {
     if (bankCode && !selectedBankOption) {
@@ -373,10 +420,11 @@ export function VendorCreateLauncher({
       return;
     }
 
-    updateBank("branchCheckDigit", "");
+    setForm((previous) => ({
+      ...previous,
+      bankAccount: { ...previous.bankAccount, branchCheckDigit: "" },
+    }));
   }, [branchHasCheckDigit, form.bankAccount.branchCheckDigit]);
-
-  useEscapeKey(() => setIsOpen(false), { enabled: isOpen && !submitting });
 
   useEffect(() => {
     if (!initialOpen || autoOpenedRef.current) {
@@ -529,6 +577,49 @@ export function VendorCreateLauncher({
     }
   }
 
+  async function handleManagingPartnerCepChange(rawValue: string) {
+    const formatted = formatCep(rawValue);
+    updateManagingPartnerAddressField("zipCode", formatted);
+
+    const digits = rawValue.replace(/\D/g, "");
+    managingPartnerCepLookupRequestIdRef.current += 1;
+    const requestId = managingPartnerCepLookupRequestIdRef.current;
+
+    if (digits.length !== 8) {
+      return;
+    }
+
+    const result = await lookupCepDetailed(digits);
+    if (requestId !== managingPartnerCepLookupRequestIdRef.current || result.status !== "ok") {
+      return;
+    }
+
+    setForm((prev) => {
+      const partner =
+        prev.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+
+      return {
+        ...prev,
+        pagarmeDraft: {
+          ...prev.pagarmeDraft,
+          managingPartners: [
+            {
+              ...partner,
+              address: {
+                ...partner.address,
+                zipCode: formatted,
+                street: result.data.street || partner.address.street,
+                neighborhood: result.data.neighborhood || partner.address.neighborhood,
+                city: result.data.city || partner.address.city,
+                state: result.data.state || partner.address.state,
+              },
+            },
+          ],
+        },
+      };
+    });
+  }
+
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -567,6 +658,77 @@ export function VendorCreateLauncher({
     }
   }
 
+  function openNewForm() {
+    setError(null);
+    setCreatedVendor(null);
+    setCepStatus(null);
+    setIsCepLookingUp(false);
+    setUseCustomBankCode(false);
+    setPrefillSource(null);
+    setForm(createInitialForm());
+    setIsOpen(true);
+  }
+
+  function closeModal() {
+    if (!submitting) {
+      setIsOpen(false);
+    }
+  }
+
+  return {
+    bankSelectValue,
+    branchHasCheckDigit,
+    cepStatus,
+    closeModal,
+    createdVendor,
+    error,
+    form,
+    handleManagingPartnerCepChange,
+    handleStoreCepChange,
+    handleSubmit,
+    isCepLookingUp,
+    isOpen,
+    openNewForm,
+    prefillSource,
+    setUseCustomBankCode,
+    submitting,
+    update,
+    updateBank,
+    updateManagingPartnerAddressField,
+    updateManagingPartnerField,
+    updatePagarmeDraft,
+    useCustomBankCode,
+  };
+}
+
+export function VendorCreateLauncher(props: VendorCreateLauncherProps) {
+  const {
+    bankSelectValue,
+    branchHasCheckDigit,
+    cepStatus,
+    closeModal,
+    createdVendor,
+    error,
+    form,
+    handleManagingPartnerCepChange,
+    handleStoreCepChange,
+    handleSubmit,
+    isCepLookingUp,
+    isOpen,
+    openNewForm,
+    prefillSource,
+    setUseCustomBankCode,
+    submitting,
+    update,
+    updateBank,
+    updateManagingPartnerAddressField,
+    updateManagingPartnerField,
+    updatePagarmeDraft,
+    useCustomBankCode,
+  } = useVendorCreateForm(props);
+
+  const pendingRequirement = validateForm(form);
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -578,16 +740,7 @@ export function VendorCreateLauncher({
         </div>
         <button
           className="inline-flex h-11 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
-          onClick={() => {
-            setError(null);
-            setCreatedVendor(null);
-            setCepStatus(null);
-            setIsCepLookingUp(false);
-            setUseCustomBankCode(false);
-            setPrefillSource(null);
-            setForm(createInitialForm());
-            setIsOpen(true);
-          }}
+          onClick={openNewForm}
           type="button"
         >
           <Plus className="h-4 w-4" strokeWidth={2.4} />
@@ -606,20 +759,16 @@ export function VendorCreateLauncher({
         </div>
       ) : null}
 
-      {isOpen ? (
-        <div
-          aria-modal="true"
-          aria-labelledby="vendor-create-title"
-          className="fixed inset-0 z-70 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8"
-          onClick={() => !submitting && setIsOpen(false)}
-          role="dialog"
-        >
+      <BaseModal
+        ariaLabelledBy="vendor-create-title"
+        contentClassName="max-h-[calc(100vh-3rem)] max-w-5xl overflow-y-auto"
+        onClose={closeModal}
+        open={isOpen}
+      >
           <form
             className="relative w-full max-w-5xl border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
-            onClick={(event) => event.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            {/* Faixa amarela decorativa no topo */}
             <div className="h-2 w-full bg-brand-yellow" />
 
             <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
@@ -635,7 +784,7 @@ export function VendorCreateLauncher({
                 aria-label="Fechar"
                 className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={submitting}
-                onClick={() => setIsOpen(false)}
+                onClick={closeModal}
                 type="button"
               >
                 <X className="h-5 w-5" strokeWidth={2.5} />
@@ -745,13 +894,7 @@ export function VendorCreateLauncher({
                     inputMode="numeric"
                     label="CEP da loja"
                     helpText="Use o CEP para preencher logradouro, bairro, cidade e estado automaticamente."
-                    helperText={
-                      isCepLookingUp
-                        ? "Buscando endereço pelo CEP..."
-                        : cepStatus?.tone === "info"
-                          ? cepStatus.message
-                          : undefined
-                    }
+                    helperText={getCepHelperText(isCepLookingUp, cepStatus)}
                     onChange={(value) => {
                       void handleStoreCepChange(value);
                     }}
@@ -819,6 +962,7 @@ export function VendorCreateLauncher({
               <Section title="KYC da empresa">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field
+                    helpText="Nome com que a empresa está registrada na Receita Federal, exatamente como aparece no cartão CNPJ. É o nome usado em contrato e nota fiscal, e costuma ser diferente do nome fantasia."
                     label="Razao social"
                     onChange={(value) => updatePagarmeDraft("companyName", value)}
                     value={form.pagarmeDraft.companyName}
@@ -881,6 +1025,7 @@ export function VendorCreateLauncher({
                     value={form.pagarmeDraft.managingPartners[0]?.name ?? ""}
                   />
                   <Field
+                    helpText="Este e-mail é usado apenas no KYC do responsável legal e enviado à Pagar.me. Ele não cria uma conta nem permite entrar na Papelito; o login usa o e-mail da seção Conta."
                     label="E-mail"
                     onChange={(value) => updateManagingPartnerField("email", value)}
                     type="email"
@@ -940,7 +1085,9 @@ export function VendorCreateLauncher({
                   <Field
                     inputMode="numeric"
                     label="CEP do responsável"
-                    onChange={(value) => updateManagingPartnerAddressField("zipCode", formatCep(value))}
+                    onChange={(value) => {
+                      void handleManagingPartnerCepChange(value);
+                    }}
                     value={form.pagarmeDraft.managingPartners[0]?.address.zipCode ?? ""}
                   />
                   <Field
@@ -1102,18 +1249,24 @@ export function VendorCreateLauncher({
               ) : null}
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-4">
+              {pendingRequirement && !submitting ? (
+                <p className="mr-auto text-[11px] font-semibold text-[#1a1a1a]/62">
+                  Falta preencher: {pendingRequirement}
+                </p>
+              ) : null}
               <button
                 className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={submitting}
-                onClick={() => setIsOpen(false)}
+                onClick={closeModal}
                 type="button"
               >
                 Cancelar
               </button>
               <button
                 className="inline-flex h-10 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={submitting}
+                disabled={submitting || pendingRequirement !== null}
+                title={pendingRequirement ?? undefined}
                 type="submit"
               >
                 {submitting ? (
@@ -1127,8 +1280,7 @@ export function VendorCreateLauncher({
               </button>
             </div>
           </form>
-        </div>
-      ) : null}
+      </BaseModal>
     </>
   );
 }

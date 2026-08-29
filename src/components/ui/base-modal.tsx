@@ -27,6 +27,15 @@ export function BaseModal({
 }: BaseModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  // O efeito abaixo move o foco. Se `onClose` entrasse nas dependências, um
+  // `onClose` recriado a cada render — o caso comum — faria o efeito rodar a
+  // cada tecla digitada e jogar o foco no primeiro elemento focável do diálogo,
+  // deixando o formulário aceitar só o primeiro caractere de cada campo.
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open || typeof document === "undefined") {
@@ -43,7 +52,7 @@ export function BaseModal({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !dialog) {
@@ -72,7 +81,7 @@ export function BaseModal({
       window.removeEventListener("keydown", handleKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [initialFocusRef, onClose, open]);
+  }, [initialFocusRef, open]);
 
   if (!open || typeof document === "undefined") {
     return null;

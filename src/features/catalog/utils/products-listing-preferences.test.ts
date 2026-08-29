@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getDefaultPerPageForView,
+  isPerPageOptionEnabled,
   getPerPageOptionsForView,
   normalizeProductsPerPage,
   normalizeProductsViewMode,
@@ -85,5 +86,30 @@ describe("perPage do grid de coleção", () => {
   it("a lista independe do grid da coleção", () => {
     expect(getPerPageOptionsForView("list", "collection")).toEqual([18, 24, 30]);
     expect(getDefaultPerPageForView("list", "collection")).toBe(18);
+  });
+});
+
+describe("isPerPageOptionEnabled", () => {
+  const grade = [12, 16, 20];
+
+  it("mantém a menor opção sempre disponível", () => {
+    expect(isPerPageOptionEnabled(grade, 12, 0)).toBe(true);
+    expect(isPerPageOptionEnabled(grade, 12, 4)).toBe(true);
+  });
+
+  it("desabilita a opção que a anterior já cobre por inteiro", () => {
+    expect(isPerPageOptionEnabled(grade, 16, 4)).toBe(false);
+    expect(isPerPageOptionEnabled(grade, 20, 4)).toBe(false);
+  });
+
+  it("habilita a opção assim que ela mostra mais que a anterior", () => {
+    expect(isPerPageOptionEnabled(grade, 16, 14)).toBe(true);
+    expect(isPerPageOptionEnabled(grade, 20, 14)).toBe(false);
+    expect(isPerPageOptionEnabled(grade, 20, 17)).toBe(true);
+  });
+
+  it("vale para as opções de 3 colunas", () => {
+    expect(isPerPageOptionEnabled([9, 12, 15], 12, 10)).toBe(true);
+    expect(isPerPageOptionEnabled([9, 12, 15], 15, 10)).toBe(false);
   });
 });

@@ -84,3 +84,24 @@ export function normalizeProductsPerPage(
 
   return parsed;
 }
+
+/**
+ * Diz se uma opção de itens por página tem produtos que a justifiquem.
+ *
+ * Com 4 produtos, escolher 16 ou 20 mostra exatamente o mesmo que 12: a opção
+ * existe mas não faz nada. A menor opção fica sempre disponível; as demais só
+ * quando a anterior já não cabe o catálogo inteiro.
+ */
+export function isPerPageOptionEnabled(
+  options: number[],
+  option: number,
+  totalItems: number,
+) {
+  const index = options.indexOf(option);
+
+  if (index <= 0) {
+    return true;
+  }
+
+  return totalItems > options[index - 1];
+}
