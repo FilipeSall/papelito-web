@@ -64,6 +64,18 @@ export type AdminKitPayload = {
   merchandise: AdminKitMerchandise[];
 };
 
+export type AdminKitDeletion = {
+  deleted: true;
+  kitId: number;
+  productId: number;
+  partial: boolean;
+  mediaCleanup: {
+    deletedIds: number[];
+    preservedIds: number[];
+    failedIds: number[];
+  };
+};
+
 type RawSnapshot = { items?: AdminKit[] };
 
 export class AdminKitRequestError extends Error {
@@ -98,6 +110,22 @@ export async function saveAdminKit(
       headers: { Authorization: `Bearer ${accessToken}` },
       json: payload,
       method: kitId ? "PUT" : "POST",
+    },
+  );
+  if (!result.ok)
+    throw new AdminKitRequestError(result.error.message, result.status);
+  return result.data;
+}
+
+export async function deleteAdminKit(
+  accessToken: string,
+  kitId: number,
+): Promise<AdminKitDeletion> {
+  const result = await wpRest<AdminKitDeletion>(
+    `/papelito/v1/admin/kits/${kitId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      method: "DELETE",
     },
   );
   if (!result.ok)

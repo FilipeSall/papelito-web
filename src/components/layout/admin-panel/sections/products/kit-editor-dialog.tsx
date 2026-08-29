@@ -46,6 +46,7 @@ type KitEditorDialogProps = Readonly<{
   onUploadImage: (file: File, target: UploadTarget) => Promise<void>;
   referenceCents: number;
   saving: boolean;
+  saveDisabled: boolean;
   search: string;
   selectedProductIds: Set<number>;
   uploadingTargets: UploadTarget[];
@@ -90,7 +91,7 @@ export function KitEditorDialog(props: KitEditorDialogProps) {
 
   return (
     <dialog
-      className="m-auto max-h-[calc(100vh-1.5rem)] w-[calc(100%-1.5rem)] max-w-6xl overflow-hidden border-2 border-[#1a1a1a] bg-[#faf8f2] p-0 shadow-[12px_12px_0_#1a1a1a] backdrop:bg-[#231f20]/70"
+      className="m-auto max-h-[calc(100vh-1.5rem)] w-[calc(100%-1.5rem)] max-w-6xl overflow-hidden border-2 border-[#1a1a1a] bg-[#faf8f2] p-0 shadow-[12px_12px_0_#1a1a1a] backdrop:bg-[#231f20]/70 [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed"
       onCancel={handleCancel}
       onClose={handleClose}
       ref={dialogRef}
@@ -118,6 +119,7 @@ function KitEditorContent({
   onUploadImage,
   referenceCents,
   saving,
+  saveDisabled,
   search,
   selectedProductIds,
   uploadingTargets,
@@ -242,7 +244,7 @@ function KitEditorContent({
         </button>
         <button
           className="h-11 border-2 border-[#1a1a1a] bg-brand-yellow px-4 text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_#1a1a1a] disabled:opacity-50"
-          disabled={saving}
+          disabled={saveDisabled}
           onClick={onSave}
           type="button"
         >

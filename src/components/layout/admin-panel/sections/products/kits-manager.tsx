@@ -4,6 +4,7 @@ import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
 import type { AdminKit } from "@/lib/server/admin-kits";
 
 import { KitEditorDialog } from "./kit-editor-dialog";
+import { KitDeleteModal } from "./kit-delete-modal";
 import { KitsList } from "./kits-list";
 import { useKitsManager } from "./use-kits-manager";
 
@@ -23,7 +24,11 @@ export function KitsManager({
       <KitsList
         kits={manager.kits}
         onCreate={manager.openCreate}
+        onDelete={manager.requestDelete}
         onEdit={manager.openEdit}
+        deletingKitId={manager.deletingKitId}
+        error={manager.draft || manager.deleteTarget ? "" : manager.error}
+        notice={manager.notice}
       />
       <KitEditorDialog
         draft={manager.draft}
@@ -43,11 +48,21 @@ export function KitsManager({
         onUploadImage={manager.uploadImage}
         referenceCents={manager.referenceCents}
         saving={manager.saving}
+        saveDisabled={manager.saving || manager.uploadingTargets.length > 0}
         search={manager.search}
         selectedProductIds={manager.selectedProductIds}
         uploadingTargets={manager.uploadingTargets}
         uploadNotice={manager.uploadNotice}
       />
+      {manager.deleteTarget ? (
+        <KitDeleteModal
+          deleting={manager.deletingKitId === manager.deleteTarget.id}
+          error={manager.error}
+          kit={manager.deleteTarget}
+          onCancel={manager.cancelDelete}
+          onConfirm={manager.confirmDelete}
+        />
+      ) : null}
     </>
   );
 }

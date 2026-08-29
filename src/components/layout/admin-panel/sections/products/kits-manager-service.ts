@@ -1,4 +1,4 @@
-import type { AdminKit } from "@/lib/server/admin-kits";
+import type { AdminKit, AdminKitDeletion } from "@/lib/server/admin-kits";
 
 import { toKitPayload } from "./kits-manager-draft";
 import type { KitDraft } from "./kits-manager-types";
@@ -21,4 +21,17 @@ export async function saveKitDraft(draft: KitDraft): Promise<AdminKit> {
   }
 
   return body.kit;
+}
+
+export async function deleteKitDraft(kitId: number): Promise<AdminKitDeletion> {
+  const response = await fetch(`/api/admin/kits/${kitId}`, { method: "DELETE" });
+  const body = (await response.json().catch(() => null)) as
+    | (AdminKitDeletion & { message?: string })
+    | null;
+
+  if (!response.ok || !body?.deleted) {
+    throw new Error(body?.message ?? "Não foi possível excluir o Kit.");
+  }
+
+  return body;
 }

@@ -1,5 +1,7 @@
-import { PackagePlus } from "lucide-react";
+import { PackagePlus, Trash2 } from "lucide-react";
+import Image from "next/image";
 
+import { MenuUnderline } from "@/components/ui/menu-underline";
 import type { AdminKit } from "@/lib/server/admin-kits";
 import { formatBRL } from "@/lib/format-currency";
 
@@ -8,10 +10,22 @@ import { parseKitMoney } from "./kits-manager-draft";
 type KitsListProps = Readonly<{
   kits: AdminKit[];
   onCreate: () => void;
+  onDelete: (kit: AdminKit) => void;
   onEdit: (kit: AdminKit) => void;
+  deletingKitId: number | null;
+  error: string;
+  notice: string;
 }>;
 
-export function KitsList({ kits, onCreate, onEdit }: KitsListProps) {
+export function KitsList({
+  deletingKitId,
+  error,
+  kits,
+  notice,
+  onCreate,
+  onDelete,
+  onEdit,
+}: KitsListProps) {
   return (
     <div className="space-y-5 [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -42,6 +56,16 @@ export function KitsList({ kits, onCreate, onEdit }: KitsListProps) {
           Criar Kit
         </button>
       </header>
+      {notice ? (
+        <output className="block border-2 border-[#275a1d] bg-[#eff8e9] px-4 py-3 text-sm text-[#275a1d]">
+          {notice}
+        </output>
+      ) : null}
+      {error ? (
+        <p className="border-2 border-[#c0392b] bg-[#fff0ed] px-4 py-3 text-sm text-[#8b1f16]" role="alert">
+          {error}
+        </p>
+      ) : null}
       <section className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0_#1a1a1a]">
         <div className="h-2 bg-brand-yellow" />
         <div className="overflow-x-auto">
@@ -57,7 +81,13 @@ export function KitsList({ kits, onCreate, onEdit }: KitsListProps) {
             </thead>
             <tbody>
               {kits.map((kit) => (
-                <KitRow kit={kit} key={kit.id} onEdit={onEdit} />
+                <KitRow
+                  deleting={deletingKitId === kit.id}
+                  key={kit.id}
+                  kit={kit}
+                  onDelete={onDelete}
+                  onEdit={onEdit}
+                />
               ))}
             </tbody>
           </table>
@@ -74,8 +104,15 @@ export function KitsList({ kits, onCreate, onEdit }: KitsListProps) {
 
 function KitRow({
   kit,
+  deleting,
+  onDelete,
   onEdit,
-}: Readonly<{ kit: AdminKit; onEdit: (kit: AdminKit) => void }>) {
+}: Readonly<{
+  deleting: boolean;
+  kit: AdminKit;
+  onDelete: (kit: AdminKit) => void;
+  onEdit: (kit: AdminKit) => void;
+}>) {
   const statusClassName =
     kit.status === "publish"
       ? "border-[#1a1a1a] bg-brand-yellow"
@@ -86,10 +123,12 @@ function KitRow({
     <tr className="border-b border-[#1a1a1a]/18 last:border-0">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <img
+          <Image
             alt=""
             className="size-10 border border-[#1a1a1a] object-cover"
+            height={40}
             src={kit.imageUrl}
+            width={40}
           />
           <span className="font-bold">{kit.name}</span>
         </div>
@@ -108,13 +147,28 @@ function KitRow({
         </span>
       </td>
       <td className="px-4 py-3 text-right">
-        <button
-          className="border-b-2 border-[#1a1a1a] text-[10px] font-black uppercase tracking-widest hover:bg-brand-yellow"
-          onClick={() => onEdit(kit)}
-          type="button"
-        >
-          Editar
-        </button>
+        <div className="flex justify-end gap-3">
+          <button
+            className="relative isolate inline-flex items-center text-[10px] font-black uppercase tracking-widest"
+            data-menu-underline
+            data-underline-draw="true"
+            disabled={deleting}
+            onClick={() => onEdit(kit)}
+            type="button"
+          >
+            Editar
+            <MenuUnderline className="bottom-0.5 h-1.5 text-[#1a1a1a]" />
+          </button>
+          <button
+            aria-label={`Excluir ${kit.name}`}
+            className="grid size-8 place-items-center border-2 border-[#c0392b] text-[#8b1f16] hover:bg-[#c0392b] hover:text-white disabled:opacity-50"
+            disabled={deleting}
+            onClick={() => onDelete(kit)}
+            type="button"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
       </td>
     </tr>
   );

@@ -14,7 +14,7 @@ import {
   kitDraftAttachmentIds,
   parseKitMoney,
 } from "./kits-manager-draft";
-import { saveKitDraft } from "./kits-manager-service";
+import { deleteKitDraft, saveKitDraft } from "./kits-manager-service";
 import type { KitDraft, UploadTarget } from "./kits-manager-types";
 
 type KitsManagerControllerArgs = Readonly<{
@@ -30,7 +30,10 @@ export function useKitsManager({
   const [draft, setDraft] = useState<KitDraft | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deletingKitId, setDeletingKitId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminKit | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [uploadNotice, setUploadNotice] = useState("");
   const [uploadingTargets, setUploadingTargets] = useState<UploadTarget[]>([]);
   const editorSession = useRef(0);
@@ -64,6 +67,7 @@ export function useKitsManager({
   function openDraft(nextDraft: KitDraft) {
     editorSession.current += 1;
     setError("");
+    setNotice("");
     setUploadNotice("");
     setDraft(nextDraft);
   }
@@ -226,21 +230,64 @@ export function useKitsManager({
     }
   }
 
+  function requestDelete(kit: AdminKit) {
+    setError("");
+    setNotice("");
+    setDeleteTarget(kit);
+  }
+
+  function cancelDelete() {
+    if (deletingKitId) return;
+    setDeleteTarget(null);
+    setError("");
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const kit = deleteTarget;
+    setDeletingKitId(kit.id);
+    setError("");
+    try {
+      const deletion = await deleteKitDraft(kit.id);
+      setKits((current) => current.filter((currentKit) => currentKit.id !== kit.id));
+      setDeleteTarget(null);
+      setNotice(
+        deletion.partial
+          ? "Kit excluído. Algumas imagens não puderam ser removidas do storage."
+          : "Kit excluído e imagens exclusivas removidas.",
+      );
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Não foi possível excluir o Kit.",
+      );
+    } finally {
+      setDeletingKitId(null);
+    }
+  }
+
   return {
     addMerchandise,
     addProduct,
     closeDraft,
+    cancelDelete,
+    confirmDelete,
+    deleteTarget,
     draft,
+    deletingKitId,
     error,
     filteredProducts,
     kits,
     openCreate,
     openEdit,
+    notice,
     patchDraft,
     patchMerchandise,
     referenceCents,
     removeMerchandise,
     removeProduct,
+    requestDelete,
     saving,
     search,
     selectedProductIds,
