@@ -172,6 +172,12 @@ export function ProductsManager({
           />
         </section>
 
+        {!isEditorOpen && manager.notice ? (
+          <output className="block rounded-[12px] border border-[#c0392b] bg-[#fff0ed] px-4 py-3 text-sm font-semibold text-[#8b1f16]">
+            {manager.notice}
+          </output>
+        ) : null}
+
         <ProductsList
           isLoading={isLoading}
           onChangePage={(nextPage) => loadProducts(nextPage, appliedFilters)}

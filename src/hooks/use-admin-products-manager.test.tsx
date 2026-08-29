@@ -1,3 +1,5 @@
+import { StrictMode } from "react";
+
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -582,5 +584,69 @@ describe("useAdminProductsManager", () => {
       expect(productCalls(fetchMock)).toHaveLength(1);
       expect(screen.getByLabelText("nova tag")).toHaveValue("teste");
     });
+  });
+});
+
+function FocusHarness({ focusId }: Readonly<{ focusId: number }>) {
+  const manager = useAdminProductsManager(snapshot, {
+    initialFocusProductId: focusId,
+  });
+
+  return (
+    <>
+      <span data-testid="abrindo">{manager.isOpeningProduct ? "sim" : "nao"}</span>
+      <span data-testid="aviso">{manager.notice}</span>
+      <span data-testid="editor">{manager.isEditorOpen ? "aberto" : "fechado"}</span>
+      <span data-testid="selecionado">{String(manager.selectedProductId)}</span>
+    </>
+  );
+}
+
+describe("useAdminProductsManager — foco vindo da notificação", () => {
+  it("solta o loading quando o produto da notificação não existe mais", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ message: "Produto não encontrado." }),
+      ok: false,
+      status: 404,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <StrictMode>
+        <FocusHarness focusId={999} />
+      </StrictMode>,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByTestId("abrindo")).toHaveTextContent("nao"),
+    );
+    expect(screen.getByTestId("aviso")).not.toHaveTextContent("");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("abre o editor do produto da notificação que ainda existe", async () => {
+    const focado = { ...product, id: 999, name: "Produto focado" };
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ product: focado }),
+      ok: true,
+      status: 200,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <StrictMode>
+        <FocusHarness focusId={999} />
+      </StrictMode>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("editor")).toHaveTextContent("aberto"),
+    );
+    expect(screen.getByTestId("selecionado")).toHaveTextContent("999");
+    expect(screen.getByTestId("abrindo")).toHaveTextContent("nao");
+
+    vi.unstubAllGlobals();
   });
 });

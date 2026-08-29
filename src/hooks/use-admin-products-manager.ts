@@ -453,6 +453,7 @@ export function useAdminProductsManager(
     }
 
     let cancelled = false;
+    let settled = false;
     const focusedProductId = initialFocusProductId;
 
     async function loadFocusedProduct() {
@@ -511,6 +512,8 @@ export function useAdminProductsManager(
           );
         }
       } finally {
+        settled = true;
+
         if (!cancelled) {
           setIsLoading(false);
           setIsOpeningProduct(false);
@@ -520,8 +523,16 @@ export function useAdminProductsManager(
 
     void loadFocusedProduct();
 
+    // Se o efeito for descartado com a busca em voo, ninguém assume o trabalho:
+    // `handledInitialFocusRef` faria a próxima execução desistir e o overlay
+    // ficaria preso. Liberar o guard só quando a busca NÃO terminou deixa a
+    // sucessora refazer o foco, sem reabrir o editor de um foco já concluído.
     return () => {
       cancelled = true;
+
+      if (!settled) {
+        handledInitialFocusRef.current = false;
+      }
     };
   }, [excludedProductIds, initialFocusProductId, products, resetDraft, selectProduct]);
 
