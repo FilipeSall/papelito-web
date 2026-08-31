@@ -5,6 +5,8 @@ export function buildStockHref(filters: VendorStockFilters, page = 1) {
   if (filters.search) params.set("search", filters.search);
   if (filters.category && filters.category > 0) params.set("category", String(filters.category));
   if (filters.tags.length > 0) params.set("tags", filters.tags.join(","));
+  if (filters.collection) params.set("collection", filters.collection);
+  if (filters.type !== "products") params.set("type", filters.type);
   if (filters.sort !== "name_asc") params.set("sort", filters.sort);
   if (page > 1) params.set("page", String(page));
   return `/vendor/estoque?${params.toString()}`;

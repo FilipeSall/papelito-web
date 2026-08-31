@@ -11,10 +11,12 @@ type FeedbackState =
 
 type FavoritePromotionEmailSettingsCardProps = {
   initialEnabled: boolean;
+  variant?: "default" | "plain";
 };
 
 export function FavoritePromotionEmailSettingsCard({
   initialEnabled,
+  variant = "default",
 }: FavoritePromotionEmailSettingsCardProps) {
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
@@ -73,11 +75,15 @@ export function FavoritePromotionEmailSettingsCard({
     });
   }
 
-  return (
-    <section className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-      <div className="h-2 w-full bg-brand-yellow" />
+  const isPlain = variant === "plain";
 
-      <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
+  return (
+    <section
+      className={isPlain ? "" : "border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"}
+    >
+      {isPlain ? null : <div className="h-2 w-full bg-brand-yellow" />}
+
+      <div className={`flex flex-col gap-6 ${isPlain ? "" : "px-6 py-6 sm:px-8"}`}>
         <div>
           <div className="flex flex-col gap-4 border-b-2 border-[#1a1a1a]/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-xl">

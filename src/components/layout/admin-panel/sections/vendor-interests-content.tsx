@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import type { ReactNode } from "react";
 
 import { authOptions } from "@/lib/auth";
 import { getAdminVendorInterests } from "@/lib/server/admin-vendor-interests";
@@ -11,14 +12,18 @@ function formatDate(value: string) {
   const date = new Date(value.replace(" ", "T") + "Z");
   return Number.isNaN(date.getTime())
     ? "—"
-    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+    : new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "America/Sao_Paulo",
+      }).format(date);
 }
 
 export async function VendorInterestsContent({
   searchParams,
-}: {
+}: Readonly<{
   searchParams?: Record<string, string | string[] | undefined>;
-}) {
+}>) {
   const session = await getServerSession(authOptions);
   const search = firstParam(searchParams?.search)?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(firstParam(searchParams?.page) ?? "", 10) || 1);
@@ -62,6 +67,34 @@ export async function VendorInterestsContent({
     return `/admin/vendors?${query.toString()}`;
   };
 
+  let snapshotContent: ReactNode;
+
+  if (snapshot.issue) {
+    snapshotContent = <Panel className="px-5 py-4 text-sm text-[#7a3428]">{snapshot.issue}</Panel>;
+  } else if (rows.length === 0) {
+    snapshotContent = (
+      <EmptyStateCard
+        body={search ? "Tente outro termo de busca." : "Novas manifestações aparecerão aqui após o envio da triagem."}
+        label="Sem registros"
+        title={search ? "Nenhum resultado encontrado" : "Nenhuma loja aguardando contato"}
+      />
+    );
+  } else {
+    snapshotContent = (
+      <Panel className="overflow-hidden">
+        <div className="border-b border-[#231f20]/10 px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
+            {snapshot.total} manifestações
+          </p>
+        </div>
+        <CompactTable
+          headers={["loja", "responsável", "cnpj", "envio", ""]}
+          rows={rows}
+        />
+      </Panel>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -93,27 +126,7 @@ export async function VendorInterestsContent({
         </form>
       </div>
 
-      {snapshot.issue ? (
-        <Panel className="px-5 py-4 text-sm text-[#7a3428]">{snapshot.issue}</Panel>
-      ) : rows.length === 0 ? (
-        <EmptyStateCard
-          body={search ? "Tente outro termo de busca." : "Novas manifestações aparecerão aqui após o envio da triagem."}
-          label="Sem registros"
-          title={search ? "Nenhum resultado encontrado" : "Nenhuma loja aguardando contato"}
-        />
-      ) : (
-        <Panel className="overflow-hidden">
-          <div className="border-b border-[#231f20]/10 px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-              {snapshot.total} manifestações
-            </p>
-          </div>
-          <CompactTable
-            headers={["loja", "responsável", "cnpj", "envio", ""]}
-            rows={rows}
-          />
-        </Panel>
-      )}
+      {snapshotContent}
 
       {snapshot.totalPages > 1 ? (
         <nav aria-label="Paginação" className="flex items-center justify-between text-xs uppercase tracking-wider text-[#231f20]/56">

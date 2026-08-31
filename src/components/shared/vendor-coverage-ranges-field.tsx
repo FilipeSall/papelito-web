@@ -229,6 +229,7 @@ function CoveragePresetSelect({
 
   return (
     <CheckoutCustomSelect
+      anchoredMenu
       label={
         <span className="flex items-center gap-1.5">
           <span>{label}</span>

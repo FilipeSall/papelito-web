@@ -217,9 +217,9 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <Panel className="overflow-hidden">
-        <div className="flex items-center justify-between border-b border-brand-dark/10 px-5 py-4">
+    <div className="grid gap-4 xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <Panel className="flex min-h-0 flex-col overflow-hidden">
+        <div className="flex shrink-0 items-center justify-between border-b border-brand-dark/10 px-5 py-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-dark/48">
               Faixas cadastradas
@@ -229,13 +229,13 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
             </p>
           </div>
         </div>
-        <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
+        <FeedbackBanner className="mx-5 mt-4 shrink-0" feedback={feedback} />
         {items.length === 0 ? (
           <p className="px-5 py-10 text-sm text-brand-dark/64">
             Nenhuma faixa cadastrada. Adicione uma faixa para habilitar cobertura regional.
           </p>
         ) : (
-          <div className="overflow-x-auto px-2 pt-3">
+          <div className="min-h-0 flex-1 overflow-auto px-2 pt-3">
             <table className="min-w-full border-separate border-spacing-0 text-left">
               <thead>
                 <tr>
@@ -293,13 +293,13 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
         )}
       </Panel>
 
-      <Panel className="h-fit overflow-hidden">
-        <div className="bg-brand-dark px-5 py-3 text-brand-yellow">
+      <Panel className="flex min-h-0 flex-col overflow-hidden">
+        <div className="shrink-0 bg-brand-dark px-5 py-3 text-brand-yellow">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em]">
             {editingRange ? "Editar faixa" : "Nova faixa"}
           </p>
         </div>
-        <div className="space-y-4 px-5 py-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
           <VendorCoverageRangesField
             mode="single"
             onChangeRanges={setDraftRanges}
@@ -314,7 +314,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
           ) : null}
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] bg-brand-yellow px-4 text-xs font-black uppercase tracking-[0.16em] text-brand-dark shadow-[4px_4px_0_rgba(35,31,32,0.14)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-brand-yellow px-4 text-xs font-black uppercase tracking-[0.16em] text-brand-dark shadow-[4px_4px_0_rgba(35,31,32,0.14)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 sm:w-auto sm:flex-1"
               disabled={pendingAction !== null || Boolean(draftError)}
               onClick={() => void persistRange()}
               type="button"

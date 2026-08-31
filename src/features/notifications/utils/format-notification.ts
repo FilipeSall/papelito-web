@@ -214,11 +214,17 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     }
     case "support_message": {
       const senderName = stringValue(payload, "sender_name") || "Atendimento";
+      const isPagarmeBankAccountUpdate =
+        stringValue(payload, "context") === "pagarme_bank_account_update";
 
       return {
         icon: "message",
-        title: "Nova mensagem de suporte",
-        body: `${senderName} enviou uma mensagem sobre um pedido.`,
+        title: isPagarmeBankAccountUpdate
+          ? "Nova mensagem sobre a conta Pagar.me"
+          : "Nova mensagem de suporte",
+        body: isPagarmeBankAccountUpdate
+          ? `${senderName} enviou uma mensagem sobre a atualização da conta bancária.`
+          : `${senderName} enviou uma mensagem sobre um pedido.`,
         href: supportHref(payload),
       };
     }
@@ -282,6 +288,13 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         href: "/vendor/dashboard",
       };
     }
+    case "vendor_pagarme_sync_pending":
+      return {
+        icon: "message",
+        title: "Configuração Pagar.me pendente",
+        body: "Conclua a configuração da Pagar.me para que sua loja possa começar a vender.",
+        href: "/vendor/configuracoes",
+      };
     case "shipment_posted":
       return {
         icon: "package",

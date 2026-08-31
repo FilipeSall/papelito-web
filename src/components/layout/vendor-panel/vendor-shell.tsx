@@ -136,7 +136,7 @@ export function VendorShell({
               ))}
             </nav>
           </header>
-          <main className="flex-1 px-4 py-5 md:px-7 md:py-7">{children}</main>
+          <main className="flex-1 px-4 py-5 md:px-7 md:py-7 xl:has-[[data-fill-viewport]]:min-h-0">{children}</main>
         </div>
       </div>
     </div>

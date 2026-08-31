@@ -6,15 +6,17 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 import { StockToolbar } from "./stock-toolbar";
 import type { VendorStockFilters, VendorStockTaxonomies } from "@/features/vendor-stock/types/vendor-stock";
 
-const taxonomies: VendorStockTaxonomies = { categories: [], tags: [] };
+const taxonomies: VendorStockTaxonomies = { categories: [], collections: [], tags: [] };
 
 function renderToolbar(filters: Partial<VendorStockFilters> = {}) {
   const full: VendorStockFilters = {
     category: null,
+    collection: null,
     filter: "all",
     search: "",
     sort: "name_asc",
     tags: [],
+    type: "products",
     ...filters,
   };
   return render(<StockToolbar filters={full} taxonomies={taxonomies} />);
@@ -32,6 +34,11 @@ describe("StockToolbar", () => {
     expect(screen.getByRole("button", { name: /filtrar · 5/i })).toBeInTheDocument();
   });
 
+  it("counts the collection as an active filter", () => {
+    renderToolbar({ collection: "premium" });
+    expect(screen.getByRole("button", { name: /filtrar · 1/i })).toBeInTheDocument();
+  });
+
   it("opens the drawer dialog when Filtrar is clicked", () => {
     renderToolbar();
     fireEvent.click(screen.getByRole("button", { name: /filtrar/i }));
@@ -44,5 +51,10 @@ describe("StockToolbar", () => {
     expect(container.querySelector('input[name="category"][value="7"]')).toBeTruthy();
     expect(container.querySelector('input[name="tags"][value="12,45"]')).toBeTruthy();
     expect(container.querySelector('input[name="sort"][value="qty_desc"]')).toBeTruthy();
+  });
+
+  it("keeps the selected collection as a hidden input in the search form", () => {
+    const { container } = renderToolbar({ collection: "premium" });
+    expect(container.querySelector('input[name="collection"][value="premium"]')).toBeTruthy();
   });
 });

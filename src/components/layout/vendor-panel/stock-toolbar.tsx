@@ -13,6 +13,8 @@ function countActive(filters: VendorStockFilters) {
   let count = 0;
   if (filters.filter !== "all") count += 1;
   if (filters.category && filters.category > 0) count += 1;
+  if (filters.collection) count += 1;
+  if (filters.type !== "products") count += 1;
   count += filters.tags.length;
   if (filters.sort !== "name_asc") count += 1;
   return count;
@@ -36,6 +38,8 @@ export function StockToolbar({
           <input name="category" type="hidden" value={String(filters.category)} />
         ) : null}
         {filters.tags.length > 0 ? <input name="tags" type="hidden" value={filters.tags.join(",")} /> : null}
+        {filters.collection ? <input name="collection" type="hidden" value={filters.collection} /> : null}
+        {filters.type !== "products" ? <input name="type" type="hidden" value={filters.type} /> : null}
         {filters.sort !== "name_asc" ? <input name="sort" type="hidden" value={filters.sort} /> : null}
         <input
           className="h-11 w-full max-w-md border-2 border-[#1a1a1a] bg-white px-4 text-sm text-[#1a1a1a] outline-none placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"

@@ -11,11 +11,12 @@ import type {
 } from "@/features/vendor-stock/types/vendor-stock";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
+import { KitStockRow } from "./kit-stock-row";
 import { StockPagination } from "./stock-pagination";
 import { StockRow } from "./stock-row";
 import { StockToolbar } from "./stock-toolbar";
 
-const tableHeaders = ["Produto", "Último ajuste", "Status", "Quantidade"];
+const tableHeaders = ["Produto", "Última atualização", "Status", "Quantidade"];
 
 export function VendorStockManager({
   filters,
@@ -143,16 +144,29 @@ export function VendorStockManager({
                 </tr>
               </thead>
               <tbody>
-                {snapshot.items.map((item) => (
-                  <StockRow
-                    focused={item.productId === focusProductId}
-                    item={item}
-                    key={item.productId}
-                    onQtyChange={handleQtyChange}
-                    qty={quantities[item.productId] ?? String(item.qty)}
-                    saving={savingIds.has(item.productId)}
-                  />
-                ))}
+                {snapshot.items.map((item) =>
+                  item.kit ? (
+                    <KitStockRow
+                      columnCount={tableHeaders.length}
+                      focused={item.productId === focusProductId}
+                      item={item}
+                      key={item.productId}
+                      kit={item.kit}
+                      onQtyChange={handleQtyChange}
+                      quantities={quantities}
+                      savingIds={savingIds}
+                    />
+                  ) : (
+                    <StockRow
+                      focused={item.productId === focusProductId}
+                      item={item}
+                      key={item.productId}
+                      onQtyChange={handleQtyChange}
+                      qty={quantities[item.productId] ?? String(item.qty)}
+                      saving={savingIds.has(item.productId)}
+                    />
+                  ),
+                )}
               </tbody>
             </table>
           </div>

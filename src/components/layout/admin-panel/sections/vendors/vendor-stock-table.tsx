@@ -17,6 +17,7 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
     month: "2-digit",
+    timeZone: "America/Sao_Paulo",
     year: "numeric",
   });
 }
@@ -30,7 +31,7 @@ type VendorStockTableProps = {
   vendorId: number;
 };
 
-export function VendorStockTable({ items, vendorId }: VendorStockTableProps) {
+export function VendorStockTable({ items, vendorId }: Readonly<VendorStockTableProps>) {
   const router = useRouter();
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [editingItem, setEditingItem] = useState<AdminVendorStockItem | null>(null);

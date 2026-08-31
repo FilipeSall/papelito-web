@@ -9,9 +9,11 @@ import {
   getVendorStock,
   getVendorStockTaxonomies,
   VENDOR_STOCK_SORTS,
+  VENDOR_STOCK_TYPES,
   type VendorStockFilter,
   type VendorStockFilters,
   type VendorStockSort,
+  type VendorStockType,
 } from "@/features/vendor-stock/server";
 import { firstParam } from "@/lib/search-params";
 
@@ -59,11 +61,19 @@ export default async function VendorStockPage({
     .map((value) => Number.parseInt(value, 10))
     .filter((value) => Number.isInteger(value) && value > 0);
 
+  const rawType = firstParam(params.type);
+  const type: VendorStockType = VENDOR_STOCK_TYPES.includes(rawType as VendorStockType)
+    ? (rawType as VendorStockType)
+    : "products";
+
+  const rawCollection = (firstParam(params.collection) ?? "").trim().toLowerCase();
+  const collection = /^[a-z0-9-]{1,48}$/.test(rawCollection) ? rawCollection : null;
+
   const search = firstParam(params.search)?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(firstParam(params.page) ?? "", 10) || 1);
   const focus = Number.parseInt(firstParam(params.focus) ?? "", 10);
 
-  const filters: VendorStockFilters = { category, filter, search, sort, tags };
+  const filters: VendorStockFilters = { category, collection, filter, search, sort, tags, type };
 
   const [snapshot, taxonomies] = await Promise.all([
     getVendorStock({ ...filters, page }),

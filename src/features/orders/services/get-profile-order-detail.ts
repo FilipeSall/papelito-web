@@ -170,7 +170,11 @@ function formatDateTime(value: string | undefined) {
   const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
   return Number.isNaN(date.getTime())
     ? value
-    : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+    : new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "America/Sao_Paulo",
+      }).format(date);
 }
 
 function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrderTimelineEvent[] {

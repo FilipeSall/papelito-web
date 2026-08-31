@@ -1,4 +1,5 @@
 export type FeedbackState = {
+  actionType?: "pagarme-bank-account-support";
   actionHref?: string;
   actionLabel?: string;
   details?: string[];
@@ -11,9 +12,13 @@ export type FeedbackState = {
 export function FeedbackBanner({
   className = "",
   feedback,
+  live = true,
+  onAction,
 }: {
   className?: string;
   feedback: FeedbackState | null;
+  live?: boolean;
+  onAction?: (actionType: NonNullable<FeedbackState["actionType"]>) => void;
 }) {
   if (!feedback) return null;
 
@@ -25,7 +30,7 @@ export function FeedbackBanner({
   return (
     <div
       className={`px-4 py-3 text-sm ${tone} ${className}`}
-      role={feedback.error ? "alert" : "status"}
+      role={live ? (feedback.error ? "alert" : "status") : undefined}
     >
       {feedback.title ? (
         <p className="text-[11px] font-black uppercase tracking-[0.18em]">{feedback.title}</p>
@@ -39,7 +44,15 @@ export function FeedbackBanner({
         </ul>
       ) : null}
       {feedback.hint ? <p className="mt-2 text-[13px] font-medium opacity-85">{feedback.hint}</p> : null}
-      {feedback.actionHref && feedback.actionLabel ? (
+      {feedback.actionType && feedback.actionLabel && onAction ? (
+        <button
+          className="mt-3 inline-flex cursor-pointer text-[11px] font-black uppercase tracking-[0.14em] underline"
+          onClick={() => onAction(feedback.actionType as NonNullable<FeedbackState["actionType"]>)}
+          type="button"
+        >
+          {feedback.actionLabel}
+        </button>
+      ) : feedback.actionHref && feedback.actionLabel ? (
         <a
           className="mt-3 inline-flex text-[11px] font-black uppercase tracking-[0.14em] underline"
           href={feedback.actionHref}

@@ -21,9 +21,13 @@ export default async function VendorMessageThreadPage({
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description={`Conversa referente ao pedido #${thread.orderNumber} com ${thread.participants.customer.name}.`}
+        description={
+          thread.context === "pagarme_bank_account_update"
+            ? "Atendimento da Papelito sobre a autorização necessária para atualizar sua conta bancária na Pagar.me."
+            : `Conversa referente ao pedido #${thread.orderNumber} com ${thread.participants.customer.name}.`
+        }
         eyebrow="Atendimento"
-        signal={thread.escalatedAt ? "Papelito acompanhando" : "Direto com cliente"}
+        signal={thread.context === "pagarme_bank_account_update" || thread.escalatedAt ? "Papelito acompanhando" : "Direto com cliente"}
         title="Mensagens"
       />
       <Link className="inline-flex text-sm font-semibold text-brand-dark/66 hover:text-brand-dark" href="/vendor/mensagens">

@@ -1,31 +1,48 @@
-import { ActiveVendorSection, ProfileSettings } from "@/components/layout/profile-page";
+import {
+  ActiveVendorSection,
+  ProfileAccountSection,
+  ProfileNotificationsSection,
+} from "@/components/layout/profile-page";
 import { NoCepNotice } from "@/components/active-vendor";
+import { AnchoredSection, AnchoredSectionNav } from "@/components/ui/anchored-sections";
 import { getAvailableVendors } from "@/features/active-vendor/server";
+
+const SECTIONS = [
+  { id: "vendor", label: "Vendor" },
+  { id: "notificacoes", label: "Notificações" },
+  { id: "conta", label: "Conta" },
+] as const;
 
 export default async function ProfileSettingsPage() {
   const availableVendorsResult = await getAvailableVendors();
+  const missingCep =
+    !availableVendorsResult.ok && availableVendorsResult.error.reason === "missing_cep";
 
   return (
-    <div className="flex flex-col gap-10">
-      {availableVendorsResult.ok ? (
-        <ActiveVendorSection vendors={availableVendorsResult.vendors} />
-      ) : availableVendorsResult.error.reason === "missing_cep" ? (
-        <section className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
-              Vendor preferido
-            </h2>
-            <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
-              Cadastre um CEP nos seus endereços para escolher o vendor que atende sua região.
-            </p>
-          </div>
-          <NoCepNotice />
-        </section>
-      ) : (
-        <ActiveVendorSection error={availableVendorsResult.error} />
-      )}
+    <div className="flex flex-col gap-5">
+      <AnchoredSectionNav className="top-0" sections={SECTIONS} />
 
-      <ProfileSettings />
+      <AnchoredSection
+        description={
+          missingCep
+            ? "Sem um CEP na sua conta não dá para saber qual vendor atende você."
+            : "O vendor escolhido atende seu CEP e define quais produtos aparecem no catálogo. Trocar de vendor pode alterar o frete e esvazia o carrinho."
+        }
+        display="brand"
+        id="vendor"
+        title="Vendor preferido"
+      >
+        {availableVendorsResult.ok ? (
+          <ActiveVendorSection vendors={availableVendorsResult.vendors} />
+        ) : missingCep ? (
+          <NoCepNotice />
+        ) : (
+          <ActiveVendorSection error={availableVendorsResult.error} />
+        )}
+      </AnchoredSection>
+
+      <ProfileNotificationsSection />
+      <ProfileAccountSection />
     </div>
   );
 }

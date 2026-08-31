@@ -10,6 +10,7 @@ export { VendorPageHeader } from "./vendor-page-header";
 export { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";
 export { VendorPeriodFilters } from "./vendor-period-filters";
 export { VendorRecipientPanel } from "./vendor-recipient-panel";
-export { VendorSettingsForm } from "./vendor-settings-form";
+export { VendorAccountSection } from "./vendor-account-section";
+export { VendorLeadTimeSection } from "./vendor-lead-time-section";
 export { VendorShell } from "./vendor-shell";
 export { VendorStockManager } from "./vendor-stock-manager";

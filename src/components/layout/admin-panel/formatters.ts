@@ -46,6 +46,7 @@ export function formatDateTimeLabel(value: string) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   }).format(date);
 }
 
@@ -74,6 +75,15 @@ export function niceMax(value: number) {
   if (value <= 0) return 1;
   const exponent = Math.floor(Math.log10(value));
   const fraction = value / Math.pow(10, exponent);
-  const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+  let niceFraction = 10;
+
+  if (fraction <= 1) {
+    niceFraction = 1;
+  } else if (fraction <= 2) {
+    niceFraction = 2;
+  } else if (fraction <= 5) {
+    niceFraction = 5;
+  }
+
   return niceFraction * Math.pow(10, exponent);
 }

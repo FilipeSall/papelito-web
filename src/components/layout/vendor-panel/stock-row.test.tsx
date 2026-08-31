@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { StockRow } from "./stock-row";
+import { formatStockUpdatedAt } from "./stock-cells";
 import type { VendorStockItem } from "@/features/vendor-stock/types/vendor-stock";
 
 const baseItem: VendorStockItem = {
@@ -9,6 +10,7 @@ const baseItem: VendorStockItem = {
   imageUrl: "",
   isPubliclyViewable: true,
   isZeroed: false,
+  kit: null,
   productId: 10,
   publicProductId: 8,
   productName: "Seda King Size",
@@ -38,6 +40,10 @@ function renderRow(item: VendorStockItem) {
 }
 
 describe("StockRow chips", () => {
+  it("formats stock timestamps in São Paulo time", () => {
+    expect(formatStockUpdatedAt("2026-09-01 01:30:00")).toContain("31/08/2026");
+  });
+
   it("renders category and tag chips", () => {
     renderRow(baseItem);
     expect(screen.getByText("Sedas")).toBeInTheDocument();

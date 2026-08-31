@@ -1,6 +1,6 @@
 "use client";
 
-import { InputHTMLAttributes, useState } from "react";
+import { InputHTMLAttributes, useId, useState } from "react";
 
 import { PasswordRevealButton } from "@/components/ui/password-reveal-button";
 
@@ -55,16 +55,23 @@ export function ProfileFormField({
   onChange,
 }: ProfileFormFieldProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const fieldId = useId();
+  const errorId = `${fieldId}-erro`;
   const isPassword = type === "password";
   const resolvedType = isPassword && isPasswordVisible ? "text" : type;
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
+      <label
+        className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]"
+        htmlFor={fieldId}
+      >
         {label}
       </label>
       <div className="relative">
         <input
+          aria-describedby={errorMessage ? errorId : undefined}
+          aria-invalid={errorMessage ? true : undefined}
           autoComplete={autoComplete}
           className={`h-11 w-full rounded-none border-2 bg-white text-sm font-medium text-[#1a1a1a] outline-none transition-[border-color] placeholder:font-normal placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:bg-[#faf8f2] disabled:text-[#1a1a1a]/40 ${
             isPassword ? "pl-3 pr-12" : "px-3"
@@ -74,6 +81,7 @@ export function ProfileFormField({
               : "border-[#1a1a1a] focus:border-[#1a1a1a]"
           }`}
           disabled={disabled}
+          id={fieldId}
           inputMode={inputMode}
           maxLength={maxLength}
           onChange={(e) => onChange?.(e.target.value)}
@@ -90,7 +98,7 @@ export function ProfileFormField({
         ) : null}
       </div>
       {errorMessage ? (
-        <p className="text-[11px] font-semibold text-[#c0392b]">
+        <p className="text-[11px] font-semibold text-[#c0392b]" id={errorId}>
           ⚠ {errorMessage}
         </p>
       ) : null}

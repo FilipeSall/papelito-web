@@ -65,6 +65,9 @@ export function MessageThreadPanel({
 
   const title = useMemo(() => {
     if (!thread) return "Conversa com o vendor";
+    if (thread.context === "pagarme_bank_account_update") {
+      return "Autorização bancária Pagar.me";
+    }
     return `Pedido #${thread.orderNumber} - ${thread.counterpartName}`;
   }, [thread]);
 

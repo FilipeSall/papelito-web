@@ -18,6 +18,7 @@ type WpMessageItem = {
 };
 
 export type WpMessageThreadSummary = {
+  context?: unknown;
   counterpart_name?: unknown;
   escalated_at?: unknown;
   last_message?: WpMessageItem | null;
@@ -58,6 +59,10 @@ function role(value: unknown): MessageSenderRole {
   return value === "seller" || value === "administrator" ? value : "customer";
 }
 
+function context(value: unknown): MessageThreadSummary["context"] {
+  return value === "pagarme_bank_account_update" ? value : "order";
+}
+
 function participant(value: { id?: unknown; name?: unknown } | undefined): MessageParticipant {
   return {
     id: number(value?.id),
@@ -79,6 +84,7 @@ export function mapMessage(raw: WpMessageItem): MessageItem {
 
 export function mapMessageThreadSummary(raw: WpMessageThreadSummary): MessageThreadSummary {
   return {
+    context: context(raw.context),
     counterpartName: text(raw.counterpart_name, "Atendimento"),
     escalatedAt: typeof raw.escalated_at === "string" && raw.escalated_at ? raw.escalated_at : null,
     lastMessage: raw.last_message ? mapMessage(raw.last_message) : null,

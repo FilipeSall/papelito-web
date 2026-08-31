@@ -7,6 +7,7 @@ const DAY_MS = 24 * HOUR_MS;
 const deadlineFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
+  timeZone: "America/Sao_Paulo",
 });
 
 /**

@@ -3,10 +3,19 @@ import "server-only";
 import { getSellerAccessToken } from "@/lib/server/vendor-session";
 import { wpRest } from "@/lib/server/wp-rest";
 
-import type { VendorStockTaxonomies, VendorStockTaxonomyTerm } from "../types/vendor-stock";
+import type {
+  VendorStockCollection,
+  VendorStockTaxonomies,
+  VendorStockTaxonomyTerm,
+} from "../types/vendor-stock";
 
 type WpTaxTerm = { id?: number; name?: string; slug?: string; count?: number };
-type WpTaxonomies = { categories?: WpTaxTerm[]; tags?: WpTaxTerm[] };
+type WpCollection = { name?: string; slug?: string; count?: number };
+type WpTaxonomies = {
+  categories?: WpTaxTerm[];
+  collections?: WpCollection[];
+  tags?: WpTaxTerm[];
+};
 
 function mapTaxTerms(raw?: WpTaxTerm[]): VendorStockTaxonomyTerm[] {
   return (raw ?? [])
@@ -19,8 +28,18 @@ function mapTaxTerms(raw?: WpTaxTerm[]): VendorStockTaxonomyTerm[] {
     .filter((term) => term.id > 0);
 }
 
+function mapCollections(raw?: WpCollection[]): VendorStockCollection[] {
+  return (raw ?? [])
+    .map((collection) => ({
+      count: Number(collection.count) || 0,
+      name: collection.name ?? collection.slug ?? "",
+      slug: collection.slug ?? "",
+    }))
+    .filter((collection) => collection.slug !== "");
+}
+
 export async function getVendorStockTaxonomies(): Promise<VendorStockTaxonomies> {
-  const empty = { categories: [], tags: [] };
+  const empty = { categories: [], collections: [], tags: [] };
   const accessToken = await getSellerAccessToken();
   if (!accessToken) return empty;
 
@@ -32,6 +51,7 @@ export async function getVendorStockTaxonomies(): Promise<VendorStockTaxonomies>
 
   return {
     categories: mapTaxTerms(result.data.categories),
+    collections: mapCollections(result.data.collections),
     tags: mapTaxTerms(result.data.tags),
   };
 }

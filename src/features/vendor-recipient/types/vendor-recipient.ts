@@ -4,4 +4,6 @@ export type VendorRecipient = {
   lastSyncAt: string;
   kycUrl: string;
   lastError: string;
+  lastErrorCode: string;
+  loadFailed: boolean;
 };

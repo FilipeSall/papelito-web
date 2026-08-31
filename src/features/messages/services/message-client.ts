@@ -36,6 +36,14 @@ export async function createMessageThread(orderId: number, body: string): Promis
   );
 }
 
+export async function createPagarmeBankAccountSupportThread(): Promise<MessageThread> {
+  return readThreadResponse(
+    await fetch("/api/messages/support/pagarme-bank-account", {
+      method: "POST",
+    }),
+  );
+}
+
 export async function sendThreadMessage(threadId: number, body: string): Promise<MessageThread> {
   return readThreadResponse(
     await fetch(`/api/messages/threads/${threadId}`, {

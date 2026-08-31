@@ -19,33 +19,21 @@ export function ActiveVendorSection({ vendors = [], error = null }: ActiveVendor
     isNearest: vendor.isNearest,
   }));
 
-  return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
-          Vendor preferido
-        </h2>
-        <p className="max-w-2xl text-sm leading-6 text-text-tertiary">
-          O vendor selecionado abaixo atende seu CEP e define quais produtos aparecem no catálogo.
-          Trocar de vendor pode alterar o frete dos produtos e esvazia o carrinho.
-        </p>
+  if (error) {
+    return (
+      <div
+        className="border-2 border-[#c0392b] bg-[#f7e6e2] px-4 py-3 text-sm leading-6 font-semibold text-[#7a3428]"
+        role="alert"
+      >
+        {error.message}
       </div>
+    );
+  }
 
-      {error ? (
-        <div
-          role="alert"
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-        >
-          {error.message}
-        </div>
-      ) : null}
-
-      {!error ? (
-        <VendorPickerList
-          vendors={pickerVendors}
-          emptyMessage="Nenhum vendor atende seu CEP no momento."
-        />
-      ) : null}
-    </section>
+  return (
+    <VendorPickerList
+      emptyMessage="Nenhum vendor atende seu CEP no momento."
+      vendors={pickerVendors}
+    />
   );
 }

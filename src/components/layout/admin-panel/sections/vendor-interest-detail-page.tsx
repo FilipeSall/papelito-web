@@ -24,16 +24,27 @@ function instagramHref(value: string): string | null {
 function phoneHref(value: string): string | null {
   const digits = value.replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 13) return null;
-  return `tel:+${digits.length <= 11 ? `55${digits}` : digits}`;
+  const normalizedDigits = digits.length <= 11 ? `55${digits}` : digits;
+  return `tel:+${normalizedDigits}`;
 }
 
 function emailHref(value: string): string | null {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-    ? `mailto:${encodeURIComponent(value.trim())}`
-    : null;
+  const normalizedValue = value.trim();
+  const atIndex = normalizedValue.indexOf("@");
+  const domain = normalizedValue.slice(atIndex + 1);
+  const dotIndex = domain.indexOf(".");
+  const hasValidShape =
+    atIndex > 0 &&
+    atIndex === normalizedValue.lastIndexOf("@") &&
+    atIndex < normalizedValue.length - 1 &&
+    dotIndex > 0 &&
+    dotIndex < domain.length - 1 &&
+    !/\s/.test(normalizedValue);
+
+  return hasValidShape ? `mailto:${encodeURIComponent(normalizedValue)}` : null;
 }
 
-function DetailField({ label, value }: { label: string; value?: string }) {
+function DetailField({ label, value }: { readonly label: string; readonly value?: string }) {
   return (
     <div>
       <dt className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</dt>
@@ -42,17 +53,26 @@ function DetailField({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function VendorInterestDetailPage({ interest }: { interest: AdminVendorInterest }) {
+export function VendorInterestDetailPage({ interest }: { readonly interest: AdminVendorInterest }) {
   const instagram = instagramHref(interest.instagram);
   const phone = phoneHref(interest.phone);
   const email = emailHref(interest.email);
   const sentAt = interest.createdAt
-    ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(
-        new Date(interest.createdAt.replace(" ", "T") + "Z"),
-      )
+    ? new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "America/Sao_Paulo",
+      }).format(new Date(interest.createdAt.replace(" ", "T") + "Z"))
     : "Não informado";
   const hasCustomer = Boolean(interest.customer);
   const isPublic = interest.visibility === "public" || !hasCustomer;
+  let soldPapelitoLabel: string | undefined;
+
+  if (interest.hasSoldPapelito === "sim") {
+    soldPapelitoLabel = "Sim";
+  } else if (interest.hasSoldPapelito === "nao") {
+    soldPapelitoLabel = "Não";
+  }
 
   return (
     <div className="space-y-5">
@@ -97,7 +117,7 @@ export function VendorInterestDetailPage({ interest }: { interest: AdminVendorIn
               <DetailField label="CNPJ" value={interest.cnpj} />
               <DetailField label="Responsável" value={[interest.firstName, interest.lastName].filter(Boolean).join(" ")} />
               <DetailField label="Customer relacionado" value={hasCustomer ? `${interest.customer?.displayName || interest.customer?.email} (#${interest.customer?.id})` : "Sem conta vinculada (manifestação pública)"} />
-              <DetailField label="Já vende Papelito" value={interest.hasSoldPapelito === "sim" ? "Sim" : interest.hasSoldPapelito === "nao" ? "Não" : undefined} />
+              <DetailField label="Já vende Papelito" value={soldPapelitoLabel} />
               <DetailField label="Como conheceu a Papelito" value={interest.discoveryChannel} />
             </dl>
           </Panel>

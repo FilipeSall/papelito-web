@@ -27,6 +27,7 @@ function formatExpiry(value?: string) {
     : new Intl.DateTimeFormat("pt-BR", {
         dateStyle: "medium",
         timeStyle: "short",
+        timeZone: "America/Sao_Paulo",
       }).format(date);
 }
 

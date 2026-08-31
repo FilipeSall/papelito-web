@@ -54,7 +54,9 @@ export function MessageThreadsList({
             >
               <div className="flex justify-between gap-3">
                 <p className="text-sm font-semibold text-brand-dark">
-                  Pedido #{thread.orderNumber}
+                  {thread.context === "pagarme_bank_account_update"
+                    ? "Autorização bancária Pagar.me"
+                    : `Pedido #${thread.orderNumber}`}
                 </p>
                 {thread.unreadCount > 0 ? (
                   <span className="rounded-full bg-brand-dark px-2 py-0.5 text-xs font-semibold text-brand-yellow">

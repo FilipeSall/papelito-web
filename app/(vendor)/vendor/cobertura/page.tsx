@@ -8,13 +8,15 @@ export default async function VendorCoveragePage() {
   const snapshot = await getVendorCoverage();
 
   return (
-    <div className="space-y-4 md:space-y-5">
-      <VendorPageHeader
-        description="Defina as faixas de CEP que sua loja atende. Essas regras controlam a disponibilidade regional dos produtos para clientes."
-        eyebrow="Região atendida"
-        signal="cobertura"
-        title="Cobertura"
-      />
+    <div className="flex flex-col space-y-4 md:space-y-5 xl:h-full" data-fill-viewport>
+      <div className="shrink-0">
+        <VendorPageHeader
+          description="Defina as faixas de CEP que sua loja atende. Essas regras controlam a disponibilidade regional dos produtos para clientes."
+          eyebrow="Região atendida"
+          signal="cobertura"
+          title="Cobertura"
+        />
+      </div>
       <VendorCoverageManager snapshot={snapshot} />
     </div>
   );

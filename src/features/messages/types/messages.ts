@@ -11,6 +11,7 @@ export type MessageItem = {
 };
 
 export type MessageThreadSummary = {
+  context: "order" | "pagarme_bank_account_update";
   counterpartName: string;
   escalatedAt: string | null;
   lastMessage: MessageItem | null;

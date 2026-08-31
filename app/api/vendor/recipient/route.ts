@@ -10,6 +10,7 @@ type VendorRecipientResponse = {
   last_sync_at?: string;
   kyc_url?: string;
   last_error?: string;
+  last_error_code?: string;
 };
 
 function mapVendorRecipientResponse(payload: unknown) {
@@ -24,6 +25,7 @@ function mapVendorRecipientResponse(payload: unknown) {
     last_sync_at: body.last_sync_at || "",
     kyc_url: body.kyc_url || "",
     last_error: body.last_error || "",
+    last_error_code: body.last_error_code || "",
   };
 }
 

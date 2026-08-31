@@ -10,6 +10,7 @@ import type {
   VendorStockFilters,
   VendorStockSort,
   VendorStockTaxonomies,
+  VendorStockType,
 } from "@/features/vendor-stock/types/vendor-stock";
 
 import { buildStockHref } from "./stock-href";
@@ -18,6 +19,11 @@ const statusOptions: Array<[VendorStockFilter, string]> = [
   ["all", "Todos"],
   ["with_stock", "Com estoque"],
   ["zeroed_only", "Zerados"],
+];
+
+const typeOptions: Array<{ label: string; value: VendorStockType }> = [
+  { label: "Produtos", value: "products" },
+  { label: "Kits", value: "kits" },
 ];
 
 const sortOptions: Array<{ label: string; value: VendorStockSort }> = [
@@ -30,10 +36,12 @@ const sortOptions: Array<{ label: string; value: VendorStockSort }> = [
 
 const DEFAULTS: VendorStockFilters = {
   category: null,
+  collection: null,
   filter: "all",
   search: "",
   sort: "name_asc",
   tags: [],
+  type: "products",
 };
 
 const selectTriggerClassName =
@@ -68,6 +76,14 @@ export function StockFilterDrawer({
     ...taxonomies.categories.map((term) => ({
       label: `${term.name} (${term.count})`,
       value: String(term.id),
+    })),
+  ];
+
+  const collectionOptions = [
+    { label: "Todas", value: "" },
+    ...taxonomies.collections.map((collection) => ({
+      label: `${collection.name} (${collection.count})`,
+      value: collection.slug,
     })),
   ];
 
@@ -134,6 +150,28 @@ export function StockFilterDrawer({
               onChange={(value) => setDraft((c) => ({ ...c, category: value ? Number(value) : null }))}
             />
           ) : null}
+
+          {taxonomies.collections.length > 0 ? (
+            <CheckoutCustomSelect
+              label="Coleção"
+              labelClassName={selectLabelClassName}
+              options={collectionOptions}
+              placeholder="Todas"
+              triggerClassName={selectTriggerClassName}
+              value={draft.collection ?? ""}
+              onChange={(value) => setDraft((c) => ({ ...c, collection: value || null }))}
+            />
+          ) : null}
+
+          <CheckoutCustomSelect
+            label="Tipo"
+            labelClassName={selectLabelClassName}
+            options={typeOptions}
+            placeholder="Produtos"
+            triggerClassName={selectTriggerClassName}
+            value={draft.type}
+            onChange={(value) => setDraft((c) => ({ ...c, type: value as VendorStockType }))}
+          />
 
           <div className="space-y-2">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72">

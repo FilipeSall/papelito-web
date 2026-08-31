@@ -18,7 +18,7 @@ const INITIAL_PASSWORD_FORM: ProfilePasswordFormValues = {
 export function PasswordSettingsCard({
   variant = "default",
 }: Readonly<{
-  variant?: "default" | "embedded";
+  variant?: "default" | "embedded" | "plain";
 }>) {
   const [form, setForm] = useState(INITIAL_PASSWORD_FORM);
   const [feedback, setFeedback] = useState<FormFeedbackState>(null);
@@ -98,19 +98,27 @@ export function PasswordSettingsCard({
   }
 
   const isEmbedded = variant === "embedded";
+  const isPlain = variant === "plain";
+  const isFramed = !isEmbedded && !isPlain;
 
   return (
     <form
       className={
-        isEmbedded
-          ? "flex flex-1 flex-col px-5 py-6 md:px-6"
-          : "border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
+        isFramed
+          ? "border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
+          : isEmbedded
+            ? "flex flex-1 flex-col px-5 py-6 md:px-6"
+            : "flex flex-col"
       }
       onSubmit={handleSubmit}
     >
-      {!isEmbedded ? <div className="h-2 w-full bg-brand-yellow" /> : null}
+      {isFramed ? <div className="h-2 w-full bg-brand-yellow" /> : null}
 
-      <div className={isEmbedded ? "flex flex-1 flex-col gap-6" : "flex flex-col gap-6 px-6 py-6 sm:px-8"}>
+      <div
+        className={
+          isFramed ? "flex flex-col gap-6 px-6 py-6 sm:px-8" : "flex flex-1 flex-col gap-6"
+        }
+      >
         <div>
           <div className="mb-4 flex items-center gap-2">
             <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />

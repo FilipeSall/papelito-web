@@ -179,4 +179,33 @@ describe("formatNotification", () => {
     expect(formatted.body).toContain("urgência");
     expect(formatted.href).toBe("/vendor/pedidos/11880");
   });
+
+  it("sends a Pagar.me pending notification to vendor settings", () => {
+    const formatted = formatNotification(
+      buildNotification({ type: "vendor_pagarme_sync_pending", payload: {} }),
+    );
+
+    expect(formatted.title).toBe("Configuração Pagar.me pendente");
+    expect(formatted.body).toContain("começar a vender");
+    expect(formatted.href).toBe("/vendor/configuracoes");
+  });
+
+  it("describes Pagar.me support without referring to an order", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "support_message",
+        payload: {
+          context: "pagarme_bank_account_update",
+          recipient_role: "seller",
+          sender_name: "Suporte Papelito",
+          thread_id: 42,
+        },
+      }),
+    );
+
+    expect(formatted.title).toBe("Nova mensagem sobre a conta Pagar.me");
+    expect(formatted.body).toContain("conta bancária");
+    expect(formatted.body).not.toContain("pedido");
+    expect(formatted.href).toBe("/vendor/mensagens/42");
+  });
 });

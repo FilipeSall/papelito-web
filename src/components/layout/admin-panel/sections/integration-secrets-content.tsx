@@ -35,7 +35,11 @@ function errorMessage(error: ApiError | null) {
   }
 }
 
-export function IntegrationSecretsContent() {
+export function IntegrationSecretsContent({
+  variant = "default",
+}: {
+  variant?: "default" | "plain";
+} = {}) {
   const searchParams = useSearchParams();
   const confirmationStarted = useRef(false);
   const [items, setItems] = useState<IntegrationSecret[]>([]);
@@ -129,12 +133,9 @@ export function IntegrationSecretsContent() {
     });
   }
 
-  return (
-    <Panel className="max-w-3xl">
-      <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">Integrações</p>
-      </div>
-      <div className="space-y-5 px-5 py-6 md:px-6 md:py-7">
+  const body = (
+    <>
+      {variant === "plain" ? null : (
         <div>
           <h2 className="text-[1.85rem] font-semibold uppercase leading-none tracking-[0.12em]" style={{ fontFamily: "var(--font-admin-display)" }}>
             Credenciais de integração
@@ -143,20 +144,33 @@ export function IntegrationSecretsContent() {
             Os valores nunca são exibidos novamente. Para editar uma credencial, informe sua senha atual.
           </p>
         </div>
+      )}
 
-        {feedback ? <FormFeedback feedback={feedback} /> : null}
-        {loading ? <p className="text-sm text-[#231f20]/70">Carregando integrações...</p> : null}
-        {!loading && items.length === 0 ? <p className="text-sm text-[#231f20]/70">Nenhuma integração está disponível neste ambiente.</p> : null}
-        {items.map((item) => (
-          <IntegrationSecretForm
-            disabled={isPending}
-            item={item}
-            key={item.slug}
-            onRemove={remove}
-            onSave={save}
-          />
-        ))}
+      {feedback ? <FormFeedback feedback={feedback} /> : null}
+      {loading ? <p className="text-sm text-[#231f20]/70">Carregando integrações...</p> : null}
+      {!loading && items.length === 0 ? <p className="text-sm text-[#231f20]/70">Nenhuma integração está disponível neste ambiente.</p> : null}
+      {items.map((item) => (
+        <IntegrationSecretForm
+          disabled={isPending}
+          item={item}
+          key={item.slug}
+          onRemove={remove}
+          onSave={save}
+        />
+      ))}
+    </>
+  );
+
+  if (variant === "plain") {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <Panel className="max-w-3xl">
+      <div className="border-b-2 border-[#231f20] bg-[#231f20] px-5 py-3 text-brand-yellow md:px-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.26em]">Integrações</p>
       </div>
+      <div className="space-y-5 px-5 py-6 md:px-6 md:py-7">{body}</div>
     </Panel>
   );
 }

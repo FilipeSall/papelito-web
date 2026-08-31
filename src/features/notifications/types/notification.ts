@@ -11,6 +11,7 @@ export type NotificationType =
   | "new_purchase"
   | "vendor_processing_overdue"
   | "vendor_registration_pending"
+  | "vendor_pagarme_sync_pending"
   | "shipment_posted"
   | "shipment_out_for_delivery"
   | "shipment_delivered"
