@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCartStore } from "@/features/cart";
+import { useCheckoutStore } from "@/features/checkout";
 import { buildCartItem } from "../../../../test/factories/cart";
 import { server } from "../../../../test/msw/server";
 import { renderWithProviders } from "../../../../test/utils/render-with-providers";
@@ -30,10 +31,95 @@ function createDeferred<T>() {
 describe("CartPageContent stock validation", () => {
   beforeEach(() => {
     pushMock.mockReset();
+    useCheckoutStore.getState().resetCheckout();
     useCartStore.setState({
       items: [buildCartItem({ id: "1", quantity: 5 })],
       coupon: null,
+      pricing: null,
+      pricingError: null,
     });
+  });
+
+  it("never reuses a shipping option persisted by a previous checkout", async () => {
+    const selectedOption = {
+      service: "PAC",
+      code: "03298",
+      name: "PAC CONTRATO AG",
+      price: 15.88,
+      deliveryTime: 5,
+    };
+    useCheckoutStore.setState({
+      addressForm: {
+        zipCode: "01310-930",
+        street: "Avenida Paulista",
+        number: "1000",
+        complement: "",
+        neighborhood: "Bela Vista",
+        city: "São Paulo",
+        state: "SP",
+      },
+      shippingQuote: {
+        quote: {
+          originCep: "01001000",
+          destinationCep: "01310930",
+          vendorId: 101,
+          options: [selectedOption],
+        },
+        selectedOption,
+      },
+    });
+    let pricingRequest: { shipping?: unknown } | null = null;
+    server.use(
+      http.post("/api/cart/pricing", async ({ request }) => {
+        pricingRequest = (await request.json()) as { shipping?: unknown };
+        return HttpResponse.json({
+          lines: [
+            {
+              productId: 1,
+              qty: 1,
+              vendorId: 101,
+              normalUnitCents: 4950,
+              subtotalCents: 4950,
+              discountCents: 0,
+              totalCents: 4950,
+              discountSource: "none",
+              promotionContext: "",
+            },
+          ],
+          coupon: null,
+          adjustments: [],
+          totals: {
+            subtotalCents: 4950,
+            discountCents: 0,
+            itemsCents: 4950,
+            shippingCents: pricingRequest.shipping ? 1588 : 0,
+            shippingDiscountCents: 0,
+            totalCents: 4950 + (pricingRequest.shipping ? 1588 : 0),
+          },
+          paymentRestrictions: {
+            creditCardMinimumCents: 100,
+            pixMinimumCents: 1,
+            boletoMinimumCents: 1,
+            installmentMinimumCents: 100,
+            maxInstallments: 6,
+          },
+        });
+      }),
+    );
+    useCartStore.setState({
+      items: [buildCartItem({ id: "1", quantity: 1, price: 49.5, originalPrice: 49.5 })],
+      coupon: null,
+      pricing: null,
+    });
+
+    renderWithProviders(<CartPageContent />);
+
+    await waitFor(() => expect(pricingRequest).not.toBeNull());
+    expect(pricingRequest).not.toHaveProperty("shipping");
+    expect(screen.getByText("A calcular no checkout")).toBeInTheDocument();
+    const totalRow = screen.getByText(/^Total$/i).parentElement;
+    expect(totalRow).not.toBeNull();
+    expect(within(totalRow as HTMLElement).getByText("R$ 49,50")).toBeInTheDocument();
   });
 
   it("limits a persisted quantity when the stock was reduced", async () => {

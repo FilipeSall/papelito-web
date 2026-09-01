@@ -860,9 +860,6 @@ export function useAdminProductsManager(
             ? Array.from(new Set([...currentDraft.tagIds, promotionTagId]))
             : currentDraft.tagIds.filter((id) => id !== promotionTagId);
 
-        // Desmarcar cancela o agendamento, não o preço: `salePrice` tem campo próprio e
-        // é o que habilita o toggle — limpá-lo aqui desabilitaria a opção que acabou de
-        // ser desmarcada, sem o preço de volta.
         return {
           ...currentDraft,
           tagIds: nextTagIds,

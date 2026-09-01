@@ -28,6 +28,7 @@ type PlaceOrderApiResponse = {
     discountCents?: number;
     itemsCents?: number;
     shippingCents?: number;
+    shippingDiscountCents?: number;
     totalCents?: number;
   };
 };

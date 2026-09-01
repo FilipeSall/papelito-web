@@ -45,6 +45,7 @@ export function buildCartCoupon(overrides: Partial<CartCoupon> = {}): CartCoupon
     code: "PAPELITO10",
     discountType: "fixed_cart",
     discountValue: 10,
+    freeShipping: false,
     appliedProductIds: [1],
     ...overrides,
   };

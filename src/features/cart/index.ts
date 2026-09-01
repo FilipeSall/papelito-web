@@ -15,7 +15,6 @@ export type {
 } from "./services/get-cart-stock";
 export { resolveCartVendor } from "./services/resolve-cart-vendor";
 export {
-  CART_SHIPPING_COST,
   getCartSummary,
 } from "./utils/get-cart-summary";
 export { normalizeProductImage } from "./utils/normalize-product-image";

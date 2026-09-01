@@ -48,6 +48,7 @@ export const cartHandlers = [
         discountCents: 0,
         itemsCents: subtotalCents,
         shippingCents,
+        shippingDiscountCents: 0,
         totalCents: subtotalCents + shippingCents,
       },
       paymentRestrictions: {

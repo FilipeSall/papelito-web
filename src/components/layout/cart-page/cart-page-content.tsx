@@ -15,6 +15,7 @@ import {
 } from "@/features/cart";
 import { formatBRL } from "@/lib/format-currency";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { ShippingSummaryRow } from "@/components/ui/shipping-summary-row";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   CartPaymentChip,
@@ -408,7 +409,12 @@ export function CartPageContent({ freeShippingMinimumCents = null }: CartPageCon
 
             <div className="mt-6 space-y-3">
               <CartSummaryRow label="Subtotal" value={formatBRL(summary.subtotal)} />
-              <CartSummaryRow label="Frete" value={formatBRL(summary.shipping)} />
+              <ShippingSummaryRow
+                isFreeShippingApplied={summary.isFreeShippingApplied}
+                labelClassName="text-sm tracking-[-0.1504px] text-text-tertiary"
+                shipping={summary.shipping}
+                shippingDiscount={summary.shippingDiscount}
+              />
               {summary.discount > 0 && (
                 <CartSummaryRow
                   label="Desconto"
@@ -417,13 +423,15 @@ export function CartPageContent({ freeShippingMinimumCents = null }: CartPageCon
                   valueClassName="text-sm font-medium text-[#16A34A]"
                 />
               )}
-              {summary.isFreeShippingCouponEligible ? (
+              {summary.isFreeShippingApplied ? null : summary.isFreeShippingCouponEligible ? (
                 <p className="text-xs text-[#16A34A]">
-                  Seu pedido atingiu o valor mínimo. Aplique seu cupom de frete grátis.
+                  {summary.shipping === null
+                    ? "Seu pedido atingiu o valor mínimo. Escolha a entrega no checkout para ativar o frete grátis."
+                    : "Seu pedido atingiu o valor mínimo e receberá frete grátis."}
                 </p>
               ) : summary.amountToFreeShippingCoupon !== null ? (
                 <p className="text-xs text-text-muted">
-                  Faltam {formatBRL(summary.amountToFreeShippingCoupon)} para se qualificar ao cupom de frete grátis.
+                  Faltam {formatBRL(summary.amountToFreeShippingCoupon)} para receber frete grátis.
                 </p>
               ) : null}
 

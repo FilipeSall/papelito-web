@@ -39,6 +39,7 @@ function isPricingCoupon(value: unknown) {
     typeof value.code === "string" &&
     ["percent", "fixed_cart"].includes(String(value.discountType)) &&
     isNonNegativeInteger(value.discountValueCents) &&
+    typeof value.freeShipping === "boolean" &&
     Array.isArray(value.appliedProductIds) &&
     value.appliedProductIds.every(isPositiveInteger) &&
     typeof value.applied === "boolean" &&
@@ -79,8 +80,10 @@ function isPricingQuote(value: unknown): value is CartPricingQuote {
     isNonNegativeInteger(totals.discountCents) &&
     isNonNegativeInteger(totals.itemsCents) &&
     isNonNegativeInteger(totals.shippingCents) &&
+    isNonNegativeInteger(totals.shippingDiscountCents) &&
     isNonNegativeInteger(totals.totalCents) &&
-    totals.itemsCents + totals.shippingCents === totals.totalCents &&
+    totals.shippingDiscountCents <= totals.shippingCents &&
+    totals.itemsCents + totals.shippingCents - totals.shippingDiscountCents === totals.totalCents &&
     isNonNegativeInteger(restrictions.creditCardMinimumCents) &&
     isNonNegativeInteger(restrictions.pixMinimumCents) &&
     isNonNegativeInteger(restrictions.boletoMinimumCents) &&

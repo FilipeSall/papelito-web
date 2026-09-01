@@ -10,6 +10,7 @@ export type Coupon = {
   status: CouponStatus;
   discountType: CouponDiscountType;
   amount: number;
+  freeShipping: boolean;
   dateExpires: string | null;
   usageLimit: number;
   usageLimitPerUser: number;
@@ -24,6 +25,7 @@ export type CouponInput = {
   code: string;
   discountType: CouponDiscountType;
   amount: number;
+  freeShipping: boolean;
   dateExpires: string | null;
   usageLimit: number;
   usageLimitPerUser: number;
@@ -66,6 +68,7 @@ export type CouponApplySuccess = {
   code: string;
   discountType: CouponDiscountType;
   discountValue: number;
+  freeShipping: boolean;
   appliedProductIds: number[];
   applied?: boolean;
   message?: string;

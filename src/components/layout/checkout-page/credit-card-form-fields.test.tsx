@@ -26,7 +26,11 @@ describe("CreditCardFormFields", () => {
 
     await user.click(screen.getByRole("button", { name: /selecione as parcelas/i }));
 
-    expect(screen.getAllByRole("option")).toHaveLength(10);
+    const installmentOptions = screen
+      .getAllByRole("option")
+      .filter((option) => (option as HTMLOptionElement).value !== "");
+
+    expect(installmentOptions).toHaveLength(10);
     expect(screen.getByRole("option", { name: "10x sem juros" })).toBeInTheDocument();
   });
 });

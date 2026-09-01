@@ -38,6 +38,7 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
     <div>
       <a
         className="inline-flex h-10 w-full items-center justify-center rounded-full border border-brand-dark px-5 text-sm font-black uppercase tracking-[0.12em] text-brand-dark transition hover:bg-brand-dark hover:text-white"
+        download
         href={`/api/profile/orders/${orderId}/receipt`}
       >
         Baixar recibo

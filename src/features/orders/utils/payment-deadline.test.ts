@@ -50,7 +50,13 @@ describe("isPaymentExpired", () => {
 
 describe("formatPaymentDeadline", () => {
   it("reports no deadline when expiry is absent", () => {
-    expect(formatPaymentDeadline(undefined, NOW)).toEqual({ label: "", expired: false, hasDeadline: false });
+    expect(formatPaymentDeadline(undefined, NOW)).toEqual({
+      label: "",
+      absoluteLabel: "",
+      remainingLabel: "",
+      expired: false,
+      hasDeadline: false,
+    });
   });
 
   it("shows minutes remaining for a near-future PIX deadline", () => {
@@ -59,6 +65,8 @@ describe("formatPaymentDeadline", () => {
     expect(result.hasDeadline).toBe(true);
     expect(result.label).toContain("Pague até");
     expect(result.label).toContain("faltam 24 min");
+    expect(result.remainingLabel).toBe("faltam 24 min");
+    expect(result.absoluteLabel).toBe("11/06/2026, 20:24");
   });
 
   it("shows days remaining for a boleto far in the future", () => {
@@ -70,6 +78,8 @@ describe("formatPaymentDeadline", () => {
   it("marks an expired deadline", () => {
     expect(formatPaymentDeadline("2026-06-11T22:00:00Z", NOW)).toEqual({
       label: "Pagamento expirado",
+      absoluteLabel: "11/06/2026, 19:00",
+      remainingLabel: "",
       expired: true,
       hasDeadline: true,
     });

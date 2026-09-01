@@ -2,7 +2,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { AdminKit } from "@/lib/server/admin-kits";
+
 import { KitsManager } from "./kits-manager";
+import {
+  createKitDraftFrom,
+  invalidKitDimensionFields,
+  kitDimensionError,
+  kitDimensionRange,
+  missingKitDimensionFields,
+} from "./kits-manager-draft";
 
 vi.mock("@/hooks/use-temporary-admin-media", () => ({
   useTemporaryAdminMedia: () => ({
@@ -90,7 +99,9 @@ describe("KitsManager", () => {
     await user.click(screen.getByRole("button", { name: "Excluir Kit teste" }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Excluir Kit?" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Excluir Kit?" }),
+    ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Excluir Kit" }));
@@ -104,5 +115,102 @@ describe("KitsManager", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Kit excluído e imagens exclusivas removidas.",
     );
+  });
+
+  it("abre o Kit da notificação e destaca somente as dimensões faltantes", async () => {
+    const user = userEvent.setup();
+    expect(kitDimensionRange("length")).toBe("11 a 100 cm");
+    expect(kitDimensionRange("width")).toBe("6 a 100 cm");
+    expect(kitDimensionRange("height")).toBe("0,4 a 100 cm");
+    expect(kitDimensionError("length", "4")).toBe("Mínimo: 11 cm.");
+    expect(kitDimensionError("width", "4")).toBe("Mínimo: 6 cm.");
+    expect(
+      invalidKitDimensionFields({ length: "4", width: "4", height: "0.4" }),
+    ).toEqual(["length", "width"]);
+
+    const kit = {
+      description: "",
+      id: 12,
+      imageSource: "custom" as const,
+      imageUrl: "/kit.webp",
+      items: [],
+      merchandise: [],
+      name: "Kit teste",
+      packageDimensions: { length: "", width: "20", height: "10" },
+      price: "10",
+      productId: 900,
+      referencePriceCents: 0,
+      salePrice: "",
+      shortDescription: "",
+      slug: "kit-teste",
+      status: "draft" as const,
+    };
+    expect(
+      missingKitDimensionFields({ length: "", width: "20", height: "10" }),
+    ).toEqual(["length"]);
+    expect(
+      createKitDraftFrom(kit, { highlightMissingDimensions: true })
+        .invalidDimensionFields,
+    ).toEqual(["length"]);
+
+    render(
+      <KitsManager
+        initialFocusKitId={12}
+        initialIssue="shipping-dimensions"
+        initialKits={[kit]}
+        initialProducts={[]}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "Comprimento (cm)" }),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Comprimento (cm)" }),
+    ).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Aceito: 6 a 100 cm")).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Largura (cm)" }),
+    ).not.toHaveAttribute("aria-invalid");
+    expect(
+      screen.getByRole("textbox", { name: "Altura (cm)" }),
+    ).not.toHaveAttribute("aria-invalid");
+
+    const infoButtons = screen.getAllByRole("button", {
+      name: "Mais informações",
+    });
+    for (const infoButton of infoButtons.slice(0, 3)) {
+      await user.hover(infoButton);
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Correios");
+      await user.unhover(infoButton);
+    }
+  });
+
+  it("normaliza dimensões numéricas retornadas pela API", () => {
+    const kit = {
+      description: "",
+      id: 12,
+      imageSource: "custom" as const,
+      imageUrl: "/kit.webp",
+      items: [],
+      merchandise: [],
+      name: "Kit teste",
+      packageDimensions: { length: 20, width: 10, height: 0.5 },
+      price: "10",
+      productId: 900,
+      referencePriceCents: 0,
+      salePrice: "",
+      shortDescription: "",
+      slug: "kit-teste",
+      status: "publish" as const,
+    } as unknown as AdminKit;
+
+    expect(createKitDraftFrom(kit).packageDimensions).toEqual({
+      length: "20",
+      width: "10",
+      height: "0.5",
+    });
   });
 });

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Panel } from "@/components/layout/operational-panel";
+import { ConfirmModal } from "@/components/ui";
 import { VendorCoverageRangesField } from "@/components/shared/vendor-coverage-ranges-field";
 import {
   type CoverageRangeValue,
@@ -72,6 +73,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
   const [editingId, setEditingId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [rangeToRemove, setRangeToRemove] = useState<VendorCoverageRange | null>(null);
   const editingRange = useMemo(
     () => items.find((item) => item.id === editingId) ?? null,
     [editingId, items],
@@ -182,12 +184,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
   }
 
   async function removeRange(item: VendorCoverageRange) {
-    const confirmed = window.confirm(`Remover a faixa ${item.minCepFormatted} a ${item.maxCepFormatted}?`);
-
-    if (!confirmed) {
-      return;
-    }
-
+    setRangeToRemove(null);
     setPendingAction(`delete:${item.id}`);
     try {
       const response = await fetch(`/api/vendor/coverage-ranges/${item.id}`, {
@@ -277,7 +274,7 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
                         <button
                           className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-rose-200 text-rose-700 transition hover:bg-rose-700 hover:text-white disabled:opacity-40"
                           disabled={pendingAction !== null}
-                          onClick={() => void removeRange(item)}
+                          onClick={() => setRangeToRemove(item)}
                           title="Remover faixa"
                           type="button"
                         >
@@ -340,6 +337,23 @@ export function VendorCoverageManager({ snapshot }: { snapshot: VendorCoverageSn
           </div>
         </div>
       </Panel>
+
+      <ConfirmModal
+        confirmLabel="Remover faixa"
+        description={
+          rangeToRemove
+            ? `A faixa ${rangeToRemove.minCepFormatted} a ${rangeToRemove.maxCepFormatted} deixa de ser atendida pela sua loja, e os produtos param de aparecer para quem tem CEP nela.`
+            : ""
+        }
+        isSubmitting={pendingAction !== null}
+        open={rangeToRemove !== null}
+        title="Remover faixa de CEP"
+        tone="danger"
+        onClose={() => setRangeToRemove(null)}
+        onConfirm={() => {
+          if (rangeToRemove) void removeRange(rangeToRemove);
+        }}
+      />
     </div>
   );
 }

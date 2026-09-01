@@ -97,6 +97,7 @@ function buildInitialState(coupon: Coupon | null): CouponInput {
       code: "",
       discountType: "percent",
       amount: 10,
+      freeShipping: false,
       dateExpires: null,
       usageLimit: 0,
       usageLimitPerUser: 0,
@@ -112,6 +113,7 @@ function buildInitialState(coupon: Coupon | null): CouponInput {
     code: coupon.code,
     discountType: coupon.discountType,
     amount: coupon.amount,
+    freeShipping: coupon.freeShipping,
     dateExpires: coupon.dateExpires ? coupon.dateExpires.slice(0, 10) : null,
     usageLimit: coupon.usageLimit,
     usageLimitPerUser: coupon.usageLimitPerUser,
@@ -311,8 +313,8 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
       return;
     }
 
-    if (form.amount <= 0) {
-      setError("O valor do desconto precisa ser maior que zero.");
+    if (form.amount <= 0 && !form.freeShipping) {
+      setError("Informe um valor de desconto ou marque o frete grátis.");
       return;
     }
 
@@ -322,7 +324,10 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
     }
 
     setSubmitting(true);
-    const message = await onSubmit({ ...form, code, role: "customer" }, coupon?.id ?? null);
+    const message = await onSubmit(
+      { ...form, amount: Math.max(0, form.amount), code, role: "customer" },
+      coupon?.id ?? null,
+    );
     setSubmitting(false);
     if (message) setError(message);
   }
@@ -406,23 +411,40 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
 
               <label className="block">
                 <CouponFieldLabel
-                  label={`Valor ${form.discountType === "percent" ? "(%)" : "(R$)"} *`}
+                  label={`Valor ${form.discountType === "percent" ? "(%)" : "(R$)"}`}
                   text={
                     form.discountType === "percent"
                       ? "Percentual de desconto aplicado sobre os itens elegiveis do pedido."
-                      : "Valor fixo abatido do total elegível do pedido."
+                      : "Valor fixo abatido do total elegível do pedido. Pode ficar em zero num cupom só de frete grátis."
                   }
                 />
                 <input
                   className={COUPON_FIELD_CLASS}
                   min={0}
                   onChange={(event) => update("amount", Number(event.target.value))}
-                  required
                   step={form.discountType === "percent" ? 1 : 0.01}
                   type="number"
                   value={form.amount}
                 />
               </label>
+
+              <div className="block">
+                <CouponFieldLabel
+                  label="Frete grátis"
+                  text="Abate a modalidade de entrega escolhida no checkout, desde que o subtotal atinja o mínimo configurado em Frete grátis."
+                />
+                <label className="flex h-11 cursor-pointer items-center gap-3 border-2 border-[#1a1a1a] bg-white px-3">
+                  <input
+                    checked={form.freeShipping}
+                    className="h-4 w-4 cursor-pointer accent-[#1a1a1a]"
+                    onChange={(event) => update("freeShipping", event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="text-sm font-black uppercase tracking-[0.12em] text-[#1a1a1a]">
+                    Concede frete grátis
+                  </span>
+                </label>
+              </div>
 
               <label className="block">
                 <CouponFieldLabel

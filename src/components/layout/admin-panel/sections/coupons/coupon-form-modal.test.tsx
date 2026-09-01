@@ -17,6 +17,7 @@ const CATALOG: ProductOption[] = [
 function coupon(overrides: Partial<Coupon> = {}): Coupon {
   return {
     amount: 10,
+  freeShipping: false,
     code: "VENDATESTE",
     dateExpires: null,
     discountType: "percent",

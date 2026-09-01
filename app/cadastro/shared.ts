@@ -96,3 +96,10 @@ export const BRAZILIAN_STATES: Array<{ value: string; label: string }> = [
   { value: "SE", label: "Sergipe" },
   { value: "TO", label: "Tocantins" },
 ];
+
+export const BRAZILIAN_STATE_OPTIONS = BRAZILIAN_STATES.map((uf) => ({
+  label: `${uf.value} — ${uf.label}`,
+  searchText: `${uf.value} ${uf.label}`,
+  triggerLabel: uf.value,
+  value: uf.value,
+}));

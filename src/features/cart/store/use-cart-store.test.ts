@@ -88,6 +88,7 @@ describe("useCartStore", () => {
       code: "CUPOM10",
       discountValue: 10,
       discountType: "fixed_cart",
+      freeShipping: false,
       appliedProductIds: [1, 2],
     });
   });
@@ -143,6 +144,7 @@ describe("useCartStore", () => {
         code: "DEZ",
         discountType: "percent",
         discountValueCents: 930,
+        freeShipping: false,
         appliedProductIds: [1],
         applied: true,
       },
@@ -152,6 +154,7 @@ describe("useCartStore", () => {
         discountCents: 930,
         itemsCents: 8370,
         shippingCents: 0,
+      shippingDiscountCents: 0,
         totalCents: 8370,
       },
       paymentRestrictions: {
@@ -178,7 +181,8 @@ describe("useCartStore", () => {
 
     expect(items[0]?.price).toBe(93);
     expect(summary.discount).toBe(0);
-    expect(summary.total).toBe(101.9);
+    expect(summary.shipping).toBeNull();
+    expect(summary.total).toBe(93);
   });
 
   it("keeps a flash-sale price when a coupon is removed", () => {
@@ -202,6 +206,7 @@ describe("useCartStore", () => {
         discountCents: 930,
         itemsCents: 8370,
         shippingCents: 0,
+      shippingDiscountCents: 0,
         totalCents: 8370,
       },
       paymentRestrictions: {

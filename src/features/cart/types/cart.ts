@@ -35,6 +35,7 @@ export interface CartCoupon {
   code: string;
   discountValue: number;
   discountType: "percent" | "fixed_cart";
+  freeShipping: boolean;
   appliedProductIds: number[];
   applied?: boolean;
   message?: string;
@@ -65,6 +66,7 @@ export interface CartPricingQuote {
     code: string;
     discountType: "percent" | "fixed_cart";
     discountValueCents: number;
+    freeShipping: boolean;
     appliedProductIds: number[];
     applied: boolean;
     message?: string;
@@ -75,6 +77,7 @@ export interface CartPricingQuote {
     discountCents: number;
     itemsCents: number;
     shippingCents: number;
+    shippingDiscountCents: number;
     totalCents: number;
   };
   paymentRestrictions: {
@@ -88,7 +91,10 @@ export interface CartPricingQuote {
 
 export interface CartSummary {
   subtotal: number;
-  shipping: number;
+  /** `null` enquanto nenhuma modalidade de entrega válida foi escolhida. */
+  shipping: number | null;
+  shippingDiscount: number;
+  isFreeShippingApplied: boolean;
   discount: number;
   total: number;
   totalItems: number;

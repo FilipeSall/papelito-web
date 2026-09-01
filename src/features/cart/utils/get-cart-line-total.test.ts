@@ -32,6 +32,7 @@ const pricing: CartPricingQuote = {
     discountCents: 1,
     itemsCents: 101,
     shippingCents: 0,
+      shippingDiscountCents: 0,
     totalCents: 101,
   },
   paymentRestrictions: {

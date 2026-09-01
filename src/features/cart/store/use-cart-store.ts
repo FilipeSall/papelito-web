@@ -145,8 +145,7 @@ function normalizePersistedCoupon(value: unknown): CartCoupon | null {
   const code = typeof value.code === "string" ? value.code.trim().toUpperCase() : "";
   const discountValue =
     typeof value.discountValue === "number" ? value.discountValue : Number(value.discountValue);
-  const discountType =
-    value.discountType === "fixed_cart" ? "fixed_cart" : "percent";
+  const discountType = value.discountType === "fixed_cart" ? "fixed_cart" : "percent";
   const appliedProductIds = Array.isArray(value.appliedProductIds)
     ? value.appliedProductIds
         .map((id) => (typeof id === "number" ? id : Number(id)))
@@ -161,6 +160,7 @@ function normalizePersistedCoupon(value: unknown): CartCoupon | null {
     code,
     discountValue,
     discountType,
+    freeShipping: value.freeShipping === true,
     appliedProductIds,
   };
 
@@ -324,6 +324,7 @@ export const useCartStore = create<CartState>()(
               code: result.code,
               discountValue: result.discountValue,
               discountType: result.discountType,
+              freeShipping: result.freeShipping,
               appliedProductIds: result.appliedProductIds,
               applied: result.applied ?? (result.discountValue > 0),
               message: result.message,
@@ -357,6 +358,7 @@ export const useCartStore = create<CartState>()(
               code: result.code,
               discountValue: result.discountValue,
               discountType: result.discountType,
+              freeShipping: result.freeShipping,
               appliedProductIds: result.appliedProductIds,
               applied: result.applied ?? (result.discountValue > 0),
               message: result.message,
@@ -402,6 +404,7 @@ export const useCartStore = create<CartState>()(
                 code: quote.coupon.code,
                 discountValue: quote.coupon.discountValueCents / 100,
                 discountType: quote.coupon.discountType,
+                freeShipping: quote.coupon.freeShipping,
                 appliedProductIds: quote.coupon.appliedProductIds,
                 applied: quote.coupon.applied,
                 message: quote.coupon.message,

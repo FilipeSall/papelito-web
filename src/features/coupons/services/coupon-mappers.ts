@@ -11,6 +11,7 @@ type WpCoupon = {
   code?: string;
   status?: string;
   discount_type?: string;
+  free_shipping?: boolean;
   amount?: number;
   date_expires?: string | null;
   usage_limit?: number;
@@ -55,6 +56,7 @@ export function mapWpCoupon(raw: WpCoupon | null | undefined): Coupon | null {
     status,
     discountType,
     amount: toNumber(raw.amount),
+    freeShipping: raw.free_shipping === true,
     dateExpires: typeof raw.date_expires === "string" && raw.date_expires.length > 0 ? raw.date_expires : null,
     usageLimit: toNumber(raw.usage_limit),
     usageLimitPerUser: toNumber(raw.usage_limit_per_user),
@@ -83,6 +85,7 @@ export function toWpCouponPayload(input: CouponInput): Record<string, unknown> {
   return {
     code: input.code,
     discount_type: input.discountType,
+    free_shipping: input.freeShipping,
     amount: input.amount,
     date_expires: input.dateExpires ?? "",
     usage_limit: input.usageLimit,

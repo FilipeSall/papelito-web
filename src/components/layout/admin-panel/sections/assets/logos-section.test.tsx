@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EMPTY_RICH_TEXT_CONTEXT } from "@/features/rich-text";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -359,7 +359,7 @@ describe("AssetsManager - seção de logos", () => {
 describe("AssetsManager - faixa de avisos e promoções", () => {
   it("edits, toggles, reorders and removes messages with confirmation", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const confirm = vi.spyOn(window, "confirm");
 
     renderManager();
     await openPromoMarqueeSection(user);
@@ -377,7 +377,13 @@ describe("AssetsManager - faixa de avisos e promoções", () => {
 
     await user.click(screen.getAllByRole("button", { name: "Remover" })[1]);
 
-    expect(confirm).toHaveBeenCalledWith("Remover esta mensagem da faixa?");
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveAccessibleName("Remover mensagem da faixa");
+    expect(confirm).not.toHaveBeenCalled();
+    expect(screen.getAllByText("⚡ Oferta atualizada").length).toBeGreaterThan(0);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remover mensagem" }));
+
     expect(screen.queryAllByText("⚡ Oferta atualizada")).toHaveLength(0);
     confirm.mockRestore();
   }, 15000);

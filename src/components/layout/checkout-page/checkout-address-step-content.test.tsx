@@ -189,15 +189,199 @@ describe("CheckoutAddressStepContent", () => {
     const advanceButton = screen.getByRole("button", { name: /próximo: pagamento/i });
     expect(advanceButton).toBeDisabled();
 
-    await userEvent.click(screen.getByRole("button", { name: /PAC.*R\$ 15,88/i }));
+    await userEvent.click(screen.getByRole("radio", { name: /PAC.*R\$ 15,88/i }));
 
     expect(advanceButton).toBeEnabled();
     expect(screen.getAllByText("R$ 15,88").length).toBeGreaterThan(0);
     expect(await screen.findByText("R$ 65,38")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /SEDEX.*R\$ 22,30/i }));
+    await userEvent.click(screen.getByRole("radio", { name: /SEDEX.*R\$ 22,30/i }));
+
+    expect(screen.getByRole("radio", { name: /SEDEX/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /PAC/i })).not.toBeChecked();
 
     expect(screen.getAllByText("R$ 22,30").length).toBeGreaterThan(0);
     expect(await screen.findByText("R$ 71,80")).toBeInTheDocument();
+  });
+
+  it("crosses out every shipping price and labels it free when the automatic minimum is reached", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              service: "PAC",
+              code: "03298",
+              name: "PAC Contrato",
+              price: 15.88,
+              delivery_time: 5,
+            },
+            {
+              service: "SEDEX",
+              code: "03220",
+              name: "SEDEX Contrato",
+              price: 22.3,
+              delivery_time: 2,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(
+      <CheckoutAddressStepContent freeShippingMinimumCents={4900} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("PAC Contrato")).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText("Frete grátis")).toHaveLength(2);
+    expect(screen.getByText("R$ 15,88", { selector: "del" })).toBeInTheDocument();
+    expect(screen.getByText("R$ 22,30", { selector: "del" })).toBeInTheDocument();
+  });
+
+  it("hides the company CEP shortcut when the company has no registered CEP", () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [],
+        }),
+      ),
+    );
+
+    renderWithProviders(
+      <CheckoutAddressStepContent
+        company={{ legalName: "Cerrado Papeis", cnpj: "99999003000148", zipCode: null }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /cep do cadastro da empresa/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("fills the CEP from the company registry and autocompletes the address", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "71200030",
+          vendor_id: 101,
+          options: [],
+        }),
+      ),
+      http.get("https://viacep.com.br/ws/71200030/json/", () =>
+        HttpResponse.json({
+          logradouro: "SHCES Quadra 401",
+          bairro: "Cruzeiro Novo",
+          localidade: "Brasilia",
+          uf: "DF",
+        }),
+      ),
+    );
+
+    useCheckoutStore.setState({
+      addressForm: {
+        zipCode: "",
+        street: "",
+        number: "",
+        complement: "",
+        neighborhood: "",
+        city: "",
+        state: "",
+      },
+    });
+
+    renderWithProviders(
+      <CheckoutAddressStepContent
+        company={{
+          legalName: "Cerrado Papeis",
+          cnpj: "99999003000148",
+          zipCode: "71200030",
+        }}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /usar o cep do cadastro da empresa/i }),
+    );
+
+    await waitFor(() => {
+      expect(useCheckoutStore.getState().addressForm.zipCode).toBe("71200-030");
+      expect(useCheckoutStore.getState().addressForm.city).toBe("Brasilia");
+      expect(useCheckoutStore.getState().addressForm.state).toBe("DF");
+    });
+
+    expect(
+      await screen.findByRole("button", {
+        name: /cep do cadastro da empresa ja aplicado|cep do cadastro da empresa já aplicado/i,
+      }),
+    ).toBeDisabled();
+  });
+
+  it("labels the company CEP shortcut with an icon button and a hover tooltip", () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [],
+        }),
+      ),
+    );
+
+    renderWithProviders(
+      <CheckoutAddressStepContent
+        company={{
+          legalName: "Cerrado Papeis",
+          cnpj: "99999003000148",
+          zipCode: "71200030",
+        }}
+      />,
+    );
+
+    const shortcut = screen.getByRole("button", {
+      name: /usar o cep do cadastro da empresa: 71200-030/i,
+    });
+
+    expect(shortcut).toHaveTextContent("");
+    expect(shortcut.querySelector("svg")).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { hidden: true })).toHaveTextContent(
+      "Usar CEP da empresa",
+    );
+  });
+
+  it("formats the company CNPJ in the buying-on-behalf-of header", () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [],
+        }),
+      ),
+    );
+
+    renderWithProviders(
+      <CheckoutAddressStepContent
+        company={{
+          legalName: "CERRADO PAPEIS E SUPRIMENTOS LTDA",
+          cnpj: "99999003000148",
+          zipCode: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("CNPJ 99.999.003/0001-48")).toBeInTheDocument();
+    expect(screen.getByText("Comprando em nome de")).toBeInTheDocument();
   });
 });

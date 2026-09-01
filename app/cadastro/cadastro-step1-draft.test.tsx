@@ -101,7 +101,7 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
     );
     expect(saved.name).toBe("Nome de Teste");
     expect(saved.email).toBe("teste@example.test");
-    expect(saved.phone).toBe("11999999999");
+    expect(saved.phone).toBe("(11) 99999-9999");
   });
 
   it("restaura o rascunho ao voltar para a etapa 1", () => {
@@ -113,7 +113,7 @@ describe("Cadastro etapa 1 — rascunho ao sair da página", () => {
 
     expect(screen.getByLabelText(/nome completo/i)).toHaveValue("Nome de Teste");
     expect(screen.getByLabelText(/e-mail/i)).toHaveValue("teste@example.test");
-    expect(screen.getByLabelText(/^telefone$/i)).toHaveValue("11999999999");
+    expect(screen.getByLabelText(/^telefone$/i)).toHaveValue("(11) 99999-9999");
   });
 
   it("preserva o cadastro como titular da nova empresa", () => {

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useCepLookup } from "./use-cep-lookup";
 import { formatZipCode } from "../utils/format-checkout-fields";
+import { isAddressFormComplete } from "../utils/checkout-step-access";
 import type { CheckoutAddressForm } from "../types/checkout";
 import { useCheckoutStore } from "../store/use-checkout-store";
 
@@ -26,16 +27,7 @@ export function useCheckoutAddressForm(): UseCheckoutAddressFormReturn {
 
   const { isLoading: cepLoading, error: cepError, fetchCep } = useCepLookup();
 
-  const isFormValid = useMemo(
-    () =>
-      form.zipCode.replace(/\D/g, "").length === 8 &&
-      Boolean(form.street.trim()) &&
-      Boolean(form.number.trim()) &&
-      Boolean(form.neighborhood.trim()) &&
-      Boolean(form.city.trim()) &&
-      Boolean(form.state.trim()),
-    [form],
-  );
+  const isFormValid = useMemo(() => isAddressFormComplete(form), [form]);
 
   function updateField<Key extends keyof CheckoutAddressForm>(
     key: Key,

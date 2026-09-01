@@ -12,10 +12,10 @@ describe("OrderReceiptActions", () => {
 
     render(<OrderReceiptActions orderId="42" />);
 
-    expect(screen.getByRole("link", { name: /baixar recibo/i })).toHaveAttribute(
-      "href",
-      "/api/profile/orders/42/receipt",
-    );
+    const downloadLink = screen.getByRole("link", { name: /baixar recibo/i });
+
+    expect(downloadLink).toHaveAttribute("href", "/api/profile/orders/42/receipt");
+    expect(downloadLink).toHaveAttribute("download");
 
     await user.click(screen.getByRole("button", { name: /enviar para meu e-mail/i }));
 

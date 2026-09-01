@@ -7,12 +7,14 @@ import {
   useCartStore,
   useCartSummary,
 } from "@/features/cart";
+import { CouponField } from "@/components/ui/coupon-field";
+import { ShippingSummaryRow } from "@/components/ui/shipping-summary-row";
 import { formatBRL } from "@/lib/format-currency";
 import { SecurityLockIcon } from "./checkout-icons";
 
 export function CheckoutOrderSummary() {
   const items = useCartStore((state) => state.items);
-  const summary = useCartSummary();
+  const summary = useCartSummary(undefined, { includeCheckoutShipping: true });
   const pricingError = useCartStore((state) => state.pricingError);
   const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(
@@ -21,7 +23,7 @@ export function CheckoutOrderSummary() {
   const confirmPricingAdjustments = useCartStore(
     (state) => state.confirmPricingAdjustments,
   );
-  const { isPricing } = useCartPricing();
+  const { isPricing } = useCartPricing({ includeCheckoutShipping: true });
 
   const orderLines = useMemo(
     () =>
@@ -48,6 +50,10 @@ export function CheckoutOrderSummary() {
         ))}
       </div>
 
+      <div className="mt-4 border-t border-[#F3F4F6] pt-4">
+        <CouponField />
+      </div>
+
       <div className="mt-4 border-t border-[#F3F4F6] pt-3">
         <div className="mt-2 flex items-center justify-between">
           <span className="text-sm text-text-tertiary">Subtotal</span>
@@ -61,10 +67,11 @@ export function CheckoutOrderSummary() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-text-tertiary">Frete</span>
-          <span className="text-sm font-medium text-brand-dark">{formatBRL(summary.shipping)}</span>
-        </div>
+        <ShippingSummaryRow
+          isFreeShippingApplied={summary.isFreeShippingApplied}
+          shipping={summary.shipping}
+          shippingDiscount={summary.shippingDiscount}
+        />
 
         <div className="mt-2 flex items-center justify-between">
           <span className="text-[28px] font-black leading-7 tracking-[-0.4492px] text-brand-dark">

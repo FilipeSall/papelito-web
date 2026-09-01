@@ -71,7 +71,9 @@ describe("formatNotification", () => {
     expect(formatted.icon).toBe("package");
     expect(formatted.title).toBe("Produto sem peso");
     expect(formatted.body).toContain("Tubelito Tradicional");
-    expect(formatted.href).toBe("/admin/products?focus=321&issue=missing-weight");
+    expect(formatted.href).toBe(
+      "/admin/products?focus=321&issue=missing-weight",
+    );
   });
 
   it("consolidates missing price and weight into one admin notification", () => {
@@ -89,7 +91,9 @@ describe("formatNotification", () => {
 
     expect(formatted.title).toBe("Cadastro de produto incompleto");
     expect(formatted.body).toContain("sem preço e sem peso");
-    expect(formatted.href).toBe("/admin/products?focus=321&issue=product-data-incomplete");
+    expect(formatted.href).toBe(
+      "/admin/products?focus=321&issue=product-data-incomplete",
+    );
   });
 
   it("formats a Kit logistics notification without treating it as a regular product", () => {
@@ -98,6 +102,7 @@ describe("formatNotification", () => {
         type: "product_data_incomplete",
         payload: {
           entity_type: "kit",
+          kit_id: 17,
           missing_dimensions: true,
           missing_weight: false,
           product_id: 321,
@@ -108,7 +113,9 @@ describe("formatNotification", () => {
 
     expect(formatted.title).toBe("Cadastro de Kit incompleto");
     expect(formatted.body).toContain("sem dimensões da embalagem");
-    expect(formatted.href).toBe("/admin/products?tab=kits");
+    expect(formatted.href).toBe(
+      "/admin/products?tab=kits&focus=17&issue=shipping-dimensions",
+    );
   });
 
   it("links a vendor interest notification to its detail inside Vendors", () => {

@@ -20,7 +20,7 @@ import {
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
-  BRAZILIAN_STATES,
+  BRAZILIAN_STATE_OPTIONS,
   CADASTRO_STEP1_ERROR_KEY,
   CADASTRO_STEP2_DRAFT_KEY,
   CADASTRO_STORAGE_KEY,
@@ -460,23 +460,19 @@ function CadastroEtapa2PageContent() {
                   required
                 />
                 <AuthSelectField
-                  id="state"
-                  name="state"
                   label="Estado"
+                  name="state"
+                  options={BRAZILIAN_STATE_OPTIONS}
+                  placeholder="UF"
+                  searchable
                   value={address.state}
-                  onChange={(event) => {
-                    const nextValue = event.currentTarget.value;
+                  onChange={(nextValue) => {
+                    // O input oculto não dispara o onChange do form, que é quem
+                    // alimenta o rascunho da etapa 2.
+                    valuesRef.current = { ...valuesRef.current, state: nextValue };
                     setAddress((current) => ({ ...current, state: nextValue }));
                   }}
-                  required
-                >
-                  <option value="">UF</option>
-                  {BRAZILIAN_STATES.map((uf) => (
-                    <option key={uf.value} value={uf.value}>
-                      {uf.value}
-                    </option>
-                  ))}
-                </AuthSelectField>
+                />
               </div>
 
               <AuthPasswordField
@@ -541,10 +537,12 @@ function CadastroEtapa2PageContent() {
                 </Link>
                 <div className="sm:flex-1">
                   <AuthSubmitButton
-                    icon={!isSubmitting ? <ArrowRightIcon className="h-4 w-4" /> : undefined}
-                    disabled={!acceptTerms || isSubmitting || !step1}
+                    icon={<ArrowRightIcon className="h-4 w-4" />}
+                    disabled={!acceptTerms || !step1}
+                    loading={isSubmitting}
+                    loadingLabel="Enviando"
                   >
-                    {isSubmitting ? "Enviando..." : "Enviar candidatura"}
+                    Enviar candidatura
                   </AuthSubmitButton>
                 </div>
               </div>

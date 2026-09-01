@@ -81,12 +81,22 @@ export async function ProductsContent({
     issueParam === "missing-weight" || issueParam === "product-data-incomplete"
       ? issueParam
       : null;
+  const focusKitParam = firstString(searchParams?.focus);
+  const initialFocusKitId = Number.parseInt(focusKitParam ?? "", 10);
+  const initialKitIssue =
+    issueParam === "shipping-dimensions" ? issueParam : null;
 
   return (
     <div className="space-y-5">
       <ProductsTabs activeTab={activeTab} />
       {activeTab === "kits" ? (
         <KitsManager
+          initialFocusKitId={
+            Number.isInteger(initialFocusKitId) && initialFocusKitId > 0
+              ? initialFocusKitId
+              : null
+          }
+          initialIssue={initialKitIssue}
           initialKits={kits}
           initialProducts={candidates?.items ?? []}
         />

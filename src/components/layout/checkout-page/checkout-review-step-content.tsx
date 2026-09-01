@@ -12,6 +12,7 @@ import {
 } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
+import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
 import { readGaIdentifiers } from "@/lib/analytics/ga-cookies";
 import { formatBRL } from "@/lib/format-currency";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -89,13 +90,8 @@ export function CheckoutReviewStepContent() {
       Boolean(activeBillingAddress.state.trim()));
   const canFinishOrder =
     isAddressValid && isBillingAddressValid && isPaymentValid;
-  const selectedShippingQuote = shippingQuote.selectedOption;
-  const currentShippingQuote = shippingQuote.quote;
-  const isShippingValid =
-    Boolean(selectedShippingQuote) &&
-    Boolean(currentShippingQuote) &&
-    currentShippingQuote?.destinationCep ===
-      addressForm.zipCode.replace(/\D/g, "");
+  const selectedShippingQuote = resolveSelectedShipping(shippingQuote, addressForm.zipCode);
+  const isShippingValid = Boolean(selectedShippingQuote);
   const placeOrderItems = items
     .map((item) => {
       const productId = Number.parseInt(item.id, 10);

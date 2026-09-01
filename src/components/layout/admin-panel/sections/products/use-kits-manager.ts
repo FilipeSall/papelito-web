@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 import { uploadDirectFile } from "@/lib/client/direct-upload";
@@ -11,6 +11,7 @@ import {
   createDraftMerchandise,
   createKitDraft,
   createKitDraftFrom,
+  invalidKitDimensionFields,
   kitDraftAttachmentIds,
   parseKitMoney,
 } from "./kits-manager-draft";
@@ -18,11 +19,15 @@ import { deleteKitDraft, saveKitDraft } from "./kits-manager-service";
 import type { KitDraft, UploadTarget } from "./kits-manager-types";
 
 type KitsManagerControllerArgs = Readonly<{
+  initialFocusKitId?: number | null;
+  initialIssue?: "shipping-dimensions" | null;
   initialKits: AdminKit[];
   initialProducts: AdminFlashSaleCandidate[];
 }>;
 
 export function useKitsManager({
+  initialFocusKitId = null,
+  initialIssue = null,
   initialKits,
   initialProducts,
 }: KitsManagerControllerArgs) {
@@ -38,6 +43,21 @@ export function useKitsManager({
   const [uploadingTargets, setUploadingTargets] = useState<UploadTarget[]>([]);
   const editorSession = useRef(0);
   const temporaryMedia = useTemporaryAdminMedia();
+  const handledInitialFocus = useRef(false);
+
+  useEffect(() => {
+    if (handledInitialFocus.current || !initialFocusKitId) return;
+
+    const focusedKit = kits.find((kit) => kit.id === initialFocusKitId);
+    if (!focusedKit) return;
+
+    handledInitialFocus.current = true;
+    openDraft(
+      createKitDraftFrom(focusedKit, {
+        highlightMissingDimensions: initialIssue === "shipping-dimensions",
+      }),
+    );
+  }, [initialFocusKitId, initialIssue, kits]);
 
   const selectedProductIds = useMemo(
     () => new Set(draft?.items.map((item) => item.productId) ?? []),
@@ -219,6 +239,16 @@ export function useKitsManager({
       editorSession.current += 1;
       setDraft(null);
     } catch (saveError) {
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              invalidDimensionFields: invalidKitDimensionFields(
+                current.packageDimensions,
+              ),
+            }
+          : current,
+      );
       setError(
         saveError instanceof Error
           ? saveError.message
@@ -249,7 +279,9 @@ export function useKitsManager({
     setError("");
     try {
       const deletion = await deleteKitDraft(kit.id);
-      setKits((current) => current.filter((currentKit) => currentKit.id !== kit.id));
+      setKits((current) =>
+        current.filter((currentKit) => currentKit.id !== kit.id),
+      );
       setDeleteTarget(null);
       setNotice(
         deletion.partial

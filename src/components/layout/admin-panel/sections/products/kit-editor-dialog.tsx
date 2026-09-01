@@ -17,7 +17,12 @@ import type { AdminKitMerchandise } from "@/lib/server/admin-kits";
 import { formatBRL } from "@/lib/format-currency";
 
 import { AdminSelectField } from "./components/admin-select-field";
-import { parseKitMoney } from "./kits-manager-draft";
+import {
+  KIT_PACKAGE_DIMENSION_RULES,
+  kitDimensionError,
+  kitDimensionRange,
+  parseKitMoney,
+} from "./kits-manager-draft";
 import type { KitDraft, UploadTarget } from "./kits-manager-types";
 
 const statusOptions = [
@@ -382,12 +387,26 @@ function KitPackageSection({
         ).map(([key, label]) => (
           <PackageDimensionField
             key={key}
+            error={
+              draft.invalidDimensionFields.includes(key) ||
+              (draft.packageDimensions[key].trim() !== "" &&
+                kitDimensionError(key, draft.packageDimensions[key]) !== "")
+                ? kitDimensionError(key, draft.packageDimensions[key])
+                : ""
+            }
             label={label}
+            max={KIT_PACKAGE_DIMENSION_RULES[key].max}
+            min={KIT_PACKAGE_DIMENSION_RULES[key].min}
             onChange={(value) =>
               onPatchDraft({
                 packageDimensions: { ...draft.packageDimensions, [key]: value },
+                invalidDimensionFields: draft.invalidDimensionFields.filter(
+                  (field) =>
+                    field !== key || kitDimensionError(key, value) !== "",
+                ),
               })
             }
+            range={kitDimensionRange(key)}
             value={draft.packageDimensions[key]}
           />
         ))}
@@ -774,27 +793,53 @@ function NumberField({
   );
 }
 function PackageDimensionField({
+  error,
   label,
+  max,
+  min,
   onChange,
+  range,
   value,
 }: Readonly<{
+  error: string;
   label: string;
+  max: number;
+  min: number;
   onChange: (value: string) => void;
+  range: string;
   value: string;
 }>) {
+  const inputId = `kit-package-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+  const errorId = `${inputId}-error`;
+
   return (
-    <label className="grid min-w-0 gap-1">
+    <div className="grid min-w-0 gap-1">
       <FieldLabel
         helpText="Os Correios calculam o frete pelas medidas da embalagem final já pronta para envio. Informe comprimento, largura e altura da caixa/pacote do Kit; não some as dimensões dos produtos internos."
         label={label}
       />
       <input
-        className="h-11 min-w-0 border-2 border-[#1a1a1a] bg-white px-3 text-sm"
+        aria-label={label}
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={Boolean(error) || undefined}
+        className={`h-11 min-w-0 border-2 bg-white px-3 text-sm ${error ? "border-[#c0392b] focus:border-[#c0392b] focus:ring-1 focus:ring-[#c0392b]" : "border-[#1a1a1a]"}`}
         inputMode="decimal"
+        max={max}
+        min={min}
         onChange={(event) => onChange(event.target.value)}
+        step="0.1"
         value={value}
       />
-    </label>
+      <p
+        className={
+          error ? "text-xs font-bold text-[#c0392b]" : "text-xs text-[#5e574c]"
+        }
+        id={error ? errorId : undefined}
+        role={error ? "alert" : undefined}
+      >
+        {error || `Aceito: ${range}`}
+      </p>
+    </div>
   );
 }
 function uploadButtonText(

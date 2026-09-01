@@ -9,15 +9,24 @@ import { KitsList } from "./kits-list";
 import { useKitsManager } from "./use-kits-manager";
 
 type KitsManagerProps = Readonly<{
+  initialFocusKitId?: number | null;
+  initialIssue?: "shipping-dimensions" | null;
   initialKits: AdminKit[];
   initialProducts: AdminFlashSaleCandidate[];
 }>;
 
 export function KitsManager({
+  initialFocusKitId = null,
+  initialIssue = null,
   initialKits,
   initialProducts,
 }: KitsManagerProps) {
-  const manager = useKitsManager({ initialKits, initialProducts });
+  const manager = useKitsManager({
+    initialFocusKitId,
+    initialIssue,
+    initialKits,
+    initialProducts,
+  });
 
   return (
     <>

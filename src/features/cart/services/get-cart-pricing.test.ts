@@ -72,6 +72,7 @@ describe("getCartPricing", () => {
             discountCents: 11979,
             itemsCents: 121,
             shippingCents: 0,
+            shippingDiscountCents: 0,
             totalCents: 121,
           },
           paymentRestrictions: {
@@ -134,6 +135,7 @@ describe("getCartPricing", () => {
             discountCents: 0,
             itemsCents: 121,
             shippingCents: 0,
+            shippingDiscountCents: 0,
             totalCents: 121,
           },
           paymentRestrictions: {

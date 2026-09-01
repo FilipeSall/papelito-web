@@ -37,6 +37,7 @@ function NavigationLoaderOverlay() {
         ) {
           return;
         }
+        if (url.pathname.startsWith("/api/")) return;
         setLoading(true);
       } catch {
         // href inválido — ignorar

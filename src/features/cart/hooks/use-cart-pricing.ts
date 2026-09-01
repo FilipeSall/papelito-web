@@ -3,15 +3,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCheckoutStore } from "@/features/checkout/store/use-checkout-store";
+import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
 import { getCartPricing } from "../services/get-cart-pricing";
 import { useCartStore } from "../store/use-cart-store";
 
-export function useCartPricing() {
+type UseCartPricingOptions = {
+  includeCheckoutShipping?: boolean;
+};
+
+export function useCartPricing({
+  includeCheckoutShipping = false,
+}: UseCartPricingOptions = {}) {
   const items = useCartStore((state) => state.items);
   const couponCode = useCartStore((state) => state.coupon?.code ?? null);
   const applyPricingQuote = useCartStore((state) => state.applyPricingQuote);
   const setPricingError = useCartStore((state) => state.setPricingError);
   const shippingQuote = useCheckoutStore((state) => state.shippingQuote);
+  const addressZipCode = useCheckoutStore((state) => state.addressForm.zipCode);
   const [isPricing, setIsPricing] = useState(false);
   const requestSequence = useRef(0);
   const itemsRef = useRef(items);
@@ -30,16 +38,18 @@ export function useCartPricing() {
         .join("|"),
     [items],
   );
-  const shippingSelection = useMemo(
-    () =>
-      shippingQuote.quote && shippingQuote.selectedOption
-        ? {
-            destinationCep: shippingQuote.quote.destinationCep,
-            selectedCode: shippingQuote.selectedOption.code,
-          }
-        : null,
-    [shippingQuote.quote, shippingQuote.selectedOption],
-  );
+  const shippingSelection = useMemo(() => {
+    if (!includeCheckoutShipping) return null;
+
+    const selected = resolveSelectedShipping(shippingQuote, addressZipCode);
+
+    return selected && shippingQuote.quote
+      ? {
+          destinationCep: shippingQuote.quote.destinationCep,
+          selectedCode: selected.code,
+        }
+      : null;
+  }, [addressZipCode, includeCheckoutShipping, shippingQuote]);
 
   useEffect(() => {
     const sequence = ++requestSequence.current;

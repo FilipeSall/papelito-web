@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
@@ -215,6 +216,7 @@ export function AssetsManager({
   const [persistedPromoMarquee, setPersistedPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
+  const [marqueeItemToRemove, setMarqueeItemToRemove] = useState<string | null>(null);
   const [promoMarqueeIssues, setPromoMarqueeIssues] = useState(
     initialPromoMarqueeSnapshot.issues,
   );
@@ -411,10 +413,7 @@ export function AssetsManager({
   }
 
   function removePromoMarqueeItem(id: string) {
-    if (!window.confirm("Remover esta mensagem da faixa?")) {
-      return;
-    }
-
+    setMarqueeItemToRemove(null);
     setPromoMarquee((current) =>
       normalizePromoMarqueeOrder(
         current.filter((message) => message.id !== id),
@@ -986,7 +985,7 @@ export function AssetsManager({
         onFeatureSave={saveHomeFeatures}
         onFeatureUploadIcon={handleFeatureIconUpload}
         onMove={movePromoMarqueeItem}
-        onRemove={removePromoMarqueeItem}
+        onRemove={setMarqueeItemToRemove}
         onSave={savePromoMarquee}
       />
 
@@ -1416,6 +1415,18 @@ export function AssetsManager({
           ))}
         </div>
       </CollapsiblePanel>
+
+      <ConfirmModal
+        confirmLabel="Remover mensagem"
+        description="A mensagem sai da faixa promocional da home assim que você salvar as alterações."
+        open={marqueeItemToRemove !== null}
+        title="Remover mensagem da faixa"
+        tone="danger"
+        onClose={() => setMarqueeItemToRemove(null)}
+        onConfirm={() => {
+          if (marqueeItemToRemove) removePromoMarqueeItem(marqueeItemToRemove);
+        }}
+      />
     </div>
   );
 }

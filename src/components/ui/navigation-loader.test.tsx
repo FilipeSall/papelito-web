@@ -21,9 +21,12 @@ function goTo(pathname: string, search = "") {
   window.history.replaceState(null, "", `${pathname}${search ? `?${search}` : ""}`);
 }
 
-function clickLink(href: string) {
+function clickLink(href: string, attributes: Record<string, string> = {}) {
   const anchor = document.createElement("a");
   anchor.setAttribute("href", href);
+  for (const [name, value] of Object.entries(attributes)) {
+    anchor.setAttribute(name, value);
+  }
   document.body.appendChild(anchor);
 
   act(() => {
@@ -69,6 +72,22 @@ describe("NavigationLoader", () => {
 
     goTo("/");
     rerender(<NavigationLoader />);
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("não exibe o overlay ao clicar em um link para uma rota de API", () => {
+    render(<NavigationLoader />);
+
+    clickLink("/api/profile/orders/14087/receipt");
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("não exibe o overlay ao clicar em um link de download", () => {
+    render(<NavigationLoader />);
+
+    clickLink("/arquivos/recibo.pdf", { download: "" });
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });

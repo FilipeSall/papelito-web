@@ -6,6 +6,17 @@ import type {
 
 import type { DraftMerchandise, KitDraft } from "./kits-manager-types";
 
+export type KitDimensionField = "length" | "width" | "height";
+
+export const KIT_PACKAGE_DIMENSION_RULES: Record<
+  KitDimensionField,
+  { label: string; min: number; max: number }
+> = {
+  length: { label: "comprimento", min: 11, max: 100 },
+  width: { label: "largura", min: 6, max: 100 },
+  height: { label: "altura", min: 0.4, max: 100 },
+};
+
 export function createKitDraft(): KitDraft {
   return {
     name: "",
@@ -19,6 +30,7 @@ export function createKitDraft(): KitDraft {
     shortDescription: "",
     description: "",
     packageDimensions: { length: "", width: "", height: "" },
+    invalidDimensionFields: [],
   };
 }
 
@@ -37,7 +49,16 @@ export function createDraftMerchandise(
   };
 }
 
-export function createKitDraftFrom(kit: AdminKit): KitDraft {
+export function createKitDraftFrom(
+  kit: AdminKit,
+  options: { highlightMissingDimensions?: boolean } = {},
+): KitDraft {
+  const packageDimensions = {
+    length: String(kit.packageDimensions?.length ?? ""),
+    width: String(kit.packageDimensions?.width ?? ""),
+    height: String(kit.packageDimensions?.height ?? ""),
+  };
+
   return {
     id: kit.id,
     name: kit.name,
@@ -54,12 +75,56 @@ export function createKitDraftFrom(kit: AdminKit): KitDraft {
     merchandise: kit.merchandise.map(createDraftMerchandise),
     shortDescription: kit.shortDescription,
     description: kit.description,
-    packageDimensions: kit.packageDimensions ?? {
-      length: "",
-      width: "",
-      height: "",
-    },
+    packageDimensions,
+    invalidDimensionFields: options.highlightMissingDimensions
+      ? missingKitDimensionFields(packageDimensions)
+      : [],
   };
+}
+
+export function missingKitDimensionFields(
+  dimensions: KitDraft["packageDimensions"],
+) {
+  return (["length", "width", "height"] as const).filter(
+    (field) =>
+      dimensions[field].trim() === "" ||
+      Number.parseFloat(dimensions[field].replace(",", ".")) <= 0,
+  );
+}
+
+export function kitDimensionRange(field: KitDimensionField) {
+  const rule = KIT_PACKAGE_DIMENSION_RULES[field];
+  return `${formatCentimeters(rule.min)} a ${formatCentimeters(rule.max)} cm`;
+}
+
+export function kitDimensionError(field: KitDimensionField, value: string) {
+  const normalizedValue = value.trim().replace(",", ".");
+  const rule = KIT_PACKAGE_DIMENSION_RULES[field];
+  if (normalizedValue === "") {
+    return `Informe o ${rule.label}.`;
+  }
+
+  const numericValue = Number.parseFloat(normalizedValue);
+  if (!Number.isFinite(numericValue) || numericValue < rule.min) {
+    return `Mínimo: ${formatCentimeters(rule.min)} cm.`;
+  }
+  if (numericValue > rule.max) {
+    return `Máximo: ${formatCentimeters(rule.max)} cm.`;
+  }
+
+  return "";
+}
+
+export function invalidKitDimensionFields(
+  dimensions: KitDraft["packageDimensions"],
+) {
+  return (["length", "width", "height"] as const).filter(
+    (field) => kitDimensionError(field, dimensions[field]) !== "",
+  );
+}
+
+function formatCentimeters(value: number) {
+  return value.toString().replace(".", ",");
 }
 
 export function kitDraftAttachmentIds(draft: KitDraft) {

@@ -6,8 +6,6 @@ import type {
   CartVendorGroup,
 } from "../types/cart";
 
-export const CART_SHIPPING_COST = 8.9;
-
 function roundMoney(value: number) {
   return Number(value.toFixed(2));
 }
@@ -83,17 +81,25 @@ export function getCartSummary(
     hasItems &&
     validFreeShippingMinimumCents !== null &&
     subtotalCents >= validFreeShippingMinimumCents;
+  // Frete só entra no total quando o comprador escolheu uma modalidade válida.
+  // Sem escolha o valor é desconhecido — `null` — e não há total definitivo.
   const quotedShipping =
     typeof shippingOverride === "number" && Number.isFinite(shippingOverride)
       ? Math.max(0, shippingOverride)
       : null;
-  const shipping = pricing && quotedShipping !== null
-    ? pricing.totals.shippingCents / 100
-    : quotedShipping !== null
-      ? quotedShipping
-      : hasItems
-        ? CART_SHIPPING_COST
+  const shipping =
+    quotedShipping === null
+      ? null
+      : pricing
+        ? roundMoney(pricing.totals.shippingCents / 100)
+        : roundMoney(quotedShipping);
+  const shippingDiscount =
+    shipping === null
+      ? 0
+      : pricing
+        ? roundMoney(Math.min(shipping, pricing.totals.shippingDiscountCents / 100))
         : 0;
+  const isFreeShippingApplied = shipping !== null && shippingDiscount > 0 && shippingDiscount >= shipping;
   const amountToFreeShippingCoupon =
     validFreeShippingMinimumCents === null
       ? null
@@ -102,11 +108,19 @@ export function getCartSummary(
   const itemsTotal = pricing
     ? roundMoney(pricing.totals.itemsCents / 100)
     : roundMoney(Math.max(0, subtotal - discount));
-  const total = roundMoney(itemsTotal + shipping);
+  const total = pricing
+    ? roundMoney(
+        (shipping === null
+          ? pricing.totals.itemsCents
+          : pricing.totals.totalCents) / 100,
+      )
+    : roundMoney(itemsTotal + (shipping ?? 0) - shippingDiscount);
 
   return {
     subtotal,
-    shipping: roundMoney(shipping),
+    shipping,
+    shippingDiscount,
+    isFreeShippingApplied,
     discount,
     total,
     totalItems,

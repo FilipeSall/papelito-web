@@ -6,7 +6,15 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { BaseModal } from "@/components/ui/base-modal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { postJson } from "@/lib/client/post-json";
+
+type PendingRoleChange = {
+  confirmLabel: string;
+  description: string;
+  role: "administrator" | "customer";
+  title: string;
+};
 
 type UserRoleActionsProps = {
   availableActions: {
@@ -32,6 +40,7 @@ export function UserRoleActions({
   const [isPending, startTransition] = useTransition();
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [activateModalOpen, setActivateModalOpen] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const [activating, setActivating] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: "error" | "success"; text: string } | null>(
     null,
@@ -39,11 +48,8 @@ export function UserRoleActions({
 
   const isEmailPending = emailVerificationStatus === "pending";
 
-  async function handleRoleChange(nextRole: "administrator" | "customer", prompt: string) {
-    if (busyAction || !window.confirm(prompt)) {
-      return;
-    }
-
+  async function handleRoleChange(nextRole: "administrator" | "customer") {
+    setPendingRoleChange(null);
     setBusyAction(nextRole);
     setFeedback(null);
 
@@ -111,10 +117,12 @@ export function UserRoleActions({
             className="inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={loading}
             onClick={() =>
-              handleRoleChange(
-                "administrator",
-                `Confirmar promoção de ${userName} para administrator?`,
-              )
+              setPendingRoleChange({
+                confirmLabel: "Promover para admin",
+                description: `${userName} passa a ter acesso total ao painel administrativo, incluindo dados de outros usuários e decisões sobre candidaturas.`,
+                role: "administrator",
+                title: "Promover para administrador",
+              })
             }
             type="button"
           >
@@ -132,10 +140,12 @@ export function UserRoleActions({
             className="inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={loading}
             onClick={() =>
-              handleRoleChange(
-                "customer",
-                `Remover ${userName} da operação ativa de vendor e voltar para customer?`,
-              )
+              setPendingRoleChange({
+                confirmLabel: "Voltar para customer",
+                description: `${userName} deixa a operação ativa de vendor e volta a ser cliente. O painel do vendor deixa de ficar acessível.`,
+                role: "customer",
+                title: "Vendor para customer",
+              })
             }
             type="button"
           >
@@ -153,10 +163,12 @@ export function UserRoleActions({
             className="inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-60"
             disabled={loading}
             onClick={() =>
-              handleRoleChange(
-                "customer",
-                `Confirmar rebaixamento de ${userName} para customer?`,
-              )
+              setPendingRoleChange({
+                confirmLabel: "Rebaixar para customer",
+                description: `${userName} perde o acesso ao painel administrativo e volta a ser cliente.`,
+                role: "customer",
+                title: "Rebaixar administrador",
+              })
             }
             type="button"
           >
@@ -260,6 +272,19 @@ export function UserRoleActions({
           </div>
         </div>
       </BaseModal>
+
+      <ConfirmModal
+        confirmLabel={pendingRoleChange?.confirmLabel ?? ""}
+        description={pendingRoleChange?.description ?? ""}
+        isSubmitting={busyAction !== null}
+        open={pendingRoleChange !== null}
+        title={pendingRoleChange?.title ?? ""}
+        tone="danger"
+        onClose={() => setPendingRoleChange(null)}
+        onConfirm={() => {
+          if (pendingRoleChange) void handleRoleChange(pendingRoleChange.role);
+        }}
+      />
     </div>
   );
 }

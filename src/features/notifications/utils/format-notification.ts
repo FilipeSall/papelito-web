@@ -1,7 +1,13 @@
 import { formatBRLIntl } from "@/lib/format-currency";
-import { VENDOR_PENDING_FIELD_LABELS, isVendorPendingFieldKey } from "@/features/revendedor/constants/pending-registration";
+import {
+  VENDOR_PENDING_FIELD_LABELS,
+  isVendorPendingFieldKey,
+} from "@/features/revendedor/constants/pending-registration";
 
-import type { NotificationItem, NotificationPayload } from "../types/notification";
+import type {
+  NotificationItem,
+  NotificationPayload,
+} from "../types/notification";
 
 export type FormattedNotification = {
   icon: "badge" | "check" | "megaphone" | "message" | "package" | "x";
@@ -17,12 +23,16 @@ function stringValue(payload: NotificationPayload, key: string) {
 
 function numberValue(payload: NotificationPayload, key: string) {
   const value = payload[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : Number(value);
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : Number(value);
 }
 
 function productHref(payload: NotificationPayload) {
   const productId = numberValue(payload, "product_id");
-  return Number.isInteger(productId) && productId > 0 ? `/produtos/${productId}` : "/produtos";
+  return Number.isInteger(productId) && productId > 0
+    ? `/produtos/${productId}`
+    : "/produtos";
 }
 
 function supportHref(payload: NotificationPayload) {
@@ -50,16 +60,20 @@ function supportHref(payload: NotificationPayload) {
 function logisticsHref(payload: NotificationPayload) {
   const orderId = numberValue(payload, "order_id");
   const seller = stringValue(payload, "recipient_role") === "seller";
-  if (!Number.isInteger(orderId) || orderId <= 0) return seller ? "/vendor/pedidos" : "/perfil";
+  if (!Number.isInteger(orderId) || orderId <= 0)
+    return seller ? "/vendor/pedidos" : "/perfil";
   return seller ? `/vendor/pedidos/${orderId}` : `/perfil/pedidos/${orderId}`;
 }
 
-export function formatNotification(notification: NotificationItem): FormattedNotification {
+export function formatNotification(
+  notification: NotificationItem,
+): FormattedNotification {
   const { payload } = notification;
 
   switch (notification.type) {
     case "company_owner_review_pending": {
-      const companyName = stringValue(payload, "companyName") || "Cadastro empresarial";
+      const companyName =
+        stringValue(payload, "companyName") || "Cadastro empresarial";
       const userId = numberValue(payload, "userId");
       const href = stringValue(payload, "href");
       const applicationId = stringValue(payload, "applicationId");
@@ -67,14 +81,13 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         icon: "badge",
         title: "Análise empresarial pendente",
         body: `${companyName} enviou um documento para revisão.`,
-        href:
-          /^pre:\d+$/.test(applicationId)
-            ? `/admin/users?preAccountApplication=${encodeURIComponent(applicationId)}`
-            : href.startsWith("/admin/users")
+        href: /^pre:\d+$/.test(applicationId)
+          ? `/admin/users?preAccountApplication=${encodeURIComponent(applicationId)}`
+          : href.startsWith("/admin/users")
             ? href
             : Number.isInteger(userId) && userId > 0
-            ? `/admin/users/${userId}?tab=company-review`
-            : "/admin/users",
+              ? `/admin/users/${userId}?tab=company-review`
+              : "/admin/users",
       };
     }
     case "company_owner_approved":
@@ -106,7 +119,8 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       };
     }
     case "favorite_on_promo": {
-      const productName = stringValue(payload, "product_name") || "Produto favorito";
+      const productName =
+        stringValue(payload, "product_name") || "Produto favorito";
       const promoLabel = stringValue(payload, "promo_label") || "promoção";
       const discountPercent = numberValue(payload, "discount_percent");
       const regularPrice = numberValue(payload, "regular_price");
@@ -190,24 +204,50 @@ export function formatNotification(notification: NotificationItem): FormattedNot
     case "product_data_incomplete": {
       const productName = stringValue(payload, "product_name") || "Produto";
       const productId = numberValue(payload, "product_id");
+      const kitId = numberValue(payload, "kit_id");
       const isKit = stringValue(payload, "entity_type") === "kit";
       const missingPrice = payload.missing_price === true;
       const missingWeight = payload.missing_weight === true;
       const missingDimensions = payload.missing_dimensions === true;
+      const missingDimensionFields = Array.isArray(
+        payload.missing_dimension_fields,
+      )
+        ? payload.missing_dimension_fields.filter(
+            (field): field is "length" | "width" | "height" =>
+              field === "length" || field === "width" || field === "height",
+          )
+        : [];
+      const missingDimensionsLabel =
+        missingDimensionFields.length > 0
+          ? `sem ${missingDimensionFields
+              .map((field) =>
+                field === "length"
+                  ? "comprimento"
+                  : field === "width"
+                    ? "largura"
+                    : "altura",
+              )
+              .join(", ")}`
+          : "sem dimensões da embalagem";
       const missingDetails = [
         missingPrice ? "sem preço" : "",
         missingWeight ? "sem peso" : "",
-        missingDimensions ? "sem dimensões da embalagem" : "",
-      ].filter(Boolean).join(" e ");
+        missingDimensions ? missingDimensionsLabel : "",
+      ]
+        .filter(Boolean)
+        .join(" e ");
 
       return {
         icon: "package",
-        title: isKit ? "Cadastro de Kit incompleto" : "Cadastro de produto incompleto",
+        title: isKit
+          ? "Cadastro de Kit incompleto"
+          : "Cadastro de produto incompleto",
         body: `O ${isKit ? "Kit" : "produto"} “${productName}” está ${missingDetails || "incompleto"}. Atualize essas informações para que ele possa ser utilizado corretamente no cálculo de frete.`,
-        href:
-          isKit
-            ? "/admin/products?tab=kits"
-            : Number.isInteger(productId) && productId > 0
+        href: isKit
+          ? Number.isInteger(kitId) && kitId > 0
+            ? `/admin/products?tab=kits&focus=${kitId}&issue=shipping-dimensions`
+            : "/admin/products?tab=kits"
+          : Number.isInteger(productId) && productId > 0
             ? `/admin/products?focus=${productId}&issue=product-data-incomplete`
             : "/admin/products",
       };
@@ -237,21 +277,31 @@ export function formatNotification(notification: NotificationItem): FormattedNot
       };
     case "new_purchase": {
       const orderId = numberValue(payload, "order_id");
-      const orderNumber = stringValue(payload, "order_number") || (orderId > 0 ? String(orderId) : "");
+      const orderNumber =
+        stringValue(payload, "order_number") ||
+        (orderId > 0 ? String(orderId) : "");
       const total = numberValue(payload, "total");
       const orderLabel = orderNumber ? `Pedido #${orderNumber}` : "Novo pedido";
-      const totalLabel = Number.isFinite(total) && total > 0 ? ` no valor de ${formatBRLIntl(total)}` : "";
+      const totalLabel =
+        Number.isFinite(total) && total > 0
+          ? ` no valor de ${formatBRLIntl(total)}`
+          : "";
 
       return {
         icon: "package",
         title: "Nova compra",
         body: `${orderLabel}${totalLabel} aguardando separação. Prepare o envio.`,
-        href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
+        href:
+          Number.isInteger(orderId) && orderId > 0
+            ? `/vendor/pedidos/${orderId}`
+            : "/vendor/pedidos",
       };
     }
     case "vendor_processing_overdue": {
       const orderId = numberValue(payload, "order_id");
-      const orderNumber = stringValue(payload, "order_number") || (orderId > 0 ? String(orderId) : "");
+      const orderNumber =
+        stringValue(payload, "order_number") ||
+        (orderId > 0 ? String(orderId) : "");
       const daysOverdue = numberValue(payload, "days_overdue");
       const orderLabel = orderNumber ? `Pedido #${orderNumber}` : "Um pedido";
       const daysLabel =
@@ -263,14 +313,24 @@ export function formatNotification(notification: NotificationItem): FormattedNot
         icon: "package",
         title: "Pedido atrasado",
         body: `${orderLabel} passou do prazo de separação${daysLabel}. Separe com urgência.`,
-        href: Number.isInteger(orderId) && orderId > 0 ? `/vendor/pedidos/${orderId}` : "/vendor/pedidos",
+        href:
+          Number.isInteger(orderId) && orderId > 0
+            ? `/vendor/pedidos/${orderId}`
+            : "/vendor/pedidos",
       };
     }
     case "vendor_registration_pending": {
       const pendingFields = Array.isArray(payload.pending_fields)
         ? payload.pending_fields
-            .map((value) => (typeof value === "string" && isVendorPendingFieldKey(value) ? value : null))
-            .filter((value): value is keyof typeof VENDOR_PENDING_FIELD_LABELS => value !== null)
+            .map((value) =>
+              typeof value === "string" && isVendorPendingFieldKey(value)
+                ? value
+                : null,
+            )
+            .filter(
+              (value): value is keyof typeof VENDOR_PENDING_FIELD_LABELS =>
+                value !== null,
+            )
         : [];
       const firstFields = pendingFields
         .slice(0, 2)
@@ -355,7 +415,9 @@ export function formatNotification(notification: NotificationItem): FormattedNot
 }
 
 export function formatRelativeTime(value: string) {
-  const normalized = value.includes("T") ? value : `${value.replace(" ", "T")}Z`;
+  const normalized = value.includes("T")
+    ? value
+    : `${value.replace(" ", "T")}Z`;
   const timestamp = new Date(normalized).getTime();
 
   if (!Number.isFinite(timestamp)) {

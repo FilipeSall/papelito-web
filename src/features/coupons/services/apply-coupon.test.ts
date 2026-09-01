@@ -19,6 +19,7 @@ describe("applyCouponClient", () => {
       code: "PAPELITO10",
       discountType: "fixed_cart",
       discountValue: 10,
+      freeShipping: false,
       appliedProductIds: [1],
     });
   });

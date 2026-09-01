@@ -18,6 +18,7 @@ import {
   uploadOwnerDocument,
 } from "@/features/company/client/company-client";
 import type { OwnerApplication } from "@/features/company/types/company";
+import { formatPhone } from "@/features/revendedor/utils/revendedor-formatters";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import {
   formatCep,
@@ -27,7 +28,7 @@ import {
   isValidCpf,
 } from "@/lib/validation/brazilian-documents";
 
-import { BRAZILIAN_STATES, type CadastroIntent, type CadastroPrefill } from "../shared";
+import { BRAZILIAN_STATE_OPTIONS, type CadastroIntent, type CadastroPrefill } from "../shared";
 import { CancelOnboardingModal } from "./cancel-onboarding-modal";
 
 const benefits = [
@@ -345,8 +346,13 @@ export function CompletarCadastroForm({
                 name="phone"
                 label="Telefone"
                 type="tel"
+                inputMode="tel"
                 placeholder="(11) 99999-9999"
                 autoComplete="tel"
+                maxLength={15}
+                onChange={(event) => {
+                  event.currentTarget.value = formatPhone(event.currentTarget.value);
+                }}
                 required
               />
 
@@ -463,23 +469,16 @@ export function CompletarCadastroForm({
                   required
                 />
                 <AuthSelectField
-                  id="state"
-                  name="state"
                   label="Estado"
+                  name="state"
+                  options={BRAZILIAN_STATE_OPTIONS}
+                  placeholder="UF"
+                  searchable
                   value={address.state}
-                  onChange={(event) => {
-                    const nextValue = event.currentTarget.value;
+                  onChange={(nextValue) => {
                     setAddress((current) => ({ ...current, state: nextValue }));
                   }}
-                  required
-                >
-                  <option value="">UF</option>
-                  {BRAZILIAN_STATES.map((uf) => (
-                    <option key={uf.value} value={uf.value}>
-                      {uf.value}
-                    </option>
-                  ))}
-                </AuthSelectField>
+                />
               </div>
 
               <AuthTextField
@@ -514,10 +513,11 @@ export function CompletarCadastroForm({
                 </button>
                 <div className="flex-1">
                   <AuthSubmitButton
-                    icon={!isSubmitting ? <ArrowRightIcon className="h-4 w-4" /> : undefined}
-                    disabled={isSubmitting}
+                    icon={<ArrowRightIcon className="h-4 w-4" />}
+                    loading={isSubmitting}
+                    loadingLabel="Enviando"
                   >
-                    {isSubmitting ? "Enviando..." : "Concluir"}
+                    Concluir
                   </AuthSubmitButton>
                 </div>
               </div>

@@ -57,22 +57,32 @@ vi.mock("@/components/auth/molecules", () => ({
     </label>
   ),
   AuthSelectField: ({
-    id,
     label,
+    name,
+    options,
     value,
     onChange,
-    children,
   }: {
-    id: string;
     label: string;
-    value?: string;
-    onChange?: React.ChangeEventHandler<HTMLSelectElement>;
-    children: React.ReactNode;
+    name: string;
+    options: ReadonlyArray<{ label: string; value: string }>;
+    value: string;
+    onChange: (value: string) => void;
   }) => (
-    <label htmlFor={id}>
+    <label htmlFor={name}>
       {label}
-      <select id={id} name={id} value={value} onChange={onChange}>
-        {children}
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      >
+        <option value="" />
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
       </select>
     </label>
   ),

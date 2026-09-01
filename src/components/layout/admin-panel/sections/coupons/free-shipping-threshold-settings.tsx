@@ -97,11 +97,11 @@ export function FreeShippingThresholdSettings({
           <div className="max-w-2xl">
             <div className="flex items-center gap-3">
               <TicketCheck className="h-5 w-5 text-[#6a5f00]" strokeWidth={2} />
-              <h2 className="text-base font-semibold text-[#1e1c10]">Frete grátis via cupom</h2>
+              <h2 className="text-base font-semibold text-[#1e1c10]">Frete grátis automático</h2>
             </div>
             <p className="mt-2 text-sm leading-6 text-[#4b4731]">
-              Defina o valor mínimo do pedido para elegibilidade ao cupom manual de frete grátis.
-              A cotação dos Correios não é alterada automaticamente.
+              Defina o subtotal mínimo para aplicar automaticamente o frete grátis.
+              A modalidade dos Correios continua visível, mas seu valor é integralmente abatido.
             </p>
           </div>
 

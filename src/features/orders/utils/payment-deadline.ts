@@ -35,6 +35,8 @@ export function isPaymentExpired(expiresAt: string | undefined, nowMs: number): 
 
 export type PaymentDeadline = {
   label: string;
+  absoluteLabel: string;
+  remainingLabel: string;
   expired: boolean;
   hasDeadline: boolean;
 };
@@ -62,16 +64,26 @@ export function formatPaymentDeadline(expiresAt: string | undefined, nowMs: numb
   const expiryMs = parseExpiry(expiresAt);
 
   if (expiryMs === null) {
-    return { label: "", expired: false, hasDeadline: false };
+    return { label: "", absoluteLabel: "", remainingLabel: "", expired: false, hasDeadline: false };
   }
 
   if (expiryMs <= nowMs) {
-    return { label: "Pagamento expirado", expired: true, hasDeadline: true };
+    return {
+      label: "Pagamento expirado",
+      absoluteLabel: deadlineFormatter.format(new Date(expiryMs)),
+      remainingLabel: "",
+      expired: true,
+      hasDeadline: true,
+    };
   }
 
   const formatted = deadlineFormatter.format(new Date(expiryMs));
+  const remaining = remainingLabel(expiryMs - nowMs);
+
   return {
-    label: `Pague até ${formatted} (${remainingLabel(expiryMs - nowMs)})`,
+    label: `Pague até ${formatted} (${remaining})`,
+    absoluteLabel: formatted,
+    remainingLabel: remaining,
     expired: false,
     hasDeadline: true,
   };

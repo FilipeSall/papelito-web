@@ -23,11 +23,5 @@ export default async function CheckoutPendingPaymentPage({
     notFound();
   }
 
-  return (
-    <main className="bg-bg-light">
-      <section className="mx-auto flex min-h-[calc(100vh-140px)] w-full max-w-391 items-center px-6 py-12 md:px-8">
-        <CheckoutPendingPayment initialOrder={order} />
-      </section>
-    </main>
-  );
+  return <CheckoutPendingPayment initialOrder={order} />;
 }

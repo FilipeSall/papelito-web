@@ -13,6 +13,7 @@ import {
 import { AuthSocialDivider, AuthTextField } from "@/components/auth/molecules";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { ToastCloseButton } from "@/components/ui/toast-close-button";
+import { formatPhone } from "@/features/revendedor/utils/revendedor-formatters";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
 import { getMaximumAdultBirthDate, validateAdultBirthDate } from "@/lib/validation/birth-date";
@@ -38,6 +39,10 @@ const benefits = [
 
 function handleCpfChange(event: ChangeEvent<HTMLInputElement>) {
   event.currentTarget.value = formatCpf(event.currentTarget.value);
+}
+
+function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatPhone(event.currentTarget.value);
 }
 
 function formDataString(formData: FormData, field: string): string {
@@ -125,6 +130,7 @@ function CadastroPageContent() {
     () => searchParams.get("feedback") === "google_account_required",
   );
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const intentRef = useRef(intent);
   const shouldFocusErrorRef = useRef(true);
@@ -215,6 +221,9 @@ function CadastroPageContent() {
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Enter em um campo dispara submit mesmo com o botão desabilitado.
+    if (isNavigating) return;
+
     const formData = new FormData(event.currentTarget);
     const cpf = formatCpf(formDataString(formData, "cpf")).trim();
     const cnpj = formatCnpj(formDataString(formData, "cnpj")).trim();
@@ -240,6 +249,9 @@ function CadastroPageContent() {
     }
 
     submittedRef.current = true;
+    // O `NavigationLoader` global só reage a clique em <a>, então esta navegação
+    // programática não tem feedback nenhum se a etapa 2 demorar a carregar.
+    setIsNavigating(true);
     window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(payload));
     window.sessionStorage.setItem(CADASTRO_STEP1_DRAFT_KEY, JSON.stringify(payload));
     router.push(
@@ -370,9 +382,12 @@ function CadastroPageContent() {
               name="phone"
               label="Telefone"
               type="tel"
+              inputMode="tel"
               placeholder="(11) 99999-9999"
               autoComplete="tel"
-              defaultValue={draft.phone}
+              maxLength={15}
+              onChange={handlePhoneChange}
+              defaultValue={formatPhone(draft.phone ?? "")}
               error={fieldErrors.phone}
               required
             />
@@ -436,7 +451,11 @@ function CadastroPageContent() {
             ) : null}
 
             <div className="pt-2">
-              <AuthSubmitButton icon={<ArrowRightIcon className="w-5 h-5" />}>
+              <AuthSubmitButton
+                icon={<ArrowRightIcon className="w-5 h-5" />}
+                loading={isNavigating}
+                loadingLabel="Carregando"
+              >
                 Próximo
               </AuthSubmitButton>
             </div>

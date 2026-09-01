@@ -8,6 +8,7 @@ type WpApplyResponse = {
   ok?: boolean;
   code?: string;
   discount_type?: CouponDiscountType | string;
+  free_shipping?: boolean;
   discount_value?: number;
   applied_product_ids?: number[];
   applied?: boolean;
@@ -96,12 +97,14 @@ export async function applyCouponClient(
   }
 
   const discountType = parsed.discount_type === "fixed_cart" ? "fixed_cart" : "percent";
+  const freeShipping = parsed.free_shipping === true;
 
   const result: CouponApplyResult = {
     ok: true,
     code: typeof parsed.code === "string" ? parsed.code : code.toUpperCase(),
     discountType,
     discountValue: typeof parsed.discount_value === "number" ? parsed.discount_value : 0,
+    freeShipping,
     appliedProductIds: Array.isArray(parsed.applied_product_ids)
       ? parsed.applied_product_ids.filter((id): id is number => Number.isInteger(id) && id > 0)
       : [],

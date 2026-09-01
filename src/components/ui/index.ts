@@ -6,7 +6,10 @@ export { ProductPrice } from "./product-price";
 export { AddToCartButton } from "./add-to-cart-button";
 export { FavoriteToggleButton } from "./favorite-toggle-button";
 export { Tag } from "./tag";
+export { ShippingSummaryRow } from "./shipping-summary-row";
+export { CouponField } from "./coupon-field";
 export { BaseModal } from "./base-modal";
+export { ConfirmModal } from "./confirm-modal";
 export { ToastCloseButton } from "./toast-close-button";
 export { PhoneInput } from "./phone-input";
 

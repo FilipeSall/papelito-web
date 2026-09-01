@@ -349,7 +349,7 @@ function normalizeTagKey(term: { name: string; slug: string }) {
     .replace(/&amp;/g, "e")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+/, "")
-    .replace(/-$/, "");
+    .replace(/-+$/, "");
 }
 
 function matchesTagKey(term: AdminProductTaxonomyTerm, key: string) {

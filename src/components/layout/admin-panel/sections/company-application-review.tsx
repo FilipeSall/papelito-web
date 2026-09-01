@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/ui";
 import type {
   AdminOwnerApplicationDetail,
   AdminOwnerApplications,
@@ -185,27 +186,23 @@ export function CompanyApplicationReview({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<"approve" | "reject" | null>(null);
   const current = data.current;
 
-  async function decide(action: "approve" | "reject") {
+  function requestDecision(action: "approve" | "reject") {
     if (current?.application.status !== "pending_manual_review") return;
     if (action === "reject" && !reason.trim()) {
       setMessage("Informe o motivo interno da reprovação.");
       return;
     }
-    if (
-      action === "approve" &&
-      !window.confirm("Confirmar a aprovação desta candidatura empresarial?")
-    ) {
-      return;
-    }
-    if (
-      action === "reject" &&
-      !window.confirm("Confirmar a reprovação terminal? O usuário só poderá iniciar uma nova candidatura.")
-    ) {
-      return;
-    }
 
+    setPendingAction(action);
+  }
+
+  async function decide(action: "approve" | "reject") {
+    if (current?.application.status !== "pending_manual_review") return;
+
+    setPendingAction(null);
     setBusy(true);
     setMessage(null);
     const response = await fetch(
@@ -363,7 +360,7 @@ export function CompanyApplicationReview({
             <button
               type="button"
               disabled={busy}
-              onClick={() => void decide("approve")}
+              onClick={() => requestDecision("approve")}
               className="border-2 border-[#1a1a1a] bg-brand-yellow px-5 py-3 text-xs font-black uppercase disabled:opacity-50"
             >
               Aprovar cadastro
@@ -371,7 +368,7 @@ export function CompanyApplicationReview({
             <button
               type="button"
               disabled={busy}
-              onClick={() => void decide("reject")}
+              onClick={() => requestDecision("reject")}
               className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-xs font-black uppercase text-white disabled:opacity-50"
             >
               Reprovar e encerrar
@@ -387,6 +384,27 @@ export function CompanyApplicationReview({
       ) : null}
 
       <ApplicationHistory items={data.history} />
+
+      <ConfirmModal
+        confirmLabel="Aprovar cadastro"
+        description="A empresa passa a comprar pelo marketplace e o titular recebe o aviso de aprovação."
+        isSubmitting={busy}
+        open={pendingAction === "approve"}
+        title="Confirmar aprovação"
+        onClose={() => setPendingAction(null)}
+        onConfirm={() => void decide("approve")}
+      />
+
+      <ConfirmModal
+        confirmLabel="Reprovar e encerrar"
+        description="A reprovação é terminal: o usuário só volta a comprar iniciando uma nova candidatura do zero."
+        isSubmitting={busy}
+        open={pendingAction === "reject"}
+        title="Confirmar reprovação"
+        tone="danger"
+        onClose={() => setPendingAction(null)}
+        onConfirm={() => void decide("reject")}
+      />
     </div>
   );
 }

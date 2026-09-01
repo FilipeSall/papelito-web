@@ -17,6 +17,7 @@ function coupon(overrides: Partial<Coupon> = {}): Coupon {
     code: "vendateste",
     dateExpires: null,
     discountType: "percent",
+    freeShipping: false,
     id: 77,
     minimumAmount: 0,
     productIds: [11798],

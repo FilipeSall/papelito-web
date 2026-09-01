@@ -9,6 +9,7 @@ export type DraftMerchandise = AdminKitMerchandise & { clientId: string };
 export type KitDraft = Omit<AdminKitPayload, "merchandise"> & {
   id?: number;
   imageUrl: string;
+  invalidDimensionFields: Array<"length" | "width" | "height">;
   merchandise: DraftMerchandise[];
 };
 

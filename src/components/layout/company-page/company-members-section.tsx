@@ -15,6 +15,7 @@ import {
   type CompanyRole,
 } from "@/features/company/types/company";
 import { memberStatusLabel, roleLabel } from "@/features/company/utils/labels";
+import { ConfirmModal } from "@/components/ui";
 
 import { ASSIGNABLE_ROLE_OPTIONS, CompanySelect, StatusBadge } from "./atoms";
 
@@ -32,6 +33,7 @@ export function CompanyMembersSection({ viewerRole, onChanged }: CompanyMembersS
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [memberToPromote, setMemberToPromote] = useState<CompanyMember | null>(null);
 
   const canManage = canManageMembers(viewerRole);
 
@@ -197,15 +199,7 @@ export function CompanyMembersSection({ viewerRole, onChanged }: CompanyMembersS
                       <MemberActionButton
                         busy={busy}
                         label="Transferir titularidade"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Transferir a titularidade para ${member.email}? Você passará a ser administrador.`,
-                            )
-                          ) {
-                            void run(member.memberId, () => transferOwnership(member.userId));
-                          }
-                        }}
+                        onClick={() => setMemberToPromote(member)}
                       />
                     ) : null}
                   </div>
@@ -215,6 +209,26 @@ export function CompanyMembersSection({ viewerRole, onChanged }: CompanyMembersS
           })}
         </ul>
       )}
+
+      <ConfirmModal
+        confirmLabel="Transferir titularidade"
+        description={
+          memberToPromote
+            ? `${memberToPromote.email} passa a ser o titular da empresa e você fica como administrador. Só o novo titular poderá desfazer isso.`
+            : ""
+        }
+        isSubmitting={pendingId !== null}
+        open={memberToPromote !== null}
+        title="Transferir titularidade"
+        tone="danger"
+        onClose={() => setMemberToPromote(null)}
+        onConfirm={() => {
+          if (!memberToPromote) return;
+          const member = memberToPromote;
+          setMemberToPromote(null);
+          void run(member.memberId, () => transferOwnership(member.userId));
+        }}
+      />
     </section>
   );
 }
