@@ -100,46 +100,48 @@ export function AnchoredSectionNav({
       className={`sticky z-20 border-y-2 border-[#1a1a1a] bg-[#1a1a1a] ${className}`}
       ref={navRef}
     >
-      <ul
-        className="relative grid py-2"
-        style={{ gridTemplateColumns: `repeat(${sections.length}, minmax(0, 1fr))` }}
-      >
-        <li
-          aria-hidden
-          className="pointer-events-none absolute top-2 bottom-2 left-0 bg-brand-yellow transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-          style={{
-            transform: `translateX(${activeIndex * 100}%)`,
-            width: `${100 / sections.length}%`,
-          }}
-        />
-        {sections.map((section) => {
-          const active = section.id === activeId;
+      <div className="p-2">
+        <ul
+          className="relative grid"
+          style={{ gridTemplateColumns: `repeat(${sections.length}, minmax(0, 1fr))` }}
+        >
+          <li
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 bg-brand-yellow transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+            style={{
+              transform: `translateX(${activeIndex * 100}%)`,
+              width: `${100 / sections.length}%`,
+            }}
+          />
+          {sections.map((section) => {
+            const active = section.id === activeId;
 
-          return (
-            <li className="min-w-0" key={section.id}>
-              <a
-                aria-current={active ? "true" : undefined}
-                className={`relative flex items-center justify-center gap-2 px-2 py-2 text-center text-[11px] font-black uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-yellow sm:tracking-[0.2em] ${
-                  active ? "text-[#1a1a1a]" : "text-[#f5f1e8]/70 hover:text-brand-yellow"
-                }`}
-                href={`#${section.id}`}
-                onClick={() => {
-                  pinnedRef.current = section.id;
-                  setActiveId(section.id);
-                }}
-              >
-                <span
-                  aria-hidden
-                  className={`hidden h-2 w-2 rotate-45 sm:inline-block ${
-                    active ? "bg-[#1a1a1a]" : "bg-brand-yellow/40"
+            return (
+              <li className="min-w-0" key={section.id}>
+                <a
+                  aria-current={active ? "true" : undefined}
+                  className={`relative flex items-center justify-center gap-2 px-2 py-2.5 text-center text-[11px] font-black uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-yellow sm:tracking-[0.2em] ${
+                    active ? "text-[#1a1a1a]" : "text-[#f5f1e8]/70 hover:text-brand-yellow"
                   }`}
-                />
-                {section.label}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+                  href={`#${section.id}`}
+                  onClick={() => {
+                    pinnedRef.current = section.id;
+                    setActiveId(section.id);
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className={`hidden h-2 w-2 rotate-45 sm:inline-block ${
+                      active ? "bg-[#1a1a1a]" : "bg-brand-yellow/40"
+                    }`}
+                  />
+                  {section.label}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }
