@@ -22,7 +22,7 @@ export function FeatureItem({ iconUrl, title, subtitle }: FeatureItemProps) {
         <span className="text-[0.6875rem] font-black uppercase leading-4 tracking-[0.16em] text-white">
           {title}
         </span>
-        <span className="truncate text-[0.6875rem] leading-4 text-white/70" data-numeric>
+        <span className="break-words text-[0.6875rem] leading-4 text-white/70" data-numeric>
           {subtitle}
         </span>
       </span>
