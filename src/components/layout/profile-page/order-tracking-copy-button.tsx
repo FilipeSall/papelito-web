@@ -29,7 +29,7 @@ export function OrderTrackingCopyButton({
   return (
     <button
       aria-label={label}
-      className="inline-flex size-6 items-center justify-center rounded text-gray-500 transition hover:bg-gray-200 hover:text-brand-dark"
+      className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] transition-colors hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
       onClick={handleCopy}
       type="button"
     >

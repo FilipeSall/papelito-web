@@ -3,6 +3,11 @@
 import { useCallback, useState } from "react";
 import { useSession } from "next-auth/react";
 
+import {
+  ProfilePageTitle,
+  ProfilePanel,
+  ProfilePanelBody,
+} from "@/components/layout/profile-page";
 import { fetchCompanyContext } from "@/features/company/client/company-client";
 import type { CompanyContext } from "@/features/company/types/company";
 import { blockMessageFor, roleLabel } from "@/features/company/utils/labels";
@@ -54,59 +59,69 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
       context.legacyMigrationStatus ?? "",
     );
 
+  const companyName = hasCompany
+    ? context.availableCompanies.find((company) => company.companyId === context.companyId)
+        ?.legalName ?? "Empresa"
+    : "Empresa B2B";
+  const showSelector = selectionRequired || context.availableCompanies.length > 1;
+  const hasEnvelopedContent = showSelector || hasCompany;
+
   return (
-    <div className="space-y-8" aria-busy={refreshing}>
-      <header className="space-y-1">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#231f20]/70">
-          Minha empresa
-        </p>
-        <h2 className="text-2xl font-black uppercase -tracking-tight text-[#1a1a1a]">
-          {hasCompany
-            ? context.availableCompanies.find((c) => c.companyId === context.companyId)?.legalName ??
-              "Empresa"
-            : "Empresa B2B"}
-        </h2>
-        {hasCompany ? (
-          <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#231f20]">
-            Seu papel: {roleLabel(context.membershipRole)} ·{" "}
-            {context.canPurchase ? "Compra liberada" : "Compra bloqueada"}
-          </p>
-        ) : null}
-      </header>
+    <div aria-busy={refreshing} className="flex flex-col gap-7">
+      <ProfilePageTitle
+        description={
+          hasCompany
+            ? `Seu papel: ${roleLabel(context.membershipRole)} · ${
+                context.canPurchase ? "compra liberada" : "compra bloqueada"
+              }.`
+            : "Vincule um CNPJ para comprar em nome da sua empresa."
+        }
+        title={companyName}
+      />
 
       {block ? (
         <CompanyBlockMessage
-          title={block.title}
           body={block.body}
-          cta={hasNoCompany ? { href: "/cadastro?intent=company", label: "Cadastrar minha empresa" } : undefined}
+          cta={
+            hasNoCompany
+              ? { href: "/cadastro?intent=company", label: "Cadastrar minha empresa" }
+              : undefined
+          }
+          title={block.title}
         />
       ) : null}
 
       {needsIdentity || legacyNeedsMigration ? (
-        <CompanyOnboardingForm
-          isLegacyMigration={legacyNeedsMigration}
-          onComplete={refresh}
-        />
+        <CompanyOnboardingForm isLegacyMigration={legacyNeedsMigration} onComplete={refresh} />
       ) : null}
-
-      {(selectionRequired || context.availableCompanies.length > 1) && (
-        <CompanySelector
-          companies={context.availableCompanies}
-          activeCompanyId={context.companyId}
-          onSelected={refresh}
-        />
-      )}
 
       {hasNoCompany && !needsIdentity ? <CompanyRequestAccessForm onRequested={refresh} /> : null}
 
-      {hasCompany ? (
-        <>
-          <CompanyDetailsSection context={context} onChanged={refresh} />
-          <CompanyAccessRequestsSection viewerRole={context.membershipRole} onChanged={refresh} />
-          <CompanyMembersSection viewerRole={context.membershipRole} onChanged={refresh} />
-          <CompanyInvitationsSection viewerRole={context.membershipRole} />
-          <CompanyAuditSection role={context.membershipRole} />
-        </>
+      {hasEnvelopedContent ? (
+        <ProfilePanel accent>
+          <ProfilePanelBody className="flex flex-col gap-8">
+            {showSelector ? (
+              <CompanySelector
+                activeCompanyId={context.companyId}
+                companies={context.availableCompanies}
+                onSelected={refresh}
+              />
+            ) : null}
+
+            {hasCompany ? (
+              <>
+                <CompanyDetailsSection context={context} onChanged={refresh} />
+                <CompanyAccessRequestsSection
+                  onChanged={refresh}
+                  viewerRole={context.membershipRole}
+                />
+                <CompanyMembersSection onChanged={refresh} viewerRole={context.membershipRole} />
+                <CompanyInvitationsSection viewerRole={context.membershipRole} />
+                <CompanyAuditSection role={context.membershipRole} />
+              </>
+            ) : null}
+          </ProfilePanelBody>
+        </ProfilePanel>
       ) : null}
     </div>
   );

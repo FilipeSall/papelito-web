@@ -6,15 +6,15 @@ type ProfileAvatarProps = {
 };
 
 /**
- * Avatar circular do perfil do usuário.
- * Exibe a foto do Google se disponível, ou o ícone padrão em círculo amarelo.
+ * Avatar do perfil, recortado como uma etiqueta de papel: quadrado, borda dura e sombra sem blur.
+ * Usa a foto do Google quando existe e cai no ícone sobre amarelo quando não existe.
  */
 export function ProfileAvatar({ image, name }: ProfileAvatarProps) {
   if (image) {
     return (
       <Image
         alt={name ?? "Avatar"}
-        className="h-20 w-20 shrink-0 rounded-full object-cover"
+        className="h-20 w-20 shrink-0 border-2 border-brand-yellow object-cover shadow-[6px_6px_0px_#ffe500]"
         height={80}
         src={image}
         width={80}
@@ -23,7 +23,7 @@ export function ProfileAvatar({ image, name }: ProfileAvatarProps) {
   }
 
   return (
-    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand-yellow">
+    <div className="flex h-20 w-20 shrink-0 items-center justify-center border-2 border-brand-yellow bg-brand-yellow shadow-[6px_6px_0px_rgba(255,229,0,0.28)]">
       <svg
         aria-hidden
         className="h-9 w-9 text-brand-dark"

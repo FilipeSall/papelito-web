@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ProfilePanel, profilePrimaryActionClass, profileSecondaryActionClass } from "./profile-panel";
 import { OrderStatus, OrderStatusBadge } from "./order-status-badge";
 
 export type Order = {
@@ -17,8 +18,8 @@ type OrderCardProps = {
 };
 
 /**
- * Card de pedido individual.
- * Exibe informações resumidas do pedido com botão para ver detalhes.
+ * Cartão de um pedido na lista da conta.
+ * Traz identificação, situação, total e a próxima ação disponível para o comprador.
  */
 export function OrderCard({ order }: OrderCardProps) {
   const formattedTotal = order.total.toLocaleString("pt-BR", {
@@ -27,44 +28,47 @@ export function OrderCard({ order }: OrderCardProps) {
   });
 
   const itemsLabel = order.itemsCount === 1 ? "item" : "itens";
+  const needsPayment = order.status === "awaiting_payment";
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl bg-white px-6 py-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.1)] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="text-base font-black tracking-[-0.31px] text-brand-dark">
-            {order.orderNumber}
-          </span>
-          <OrderStatusBadge status={order.status} />
+    <ProfilePanel tone="white">
+      <article className="flex flex-col gap-5 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
+        <div className="flex min-w-0 flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-lg font-black uppercase tracking-tight text-[#1a1a1a]">
+              {order.orderNumber}
+            </span>
+            <OrderStatusBadge status={order.status} />
+          </div>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/55">
+            {order.date} · {order.itemsCount} {itemsLabel}
+          </p>
+          {order.trackingCode ? (
+            <p className="text-xs font-bold tracking-[0.08em] text-[#1a1a1a]/75">
+              Rastreio {order.trackingCode}
+            </p>
+          ) : null}
         </div>
-        <span className="text-sm font-normal tracking-[-0.15px] text-gray-400">
-          {order.date}
-        </span>
-        <span className="text-sm font-normal tracking-[-0.15px] text-gray-500">
-          {order.itemsCount} {itemsLabel}
-        </span>
-        {order.trackingCode ? <code className="text-xs font-bold tracking-[0.08em] text-brand-dark">Rastreio: {order.trackingCode}</code> : null}
-      </div>
 
-      <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
-        <span className="text-base font-black tracking-[-0.44px] text-brand-dark sm:text-lg">
-          {formattedTotal}
-        </span>
-        {order.status === "awaiting_payment" ? (
-          <Link
-            className="inline-flex h-8 shrink-0 items-center rounded-full bg-brand-yellow px-4 text-[10px] font-black uppercase tracking-[0.2px] text-brand-dark transition hover:opacity-90"
-            href={`/checkout/pagamento/${order.id}`}
-          >
-            Concluir pagamento
-          </Link>
-        ) : null}
-        <Link
-          className="inline-flex h-8 shrink-0 items-center rounded-full bg-brand-dark px-4 text-[10px] font-black uppercase tracking-[0.2px] text-white transition hover:opacity-90"
-          href={`/perfil/pedidos/${order.id}`}
-        >
-          Ver Detalhes
-        </Link>
-      </div>
-    </article>
+        <div className="flex flex-col gap-4 md:items-end">
+          <span className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a] tabular-nums">
+            {formattedTotal}
+          </span>
+          <div className="flex flex-wrap gap-3">
+            {needsPayment ? (
+              <Link className={profilePrimaryActionClass} href={`/checkout/pagamento/${order.id}`}>
+                Concluir pagamento
+              </Link>
+            ) : null}
+            <Link
+              className={needsPayment ? profileSecondaryActionClass : profilePrimaryActionClass}
+              href={`/perfil/pedidos/${order.id}`}
+            >
+              Ver detalhes
+            </Link>
+          </div>
+        </div>
+      </article>
+    </ProfilePanel>
   );
 }

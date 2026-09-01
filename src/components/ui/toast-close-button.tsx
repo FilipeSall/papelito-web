@@ -31,7 +31,7 @@ export function ToastCloseButton({ onClose, tone = "yellow" }: ToastCloseButtonP
   return (
     <button
       aria-label="Fechar notificação"
-      className={`-mr-1 -mt-1 ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow ${TONE_CLASSNAME[tone]}`}
+      className={`-mr-1 -mt-1 ml-auto inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow ${TONE_CLASSNAME[tone]}`}
       onClick={onClose}
       type="button"
     >

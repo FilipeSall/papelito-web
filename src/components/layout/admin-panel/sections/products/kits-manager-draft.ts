@@ -67,6 +67,7 @@ export function createKitDraftFrom(
     price: kit.price,
     salePrice: kit.salePrice,
     imageSource: kit.imageSource,
+    imageAttachmentId: kit.imageAttachmentId,
     imageUrl: kit.imageUrl,
     items: kit.items.map(({ productId, quantity }) => ({
       productId,

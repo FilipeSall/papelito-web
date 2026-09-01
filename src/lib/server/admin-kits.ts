@@ -31,6 +31,7 @@ export type AdminKit = {
   status: "draft" | "publish";
   price: string;
   salePrice: string;
+  imageAttachmentId: number;
   imageUrl: string;
   imageSource: "fallback" | "kit" | "premium" | "custom";
   shortDescription: string;

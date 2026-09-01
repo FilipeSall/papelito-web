@@ -101,7 +101,7 @@ export function FavoritePromotionEmailSettingsCard({
             <button
               aria-checked={isEnabled}
               className={[
-                "relative inline-flex h-11 w-20 shrink-0 items-center border-2 border-[#1a1a1a] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60",
+                "relative inline-flex h-11 w-20 shrink-0 cursor-pointer items-center border-2 border-[#1a1a1a] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60",
                 isEnabled ? "bg-[#1a1a1a]" : "bg-white",
               ].join(" ")}
               disabled={isPending}

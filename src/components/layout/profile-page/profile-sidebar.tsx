@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { ProfilePanel } from "./profile-panel";
 import {
   AddressIcon,
   FavoritesIcon,
@@ -14,17 +15,16 @@ import { ProfileSidebarItem } from "./profile-sidebar-item";
 import { useProfileShell } from "./profile-shell-provider";
 
 const menuItems = [
-  { href: "/perfil", label: "Meus Pedidos", icon: OrdersIcon },
-  { href: "/perfil/dados", label: "Meus Dados", icon: UserDataIcon },
-  { href: "/perfil/empresa", label: "Minha Empresa", icon: UserDataIcon },
+  { href: "/perfil", label: "Meus pedidos", icon: OrdersIcon },
+  { href: "/perfil/dados", label: "Meus dados", icon: UserDataIcon },
+  { href: "/perfil/empresa", label: "Minha empresa", icon: UserDataIcon },
   { href: "/perfil/enderecos", label: "Endereços", icon: AddressIcon },
   { href: "/perfil/favoritos", label: "Favoritos", icon: FavoritesIcon },
   { href: "/perfil/configuracoes", label: "Configurações", icon: SettingsIcon },
 ];
 
 /**
- * Sidebar de navegação do perfil do usuário.
- * Exibe menu com itens de navegação e botão de logout.
+ * Navegação lateral do painel do comprador, no mesmo recorte dos painéis de vendor e admin.
  */
 export function ProfileSidebar() {
   const pathname = usePathname();
@@ -32,8 +32,11 @@ export function ProfileSidebar() {
   const isSeller = customer.role.trim().toLowerCase() === "seller";
 
   return (
-    <aside className="w-full overflow-hidden rounded-2xl bg-white shadow-sm lg:w-72 lg:shrink-0 xl:w-80">
-      <nav className="flex flex-col">
+    <ProfilePanel
+      accent
+      className="w-full self-start lg:sticky lg:top-6 lg:w-72 lg:shrink-0 xl:w-80"
+    >
+      <nav aria-label="Seções da minha conta" className="flex flex-col">
         {isSeller ? (
           <ProfileSidebarItem
             href="/vendor/dashboard"
@@ -59,6 +62,6 @@ export function ProfileSidebar() {
           variant="danger"
         />
       </nav>
-    </aside>
+    </ProfilePanel>
   );
 }

@@ -2,12 +2,16 @@ import Link from "next/link";
 
 import { Order, OrderCard } from "./order-card";
 import { ProfileEmptyShoppingState } from "./profile-empty-shopping-state";
+import { ProfilePageTitle } from "./profile-panel";
 
 type OrdersListProps = {
   orders: Order[];
   currentPage: number;
   totalPages: number;
 };
+
+const pageLinkClass =
+  "inline-flex h-11 min-w-11 items-center justify-center border-2 px-3 text-xs font-black uppercase tracking-[0.14em] transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]";
 
 function buildProfileHref(page: number) {
   return page <= 1 ? "/perfil" : `/perfil?page=${page}`;
@@ -43,11 +47,10 @@ function getPaginationItems(currentPage: number, totalPages: number) {
     "...",
     totalPages,
   ] as const;
-};
+}
 
 /**
- * Lista de pedidos do usuário.
- * Exibe título e cards de pedidos.
+ * Lista paginada dos pedidos da conta, com o estado vazio de primeira compra.
  */
 export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps) {
   const hasPrevious = currentPage > 1;
@@ -55,12 +58,17 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
   const paginationItems = getPaginationItems(currentPage, totalPages);
 
   return (
-    <section className="flex flex-1 flex-col gap-4">
-      <h2 className="text-xl font-black uppercase tracking-[-0.45px] text-brand-dark">
-        Meus Pedidos
-      </h2>
+    <section className="flex flex-1 flex-col gap-7">
+      <ProfilePageTitle
+        description={
+          orders.length === 0
+            ? "Cada compra fechada aparece aqui com situação, rastreio e recibo."
+            : "Acompanhe a situação de cada compra, o rastreio e o recibo."
+        }
+        title="Meus pedidos"
+      />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         {orders.length === 0 ? (
           <ProfileEmptyShoppingState
             ctaLabel="Ir as compras"
@@ -75,14 +83,14 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
       {totalPages > 1 ? (
         <nav
           aria-label="Paginação de pedidos"
-          className="mt-2 flex flex-wrap items-center justify-center gap-2"
+          className="flex flex-wrap items-center justify-center gap-2"
         >
           <Link
             aria-disabled={!hasPrevious}
-            className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-bold transition-colors ${
+            className={`${pageLinkClass} ${
               hasPrevious
-                ? "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
-                : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
+                ? "border-[#1a1a1a] bg-white text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_#1a1a1a]"
+                : "pointer-events-none border-[#1a1a1a]/25 bg-transparent text-[#1a1a1a]/35"
             }`}
             href={hasPrevious ? buildProfileHref(currentPage - 1) : "#"}
           >
@@ -93,7 +101,8 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
             if (item === "...") {
               return (
                 <span
-                  className="inline-flex h-10 min-w-8 items-center justify-center text-sm font-semibold text-text-muted"
+                  aria-hidden
+                  className="inline-flex h-11 min-w-8 items-center justify-center text-sm font-black text-[#1a1a1a]/45"
                   key={`ellipsis-${index}`}
                 >
                   ...
@@ -102,13 +111,14 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
             }
 
             const isActive = item === currentPage;
+
             return (
               <Link
                 aria-current={isActive ? "page" : undefined}
-                className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border text-sm font-black transition-colors ${
+                className={`${pageLinkClass} tabular-nums ${
                   isActive
-                    ? "border-brand-dark bg-brand-dark text-white shadow-[0_6px_14px_rgba(35,31,32,0.18)]"
-                    : "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
+                    ? "border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow shadow-[3px_3px_0px_#ffe500]"
+                    : "border-[#1a1a1a] bg-white text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_#1a1a1a]"
                 }`}
                 href={buildProfileHref(item)}
                 key={item}
@@ -120,10 +130,10 @@ export function OrdersList({ orders, currentPage, totalPages }: OrdersListProps)
 
           <Link
             aria-disabled={!hasNext}
-            className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-bold transition-colors ${
+            className={`${pageLinkClass} ${
               hasNext
-                ? "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
-                : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
+                ? "border-[#1a1a1a] bg-white text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] hover:shadow-[1px_1px_0px_#1a1a1a]"
+                : "pointer-events-none border-[#1a1a1a]/25 bg-transparent text-[#1a1a1a]/35"
             }`}
             href={hasNext ? buildProfileHref(currentPage + 1) : "#"}
           >

@@ -13,9 +13,12 @@ type ProfileSidebarItemProps = {
   variant?: "default" | "danger";
 };
 
+const baseClass =
+  "group flex min-h-13 w-full cursor-pointer items-center justify-between gap-3 border-b-2 border-[#1a1a1a]/12 px-5 py-3.5 text-left transition-colors last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-yellow";
+
 /**
- * Item de menu do sidebar do perfil.
- * Suporta estado ativo e variante de perigo (logout).
+ * Item de navegação do painel do comprador.
+ * Ativo vira bloco preto com marcador amarelo; a saída da conta usa o vermelho de erro da marca.
  */
 export function ProfileSidebarItem({
   href,
@@ -24,64 +27,43 @@ export function ProfileSidebarItem({
   isActive = false,
   variant = "default",
 }: ProfileSidebarItemProps) {
-  const baseClasses =
-    "flex h-[53px] w-full items-center justify-between border-b border-bg-light px-5 py-4";
-
-  const activeClasses = isActive ? "bg-brand-dark text-white" : "";
-
-  const textColor =
-    variant === "danger"
-      ? "text-red-500"
-      : isActive
-        ? "text-white"
-        : "text-gray-600";
-
-  const iconColor =
-    variant === "danger"
-      ? "text-red-500"
-      : isActive
-        ? "text-white"
-        : "text-gray-500";
-
-  const chevronColor = isActive ? "text-white" : "text-gray-400";
-
   if (variant === "danger") {
     return (
       <button
-        className={baseClasses}
+        className={`${baseClass} bg-transparent text-[#c0392b] hover:bg-[#c0392b] hover:text-white`}
         onClick={() => {
           void signOutAndClearSession({ callbackUrl: "/" });
         }}
         type="button"
       >
-        <div className="flex items-center gap-3">
-          <span className={`h-4 w-4 ${iconColor}`}>{icon}</span>
-          <span className={`text-sm font-medium tracking-[-0.15px] ${textColor}`}>
-            {label}
-          </span>
-        </div>
+        <span className="flex items-center gap-3">
+          <span className="h-4 w-4 shrink-0">{icon}</span>
+          <span className="text-xs font-black uppercase tracking-[0.16em]">{label}</span>
+        </span>
       </button>
     );
   }
 
   return (
-    <Link className={`${baseClasses} ${activeClasses}`} href={href}>
-      <div className="flex items-center gap-3">
-        <span className={`h-4 w-4 ${iconColor}`}>{icon}</span>
-        <span className={`text-sm font-medium tracking-[-0.15px] ${textColor}`}>
-          {label}
-        </span>
-      </div>
-      <svg
+    <Link
+      aria-current={isActive ? "page" : undefined}
+      className={`${baseClass} ${
+        isActive
+          ? "bg-[#1a1a1a] text-brand-yellow"
+          : "bg-transparent text-[#1a1a1a]/72 hover:bg-[#1a1a1a]/6 hover:text-[#1a1a1a]"
+      }`}
+      href={href}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="h-4 w-4 shrink-0">{icon}</span>
+        <span className="truncate text-xs font-black uppercase tracking-[0.16em]">{label}</span>
+      </span>
+      <span
         aria-hidden
-        className={`h-3.5 w-3.5 ${chevronColor}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
-        <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+        className={`h-2 w-2 shrink-0 rotate-45 transition-colors ${
+          isActive ? "bg-brand-yellow" : "bg-[#1a1a1a]/20 group-hover:bg-[#1a1a1a]/45"
+        }`}
+      />
     </Link>
   );
 }

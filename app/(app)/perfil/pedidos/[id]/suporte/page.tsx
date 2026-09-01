@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ProfilePageTitle } from "@/components/layout/profile-page";
 import { MessageThreadPanel, getOrderSupportThread } from "@/features/messages";
 import { getProfileOrderDetail } from "@/features/orders";
 
@@ -11,28 +12,35 @@ export default async function OrderSupportPage({ params }: { params: Promise<{ i
   if (!order) notFound();
 
   return (
-    <section className="min-h-screen bg-bg-light">
-      <div className="bg-brand-dark">
-        <div className="mx-auto w-full max-w-5xl px-5 py-7 md:px-8">
-          <Link className="text-sm font-semibold text-white/65 transition hover:text-white" href={`/perfil/pedidos/${id}`}>
-            &larr; Voltar ao pedido
-          </Link>
-          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-yellow">Suporte do pedido</p>
-          <h1 className="mt-2 text-3xl font-black text-white">Pedido {order.orderNumber}</h1>
-          <p className="mt-2 text-sm text-white/58">
-            Fale primeiro com {order.storeLabel}. Se necessario, a Papelito pode acompanhar a mesma conversa.
-          </p>
-        </div>
-      </div>
+    <section className="flex flex-col gap-7">
+      <Link
+        className="inline-flex w-fit items-center gap-2 border-b-2 border-transparent text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/70 transition-colors hover:border-[#1a1a1a] hover:text-[#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
+        href={`/perfil/pedidos/${id}`}
+      >
+        <svg
+          aria-hidden
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Voltar ao pedido
+      </Link>
 
-      <div className="mx-auto w-full max-w-5xl px-5 py-7 md:px-8">
-        <MessageThreadPanel
-          canEscalate
-          canStart
-          initialThread={thread}
-          orderId={Number(order.id)}
-        />
-      </div>
+      <ProfilePageTitle
+        description={`Pedido ${order.orderNumber}. Fale primeiro com ${order.storeLabel}; se necessário, a Papelito acompanha a mesma conversa.`}
+        title="Suporte do pedido"
+      />
+
+      <MessageThreadPanel
+        canEscalate
+        canStart
+        initialThread={thread}
+        orderId={Number(order.id)}
+      />
     </section>
   );
 }

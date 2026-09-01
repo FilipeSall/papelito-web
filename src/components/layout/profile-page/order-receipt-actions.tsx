@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { profilePrimaryActionClass, profileSecondaryActionClass } from "./profile-panel";
+
 type ReceiptActionsProps = {
   orderId: string;
 };
@@ -37,14 +39,14 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
   return (
     <div>
       <a
-        className="inline-flex h-10 w-full items-center justify-center rounded-full border border-brand-dark px-5 text-sm font-black uppercase tracking-[0.12em] text-brand-dark transition hover:bg-brand-dark hover:text-white"
+        className={`${profileSecondaryActionClass} w-full`}
         download
         href={`/api/profile/orders/${orderId}/receipt`}
       >
         Baixar recibo
       </a>
       <button
-        className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-full bg-brand-dark px-5 text-sm font-black uppercase tracking-[0.12em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${profilePrimaryActionClass} mt-3 w-full`}
         disabled={sending}
         onClick={sendReceipt}
         type="button"
@@ -53,9 +55,10 @@ export function OrderReceiptActions({ orderId }: ReceiptActionsProps) {
       </button>
       {message ? (
         <p
-          className={`mt-2 text-center text-xs font-semibold ${failed ? "text-red-600" : "text-brand-dark"}`}
+          className={`mt-3 text-center text-xs font-bold ${failed ? "text-[#c0392b]" : "text-[#1a1a1a]"}`}
           role={failed ? "alert" : "status"}
         >
+          {failed ? "⚠ " : "✓ "}
           {message}
         </p>
       ) : null}

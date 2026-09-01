@@ -1,3 +1,16 @@
+export {
+  ProfilePanel,
+  ProfilePanelBody,
+  ProfilePageTitle,
+  ProfilePanelHeader,
+  ProfileSectionHeading,
+  profileDangerActionClass,
+  profileFieldLabelClass,
+  profileInputClass,
+  profilePrimaryActionClass,
+  profileQuietActionClass,
+  profileSecondaryActionClass,
+} from "./profile-panel";
 export { ProfileHero } from "./profile-hero";
 export { ProfileAvatar } from "./profile-avatar";
 export { ProfileInfo } from "./profile-info";

@@ -63,7 +63,7 @@ export function CompanyOnboardingForm({ isLegacyMigration = false, onComplete }:
       <label className="block text-sm font-bold">CEP<input required value={cep} onChange={(event) => setCep(event.target.value)} className="mt-1 w-full border-2 border-[#1a1a1a] p-3" /></label>
       <label className="block text-sm font-bold">CNPJ da empresa<input required value={cnpj} onChange={(event) => setCnpj(event.target.value)} className="mt-1 w-full border-2 border-[#1a1a1a] p-3" /></label>
       {message ? <p role="status" className="text-sm font-bold">{message}</p> : null}
-      <button disabled={busy} className="bg-[#1a1a1a] px-5 py-3 text-xs font-black uppercase text-brand-yellow disabled:opacity-50">{busy ? "Salvando..." : "Continuar"}</button>
+      <button disabled={busy} className="cursor-pointer bg-[#1a1a1a] px-5 py-3 text-xs font-black uppercase text-brand-yellow disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Salvando..." : "Continuar"}</button>
     </form>
   );
 }

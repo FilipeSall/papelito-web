@@ -18,6 +18,7 @@ export function AnchoredSectionNav({
 }>) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
   const navRef = useRef<HTMLElement>(null);
+  const pinnedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -40,6 +41,8 @@ export function AnchoredSectionNav({
 
       offsetHost.style.setProperty("--anchored-nav-offset", `${offset + SECTION_GAP}px`);
 
+      if (pinnedRef.current) return;
+
       const atBottom = scroller
         ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4
         : window.innerHeight + window.scrollY >= document.body.scrollHeight - 4;
@@ -49,14 +52,16 @@ export function AnchoredSectionNav({
         return;
       }
 
-      const scrollerTop = scroller ? scroller.getBoundingClientRect().top : 0;
-      const line = scrollerTop + offset + SECTION_GAP * 2;
+      const bounds = scroller ? scroller.getBoundingClientRect() : null;
+      const readingTop = (bounds ? bounds.top : 0) + offset + SECTION_GAP * 2;
+      const readingBottom = bounds ? bounds.bottom : window.innerHeight;
+      const focusLine = readingTop + (readingBottom - readingTop) / 2;
       let current = sections[0].id;
 
       for (const section of sections) {
         const element = document.getElementById(section.id);
 
-        if (element && element.getBoundingClientRect().top <= line) {
+        if (element && element.getBoundingClientRect().top <= focusLine) {
           current = section.id;
         }
       }
@@ -64,13 +69,23 @@ export function AnchoredSectionNav({
       setActiveId(current);
     }
 
+    function releasePin() {
+      pinnedRef.current = null;
+    }
+
     resolveActive();
     source.addEventListener("scroll", resolveActive, { passive: true });
     window.addEventListener("resize", resolveActive);
+    window.addEventListener("wheel", releasePin, { passive: true });
+    window.addEventListener("touchmove", releasePin, { passive: true });
+    window.addEventListener("keydown", releasePin);
 
     return () => {
       source.removeEventListener("scroll", resolveActive);
       window.removeEventListener("resize", resolveActive);
+      window.removeEventListener("wheel", releasePin);
+      window.removeEventListener("touchmove", releasePin);
+      window.removeEventListener("keydown", releasePin);
     };
   }, [sections]);
 
@@ -108,6 +123,10 @@ export function AnchoredSectionNav({
                   active ? "text-[#1a1a1a]" : "text-[#f5f1e8]/70 hover:text-brand-yellow"
                 }`}
                 href={`#${section.id}`}
+                onClick={() => {
+                  pinnedRef.current = section.id;
+                  setActiveId(section.id);
+                }}
               >
                 <span
                   aria-hidden

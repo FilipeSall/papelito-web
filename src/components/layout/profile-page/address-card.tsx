@@ -111,7 +111,7 @@ export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
       {/* Ações */}
       <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
         <button
-          className="text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+          className="cursor-pointer text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
           onClick={() => onEdit?.(address.id)}
           type="button"
         >
@@ -119,7 +119,7 @@ export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
         </button>
         <span className="text-[#1a1a1a]/20">|</span>
         <button
-          className="text-[#c0392b] transition-colors hover:text-[#c0392b]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+          className="cursor-pointer text-[#c0392b] transition-colors hover:text-[#c0392b]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
           onClick={() => onRemove?.(address.id)}
           type="button"
         >

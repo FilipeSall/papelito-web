@@ -158,7 +158,7 @@ export function MessageThreadPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           {canEscalate && thread && !thread.escalatedAt ? (
             <button
-              className="text-sm font-semibold text-brand-dark/65 underline decoration-brand-dark/25 underline-offset-4 transition hover:text-brand-dark disabled:opacity-50"
+              className="cursor-pointer text-sm font-semibold text-brand-dark/65 underline decoration-brand-dark/25 underline-offset-4 transition hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isEscalating}
               onClick={handleEscalate}
               type="button"

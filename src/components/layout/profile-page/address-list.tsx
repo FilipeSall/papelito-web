@@ -2,6 +2,7 @@
 
 import { AddAddressCard } from "./add-address-card";
 import { Address, AddressCard } from "./address-card";
+import { ProfilePageTitle } from "./profile-panel";
 
 type AddressListProps = {
   /** Lista de enderecos do usuario */
@@ -37,12 +38,13 @@ export function AddressList({
   onAdd,
 }: AddressListProps) {
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-black uppercase tracking-tight text-brand-dark">
-        Meus Endereços
-      </h2>
+    <section className="flex flex-col gap-7">
+      <ProfilePageTitle
+        description="O endereço principal define o vendor que atende você, o frete e a entrega."
+        title="Meus endereços"
+      />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {addresses.map((address) => (
           <AddressCard
             address={address}

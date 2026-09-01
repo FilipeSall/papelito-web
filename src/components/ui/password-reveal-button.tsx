@@ -25,7 +25,7 @@ export function PasswordRevealButton({
   return (
     <button
       aria-label={isVisible ? "Ocultar senha" : "Mostrar senha"}
-      className="absolute bottom-0 right-0 grid h-11 w-11 place-items-center text-[#1a1a1a] transition-opacity hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+      className="absolute bottom-0 right-0 grid h-11 w-11 cursor-pointer place-items-center text-[#1a1a1a] transition-opacity hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
       disabled={disabled}
       onClick={onToggle}
       type="button"

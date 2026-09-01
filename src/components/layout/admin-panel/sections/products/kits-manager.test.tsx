@@ -77,6 +77,7 @@ describe("KitsManager", () => {
           {
             description: "",
             id: 12,
+            imageAttachmentId: 70,
             imageSource: "custom",
             imageUrl: "/kit.webp",
             items: [],
@@ -131,6 +132,7 @@ describe("KitsManager", () => {
     const kit = {
       description: "",
       id: 12,
+      imageAttachmentId: 70,
       imageSource: "custom" as const,
       imageUrl: "/kit.webp",
       items: [],
@@ -192,6 +194,7 @@ describe("KitsManager", () => {
     const kit = {
       description: "",
       id: 12,
+      imageAttachmentId: 14001,
       imageSource: "custom" as const,
       imageUrl: "/kit.webp",
       items: [],
@@ -212,5 +215,6 @@ describe("KitsManager", () => {
       width: "10",
       height: "0.5",
     });
+    expect(createKitDraftFrom(kit).imageAttachmentId).toBe(14001);
   });
 });

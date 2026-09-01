@@ -9,6 +9,41 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 
 export const ADD_TO_CART_EVENT_NAME = "papelito:add-to-cart";
 
+const LABELLED_SHELL_CLASS = {
+  collection:
+    "group h-8 border-2 border-[#1a1a1a] bg-brand-dark text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
+  default: "h-7 rounded-[10px] bg-brand-dark transition-opacity hover:opacity-80",
+  panel:
+    "h-11 border-2 border-[#1a1a1a] bg-[#1a1a1a] shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
+} as const;
+
+const LABELLED_ICON_CLASS = {
+  collection: "size-3 text-brand-yellow group-hover:text-brand-dark",
+  default: "size-3 text-white",
+  panel: "size-4 text-brand-yellow",
+} as const;
+
+const LABELLED_TEXT_CLASS = {
+  collection:
+    "text-[10px] font-black uppercase tracking-[0.08em] text-brand-yellow group-hover:text-brand-dark",
+  default: "text-xs font-black leading-4 text-white",
+  panel: "text-xs font-black uppercase tracking-[0.18em] text-brand-yellow",
+} as const;
+
+const ICON_ONLY_SHELL_CLASS = {
+  collection:
+    "group border-2 border-[#1a1a1a] text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
+  default: "rounded-[14px] transition-opacity hover:opacity-80",
+  panel:
+    "border-2 border-[#1a1a1a] shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
+} as const;
+
+const ICON_ONLY_ICON_CLASS = {
+  collection: "size-4 text-brand-yellow group-hover:text-brand-dark",
+  default: "size-4 text-white",
+  panel: "size-4 text-brand-yellow",
+} as const;
+
 export type AddToCartEventDetail = {
   productName?: string;
   title?: string;
@@ -26,7 +61,7 @@ interface AddToCartButtonProps {
   disabledReason?: string;
   onClick?: () => void;
   onAdded?: () => void;
-  variant?: "default" | "collection";
+  variant?: "default" | "collection" | "panel";
 }
 
 export function AddToCartButton({
@@ -181,14 +216,10 @@ export function AddToCartButton({
           aria-label="Adicionar ao carrinho"
           aria-disabled={isDisabled}
           title={blockedMessage}
-          className={`flex w-full cursor-pointer items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${
-            variant === "collection"
-              ? "group h-8 border-2 border-[#1a1a1a] bg-brand-dark text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-              : "h-7 rounded-[10px] bg-brand-dark transition-opacity hover:opacity-80"
-          } ${className}`.trim()}
+          className={`flex w-full cursor-pointer items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${LABELLED_SHELL_CLASS[variant]} ${className}`.trim()}
         >
-          <CartIcon className={variant === "collection" ? "size-3 text-brand-yellow group-hover:text-brand-dark" : "size-3 text-white"} />
-          <span className={variant === "collection" ? "text-[10px] font-black uppercase tracking-[0.08em] text-brand-yellow group-hover:text-brand-dark" : "text-xs font-black leading-4 text-white"}>{labelText}</span>
+          <CartIcon className={LABELLED_ICON_CLASS[variant]} />
+          <span className={LABELLED_TEXT_CLASS[variant]}>{labelText}</span>
         </button>
       </span>
     );
@@ -204,13 +235,9 @@ export function AddToCartButton({
         aria-label="Adicionar ao carrinho"
         aria-disabled={isDisabled}
         title={blockedMessage}
-        className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60 ${
-          variant === "collection"
-            ? "group border-2 border-[#1a1a1a] text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-            : "rounded-[14px] transition-opacity hover:opacity-80"
-        } ${className}`.trim()}
+        className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60 ${ICON_ONLY_SHELL_CLASS[variant]} ${className}`.trim()}
       >
-        <CartIcon className={variant === "collection" ? "size-4 text-brand-yellow group-hover:text-brand-dark" : "size-4 text-white"} />
+        <CartIcon className={ICON_ONLY_ICON_CLASS[variant]} />
       </button>
     </span>
   );

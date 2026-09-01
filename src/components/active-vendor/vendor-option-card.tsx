@@ -111,7 +111,7 @@ export function VendorOptionCard({
           className={`w-full rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
             isActive
               ? "cursor-default bg-brand-yellow/30 text-brand-dark"
-              : "bg-brand-dark text-brand-yellow hover:opacity-90 disabled:opacity-50"
+              : "cursor-pointer bg-brand-dark text-brand-yellow hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           }`}
         >
           {isActive ? "Selecionado" : selecting ? "Trocando..." : "Selecionar este vendor"}

@@ -68,7 +68,7 @@ export function VendorSwitchConfirmationModal({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide text-brand-dark transition hover:bg-bg-light disabled:opacity-50"
+            className="cursor-pointer rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide text-brand-dark transition hover:bg-bg-light disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -76,7 +76,7 @@ export function VendorSwitchConfirmationModal({
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="rounded-full bg-brand-dark px-4 py-2 text-xs font-black uppercase tracking-wide text-brand-yellow transition hover:opacity-90 disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-brand-dark px-4 py-2 text-xs font-black uppercase tracking-wide text-brand-yellow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Trocando..." : "Confirmar troca"}
           </button>
