@@ -239,7 +239,11 @@ describe("CheckoutAddressStepContent", () => {
       expect(screen.getByText("PAC Contrato")).toBeInTheDocument();
     });
 
-    expect(screen.getAllByText("Frete grátis")).toHaveLength(2);
+    const freeShippingLabels = screen.getAllByText("Frete grátis");
+    expect(freeShippingLabels).toHaveLength(2);
+    for (const label of freeShippingLabels) {
+      expect(label).toHaveClass("animate-free-shipping");
+    }
     expect(screen.getByText("R$ 15,88", { selector: "del" })).toBeInTheDocument();
     expect(screen.getByText("R$ 22,30", { selector: "del" })).toBeInTheDocument();
   });

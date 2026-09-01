@@ -108,7 +108,7 @@ export type PlaceOrderResult = {
   orderNumber: string;
   status: string;
   payment: PlaceOrderPaymentResult;
-  totals?: {
+  totals: {
     subtotalCents: number;
     discountCents: number;
     itemsCents: number;

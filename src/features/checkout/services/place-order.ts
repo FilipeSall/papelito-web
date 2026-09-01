@@ -5,6 +5,30 @@ import type {
   PlaceOrderResponse,
 } from "../types/checkout";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function hasValidTotals(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+
+  return (
+    isNonNegativeInteger(value.subtotalCents) &&
+    isNonNegativeInteger(value.discountCents) &&
+    isNonNegativeInteger(value.itemsCents) &&
+    isNonNegativeInteger(value.shippingCents) &&
+    isNonNegativeInteger(value.shippingDiscountCents) &&
+    isNonNegativeInteger(value.totalCents) &&
+    value.shippingDiscountCents <= value.shippingCents &&
+    value.itemsCents + value.shippingCents - value.shippingDiscountCents ===
+      value.totalCents
+  );
+}
+
 const ERROR_MESSAGES: Record<string, string> = {
   papelito_checkout_auth_required: "Faca login para concluir o pedido.",
   papelito_checkout_customer_only:
@@ -178,7 +202,8 @@ export async function placeOrder(
     typeof payload.orderNumber !== "string" ||
     typeof payload.status !== "string" ||
     !payload.payment ||
-    typeof payload.payment !== "object"
+    typeof payload.payment !== "object" ||
+    !hasValidTotals(payload.totals)
   ) {
     return {
       ok: false,

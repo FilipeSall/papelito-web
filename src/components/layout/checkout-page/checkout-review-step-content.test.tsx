@@ -16,6 +16,14 @@ const eligibleB2bSession = {
 	expires: "2099-01-01T00:00:00.000Z",
 	b2b: { canPurchase: true, companyId: 10, purchaseMode: "b2b" as const },
 };
+const validOrderTotals = {
+  subtotalCents: 9000,
+  discountCents: 0,
+  itemsCents: 9000,
+  shippingCents: 890,
+  shippingDiscountCents: 0,
+  totalCents: 9890,
+};
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
@@ -98,6 +106,7 @@ describe("CheckoutReviewStepContent", () => {
             method: "pix",
             state: "waiting_payment",
           },
+          totals: validOrderTotals,
         }),
       ),
     );
@@ -237,6 +246,7 @@ describe("CheckoutReviewStepContent", () => {
             method: "pix",
             state: "waiting_payment",
           },
+          totals: validOrderTotals,
         });
       }),
     );

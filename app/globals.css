@@ -75,8 +75,14 @@
 }
 
 @keyframes free-shipping-pulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.55; }
+    0%, 100% {
+        color: #15803D;
+        text-shadow: 0 0 0 rgba(254, 228, 0, 0);
+    }
+    45% {
+        color: #9A4B00;
+        text-shadow: 0 0 8px rgba(254, 228, 0, 0.24);
+    }
 }
 
 @keyframes countdown-flip {
@@ -231,12 +237,14 @@ a:hover .menu-underline path:nth-child(3),
     }
 
     .animate-free-shipping {
-        animation: free-shipping-pulse 1.8s ease-in-out 3;
+        animation: free-shipping-pulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) 2 both;
     }
 
     @media (prefers-reduced-motion: reduce) {
         .animate-free-shipping {
             animation: none;
+            color: #15803D;
+            text-shadow: none;
         }
     }
 

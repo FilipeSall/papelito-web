@@ -31,6 +31,14 @@ export const checkoutHandlers = [
         method: "credit_card",
         state: "paid",
       },
+      totals: {
+        subtotalCents: 12100,
+        discountCents: 0,
+        itemsCents: 12100,
+        shippingCents: 1937,
+        shippingDiscountCents: 1937,
+        totalCents: 12100,
+      },
     });
   }),
 ];

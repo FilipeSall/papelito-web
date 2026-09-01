@@ -23,13 +23,13 @@ type PlaceOrderApiResponse = {
       expires_at?: string;
     };
   };
-  totals?: {
-    subtotalCents?: number;
-    discountCents?: number;
-    itemsCents?: number;
-    shippingCents?: number;
-    shippingDiscountCents?: number;
-    totalCents?: number;
+  totals: {
+    subtotalCents: number;
+    discountCents: number;
+    itemsCents: number;
+    shippingCents: number;
+    shippingDiscountCents: number;
+    totalCents: number;
   };
 };
 

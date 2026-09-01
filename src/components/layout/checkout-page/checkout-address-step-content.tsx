@@ -381,7 +381,7 @@ export function CheckoutAddressStepContent({
                             <del className="text-xs font-semibold text-text-tertiary">
                               {formatBRL(option.price)}
                             </del>
-                            <span className="text-xs font-black uppercase tracking-[0.08em] text-[#15803D]">
+                            <span className="animate-free-shipping text-xs font-black uppercase tracking-[0.08em] text-[#15803D]">
                               Frete grátis
                             </span>
                           </span>

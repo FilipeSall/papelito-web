@@ -31,6 +31,15 @@ const baseInput = {
   },
 };
 
+const validTotals = {
+  subtotalCents: 12100,
+  discountCents: 0,
+  itemsCents: 12100,
+  shippingCents: 1937,
+  shippingDiscountCents: 1937,
+  totalCents: 12100,
+};
+
 describe("placeOrder", () => {
   afterEach(() => {
     server.resetHandlers();
@@ -47,6 +56,7 @@ describe("placeOrder", () => {
           method: "credit_card",
           state: "paid",
         },
+        totals: validTotals,
       },
     });
   });
@@ -65,6 +75,7 @@ describe("placeOrder", () => {
             method: "pix",
             state: "waiting_payment",
           },
+          totals: validTotals,
         });
       }),
     );
@@ -81,7 +92,7 @@ describe("placeOrder", () => {
     server.use(
       http.post("/api/checkout/place-order", async ({ request }) => {
         payload = (await request.json()) as PlaceOrderRequestPayload;
-        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" }, totals: validTotals });
       }),
     );
     await placeOrder({ ...baseInput, expectedCompanyId: 44 });
@@ -93,7 +104,7 @@ describe("placeOrder", () => {
     server.use(
       http.post("/api/checkout/place-order", async ({ request }) => {
         payload = (await request.json()) as PlaceOrderRequestPayload;
-        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" }, totals: validTotals });
       }),
     );
 
@@ -113,7 +124,7 @@ describe("placeOrder", () => {
     server.use(
       http.post("/api/checkout/place-order", async ({ request }) => {
         payload = (await request.json()) as PlaceOrderRequestPayload;
-        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" } });
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" }, totals: validTotals });
       }),
     );
 
@@ -180,6 +191,32 @@ describe("placeOrder", () => {
         message: "Resposta inválida ao concluir o pedido.",
         status: 200,
       },
+    });
+  });
+
+  it("rejects checkout totals whose shipping discount increases the order", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json({
+          orderId: 321,
+          orderNumber: "321",
+          status: "pending",
+          payment: { method: "pix", state: "waiting_payment" },
+          totals: {
+            subtotalCents: 12100,
+            discountCents: 0,
+            itemsCents: 12100,
+            shippingCents: 1937,
+            shippingDiscountCents: -1937,
+            totalCents: 14037,
+          },
+        }),
+      ),
+    );
+
+    await expect(placeOrder(baseInput)).resolves.toMatchObject({
+      ok: false,
+      error: { code: "papelito_invalid_response" },
     });
   });
 });
