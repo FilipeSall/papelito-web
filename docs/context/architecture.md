@@ -39,6 +39,7 @@ Pontos que a lista de pastas não conta:
 - **Lógica de domínio não mora em `app/`.** As rotas compõem; a lógica vem de `src/features` e `src/lib`.
 - `_verify-stepper` usa o prefixo `_` do App Router para existir no repositório sem virar rota pública. Mesma técnica vale para qualquer utilitário de rota.
 - O gate de autenticação, o gate de onboarding B2B e o guard de admin vivem todos em **`proxy.ts`** (o middleware do Next 16, na raiz do repositório) — não em layouts nem em efeitos de cliente.
+- **`pos-login/` só se alcança por navegação de documento.** A rota existe apenas para `redirect()`, e numa navegação client-side o Next entrega esse redirect como chunk RSC rejeitado em vez de `307` — o que, em dev, estoura `Failed to execute 'measure' on 'Performance'` na trilha de Server Components do React. Quem conclui o login usa `window.location.assign`, nunca `router.push`.
 
 ### `app/api/` — dois tipos de rota
 

@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 
 const signInMock = vi.fn();
 const clearPreviousSessionBeforeSignInMock = vi.fn();
+const routerPushMock = vi.fn();
+const routerRefreshMock = vi.fn();
 
 vi.mock("next-auth/react", () => ({ signIn: (...args: unknown[]) => signInMock(...args) }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push: routerPushMock, refresh: routerRefreshMock }),
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/features/auth/client/logout", () => ({
@@ -17,6 +19,34 @@ vi.mock("@/features/auth/client/logout", () => ({
 import { AuthLoginForm } from "./auth-login-form";
 
 describe("AuthLoginForm", () => {
+  it("leaves the SPA on success so /pos-login answers with an HTTP redirect", async () => {
+    const user = userEvent.setup();
+    const assignMock = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...window.location, assign: assignMock },
+    });
+
+    clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);
+    signInMock.mockResolvedValue({
+      ok: true,
+      error: null,
+      url: "http://localhost:3000/pos-login?callbackUrl=%2F",
+    });
+
+    render(<AuthLoginForm />);
+
+    await user.type(screen.getByLabelText("E-mail"), "conta@example.com");
+    await user.type(screen.getByLabelText("Senha"), "senha-correta");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    await waitFor(() => {
+      expect(assignMock).toHaveBeenCalledWith("http://localhost:3000/pos-login?callbackUrl=%2F");
+    });
+    expect(routerPushMock).not.toHaveBeenCalled();
+    expect(routerRefreshMock).not.toHaveBeenCalled();
+  });
+
   it("normalizes the email and explains how a Google-created account can recover access", async () => {
     const user = userEvent.setup();
     clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Suspense, startTransition, useState } from "react";
 
@@ -18,7 +18,6 @@ import { AuthSocialDivider } from "../molecules/auth-social-divider";
 import { AuthTextField } from "../molecules/auth-text-field";
 
 function AuthLoginFormContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
@@ -30,6 +29,14 @@ function AuthLoginFormContent() {
     searchParams.get("error") === "papelito_auth_context_unavailable";
   const cartLoginRequired = searchParams.get("feedback") === "cart_login_required";
 
+  /**
+   * Conclui o login e sai do SPA para o destino de pós-autenticação.
+   *
+   * A saída é navegação de documento de propósito: `/pos-login` só existe para redirecionar, e
+   * numa navegação client-side esse redirect chega como chunk RSC rejeitado em vez de 307 — o
+   * mesmo caminho que o Google OAuth já percorre. O documento novo também dispensa o `refresh()`
+   * que corria em paralelo com o push.
+   */
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -92,8 +99,7 @@ function AuthLoginFormContent() {
         return;
       }
 
-      router.push(result.url ?? postAuthUrl);
-      router.refresh();
+      window.location.assign(result.url ?? postAuthUrl);
     });
   }
 
