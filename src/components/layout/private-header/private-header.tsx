@@ -54,7 +54,7 @@ export function PrivateHeader({ logo }: PrivateHeaderProps) {
         <PrivateHeaderLogo logo={logo} />
 
         <div className="flex items-start gap-2 pt-1">
-          <NotificationBell inverted />
+          <NotificationBell />
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
 
           <PrivateHeaderMobileMenu
@@ -71,7 +71,7 @@ export function PrivateHeader({ logo }: PrivateHeaderProps) {
         <PrivateHeaderNav links={privateLinks} />
 
         <div className="order-2 flex h-9 flex-none grow-0 items-center justify-self-end gap-4">
-          <NotificationBell inverted />
+          <NotificationBell />
           <PrivateHeaderCartIcon buttonClass={iconButtonClass} count={cartItemCount} />
           {isAdministrator && !isAdminRoute ? (
             <Link

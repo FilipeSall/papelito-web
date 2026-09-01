@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { BrandArrowIcon } from "@/components/ui/icons";
 
 interface PartnerBannerCtaProps {
   children: React.ReactNode;
@@ -9,13 +9,11 @@ interface PartnerBannerCtaProps {
 export function PartnerBannerCta({ children, href }: PartnerBannerCtaProps) {
   return (
     <Link
+      className="group inline-flex items-center gap-3 whitespace-nowrap bg-brand-dark px-7 py-4 text-xs font-black uppercase leading-4 tracking-[0.18em] text-brand-yellow transition-colors hover:bg-white hover:text-brand-dark"
       href={href}
-      className="inline-flex h-14 w-full max-w-[313.625px] self-start items-center justify-center gap-4 rounded-full bg-brand-dark px-10 text-white transition-colors hover:bg-brand-dark/90 sm:w-auto"
     >
-      <span className="font-black text-base leading-6 tracking-[-0.3125px] uppercase">
-        {children}
-      </span>
-      <ArrowRightIcon className="size-4" />
+      {children}
+      <BrandArrowIcon className="size-4 shrink-0 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5 group-hover:rotate-[15deg]" />
     </Link>
   );
 }

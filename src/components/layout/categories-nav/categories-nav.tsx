@@ -1,7 +1,3 @@
-"use client";
-
-import useEmblaCarousel from "embla-carousel-react";
-
 import { CategoryNavItem } from "./category-nav-item";
 import { CATEGORIES_NAV_ITEMS, resolveCategoryNavSubtitle } from "./constants";
 import type { ProductsCollectionsSummary } from "@/features/catalog";
@@ -10,49 +6,38 @@ interface CategoriesNavProps {
   collectionsSummary?: ProductsCollectionsSummary | null;
 }
 
+const TILTS = [-1.4, 0.9, -0.7, 1.2];
+
 export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProps>) {
-  const [emblaRef] = useEmblaCarousel({
-    align: "start",
-    containScroll: "trimSnaps",
-    dragFree: true,
-  });
-  const items = CATEGORIES_NAV_ITEMS.map((item) => ({
-    iconSrc: item.iconSrc,
-    title: item.title,
-    subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
+  const items = CATEGORIES_NAV_ITEMS.map((item, index) => ({
     href: item.href,
+    subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
+    tilt: TILTS[index % TILTS.length],
+    title: item.title,
   }));
 
   return (
-    <section className="w-full bg-[#f9fafb] py-6 sm:py-8 lg:py-10">
+    <section
+      aria-labelledby="corredor-colecoes"
+      className="w-full bg-transparent py-12 sm:py-16"
+    >
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
-        <div className="mb-4 flex items-center gap-3 sm:mb-5">
-          <span aria-hidden className="h-2.5 w-2.5 rotate-45 bg-brand-yellow" />
-          <h2 className="text-xs font-black uppercase tracking-[0.18em] text-brand-dark sm:text-sm">
+        <div className="flex flex-col items-center gap-8">
+          <h2
+            className="flex items-center gap-3 text-xl font-black uppercase leading-none tracking-[-0.02em] text-brand-dark sm:text-2xl"
+            id="corredor-colecoes"
+          >
+            <span aria-hidden className="inline-block size-3 rotate-45 bg-brand-yellow" />
             Explore por coleção
           </h2>
-        </div>
-        <div
-          ref={emblaRef}
-          aria-label="Carrossel de coleções"
-          className="overflow-hidden px-0.5 pb-2 lg:hidden"
-        >
-          <div className="flex gap-4 pr-4">
-            {items.map((item) => (
-              <div
-                key={item.title}
-                className="min-w-0 shrink-0 basis-[78%] min-[480px]:basis-[46%]"
-              >
-                <CategoryNavItem {...item} className="max-w-none" />
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="hidden grid-cols-4 gap-5 lg:grid">
-          {items.map((item) => (
-            <CategoryNavItem key={item.title} {...item} />
-          ))}
+          <ul className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+            {items.map((item) => (
+              <li key={item.title}>
+                <CategoryNavItem {...item} />
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

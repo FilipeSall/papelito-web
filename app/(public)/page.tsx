@@ -6,7 +6,6 @@ import { HeroSection } from "@/components/layout/hero-section";
 import { NewArrivalsSection } from "@/components/layout/new-arrivals";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { PartnerBanner } from "@/components/layout/partner-banner";
-import { PromoBanner } from "@/components/layout/promo-banner";
 import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
@@ -84,19 +83,31 @@ export default async function Home() {
 
   return (
     <ProductAvailabilityProvider productIds={productIds}>
-      <main className="flex flex-col bg-white">
+      <main className="flex flex-col bg-[#faf8f2]">
         <AddToCartToastHost />
+
+        {/* Cabeça do corredor: o ticker, a folha emoldurada e a régua de condições
+            formam um bloco só — a régua encosta na folha em vez de virar seção. */}
         <div className="flex flex-col">
           <PromoMarquee items={resolvedPromoMarquee} />
           <HeroSection banners={heroBanners} />
           <FeaturesBar items={resolvedHomeFeatures} />
-          <CategoriesNav collectionsSummary={collectionsSummary} />
         </div>
-        {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
-        {flashSaleCampaign && promoBanner ? <PromoBanner banner={promoBanner} /> : null}
-        <BestSellersSection products={bestSellerProducts} />
-        <PromoCardsSection />
+
+        <BestSellersSection
+          freeShippingMinimumCents={freeShippingThreshold?.minimumOrderCents ?? null}
+          products={bestSellerProducts}
+        />
+
+        {flashSaleCampaign ? (
+          <FlashSaleSection campaign={flashSaleCampaign} promoBanner={promoBanner} />
+        ) : null}
+
         <NewArrivalsSection products={newArrivalProducts} />
+
+        <CategoriesNav collectionsSummary={collectionsSummary} />
+
+        <PromoCardsSection />
         {partnerBanner ? <PartnerBanner banner={partnerBanner} /> : null}
       </main>
     </ProductAvailabilityProvider>

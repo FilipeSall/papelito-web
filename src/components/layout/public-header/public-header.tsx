@@ -21,7 +21,7 @@ const iconButtonClass =
  */
 export function PublicHeader({ logo }: PublicHeaderProps) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 w-full border-b border-white/10 bg-brand-dark md:bg-brand-yellow">
+    <header className="fixed inset-x-0 top-0 z-50 w-full border-b-2 border-brand-yellow bg-brand-dark">
       {/* Mobile */}
       <div className="mx-auto flex h-15 w-full max-w-391 items-center justify-between px-4 md:hidden">
         <PublicHeaderLogo logo={logo} variant="mobile" />

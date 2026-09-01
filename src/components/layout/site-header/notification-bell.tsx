@@ -16,16 +16,12 @@ import {
 } from "@/features/notifications";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
-type NotificationBellProps = {
-  inverted?: boolean;
-};
-
 type RedirectState = {
   from: string;
   to: string;
 };
 
-function NotificationBellContent({ inverted = false }: Readonly<NotificationBellProps>) {
+function NotificationBellContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -143,28 +139,26 @@ function NotificationBellContent({ inverted = false }: Readonly<NotificationBell
   const unreadPlural = unreadCount === 1 ? "" : "s";
   const bellAriaLabel =
     unreadCount > 0 ? `Notificações, ${unreadCount} não lida${unreadPlural}` : "Notificações";
-  const buttonClass = inverted
-    ? "bg-white/8 text-white hover:bg-white/12 focus-visible:ring-brand-yellow/80"
-    : "bg-white/12 text-brand-dark hover:bg-white/22 focus-visible:ring-brand-dark/30";
-  const badgeClass = inverted
-    ? "bg-brand-yellow text-brand-dark ring-brand-dark"
-    : "bg-[#d12b2b] text-white ring-brand-yellow";
+  // Todo header que hospeda o sino é escuro: ícone branco, sem fundo.
+  const buttonClass = "text-white hover:text-brand-yellow focus-visible:ring-brand-yellow/80";
+  const badgeClass = "bg-brand-yellow text-brand-dark ring-brand-dark";
 
   return (
     <div className="relative" ref={ref}>
       <button
         aria-expanded={open}
         aria-label={bellAriaLabel}
-        className={`relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${buttonClass}`}
+        className={`relative inline-flex h-9 w-9 cursor-pointer items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 ${buttonClass}`}
         disabled={isRedirecting}
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
-        <Bell aria-hidden className="h-5 w-5" strokeWidth={2.1} />
+        <Bell aria-hidden className="size-5" strokeWidth={2.1} />
         {unreadCount > 0 ? (
           <span
             aria-hidden
-            className={`absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-black leading-none ring-2 ${badgeClass}`}
+            className={`absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center px-1 text-[10px] font-black leading-none ring-2 ${badgeClass}`}
+            data-numeric
           >
             {badgeLabel}
           </span>
@@ -199,10 +193,10 @@ function NotificationBellContent({ inverted = false }: Readonly<NotificationBell
  * falha no prerender da rota com `missing-suspense-with-csr-bailout`. Fica embutido aqui, e não na
  * página, para não depender de cada chamador lembrar — mesmo padrão do `NavigationLoader`.
  */
-export function NotificationBell(props: React.ComponentProps<typeof NotificationBellContent>) {
+export function NotificationBell() {
   return (
     <Suspense fallback={null}>
-      <NotificationBellContent {...props} />
+      <NotificationBellContent />
     </Suspense>
   );
 }

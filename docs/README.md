@@ -8,7 +8,7 @@ Contexto **específico do frontend**. Tudo que é compartilhado com o backend (m
 2. **[context/architecture.md](context/architecture.md)** — organização de `app/` e `src/`, grupos de rota, camadas, componentes reutilizáveis, convenções e dívida conhecida.
 3. **[context/rendering-and-performance.md](context/rendering-and-performance.md)** — as invariantes de ISR/cache que já foram violadas uma vez e não podem regredir.
 4. **[context/testing.md](context/testing.md)** — Vitest, MSW, o que se mocka e o que nunca se mocka.
-5. **[brand/identidade-visual.md](brand/identidade-visual.md)** — sistema visual da marca: tokens, contraste, tipografia, microcópia.
+5. **[brand/identidade-visual.md](brand/identidade-visual.md)** — sistema visual da marca: tokens, contraste, tipografia, microcópia. A **seção 11** traz o *sistema do corredor*, a linguagem da vitrine pública (recortes, `ShelfLabel`/`Shelf`, movimento e armadilhas já verificadas) — leia antes de mexer em qualquer página pública.
 
 Documentos de referência pontual:
 

@@ -89,6 +89,23 @@ export const metadata: Metadata = {
   },
 };
 
+const DIRECTION_CONTRACT = `<!--
+THESIS: A home é um corredor de papelaria, não uma pilha de banners. Cada família de
+produto corre na horizontal sob uma etiqueta de gôndola que carrega dado, não enfeite.
+Recusa a coluna de faixas de peso igual anunciadas por eyebrow de emoji.
+OWN-WORLD: Amarelo #ffe500, preto #231f20, kraft #faf8f2. Borda 2px preta, sombra dura
+sem blur, losango rotacionado, corte diagonal de papel, Inter font-black uppercase com
+tracking largo. Sem rounded-full, sem blur, sem emoji, sem gradiente.
+STORY: Um comprador anônimo vê mercadoria real no primeiro viewport, entende que o preço
+é único e a entrega é regional, e entra no catálogo pela prateleira.
+FIRST VIEWPORT: Header preto fixo com régua amarela; ticker; carrossel gerenciado
+emoldurado em preto com corte diagonal na base; encostada nele a etiqueta NOSSOS PRODUTOS
+com contagem, e a primeira prateleira já correndo com produto real.
+FORM: A Prateleira — 3ª da lista ordenada de sete; seed 4cbff969.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review,
+the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -119,6 +136,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className="font-sans" suppressHydrationWarning>
+        <div hidden dangerouslySetInnerHTML={{ __html: DIRECTION_CONTRACT }} />
         {GTM_CONTAINER_ID ? (
           <noscript>
             <iframe

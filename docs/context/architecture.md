@@ -110,7 +110,9 @@ Atomic design, variante escura (fundo `bg-brand-dark`). Usado em login, cadastro
 
 ### `src/components/ui/`
 
-`AddToCartButton` (integrado à feature `cart`, aceita `disabledReason`), `BaseModal`, `ImageWithSkeleton`, `ProductImageFallback`, `ProductPrice`, `SectionHeader`, `StarRating`, `Tag`, `PageContainer`, `FavoriteToggleButton`, `LogoSpinnerLoader`, `MenuUnderline`, `NavigationLoader`, `ToastCloseButton`, além de `icons/` e `badges/`.
+`AddToCartButton` (integrado à feature `cart`, aceita `disabledReason` e a variante `collection`, que é a única com vocabulário da marca — caixa preta, ícone amarelo, sombra dura), `BaseModal`, `ImageWithSkeleton`, `ProductImageFallback`, `ProductPrice`, `StarRating`, `Tag`, `PageContainer`, `FavoriteToggleButton`, `LogoSpinnerLoader`, `MenuUnderline`, `NavigationLoader`, `ToastCloseButton`, além de `icons/` e `badges/`.
+
+Do sistema do corredor da vitrine pública, descrito em [../brand/identidade-visual.md](../brand/identidade-visual.md#11-sistema-do-corredor--vitrine-pública): `ShelfLabel` (etiqueta de gôndola, tons `dark`/`yellow`/`framed`), `Shelf` (trilho horizontal com encaixe, setas sobrepostas e régua) e `ScribbleRule` (régua desenhada com rough.js). `SectionHeader` foi removido — era usado só pelas duas seções da home e virou `ShelfLabel`.
 
 `BaseModal` fornece **apenas a casca**: portal, `role="dialog"`/`aria-modal`, ESC, overlay, trava de scroll, foco preso e retorno de foco. **Não tem header nem footer** — cada uso monta os seus. `vendor-cancel-shipment-modal.tsx` é o precedente de uso; `vendor-reject-modal.tsx` é o precedente da paleta de perigo (`#b91c1c`, hover `#991b1b`) mas monta o próprio diálogo.
 

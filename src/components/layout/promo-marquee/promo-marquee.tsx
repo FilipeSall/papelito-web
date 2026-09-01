@@ -26,15 +26,16 @@ export function PromoMarquee({ items }: { items: PromoMarqueeMessage[] }) {
   const doubled = [...activeItems, ...activeItems];
 
   return (
-    <div className="h-8">
-      <div className="fixed inset-x-0 top-[60px] z-40 flex h-8 items-center overflow-hidden bg-white md:top-23.25">
+    <div className="h-9">
+      <div className="fixed inset-x-0 top-[62px] z-40 flex h-9 items-center overflow-hidden bg-brand-dark md:top-[95px]">
         <div className="flex whitespace-nowrap animate-marquee">
           {doubled.map((item, i) => (
             <span
+              className="flex items-center gap-8 pl-8 text-[0.6875rem] font-black uppercase leading-4 tracking-[0.18em] text-brand-yellow"
               key={`${item.id}-${i}`}
-              className="px-8 text-xs font-black uppercase leading-4 tracking-[0.6px] text-[#231F20]"
             >
               <RichText nodes={item.nodes} />
+              <span aria-hidden className="inline-block size-1.5 shrink-0 rotate-45 bg-brand-yellow" />
             </span>
           ))}
         </div>

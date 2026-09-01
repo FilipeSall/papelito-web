@@ -6,9 +6,9 @@ interface CategoryBadgeProps {
 export function CategoryBadge({ label, className }: CategoryBadgeProps) {
   return (
     <div
-      className={`absolute top-2 left-2 flex items-center px-2 py-0.5 bg-brand-yellow rounded-full ${className ?? ""}`}
+      className={`absolute left-2 top-2 flex items-center border-2 border-brand-dark bg-brand-yellow px-2 py-0.5 ${className ?? ""}`}
     >
-      <span className="font-black text-xs leading-4 text-brand-dark whitespace-nowrap">
+      <span className="whitespace-nowrap text-[0.625rem] font-black uppercase leading-4 tracking-[0.12em] text-brand-dark">
         {label}
       </span>
     </div>

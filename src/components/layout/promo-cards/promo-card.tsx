@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { BrandArrowIcon } from "@/components/ui/icons";
 
 interface PromoCardProps {
   variant: "dark" | "yellow";
@@ -13,6 +13,28 @@ interface PromoCardProps {
   discountBadge?: string;
 }
 
+const PLATE = {
+  dark: "border-brand-yellow bg-brand-dark shadow-[8px_8px_0_#ffe500] hover:shadow-[11px_11px_0_#ffe500]",
+  yellow: "border-brand-dark bg-brand-yellow shadow-[8px_8px_0_#231f20] hover:shadow-[11px_11px_0_#231f20]",
+} as const;
+
+const TITLE = {
+  dark: "text-white",
+  yellow: "text-brand-dark",
+} as const;
+
+/* Chapa cheia com a ponta inclinada, no recorte do logo: vazado, o chip sumia. */
+const CHIP = "tag-cut bg-[#faf8f2] text-brand-dark";
+
+const CTA = {
+  dark: "bg-brand-yellow text-brand-dark hover:bg-white",
+  yellow: "bg-brand-dark text-brand-yellow hover:bg-white hover:text-brand-dark",
+} as const;
+
+/**
+ * Cartaz colado do corredor: chapa recortada com moldura, título em caixa alta e
+ * a mercadoria ocupando a metade direita.
+ */
 export function PromoCard({
   variant,
   label,
@@ -23,90 +45,64 @@ export function PromoCard({
   imageAlt,
   discountBadge,
 }: PromoCardProps) {
-  const isDark = variant === "dark";
   const titleLines = title.split("\n");
-  const linkLines = linkText.split("\n");
+  const linkLabel = linkText.split("\n").join(" ");
 
   return (
     <Link
+      className={`group relative flex min-h-62 items-stretch overflow-hidden border-2 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 ${PLATE[variant]}`}
       href={href}
-      className={`relative h-[234px] rounded-3xl overflow-hidden block hover:opacity-90 transition-opacity ${
-        isDark ? "bg-brand-dark" : "bg-brand-yellow"
-      }`}
     >
-      <div
-        className={`absolute rounded-full size-40 ${
-          isDark
-            ? "bg-brand-yellow/5 right-0 top-[106px]"
-            : "bg-brand-dark/5 -left-8 -top-8"
-        }`}
-      />
-
-      <div className="absolute left-8 top-8 z-10">
-        {label && (
-          <p
-            className={`font-black text-xs leading-4 tracking-[1.2px] uppercase mb-2 ${
-              isDark ? "text-white/70" : "text-brand-dark/70"
-            }`}
-          >
-            {label}
-          </p>
-        )}
-
-        <h3
-          className={`font-black text-3xl leading-[37.5px] tracking-[0.3955px] uppercase ${
-            isDark ? "text-white" : "text-brand-dark"
-          }`}
-        >
-          {titleLines.map((line, index) => (
-            <span key={index} className="block">
-              {line}
+      <div className="relative z-10 flex w-3/5 flex-col justify-between gap-5 px-6 py-6 sm:px-8 sm:py-7">
+        <div className="flex flex-col gap-3">
+          {label ? (
+            <span
+              className={`inline-flex w-fit items-center gap-2 py-1 pl-2.5 pr-4.5 text-[0.625rem] font-black uppercase leading-4 tracking-[0.18em] ${CHIP}`}
+            >
+              <span aria-hidden className="inline-block size-1.5 rotate-45 bg-brand-dark" />
+              {label}
             </span>
-          ))}
-        </h3>
+          ) : null}
 
-        <div
-          className={`flex items-center gap-2 mt-4 ${
-            isDark ? "text-brand-yellow" : "text-brand-dark"
-          }`}
-        >
-          <span className="font-black text-sm leading-5 tracking-[-0.150391px] uppercase">
-            {linkLines.map((line, index) => (
-              <span key={index} className="block">
+          <h3
+            className={`text-2xl font-black uppercase leading-[0.95] tracking-[-0.02em] sm:text-3xl ${TITLE[variant]}`}
+          >
+            {titleLines.map((line) => (
+              <span className="block" key={line}>
                 {line}
               </span>
             ))}
-          </span>
-          <ArrowRightIcon className="size-3.5" />
+          </h3>
         </div>
+
+        <span
+          className={`inline-flex w-fit items-center gap-2 px-5 py-3 text-xs font-black uppercase leading-4 tracking-[0.18em] transition-colors ${CTA[variant]}`}
+        >
+          {linkLabel}
+          <BrandArrowIcon className="size-3.5 shrink-0 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5 group-hover:rotate-[15deg]" />
+        </span>
       </div>
 
-      <div
-        className={`absolute ${
-          isDark
-            ? "right-0 -top-3 w-[336px] h-[420px]"
-            : "right-0 -top-11 w-[432px] h-[311px]"
-        }`}
-      >
+      <div className="relative w-2/5 shrink-0 self-stretch">
         <Image
-          src={image}
           alt={imageAlt}
+          className="object-cover object-center"
           fill
-          className={`object-cover ${!isDark ? "-rotate-[8.88deg]" : ""}`}
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="(max-width: 1024px) 40vw, 260px"
+          src={image}
         />
-      </div>
 
-      {discountBadge && (
-        <div className="absolute left-[227px] top-[181px] flex flex-col items-center justify-center bg-brand-dark rounded-full size-16 shadow-[0px_20px_25px_0px_rgba(0,0,0,0.1),0px_8px_10px_0px_rgba(0,0,0,0.1)]">
-          <span className="font-black text-lg leading-[18px] tracking-[-0.4395px] text-brand-yellow">
-            {discountBadge}
+        {discountBadge ? (
+          <span className="absolute bottom-5 left-0 z-20 flex size-18 -translate-x-1/2 -rotate-6 flex-col items-center justify-center border-2 border-brand-yellow bg-brand-dark">
+            <span className="text-lg font-black leading-none text-brand-yellow" data-numeric>
+              {discountBadge}
+            </span>
+            <span className="text-[0.625rem] font-black uppercase leading-4 tracking-[0.18em] text-brand-yellow">
+              Off
+            </span>
           </span>
-          <span className="font-black text-xs leading-3 text-brand-yellow">
-            OFF
-          </span>
-        </div>
-      )}
+        ) : null}
+      </div>
     </Link>
   );
 }

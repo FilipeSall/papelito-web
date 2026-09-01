@@ -5,74 +5,34 @@ import type { HomeFeatureItem } from "@/types/home-assets";
 import { FeatureItem } from "./feature-item";
 
 /**
- * Barra de benefícios exibida imediatamente abaixo do hero section.
+ * Régua de condições, logo abaixo da folha do corredor.
  *
- * Apresenta quatro itens informativos — frete grátis, troca fácil,
- * parcelamento e envio rápido — em layout horizontal com separadores
- * verticais e fundo branco.
+ * Frete, troca, parcelamento e prazo ficam lado a lado numa faixa preta para
+ * serem lidos numa varredura só, em vez de descobertos um a um durante a rolagem.
  */
 export type FeaturesBarItem = Omit<HomeFeatureItem, "subtitle"> & { subtitle: ReactNode };
 
 export function FeaturesBar({ items }: { items: FeaturesBarItem[] }) {
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="w-full border-b border-[#F3F4F6] bg-white">
-      <div className="mx-auto max-w-450">
-        <div className="grid grid-cols-2 border-t border-brand-yellow md:hidden max-[360px]:hidden">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className={`flex items-center justify-center ${
-                index % 2 === 0 ? "border-r border-[#F3F4F6]" : ""
-              } ${index < 2 ? "border-b border-[#F3F4F6]" : ""}
-              `}
-            >
+    <section aria-label="Condições de compra" className="w-full bg-brand-dark">
+      <div className="mx-auto max-w-450 px-4 pb-6 pt-6 sm:px-6 md:pb-8 md:pt-8 lg:px-8 xl:px-43.5">
+        {/* O fio amarelo entre as células é o fundo da grade aparecendo pelo gap:
+            separa em qualquer contagem de colunas, inclusive na quebra. */}
+        <ul className="grid grid-cols-1 gap-px bg-brand-yellow/30 min-[360px]:grid-cols-2 lg:grid-cols-4">
+          {items.map((item) => (
+            <li className="bg-brand-dark" key={item.id}>
               <FeatureItem
                 iconUrl={item.iconUrl}
-                title={item.title}
                 subtitle={item.subtitle}
-                className="flex w-[10.67256rem] h-[5.24956rem] pl-[0.99994rem] items-center gap-[0.74994rem]"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* fallback for very narrow mobile widths */}
-        <div className="hidden flex-col border-t border-brand-yellow md:hidden max-[360px]:flex">
-          {items.map((item, index) => (
-            <div
-              key={`${item.id}-stack`}
-              className={`flex items-center justify-center ${
-                index !== items.length - 1 ? "border-b border-[#F3F4F6]" : ""
-              }`}
-            >
-              <FeatureItem
-                iconUrl={item.iconUrl}
                 title={item.title}
-                subtitle={item.subtitle}
-                className="flex w-[10.67256rem] h-[5.24956rem] pl-[0.99994rem] items-center gap-[0.74994rem]"
               />
-            </div>
+            </li>
           ))}
-        </div>
-
-        <div className="mx-auto hidden md:grid md:h-17 md:grid-cols-4 md:px-4 lg:px-8 xl:px-43.5">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className={`flex items-center pl-6 ${
-                index !== items.length - 1 ? "border-r border-[#F3F4F6]" : ""
-              }`}
-            >
-              <FeatureItem
-                iconUrl={item.iconUrl}
-                title={item.title}
-                subtitle={item.subtitle}
-                className="h-17 w-full"
-                contentClassName="h-9 justify-start"
-              />
-            </div>
-          ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

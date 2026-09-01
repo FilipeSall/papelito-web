@@ -215,7 +215,7 @@ Usada em botões de ação secundária (ex: "Adicionar faixa de CEP") — evoca 
 O layout deve parecer **construído com materiais físicos**: papel colado, borda de cartaz, etiqueta recortada. Isso se traduz em:
 
 - **Cantos retos** (`rounded-none`) nos componentes do admin/formulários — sem arredondamento nos elementos de ação
-- **Cantos arredondados** (`rounded-full`) apenas em pills/badges e botões do contexto público (auth)
+- **Cantos arredondados** (`rounded-full`) só nas telas de autenticação. A vitrine pública é reta: badge de card, botão e chip são quadrados
 - **Bordas explícitas** e grossas — os limites dos elementos devem ser visíveis
 - **Sombras duras** — offset sem blur, como carimbo no papel
 - **Espaçamento generoso** dentro dos campos, mas compacto nos headers
@@ -243,14 +243,19 @@ Página
     └── Footer (botões: cancelar + submit)
 ```
 
-### Diferença entre contexto público e admin
+### Diferença entre os três contextos
 
-| | Contexto Público (auth, cadastro) | Admin Panel |
-|---|---|---|
-| Fundo | `bg-brand-dark` (painel lateral) | `bg-[#faf8f2]` off-white kraft |
-| Botão primário | `rounded-full bg-brand-yellow text-brand-dark` | `border-2 border-black bg-black text-yellow` |
-| Inputs | `rounded-xl border border-white/20 bg-white/10` | `rounded-none border-2 border-black` |
-| Tom | Sutil, elegante, escuro | Ousado, gráfico, marcante |
+A vitrine pública **deixou de ser o contexto sutil**. Ela adota a mesma linguagem gráfica do
+admin, no [sistema do corredor](#11-sistema-do-corredor--vitrine-pública). Quem continua
+elegante e escuro é só o contexto de **autenticação** (`/entrar`, `/cadastro`, recuperação de
+senha), que ainda não foi migrado.
+
+| | Vitrine pública | Autenticação | Admin / Vendor |
+|---|---|---|---|
+| Fundo | `#faf8f2` kraft, com faixas pretas e amarelas | `bg-brand-dark` (painel lateral) | `bg-[#faf8f2]` off-white kraft |
+| Botão primário | bloco reto amarelo ou preto, sem raio | `rounded-full bg-brand-yellow text-brand-dark` | `border-2 border-black bg-black text-yellow` |
+| Inputs | ainda não migrados | `rounded-xl border border-white/20 bg-white/10` | `rounded-none border-2 border-black` |
+| Tom | Ousado, gráfico, marcante | Sutil, elegante, escuro | Ousado, gráfico, marcante |
 
 ---
 
@@ -543,10 +548,14 @@ Borda `2px solid #1a1a1a`, sombra `8px 8px 0 #1a1a1a`, fundo `#faf8f2`, sem `bor
 
 ### Headers
 
-- Fundo escuro: `bg-brand-dark` com logo e nav em amarelo/branco
-- Fundo claro: `bg-white` com logo escuro
-- Sticky com `z-index` alto
-- Links ativos: underline animado (`.menu-underline`)
+- **Sempre escuros**, público e privado: `bg-brand-dark` com régua amarela de 2px embaixo.
+- O logo é sempre a **versão clara** (`/images/marketplacelogo.svg`, slot `privateHeader`).
+  A versão escura (`logo.svg`) só serve em fundo claro e hoje não é usada em header nenhum.
+- Nav em `font-black` uppercase com `tracking-[0.18em]`, branca, amarela no hover e no ativo.
+- Item ativo e hover recebem um **traço amarelo desenhado com rough.js** (`MenuUnderline`),
+  riscado da esquerda para a direita.
+- Ações (carrinho, sino, perfil) sem fundo, ícone branco; o botão de perfil é bloco reto amarelo.
+- Sticky com `z-index` alto.
 
 ### Seções de destaque (hero)
 
@@ -567,7 +576,7 @@ Borda `2px solid #1a1a1a`, sombra `8px 8px 0 #1a1a1a`, fundo `#faf8f2`, sem `bor
 - Escreva labels em UPPERCASE com `tracking-[0.18em]` ou mais
 - Use o losango amarelo (`rotate-45 bg-brand-yellow`) como marcador de seção
 - Mantenha cantos retos (`rounded-none`) em formulários e admin
-- Prefira `rounded-full` apenas em pills/tags e botões de contexto público
+- Use `rounded-full` só nas telas de autenticação — na vitrine e no admin tudo é reto
 
 ### ❌ Evite
 
@@ -716,5 +725,128 @@ margin: auto;
 
 ---
 
-*Última atualização: extraído do codebase em junho de 2026.*
+## 11. Sistema do corredor — vitrine pública
+
+Sistema aplicado primeiro na home (`app/(public)/page.tsx`) e feito para ser levado às demais
+páginas públicas. A tese: **a vitrine é o corredor de uma papelaria**. Cada família de produto
+corre na horizontal sob uma etiqueta de gôndola que carrega dado, não enfeite.
+
+### Fundos e ritmo
+
+O corredor alterna densidade de propósito. Uma passagem densa paga uma clara.
+
+| Fundo | Papel |
+|---|---|
+| `#faf8f2` kraft | chão da página — o padrão |
+| `#231f20` preto | faixa de ênfase: régua de condições, campanha |
+| `#ffe500` amarelo | fecho e convite: etiqueta secundária, banner de parceiro |
+| `white` | face de card, sobre o chão kraft |
+
+Não empilhe duas faixas do mesmo peso. Se a seção anterior era preta, a próxima é kraft.
+
+### Recortes de papel
+
+Três utilitários em `globals.css`, cada um com um trabalho:
+
+| Classe | Forma | Onde usar |
+|---|---|---|
+| `.aisle-cut` | diagonal longa e rasa na base | folhas grandes: hero, foto emoldurada |
+| `.label-notch` | **um** corte, na ponta superior direita, com a mesma diagonal | etiquetas de seção |
+| `.tag-cut` | lado direito inclinado, sutil | chips e etiquetas pequenas |
+
+O `.tag-cut` repete a inclinação da placa branca do logo **PDV Perfeito** — é de lá que ele vem.
+
+**`clip-path` mata a borda CSS na diagonal.** Para uma chapa recortada *com* moldura visível,
+empilhe duas camadas recortadas: a de fora com a cor da moldura e `p-0.5`, a de dentro com o
+fundo. É o que a variante `framed` do `ShelfLabel` faz para existir sobre fundo preto.
+
+### Componentes
+
+- **`ShelfLabel`** (`src/components/ui/shelf-label.tsx`) — etiqueta de gôndola. Tons `dark`,
+  `yellow` e `framed`. Recebe `facts`, uma faixa densa de informação real que colide de
+  propósito com o campo de produto quase vazio abaixo. Aceita `href`/`linkText` e um `aside`
+  para conteúdo próprio da fileira (cronômetro, contador).
+- **`Shelf`** (`src/components/ui/shelf.tsx`) — trilho horizontal com encaixe nativo
+  (`.shelf-rail`), setas sobrepostas às pontas e régua embaixo. `scribble` troca a régua reta
+  pelo traço à mão.
+- **`ScribbleRule`** (`src/components/ui/scribble-rule.tsx`) — régua rough.js, riscada quando
+  entra na tela. Ela usa duas passadas finas em largura real: perceptivelmente manual, mas sem
+  virar faixa pesada. Não estique `MenuUnderline` para substituir uma régua longa.
+- **`BrandArrowIcon`** (`src/components/ui/icons/`) — a seta da marca, o mesmo traço à mão do
+  site institucional. **Use esta, nunca uma seta geométrica**, em CTA e navegação de carrossel.
+
+### Cards de produto — chapa impressa
+
+Os cards das prateleiras da home não usam `box-shadow`. Cada unidade tem duas camadas: a
+**face** branca, com borda de 2px e assimetria muito discreta nos cantos, e uma **chapa** sólida
+atrás dela. A chapa é uma camada sem interação, levemente girada (`1.2deg`), deslocada 6px e com
+contorno próprio (`polygon(1% 2%, 98% 0, 100% 95%, 94% 100%, 0 97%)`). É esse descompasso que
+faz a sombra parecer impressão/serigrafia, não uma cópia geométrica do card.
+
+- Chão kraft: face branca + borda e chapa `#231f20`.
+- Faixa preta: face branca + borda e chapa `#ffe500`.
+- No hover, o card sobe só na vertical e a chapa vai de 6px para 8px de offset. Não escale nem
+  desloque horizontalmente o card — o trilho corta esse gesto.
+- Cards compactos reduzem o offset para 4px → 6px; mantêm a mesma linguagem.
+- Em `prefers-reduced-motion`, card e chapa ficam imóveis.
+
+As setas do `Shelf` pertencem à família dos chips de **Explore por coleção**: contorno de 2px,
+leve inclinação oposta (`-1.4deg` para voltar, `0.9deg` para avançar), ícone `BrandArrowIcon` e
+inversão preto/amarelo no hover. Em faixa preta, já nascem preto/amarelo com chapa amarela. Foco
+de teclado usa outline amarelo com offset de 3px, em ambos os tons.
+
+### Movimento
+
+- **Um momento autoral por superfície.** Na home é `.animate-sheet-settle`: a sombra amarela da
+  folha do topo cresce uma vez no carregamento, partindo de um estado já visível.
+- **Pressionar** um botão encolhe a sombra dura (`3px → 1px`) e afunda 1px. Nada de escala.
+- **Hover em card de trilho é só vertical.** Ver a armadilha do encaixe, abaixo.
+- **Seta** gira ~15° e desliza no hover, em 300ms.
+- Tudo que anima respeita `prefers-reduced-motion` — e nesse modo o traço aparece **pronto**,
+  nunca ausente.
+
+### Superfícies do navegador
+
+Já tematizadas globalmente em `globals.css`, não repita por componente: `::selection`,
+`caret-color`, `scrollbar-color`, `:focus-visible`, `text-underline-offset` e
+`[data-numeric]` (numerais tabulares para preço, contagem e prazo alinharem na coluna).
+`button`, `[role="button"]`, `summary` e `label[for]` recebem `cursor: pointer` — o Preflight
+do Tailwind 4 deixou de fazer isso.
+
+### Armadilhas verificadas
+
+Cada uma custou uma rodada de depuração. Não as redescubra.
+
+- **`scroll-snap` encosta o primeiro card na borda do recorte.** O trilho tem
+  `overflow-x`, que corta no limite do padding, e o encaixe posiciona o primeiro item
+  exatamente ali. Qualquer `translate` lateral no hover é cortado, por mais folga que se dê.
+  Por isso o card levanta na vertical.
+- **Passo de rolagem tem que ser múltiplo exato do card.** Com encaixe obrigatório, um passo
+  quebrado cai entre dois pontos e o navegador reancora onde quer — o clique parece não
+  funcionar. `Shelf` calcula `pitch × cards`.
+- **`MenuUnderline` não serve para régua longa.** Ele usa `pathLength="1"` num viewBox fixo de
+  120px com `preserveAspectRatio="none"`; esticado ~9×, a conta do `stroke-dasharray` se perde
+  e o traço sai picotado. Para larguras grandes use `ScribbleRule`, que gera o traço na largura
+  real em pixels.
+- **Ícone claro sobre chapa clara desaparece.** Os ícones de coleção são arte clara sobre
+  transparente: em placa kraft precisam de ladrilho preto atrás.
+- **Ao capturar evidência, role a página inteira antes.** Imagens abaixo da dobra são
+  `loading="lazy"` e `captureBeyondViewport` não dispara o carregamento — o print mostra
+  buracos que não existem.
+
+### Ao levar o sistema para outra página
+
+1. Chão kraft; faixas pretas e amarelas só onde o ritmo pedir.
+2. Toda seção de produto abre com `ShelfLabel` e corre em `Shelf`. Sem cabeçalho próprio.
+3. Os `facts` da etiqueta são **dado real** — contagem, condição, alcance. Se não houver dado,
+   uma linha curta de marketing verdadeira; nunca número inventado.
+4. Card em fundo claro: borda preta 2px e sombra dura preta. Em fundo preto, `onDark` — moldura
+   e sombra amarelas, porque as pretas somem.
+5. `AddToCartButton` com `variant="collection"`.
+6. Sem emoji fazendo papel de ícone, sem sobretítulo decorativo, sem gradiente, sem blur.
+
+---
+
+*Última atualização: rebranding da vitrine pública, setembro de 2026 — seção 11 e correções nas
+seções 5 e 8. O restante foi extraído do codebase em junho de 2026.*
 *Para dúvidas sobre decisões de design, consultar os commits de `vendor-create-launcher.tsx` e `globals.css`.*

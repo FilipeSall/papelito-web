@@ -8,6 +8,8 @@ import type { HomeProductCard } from "@/features/catalog/types/home-products";
 interface ProductCardProps {
   product: HomeProductCard;
   compactOnMobile?: boolean;
+  /** Sobre fundo preto a moldura e a sombra viram amarelas — em preto sumiriam. */
+  onDark?: boolean;
 }
 
 /**
@@ -42,6 +44,7 @@ interface ProductCardProps {
 export function ProductCard({
   product,
   compactOnMobile = false,
+  onDark = false,
 }: Readonly<ProductCardProps>) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
@@ -53,29 +56,30 @@ export function ProductCard({
     originalPrice,
     price,
     image,
-    featured,
     promotionContext,
   } = product;
+  const plateColor = onDark ? "bg-brand-yellow" : "bg-brand-dark";
+  const borderColor = onDark ? "border-brand-yellow" : "border-brand-dark";
 
   return (
     <div
-      className={`group/availability relative h-82.5 w-full max-w-73 cursor-pointer overflow-visible rounded-xl bg-white ${
+      className={`group/availability relative isolate h-82.5 w-full max-w-73 cursor-pointer overflow-visible transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
         compactOnMobile
           ? "h-[329.982px] w-full max-w-none sm:h-82.5 sm:max-w-73"
           : ""
-      } ${
-        featured
-          ? "shadow-[0px_0px_0px_2px_#FFE500,0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
-          : "shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
       }`}
     >
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-0 ${plateColor} translate-x-[6px] translate-y-[6px] rotate-[1.2deg] [clip-path:polygon(1%_2%,98%_0,100%_95%,94%_100%,0_97%)] transition-transform duration-200 ease-out group-hover/availability:translate-x-[8px] group-hover/availability:translate-y-[8px] motion-reduce:transition-none motion-reduce:group-hover/availability:translate-x-[6px] motion-reduce:group-hover/availability:translate-y-[6px]`}
+      />
       <div
-        className={`overflow-hidden rounded-xl ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
+        className={`relative z-10 h-full overflow-hidden rounded-[2px_5px_12px_4px] border-2 ${borderColor} bg-white ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
       >
         <Link
           href={`/produtos/${id}`}
           aria-label={`Ver produto ${name}`}
-          className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+          className="absolute inset-0 z-10"
         />
         <ProductCardImage
           image={image}
@@ -99,7 +103,7 @@ export function ProductCard({
       {isUnavailable ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-3 right-3 top-3 z-30 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/availability:opacity-100 group-focus-within/availability:opacity-100"
+          className="pointer-events-none absolute left-3 right-3 top-3 z-30 border-2 border-brand-yellow bg-brand-dark px-3 py-2 text-center text-[11px] font-black uppercase leading-4 tracking-[0.08em] text-brand-yellow opacity-0 transition-opacity group-hover/availability:opacity-100 group-focus-within/availability:opacity-100"
         >
           {disabledReason}
         </span>

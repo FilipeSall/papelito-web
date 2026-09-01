@@ -22,7 +22,7 @@ export function ProductCardImage({
 }: ProductCardImageProps) {
   return (
     <div
-      className={`relative h-48 w-full shrink-0 bg-bg-light ${
+      className={`relative h-48 w-full shrink-0 border-b-2 border-brand-dark bg-[#faf8f2] ${
         compactOnMobile ? "h-[191.994px] sm:h-48" : ""
       }`}
     >

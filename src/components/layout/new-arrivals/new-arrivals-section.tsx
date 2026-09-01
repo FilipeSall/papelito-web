@@ -1,13 +1,4 @@
-"use client";
-
-import Link from "next/link";
-import { useCallback } from "react";
-import useEmblaCarousel from "embla-carousel-react";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  SectionHeader,
-} from "@/components/ui";
+import { Shelf, ShelfLabel } from "@/components/ui";
 import { MiniProductCard } from "./mini-product-card";
 import type { HomeNewArrivalProduct } from "@/features/catalog";
 
@@ -15,82 +6,46 @@ interface NewArrivalsSectionProps {
   products: HomeNewArrivalProduct[];
 }
 
-export function NewArrivalsSection({
-  products,
-}: Readonly<NewArrivalsSectionProps>) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "start",
-    containScroll: "trimSnaps",
-    dragFree: true,
-  });
+const LABEL_ID = "prateleira-recem-chegados";
 
-  const scrollPrev = useCallback(() => {
-    emblaApi?.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    emblaApi?.scrollNext();
-  }, [emblaApi]);
+/**
+ * Segunda prateleira do corredor: as novidades, em cards menores e mais densos —
+ * a fileira muda de peso para o corredor não virar acordeão.
+ */
+export function NewArrivalsSection({ products }: Readonly<NewArrivalsSectionProps>) {
+  if (products.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="w-full bg-white py-12">
+    <section aria-labelledby={LABEL_ID} className="w-full bg-transparent pb-16 pt-4">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
-        <div className="w-full max-w-304 mx-auto flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <SectionHeader
-              emoji="✨"
-              title="Recém Chegados"
-              variant="compact"
-            />
+        <div className="flex flex-col">
+          <ShelfLabel
+            facts={["Últimas entradas do catálogo", "Preço único em toda a rede"]}
+            href="/novidades"
+            id={LABEL_ID}
+            linkText="Ver novidades"
+            title="Recém chegados"
+            tone="yellow"
+          />
 
-            <div className="ml-auto flex items-center gap-2">
-              <Link
-                href="/novidades"
-                className="inline-flex items-center gap-1 text-brand-dark transition-opacity hover:opacity-70"
-              >
-                <span className="font-black text-sm leading-5 tracking-[-0.150391px] uppercase">
-                  Ver todos
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                aria-label="Produtos anteriores"
-                onClick={scrollPrev}
-                className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
-              >
-                <ChevronLeftIcon className="size-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Próximos produtos"
-                onClick={scrollNext}
-                className="flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-brand-dark transition-colors hover:bg-gray-50"
-              >
-                <ChevronRightIcon className="size-4" />
-              </button>
-            </div>
-          </div>
-
-          <section
-            aria-label="Carrossel de produtos recém chegados"
-            className="-mx-1 overflow-hidden pb-1"
-            ref={emblaRef}
-          >
-            <div className="flex gap-4 px-1">
+          <div className="pt-8">
+            <Shelf gap="tight" labelledBy={LABEL_ID} scribble>
               {products.map((product) => (
-                <MiniProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  originalPrice={product.originalPrice}
-                  price={product.price}
-                  discount={product.discount}
-                  image={product.image}
-                />
+                <li className="shrink-0 snap-start" key={product.id}>
+                  <MiniProductCard
+                    discount={product.discount}
+                    id={product.id}
+                    image={product.image}
+                    name={product.name}
+                    originalPrice={product.originalPrice}
+                    price={product.price}
+                  />
+                </li>
               ))}
-            </div>
-          </section>
+            </Shelf>
+          </div>
         </div>
       </div>
     </section>
