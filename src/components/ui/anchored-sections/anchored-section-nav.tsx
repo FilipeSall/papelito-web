@@ -36,12 +36,36 @@ export function AnchoredSectionNav({
       return (Number.isFinite(stickyTop) ? stickyTop : 0) + nav!.offsetHeight;
     }
 
+    function readingBounds(offset: number) {
+      const bounds = scroller ? scroller.getBoundingClientRect() : null;
+
+      return {
+        bottom: bounds ? bounds.bottom : window.innerHeight,
+        top: (bounds ? bounds.top : 0) + offset + SECTION_GAP * 2,
+      };
+    }
+
+    function stillLeadsReadingArea(id: string, offset: number) {
+      const element = document.getElementById(id);
+
+      if (!element) return false;
+
+      const { bottom, top } = readingBounds(offset);
+      const rect = element.getBoundingClientRect();
+
+      return rect.top <= top + (bottom - top) / 2 && rect.bottom > top;
+    }
+
     function resolveActive() {
       const offset = stuckOffset();
 
       offsetHost.style.setProperty("--anchored-nav-offset", `${offset + SECTION_GAP}px`);
 
-      if (pinnedRef.current) return;
+      if (pinnedRef.current) {
+        if (stillLeadsReadingArea(pinnedRef.current, offset)) return;
+
+        pinnedRef.current = null;
+      }
 
       const atBottom = scroller
         ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4
@@ -52,10 +76,8 @@ export function AnchoredSectionNav({
         return;
       }
 
-      const bounds = scroller ? scroller.getBoundingClientRect() : null;
-      const readingTop = (bounds ? bounds.top : 0) + offset + SECTION_GAP * 2;
-      const readingBottom = bounds ? bounds.bottom : window.innerHeight;
-      const focusLine = readingTop + (readingBottom - readingTop) / 2;
+      const { bottom, top } = readingBounds(offset);
+      const focusLine = top + (bottom - top) / 2;
       let current = sections[0].id;
 
       for (const section of sections) {
@@ -69,23 +91,30 @@ export function AnchoredSectionNav({
       setActiveId(current);
     }
 
-    function releasePin() {
-      pinnedRef.current = null;
+    function focusHashSection() {
+      const id = window.location.hash.slice(1);
+
+      if (!id || !sections.some((section) => section.id === id)) return;
+
+      const element = document.getElementById(id);
+
+      if (!element) return;
+
+      pinnedRef.current = id;
+      setActiveId(id);
+      element.scrollIntoView({ block: "start" });
     }
 
     resolveActive();
+    focusHashSection();
     source.addEventListener("scroll", resolveActive, { passive: true });
     window.addEventListener("resize", resolveActive);
-    window.addEventListener("wheel", releasePin, { passive: true });
-    window.addEventListener("touchmove", releasePin, { passive: true });
-    window.addEventListener("keydown", releasePin);
+    window.addEventListener("hashchange", focusHashSection);
 
     return () => {
       source.removeEventListener("scroll", resolveActive);
       window.removeEventListener("resize", resolveActive);
-      window.removeEventListener("wheel", releasePin);
-      window.removeEventListener("touchmove", releasePin);
-      window.removeEventListener("keydown", releasePin);
+      window.removeEventListener("hashchange", focusHashSection);
     };
   }, [sections]);
 
