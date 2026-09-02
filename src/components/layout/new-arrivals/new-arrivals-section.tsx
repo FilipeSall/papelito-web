@@ -32,7 +32,7 @@ export function NewArrivalsSection({ products }: Readonly<NewArrivalsSectionProp
           <div className="pt-8">
             <Shelf gap="tight" labelledBy={LABEL_ID} rule="none">
               {products.map((product) => (
-                <li className="shrink-0 snap-start" key={product.id}>
+                <li className="flex shrink-0 snap-start" key={product.id}>
                   <MiniProductCard
                     discount={product.discount}
                     id={product.id}
