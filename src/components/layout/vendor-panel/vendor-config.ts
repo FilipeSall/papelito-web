@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Settings,
   ShoppingBag,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,7 +21,6 @@ export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: "/vendor/cobertura", icon: MapPinned, label: "Cobertura", description: "CEPs atendidos" },
   { href: "/vendor/estoque", icon: Boxes, label: "Estoque", description: "Produtos e saldo" },
   { href: "/vendor/pedidos", icon: ShoppingBag, label: "Pedidos", description: "Separacao e envio" },
-  { href: "/vendor/financeiro", icon: Wallet, label: "Financeiro", description: "Faturamento" },
   { href: "/vendor/mensagens", icon: MessageSquare, label: "Mensagens", description: "Atendimento" },
   { href: "/vendor/configuracoes", icon: Settings, label: "Configuracoes", description: "Operacao" },
 ];

@@ -1,4 +1,4 @@
-export type StatusBadgeTone = "success" | "warning" | "critical" | "default";
+export type StatusBadgeTone = "success" | "warning" | "critical" | "strong" | "default";
 
 export function StatusBadge({
   label,
@@ -30,8 +30,10 @@ export function StatusBadge({
   // pesada e amarelo da marca no estado positivo. O painel tem uma identidade de
   // status so, e nao uma por tabela.
   const toneClassName =
-    tone === "success"
-      ? "border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a]"
+    tone === "strong"
+      ? "border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow"
+      : tone === "success"
+        ? "border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a]"
       : tone === "warning"
         ? "border-[#1a1a1a] bg-[#faf8f2] text-[#1a1a1a]"
         : tone === "critical"

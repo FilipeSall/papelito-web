@@ -32,10 +32,7 @@ export function VendorPageHeader({
         </div>
         {action ?? (
           signal ? (
-            <StatusBadge
-              className="rounded-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-3 py-1 text-[10px] font-black tracking-[0.18em] text-brand-yellow"
-              label={signal}
-            />
+            <StatusBadge label={signal} tone="strong" />
           ) : null
         )}
       </div>

@@ -16,6 +16,7 @@ function formatDelta(rate: number) {
 export function SalesHeadline({
   deltaRate,
   grossRevenue,
+  label = "Receita bruta",
   netRevenue,
   periodLabel,
   previousGrossRevenue,
@@ -23,7 +24,8 @@ export function SalesHeadline({
 }: Readonly<{
   deltaRate: number | null;
   grossRevenue: number;
-  netRevenue: number;
+  label?: string;
+  netRevenue?: number;
   periodLabel: string;
   previousGrossRevenue: number | null;
   previousPeriodLabel: string;
@@ -33,7 +35,7 @@ export function SalesHeadline({
   return (
     <dl>
       <dt className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/62">
-        Receita bruta · {periodLabel}
+        {label} · {periodLabel}
       </dt>
       <dd
         className="mt-3 text-[clamp(2.5rem,7vw,4rem)] font-bold leading-[0.86] tracking-[-0.04em] tabular-nums text-[#1a1a1a]"
@@ -76,12 +78,14 @@ export function SalesHeadline({
         )}
       </dd>
 
-      <dd className="mt-4 border-t-2 border-dashed border-[#1a1a1a]/28 pt-4 text-sm leading-6 text-[#1a1a1a]/72">
-        Líquida, já descontados frete, impostos e reembolsos:{" "}
-        <span className="font-semibold tabular-nums text-[#1a1a1a]">
-          {CURRENCY.format(netRevenue)}
-        </span>
-      </dd>
+      {netRevenue === undefined ? null : (
+        <dd className="mt-4 border-t-2 border-dashed border-[#1a1a1a]/28 pt-4 text-sm leading-6 text-[#1a1a1a]/72">
+          Líquida, já descontados frete, impostos e reembolsos:{" "}
+          <span className="font-semibold tabular-nums text-[#1a1a1a]">
+            {CURRENCY.format(netRevenue)}
+          </span>
+        </dd>
+      )}
     </dl>
   );
 }

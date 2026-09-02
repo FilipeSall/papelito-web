@@ -15,6 +15,7 @@ export type VendorDashboardSnapshot = {
   grossRevenue: number;
   ordersCount: number;
   pendingOrders: number;
+  previousGrossRevenue: number | null;
   period: {
     from: string;
     interval: SalesSeriesInterval;

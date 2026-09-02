@@ -17,6 +17,7 @@ type WpVendorKpis = {
   orders_count?: number;
   pending_orders?: number;
   period?: { from?: string; interval?: SalesSeriesInterval | string; to?: string };
+  previous_gross_revenue?: number | null;
   revenue_series?: Array<{ label?: string; value?: number }>;
   top_products?: Array<{ name?: string; product_id?: number; qty?: number; revenue?: number }>;
 };
@@ -29,6 +30,7 @@ function emptySnapshot(filters: AdminSalesFilters): VendorDashboardSnapshot {
     ordersCount: 0,
     pendingOrders: 0,
     period: { from: filters.from, interval: filters.interval, to: filters.to },
+    previousGrossRevenue: null,
     revenueSeries: [],
     topProducts: [],
   };
@@ -45,6 +47,7 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
     from: filters.from,
     to: filters.to,
     interval: filters.interval,
+    segment: filters.segment,
   });
   const result = await wpRest<WpVendorKpis>(`/papelito/v1/vendor/me/kpis?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -75,6 +78,10 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
       interval,
       to,
     },
+    previousGrossRevenue:
+      data.previous_gross_revenue === null || data.previous_gross_revenue === undefined
+        ? null
+        : Math.max(0, Number(data.previous_gross_revenue) || 0),
     revenueSeries: buildSalesSeriesPoints({
       from,
       to,

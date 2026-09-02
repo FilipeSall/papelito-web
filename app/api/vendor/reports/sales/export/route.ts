@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getAdminApiSession } from "@/lib/server/admin-api-auth";
+import { requireVendorAccessToken } from "../../../_lib/require-vendor-session";
 import { proxyExportDownload } from "@/lib/server/export-proxy";
 
 export async function GET(request: Request) {
-  const auth = await getAdminApiSession();
+  const auth = await requireVendorAccessToken();
 
   if ("error" in auth) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
 
   return proxyExportDownload({
     accessToken: auth.accessToken,
-    failureMessage: "Não foi possível exportar usuários.",
-    path: "/papelito/v1/admin/reports/users/export",
+    failureMessage: "Não foi possível exportar suas vendas.",
+    path: "/papelito/v1/vendor/me/reports/sales/export",
     request,
   });
 }

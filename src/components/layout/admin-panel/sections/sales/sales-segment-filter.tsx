@@ -14,8 +14,10 @@ const SEGMENT_HINTS: Record<(typeof ADMIN_SALES_SEGMENTS)[number], string> = {
 };
 
 export function SalesSegmentFilter({
+  basePath = "/admin/sales",
   filters,
 }: Readonly<{
+  basePath?: string;
   filters: ReturnType<typeof parseAdminSalesFilters>;
 }>) {
   return (
@@ -44,7 +46,7 @@ export function SalesSegmentFilter({
                     : "bg-white text-[#1a1a1a] hover:bg-[#f7f2e7]",
                   FOCUS_RING,
                 ].join(" ")}
-                href={`/admin/sales?${buildAdminSalesFilterQuery(filters, {
+                href={`${basePath}?${buildAdminSalesFilterQuery(filters, {
                   page: 1,
                   segment,
                 })}`}
