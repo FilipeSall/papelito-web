@@ -771,7 +771,9 @@ fundo. É o que a variante `framed` do `ShelfLabel` faz para existir sobre fundo
   pelo traço à mão.
 - **`ScribbleRule`** (`src/components/ui/scribble-rule.tsx`) — régua rough.js, riscada quando
   entra na tela. Ela usa duas passadas finas em largura real: perceptivelmente manual, mas sem
-  virar faixa pesada. Não estique `MenuUnderline` para substituir uma régua longa.
+  virar faixa pesada. Também pode ser vertical para costurar células contínuas; aplique-a em
+  amarelo translúcido, sem voltar a usar `gap-px` como separador reto. Não estique
+  `MenuUnderline` para substituir uma régua longa.
 - **`BrandArrowIcon`** (`src/components/ui/icons/`) — a seta da marca, o mesmo traço à mão do
   site institucional. **Use esta, nunca uma seta geométrica**, em CTA e navegação de carrossel.
 
@@ -794,6 +796,14 @@ As setas do `Shelf` pertencem à família dos chips de **Explore por coleção**
 leve inclinação oposta (`-1.4deg` para voltar, `0.9deg` para avançar), ícone `BrandArrowIcon` e
 inversão preto/amarelo no hover. Em faixa preta, já nascem preto/amarelo com chapa amarela. Foco
 de teclado usa outline amarelo com offset de 3px, em ambos os tons.
+
+### Régua de condições
+
+Os benefícios formam uma faixa preta contínua, com o ícone amarelo alinhado ao início do título —
+nunca centralizado em relação a uma descrição que possa quebrar em duas linhas. O respiro inferior
+é menor que o superior (`pb-4`, `md:pb-5`) para devolver peso visual ao hero. Entre células, use
+`ScribbleRule` em amarelo translúcido: horizontal em uma ou duas colunas e vertical em quatro.
+É uma costura discreta da faixa, não uma borda grossa nem uma terceira régua de destaque.
 
 ### Movimento
 

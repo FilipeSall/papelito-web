@@ -7,6 +7,7 @@ import type { Options } from "roughjs/bin/core";
 const generator = rough.generator();
 const HEIGHT = 12;
 const STROKE_Y_OFFSETS = [5.9, 7.15];
+const STROKE_X_OFFSETS = [5.9, 7.15];
 const LINE_SEED = 17;
 
 const LINE_OPTIONS: Options = {
@@ -24,10 +25,15 @@ const LINE_OPTIONS: Options = {
  * O traço é gerado na largura real em pixels e o viewBox acompanha essa largura.
  * Esticar um viewBox fixo quebra a conta do `stroke-dasharray` e o traço sai picotado.
  */
-export function ScribbleRule({ className }: { className?: string }) {
+interface ScribbleRuleProps {
+  className?: string;
+  orientation?: "horizontal" | "vertical";
+}
+
+export function ScribbleRule({ className, orientation = "horizontal" }: ScribbleRuleProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
-  const [width, setWidth] = useState(0);
+  const [length, setLength] = useState(0);
   const [drawn, setDrawn] = useState(false);
 
   useEffect(() => {
@@ -37,7 +43,11 @@ export function ScribbleRule({ className }: { className?: string }) {
       return;
     }
 
-    const measure = () => setWidth(Math.round(host.getBoundingClientRect().width));
+    const measure = () => {
+      const bounds = host.getBoundingClientRect();
+
+      setLength(Math.round(orientation === "horizontal" ? bounds.width : bounds.height));
+    };
 
     measure();
 
@@ -50,12 +60,18 @@ export function ScribbleRule({ className }: { className?: string }) {
     observer.observe(host);
 
     return () => observer.disconnect();
-  }, []);
+  }, [orientation]);
 
   useEffect(() => {
     const host = hostRef.current;
 
     if (!host) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      setDrawn(true);
+
       return;
     }
 
@@ -77,35 +93,48 @@ export function ScribbleRule({ className }: { className?: string }) {
   useEffect(() => {
     const path = pathRef.current;
 
-    if (!path || width <= 0) {
+    if (!path || length <= 0) {
       return;
     }
 
-    const length = path.getTotalLength();
+    const pathLength = path.getTotalLength();
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    path.style.strokeDasharray = `${length}`;
+    path.style.strokeDasharray = `${pathLength}`;
     path.style.transitionDuration = reduced ? "0ms" : "1100ms";
-    path.style.strokeDashoffset = drawn || reduced ? "0" : `${length}`;
-  }, [drawn, width]);
+    path.style.strokeDashoffset = drawn || reduced ? "0" : `${pathLength}`;
+  }, [drawn, length]);
 
-  const d = width > 0
-    ? STROKE_Y_OFFSETS.flatMap((y, index) =>
-        generator
-          .line(1, y, width - 1, y - 0.35, { ...LINE_OPTIONS, seed: LINE_SEED + index })
-          .sets.filter((set) => set.type === "path")
-          .map((set) => generator.opsToPath(set, 2)),
-      ).join(" ")
+  const d = length > 0
+    ? (orientation === "horizontal" ? STROKE_Y_OFFSETS : STROKE_X_OFFSETS)
+        .flatMap((offset, index) => {
+          const drawable = orientation === "horizontal"
+            ? generator.line(1, offset, length - 1, offset - 0.35, {
+                ...LINE_OPTIONS,
+                seed: LINE_SEED + index,
+              })
+            : generator.line(offset, 1, offset - 0.35, length - 1, {
+                ...LINE_OPTIONS,
+                seed: LINE_SEED + index,
+              });
+
+          return drawable.sets
+            .filter((set) => set.type === "path")
+            .map((set) => generator.opsToPath(set, 2));
+        })
+        .join(" ")
     : "";
+
+  const horizontal = orientation === "horizontal";
 
   return (
     <div aria-hidden className={className} ref={hostRef}>
       {d ? (
         <svg
-          className="block h-3 w-full overflow-visible"
-          height={HEIGHT}
-          viewBox={`0 0 ${width} ${HEIGHT}`}
-          width={width}
+          className={horizontal ? "block h-3 w-full overflow-visible" : "block h-full w-3 overflow-visible"}
+          height={horizontal ? HEIGHT : length}
+          viewBox={horizontal ? `0 0 ${length} ${HEIGHT}` : `0 0 ${HEIGHT} ${length}`}
+          width={horizontal ? length : HEIGHT}
           xmlns="http://www.w3.org/2000/svg"
         >
           <path

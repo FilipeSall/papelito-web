@@ -13,7 +13,7 @@ interface FeatureItemProps {
  */
 export function FeatureItem({ iconUrl, title, subtitle }: FeatureItemProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
+    <div className="flex items-start gap-3 px-4 py-4 sm:px-6">
       <span className="grid size-9 shrink-0 place-items-center bg-brand-yellow">
         <Image alt="" aria-hidden height={16} src={iconUrl} width={16} />
       </span>
