@@ -63,7 +63,6 @@ export function FlashSaleSection({
         <div className="flex flex-col">
           <ShelfLabel
             aside={<CountdownTimerNoSSR endsAt={campaign.endsAt} />}
-            bullet={false}
             facts={[getCampaignPhaseLabel(campaign)]}
             href={promoBanner?.href}
             id={LABEL_ID}

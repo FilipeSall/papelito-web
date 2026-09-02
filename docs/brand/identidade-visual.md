@@ -770,11 +770,10 @@ fundo — a borda simples desapareceria no corte.
 ### Componentes
 
 - **`ShelfLabel`** (`src/components/ui/shelf-label.tsx`) — etiqueta de gôndola. Tons `dark` e
-  `yellow`. Abre com um ponto redondo amarelo, que `bullet={false}` dispensa quando o título já
-  pesa sozinho — é o caso da campanha. Recebe `facts` opcional, uma faixa densa de informação
-  real que colide de propósito com o campo de produto quase vazio abaixo; sem `facts`, a
-  etiqueta é só o título. O separador entre fatos é o mesmo ponto redondo, e só aparece a partir
-  do segundo fato. Aceita `href`/`linkText` e um `aside` para conteúdo próprio da fileira
+  `yellow`. Abre sempre com um ponto redondo antes do título. Recebe `facts` opcional, uma faixa
+  densa de informação real que colide de propósito com o campo de produto quase vazio abaixo;
+  sem `facts`, a etiqueta é só o título. O separador entre fatos é o mesmo ponto redondo, e só
+  aparece a partir do segundo fato. Aceita `href`/`linkText` e um `aside` para conteúdo próprio da fileira
   (cronômetro, contador).
 - **`Shelf`** (`src/components/ui/shelf.tsx`) — trilho horizontal com encaixe nativo
   (`.shelf-rail`), setas sobrepostas às pontas e régua embaixo. `rule` escolhe a régua:

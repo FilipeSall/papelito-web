@@ -11,14 +11,12 @@ interface ShelfLabelProps {
   linkText?: string;
   size?: "lead" | "row";
   tone?: "dark" | "yellow";
-  /** Marcador redondo antes do título. */
-  bullet?: boolean;
   /** Conteúdo próprio da fileira — cronômetro, contador — na coluna da direita. */
   aside?: ReactNode;
 }
 
 const TITLE_SIZE = {
-  lead: "text-[2rem] leading-[0.92] sm:text-5xl md:text-6xl",
+  lead: "text-[1.875rem] leading-[0.92] sm:text-[2.75rem] md:text-[3.375rem]",
   row: "text-2xl leading-[0.95] sm:text-4xl",
 } as const;
 
@@ -55,7 +53,6 @@ export function ShelfLabel({
   linkText = "Ver todos",
   size = "row",
   tone = "dark",
-  bullet = true,
   aside,
 }: Readonly<ShelfLabelProps>) {
   return (
@@ -67,12 +64,10 @@ export function ShelfLabel({
           className={`flex items-center gap-3 font-black uppercase tracking-tight ${TITLE_SIZE[size]}`}
           id={id}
         >
-          {bullet ? (
-            <span
-              aria-hidden
-              className={`inline-block size-3 shrink-0 rounded-full sm:size-4 ${BULLET_TONE[tone]}`}
-            />
-          ) : null}
+          <span
+            aria-hidden
+            className={`inline-block size-3 shrink-0 rounded-full sm:size-4 ${BULLET_TONE[tone]}`}
+          />
           {title}
         </h2>
 
