@@ -52,10 +52,6 @@ export function MiniProductCard({
       onKeyDown={handleCardKeyDown}
       className="group/availability relative isolate flex h-65.5 w-44 shrink-0 cursor-pointer select-none flex-col items-start overflow-visible transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 bg-brand-dark translate-x-[4px] translate-y-[4px] rotate-[1.2deg] [clip-path:polygon(1%_2%,98%_0,100%_95%,94%_100%,0_97%)] transition-transform duration-200 ease-out group-hover/availability:translate-x-[6px] group-hover/availability:translate-y-[6px] motion-reduce:transition-none motion-reduce:group-hover/availability:translate-x-[4px] motion-reduce:group-hover/availability:translate-y-[4px]"
-      />
       <div
         className={`relative z-10 flex h-full w-full flex-col overflow-hidden rounded-[2px_5px_10px_4px] border-2 border-brand-dark bg-white ${
           isUnavailable ? "opacity-45 transition-opacity" : ""

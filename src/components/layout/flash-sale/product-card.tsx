@@ -58,7 +58,6 @@ export function ProductCard({
     image,
     promotionContext,
   } = product;
-  const plateColor = onDark ? "bg-brand-yellow" : "bg-brand-dark";
   const borderColor = onDark ? "border-brand-yellow" : "border-brand-dark";
 
   return (
@@ -69,10 +68,6 @@ export function ProductCard({
           : ""
       }`}
     >
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 z-0 ${plateColor} translate-x-[6px] translate-y-[6px] rotate-[1.2deg] [clip-path:polygon(1%_2%,98%_0,100%_95%,94%_100%,0_97%)] transition-transform duration-200 ease-out group-hover/availability:translate-x-[8px] group-hover/availability:translate-y-[8px] motion-reduce:transition-none motion-reduce:group-hover/availability:translate-x-[6px] motion-reduce:group-hover/availability:translate-y-[6px]`}
-      />
       <div
         className={`relative z-10 h-full overflow-hidden rounded-[2px_5px_12px_4px] border-2 ${borderColor} bg-white ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
       >
