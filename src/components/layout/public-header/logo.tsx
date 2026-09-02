@@ -24,10 +24,10 @@ export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
         <Image
           alt={resolved.alt}
           className="h-9 w-auto"
-          height={73}
+          height={1352}
           priority
           src={resolved.imageUrl}
-          width={123}
+          width={2121}
         />
       </Link>
     );
@@ -38,10 +38,10 @@ export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
       <Image
         alt={resolved.alt}
         className="h-18.25 w-auto"
-        height={73}
+        height={1352}
         priority
         src={resolved.imageUrl}
-        width={123}
+        width={2121}
       />
     </Link>
   );
