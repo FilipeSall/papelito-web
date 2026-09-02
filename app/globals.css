@@ -326,14 +326,6 @@ a:hover .menu-underline path:nth-child(3),
         }
     }
 
-    /* Etiqueta arrancada do trilho: um único corte, na ponta superior direita,
-       com a mesma diagonal longa e rasa da folha do topo. As outras três pontas
-       ficam em bico. */
-    .label-notch {
-        -webkit-clip-path: polygon(0 0, 78% 0, 100% 1rem, 100% 100%, 0 100%);
-        clip-path: polygon(0 0, 78% 0, 100% 1rem, 100% 100%, 0 100%);
-    }
-
     /* Ponta inclinada de um lado só, como a placa branca do logo PDV Perfeito. */
     .tag-cut {
         -webkit-clip-path: polygon(0 0, 100% 0, calc(100% - 0.5rem) 100%, 0 100%);

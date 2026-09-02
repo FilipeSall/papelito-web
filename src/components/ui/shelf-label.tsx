@@ -60,7 +60,7 @@ export function ShelfLabel({
 }: Readonly<ShelfLabelProps>) {
   return (
     <div
-      className={`label-notch flex flex-col gap-3 px-5 py-5 sm:px-7 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-8 ${PLATE_TONE[tone]}`}
+      className={`flex flex-col gap-3 rounded-[2px_5px_12px_4px] px-5 py-5 sm:px-7 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-8 ${PLATE_TONE[tone]}`}
     >
       <div className="flex flex-col gap-3">
         <h2

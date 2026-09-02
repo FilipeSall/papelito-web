@@ -22,7 +22,6 @@ export function NewArrivalsSection({ products }: Readonly<NewArrivalsSectionProp
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="flex flex-col">
           <ShelfLabel
-            facts={["Últimas entradas do catálogo", "Preço único em toda a rede"]}
             href="/novidades"
             id={LABEL_ID}
             linkText="Ver novidades"

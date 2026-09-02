@@ -750,13 +750,16 @@ Não empilhe duas faixas do mesmo peso. Se a seção anterior era preta, a próx
 
 ### Recortes de papel
 
-Três utilitários em `globals.css`, cada um com um trabalho:
+Dois utilitários em `globals.css`, cada um com um trabalho:
 
 | Classe | Forma | Onde usar |
 |---|---|---|
 | `.aisle-cut` | diagonal longa e rasa na base | folhas grandes: hero, foto emoldurada |
-| `.label-notch` | **um** corte, na ponta superior direita, com a mesma diagonal | etiquetas de seção |
 | `.tag-cut` | lado direito inclinado, sutil | chips e etiquetas pequenas |
+
+A chapa da etiqueta de gôndola não usa recorte: ela repete o raio irregular do card de produto
+(`rounded-[2px_5px_12px_4px]`), que arredonda cada ponta de um jeito diferente e lê como canto
+amassado, não como cartão de software.
 
 O `.tag-cut` repete a inclinação da placa branca do logo **PDV Perfeito** — é de lá que ele vem.
 
