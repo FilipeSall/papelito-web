@@ -3,51 +3,71 @@ import { describe, expect, it } from "vitest";
 
 import { ProductCollectionFilters } from "./product-collection-filters";
 
+function renderFilters(
+  props: Partial<React.ComponentProps<typeof ProductCollectionFilters>> = {},
+) {
+  render(
+    <ProductCollectionFilters
+      activeCollection="todos"
+      perPage={9}
+      viewMode="grid"
+      {...props}
+    />,
+  );
+}
+
 describe("ProductCollectionFilters", () => {
-  it("usa uma linha amarela discreta para a coleção selecionada", () => {
-    render(
-      <ProductCollectionFilters
-        activeCollection="todos"
-        basePath="/kits"
-        perPage={9}
-        viewMode="grid"
-      />,
-    );
+  it("marca a coleção selecionada com o preenchimento escuro do catálogo", () => {
+    renderFilters();
 
     const tudo = screen.getByRole("link", { name: /tudo/i });
 
-    expect(tudo).toHaveClass("bg-brand-dark", "after:bg-brand-yellow");
-    expect(tudo).not.toHaveClass("shadow-[4px_4px_0px_#ffe500]");
+    expect(tudo).toHaveClass("rounded-xl", "border-brand-dark", "bg-brand-dark");
+    expect(tudo).not.toHaveClass("border-2", "border-[#1a1a1a]");
+    expect(tudo).toHaveAttribute("aria-current", "page");
   });
 
-  it("escurece o subtítulo no hover para manter a leitura", () => {
-    render(
-      <ProductCollectionFilters
-        activeCollection="todos"
-        basePath="/kits"
-        perPage={9}
-        viewMode="grid"
-      />,
-    );
+  it("usa a tipografia discreta do catálogo no subtítulo", () => {
+    renderFilters();
 
-    expect(screen.getByText("Linha premium")).toHaveClass(
-      "text-text-secondary",
-      "group-hover:text-brand-dark",
+    expect(screen.getByText("Linha premium")).toHaveClass("sm:text-xs", "text-text-muted");
+  });
+
+  /**
+   * Reescrever `?colecao=` no caminho atual servia promoções sob a URL de premium e
+   * mandava quem estava em `/kits` para `/produtos`.
+   */
+  it("navega para a rota própria de cada coleção", () => {
+    renderFilters({ activeCollection: "kits", perPage: 12 });
+
+    expect(screen.getByRole("link", { name: /tudo/i })).toHaveAttribute(
+      "href",
+      "/colecoes?perPage=12",
+    );
+    expect(screen.getByRole("link", { name: /premium/i })).toHaveAttribute(
+      "href",
+      "/premium?perPage=12",
+    );
+    expect(screen.getByRole("link", { name: /recém chegados/i })).toHaveAttribute(
+      "href",
+      "/novidades?perPage=12",
+    );
+    expect(screen.getByRole("link", { name: /promoções/i })).toHaveAttribute(
+      "href",
+      "/promocoes?perPage=12",
+    );
+    expect(screen.getByRole("link", { name: /kits/i })).toHaveAttribute(
+      "href",
+      "/kits?perPage=12",
     );
   });
 
-  it("descarta a faixa de preço ao trocar de coleção", () => {
-    render(
-      <ProductCollectionFilters
-        activeCollection="todos"
-        basePath="/produtos"
-        perPage={24}
-        viewMode="grid"
-      />,
+  it("leva só a preferência de leitura e a busca para a próxima coleção", () => {
+    renderFilters({ perPage: 24, search: "seda", viewMode: "list" });
+
+    expect(screen.getByRole("link", { name: /premium/i })).toHaveAttribute(
+      "href",
+      "/premium?view=list&perPage=24&busca=seda",
     );
-
-    const kits = screen.getByRole("link", { name: /kits/i });
-
-    expect(kits).toHaveAttribute("href", "/kits");
   });
 });

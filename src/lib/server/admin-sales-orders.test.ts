@@ -6,7 +6,10 @@ vi.mock("@/lib/server/wp-rest", () => ({
   wpRest: (...args: unknown[]) => wpRestMock(...args),
 }));
 
-import { getAdminSalesOrdersAggregate } from "./admin-sales-orders";
+import {
+  getAdminSalesOrdersAggregate,
+  getAdminSalesOrdersSnapshot,
+} from "./admin-sales-orders";
 
 const filters = {
   afterIso: "2026-08-01T00:00:00",
@@ -14,9 +17,10 @@ const filters = {
   from: "2026-08-01",
   interval: "day" as const,
   page: 1,
-  perPage: 20,
+  perPage: 10,
   periodLabel: "01/08/2026 - 31/08/2026",
   preset: "month" as const,
+  segment: "all" as const,
   to: "2026-08-31",
 };
 
@@ -82,5 +86,68 @@ describe("getAdminSalesOrdersAggregate", () => {
       { label: "processing", value: 1 },
       { label: "refunded", value: 1 },
     ]);
+  });
+});
+
+describe("getAdminSalesOrdersSnapshot", () => {
+  beforeEach(() => {
+    wpRestMock.mockReset();
+  });
+
+  it("identifica o cliente pelo shipping quando o billing B2B nasce sem nome", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: [
+        {
+          billing: { company: "CERRADO PAPEIS E SUPRIMENTOS LTDA", first_name: "", last_name: "" },
+          date_created: "2026-09-01T02:05:18",
+          id: 14094,
+          line_items: [],
+          shipping: { first_name: "Marcos", last_name: "Stub de Oliveira" },
+          status: "processing",
+          total: "490",
+        },
+        {
+          billing: { company: "CERRADO PAPEIS E SUPRIMENTOS LTDA", first_name: "", last_name: "" },
+          date_created: "2026-08-31T23:45:12",
+          id: 14088,
+          line_items: [],
+          shipping: { first_name: "", last_name: "" },
+          status: "processing",
+          total: "110.27",
+        },
+        {
+          billing: { company: "", first_name: "", last_name: "" },
+          date_created: "2026-08-31T21:23:26",
+          id: 14087,
+          line_items: [],
+          shipping: { first_name: "", last_name: "" },
+          status: "processing",
+          total: "346.35",
+        },
+      ],
+      headers: new Headers({ "X-WP-Total": "3", "X-WP-TotalPages": "1" }),
+    });
+
+    const snapshot = await getAdminSalesOrdersSnapshot("token", filters);
+
+    expect(snapshot.orders.map((order) => order.customerLabel)).toEqual([
+      "Marcos Stub de Oliveira",
+      "CERRADO PAPEIS E SUPRIMENTOS LTDA",
+      "Cliente não identificado",
+    ]);
+  });
+
+  it("pede ao WooCommerce no maximo 10 pedidos por pagina", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: [],
+      headers: new Headers({ "X-WP-Total": "0", "X-WP-TotalPages": "0" }),
+    });
+
+    await getAdminSalesOrdersSnapshot("token", { ...filters, page: 3 });
+
+    expect(wpRestMock.mock.calls[0]?.[0]).toContain("per_page=10");
+    expect(wpRestMock.mock.calls[0]?.[0]).toContain("page=3");
   });
 });

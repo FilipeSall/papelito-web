@@ -1,12 +1,11 @@
 interface GridIconProps {
   active: boolean;
-  variant?: "default" | "collection";
 }
 
 /**
  * Ícone de grade (grid view).
  */
-export function ViewToggleGridIcon({ active, variant = "default" }: GridIconProps) {
+export function ViewToggleGridIcon({ active }: GridIconProps) {
   return (
     <svg
       width="20"
@@ -22,7 +21,7 @@ export function ViewToggleGridIcon({ active, variant = "default" }: GridIconProp
         width="7"
         height="7"
         rx="1.5"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
       <rect
         x="11"
@@ -30,7 +29,7 @@ export function ViewToggleGridIcon({ active, variant = "default" }: GridIconProp
         width="7"
         height="7"
         rx="1.5"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
       <rect
         x="2"
@@ -38,7 +37,7 @@ export function ViewToggleGridIcon({ active, variant = "default" }: GridIconProp
         width="7"
         height="7"
         rx="1.5"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
       <rect
         x="11"
@@ -46,7 +45,7 @@ export function ViewToggleGridIcon({ active, variant = "default" }: GridIconProp
         width="7"
         height="7"
         rx="1.5"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
     </svg>
   );

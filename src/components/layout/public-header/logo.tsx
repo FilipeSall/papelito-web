@@ -11,9 +11,7 @@ type PublicHeaderLogoProps = {
 
 /**
  * Logo da Papelito no cabeçalho público.
- *
- * Lê o slot `publicHeader` administrado em /admin/assets, cujo padrão é a
- * versão clara da marca — a escura sumia no header preto.
+ * Renderiza imagens e tamanhos diferentes conforme o contexto mobile ou desktop.
  */
 export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
   const resolved = resolveLogo("publicHeader", logo);
@@ -24,10 +22,10 @@ export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
         <Image
           alt={resolved.alt}
           className="h-9 w-auto"
-          height={1352}
+          height={73}
           priority
           src={resolved.imageUrl}
-          width={2121}
+          width={123}
         />
       </Link>
     );
@@ -38,10 +36,10 @@ export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
       <Image
         alt={resolved.alt}
         className="h-18.25 w-auto"
-        height={1352}
+        height={73}
         priority
         src={resolved.imageUrl}
-        width={2121}
+        width={123}
       />
     </Link>
   );

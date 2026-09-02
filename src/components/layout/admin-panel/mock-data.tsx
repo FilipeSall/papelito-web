@@ -42,11 +42,6 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "tipos", value: "% / R$" },
     { label: "restrições", value: "vendor + produto" },
   ],
-  reports: [
-    { label: "consultas", value: "14" },
-    { label: "fila xlsx", value: "03" },
-    { label: "último build", value: "12m" },
-  ],
   assets: [
     { label: "banners", value: "07" },
     { label: "uploads", value: "23" },
@@ -131,14 +126,6 @@ export const SECTION_META: Record<
     railLabel: "status",
     railValue: "ativo",
     signalTone: "default",
-  },
-  reports: {
-    eyebrow: "Consultas versionadas",
-    description:
-      "Catálogo fechado de relatórios, fila de exportação XLSX e placeholders preparados para navegacao por presets.",
-    railLabel: "exports",
-    railValue: "03 queued",
-    signalTone: "warning",
   },
   assets: {
     eyebrow: "Home assets",

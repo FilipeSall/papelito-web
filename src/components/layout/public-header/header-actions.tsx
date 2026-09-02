@@ -12,13 +12,13 @@ const iconButtonClass =
   "order-0 flex h-7 w-7 flex-none grow-0 items-center justify-center transition hover:opacity-70";
 
 const profileButtonBaseClass =
-  "group inline-flex h-9 cursor-pointer items-center gap-2 border-2 px-2.5 pr-4 text-xs font-black uppercase leading-4 tracking-[0.16em] transition-colors";
+  "group inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border-2 px-2.5 pr-4 text-xs font-black uppercase leading-4 tracking-[0.16em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/80 focus-visible:ring-offset-2 active:translate-y-px";
 
 const profileButtonDesktopClass =
-  "border-brand-yellow bg-brand-yellow text-brand-dark hover:bg-white hover:border-white";
+  "border-brand-dark bg-brand-dark text-brand-yellow hover:border-brand-dark/85 hover:bg-brand-dark/85 focus-visible:ring-offset-brand-yellow";
 
 const profileButtonMobileClass =
-  "border-brand-yellow bg-transparent text-brand-yellow hover:bg-brand-yellow hover:text-brand-dark";
+  "border-brand-yellow bg-brand-dark text-brand-yellow hover:border-brand-yellow hover:bg-brand-dark/85 focus-visible:ring-offset-brand-dark";
 
 /** Logado: ícone carrinho + "Sair" link + pill "Perfil" com ícone */
 function LoggedInActions({
@@ -32,31 +32,32 @@ function LoggedInActions({
 }) {
   const { totalItems } = useCartSummary();
   const { isSeller } = useAuthSession();
-  const cartBadgeClass = "bg-brand-yellow text-brand-dark";
+  const cartBadgeClass = invertColors
+    ? "bg-brand-yellow text-brand-dark"
+    : "bg-brand-dark text-brand-yellow";
   const profileHref = isAdministrator ? "/admin/sales" : isSeller ? "/vendor/dashboard" : "/perfil";
   const profileLabel = isAdministrator ? "Admin" : isSeller ? "Painel vendor" : "Perfil";
   const profileButtonClass = compactProfile
-    ? "group inline-flex h-10 w-10 cursor-pointer items-center justify-center border-2 border-brand-yellow bg-transparent text-brand-yellow transition-colors hover:bg-brand-yellow hover:text-brand-dark"
+    ? "group inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-2 border-brand-yellow bg-brand-dark text-brand-yellow transition-colors hover:bg-brand-dark/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/80 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark active:translate-y-px"
     : `${profileButtonBaseClass} ${invertColors ? profileButtonMobileClass : profileButtonDesktopClass}`;
 
   return (
     <div className="flex h-9 items-center gap-2">
       <SellerPurchaseGuard />
-      <NotificationBell />
+      <NotificationBell inverted={invertColors} />
 
       <Link aria-label="Carrinho" className={`${iconButtonClass} relative`} href="/carrinho">
         <Image
           alt=""
           aria-hidden
-          className="h-7 w-7 flex-none grow-0 brightness-0 invert"
+          className={`h-7 w-7 flex-none grow-0 ${invertColors ? "brightness-0 invert" : ""}`}
           height={28}
           src="/images/icons/cart.svg"
           width={28}
         />
         {totalItems > 0 && (
           <span
-            className={`absolute -right-1.5 -top-1.5 inline-flex min-h-4 min-w-4 items-center justify-center px-1 text-[10px] font-black leading-none ${cartBadgeClass}`}
-            data-numeric
+            className={`absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-black leading-none ${cartBadgeClass}`}
           >
             {totalItems > 99 ? "99+" : totalItems}
           </span>
@@ -85,13 +86,13 @@ function AuthButtons() {
   return (
     <div className="flex h-9 items-center gap-4">
       <Link
-        className="inline-flex items-center text-xs font-black uppercase leading-4 tracking-[0.18em] text-white transition-colors hover:text-brand-yellow"
+        className="inline-flex items-center text-xs font-black uppercase leading-4 tracking-[0.18em] text-brand-dark transition-colors hover:text-brand-dark/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/60 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-yellow"
         href="/entrar"
       >
         Entrar
       </Link>
       <Link
-        className="inline-flex h-9 items-center border-2 border-brand-yellow bg-brand-yellow px-5 text-xs font-black uppercase leading-4 tracking-[0.18em] text-brand-dark transition-colors hover:border-white hover:bg-white"
+        className="inline-flex h-9 cursor-pointer items-center rounded-md border-2 border-brand-dark bg-brand-dark px-5 text-xs font-black uppercase leading-4 tracking-[0.18em] text-brand-yellow transition-colors hover:border-brand-dark/85 hover:bg-brand-dark/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/60 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-yellow active:translate-y-px"
         href="/cadastro"
       >
         Cadastrar

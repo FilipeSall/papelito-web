@@ -50,14 +50,14 @@ export function MiniProductCard({
       aria-label={`Ver produto ${name}`}
       onClick={navigateToProduct}
       onKeyDown={handleCardKeyDown}
-      className="group/availability relative isolate flex w-44 shrink-0 cursor-pointer select-none flex-col items-start overflow-visible transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className="group/availability relative h-65.5 w-44 shrink-0 snap-start select-none overflow-visible rounded-xl border border-[#F3F4F6] bg-white p-px shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] flex cursor-pointer flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
     >
       <div
-        className={`relative z-10 flex h-full w-full flex-col overflow-hidden rounded-[2px_5px_10px_4px] border-2 border-brand-dark bg-white shadow-[0_2px_3px_rgba(35,31,32,0.14),0_9px_19px_-7px_rgba(35,31,32,0.32)] group-hover/availability:shadow-[0_3px_5px_rgba(35,31,32,0.18),0_14px_26px_-9px_rgba(35,31,32,0.40)] transition-[box-shadow,opacity] duration-200 ease-out motion-reduce:transition-none ${
-          isUnavailable ? "opacity-45" : ""
+        className={`flex h-full w-full flex-col overflow-hidden rounded-[11px] ${
+          isUnavailable ? "opacity-45 transition-opacity" : ""
         }`.trim()}
       >
-        <div className="relative h-36 w-full shrink-0 border-b-2 border-brand-dark bg-[#faf8f2]">
+        <div className="relative h-36 w-full bg-bg-light">
           {image ? (
             <div className="absolute inset-x-0 top-4 h-28">
               <ImageWithSkeleton
@@ -70,30 +70,25 @@ export function MiniProductCard({
               />
             </div>
           ) : (
-            <ProductImageFallback className="absolute inset-0" />
+            <ProductImageFallback className="absolute inset-0 rounded-t-xl" />
           )}
 
-          <DiscountBadge discount={discount} />
+          <DiscountBadge discount={discount} variant="legacy" />
         </div>
 
         <div className="flex-1 w-full p-3 flex flex-col">
           <div className="flex flex-col gap-1">
-            <span className="truncate text-xs font-black uppercase leading-4 tracking-[0.01em] text-brand-dark">
+            <span className="font-black text-xs leading-4 text-brand-dark truncate">
               {name}
             </span>
-            <span className="text-[11px] leading-3.5 text-text-tertiary" data-numeric>
-              {stockLabel}
-            </span>
-            <span data-numeric>
-              <ProductPrice current={price} original={originalPrice} />
-            </span>
+            <span className="text-[11px] leading-3.5 text-text-muted">{stockLabel}</span>
+            <ProductPrice original={originalPrice} current={price} />
           </div>
 
           <div className="mt-auto pt-3" onClick={(event) => event.stopPropagation()}>
             <AddToCartButton
               label="Adicionar"
               disabledReason={disabledReason}
-              variant="collection"
               product={{
                 id,
                 category,
@@ -109,7 +104,7 @@ export function MiniProductCard({
       {isUnavailable ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-2 right-2 top-2 z-30 border-2 border-brand-yellow bg-brand-dark px-2.5 py-2 text-center text-[10px] font-black uppercase leading-3.5 tracking-[0.08em] text-brand-yellow opacity-0 transition-opacity group-hover/availability:opacity-100 group-focus/availability:opacity-100"
+          className="pointer-events-none absolute left-2 right-2 top-2 z-30 rounded-lg bg-brand-dark px-2.5 py-2 text-center text-[10px] font-black leading-[14px] text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/availability:opacity-100 group-focus/availability:opacity-100"
         >
           {disabledReason}
         </span>

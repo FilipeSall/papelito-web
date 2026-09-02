@@ -9,7 +9,6 @@ import {
   CouponsContent,
   FlashSaleContent,
   ProductsContent,
-  ReportsContent,
   SalesContent,
   SupportContent,
   UsersContent,
@@ -37,8 +36,6 @@ function renderSection(
       return <SupportContent searchParams={searchParams} />;
     case "coupons":
       return <CouponsContent />;
-    case "reports":
-      return <ReportsContent searchParams={searchParams} />;
     case "assets":
       return <AssetsContent />;
     case "config":
@@ -60,7 +57,6 @@ export function AdminSectionPage({
       {section === "sales" ||
       section === "products" ||
       section === "categories" ||
-      section === "reports" ||
       section === "config" ||
       section === "flash-sale" ||
       section === "assets" ||

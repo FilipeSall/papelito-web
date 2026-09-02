@@ -94,8 +94,9 @@ export function ProductsDiscoveryPage({
       : [];
   const currentPage = normalizePage(readSingleQueryParam(resolvedSearchParams.page));
   const viewMode = normalizeProductsViewMode(readSingleQueryParam(resolvedSearchParams.view));
-  const visualVariant = basePath === "/produtos" ? "default" : "collection";
-  const gridLayout = resolveProductsGridLayout(visualVariant, activeCollection);
+  // Coleção específica não tem sidebar: a listagem ocupa a largura cheia e ganha
+  // uma quarta coluna. `todos` volta ao grid da vitrine, que tem sidebar.
+  const gridLayout = resolveProductsGridLayout("collection", activeCollection);
   const perPage = normalizeProductsPerPage(
     readSingleQueryParam(resolvedSearchParams.perPage),
     viewMode,
@@ -164,7 +165,7 @@ export function ProductsDiscoveryPage({
         showSearch
         showCategoryFilters={isAllCollection}
         showCategoryTabs={false}
-        visualVariant={visualVariant}
+        gridLayout={gridLayout}
       />
     </main>
   );

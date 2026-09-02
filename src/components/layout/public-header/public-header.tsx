@@ -21,16 +21,16 @@ const iconButtonClass =
  */
 export function PublicHeader({ logo }: PublicHeaderProps) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 w-full border-b-2 border-brand-yellow bg-brand-dark">
+    <header className="fixed inset-x-0 top-0 z-[60] w-full border-b border-brand-dark/10 bg-brand-yellow">
       {/* Mobile */}
       <div className="mx-auto flex h-15 w-full max-w-391 items-center justify-between px-4 md:hidden">
         <PublicHeaderLogo logo={logo} variant="mobile" />
 
         <div className="flex items-center gap-2">
-          <PublicHeaderMobileActions invertColors />
+          <PublicHeaderMobileActions />
 
           <PublicHeaderMobileMenu
-            iconButtonClass={`${iconButtonClass} text-white`}
+            iconButtonClass={`${iconButtonClass} text-brand-dark`}
             links={publicLinks.map(({ href, label }) => ({ href, label }))}
           />
         </div>

@@ -10,38 +10,16 @@ vi.mock("next/navigation", () => ({
 }));
 
 function renderSidebar(
-  variant: "default" | "collection",
   props: Partial<React.ComponentProps<typeof ProductFilterSidebar>> = {},
 ) {
   render(
-    <ProductFilterSidebar
-      selectedTypes={[]}
-      viewMode="grid"
-      perPage={9}
-      variant={variant}
-      {...props}
-    />,
+    <ProductFilterSidebar selectedTypes={[]} viewMode="grid" perPage={9} {...props} />,
   );
 }
 
 describe("ProductFilterSidebar", () => {
-  it("usa o acabamento de coleção com bordas quadradas", () => {
-    renderSidebar("collection");
-
-    expect(screen.getByText("Filtros").parentElement).toHaveClass(
-      "border-2",
-      "border-[#1a1a1a]",
-      "rounded-none",
-    );
-    expect(screen.getByPlaceholderText("Min")).toHaveClass("border-2", "rounded-none");
-    expect(screen.getByRole("button", { name: "Aplicar preço" })).toHaveClass(
-      "border-2",
-      "rounded-none",
-    );
-  });
-
-  it("mantém o acabamento padrão do catálogo", () => {
-    renderSidebar("default");
+  it("usa o acabamento do catálogo em toda superfície", () => {
+    renderSidebar();
 
     expect(screen.getByText("Filtros").parentElement).toHaveClass("rounded-xl");
     expect(screen.getByPlaceholderText("Min")).toHaveClass("rounded-lg");
@@ -49,7 +27,7 @@ describe("ProductFilterSidebar", () => {
   });
 
   it("mostra os preços aplicados quando a faixa é válida", () => {
-    renderSidebar("default", { minPrice: 100, maxPrice: 130 });
+    renderSidebar({ minPrice: 100, maxPrice: 130 });
 
     expect(screen.getByPlaceholderText("Min")).toHaveValue("100");
     expect(screen.getByPlaceholderText("Max")).toHaveValue("130");
@@ -61,7 +39,7 @@ describe("ProductFilterSidebar", () => {
    * valores que não estão mais na tela e não tem como corrigi-los.
    */
   it("preserva o que foi digitado quando a faixa é inválida", () => {
-    renderSidebar("default", {
+    renderSidebar({
       minPrice: null,
       maxPrice: null,
       rawMinPrice: "1000",

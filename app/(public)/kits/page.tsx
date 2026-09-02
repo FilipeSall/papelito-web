@@ -71,11 +71,10 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
         )}
       />
       <ProductsHeroBanner image={siteImages.productHero} />
-      <section className="mx-auto w-full max-w-7xl px-6 py-10 md:px-12">
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
         <div className="mb-4">
           <ProductCollectionFilters
             activeCollection="kits"
-            basePath="/produtos"
             perPage={perPage}
             search={search}
             viewMode={viewMode}
@@ -87,7 +86,6 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
             basePath="/kits"
             initialValue={search}
             totalItems={kits.length}
-            variant="collection"
           />
         </div>
 
@@ -106,7 +104,6 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
               search={search}
               selectedTypes={[]}
               totalItems={kits.length}
-              variant="collection"
               viewMode={viewMode}
             />
             <ViewToggle
@@ -118,21 +115,19 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
               perPage={perPage}
               search={search}
               selectedTypes={[]}
-              variant="collection"
             />
           </div>
         </div>
 
         <ProductAvailabilityProvider productIds={kits.map((kit) => kit.id)}>
           <ProductsGrid
-            activeCollection="kits"
+            gridLayout="collection"
             emptyMessage={
               search
                 ? "Nenhum Kit encontrado para essa busca."
                 : "Nenhum Kit disponível no momento."
             }
             products={kits}
-            variant="collection"
             viewMode={viewMode}
           />
         </ProductAvailabilityProvider>

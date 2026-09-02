@@ -13,7 +13,6 @@ import {
   getHomeFeatures,
   getHomeHeroBanners,
   getHomePartnerBanner,
-  getHomePromoBanner,
   getHomePromoMarquee,
 } from "@/features/catalog/services/get-home-assets";
 import { getHomeProducts } from "@/features/catalog/services/get-home-products";
@@ -41,10 +40,9 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function Home() {
-  const [homeProducts, heroBanners, promoBanner, partnerBanner, promoMarquee, homeFeatures, freeShippingThreshold, paymentConfig, collectionsSummary] = await Promise.all([
+  const [homeProducts, heroBanners, partnerBanner, promoMarquee, homeFeatures, freeShippingThreshold, paymentConfig, collectionsSummary] = await Promise.all([
     getHomeProducts(),
     getHomeHeroBanners(),
-    getHomePromoBanner(),
     getHomePartnerBanner(),
     getHomePromoMarquee(),
     getHomeFeatures(),
@@ -94,15 +92,13 @@ export default async function Home() {
           <FeaturesBar items={resolvedHomeFeatures} />
         </div>
 
+        <CategoriesNav collectionsSummary={collectionsSummary} />
+
+        {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
+
         <BestSellersSection products={bestSellerProducts} />
 
-        {flashSaleCampaign ? (
-          <FlashSaleSection campaign={flashSaleCampaign} promoBanner={promoBanner} />
-        ) : null}
-
         <NewArrivalsSection products={newArrivalProducts} />
-
-        <CategoriesNav collectionsSummary={collectionsSummary} />
 
         <PromoCardsSection />
         {partnerBanner ? <PartnerBanner banner={partnerBanner} /> : null}

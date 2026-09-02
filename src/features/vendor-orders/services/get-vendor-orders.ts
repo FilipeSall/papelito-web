@@ -11,13 +11,21 @@ import {
 } from "./vendor-order-mappers";
 import type { VendorOrderDetail, VendorOrderStatus, VendorOrdersSnapshot } from "../types/vendor-orders";
 
+export const VENDOR_ORDERS_PER_PAGE = 10;
+
 export async function getVendorOrders(filters: {
   page: number;
   search: string;
   status: VendorOrderStatus | "all";
 }): Promise<VendorOrdersSnapshot> {
   const accessToken = await getSellerAccessToken();
-  const empty = { items: [], page: filters.page, perPage: 20, total: 0, totalPages: 1 };
+  const empty = {
+    items: [],
+    page: filters.page,
+    perPage: VENDOR_ORDERS_PER_PAGE,
+    total: 0,
+    totalPages: 1,
+  };
 
   if (!accessToken) {
     return empty;
@@ -25,7 +33,7 @@ export async function getVendorOrders(filters: {
 
   const params = new URLSearchParams({
     page: String(filters.page),
-    per_page: "20",
+    per_page: String(VENDOR_ORDERS_PER_PAGE),
     status: filters.status,
   });
   if (filters.search) {

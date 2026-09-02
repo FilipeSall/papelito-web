@@ -7,6 +7,8 @@ import type {
   VendorOrderSummary,
 } from "../types/vendor-orders";
 
+import { VENDOR_ORDERS_PER_PAGE } from "./get-vendor-orders";
+
 export type WpVendorOrder = {
   created_at?: string;
   customer_name?: string;
@@ -210,7 +212,7 @@ export function mapVendorOrdersSnapshot(data: WpVendorOrdersList): VendorOrdersS
   return {
     items: (data.items ?? []).map(mapVendorOrderSummary),
     page: Number(data.page) || 1,
-    perPage: Number(data.per_page) || 20,
+    perPage: Number(data.per_page) || VENDOR_ORDERS_PER_PAGE,
     total: Number(data.total) || 0,
     totalPages: Number(data.total_pages) || 1,
   };

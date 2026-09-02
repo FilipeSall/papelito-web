@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatPercent } from "../formatters";
-import { CardNotification, FramedPanel } from "../primitives";
+import { CardNotification, HardPanel } from "../primitives";
 
 export function SalesDonutChart({
   label,
@@ -33,7 +33,7 @@ export function SalesDonutChart({
     .segments.join(",");
 
   return (
-    <FramedPanel className="flex h-full flex-1 flex-col">
+    <HardPanel accent="black" className="flex h-full flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
@@ -56,6 +56,6 @@ export function SalesDonutChart({
           ))}
         </div>
       </div>
-    </FramedPanel>
+    </HardPanel>
   );
 }

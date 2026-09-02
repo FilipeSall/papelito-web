@@ -14,7 +14,7 @@ Documentos de referência pontual:
 
 | Documento | Conteúdo |
 |---|---|
-| [context/admin-panel-ui.md](context/admin-panel-ui.md) | arquitetura da informação do painel admin, contrato de URL das abas e rotas removidas |
+| [context/admin-panel-ui.md](context/admin-panel-ui.md) | arquitetura da informação dos painéis admin e vendor, contrato de URL das abas e do recorte de vendas, sincronia dos filtros de exportação, identidade de status e rotas removidas |
 
 ## Onde procurar o que não está aqui
 

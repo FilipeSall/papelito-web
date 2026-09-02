@@ -10,6 +10,7 @@ interface ProductCardInfoProps {
   price: number;
   promotionContext?: string;
   disabledReason?: string;
+  compactOnMobile?: boolean;
 }
 
 export function ProductCardInfo({
@@ -22,24 +23,20 @@ export function ProductCardInfo({
   price,
   promotionContext,
   disabledReason,
+  compactOnMobile = false,
 }: ProductCardInfoProps) {
   return (
     <div className="flex-1 px-4 pt-4 pb-4 flex flex-col">
-      <span className="text-[0.625rem] font-black uppercase leading-4 tracking-[0.16em] text-text-secondary">
-        {category}
-      </span>
-      <span className="mt-1 text-sm font-black uppercase leading-5 tracking-[0.01em] text-brand-dark">
+      <span className="text-xs leading-4 text-text-muted">{category}</span>
+      <span className="font-black text-sm leading-5 tracking-[-0.150391px] text-brand-dark mt-0.5">
         {name}
       </span>
-      <span className="mt-1 text-[0.6875rem] leading-4 text-text-tertiary" data-numeric>
-        {stockLabel}
-      </span>
-      <div className="mt-auto flex items-end justify-between gap-2 pt-3" data-numeric>
+      <span className="mt-1 text-xs leading-4 text-text-muted">{stockLabel}</span>
+      <div className={`flex items-center justify-between ${compactOnMobile ? "mt-auto pt-3" : "mt-3"}`}>
         <ProductPrice original={originalPrice} current={price} />
         <AddToCartButton
           className="relative z-20"
           disabledReason={disabledReason}
-          variant="collection"
           product={{
             id,
             category,

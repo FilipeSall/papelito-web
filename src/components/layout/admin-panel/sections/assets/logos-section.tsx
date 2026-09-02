@@ -166,10 +166,10 @@ function LogoCard({
 
       <PreviewImage
         className="object-contain p-6"
-        frameClass="bg-brand-dark"
+        frameClass={config.key === "publicHeader" && isDefault ? "bg-brand-yellow" : "bg-brand-dark"}
         imageUrl={logo.imageUrl}
         label={config.title}
-        tone="dark"
+        tone={config.key === "publicHeader" && isDefault ? "light" : "dark"}
       />
 
       <div className="mt-4">

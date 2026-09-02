@@ -22,7 +22,6 @@ import {
 } from "@/features/catalog/utils/subcategory-selection";
 
 type SpecificType = Exclude<ProductTypeId, "todos">;
-type FilterVariant = "default" | "collection";
 
 export interface CategoryFilterOption {
   id: ProductTypeId;
@@ -41,7 +40,6 @@ interface CategoryFilterTreeProps {
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
-  variant: FilterVariant;
 }
 
 interface Selection {
@@ -67,41 +65,24 @@ function toggleCategory(current: SpecificType[], target: ProductTypeId): Specifi
 
 function CheckboxIndicator({
   checked,
-  variant,
   size,
 }: {
   checked: boolean;
-  variant: FilterVariant;
   size: "parent" | "child";
 }) {
-  const isCollection = variant === "collection";
   const box = size === "parent" ? "h-4 w-4" : "h-3.5 w-3.5";
   const tick = size === "parent" ? "h-3 w-3" : "h-2.5 w-2.5";
-
-  let tone: string;
-  if (checked) {
-    tone = isCollection
-      ? "border-[#1a1a1a] bg-brand-dark"
-      : "border-brand-dark bg-brand-dark";
-  } else {
-    tone = isCollection
-      ? "border-[#1a1a1a] bg-white group-hover:bg-brand-yellow"
-      : "border-gray-300 bg-white group-hover:border-brand-dark";
-  }
+  const tone = checked
+    ? "border-brand-dark bg-brand-dark"
+    : "border-gray-300 bg-white group-hover:border-brand-dark";
 
   return (
     <span
       aria-hidden
-      className={`inline-flex ${box} shrink-0 items-center justify-center transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-yellow ${
-        isCollection ? "border-2 rounded-none" : "border rounded"
-      } ${tone}`}
+      className={`inline-flex ${box} shrink-0 items-center justify-center rounded border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-yellow ${tone}`}
     >
       {checked ? (
-        <svg
-          className={`${tick} ${isCollection ? "text-brand-yellow" : "text-white"}`}
-          fill="none"
-          viewBox="0 0 16 16"
-        >
+        <svg className={`${tick} text-white`} fill="none" viewBox="0 0 16 16">
           <path
             d="M3.2 8.2L6.2 11.2L12.8 4.8"
             stroke="currentColor"
@@ -120,20 +101,16 @@ interface FilterCheckboxProps {
   label: string;
   level: "parent" | "child";
   onToggle: () => void;
-  variant: FilterVariant;
 }
 
-function FilterCheckbox({ checked, label, level, onToggle, variant }: FilterCheckboxProps) {
+function FilterCheckbox({ checked, label, level, onToggle }: FilterCheckboxProps) {
   const isParent = level === "parent";
-  const isCollection = variant === "collection";
 
   let text: string;
   if (isParent) {
-    text = `text-sm ${isCollection ? "font-bold" : ""} ${
-      checked ? "font-semibold text-brand-dark" : "text-text-secondary"
-    }`;
+    text = `text-sm ${checked ? "font-semibold text-brand-dark" : "text-text-secondary"}`;
   } else {
-    text = `text-[13px] leading-snug ${isCollection ? "font-bold" : ""} ${
+    text = `text-[13px] leading-snug ${
       checked ? "font-medium text-brand-dark" : "text-text-secondary"
     }`;
   }
@@ -147,7 +124,7 @@ function FilterCheckbox({ checked, label, level, onToggle, variant }: FilterChec
         type="checkbox"
       />
       <span className={isParent ? "mt-px" : "mt-[3px]"}>
-        <CheckboxIndicator checked={checked} size={level} variant={variant} />
+        <CheckboxIndicator checked={checked} size={level} />
       </span>
       <span className={`${text} transition-colors group-hover:text-brand-dark`}>
         {isParent ? toCategoryDisplayLabel(label) : label}
@@ -180,7 +157,6 @@ export function CategoryFilterTree({
   viewMode,
   perPage,
   search,
-  variant,
 }: Readonly<CategoryFilterTreeProps>) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -246,7 +222,6 @@ export function CategoryFilterTree({
                   subcategories: keepSelectedCategories(selection.subcategories, types),
                 });
               }}
-              variant={variant}
             />
 
             {subcategories.length > 0 ? (
@@ -266,7 +241,6 @@ export function CategoryFilterTree({
                 }
                 selectedSubcategories={categorySelection}
                 subcategories={subcategories}
-                variant={variant}
               />
             ) : null}
           </div>
@@ -282,7 +256,6 @@ interface SubcategoryGroupProps {
   onToggle: (slug: string) => void;
   selectedSubcategories: string[];
   subcategories: ProductsCatalogCategory["subcategories"];
-  variant: FilterVariant;
 }
 
 function SubcategoryGroup({
@@ -291,21 +264,17 @@ function SubcategoryGroup({
   onToggle,
   selectedSubcategories,
   subcategories,
-  variant,
 }: Readonly<SubcategoryGroupProps>) {
   const checked = resolveCheckedSubcategories(subcategories, selectedSubcategories);
   const facets = groupSubcategoriesByFacet(subcategories);
   const showFacetLabels = facets.length > 1;
-  const isCollection = variant === "collection";
 
   return (
     <div className="animate-filter-subtree">
       <div className="overflow-hidden">
         <div
           aria-label={`Subcategorias de ${toCategoryDisplayLabel(categoryLabel)}`}
-          className={`mt-2 ml-[7px] pl-3 ${
-            isCollection ? "border-l-2 border-[#1a1a1a]" : "border-l border-gray-200"
-          }`}
+          className="mt-2 ml-[7px] border-l border-gray-200 pl-3"
           role="group"
         >
           {facets.map((group, index) => {
@@ -334,7 +303,6 @@ function SubcategoryGroup({
                     label={subcategory.name}
                     level="child"
                     onToggle={() => onToggle(subcategory.slug)}
-                    variant={variant}
                   />
                 ))}
               </div>

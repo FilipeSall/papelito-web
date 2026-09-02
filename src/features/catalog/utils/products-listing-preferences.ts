@@ -4,7 +4,8 @@ export type ProductsViewMode = "grid" | "list";
 
 /**
  * Densidade do grid de produtos, espelhando `products-grid.tsx`:
- * `default` chega a 3 colunas em desktop, `collection` chega a 4.
+ * `default` chega a 3 colunas em desktop, `collection` — usada quando a listagem
+ * ocupa a largura cheia, sem sidebar — chega a 4.
  */
 export type ProductsGridLayout = "default" | "collection";
 
@@ -36,10 +37,10 @@ export function normalizeProductsViewMode(value: string | undefined): ProductsVi
  * geral de produtos continuam em 3, com a paginação que já tinham.
  */
 export function resolveProductsGridLayout(
-  variant: "default" | "collection",
+  surfaceLayout: ProductsGridLayout,
   activeCollection: ProductCollectionId,
 ): ProductsGridLayout {
-  return variant === "collection" && activeCollection !== "todos"
+  return surfaceLayout === "collection" && activeCollection !== "todos"
     ? "collection"
     : "default";
 }

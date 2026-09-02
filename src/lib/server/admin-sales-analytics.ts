@@ -29,6 +29,7 @@ export type AdminSalesAnalyticsSnapshot = {
   paymentMixSeries: AdminAnalyticsSeriesPoint[];
   paymentMixTotalAvailable: number;
   periodLabel: string;
+  previousGrossRevenue: number | null;
   refundsTotal: number;
   revenueDeltaRate: number | null;
   revenueSeries: AdminAnalyticsSeriesPoint[];
@@ -50,6 +51,7 @@ type CanonicalSalesSnapshot = {
   orderVolumeByInterval?: unknown;
   orders?: unknown;
   paymentMixSeries?: unknown;
+  previousGrossRevenue?: unknown;
   refundsTotal?: unknown;
   revenueByInterval?: unknown;
   shippingTotal?: unknown;
@@ -150,6 +152,7 @@ function buildEmptySnapshot(
     paymentMixSeries: [],
     paymentMixTotalAvailable: 0,
     periodLabel: filters.periodLabel,
+    previousGrossRevenue: null,
     refundsTotal: 0,
     revenueDeltaRate: null,
     revenueSeries: buildSalesSeriesPoints({
@@ -177,6 +180,7 @@ export async function getAdminSalesAnalyticsSnapshot(
   const query = new URLSearchParams({
     from: filters.from,
     interval: filters.interval,
+    segment: filters.segment,
     to: filters.to,
   });
   const result = await wpRest<CanonicalSalesSnapshot>(
@@ -198,18 +202,22 @@ export async function getAdminSalesAnalyticsSnapshot(
   const orderVolumeSeries = mapRevenueSeries(result.data.orderVolumeByInterval, filters);
   const orderStatusSeries = mapValueSeries(result.data.orderStatusSeries);
   const paymentMixSeries = mapValueSeries(result.data.paymentMixSeries);
+  const grossRevenue = Math.max(0, toNumber(result.data.grossRevenue));
+  const previousGrossRevenue =
+    result.data.previousGrossRevenue === null ||
+    result.data.previousGrossRevenue === undefined
+      ? null
+      : Math.max(0, toNumber(result.data.previousGrossRevenue));
   const revenueDeltaRate =
-    revenueSeries.length >= 2 && revenueSeries[0].value > 0
-      ? ((revenueSeries[revenueSeries.length - 1].value - revenueSeries[0].value) /
-          revenueSeries[0].value) *
-        100
+    previousGrossRevenue !== null && previousGrossRevenue > 0
+      ? ((grossRevenue - previousGrossRevenue) / previousGrossRevenue) * 100
       : null;
 
   return {
     avgOrderValue: Math.max(0, toNumber(result.data.avgOrderValue)),
     dataSource: "live",
     discountsTotal: Math.max(0, toNumber(result.data.discountsTotal)),
-    grossRevenue: Math.max(0, toNumber(result.data.grossRevenue)),
+    grossRevenue,
     issues: [],
     itemsSold: Math.max(0, toNumber(result.data.itemsSold)),
     leaderboard: mapLeaderboard(result.data.leaderboard),
@@ -222,6 +230,7 @@ export async function getAdminSalesAnalyticsSnapshot(
     paymentMixSeries,
     paymentMixTotalAvailable: Math.max(0, toNumber(result.data.orders)),
     periodLabel: filters.periodLabel,
+    previousGrossRevenue,
     refundsTotal: Math.max(0, toNumber(result.data.refundsTotal)),
     revenueDeltaRate,
     revenueSeries,

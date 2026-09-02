@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FOCUS_RING } from "../../primitives";
+
 export function SalesPresetLink({
   active,
   href,
@@ -11,11 +13,13 @@ export function SalesPresetLink({
 }) {
   return (
     <Link
+      aria-current={active ? "true" : undefined}
       className={[
-        "inline-flex min-h-9 items-center rounded-[8px] border px-4 text-sm font-semibold transition-colors",
+        "inline-flex min-h-11 items-center rounded-none border-2 border-[#1a1a1a] px-4 text-[11px] font-black uppercase tracking-[0.16em] transition-colors",
         active
-          ? "border-[#ffe500] bg-[#ffe500] text-[#231f20]"
-          : "border-[#231f20]/18 bg-white text-[#231f20] hover:bg-[#f7f2e7]",
+          ? "bg-brand-yellow text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a]"
+          : "bg-white text-[#1a1a1a] hover:bg-[#f7f2e7]",
+        FOCUS_RING,
       ].join(" ")}
       href={href}
     >

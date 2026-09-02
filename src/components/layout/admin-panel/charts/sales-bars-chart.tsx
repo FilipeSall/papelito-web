@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatCompactNumber, niceMax } from "../formatters";
-import { CardNotification, FramedPanel } from "../primitives";
+import { CardNotification, HardPanel } from "../primitives";
 
 export function SalesBarsChart({
   label,
@@ -32,7 +32,7 @@ export function SalesBarsChart({
   const barWidth = Math.min(72, groupWidth * 0.72);
 
   return (
-    <FramedPanel className="flex h-full flex-1 flex-col">
+    <HardPanel accent="black" className="flex h-full flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
@@ -126,6 +126,6 @@ export function SalesBarsChart({
           })}
         </svg>
       </div>
-    </FramedPanel>
+    </HardPanel>
   );
 }
