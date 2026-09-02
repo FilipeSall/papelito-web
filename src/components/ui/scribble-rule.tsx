@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import rough from "roughjs";
 import type { Options } from "roughjs/bin/core";
 
@@ -33,8 +33,25 @@ interface ScribbleRuleProps {
 export function ScribbleRule({ className, orientation = "horizontal" }: ScribbleRuleProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
+  const drawnRef = useRef(false);
   const [length, setLength] = useState(0);
-  const [drawn, setDrawn] = useState(false);
+
+  /* O risco é estado do DOM, não do React: guardá-lo em `useState` só serviria
+     para disparar um render que reescreve o mesmo atributo de estilo. */
+  const paintStroke = useCallback(() => {
+    const path = pathRef.current;
+
+    if (!path) {
+      return;
+    }
+
+    const pathLength = path.getTotalLength();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    path.style.strokeDasharray = `${pathLength}`;
+    path.style.transitionDuration = reduced ? "0ms" : "1100ms";
+    path.style.strokeDashoffset = drawnRef.current || reduced ? "0" : `${pathLength}`;
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -69,8 +86,13 @@ export function ScribbleRule({ className, orientation = "horizontal" }: Scribble
       return;
     }
 
+    const draw = () => {
+      drawnRef.current = true;
+      paintStroke();
+    };
+
     if (typeof IntersectionObserver === "undefined") {
-      setDrawn(true);
+      draw();
 
       return;
     }
@@ -78,7 +100,7 @@ export function ScribbleRule({ className, orientation = "horizontal" }: Scribble
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setDrawn(true);
+          draw();
           observer.disconnect();
         }
       },
@@ -88,22 +110,15 @@ export function ScribbleRule({ className, orientation = "horizontal" }: Scribble
     observer.observe(host);
 
     return () => observer.disconnect();
-  }, []);
+  }, [paintStroke]);
 
   useEffect(() => {
-    const path = pathRef.current;
-
-    if (!path || length <= 0) {
+    if (length <= 0) {
       return;
     }
 
-    const pathLength = path.getTotalLength();
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    path.style.strokeDasharray = `${pathLength}`;
-    path.style.transitionDuration = reduced ? "0ms" : "1100ms";
-    path.style.strokeDashoffset = drawn || reduced ? "0" : `${pathLength}`;
-  }, [drawn, length]);
+    paintStroke();
+  }, [length, paintStroke]);
 
   const d = length > 0
     ? (orientation === "horizontal" ? STROKE_Y_OFFSETS : STROKE_X_OFFSETS)
