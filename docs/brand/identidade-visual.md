@@ -777,8 +777,8 @@ fundo — a borda simples desapareceria no corte.
   (cronômetro, contador).
 - **`Shelf`** (`src/components/ui/shelf.tsx`) — trilho horizontal com encaixe nativo
   (`.shelf-rail`), setas sobrepostas às pontas e régua embaixo. `rule` escolhe a régua:
-  `straight` (padrão), `scribble` (traço à mão) ou `none` — a campanha dispensa a régua porque
-  a própria faixa preta já fecha a fileira.
+  `straight` (padrão) ou `none` — a campanha e as novidades dispensam a régua; só "Nossos
+  produtos" ainda fecha a fileira com a barra amarela.
 - **`ScribbleRule`** (`src/components/ui/scribble-rule.tsx`) — régua rough.js, riscada quando
   entra na tela. Ela usa duas passadas finas em largura real: perceptivelmente manual, mas sem
   virar faixa pesada. Também pode ser vertical para costurar células contínuas; aplique-a em

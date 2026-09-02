@@ -41,6 +41,15 @@ interface ProductCardProps {
  * />
  * ```
  */
+/* Sobre a faixa preta o grafite some no fundo: lá a sombra é amarela, como a
+   borda, e faz o papel de tinta vazando por baixo do card. */
+const SHADOW_TONE = {
+  light:
+    "shadow-[0_2px_4px_rgba(35,31,32,0.16),0_11px_24px_-8px_rgba(35,31,32,0.36)] group-hover/availability:shadow-[0_3px_6px_rgba(35,31,32,0.20),0_18px_34px_-10px_rgba(35,31,32,0.44)]",
+  dark:
+    "shadow-[0_2px_4px_rgba(255,229,0,0.10),0_9px_20px_-9px_rgba(255,229,0,0.22)] group-hover/availability:shadow-[0_3px_5px_rgba(255,229,0,0.13),0_14px_28px_-11px_rgba(255,229,0,0.30)]",
+} as const;
+
 export function ProductCard({
   product,
   compactOnMobile = false,
@@ -59,6 +68,7 @@ export function ProductCard({
     promotionContext,
   } = product;
   const borderColor = onDark ? "border-brand-yellow" : "border-brand-dark";
+  const shadowTone = onDark ? SHADOW_TONE.dark : SHADOW_TONE.light;
 
   return (
     <div
@@ -69,7 +79,7 @@ export function ProductCard({
       }`}
     >
       <div
-        className={`relative z-10 h-full overflow-hidden rounded-[2px_5px_12px_4px] border-2 ${borderColor} bg-white ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
+        className={`relative z-10 h-full overflow-hidden rounded-[2px_5px_12px_4px] border-2 ${borderColor} bg-white ${shadowTone} transition-[box-shadow,opacity] duration-200 ease-out motion-reduce:transition-none ${isUnavailable ? "opacity-45" : ""}`.trim()}
       >
         <Link
           href={`/produtos/${id}`}

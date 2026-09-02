@@ -53,8 +53,8 @@ export function MiniProductCard({
       className="group/availability relative isolate flex h-65.5 w-44 shrink-0 cursor-pointer select-none flex-col items-start overflow-visible transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       <div
-        className={`relative z-10 flex h-full w-full flex-col overflow-hidden rounded-[2px_5px_10px_4px] border-2 border-brand-dark bg-white ${
-          isUnavailable ? "opacity-45 transition-opacity" : ""
+        className={`relative z-10 flex h-full w-full flex-col overflow-hidden rounded-[2px_5px_10px_4px] border-2 border-brand-dark bg-white shadow-[0_2px_3px_rgba(35,31,32,0.14),0_9px_19px_-7px_rgba(35,31,32,0.32)] group-hover/availability:shadow-[0_3px_5px_rgba(35,31,32,0.18),0_14px_26px_-9px_rgba(35,31,32,0.40)] transition-[box-shadow,opacity] duration-200 ease-out motion-reduce:transition-none ${
+          isUnavailable ? "opacity-45" : ""
         }`.trim()}
       >
         <div className="relative h-36 w-full border-b-2 border-brand-dark bg-[#faf8f2]">
@@ -109,7 +109,7 @@ export function MiniProductCard({
       {isUnavailable ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-2 right-2 top-2 z-30 border-2 border-brand-yellow bg-brand-dark px-2.5 py-2 text-center text-[10px] font-black uppercase leading-[14px] tracking-[0.08em] text-brand-yellow opacity-0 transition-opacity group-hover/availability:opacity-100 group-focus/availability:opacity-100"
+          className="pointer-events-none absolute left-2 right-2 top-2 z-30 border-2 border-brand-yellow bg-brand-dark px-2.5 py-2 text-center text-[10px] font-black uppercase leading-3.5 tracking-[0.08em] text-brand-yellow opacity-0 transition-opacity group-hover/availability:opacity-100 group-focus/availability:opacity-100"
         >
           {disabledReason}
         </span>

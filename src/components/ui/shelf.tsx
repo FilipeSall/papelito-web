@@ -4,15 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { BrandArrowIcon } from "./icons";
-import { ScribbleRule } from "./scribble-rule";
 
 interface ShelfProps {
   labelledBy: string;
   children: ReactNode;
   gap?: "tight" | "wide";
   onDark?: boolean;
-  /** Régua embaixo da fileira: reta, traço à mão riscado na entrada, ou nenhuma. */
-  rule?: "straight" | "scribble" | "none";
+  /** Régua reta embaixo da fileira, ou nenhuma. */
+  rule?: "straight" | "none";
 }
 
 const GAP = {
@@ -149,7 +148,6 @@ export function Shelf({
         ) : null}
       </div>
 
-      {rule === "scribble" ? <ScribbleRule className="w-full text-brand-yellow" /> : null}
       {rule === "straight" ? (
         <div aria-hidden className="h-1 w-full bg-brand-yellow" />
       ) : null}
