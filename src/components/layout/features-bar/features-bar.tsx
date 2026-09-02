@@ -49,14 +49,14 @@ export function FeaturesBar({ items }: { items: FeaturesBarItem[] }) {
 
               {isLeftColumn && index + 1 < items.length ? (
                 <ScribbleRule
-                  className="pointer-events-none absolute right-0 top-4 hidden h-[calc(100%-2rem)] w-3 -translate-x-1/2 text-brand-yellow/45 min-[360px]:block lg:hidden"
+                  className="pointer-events-none absolute right-0 top-4 hidden h-9 w-3 -translate-x-1/2 text-brand-yellow/45 min-[360px]:block lg:hidden"
                   orientation="vertical"
                 />
               ) : null}
 
               {hasNext ? (
                 <ScribbleRule
-                  className="pointer-events-none absolute right-0 top-4 hidden h-[calc(100%-2rem)] w-3 -translate-x-1/2 text-brand-yellow/45 lg:block"
+                  className="pointer-events-none absolute right-0 top-4 hidden h-9 w-3 -translate-x-1/2 text-brand-yellow/45 lg:block"
                   orientation="vertical"
                 />
               ) : null}

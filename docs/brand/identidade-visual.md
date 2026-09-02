@@ -813,6 +813,8 @@ Os benefícios formam uma faixa preta contínua, com o ícone amarelo alinhado a
 nunca centralizado em relação a uma descrição que possa quebrar em duas linhas. O respiro inferior
 é menor que o superior (`pb-4`, `md:pb-5`) para devolver peso visual ao hero. Entre células, use
 `ScribbleRule` em amarelo translúcido: horizontal em uma ou duas colunas e vertical em quatro.
+A costura vertical tem a altura da placa do ícone (`h-9`), não a da célula: se ela acompanhasse
+a altura total, uma condição que quebra em duas linhas esticaria todas as réguas da fileira.
 É uma costura discreta da faixa, não uma borda grossa nem uma terceira régua de destaque.
 
 ### Movimento
