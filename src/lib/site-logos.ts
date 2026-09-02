@@ -3,7 +3,7 @@ import type { ManagedImageAsset, SiteLogoKey, SiteLogos } from "@/types/home-ass
 export const SITE_LOGO_DEFAULTS: SiteLogos = {
   publicHeader: {
     imageId: 0,
-    imageUrl: "/images/logo.svg",
+    imageUrl: "/images/marketplacelogo.svg",
     alt: "Papelito",
   },
   privateHeader: {

@@ -12,11 +12,11 @@ type PublicHeaderLogoProps = {
 /**
  * Logo da Papelito no cabeçalho público.
  *
- * Usa o mesmo ativo das rotas privadas: o header público também é preto, e a
- * versão escura do logo sumia nele.
+ * Lê o slot `publicHeader` administrado em /admin/assets, cujo padrão é a
+ * versão clara da marca — a escura sumia no header preto.
  */
 export function PublicHeaderLogo({ logo, variant }: PublicHeaderLogoProps) {
-  const resolved = resolveLogo("privateHeader", logo);
+  const resolved = resolveLogo("publicHeader", logo);
 
   if (variant === "mobile") {
     return (

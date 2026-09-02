@@ -9,7 +9,7 @@ export default async function PublicAreaLayout({
 
   return (
     <section className="flex flex-col overflow-x-clip bg-white pt-[62px] md:pt-[95px]">
-      <PublicHeader logo={logos.privateHeader} />
+      <PublicHeader logo={logos.publicHeader} />
       {children}
       <PublicFooter logo={logos.footer} />
     </section>
