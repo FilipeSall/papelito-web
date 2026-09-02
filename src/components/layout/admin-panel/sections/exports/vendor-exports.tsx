@@ -18,7 +18,7 @@ export function VendorSalesExportPanel({
       formatFieldName="vendor-sales-export-format"
       pageFrom={pageFrom}
       pageTo={pageTo}
-      submitLabel="Exportar minhas vendas"
+      submitLabel="Exportar vendas"
       title="Exportar minhas vendas"
     />
   );
@@ -40,7 +40,7 @@ export function VendorCustomersExportPanel({
       formatFieldName="vendor-customers-export-format"
       pageFrom={pageFrom}
       pageTo={pageTo}
-      submitLabel="Exportar meus clientes"
+      submitLabel="Exportar clientes"
       title="Exportar meus clientes"
     />
   );

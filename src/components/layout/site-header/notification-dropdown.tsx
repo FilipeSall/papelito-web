@@ -44,7 +44,7 @@ export function NotificationDropdown({
 
   return (
     <div
-      className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-[#d8d1ba] bg-white text-[#231f20] shadow-[0_18px_44px_rgba(35,31,32,0.18)]"
+      className="fixed left-1/2 top-[4.25rem] z-[70] w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 max-h-[calc(100dvh-5rem)] overflow-hidden rounded-lg border border-[#d8d1ba] bg-white text-[#231f20] shadow-[0_18px_44px_rgba(35,31,32,0.18)] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(360px,calc(100vw-2rem))] sm:translate-x-0 sm:max-h-none"
       role="dialog"
     >
       <div className="flex items-center justify-between border-b border-[#ece6d7] px-3.5 py-3">
@@ -76,7 +76,7 @@ export function NotificationDropdown({
           Não foi possível carregar as notificações.
         </p>
       ) : hasItems ? (
-        <ul className="max-h-[480px] overflow-y-auto p-2">
+        <ul className="max-h-[calc(100dvh-10rem)] overflow-y-auto p-2 sm:max-h-[480px]">
           {items.map((item) => {
             const formatted = formatNotification(item);
             const Icon = iconMap[formatted.icon];

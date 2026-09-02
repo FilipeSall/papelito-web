@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BrandArrowIcon } from "@/components/ui/icons";
 import { AUTO_INTERVAL } from "@/constants/auto-interval";
 import type { HeroBanner } from "@/types/home-assets";
 
@@ -53,10 +52,23 @@ type HeroSlide = {
   mobileSrc: string;
 };
 
-const NAV_BTN_CLASS =
-  "absolute top-1/2 z-10 -mt-5.5 flex size-11 items-center justify-center border-2 border-brand-dark bg-brand-yellow text-brand-dark shadow-[3px_3px_0_#231f20] transition-[background-color,box-shadow,translate] duration-100 ease-out hover:bg-white active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0_#231f20]";
-
-const NAV_ICON_CLASS = "size-4 shrink-0 transition-transform duration-300 ease-in-out"
+const NAV_BTN: React.CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: 40,
+  height: 40,
+  borderRadius: "50%",
+  border: "1px solid rgba(255, 229, 0, 0.27)",
+  padding: "0 9px",
+  background: "rgba(255, 229, 0, 0.13)",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  zIndex: 10,
+};
 
 function buildSlides(banners: HeroBanner[]): HeroSlide[] {
   if (banners.length === 0) {
@@ -123,7 +135,6 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
 
   useEffect(() => {
     resetTimer();
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -131,89 +142,113 @@ export function HeroSection({ banners = [] }: Readonly<{ banners?: HeroBanner[] 
     };
   }, [resetTimer, slides.length]);
 
-  // A faixa de condições continua visualmente por trás do eco amarelo do rasgo.
   return (
-    <section className="relative z-10 w-full bg-brand-dark">
-      {/* Folha de ponta a ponta: o enquadramento vem do corte diagonal na base,
-          não de margem lateral — e o eco amarelo aparece embaixo do rasgo. */}
-      <div className="animate-sheet-settle">
-        <div className="aisle-cut w-full bg-brand-dark p-0 md:p-3">
+    <>
+      <section
+        className={
+          isMobileOnly
+            ? "relative h-[calc(100vw*2)] min-h-160 w-full flex-none overflow-hidden"
+            : "relative h-135 w-full flex-none overflow-hidden"
+        }
+      >
+        {slides.map((slide, i) => (
           <div
-            className={
-              isMobileOnly
-                ? "relative h-[calc(100vw*2)] w-full overflow-hidden"
-                : "relative h-92 w-full overflow-hidden md:h-120 xl:h-132"
-            }
+            key={slide.id}
+            style={{
+              position: "absolute",
+              inset: 0,
+              opacity: i === activeIndex ? 1 : 0,
+              transition: "opacity 0.6s ease-in-out",
+            }}
+          >
+            <div className="relative h-full w-full">
+              <Image
+                src={isMobileOnly ? slide.mobileSrc : slide.desktopSrc}
+                alt={slide.alt}
+                fill
+                loading={i === activeIndex ? "eager" : "lazy"}
+                className={isMobileOnly ? "object-contain object-top" : "object-cover"}
+                sizes="100vw"
+              />
+            </div>
+          </div>
+        ))}
+
+        {!isMobileOnly && isCarousel ? (
+          <>
+            {/* Botão anterior */}
+            <button
+              type="button"
+              onClick={prev}
+              style={{ ...NAV_BTN, left: 16 }}
+              aria-label="Slide anterior"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+
+            {/* Botão próximo */}
+            <button
+              type="button"
+              onClick={next}
+              style={{ ...NAV_BTN, right: 16 }}
+              aria-label="Próximo slide"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </>
+        ) : null}
+
+        {/* Indicadores */}
+        {isCarousel ? (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 16,
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: 8,
+              zIndex: 10,
+            }}
           >
             {slides.map((slide, i) => (
-              <div
-                className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+              <button
+                type="button"
                 key={slide.id}
-                style={{ opacity: i === activeIndex ? 1 : 0 }}
+                onClick={() => {
+                  setCurrent(i);
+                  resetTimer();
+                }}
+                aria-label={`Ir para slide ${i + 1}`}
+                style={{
+                  width: 24,
+                  height: 24,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
               >
-                <Image
-                  alt={slide.alt}
-                  className="object-cover object-center"
-                  fill
-                  loading={i === activeIndex ? "eager" : "lazy"}
-                  priority={i === activeIndex}
-                  sizes="100vw"
-                  src={isMobileOnly ? slide.mobileSrc : slide.desktopSrc}
+                <span
+                  aria-hidden
+                  style={{
+                    width: i === activeIndex ? 28 : 8,
+                    height: 8,
+                    borderRadius: 9999,
+                    background: "#FFE500",
+                    opacity: i === activeIndex ? 1 : 0.72,
+                    transition: "width 0.3s ease, opacity 0.3s ease",
+                  }}
                 />
-              </div>
+              </button>
             ))}
-
-            {isCarousel ? (
-              <>
-                <button
-                  aria-label="Slide anterior"
-                  className={`group/nav ${NAV_BTN_CLASS} left-4 md:left-8`}
-                  onClick={prev}
-                  type="button"
-                >
-                  <BrandArrowIcon
-                    className={`${NAV_ICON_CLASS} -rotate-180 group-hover/nav:-translate-x-1.5 group-hover/nav:rotate-[-195deg]`}
-                  />
-                </button>
-
-                <button
-                  aria-label="Próximo slide"
-                  className={`group/nav ${NAV_BTN_CLASS} right-4 md:right-8`}
-                  onClick={next}
-                  type="button"
-                >
-                  <BrandArrowIcon
-                    className={`${NAV_ICON_CLASS} group-hover/nav:translate-x-1.5 group-hover/nav:rotate-[15deg]`}
-                  />
-                </button>
-
-                <div className="absolute right-4 top-4 z-10 flex items-center gap-2.5 bg-brand-dark/85 px-3 py-2 md:right-8 md:top-6">
-                  {slides.map((slide, i) => (
-                    <button
-                      aria-current={i === activeIndex ? "true" : undefined}
-                      aria-label={`Ir para o banner ${i + 1}`}
-                      className="flex size-5 items-center justify-center"
-                      key={slide.id}
-                      onClick={() => {
-                        setCurrent(i);
-                        resetTimer();
-                      }}
-                      type="button"
-                    >
-                      <span
-                        aria-hidden
-                        className={`inline-block rotate-45 bg-brand-yellow transition-all duration-300 ${
-                          i === activeIndex ? "size-3" : "size-1.5 opacity-45"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : null}
           </div>
-        </div>
-      </div>
-    </section>
+        ) : null}
+      </section>
+      <div className="h-0.5 w-full bg-[#FFE500] max-[500px]:h-1" />
+    </>
   );
 }

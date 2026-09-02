@@ -8,8 +8,6 @@ import type { HomeProductCard } from "@/features/catalog/types/home-products";
 interface ProductCardProps {
   product: HomeProductCard;
   compactOnMobile?: boolean;
-  /** Sobre fundo preto a moldura e a sombra viram amarelas — em preto sumiriam. */
-  onDark?: boolean;
 }
 
 /**
@@ -41,19 +39,9 @@ interface ProductCardProps {
  * />
  * ```
  */
-/* Sobre a faixa preta o grafite some no fundo: lá a sombra é amarela, como a
-   borda, e faz o papel de tinta vazando por baixo do card. */
-const SHADOW_TONE = {
-  light:
-    "shadow-[0_2px_4px_rgba(35,31,32,0.16),0_11px_24px_-8px_rgba(35,31,32,0.36)] group-hover/availability:shadow-[0_3px_6px_rgba(35,31,32,0.20),0_18px_34px_-10px_rgba(35,31,32,0.44)]",
-  dark:
-    "shadow-[0_2px_4px_rgba(255,229,0,0.10),0_9px_20px_-9px_rgba(255,229,0,0.22)] group-hover/availability:shadow-[0_3px_5px_rgba(255,229,0,0.13),0_14px_28px_-11px_rgba(255,229,0,0.30)]",
-} as const;
-
 export function ProductCard({
   product,
   compactOnMobile = false,
-  onDark = false,
 }: Readonly<ProductCardProps>) {
   const { isUnavailable, disabledReason, stockLabel } = useProductAvailability(product.id);
   const {
@@ -65,26 +53,29 @@ export function ProductCard({
     originalPrice,
     price,
     image,
+    featured,
     promotionContext,
   } = product;
-  const borderColor = onDark ? "border-brand-yellow" : "border-brand-dark";
-  const shadowTone = onDark ? SHADOW_TONE.dark : SHADOW_TONE.light;
 
   return (
     <div
-      className={`group/availability relative isolate h-82.5 w-full max-w-73 cursor-pointer overflow-visible transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+      className={`group/availability relative h-82.5 w-full max-w-73 cursor-pointer overflow-visible rounded-xl bg-white ${
         compactOnMobile
-          ? "h-[329.982px] w-full max-w-none sm:h-82.5 sm:max-w-73"
+          ? "h-[360px] w-full max-w-none sm:h-82.5 sm:max-w-73"
           : ""
+      } ${
+        featured
+          ? "shadow-[0px_0px_0px_2px_#FFE500,0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
+          : "shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
       }`}
     >
       <div
-        className={`relative z-10 h-full overflow-hidden rounded-[2px_5px_12px_4px] border-2 ${borderColor} bg-white ${shadowTone} transition-[box-shadow,opacity] duration-200 ease-out motion-reduce:transition-none ${isUnavailable ? "opacity-45" : ""}`.trim()}
+        className={`flex h-full flex-col overflow-hidden rounded-xl ${isUnavailable ? "opacity-45 transition-opacity" : ""}`.trim()}
       >
         <Link
           href={`/produtos/${id}`}
           aria-label={`Ver produto ${name}`}
-          className="absolute inset-0 z-10"
+          className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
         />
         <ProductCardImage
           image={image}
@@ -92,6 +83,7 @@ export function ProductCard({
           badge={badge}
           discount={discount}
           compactOnMobile={compactOnMobile}
+          legacyBadges
         />
         <ProductCardInfo
           id={id}
@@ -103,12 +95,13 @@ export function ProductCard({
           price={price}
           promotionContext={promotionContext}
           disabledReason={disabledReason}
+          compactOnMobile={compactOnMobile}
         />
       </div>
       {isUnavailable ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-3 right-3 top-3 z-30 border-2 border-brand-yellow bg-brand-dark px-3 py-2 text-center text-[11px] font-black uppercase leading-4 tracking-[0.08em] text-brand-yellow opacity-0 transition-opacity group-hover/availability:opacity-100 group-focus-within/availability:opacity-100"
+          className="pointer-events-none absolute left-3 right-3 top-3 z-30 rounded-lg bg-brand-dark px-3 py-2 text-center text-[11px] font-black leading-4 text-white opacity-0 shadow-[0_12px_24px_rgba(35,31,32,0.25)] transition-opacity group-hover/availability:opacity-100 group-focus-within/availability:opacity-100"
         >
           {disabledReason}
         </span>

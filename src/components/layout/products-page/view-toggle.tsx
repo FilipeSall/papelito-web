@@ -24,23 +24,10 @@ interface ViewToggleProps {
   perPage: number;
   gridLayout?: ProductsGridLayout;
   search?: string;
-  variant?: "default" | "collection";
 }
 
-function getViewStateClassName(
-  view: ProductsViewMode,
-  activeView: ProductsViewMode,
-  isCollectionVariant: boolean,
-) {
-  const isActive = view === activeView;
-
-  if (isCollectionVariant) {
-    if (isActive) return "bg-brand-dark";
-    return "hover:bg-brand-yellow";
-  }
-
-  if (isActive) return "bg-white shadow-sm";
-  return "hover:bg-gray-200";
+function getViewStateClassName(view: ProductsViewMode, activeView: ProductsViewMode) {
+  return view === activeView ? "bg-white shadow-sm" : "hover:bg-gray-200";
 }
 
 /**
@@ -65,27 +52,11 @@ export function ViewToggle({
   perPage,
   gridLayout = "default",
   search,
-  variant = "default",
 }: Readonly<ViewToggleProps>) {
   const gridPerPageOptions = getPerPageOptionsForView("grid", gridLayout);
   const listPerPageOptions = getPerPageOptionsForView("list");
-  const isCollectionVariant = variant === "collection";
-  const containerClassName = isCollectionVariant
-    ? "flex items-center gap-1 border-2 border-[#1a1a1a] bg-white p-1"
-    : "flex items-center gap-1 rounded-lg bg-gray-100 p-1";
-  const itemClassName = isCollectionVariant
-    ? "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-    : "rounded-md";
-  const gridStateClassName = getViewStateClassName(
-    "grid",
-    activeView,
-    isCollectionVariant,
-  );
-  const listStateClassName = getViewStateClassName(
-    "list",
-    activeView,
-    isCollectionVariant,
-  );
+  const gridStateClassName = getViewStateClassName("grid", activeView);
+  const listStateClassName = getViewStateClassName("list", activeView);
 
   // Trocar de visualização com um perPage fora das opções do destino deixa o seletor sem
   // opção ativa e a URL divergente do que a interface mostra: cada link cai no default do
@@ -98,7 +69,7 @@ export function ViewToggle({
     : getDefaultPerPageForView("list");
 
   return (
-    <div className={containerClassName}>
+    <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
       <Link
         aria-label="Visualização em grade"
         href={buildProductsHref({
@@ -112,9 +83,9 @@ export function ViewToggle({
           perPage: gridPerPage,
           search,
         })}
-        className={`p-1.5 transition-colors ${itemClassName} ${gridStateClassName}`}
+        className={`rounded-md p-1.5 transition-colors ${gridStateClassName}`}
       >
-        <ViewToggleGridIcon active={activeView === "grid"} variant={variant} />
+        <ViewToggleGridIcon active={activeView === "grid"} />
       </Link>
       <Link
         aria-label="Visualização em lista"
@@ -129,9 +100,9 @@ export function ViewToggle({
           perPage: listPerPage,
           search,
         })}
-        className={`p-1.5 transition-colors ${itemClassName} ${listStateClassName}`}
+        className={`rounded-md p-1.5 transition-colors ${listStateClassName}`}
       >
-        <ViewToggleListIcon active={activeView === "list"} variant={variant} />
+        <ViewToggleListIcon active={activeView === "list"} />
       </Link>
     </div>
   );

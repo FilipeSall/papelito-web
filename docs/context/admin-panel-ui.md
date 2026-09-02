@@ -96,11 +96,34 @@ painel do vendor herda a mesma gramática. Não crie uma segunda identidade por 
 sobreponha cor por `className`** — o tom perde para a classe do componente em metade das
 propriedades e produz pares proibidos, como amarelo sobre fundo claro.
 
-**Navegação de seções.** `SalesSectionNav` é flutuante, discreta, aparece a partir de `xl` e tem
-botão de recolher com a preferência lembrada. O conteúdo dos dois painéis rola **dentro de um
-`div.overflow-y-auto`**, não na janela: a seção ativa é resolvida contra esse contêiner e o clique
-marca na hora. Medir contra o viewport, ou usar offset fixo, é o que faz o item clicado não ficar
-ativo — a mesma armadilha já registrada nas telas de configuração.
+**Navegação de seções.** `SalesSectionNav` é flutuante, discreta e aparece a partir de `xl`. O
+conteúdo dos dois painéis rola **dentro de um `div.overflow-y-auto`**, não na janela: a seção ativa
+é resolvida contra esse contêiner e o clique marca na hora. Medir contra o viewport, ou usar offset
+fixo, é o que faz o item clicado não ficar ativo — a mesma armadilha já registrada nas telas de
+configuração.
+
+**Ocultar e arrastar são estado de visita, não preferência.** Não há recolher: o botão é **Ocultar**,
+e ocultar remove a navegação da tela sem nenhum caminho de volta na interface — só recarregar traz.
+
+- O flag de oculto fica em `sessionStorage`, para atravessar navegação e o submit `method="get"` do
+  filtro, e é **apagado no boot do módulo** (uma vez por carregamento de página). `sessionStorage`
+  sobrevive ao F5 por conta própria, e sem essa limpeza o usuário ficaria preso sem a navegação
+  pelo resto da aba. Nunca troque por `localStorage`.
+- A posição arrastada fica num store de módulo carimbado com o `pathname`: sobrevive ao remonte que
+  a troca de filtro provoca (filtro é query, a rota não muda) e é descartada ao trocar de seção ou
+  recarregar. Nada de posição é persistido.
+- O arrasto sai **só do punho de seis pontos** acima de "Ocultar". Arrastar pelo corpo exigiria
+  engolir cliques por limiar de movimento, e era isso que roubava o clique de Resumo/Gráfico/Exportações.
+- Ao arrastar, a navegação troca a âncora `right-6 top-1/2 -translate-y-1/2` por `left`/`top`
+  absolutos. Manter a centralização faria o painel pular quando a altura da caixa mudasse.
+- A posição é sempre limitada à viewport, e reancorada em `resize` e em mudança de tamanho do
+  próprio painel (`ResizeObserver`) — arrastar para a borda não pode deixá-la fora da tela.
+
+**Filtro de período é um só componente.** `SalesPeriodFilter` (presets + `de`/`até` + Aplicar) serve
+o admin, dentro do `SalesWindowBar`, e o painel do vendor, dentro de `VendorPeriodFilters`. O vendor
+tinha um cartão macio próprio (`rounded-[14px]`, `border-brand-dark/15`) que era a única sobra do
+estilo antigo no painel — não recrie variante local do filtro, passe `basePath` e, se precisar,
+`className` para o encaixe.
 
 ## Aba Categorias
 

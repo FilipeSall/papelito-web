@@ -81,17 +81,19 @@ export function ExportPanel({
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#1a1a1a]/72">{description}</p>
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
-          <ExportDateField
-            label={fromLabel}
-            onChange={(value) => setRange({ ...range, from: value })}
-            value={range.from}
-          />
-          <ExportDateField
-            label={toLabel}
-            onChange={(value) => setRange({ ...range, to: value })}
-            value={range.to}
-          />
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="grid items-end gap-3 min-[380px]:grid-cols-2 sm:flex sm:gap-4">
+            <ExportDateField
+              label={fromLabel}
+              onChange={(value) => setRange({ ...range, from: value })}
+              value={range.from}
+            />
+            <ExportDateField
+              label={toLabel}
+              onChange={(value) => setRange({ ...range, to: value })}
+              value={range.to}
+            />
+          </div>
           {extraFields}
           <ExportChoiceField
             label="Formato"
@@ -100,11 +102,12 @@ export function ExportPanel({
             options={EXPORT_FORMATS}
             value={format}
           />
-          <div className="md:ml-auto">
-            <ExportSubmitButton disabled={status === "loading"}>
-              {status === "loading" ? "Gerando arquivo…" : submitLabel}
-            </ExportSubmitButton>
-          </div>
+        </div>
+
+        <div className="flex sm:justify-end">
+          <ExportSubmitButton className="w-full sm:w-auto" disabled={status === "loading"}>
+            {status === "loading" ? "Gerando arquivo…" : submitLabel}
+          </ExportSubmitButton>
         </div>
 
         {isOverridden ? (

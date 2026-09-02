@@ -11,6 +11,7 @@ interface ProductCardImageProps {
   badge: string;
   discount: number;
   compactOnMobile?: boolean;
+  legacyBadges?: boolean;
 }
 
 export function ProductCardImage({
@@ -19,10 +20,11 @@ export function ProductCardImage({
   badge,
   discount,
   compactOnMobile = false,
+  legacyBadges = false,
 }: ProductCardImageProps) {
   return (
     <div
-      className={`relative h-48 w-full shrink-0 border-b-2 border-brand-dark bg-[#faf8f2] ${
+      className={`relative h-48 w-full shrink-0 bg-bg-light ${
         compactOnMobile ? "h-[191.994px] sm:h-48" : ""
       }`}
     >
@@ -47,8 +49,8 @@ export function ProductCardImage({
         <ProductImageFallback className="absolute inset-0" />
       )}
 
-      <CategoryBadge label={badge} />
-      <DiscountBadge discount={discount} />
+      <CategoryBadge label={badge} variant={legacyBadges ? "legacy" : "current"} />
+      <DiscountBadge discount={discount} variant={legacyBadges ? "legacy" : "current"} />
     </div>
   );
 }

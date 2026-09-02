@@ -1,37 +1,102 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-const COLLAPSE_STORAGE_KEY = "papelito.admin.sales.nav.collapsed";
+const VIEWPORT_MARGIN_PX = 8;
+const HIDDEN_STORAGE_KEY = "papelito.admin.sales.nav.hidden";
 
-// Trocar filtro remonta a página inteira: sem lembrar a escolha, o recolhido
-// voltaria a abrir a cada clique de filtro. Fica num store externo porque é
-// estado do navegador, não do componente — e assim o servidor renderiza aberto
-// sem divergir da hidratação.
-const collapseListeners = new Set<() => void>();
+type NavPosition = {
+  left: number;
+  top: number;
+};
 
-function readCollapsed() {
+type NavPlacement = {
+  pathname: string | null;
+  position: NavPosition | null;
+};
+
+const INITIAL_PLACEMENT: NavPlacement = {
+  pathname: null,
+  position: null,
+};
+
+// Ocultar vale até o próximo carregamento da página: fica na sessão para
+// atravessar navegação e submit de filtro, e é apagado no boot deste módulo —
+// que roda uma vez por carregamento — porque sessionStorage sobrevive ao F5 por
+// conta própria e a navegação precisa voltar quando a página recarrega.
+if (typeof window !== "undefined") {
   try {
-    return window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
+    window.sessionStorage.removeItem(HIDDEN_STORAGE_KEY);
+  } catch {
+    // Sem storage, ocultar vale só enquanto o componente estiver montado.
+  }
+}
+
+// A posição arrastada vale só para a visita atual da página: fica num store de
+// módulo, carimbado com a rota, para sobreviver ao remonte que a troca de filtro
+// provoca e ser descartada ao trocar de seção ou recarregar.
+let placement = INITIAL_PLACEMENT;
+const navListeners = new Set<() => void>();
+
+function subscribeNav(onChange: () => void) {
+  navListeners.add(onChange);
+  return () => navListeners.delete(onChange);
+}
+
+function readHidden() {
+  try {
+    return window.sessionStorage.getItem(HIDDEN_STORAGE_KEY) === "1";
   } catch {
     return false;
   }
 }
 
-function subscribeCollapsed(onChange: () => void) {
-  collapseListeners.add(onChange);
-  return () => collapseListeners.delete(onChange);
-}
-
-function writeCollapsed(next: boolean) {
+function hideNav() {
   try {
-    window.localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+    window.sessionStorage.setItem(HIDDEN_STORAGE_KEY, "1");
   } catch {
-    // Preferência é conveniência: sem storage, o padrão continua valendo.
+    // Sem storage, ocultar vale só enquanto o componente estiver montado.
   }
 
-  collapseListeners.forEach((listener) => listener());
+  navListeners.forEach((listener) => listener());
 }
+
+function readPlacement() {
+  return placement;
+}
+
+function placementFor(pathname: string | null, current: NavPlacement) {
+  return current.pathname === pathname ? current : INITIAL_PLACEMENT;
+}
+
+function writePlacement(pathname: string | null, patch: Partial<NavPlacement>) {
+  placement = { ...placementFor(pathname, placement), ...patch, pathname };
+  navListeners.forEach((listener) => listener());
+}
+
+function clampToRange(value: number, min: number, max: number) {
+  if (min > max) {
+    return min;
+  }
+
+  return Math.min(Math.max(value, min), max);
+}
+
+function positionWithinViewport(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): NavPosition {
+  return {
+    left: clampToRange(left, VIEWPORT_MARGIN_PX, window.innerWidth - width - VIEWPORT_MARGIN_PX),
+    top: clampToRange(top, VIEWPORT_MARGIN_PX, window.innerHeight - height - VIEWPORT_MARGIN_PX),
+  };
+}
+
+const GRIP_DOTS = [0, 1, 2, 3, 4, 5] as const;
 
 export type SalesSectionLink = {
   id: string;
@@ -52,8 +117,15 @@ export function SalesSectionNav({
   sections: readonly SalesSectionLink[];
 }>) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
-  const collapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
   const pinnedRef = useRef<string | null>(null);
+  const pathname = usePathname();
+  const hidden = useSyncExternalStore(subscribeNav, readHidden, () => false);
+  const stored = useSyncExternalStore(subscribeNav, readPlacement, () => INITIAL_PLACEMENT);
+  const { position } = placementFor(pathname, stored);
+  const [dragging, setDragging] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const positionRef = useRef<NavPosition | null>(position);
+  const endDragRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const first = document.getElementById(sections[0]?.id ?? "");
@@ -126,36 +198,150 @@ export function SalesSectionNav({
     };
   }, [sections]);
 
+  useEffect(() => () => endDragRef.current?.(), []);
+
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+
+    // Recolher, reabrir ou redimensionar a janela muda a caixa do painel: sem
+    // reancorar, a navegação arrastada para a borda ficaria fora da viewport.
+    function keepInsideViewport() {
+      const current = positionRef.current;
+
+      if (!nav || !current) {
+        return;
+      }
+
+      const rect = nav.getBoundingClientRect();
+      const next = positionWithinViewport(
+        current.left,
+        current.top,
+        rect.width,
+        rect.height,
+      );
+
+      if (next.left !== current.left || next.top !== current.top) {
+        writePlacement(pathname, { position: next });
+      }
+    }
+
+    window.addEventListener("resize", keepInsideViewport);
+
+    const observer =
+      nav && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(keepInsideViewport)
+        : null;
+
+    observer?.observe(nav as HTMLElement);
+
+    return () => {
+      window.removeEventListener("resize", keepInsideViewport);
+      observer?.disconnect();
+    };
+  }, [pathname]);
+
+  function startDrag(event: ReactPointerEvent<HTMLElement>) {
+    const nav = navRef.current;
+
+    if (event.button !== 0 || !nav) {
+      return;
+    }
+
+    const rect = nav.getBoundingClientRect();
+    const grabX = event.clientX - rect.left;
+    const grabY = event.clientY - rect.top;
+    const pointerId = event.pointerId;
+
+    event.preventDefault();
+    endDragRef.current?.();
+    setDragging(true);
+
+    function handleMove(moveEvent: PointerEvent) {
+      if (moveEvent.pointerId !== pointerId) {
+        return;
+      }
+
+      moveEvent.preventDefault();
+      writePlacement(pathname, {
+        position: positionWithinViewport(
+          moveEvent.clientX - grabX,
+          moveEvent.clientY - grabY,
+          rect.width,
+          rect.height,
+        ),
+      });
+    }
+
+    function handleEnd(endEvent: PointerEvent) {
+      if (endEvent.pointerId !== pointerId) {
+        return;
+      }
+
+      endDrag();
+    }
+
+    function endDrag() {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+      endDragRef.current = null;
+      setDragging(false);
+    }
+
+    endDragRef.current = endDrag;
+    window.addEventListener("pointermove", handleMove, { passive: false });
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+  }
+
+  if (hidden) {
+    return null;
+  }
+
   return (
     <nav
       aria-label="Seções desta página"
-      className="pointer-events-none fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 xl:block"
+      className={[
+        "pointer-events-none fixed z-30 hidden xl:block",
+        position ? "" : "right-6 top-1/2 -translate-y-1/2",
+      ].join(" ")}
+      ref={navRef}
+      style={position ? { left: position.left, top: position.top } : undefined}
     >
       <div className="pointer-events-auto border-2 border-[#1a1a1a] bg-[#fbf7ef]/95 p-2 shadow-[4px_4px_0px_#1a1a1a] backdrop-blur-sm">
+        <span
+          aria-hidden
+          className={[
+            "flex touch-none select-none items-center justify-center border-b-2 border-dashed border-[#1a1a1a]/28 pb-1.5 pt-0.5 transition-colors hover:bg-[#f7f2e7]",
+            dragging ? "cursor-grabbing" : "cursor-grab",
+          ].join(" ")}
+          onPointerDown={startDrag}
+          title="Arraste para mover"
+        >
+          <span className="grid grid-cols-3 gap-[3px]">
+            {GRIP_DOTS.map((dot) => (
+              <span className="h-[3px] w-[3px] bg-[#1a1a1a]/45" key={dot} />
+            ))}
+          </span>
+        </span>
+
         <button
-          aria-controls="sales-section-nav-list"
-          aria-expanded={!collapsed}
-          className="flex min-h-9 w-full items-center justify-between gap-2 px-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/60 transition-colors hover:bg-[#f7f2e7] hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1a1a1a]"
-          onClick={() => writeCollapsed(!collapsed)}
+          className="mt-1 flex min-h-9 w-full cursor-pointer items-center justify-between gap-2 px-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/60 transition-colors hover:bg-[#f7f2e7] hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1a1a1a]"
+          onClick={hideNav}
+          title="Só volta ao recarregar a página"
           type="button"
         >
-          <span>{collapsed ? "Seções" : "Recolher"}</span>
-          <span
-            aria-hidden
-            className={[
-              "border-[#1a1a1a] transition-transform",
-              collapsed
-                ? "h-0 w-0 border-y-4 border-l-[6px] border-y-transparent border-l-[#1a1a1a]"
-                : "h-0 w-0 border-x-4 border-t-[6px] border-x-transparent border-t-[#1a1a1a]",
-            ].join(" ")}
-          />
+          <span>Ocultar</span>
+          <span aria-hidden className="text-[13px] leading-none">
+            ×
+          </span>
         </button>
 
-      <ul
-        className="mt-1 flex flex-col gap-1 border-t-2 border-dashed border-[#1a1a1a]/28 pt-1"
-        hidden={collapsed}
-        id="sales-section-nav-list"
-      >
+      <ul className="mt-1 flex flex-col gap-1 border-t-2 border-dashed border-[#1a1a1a]/28 pt-1">
         {sections.map((section) => {
           const active = section.id === activeId;
 

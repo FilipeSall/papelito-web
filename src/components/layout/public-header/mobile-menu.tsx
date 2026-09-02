@@ -55,18 +55,17 @@ export function PublicHeaderMobileMenu({ iconButtonClass, links }: PublicHeaderM
 
       <nav
         aria-label="Navegação pública mobile"
-        className="absolute right-0 top-[calc(100%+10px)] z-30 flex w-48 origin-top-right flex-col gap-4 border-2 border-brand-dark bg-brand-yellow px-4 py-4 shadow-[6px_6px_0_#231f20]"
+        className="absolute right-0 top-[calc(100%+8px)] z-30 flex w-44 origin-top-right flex-col gap-4 rounded-md border border-white/10 bg-brand-dark px-3 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
         id={mobileMenuId}
       >
         {menuLinks.map((item, index) => (
           <Link
-            className={`flex items-center gap-2 text-xs font-black uppercase leading-4 tracking-[0.18em] text-brand-dark transition-opacity hover:opacity-60 ${
-              index === authLinks.length - 1 ? "border-b-2 border-brand-dark pb-4" : ""
+            className={`text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-70 ${
+              index === authLinks.length - 1 ? "border-b border-white/10 pb-4" : ""
             }`}
             href={item.href}
             key={item.label}
           >
-            <span aria-hidden className="inline-block size-1.5 rotate-45 bg-brand-dark" />
             {item.label}
           </Link>
         ))}

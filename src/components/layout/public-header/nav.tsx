@@ -3,6 +3,7 @@ import { PublicHeaderNavLink } from "./nav-link";
 type NavLink = {
   href: string;
   label: string;
+  widthClass: string;
 };
 
 type PublicHeaderNavProps = {
@@ -15,7 +16,7 @@ type PublicHeaderNavProps = {
  */
 export function PublicHeaderNav({ links }: PublicHeaderNavProps) {
   return (
-    <nav aria-label="Navegação pública" className="flex flex-wrap items-center justify-center gap-x-9 gap-y-2">
+    <nav aria-label="Navegação pública" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
       {links.map((item) => (
         <PublicHeaderNavLink key={item.label} {...item} />
       ))}

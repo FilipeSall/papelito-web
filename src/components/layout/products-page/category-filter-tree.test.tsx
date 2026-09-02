@@ -54,7 +54,6 @@ function renderTree(
       perPage={9}
       selectedSubcategories={[]}
       selectedTypes={[]}
-      variant="default"
       viewMode="grid"
       {...props}
     />,

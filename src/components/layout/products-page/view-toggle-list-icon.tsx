@@ -1,12 +1,11 @@
 interface ListIconProps {
   active: boolean;
-  variant?: "default" | "collection";
 }
 
 /**
  * Ícone de lista (list view).
  */
-export function ViewToggleListIcon({ active, variant = "default" }: ListIconProps) {
+export function ViewToggleListIcon({ active }: ListIconProps) {
   return (
     <svg
       width="20"
@@ -22,7 +21,7 @@ export function ViewToggleListIcon({ active, variant = "default" }: ListIconProp
         width="16"
         height="4"
         rx="1"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
       <rect
         x="2"
@@ -30,7 +29,7 @@ export function ViewToggleListIcon({ active, variant = "default" }: ListIconProp
         width="16"
         height="4"
         rx="1"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
       <rect
         x="2"
@@ -38,7 +37,7 @@ export function ViewToggleListIcon({ active, variant = "default" }: ListIconProp
         width="16"
         height="4"
         rx="1"
-        fill={active ? variant === "collection" ? "#FFE500" : "#231F20" : "#9CA3AF"}
+        fill={active ? "#231F20" : "#9CA3AF"}
       />
     </svg>
   );

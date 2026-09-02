@@ -19,9 +19,9 @@ import type {
   ProductsCatalogItem,
   ProductsCatalogTab,
 } from "@/features/catalog";
-import {
-  resolveProductsGridLayout,
-  type ProductsViewMode,
+import type {
+  ProductsGridLayout,
+  ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsSectionProps {
@@ -51,7 +51,7 @@ interface ProductsSectionProps {
   sourceStatus?: CatalogSourceStatus;
   search?: string;
   showSearch?: boolean;
-  visualVariant?: "default" | "collection";
+  gridLayout?: ProductsGridLayout;
 }
 
 /**
@@ -63,6 +63,8 @@ interface ProductsSectionProps {
  * - Listagem de produtos em grid ou lista
  *
  * Os filtros de coleção e categoria ficam acima da listagem em todos os breakpoints.
+ * O acabamento visual é o mesmo em toda superfície de catálogo; `gridLayout` só muda a
+ * densidade do grid quando a listagem ocupa a largura cheia, sem sidebar.
  *
  * @example
  * ```tsx
@@ -96,10 +98,8 @@ export function ProductsSection({
   sourceStatus = "ok",
   search = "",
   showSearch = false,
-  visualVariant,
+  gridLayout = "default",
 }: Readonly<ProductsSectionProps>) {
-  const resolvedVisualVariant = visualVariant ?? (showCategoryFilters ? "default" : "collection");
-  const gridLayout = resolveProductsGridLayout(resolvedVisualVariant, activeCollection);
   const showCoverageWarning = coverageStatus === "unavailable";
   const isSourceUnavailable = sourceStatus === "unavailable";
   let emptyMessage = "Nenhum produto encontrado.";
@@ -119,7 +119,6 @@ export function ProductsSection({
           {showCollectionFilters ? (
             <div className="mb-4">
               <ProductCollectionFilters
-                basePath={basePath}
                 activeCollection={activeCollection}
                 viewMode={viewMode}
                 perPage={perPage}
@@ -134,7 +133,6 @@ export function ProductsSection({
                 basePath={basePath}
                 initialValue={search}
                 totalItems={totalItems}
-                variant={resolvedVisualVariant}
               />
             </div>
           ) : null}
@@ -180,7 +178,6 @@ export function ProductsSection({
                 perPage={perPage}
                 search={search}
                 totalItems={totalItems}
-                variant={resolvedVisualVariant}
               />
               <ViewToggle
                 basePath={basePath}
@@ -193,7 +190,6 @@ export function ProductsSection({
                 perPage={perPage}
                 gridLayout={gridLayout}
                 search={search}
-                variant={resolvedVisualVariant}
               />
             </div>
           </div>
@@ -218,7 +214,6 @@ export function ProductsSection({
                   id: tab.id,
                   label: tab.id === "todos" ? "Todos" : tab.label,
                 }))}
-                variant={resolvedVisualVariant}
               />
             ) : null}
             <div className={showCategoryFilters ? "min-w-0 flex-1" : undefined}>
@@ -230,8 +225,7 @@ export function ProductsSection({
                     emptyMessage={emptyMessage}
                     emptyAction={search ? <ClearProductSearchButton basePath={basePath} /> : undefined}
                     products={products}
-                    activeCollection={activeCollection}
-                    variant={resolvedVisualVariant}
+                    gridLayout={gridLayout}
                     viewMode={viewMode}
                   />
                   <ProductsPagination
@@ -246,7 +240,6 @@ export function ProductsSection({
                     viewMode={viewMode}
                     perPage={perPage}
                     search={search}
-                    variant={resolvedVisualVariant}
                   />
                 </>
               )}

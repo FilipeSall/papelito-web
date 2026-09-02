@@ -8,7 +8,7 @@ export default async function PublicAreaLayout({
   const logos = await getSiteLogos();
 
   return (
-    <section className="flex flex-col overflow-x-clip bg-white pt-[62px] md:pt-[95px]">
+    <section className="flex flex-col overflow-x-clip bg-white pt-15 md:pt-23.25">
       <PublicHeader logo={logos.publicHeader} />
       {children}
       <PublicFooter logo={logos.footer} />

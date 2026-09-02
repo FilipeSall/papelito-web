@@ -10,36 +10,28 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 export const ADD_TO_CART_EVENT_NAME = "papelito:add-to-cart";
 
 const LABELLED_SHELL_CLASS = {
-  collection:
-    "group h-8 border-2 border-[#1a1a1a] bg-brand-dark text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
   default: "h-7 rounded-[10px] bg-brand-dark transition-opacity hover:opacity-80",
   panel:
     "h-11 border-2 border-[#1a1a1a] bg-[#1a1a1a] shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
 } as const;
 
 const LABELLED_ICON_CLASS = {
-  collection: "size-3 text-brand-yellow group-hover:text-brand-dark",
   default: "size-3 text-white",
   panel: "size-4 text-brand-yellow",
 } as const;
 
 const LABELLED_TEXT_CLASS = {
-  collection:
-    "text-[10px] font-black uppercase tracking-[0.08em] text-brand-yellow group-hover:text-brand-dark",
   default: "text-xs font-black leading-4 text-white",
   panel: "text-xs font-black uppercase tracking-[0.18em] text-brand-yellow",
 } as const;
 
 const ICON_ONLY_SHELL_CLASS = {
-  collection:
-    "group border-2 border-[#1a1a1a] text-brand-yellow transition-all hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:text-brand-dark hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
   default: "rounded-[14px] transition-opacity hover:opacity-80",
   panel:
     "border-2 border-[#1a1a1a] shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
 } as const;
 
 const ICON_ONLY_ICON_CLASS = {
-  collection: "size-4 text-brand-yellow group-hover:text-brand-dark",
   default: "size-4 text-white",
   panel: "size-4 text-brand-yellow",
 } as const;
@@ -61,7 +53,7 @@ interface AddToCartButtonProps {
   disabledReason?: string;
   onClick?: () => void;
   onAdded?: () => void;
-  variant?: "default" | "collection" | "panel";
+  variant?: "default" | "panel";
 }
 
 export function AddToCartButton({

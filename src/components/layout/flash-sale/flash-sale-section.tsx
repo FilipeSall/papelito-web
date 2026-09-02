@@ -1,17 +1,13 @@
-import { Shelf, ShelfLabel } from "@/components/ui";
+import { ProductCard } from "./product-card";
 import type { HomeFlashSaleCampaign } from "@/features/catalog";
-import type { PromoBannerConfig } from "@/types/home-assets";
+import { FlashSaleBadge } from "@/components/ui";
 
 import { CountdownTimerNoSSR } from "./countdown-timer-no-ssr";
-import { ProductCard } from "./product-card";
+import { FlashSaleProductsCarousel } from "./flash-sale-products-carousel";
 
 interface FlashSaleSectionProps {
   campaign: HomeFlashSaleCampaign;
-  /** CTA gerenciado pelo admin, ancorado na própria etiqueta da campanha. */
-  promoBanner?: PromoBannerConfig | null;
 }
-
-const LABEL_ID = "prateleira-oferta-relampago";
 
 function parseCampaignDate(value: string) {
   const parsed = Date.parse(value);
@@ -43,14 +39,9 @@ function getCampaignPhaseLabel(campaign: HomeFlashSaleCampaign) {
   return "Nova campanha";
 }
 
-/**
- * A campanha é a passagem preta do corredor — mesma etiqueta e mesmo trilho das
- * outras fileiras, sem cabeçalho próprio.
- */
-export function FlashSaleSection({
-  campaign,
-  promoBanner,
-}: Readonly<FlashSaleSectionProps>) {
+export function FlashSaleSection({ campaign }: Readonly<FlashSaleSectionProps>) {
+  const phaseLabel = getCampaignPhaseLabel(campaign);
+  const shouldUseCarousel = campaign.products.length > 4;
   const displayTitle = campaign.title.trim();
   const hasCustomTitle =
     displayTitle.length > 0 &&
@@ -58,29 +49,37 @@ export function FlashSaleSection({
     displayTitle.toLowerCase() !== "oferta relampago";
 
   return (
-    <section aria-labelledby={LABEL_ID} className="w-full bg-brand-dark py-14">
+    <section className="w-full bg-[#231F20] pt-12 pb-12">
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
-        <div className="flex flex-col">
-          <ShelfLabel
-            aside={<CountdownTimerNoSSR endsAt={campaign.endsAt} />}
-            facts={[getCampaignPhaseLabel(campaign)]}
-            href={promoBanner?.href}
-            id={LABEL_ID}
-            linkText={promoBanner?.ctaLabel}
-            size="lead"
-            title={hasCustomTitle ? displayTitle : "Oferta relâmpago"}
-            tone="dark"
-          />
-
-          <div className="pt-8">
-            <Shelf labelledBy={LABEL_ID} onDark rule="none">
-              {campaign.products.map((product) => (
-                <li className="w-73 shrink-0 snap-start" key={product.id}>
-                  <ProductCard onDark product={product} />
-                </li>
-              ))}
-            </Shelf>
+        <div className="mx-auto flex w-full max-w-304 flex-col gap-8">
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4">
+                <FlashSaleBadge />
+                <span className="hidden text-sm leading-5 tracking-[-0.150391px] text-white/50 sm:inline">
+                  {phaseLabel}
+                </span>
+              </div>
+              {hasCustomTitle ? (
+                <div>
+                  <h2 className="text-2xl font-black tracking-[-0.03em] text-white sm:text-[2rem]">
+                    {displayTitle}
+                  </h2>
+                </div>
+              ) : null}
+            </div>
+            <CountdownTimerNoSSR endsAt={campaign.endsAt} />
           </div>
+
+          {shouldUseCarousel ? (
+            <FlashSaleProductsCarousel products={campaign.products} />
+          ) : (
+            <div className="grid w-full grid-cols-2 justify-items-stretch gap-4 sm:grid-cols-3 xl:grid-cols-4">
+              {campaign.products.map((product) => (
+                <ProductCard key={product.id} product={product} compactOnMobile />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

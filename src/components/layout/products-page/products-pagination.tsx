@@ -15,7 +15,6 @@ interface ProductsPaginationProps {
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
-  variant?: "default" | "collection";
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {
@@ -68,7 +67,6 @@ export function ProductsPagination({
   viewMode,
   perPage,
   search,
-  variant = "default",
 }: ProductsPaginationProps) {
   if (totalPages <= 1) {
     return null;
@@ -101,10 +99,10 @@ export function ProductsPagination({
             : "#"
         }
         aria-disabled={!hasPrevious}
-        className={`inline-flex h-10 min-w-10 items-center justify-center px-3 ${variant === "collection" ? "border-2 text-xs font-black uppercase tracking-[0.08em] transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow" : "rounded-xl border text-sm font-bold transition-colors"} ${
+        className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-bold transition-colors ${
           hasPrevious
-            ? variant === "collection" ? "border-[#1a1a1a] bg-white text-brand-dark hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:shadow-[3px_3px_0px_#1a1a1a]" : "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
-            : variant === "collection" ? "pointer-events-none border-gray-300 bg-gray-100 text-gray-400" : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
+            ? "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
+            : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
         }`}
       >
         Anterior
@@ -139,10 +137,10 @@ export function ProductsPagination({
               search,
             })}
             aria-current={isActive ? "page" : undefined}
-            className={`inline-flex h-10 min-w-10 items-center justify-center ${variant === "collection" ? "border-2 text-sm font-black transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow" : "rounded-xl border text-sm font-black transition-colors"} ${
+            className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border text-sm font-black transition-colors ${
               isActive
-                ? variant === "collection" ? "border-[#1a1a1a] bg-brand-dark text-brand-yellow shadow-[3px_3px_0px_#ffe500]" : "border-brand-dark bg-brand-dark text-white shadow-[0_6px_14px_rgba(35,31,32,0.18)]"
-                : variant === "collection" ? "border-[#1a1a1a] bg-white text-brand-dark hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:shadow-[3px_3px_0px_#1a1a1a]" : "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
+                ? "border-brand-dark bg-brand-dark text-white shadow-[0_6px_14px_rgba(35,31,32,0.18)]"
+                : "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
             }`}
           >
             {item}
@@ -168,10 +166,10 @@ export function ProductsPagination({
             : "#"
         }
         aria-disabled={!hasNext}
-        className={`inline-flex h-10 min-w-10 items-center justify-center px-3 ${variant === "collection" ? "border-2 text-xs font-black uppercase tracking-[0.08em] transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-yellow" : "rounded-xl border text-sm font-bold transition-colors"} ${
+        className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-bold transition-colors ${
           hasNext
-            ? variant === "collection" ? "border-[#1a1a1a] bg-white text-brand-dark hover:-translate-x-px hover:-translate-y-px hover:bg-brand-yellow hover:shadow-[3px_3px_0px_#1a1a1a]" : "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
-            : variant === "collection" ? "pointer-events-none border-gray-300 bg-gray-100 text-gray-400" : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
+            ? "border-gray-200 bg-white text-brand-dark hover:border-brand-dark"
+            : "pointer-events-none border-gray-100 bg-gray-50 text-gray-300"
         }`}
       >
         Próxima

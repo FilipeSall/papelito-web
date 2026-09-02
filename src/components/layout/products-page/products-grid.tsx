@@ -1,10 +1,9 @@
 import { ProductGridCard, type ProductGridItem } from "./product-grid-card";
 import { ProductsList } from "./products-list";
 import type { ReactNode } from "react";
-import type { ProductCollectionId } from "@/features/catalog";
-import {
-  resolveProductsGridLayout,
-  type ProductsViewMode,
+import type {
+  ProductsGridLayout,
+  ProductsViewMode,
 } from "@/features/catalog/utils/products-listing-preferences";
 
 interface ProductsGridProps {
@@ -13,16 +12,17 @@ interface ProductsGridProps {
   viewMode: ProductsViewMode;
   emptyMessage?: string;
   emptyAction?: ReactNode;
-  variant?: "default" | "collection";
-  activeCollection?: ProductCollectionId;
+  gridLayout?: ProductsGridLayout;
 }
 
 /**
  * Grid de produtos da página de listagem.
  *
  * Componente molecular que organiza os cards de produtos em um layout
- * responsivo de grid. A vitrine principal mantém seu grid espaçado; as
- * coleções usam uma composição mais densa, chegando a quatro colunas.
+ * responsivo de grid. O card e o espaçamento são os mesmos em toda
+ * superfície de catálogo; só a densidade muda: a listagem com sidebar
+ * chega a três colunas e a de coleção, sem sidebar, aproveita a largura
+ * cheia para uma quarta coluna em telas grandes.
  *
  * @example
  * ```tsx
@@ -34,8 +34,7 @@ export function ProductsGrid({
   viewMode,
   emptyMessage = "Nenhum produto encontrado.",
   emptyAction,
-  variant = "default",
-  activeCollection = "todos",
+  gridLayout = "default",
 }: Readonly<ProductsGridProps>) {
   if (products.length === 0) {
     return (
@@ -47,20 +46,18 @@ export function ProductsGrid({
   }
 
   if (viewMode === "list") {
-    return <ProductsList products={products} variant={variant} />;
+    return <ProductsList products={products} />;
   }
 
   const gridClassName =
-    variant !== "collection"
-      ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      : resolveProductsGridLayout(variant, activeCollection) === "collection"
-        ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-        : "grid grid-cols-2 gap-3 sm:grid-cols-3";
+    gridLayout === "collection"
+      ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className={gridClassName}>
       {products.map((product) => (
-        <ProductGridCard key={product.id} product={product} variant={variant} />
+        <ProductGridCard key={product.id} product={product} />
       ))}
     </div>
   );

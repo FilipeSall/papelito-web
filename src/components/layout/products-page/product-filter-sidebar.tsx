@@ -30,7 +30,6 @@ interface PriceRangeInputProps {
   invalid?: boolean;
   name: "precoMin" | "precoMax";
   placeholder: string;
-  variant: "default" | "collection";
 }
 
 /**
@@ -39,7 +38,7 @@ interface PriceRangeInputProps {
  * Campo de input numérico estilizado para inserção de valores
  * mínimos ou máximos de preço.
  */
-function PriceRangeInput({ label, value, invalid, name, placeholder, variant }: PriceRangeInputProps) {
+function PriceRangeInput({ label, value, invalid, name, placeholder }: PriceRangeInputProps) {
   return (
     <div className="flex-1">
       <label className="sr-only">{label}</label>
@@ -50,11 +49,7 @@ function PriceRangeInput({ label, value, invalid, name, placeholder, variant }: 
         aria-invalid={invalid || undefined}
         aria-describedby={invalid ? PRICE_ERROR_ID : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow ${
-          variant === "collection"
-            ? "border-2 border-[#1a1a1a] rounded-none focus:border-[#1a1a1a]"
-            : "border border-gray-200 rounded-lg focus:border-transparent"
-        }`}
+        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-yellow"
       />
     </div>
   );
@@ -82,7 +77,6 @@ interface ProductFilterSidebarProps {
   viewMode: ProductsViewMode;
   perPage: number;
   search?: string;
-  variant?: "default" | "collection";
 }
 
 function buildHrefFromSelection(
@@ -128,19 +122,18 @@ export function ProductFilterSidebar({
   viewMode,
   perPage,
   search,
-  variant = "default",
 }: ProductFilterSidebarProps) {
   return (
     <aside className="w-full md:w-56 shrink-0">
-      <div className={`bg-white p-4 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none" : "rounded-xl border border-gray-100"}`}>
+      <div className="rounded-xl border border-gray-100 bg-white p-4">
         {/* Header */}
-        <h3 className={`text-sm text-brand-dark uppercase tracking-wide ${variant === "collection" ? "font-black tracking-[0.12em]" : "font-bold"}`}>
+        <h3 className="text-sm font-bold uppercase tracking-wide text-brand-dark">
           Filtros
         </h3>
 
         {/* Price Range */}
         <div className="mt-4">
-          <h4 className={`text-xs text-text-muted uppercase tracking-wide mb-2 ${variant === "collection" ? "font-black" : "font-medium"}`}>
+          <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
             Faixa de Preço
           </h4>
           <form method="GET" action={basePath} className="space-y-2">
@@ -167,7 +160,6 @@ export function ProductFilterSidebar({
                 value={priceError ? rawMinPrice : minPrice}
                 invalid={Boolean(priceError)}
                 placeholder="Min"
-                variant={variant}
               />
               <PriceRangeInput
                 label="Preço máximo"
@@ -175,7 +167,6 @@ export function ProductFilterSidebar({
                 value={priceError ? rawMaxPrice : maxPrice}
                 invalid={Boolean(priceError)}
                 placeholder="Max"
-                variant={variant}
               />
             </div>
             {priceError ? (
@@ -185,7 +176,7 @@ export function ProductFilterSidebar({
             ) : null}
             <button
               type="submit"
-              className={`w-full bg-brand-dark px-3 py-2 text-xs font-black text-white transition-opacity hover:opacity-90 ${variant === "collection" ? "border-2 border-[#1a1a1a] rounded-none uppercase tracking-[0.08em] shadow-[3px_3px_0px_#ffe500]" : "rounded-lg"}`}
+              className="w-full rounded-lg bg-brand-dark px-3 py-2 text-xs font-black text-white transition-opacity hover:opacity-90"
             >
               Aplicar preço
             </button>
@@ -193,11 +184,11 @@ export function ProductFilterSidebar({
         </div>
 
         {/* Divider */}
-        <hr className={`my-4 ${variant === "collection" ? "border-[#1a1a1a]" : "border-gray-100"}`} />
+        <hr className="my-4 border-gray-100" />
 
         {/* Categories */}
         <div>
-          <h4 className={`text-xs text-text-muted uppercase tracking-wide mb-3 ${variant === "collection" ? "font-black" : "font-medium"}`}>
+          <h4 className="mb-3 text-xs font-medium uppercase tracking-wide text-text-muted">
             Categorias
           </h4>
           <CategoryFilterTree
@@ -211,13 +202,12 @@ export function ProductFilterSidebar({
             search={search}
             selectedSubcategories={selectedSubcategories}
             selectedTypes={selectedTypes}
-            variant={variant}
             viewMode={viewMode}
           />
         </div>
 
         {/* Divider */}
-        <hr className={`my-4 ${variant === "collection" ? "border-[#1a1a1a]" : "border-gray-100"}`} />
+        <hr className="my-4 border-gray-100" />
 
         {/* Clear Filters */}
         <Link
@@ -231,7 +221,7 @@ export function ProductFilterSidebar({
             perPage,
             search,
           )}
-          className={`text-sm text-text-muted hover:text-brand-dark transition-colors underline ${variant === "collection" ? "font-black uppercase tracking-[0.06em]" : ""}`}
+          className="text-sm text-text-muted underline transition-colors hover:text-brand-dark"
         >
           Limpar filtros
         </Link>
