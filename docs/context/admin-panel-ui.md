@@ -30,6 +30,8 @@ Registro de migração — links antigos apontam para lugar nenhum:
 
 - `/admin/vendor-interests`
 - `/admin/vendor-interests/[id]`
+- `/admin/reports` — absorvida por `/admin/sales`; a rota redireciona para `/admin/sales#exportar-vendas`
+- `/vendor/financeiro` — absorvida por `/vendor/dashboard`; a rota redireciona
 
 Todos os pontos de entrada foram repontados para as rotas sob `/admin/vendors`: links de notificação, listagem, paginação e retorno do detalhe. O link de notificação vive em `src/features/notifications/utils/format-notification.ts` — **é o único lugar que conhece os deep links administrativos**, então qualquer nova mudança de rota no painel precisa passar por lá.
 
@@ -51,6 +53,54 @@ Uma candidatura documental ainda não é um usuário: não existe `wp_user`, ses
 - Ação destrutiva usa a paleta de perigo `#b91c1c` / hover `#991b1b`.
 - Ação administrativa que muda estado exige confirmação, e a que rejeita algo exige motivo — o motivo é o que chega ao usuário afetado.
 - Estado fresco depois de uma ação vem do `router.refresh()`, não do corpo da resposta do POST — que é **deliberadamente descartado**. Para isso funcionar, o fetch de detalhe precisa continuar `no-store`.
+
+## Vendas e exportações — vale para os dois painéis
+
+`/admin/sales` e `/vendor/dashboard` compartilham componentes e as mesmas regras de leitura. O que
+muda entre eles é o escopo dos dados, que é resolvido no backend, nunca no cliente.
+
+**Contrato de URL.** Além de `preset`/`from`/`to`/`page`, a página aceita `segment` (`all`,
+`discounted`, `refunded`). `buildAdminSalesFilterQuery` preserva período **e** segmento em toda
+troca de página; trocar de segmento volta para a página 1. O segmento padrão é omitido da
+querystring. `VendorPeriodFilters` usa o mesmo construtor, então o segmento sobrevive à troca de
+período no painel do vendor também.
+
+**Composição.** Receita bruta e Mais vendidos dividem uma linha em `lg:grid-cols-2`, ocupando a
+largura do pai. Pedidos paginam de 10 em 10, com o recorte vindo da origem — WooCommerce
+(`page`/`per_page` + `X-WP-TotalPages`) no admin, `/vendor/me/orders` no vendor. Nada de buscar
+tudo para paginar no cliente.
+
+**Variação de receita.** É período contra período: a janela imediatamente anterior, de mesma
+duração e mesmo segmento, calculada no WordPress. Quando não há base de comparação a interface diz
+isso por extenso — não exibe `n/a` nem inventa um número.
+
+**Sincronia dos filtros de exportação — mão única.** Cada área de exportação tem intervalo próprio,
+governado por `useSyncedDateRange`:
+
+- a página inicializa o intervalo local;
+- mudar o intervalo local **não** altera o filtro da página;
+- uma mudança posterior na página sobrescreve o override local;
+- F5, nova entrada ou remontagem voltam ao filtro da página. **O override não é persistido.**
+
+O estado nasce das props e é reajustado quando elas mudam, sem `useEffect` — é o que faz a regra do
+F5 valer por construção, e não por limpeza manual.
+
+**Semântica que não deve ser uniformizada.** O intervalo do export de usuários recorta **data de
+cadastro**, não período de venda, e a interface rotula assim de propósito. Igualar o texto ao do
+export de vendas modelaria o dado errado.
+
+**Identidade de status.** `StatusBadge` (`admin-panel/primitives`) é a única identidade de status
+dos painéis: borda preta de 2px, caixa alta pesada, amarelo no positivo, `#c0392b` no crítico, e o
+tom `strong` para o chip escuro de cabeçalho. `operational-panel` é só um barrel dele, então o
+painel do vendor herda a mesma gramática. Não crie uma segunda identidade por tabela, e **não
+sobreponha cor por `className`** — o tom perde para a classe do componente em metade das
+propriedades e produz pares proibidos, como amarelo sobre fundo claro.
+
+**Navegação de seções.** `SalesSectionNav` é flutuante, discreta, aparece a partir de `xl` e tem
+botão de recolher com a preferência lembrada. O conteúdo dos dois painéis rola **dentro de um
+`div.overflow-y-auto`**, não na janela: a seção ativa é resolvida contra esse contêiner e o clique
+marca na hora. Medir contra o viewport, ou usar offset fixo, é o que faz o item clicado não ficar
+ativo — a mesma armadilha já registrada nas telas de configuração.
 
 ## Aba Categorias
 
