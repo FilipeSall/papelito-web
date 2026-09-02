@@ -31,7 +31,7 @@ export function NewArrivalsSection({ products }: Readonly<NewArrivalsSectionProp
           />
 
           <div className="pt-8">
-            <Shelf gap="tight" labelledBy={LABEL_ID} scribble>
+            <Shelf gap="tight" labelledBy={LABEL_ID} rule="scribble">
               {products.map((product) => (
                 <li className="shrink-0 snap-start" key={product.id}>
                   <MiniProductCard

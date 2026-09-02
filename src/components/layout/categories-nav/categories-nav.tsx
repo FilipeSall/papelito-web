@@ -27,7 +27,7 @@ export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProp
             className="flex items-center gap-3 text-xl font-black uppercase leading-none tracking-[-0.02em] text-brand-dark sm:text-2xl"
             id="corredor-colecoes"
           >
-            <span aria-hidden className="inline-block size-3 rotate-45 bg-brand-yellow" />
+            <span aria-hidden className="inline-block size-3 rounded-full bg-brand-yellow" />
             Explore por coleção
           </h2>
 

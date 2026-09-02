@@ -163,7 +163,9 @@ A marca usa os seguintes elementos visuais recorrentes em suas interfaces:
 ```html
 <span class="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
 ```
-Usado como marcador de seção — o losango amarelo antes de títulos de seção cria uma identidade visual de "sticker" ou "tag".
+Usado como marcador de seção — o losango amarelo antes de títulos de seção cria uma identidade
+visual de "sticker" ou "tag". No [sistema do corredor](#11-sistema-do-corredor--vitrine-pública)
+esse marcador é redondo (`rounded-full`), não losango.
 
 **2. Faixa de cor horizontal**
 ```html
@@ -574,9 +576,11 @@ Borda `2px solid #1a1a1a`, sombra `8px 8px 0 #1a1a1a`, fundo `#faf8f2`, sem `bor
 - Use sombras duras (`shadow-[Xpx_Ypx_0px_color]`) sem blur
 - Use amarelo `#ffe500` com texto preto `#1a1a1a` — esse é o par principal
 - Escreva labels em UPPERCASE com `tracking-[0.18em]` ou mais
-- Use o losango amarelo (`rotate-45 bg-brand-yellow`) como marcador de seção
+- Use o losango amarelo (`rotate-45 bg-brand-yellow`) como marcador de seção fora do corredor;
+  dentro dele o marcador é um ponto redondo
 - Mantenha cantos retos (`rounded-none`) em formulários e admin
-- Use `rounded-full` só nas telas de autenticação — na vitrine e no admin tudo é reto
+- `rounded-full` é para as telas de autenticação e para o marcador do corredor — chapa, card e
+  campo continuam retos em toda a vitrine e no admin
 
 ### ❌ Evite
 
@@ -758,17 +762,21 @@ O `.tag-cut` repete a inclinação da placa branca do logo **PDV Perfeito** — 
 
 **`clip-path` mata a borda CSS na diagonal.** Para uma chapa recortada *com* moldura visível,
 empilhe duas camadas recortadas: a de fora com a cor da moldura e `p-0.5`, a de dentro com o
-fundo. É o que a variante `framed` do `ShelfLabel` faz para existir sobre fundo preto.
+fundo — a borda simples desapareceria no corte.
 
 ### Componentes
 
-- **`ShelfLabel`** (`src/components/ui/shelf-label.tsx`) — etiqueta de gôndola. Tons `dark`,
-  `yellow` e `framed`. Recebe `facts`, uma faixa densa de informação real que colide de
-  propósito com o campo de produto quase vazio abaixo. Aceita `href`/`linkText` e um `aside`
-  para conteúdo próprio da fileira (cronômetro, contador).
+- **`ShelfLabel`** (`src/components/ui/shelf-label.tsx`) — etiqueta de gôndola. Tons `dark` e
+  `yellow`. Abre com um ponto redondo amarelo, que `bullet={false}` dispensa quando o título já
+  pesa sozinho — é o caso da campanha. Recebe `facts` opcional, uma faixa densa de informação
+  real que colide de propósito com o campo de produto quase vazio abaixo; sem `facts`, a
+  etiqueta é só o título. O separador entre fatos é o mesmo ponto redondo, e só aparece a partir
+  do segundo fato. Aceita `href`/`linkText` e um `aside` para conteúdo próprio da fileira
+  (cronômetro, contador).
 - **`Shelf`** (`src/components/ui/shelf.tsx`) — trilho horizontal com encaixe nativo
-  (`.shelf-rail`), setas sobrepostas às pontas e régua embaixo. `scribble` troca a régua reta
-  pelo traço à mão.
+  (`.shelf-rail`), setas sobrepostas às pontas e régua embaixo. `rule` escolhe a régua:
+  `straight` (padrão), `scribble` (traço à mão) ou `none` — a campanha dispensa a régua porque
+  a própria faixa preta já fecha a fileira.
 - **`ScribbleRule`** (`src/components/ui/scribble-rule.tsx`) — régua rough.js, riscada quando
   entra na tela. Ela usa duas passadas finas em largura real: perceptivelmente manual, mas sem
   virar faixa pesada. Também pode ser vertical para costurar células contínuas; aplique-a em

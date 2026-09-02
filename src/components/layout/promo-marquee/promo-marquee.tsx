@@ -31,11 +31,10 @@ export function PromoMarquee({ items }: { items: PromoMarqueeMessage[] }) {
         <div className="flex whitespace-nowrap animate-marquee">
           {doubled.map((item, i) => (
             <span
-              className="flex items-center gap-8 pl-8 text-[0.6875rem] font-black uppercase leading-4 tracking-[0.18em] text-brand-yellow"
+              className="px-8 text-xs font-black uppercase leading-4 tracking-[0.6px] text-brand-yellow"
               key={`${item.id}-${i}`}
             >
               <RichText nodes={item.nodes} />
-              <span aria-hidden className="inline-block size-1.5 shrink-0 rotate-45 bg-brand-yellow" />
             </span>
           ))}
         </div>

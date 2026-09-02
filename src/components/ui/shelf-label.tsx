@@ -6,11 +6,13 @@ import { BrandArrowIcon } from "./icons";
 interface ShelfLabelProps {
   id: string;
   title: string;
-  facts: string[];
+  facts?: string[];
   href?: string;
   linkText?: string;
   size?: "lead" | "row";
-  tone?: "dark" | "yellow" | "framed";
+  tone?: "dark" | "yellow";
+  /** Marcador redondo antes do título. */
+  bullet?: boolean;
   /** Conteúdo próprio da fileira — cronômetro, contador — na coluna da direita. */
   aside?: ReactNode;
 }
@@ -23,35 +25,21 @@ const TITLE_SIZE = {
 const PLATE_TONE = {
   dark: "bg-brand-dark text-white",
   yellow: "bg-brand-yellow text-brand-dark",
-  framed: "bg-brand-dark text-white",
-} as const;
-
-/**
- * A moldura é uma camada recortada por baixo, não uma borda CSS: com `clip-path`
- * a borda morre na diagonal e o corte fica invisível em fundo preto.
- */
-const FRAME_TONE = {
-  dark: "",
-  yellow: "",
-  framed: "bg-brand-yellow p-0.5",
 } as const;
 
 const FACT_TONE = {
   dark: "text-brand-yellow",
   yellow: "text-brand-dark",
-  framed: "text-brand-yellow",
 } as const;
 
-const DIAMOND_TONE = {
+const BULLET_TONE = {
   dark: "bg-brand-yellow",
   yellow: "bg-brand-dark",
-  framed: "bg-brand-yellow",
 } as const;
 
 const LINK_TONE = {
   dark: "bg-brand-yellow text-brand-dark hover:bg-white",
   yellow: "bg-brand-dark text-brand-yellow hover:bg-white hover:text-brand-dark",
-  framed: "bg-brand-yellow text-brand-dark hover:bg-white",
 } as const;
 
 /**
@@ -62,46 +50,50 @@ const LINK_TONE = {
 export function ShelfLabel({
   id,
   title,
-  facts,
+  facts = [],
   href,
   linkText = "Ver todos",
   size = "row",
   tone = "dark",
+  bullet = true,
   aside,
 }: Readonly<ShelfLabelProps>) {
   return (
-    <div className={`label-notch ${FRAME_TONE[tone]}`}>
-      <div
-        className={`label-notch flex flex-col gap-3 px-5 py-5 sm:px-7 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-8 ${PLATE_TONE[tone]}`}
-      >
+    <div
+      className={`label-notch flex flex-col gap-3 px-5 py-5 sm:px-7 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-8 ${PLATE_TONE[tone]}`}
+    >
       <div className="flex flex-col gap-3">
         <h2
-          className={`flex items-center gap-3 font-black uppercase tracking-[-0.02em] ${TITLE_SIZE[size]}`}
+          className={`flex items-center gap-3 font-black uppercase tracking-tight ${TITLE_SIZE[size]}`}
           id={id}
         >
-          <span
-            aria-hidden
-            className={`inline-block size-3 shrink-0 rotate-45 sm:size-4 ${DIAMOND_TONE[tone]}`}
-          />
+          {bullet ? (
+            <span
+              aria-hidden
+              className={`inline-block size-3 shrink-0 rounded-full sm:size-4 ${BULLET_TONE[tone]}`}
+            />
+          ) : null}
           {title}
         </h2>
 
-        <ul
-          className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem] font-black uppercase leading-4 tracking-[0.16em] ${FACT_TONE[tone]}`}
-          data-numeric
-        >
-          {facts.map((fact, index) => (
-            <li className="flex items-center gap-3" key={fact}>
-              {index > 0 ? (
-                <span
-                  aria-hidden
-                  className={`inline-block size-1.5 rotate-45 ${DIAMOND_TONE[tone]}`}
-                />
-              ) : null}
-              {fact}
-            </li>
-          ))}
-        </ul>
+        {facts.length > 0 ? (
+          <ul
+            className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem] font-black uppercase leading-4 tracking-[0.16em] ${FACT_TONE[tone]}`}
+            data-numeric
+          >
+            {facts.map((fact, index) => (
+              <li className="flex items-center gap-3" key={fact}>
+                {index > 0 ? (
+                  <span
+                    aria-hidden
+                    className={`inline-block size-1.5 rounded-full ${BULLET_TONE[tone]}`}
+                  />
+                ) : null}
+                {fact}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       {aside || href ? (
@@ -114,12 +106,11 @@ export function ShelfLabel({
               href={href}
             >
               {linkText}
-              <BrandArrowIcon className="size-3.5 shrink-0 transition-transform duration-300 ease-in-out group-hover/cta:translate-x-1.5 group-hover/cta:rotate-[15deg]" />
+              <BrandArrowIcon className="size-3.5 shrink-0 transition-transform duration-300 ease-in-out group-hover/cta:translate-x-1.5 group-hover/cta:rotate-15" />
             </Link>
           ) : null}
         </div>
       ) : null}
-      </div>
     </div>
   );
 }

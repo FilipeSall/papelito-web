@@ -94,10 +94,7 @@ export default async function Home() {
           <FeaturesBar items={resolvedHomeFeatures} />
         </div>
 
-        <BestSellersSection
-          freeShippingMinimumCents={freeShippingThreshold?.minimumOrderCents ?? null}
-          products={bestSellerProducts}
-        />
+        <BestSellersSection products={bestSellerProducts} />
 
         {flashSaleCampaign ? (
           <FlashSaleSection campaign={flashSaleCampaign} promoBanner={promoBanner} />

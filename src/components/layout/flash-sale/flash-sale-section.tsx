@@ -63,17 +63,18 @@ export function FlashSaleSection({
         <div className="flex flex-col">
           <ShelfLabel
             aside={<CountdownTimerNoSSR endsAt={campaign.endsAt} />}
-            facts={[getCampaignPhaseLabel(campaign), "Enquanto durar o estoque"]}
+            bullet={false}
+            facts={[getCampaignPhaseLabel(campaign)]}
             href={promoBanner?.href}
             id={LABEL_ID}
             linkText={promoBanner?.ctaLabel}
             size="lead"
             title={hasCustomTitle ? displayTitle : "Oferta relâmpago"}
-            tone="framed"
+            tone="dark"
           />
 
           <div className="pt-8">
-            <Shelf labelledBy={LABEL_ID} onDark scribble>
+            <Shelf labelledBy={LABEL_ID} onDark rule="none">
               {campaign.products.map((product) => (
                 <li className="w-73 shrink-0 snap-start" key={product.id}>
                   <ProductCard onDark product={product} />

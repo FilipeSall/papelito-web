@@ -11,8 +11,8 @@ interface ShelfProps {
   children: ReactNode;
   gap?: "tight" | "wide";
   onDark?: boolean;
-  /** Troca a régua reta por um traço à mão, riscado quando a fileira entra na tela. */
-  scribble?: boolean;
+  /** Régua embaixo da fileira: reta, traço à mão riscado na entrada, ou nenhuma. */
+  rule?: "straight" | "scribble" | "none";
 }
 
 const GAP = {
@@ -43,7 +43,7 @@ export function Shelf({
   children,
   gap = "wide",
   onDark = false,
-  scribble = false,
+  rule = "straight",
 }: Readonly<ShelfProps>) {
   const railRef = useRef<HTMLUListElement>(null);
   const [canScrollBack, setCanScrollBack] = useState(false);
@@ -149,11 +149,10 @@ export function Shelf({
         ) : null}
       </div>
 
-      {scribble ? (
-        <ScribbleRule className="w-full text-brand-yellow" />
-      ) : (
+      {rule === "scribble" ? <ScribbleRule className="w-full text-brand-yellow" /> : null}
+      {rule === "straight" ? (
         <div aria-hidden className="h-1 w-full bg-brand-yellow" />
-      )}
+      ) : null}
     </div>
   );
 }
