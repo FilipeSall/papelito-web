@@ -4,6 +4,16 @@ import { resolveSalesInterval, type SalesSeriesInterval } from "@/lib/sales-seri
 
 export type AdminSalesPageSearchParams = Record<string, string | string[] | undefined>;
 
+export const ADMIN_SALES_SEGMENTS = ["all", "discounted", "refunded"] as const;
+
+export type AdminSalesSegment = (typeof ADMIN_SALES_SEGMENTS)[number];
+
+export const ADMIN_SALES_SEGMENT_LABELS: Record<AdminSalesSegment, string> = {
+  all: "Todas as vendas",
+  discounted: "Vendas com desconto",
+  refunded: "Reembolsadas / canceladas",
+};
+
 export type AdminSalesFilters = {
   afterIso: string;
   beforeIso: string;
@@ -13,11 +23,12 @@ export type AdminSalesFilters = {
   periodLabel: string;
   preset: "7d" | "30d" | "month" | "1y" | "custom";
   perPage: number;
+  segment: AdminSalesSegment;
   to: string;
 };
 
 const SALES_TIMEZONE = "America/Sao_Paulo";
-const DEFAULT_PER_PAGE = 20;
+const DEFAULT_PER_PAGE = 10;
 
 function firstString(value: string | string[] | undefined) {
   if (Array.isArray(value)) {
@@ -75,6 +86,12 @@ function startOfMonth(baseDate: string) {
 function parsePositiveInt(value: string | undefined, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizeSegment(value: string | undefined): AdminSalesSegment {
+  return ADMIN_SALES_SEGMENTS.includes(value as AdminSalesSegment)
+    ? (value as AdminSalesSegment)
+    : "all";
 }
 
 function normalizePreset(value: string | undefined, hasCustomDates: boolean): AdminSalesFilters["preset"] {
@@ -161,27 +178,54 @@ export function parseAdminSalesFilters(
     }),
     page: parsePositiveInt(firstString(searchParams.page), 1),
     perPage: DEFAULT_PER_PAGE,
+    segment: normalizeSegment(firstString(searchParams.segment)),
     afterIso: `${normalizedFrom}T00:00:00`,
     beforeIso: `${normalizedTo}T23:59:59`,
     periodLabel: `${formatDateToLabel(normalizedFrom)} - ${formatDateToLabel(normalizedTo)}`,
   };
 }
 
+/**
+ * Janela imediatamente anterior, de mesma duracao — espelha
+ * `papelito_admin_reports_previous_window` no WordPress, que e quem calcula os valores.
+ */
+export function buildPreviousPeriodLabel(from: string, to: string) {
+  const start = new Date(`${from}T12:00:00-03:00`);
+  const end = new Date(`${to}T12:00:00-03:00`);
+  const days = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1;
+
+  if (!Number.isFinite(days) || days < 1) {
+    return "";
+  }
+
+  const previousTo = shiftDays(from, -1);
+  const previousFrom = shiftDays(previousTo, -(days - 1));
+
+  return `${formatDateToLabel(previousFrom)} - ${formatDateToLabel(previousTo)}`;
+}
+
 export function buildAdminSalesFilterQuery(
   filters: AdminSalesFilters,
-  overrides: Partial<Pick<AdminSalesFilters, "from" | "page" | "preset" | "to">> = {},
+  overrides: Partial<
+    Pick<AdminSalesFilters, "from" | "page" | "preset" | "segment" | "to">
+  > = {},
 ) {
   const params = new URLSearchParams();
   const preset = overrides.preset ?? filters.preset;
   const from = overrides.from ?? filters.from;
   const to = overrides.to ?? filters.to;
   const page = overrides.page ?? filters.page;
+  const segment = overrides.segment ?? filters.segment;
 
   if (preset && preset !== "custom") {
     params.set("preset", preset);
   } else {
     params.set("from", from);
     params.set("to", to);
+  }
+
+  if (segment !== "all") {
+    params.set("segment", segment);
   }
 
   if (page > 1) {

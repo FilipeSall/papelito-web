@@ -20,6 +20,11 @@ type WcOrder = {
   }> | null;
   number?: string | null;
   payment_method_title?: string | null;
+  shipping?: {
+    company?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+  } | null;
   shipping_total?: string | number | null;
   status?: string | null;
   total?: string | number | null;
@@ -100,20 +105,22 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function fullName(first?: string | null, last?: string | null) {
+  return `${first?.trim() ?? ""} ${last?.trim() ?? ""}`.trim();
+}
+
+// Em pedido B2B o comprador fiscal e a empresa: billing_first_name/last_name nascem
+// vazios e a pessoa fica so em shipping. Mesma ordem de resolucao do painel do vendor
+// e do export de vendas, para os tres nao discordarem sobre quem e o cliente.
 function buildCustomerLabel(order: WcOrder) {
-  const firstName = order.billing?.first_name?.trim() ?? "";
-  const lastName = order.billing?.last_name?.trim() ?? "";
-  const fullName = `${firstName} ${lastName}`.trim();
+  const candidates = [
+    fullName(order.shipping?.first_name, order.shipping?.last_name),
+    order.shipping?.company?.trim() ?? "",
+    order.billing?.company?.trim() ?? "",
+    fullName(order.billing?.first_name, order.billing?.last_name),
+  ];
 
-  if (fullName) {
-    return fullName;
-  }
-
-  if (order.billing?.company?.trim()) {
-    return order.billing.company.trim();
-  }
-
-  return "Cliente não identificado";
+  return candidates.find((candidate) => candidate.length > 0) ?? "Cliente não identificado";
 }
 
 function buildItemsLabel(order: WcOrder) {

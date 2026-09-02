@@ -312,6 +312,20 @@ a:hover .menu-underline path:nth-child(3),
         animation: admin-donut-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        .animate-admin-panel-enter,
+        .animate-admin-chart-fade,
+        .animate-admin-bar-rise,
+        .animate-admin-point-pop,
+        .animate-admin-donut-in {
+            animation: none;
+        }
+        .animate-admin-line-draw {
+            animation: none;
+            stroke-dashoffset: 0;
+        }
+    }
+
     /* Corte de papel do corredor: a faixa preta do topo termina em diagonal,
        como folha colada e rasgada na base. */
     .aisle-cut {

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { AdminSectionPage, isAdminSection } from "@/components/layout/admin-panel";
 
@@ -11,6 +11,10 @@ export default async function AdminSectionRoute({
 }>) {
   const { section } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
+
+  if (section === "reports") {
+    redirect("/admin/sales#exportar-vendas");
+  }
 
   if (!isAdminSection(section)) {
     notFound();

@@ -26,23 +26,25 @@ export function StatusBadge({
           ? "warning"
           : "default");
 
+  // Mesma gramatica de UserRoleBadge/UserStatusBadge: borda preta de 2px, caixa alta
+  // pesada e amarelo da marca no estado positivo. O painel tem uma identidade de
+  // status so, e nao uma por tabela.
   const toneClassName =
     tone === "success"
-      ? "border-[#97b38e] bg-[#e4efe0] text-[#28422d]"
+      ? "border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a]"
       : tone === "warning"
-        ? "border-[#d7c98f] bg-[#f4edd3] text-[#5d4d1b]"
+        ? "border-[#1a1a1a] bg-[#faf8f2] text-[#1a1a1a]"
         : tone === "critical"
-          ? "border-[#d7b0aa] bg-[#f3e3df] text-[#7a3428]"
-          : "border-[#231f20]/14 bg-[#231f20] text-[#ffe500]";
+          ? "border-[#1a1a1a] bg-[#c0392b] text-white"
+          : "border-[#1a1a1a] bg-white text-[#1a1a1a]";
 
   return (
     <span
       className={[
-        "inline-flex min-h-7 items-center justify-center rounded-full border px-2.5 text-[11px] font-semibold uppercase tracking-[0.18em]",
+        "inline-flex min-h-7 items-center justify-center border-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
         toneClassName,
         extraClassName ?? "",
       ].join(" ")}
-      style={{ fontFamily: "var(--font-admin-mono)" }}
     >
       {label}
     </span>

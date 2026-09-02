@@ -1,6 +1,5 @@
 import {
   BadgePercent,
-  FileText,
   FolderTree,
   Image,
   MessageSquare,
@@ -22,7 +21,6 @@ export type AdminSectionKey =
   | "users"
   | "suporte"
   | "coupons"
-  | "reports"
   | "assets"
   | "config";
 
@@ -83,14 +81,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Cupons",
     shortLabel: "Cupons",
     description: "Cupons e restrições",
-  },
-  {
-    key: "reports",
-    href: "/admin/reports",
-    icon: FileText,
-    label: "Relatórios",
-    shortLabel: "Relatórios",
-    description: "Consultas e exportação",
   },
   {
     key: "assets",

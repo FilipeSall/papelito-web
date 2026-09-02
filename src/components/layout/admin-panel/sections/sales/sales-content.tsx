@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAdminSalesAnalyticsSnapshot } from "@/lib/server/admin-sales-analytics";
 import {
+  buildPreviousPeriodLabel,
   parseAdminSalesFilters,
   type AdminSalesPageSearchParams,
 } from "@/lib/server/admin-sales-filters";
@@ -11,12 +12,25 @@ import { getAdminSalesOrdersSnapshot } from "@/lib/server/admin-sales-orders";
 import { SalesBarsChart, SalesDonutChart, SalesLineChart } from "../../charts";
 import {
   formatCompactCurrency,
+  formatCompactNumber,
+  formatCurrency,
   formatPercent,
 } from "../../formatters";
-import { CardNotification, CompactTable, FramedPanel } from "../../primitives";
-import { SalesFiltersPanel } from "./sales-filters-panel";
-import { SalesMetricCard } from "./sales-metric-card";
+import { CardNotification, HardPanel } from "../../primitives";
+import { SalesExportPanel, UsersExportPanel } from "../exports";
+import { FigureLine, FigureList } from "./sales-figures";
+import { SalesHeadline } from "./sales-headline";
 import { SalesOrdersPanel } from "./sales-orders-panel";
+import { SalesSectionNav } from "./sales-section-nav";
+import { SalesSegmentFilter } from "./sales-segment-filter";
+import { SalesWindowBar } from "./sales-window-bar";
+
+const PAGE_SECTIONS = [
+  { id: "resumo", label: "Resumo" },
+  { id: "graficos", label: "Gráficos" },
+  { id: "pedidos", label: "Pedidos" },
+  { id: "exportar-vendas", label: "Exportações" },
+] as const;
 
 function classifyIssues(issues: string[]) {
   const revenue: string[] = [];
@@ -54,84 +68,49 @@ export async function SalesContent({
     getAdminSalesOrdersSnapshot(session?.accessToken, filters),
   ]);
 
-  const salesKpis = [
+  const totals: Array<{
+    label: string;
+    note?: string;
+    tone?: "default" | "warning";
+    value: string;
+  }> = [
     {
-      format: "currency" as const,
-      label: "Receita bruta",
-      value: analytics.grossRevenue,
-      detail: `Vendas confirmadas na janela ${analytics.periodLabel}`,
-      tone: "default" as const,
-    },
-    {
-      format: "currency" as const,
-      label: "Receita líquida",
-      value: analytics.netRevenue,
-      detail: `Vendas confirmadas menos reembolsos. Variação ${formatPercent(analytics.revenueDeltaRate)}`,
-      tone: "default" as const,
-    },
-    {
-      format: "number" as const,
       label: "Pedidos criados",
-      value: ordersSnapshot.totalOrders,
-      detail: "Mesmo período e mesma consulta do histórico abaixo.",
-      tone: "default" as const,
+      note: "Mesma janela e mesma consulta da lista de pedidos.",
+      value: formatCompactNumber(ordersSnapshot.totalOrders),
     },
     {
-      format: "number" as const,
-      label: "Vendas confirmadas",
-      value: analytics.orders,
-      detail: "Pedidos com pagamento confirmado.",
-      tone: "default" as const,
+      label: "Vendas no recorte",
+      note: "Pedidos que compõem a receita deste tipo de venda.",
+      value: formatCompactNumber(analytics.orders),
     },
+    { label: "Ticket médio", value: formatCurrency(analytics.avgOrderValue) },
+    { label: "Itens vendidos", value: formatCompactNumber(analytics.itemsSold) },
     {
-      format: "currency" as const,
-      label: "Ticket médio",
-      value: analytics.avgOrderValue,
-      detail: "Receita bruta dividida pelas vendas confirmadas.",
-      tone: "default" as const,
-    },
-    {
-      format: "number" as const,
-      label: "Itens vendidos",
-      value: analytics.itemsSold,
-      detail: "Itens de vendas com pagamento confirmado.",
-      tone: "default" as const,
-    },
-    {
-      format: "currency" as const,
       label: "Descontos",
-      value: analytics.discountsTotal,
-      detail: "Total de cupons e descontos concedidos.",
-      tone: "default" as const,
+      note: "Cupons e descontos concedidos no período.",
+      value: formatCompactCurrency(analytics.discountsTotal),
     },
     {
-      format: "currency" as const,
       label: "Frete",
-      value: analytics.shippingTotal,
-      detail: `Impostos ${formatCompactCurrency(analytics.taxesTotal)}`,
-      tone: "default" as const,
+      note: `Impostos ${formatCompactCurrency(analytics.taxesTotal)}`,
+      value: formatCompactCurrency(analytics.shippingTotal),
     },
     {
-      format: "currency" as const,
       label: "Reembolsos",
-      value: analytics.refundsTotal,
-      detail: analytics.refundsTotal > 0 ? "Pedidos devolvidos no período." : "Sem reembolsos no período.",
-      tone: analytics.refundsTotal > 0 ? ("warning" as const) : ("default" as const),
+      note:
+        analytics.refundsTotal > 0
+          ? "Pedidos devolvidos no período."
+          : "Sem reembolsos no período.",
+      tone: analytics.refundsTotal > 0 ? "warning" : "default",
+      value: formatCompactCurrency(analytics.refundsTotal),
     },
   ];
 
-  const leaderboardRows =
-    analytics.leaderboard.length > 0
-      ? analytics.leaderboard.map((row) => [
-          row.label,
-          formatCompactCurrency(row.value),
-          formatPercent(row.share, 0),
-        ])
-      : [["sem dados", "R$ 0", "0%"]];
-
   const statusChartSeries =
-    analytics.orderStatusSeries.length > 0 ? analytics.orderStatusSeries : analytics.orderVolumeSeries;
-  const paymentMixSeries = analytics.paymentMixSeries;
+    analytics.orderStatusSeries.length > 0
+      ? analytics.orderStatusSeries
+      : analytics.orderVolumeSeries;
   const allIssues = [...analytics.issues, ...ordersSnapshot.issues];
   const classified = classifyIssues(allIssues);
   const generalNotifications = [
@@ -140,65 +119,119 @@ export async function SalesContent({
       ? ["Dados indisponíveis: não foi possível consultar o snapshot financeiro completo do período."]
       : []),
   ];
-  const animationKey = `${filters.preset}-${filters.from}-${filters.to}-${filters.interval}`;
+  const animationKey = `${filters.preset}-${filters.from}-${filters.to}-${filters.interval}-${filters.segment}`;
 
   return (
     <>
-      <SalesFiltersPanel filters={filters} notifications={generalNotifications} />
+      <SalesSectionNav sections={PAGE_SECTIONS} />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {salesKpis.map((card, index) => (
-          <SalesMetricCard
-            key={card.label}
-            {...card}
-            animationDelayMs={80 + index * 45}
-          />
-        ))}
-      </div>
+      <SalesWindowBar filters={filters} notifications={generalNotifications} />
 
-      <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-2 [animation-delay:220ms]">
-        <SalesLineChart
-          emptyMessage="Nenhuma venda confirmada no período."
-          key={`revenue-${animationKey}`}
-          label="receita por período"
-          notifications={classified.revenue}
-          points={analytics.revenueSeries}
-        />
-        <SalesBarsChart
-          key={`status-${animationKey}`}
-          label="pedidos por status"
-          notifications={classified.orders}
-          points={statusChartSeries}
-        />
-      </div>
+      <SalesSegmentFilter filters={filters} />
 
-      <div className="animate-admin-panel-enter grid items-stretch gap-4 xl:grid-cols-[1.15fr_0.85fr] [animation-delay:320ms]">
-        <FramedPanel className="overflow-hidden pb-3">
-          <div className="flex flex-col gap-3 border-b border-[#231f20]/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#231f20]/48">
-                Mais vendidos
-              </p>
-              <p className="mt-1 text-sm text-[#231f20]/66">
-                Produtos e categorias com maior participação na receita do período.
-              </p>
+      <section
+        aria-label="Resumo do período"
+        className="animate-admin-panel-enter grid items-stretch gap-4 scroll-mt-24 [animation-delay:110ms] lg:grid-cols-2"
+        id="resumo"
+      >
+        <HardPanel accent="black" className="flex h-full flex-col">
+          <div className="flex-1 px-5 py-6 md:px-7">
+            <SalesHeadline
+              deltaRate={analytics.revenueDeltaRate}
+              grossRevenue={analytics.grossRevenue}
+              netRevenue={analytics.netRevenue}
+              periodLabel={filters.periodLabel}
+              previousGrossRevenue={analytics.previousGrossRevenue}
+              previousPeriodLabel={buildPreviousPeriodLabel(filters.from, filters.to)}
+            />
+            <div className="mt-5">
+              <FigureList>
+                {totals.map((total) => (
+                  <FigureLine
+                    key={total.label}
+                    label={total.label}
+                    note={total.note}
+                    tone={total.tone}
+                    value={total.value}
+                  />
+                ))}
+              </FigureList>
             </div>
-            <CardNotification issues={classified.leaderboard} />
           </div>
-          <div className="px-2 pt-2">
-            <CompactTable headers={["item", "receita", "share"]} rows={leaderboardRows} />
+        </HardPanel>
+
+        <HardPanel accent="black" className="flex h-full flex-col">
+          <div className="flex-1 px-5 py-6 md:px-7">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-dashed border-[#1a1a1a]/28 pb-4">
+              <div>
+                <h3 className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a]">
+                  Mais vendidos
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#1a1a1a]/72">
+                  Participação de cada item na receita do recorte.
+                </p>
+              </div>
+              <CardNotification issues={classified.leaderboard} />
+            </div>
+
+            {analytics.leaderboard.length > 0 ? (
+              <div className="mt-2">
+                <FigureList>
+                  {analytics.leaderboard.map((row) => (
+                    <FigureLine
+                      key={row.label}
+                      label={row.label}
+                      value={`${formatCompactCurrency(row.value)} · ${formatPercent(row.share, 0)}`}
+                    />
+                  ))}
+                </FigureList>
+              </div>
+            ) : (
+              <p className="pt-5 text-sm leading-6 text-[#1a1a1a]/72">
+                Nenhuma venda neste recorte, então não há ranking a montar.
+              </p>
+            )}
           </div>
-        </FramedPanel>
-        <SalesDonutChart
-          key={`payment-${animationKey}`}
-          label="mix por método de pagamento"
-          notifications={classified.paymentMix}
-          points={paymentMixSeries}
-        />
+        </HardPanel>
+      </section>
+
+      <div className="scroll-mt-24 space-y-4" id="graficos">
+        <div className="animate-admin-panel-enter [animation-delay:200ms]">
+          <SalesLineChart
+            emptyMessage="Nenhuma venda no recorte selecionado."
+            key={`revenue-${animationKey}`}
+            label="receita por período"
+            notifications={classified.revenue}
+            points={analytics.revenueSeries}
+          />
+        </div>
+
+        <div className="animate-admin-panel-enter grid items-stretch gap-4 [animation-delay:280ms] xl:grid-cols-[1.15fr_0.85fr]">
+          <SalesBarsChart
+            key={`status-${animationKey}`}
+            label="pedidos por status"
+            notifications={classified.orders}
+            points={statusChartSeries}
+          />
+          <SalesDonutChart
+            key={`payment-${animationKey}`}
+            label="mix por método de pagamento"
+            notifications={classified.paymentMix}
+            points={analytics.paymentMixSeries}
+          />
+        </div>
       </div>
 
-      <div className="animate-admin-panel-enter [animation-delay:420ms]">
+      <div className="animate-admin-panel-enter scroll-mt-24 [animation-delay:360ms]" id="pedidos">
         <SalesOrdersPanel filters={filters} snapshot={ordersSnapshot} />
+      </div>
+
+      <div className="animate-admin-panel-enter [animation-delay:440ms]">
+        <SalesExportPanel pageFrom={filters.from} pageTo={filters.to} />
+      </div>
+
+      <div className="animate-admin-panel-enter [animation-delay:500ms]">
+        <UsersExportPanel pageFrom={filters.from} pageTo={filters.to} />
       </div>
     </>
   );

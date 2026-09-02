@@ -1,7 +1,7 @@
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatCompactCurrency, niceMax } from "../formatters";
-import { CardNotification, FramedPanel } from "../primitives";
+import { CardNotification, HardPanel } from "../primitives";
 
 export function SalesLineChart({
   emptyMessage = "Nenhum dado no período.",
@@ -18,7 +18,7 @@ export function SalesLineChart({
 
   if (!hasData) {
     return (
-      <FramedPanel className="flex h-full flex-1 flex-col">
+      <HardPanel accent="black" className="flex h-full flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 px-5 pt-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
           <CardNotification issues={notifications} />
@@ -26,7 +26,7 @@ export function SalesLineChart({
         <div className="mx-5 mt-5 mb-5 grid min-h-56 place-items-center rounded-xl border border-dashed border-[#231f20]/18 bg-[#f3efe4] px-5 text-center text-sm text-[#231f20]/64">
           {emptyMessage}
         </div>
-      </FramedPanel>
+      </HardPanel>
     );
   }
 
@@ -68,7 +68,7 @@ export function SalesLineChart({
   const areaPath = `${linePath} L${paddingLeft + plotWidth},${paddingTop + plotHeight} L${paddingLeft},${paddingTop + plotHeight} Z`;
 
   return (
-    <FramedPanel className="flex h-full flex-1 flex-col">
+    <HardPanel accent="black" className="flex h-full flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#231f20]/46">{label}</p>
         <CardNotification issues={notifications} />
@@ -195,6 +195,6 @@ export function SalesLineChart({
           })}
         </svg>
       </div>
-    </FramedPanel>
+    </HardPanel>
   );
 }
