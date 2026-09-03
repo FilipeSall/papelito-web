@@ -1,70 +1,23 @@
-import { notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
-import { UserDetailPage, type UserDetailOrigin, type UserDetailTabKey } from "@/components/layout/admin-panel/sections/users";
-import { authOptions } from "@/lib/auth";
-import { getAdminOwnerApplications, getAdminUserDetail } from "@/lib/server/admin-users";
-import type { AdminUserFilterRole } from "@/lib/server/admin-users-filters";
-import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
-import { firstParam } from "@/lib/search-params";
-
-function parseTab(value: string | undefined): UserDetailTabKey {
-  return value === "orders" || value === "sales" || value === "role" || value === "company-review"
-    ? value
-    : "overview";
-}
-
-function parseOriginRole(value: string | undefined): AdminUserFilterRole {
-  return value === "administrator" || value === "customer" || value === "seller" || value === "other"
-    ? value
-    : "all";
-}
-
-export default async function AdminUserDetailRoute({
+export default async function AdminUserDetailRedirect({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await getServerSession(authOptions);
-
-  if (
-    !session?.user ||
-    !session.accessToken ||
-    (await fetchCurrentUserRole(session.accessToken)) !== "administrator"
-  ) {
-    notFound();
-  }
-
   const { id } = await params;
-  const userId = Number.parseInt(id, 10);
-  if (!Number.isFinite(userId) || userId <= 0) {
-    notFound();
+  const resolved = searchParams ? await searchParams : {};
+  const query = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(resolved)) {
+    const single = Array.isArray(value) ? value[0] : value;
+    if (typeof single === "string" && single) {
+      query.set(key, single);
+    }
   }
 
-  const [user, ownerApplications] = await Promise.all([
-    getAdminUserDetail(session.accessToken, userId),
-    getAdminOwnerApplications(session.accessToken, userId),
-  ]);
-  if (!user) {
-    notFound();
-  }
-
-  const resolvedSearchParams = searchParams ? await searchParams : {};
-  const activeTab = parseTab(firstParam(resolvedSearchParams.tab));
-  const origin: UserDetailOrigin = {
-    page: Math.max(1, Number.parseInt(firstParam(resolvedSearchParams.originPage) ?? "", 10) || 1),
-    role: parseOriginRole(firstParam(resolvedSearchParams.originRole)),
-    search: firstParam(resolvedSearchParams.originSearch)?.trim() ?? "",
-  };
-
-  return (
-    <UserDetailPage
-      activeTab={activeTab}
-      ownerApplications={ownerApplications}
-      origin={origin}
-      user={user}
-    />
-  );
+  const search = query.toString();
+  redirect(search ? `/admin/contas/${id}?${search}` : `/admin/contas/${id}`);
 }

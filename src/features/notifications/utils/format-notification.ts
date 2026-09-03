@@ -82,12 +82,12 @@ export function formatNotification(
         title: "Análise empresarial pendente",
         body: `${companyName} enviou um documento para revisão.`,
         href: /^pre:\d+$/.test(applicationId)
-          ? `/admin/users?preAccountApplication=${encodeURIComponent(applicationId)}`
-          : href.startsWith("/admin/users")
+          ? `/admin/contas?preAccountApplication=${encodeURIComponent(applicationId)}`
+          : href.startsWith("/admin/contas")
             ? href
             : Number.isInteger(userId) && userId > 0
-              ? `/admin/users/${userId}?tab=company-review`
-              : "/admin/users",
+              ? `/admin/contas/${userId}?tab=company-review`
+              : "/admin/contas",
       };
     }
     case "company_owner_approved":
@@ -115,7 +115,7 @@ export function formatNotification(
         href:
           Number.isInteger(interestId) && interestId > 0
             ? `/admin/vendors/interesses/${interestId}`
-            : "/admin/vendors?tab=interesses",
+            : "/admin/contas?tab=analises&analysisType=vendor",
       };
     }
     case "favorite_on_promo": {

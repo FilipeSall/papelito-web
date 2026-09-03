@@ -1,8 +1,14 @@
+import { getServerSession } from "next-auth";
+
 import {
   VendorOnboardingRequiredNotice,
   VendorPageHeader,
   VendorStockManager,
+  VendorSuspendedNotice,
 } from "@/components/layout/vendor-panel";
+import { isAccountSuspended } from "@/features/account-status";
+import { getContactConfig } from "@/features/site-contact/services/contact-config";
+import { authOptions } from "@/lib/auth";
 import { getVendorPendingRegistrationState } from "@/features/revendedor/server/vendor-onboarding";
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import {
@@ -22,7 +28,30 @@ export default async function VendorStockPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const pendingState = await getVendorPendingRegistrationState();
+  const [pendingState, session] = await Promise.all([
+    getVendorPendingRegistrationState(),
+    getServerSession(authOptions),
+  ]);
+
+  if (isAccountSuspended(session)) {
+    const contact = await getContactConfig();
+
+    return (
+      <div className="space-y-4 md:space-y-5">
+        <VendorPageHeader
+          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+          eyebrow="Catálogo regional"
+          signal="conta suspensa"
+          title="Estoque"
+        />
+        <VendorSuspendedNotice
+          body="Enquanto a conta estiver suspensa você não lança estoque nem recebe pedidos novos. Os pedidos que você já vendeu continuam em Pedidos, e podem ser despachados normalmente."
+          phone={contact.phone}
+          reason={session?.b2b?.accountSuspension?.reason}
+        />
+      </div>
+    );
+  }
 
   if (pendingState.pendingFields.length > 0) {
     return (

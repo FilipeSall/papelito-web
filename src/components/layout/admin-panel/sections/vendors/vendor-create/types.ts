@@ -43,6 +43,7 @@ export type VendorCreateSourceUser = {
 };
 
 export type VendorCreateLauncherProps = Readonly<{
+  hideHeading?: boolean;
   initialOpen?: boolean;
   sourceUser?: VendorCreateSourceUser | null;
 }>;

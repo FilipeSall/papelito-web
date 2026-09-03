@@ -3,6 +3,7 @@ import type { AdminSalesPageSearchParams } from "@/lib/server/admin-sales-filter
 import type { AdminSectionKey } from "./admin-config";
 import { SectionHeader } from "./section-header";
 import {
+  AccountsContent,
   AssetsContent,
   CategoriesContent,
   ConfigContent,
@@ -11,8 +12,6 @@ import {
   ProductsContent,
   SalesContent,
   SupportContent,
-  UsersContent,
-  VendorsContent,
 } from "./sections";
 
 function renderSection(
@@ -28,10 +27,8 @@ function renderSection(
       return <CategoriesContent />;
     case "flash-sale":
       return <FlashSaleContent />;
-    case "vendors":
-      return <VendorsContent searchParams={searchParams} />;
-    case "users":
-      return <UsersContent searchParams={searchParams} />;
+    case "contas":
+      return <AccountsContent searchParams={searchParams} />;
     case "suporte":
       return <SupportContent searchParams={searchParams} />;
     case "coupons":
@@ -61,8 +58,7 @@ export function AdminSectionPage({
       section === "flash-sale" ||
       section === "assets" ||
       section === "coupons" ||
-      section === "vendors" ||
-      section === "users" ||
+      section === "contas" ||
       section === "suporte" ? null : (
         <SectionHeader section={section} />
       )}

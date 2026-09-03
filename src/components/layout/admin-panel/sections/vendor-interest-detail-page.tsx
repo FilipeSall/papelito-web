@@ -76,7 +76,7 @@ export function VendorInterestDetailPage({ interest }: { readonly interest: Admi
 
   return (
     <div className="space-y-5">
-      <Link className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#231f20]/64 hover:text-[#231f20]" href="/admin/vendors?tab=interesses">
+      <Link className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#231f20]/64 hover:text-[#231f20]" href="/admin/contas?tab=analises&analysisType=vendor">
         <ArrowLeft className="size-4" /> Voltar às manifestações
       </Link>
 
@@ -94,14 +94,14 @@ export function VendorInterestDetailPage({ interest }: { readonly interest: Admi
         {hasCustomer ? (
           <Link
             className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-xs font-black uppercase tracking-[0.12em] text-brand-dark transition hover:brightness-95"
-            href={`/admin/vendors?create=1&sourceUserId=${interest.customerUserId}&sourceInterestId=${interest.id}`}
+            href={`/admin/contas?create=1&sourceUserId=${interest.customerUserId}&sourceInterestId=${interest.id}`}
           >
             <Store className="size-4" /> Novo vendor
           </Link>
         ) : (
           <Link
             className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-yellow px-6 text-xs font-black uppercase tracking-[0.12em] text-brand-dark transition hover:brightness-95"
-            href={`/admin/vendors?create=1&sourceInterestId=${interest.id}`}
+            href={`/admin/contas?create=1&sourceInterestId=${interest.id}`}
           >
             <Store className="size-4" /> Novo vendor
           </Link>

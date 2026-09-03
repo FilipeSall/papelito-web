@@ -43,6 +43,14 @@ export type WpAuthIdentityResponse = {
   } | null;
   b2b?: {
     isB2bCohort?: boolean;
+    accountStatus?: string;
+    accountStatusLabel?: string;
+    accountSuspension?: {
+      actorName?: string;
+      actorUserId?: number;
+      at?: string;
+      reason?: string;
+    } | null;
     canPurchase?: boolean;
     purchaseBlockReason?: string | null;
     requiresB2bOnboarding?: boolean;

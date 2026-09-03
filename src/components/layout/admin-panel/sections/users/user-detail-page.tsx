@@ -5,22 +5,43 @@ import type {
   AdminUserDetail,
   AdminUserRelatedOrder,
 } from "@/lib/server/admin-users";
-import type { AdminUserFilterRole } from "@/lib/server/admin-users-filters";
+import type {
+  AdminUserFilterRelation,
+  AdminUserFilterRole,
+  AdminUserFilterStatus,
+} from "@/lib/server/admin-users-filters";
 import { buildAdminUsersQuery } from "@/lib/server/admin-users-filters";
 
-import { CompactTable, EmptyStateCard, MetricCard, Panel, StatusBadge } from "../../primitives";
+import { CompactTable, EmptyStateCard, FOCUS_RING, MetricCard, Panel, StatusBadge } from "../../primitives";
 
-import { UserRoleBadge, UserStatusBadge } from "./user-badges";
+import { UserRoleBadge } from "./user-badges";
 import { UserOrderActionButton } from "./user-order-action-button";
 import { UserRoleActions } from "./user-role-actions";
 import { CompanyApplicationReview } from "../company-application-review";
+import { AccountStatusActions } from "../accounts/account-status-actions";
+import { AccountStatusChip } from "../accounts/status-chip";
+import {
+  ACCOUNTS_PATH,
+  companyHref,
+  formatCnpj,
+  membershipRoleLabel,
+  membershipStatusLabel,
+} from "../accounts/accounts-config";
 
-export type UserDetailTabKey = "company-review" | "orders" | "overview" | "role" | "sales";
+export type UserDetailTabKey =
+  | "company-review"
+  | "conta"
+  | "orders"
+  | "overview"
+  | "role"
+  | "sales";
 
 export type UserDetailOrigin = {
   page: number;
+  relation: AdminUserFilterRelation;
   role: AdminUserFilterRole;
   search: string;
+  status: AdminUserFilterStatus;
 };
 
 function sectionTitle(title: string) {
@@ -59,13 +80,15 @@ function buildBackHref(origin: UserDetailOrigin) {
     {
       page: origin.page,
       perPage: 20,
+      relation: origin.relation,
       role: origin.role,
       search: origin.search,
+      status: origin.status,
     },
     {},
   );
 
-  return query ? `/admin/users?${query}` : "/admin/users";
+  return query ? `${ACCOUNTS_PATH}?${query}` : ACCOUNTS_PATH;
 }
 
 function buildDetailHref(
@@ -84,11 +107,19 @@ function buildDetailHref(
   if (origin.role !== "all") {
     params.set("originRole", origin.role);
   }
+  if (origin.status !== "all") {
+    params.set("originStatus", origin.status);
+  }
+  if (origin.relation !== "all") {
+    params.set("originRelation", origin.relation);
+  }
   if (overrides.tab && overrides.tab !== "overview") {
     params.set("tab", overrides.tab);
   }
 
-  return params.toString() ? `/admin/users/${userId}?${params.toString()}` : `/admin/users/${userId}`;
+  return params.toString()
+    ? `${ACCOUNTS_PATH}/${userId}?${params.toString()}`
+    : `${ACCOUNTS_PATH}/${userId}`;
 }
 
 function detailRows(detail: AdminUserDetail) {
@@ -182,6 +213,7 @@ export function UserDetailPage({
     `Usuário #${user.id}`;
   const tabs: Array<{ key: UserDetailTabKey; label: string }> = [
     { key: "overview", label: "Visão geral" },
+    { key: "conta", label: "Conta" },
     { key: "orders", label: "Pedidos" },
     { key: "sales", label: "Vendas" },
     { key: "company-review", label: "Análise empresarial" },
@@ -198,7 +230,7 @@ export function UserDetailPage({
             className="inline-flex text-xs font-semibold uppercase tracking-[0.16em] text-[#231f20]/62 underline"
             href={buildBackHref(origin)}
           >
-            Voltar para usuários
+            Voltar para contas
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -206,7 +238,7 @@ export function UserDetailPage({
               Usuário #{user.id}
             </p>
             <UserRoleBadge label={user.roleLabel || "Outro"} />
-            <UserStatusBadge label={user.accountStatusLabel || "Ativa"} />
+            <AccountStatusChip fallbackLabel={user.accountStatusLabel} status={user.accountStatus} />
           </div>
 
           <div>
@@ -226,10 +258,21 @@ export function UserDetailPage({
           >
             Enviar email
           </a>
+          {user.isVendor ? (
+            <Link
+              className={[
+                "inline-flex h-11 items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow",
+                FOCUS_RING,
+              ].join(" ")}
+              href={`/admin/vendors/${user.id}`}
+            >
+              Painel do vendor
+            </Link>
+          ) : null}
           {user.availableActions.canUseVendorRedirect ? (
             <Link
               className="inline-flex h-11 items-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500]"
-              href={`/admin/vendors?create=1&sourceUserId=${user.id}`}
+              href={`${ACCOUNTS_PATH}?create=1&sourceUserId=${user.id}`}
             >
               Criar vendor
             </Link>
@@ -432,6 +475,63 @@ export function UserDetailPage({
 
       {activeTab === "company-review" ? (
         <CompanyApplicationReview initialData={ownerApplications} />
+      ) : null}
+
+      {activeTab === "conta" ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
+            {sectionTitle("Situacao da conta")}
+            <AccountStatusActions
+              accountStatus={user.accountStatus === "suspended" ? "suspended" : "active"}
+              canReactivate={user.availableActions.canReactivate}
+              canSuspend={user.availableActions.canSuspend}
+              reactivateEndpoint={`/api/admin/users/${user.id}/reactivate`}
+              statusHistory={user.statusHistory}
+              subjectLabel="Conta"
+              subjectName={fullName}
+              suspendBlockedReason={user.availableActions.suspendBlockedReason}
+              suspendEndpoint={`/api/admin/users/${user.id}/suspend`}
+              suspension={user.accountSuspension}
+            />
+          </Panel>
+
+          <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
+            {sectionTitle("Empresas vinculadas")}
+            {user.companies.length === 0 ? (
+              <p className="text-sm leading-6 text-[#231f20]/68">
+                {user.availableActions.currentRole === "administrator"
+                  ? "Conta da equipe Papelito. Administrador não compra em nome de empresa nenhuma — é quem aprova as dos outros."
+                  : "Esta pessoa não participa de nenhuma empresa. Sem vínculo ativo ela não compra pela plataforma."}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {user.companies.map((membership) => (
+                  <li
+                    className="border-2 border-[#1a1a1a] bg-white px-4 py-3"
+                    key={membership.companyId}
+                  >
+                    <Link
+                      className={[
+                        "block font-black uppercase tracking-tight text-[#231f20] hover:underline",
+                        FOCUS_RING,
+                      ].join(" ")}
+                      href={companyHref(membership.companyId)}
+                    >
+                      {membership.tradeName || membership.legalName}
+                    </Link>
+                    <p className="mt-1 font-mono text-xs text-[#231f20]/58">
+                      {formatCnpj(membership.cnpj)}
+                    </p>
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/58">
+                      {membershipRoleLabel(membership.membershipRole)} ·{" "}
+                      {membershipStatusLabel(membership.membershipStatus)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
       ) : null}
 
       {activeTab === "role" ? (

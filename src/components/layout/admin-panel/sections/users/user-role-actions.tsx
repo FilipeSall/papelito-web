@@ -184,7 +184,7 @@ export function UserRoleActions({
         {availableActions.canUseVendorRedirect ? (
           <Link
             className="inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow"
-            href={`/admin/vendors?create=1&sourceUserId=${userId}`}
+            href={`/admin/contas?create=1&sourceUserId=${userId}`}
           >
             <Store className="h-4 w-4" strokeWidth={2} />
             Abrir criacao de vendor

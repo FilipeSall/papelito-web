@@ -74,5 +74,5 @@ export function vendorBackHref(origin: OriginFilters): string {
   if (origin.page > 1) params.set("page", String(origin.page));
   if (origin.search) params.set("search", origin.search);
   const query = params.toString();
-  return query ? `/admin/vendors?${query}` : "/admin/vendors";
+  return query ? `/admin/contas?${query}` : "/admin/contas?role=seller";
 }

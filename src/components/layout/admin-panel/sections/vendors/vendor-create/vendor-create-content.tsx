@@ -63,27 +63,35 @@ export function VendorCreateContent(props: VendorCreateLauncherProps) {
 
   const pendingRequirement = validateVendorCreateForm(form);
 
+  const trigger = (
+    <button
+      className="inline-flex h-11 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
+      onClick={openNewForm}
+      type="button"
+    >
+      <Plus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+      Novo vendor
+    </button>
+  );
+
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
-            Operação
-          </p>
-          <h2 className="text-xl font-black uppercase tracking-tight text-[#1a1a1a]">Vendors</h2>
+      {props.hideHeading ? (
+        trigger
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
+              Operação
+            </p>
+            <h2 className="text-xl font-black uppercase tracking-tight text-[#1a1a1a]">Vendors</h2>
+          </div>
+          {trigger}
         </div>
-        <button
-          className="inline-flex h-11 cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none"
-          onClick={openNewForm}
-          type="button"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2.4} />
-          + Novo vendor
-        </button>
-      </div>
+      )}
 
       {createdVendor?.id ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-brand-yellow px-4 py-3 text-sm shadow-[4px_4px_0px_#1a1a1a]">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-brand-yellow px-4 py-3 text-sm shadow-[4px_4px_0px_#1a1a1a]">
           <span className="font-black uppercase tracking-wide text-[#1a1a1a]">
             ✓ Vendor criado: {createdVendor.storeName || createdVendor.email || `#${createdVendor.id}`}
           </span>

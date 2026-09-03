@@ -14,6 +14,20 @@ describe("blockMêssageFor", () => {
     expect(blockMessageFor(base)).toBeNull();
   });
 
+  it("conta suspensa vence os demais motivos de bloqueio", () => {
+    const message = blockMessageFor({
+      ...base,
+      canPurchase: false,
+      purchaseMode: "blocked",
+      purchaseBlockReason: "account_suspended",
+    });
+
+    expect(message).toEqual({
+      title: "Conta suspensa",
+      body: "Sua conta está suspensa para operações comerciais. Fale com a Papelito para reativá-la.",
+    });
+  });
+
   it("sem empresa → convida a cadastrar/entrar", () => {
     const msg = blockMessageFor({ ...base, onboardingStatus: "none" });
     expect(msg?.title).toMatch(/ainda não faz parte/i);

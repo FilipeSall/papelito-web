@@ -32,7 +32,7 @@ export default async function AdminPreAccountApplicationPage({
   return (
     <section className="space-y-5">
       <Link
-        href="/admin/empresas?status=pending_manual_review"
+        href="/admin/contas?tab=analises"
         className="inline-flex border-2 border-[#1a1a1a] bg-white px-3 py-2 text-xs font-black uppercase hover:bg-brand-yellow"
       >
         Voltar para análises empresariais

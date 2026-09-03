@@ -3,11 +3,50 @@ import "server-only";
 import { wpRest } from "@/lib/server/wp-rest";
 import type { AdminUsersFilters } from "@/lib/server/admin-users-filters";
 
+export type AdminUserCompanyRelation = {
+  companyCnpj: string;
+  companyId: number;
+  companyName: string;
+  companyStatus: string;
+  membershipRole: string;
+  membershipStatus: string;
+};
+
+export type AdminAccountSuspension = {
+  actorName: string;
+  actorUserId: number;
+  at: string;
+  reason: string;
+};
+
+export type AdminAccountStatusEvent = {
+  action: string;
+  actorName: string;
+  actorUserId: number;
+  createdAt: string;
+  reason: string;
+};
+
+export type AdminUserCompanyMembership = {
+  cnpj: string;
+  companyId: number;
+  companyStatus: string;
+  legalName: string;
+  membershipRole: string;
+  membershipStatus: string;
+  ownershipStatus: string;
+  tradeName: string;
+};
+
 export type AdminUserRow = {
   accountStatus: string;
   accountStatusLabel: string;
+  city: string;
+  cnpj: string;
+  company: AdminUserCompanyRelation | null;
   email: string;
   favoritesCount: number;
+  hasCoverage: boolean;
   id: number | string;
   isVendor: boolean;
   name: string;
@@ -18,6 +57,8 @@ export type AdminUserRow = {
   role: string;
   roleLabel: string;
   salesCount: number;
+  state: string;
+  storeName: string;
   supportTicketsCount: number;
 };
 
@@ -26,6 +67,7 @@ export type AdminUsersSummary = {
   customersCount: number;
   othersCount: number;
   sellersCount: number;
+  suspendedCount: number;
   totalUsers: number;
 };
 
@@ -58,15 +100,22 @@ export type AdminUserRelatedOrder = {
 export type AdminUserDetail = {
   accountStatus: string;
   accountStatusLabel: string;
+  accountSuspension: AdminAccountSuspension | null;
   availableActions: {
     canCancelOrders: boolean;
     canConvertSellerToCustomer: boolean;
     canDemoteAdministrator: boolean;
     canPromoteToAdministrator: boolean;
+    canReactivate: boolean;
+    canSuspend: boolean;
     canUseVendorRedirect: boolean;
     currentRole: string;
     isSelf: boolean;
+    suspendBlockedCode: string;
+    suspendBlockedReason: string;
   };
+  companies: AdminUserCompanyMembership[];
+  statusHistory: AdminAccountStatusEvent[];
   cancelledOrders: AdminUserRelatedOrder[];
   cep: string;
   city: string;
@@ -239,8 +288,12 @@ function mapRow(raw: unknown): AdminUserRow | null {
   return {
     accountStatus: String(row.accountStatus ?? ""),
     accountStatusLabel: String(row.accountStatusLabel ?? ""),
+    city: String(row.city ?? ""),
+    cnpj: String(row.cnpj ?? ""),
+    company: mapCompanyRelation(row.company),
     email: String(row.email ?? ""),
     favoritesCount: toNumber(row.favoritesCount),
+    hasCoverage: Boolean(row.hasCoverage),
     id,
     isVendor: Boolean(row.isVendor),
     name: String(row.name ?? ""),
@@ -251,7 +304,31 @@ function mapRow(raw: unknown): AdminUserRow | null {
     role: String(row.role ?? ""),
     roleLabel: String(row.roleLabel ?? ""),
     salesCount: toNumber(row.salesCount),
+    state: String(row.state ?? ""),
+    storeName: String(row.storeName ?? ""),
     supportTicketsCount: toNumber(row.supportTicketsCount),
+  };
+}
+
+function mapCompanyRelation(raw: unknown): AdminUserCompanyRelation | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const relation = raw as Record<string, unknown>;
+  const companyId = toNumber(relation.companyId);
+
+  if (companyId <= 0) {
+    return null;
+  }
+
+  return {
+    companyCnpj: String(relation.companyCnpj ?? ""),
+    companyId,
+    companyName: String(relation.companyName ?? ""),
+    companyStatus: String(relation.companyStatus ?? ""),
+    membershipRole: String(relation.membershipRole ?? ""),
+    membershipStatus: String(relation.membershipStatus ?? ""),
   };
 }
 
@@ -271,6 +348,7 @@ function emptySnapshot(filters: AdminUsersFilters): AdminUsersSnapshot {
       customersCount: 0,
       othersCount: 0,
       sellersCount: 0,
+      suspendedCount: 0,
       totalUsers: 0,
     },
     totalPages: 1,
@@ -300,8 +378,20 @@ export async function getAdminUsersSnapshot(
     query.set("role", filters.role);
   }
 
+  if (filters.status !== "all") {
+    query.set("status", filters.status);
+  }
+
+  if (filters.relation !== "all") {
+    query.set("relation", filters.relation);
+  }
+
   if (filters.search) {
     query.set("search", filters.search);
+  }
+
+  if (filters.countsOnly) {
+    query.set("countsOnly", "1");
   }
 
   const result = await wpRest<RawUsersSnapshot>(
@@ -328,6 +418,7 @@ export async function getAdminUsersSnapshot(
       customersCount: toNumber(result.data.summary?.customersCount),
       othersCount: toNumber(result.data.summary?.othersCount),
       sellersCount: toNumber(result.data.summary?.sellersCount),
+      suspendedCount: toNumber(result.data.summary?.suspendedCount),
       totalUsers: toNumber(result.data.summary?.totalUsers),
     },
     totalPages: Math.max(1, toNumber(result.data.totalPages, 1)),

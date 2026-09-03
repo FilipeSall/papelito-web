@@ -17,10 +17,10 @@ describe("formatNotification", () => {
 
     expect(formatted.title).toBe("Análise empresarial pendente");
     expect(formatted.body).toContain("Papelaria Exemplo");
-    expect(formatted.href).toBe("/admin/users/84?tab=company-review");
+    expect(formatted.href).toBe("/admin/contas/84?tab=company-review");
   });
 
-  it("links a pre-account document review into the administrative users table", () => {
+  it("links a pre-account document review into the administrative accounts table", () => {
     const formatted = formatNotification(
       buildNotification({
         type: "company_owner_review_pending",
@@ -32,7 +32,7 @@ describe("formatNotification", () => {
       }),
     );
 
-    expect(formatted.href).toBe("/admin/users?preAccountApplication=pre%3A84");
+    expect(formatted.href).toBe("/admin/contas?preAccountApplication=pre%3A84");
   });
 
   it("shows discount details for favorite-on-promo notifications when available", () => {
@@ -132,12 +132,12 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/admin/vendors/interesses/42");
   });
 
-  it("falls back to the interests tab when the notification has no interest id", () => {
+  it("falls back to the analysis queue when the notification has no interest id", () => {
     const formatted = formatNotification(
       buildNotification({ type: "new_vendor_application", payload: {} }),
     );
 
-    expect(formatted.href).toBe("/admin/vendors?tab=interesses");
+    expect(formatted.href).toBe("/admin/contas?tab=analises&analysisType=vendor");
   });
 
   it("links a new purchase to the vendor order detail and shows the total", () => {

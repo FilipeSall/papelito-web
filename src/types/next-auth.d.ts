@@ -4,6 +4,14 @@ import "next-auth/jwt";
 declare module "next-auth" {
   type B2bContext = {
 		isB2bCohort?: boolean;
+    accountStatus?: string;
+    accountStatusLabel?: string;
+    accountSuspension?: {
+      actorName?: string;
+      actorUserId?: number;
+      at?: string;
+      reason?: string;
+    } | null;
     canPurchase?: boolean;
 		purchaseBlockReason?: string | null;
 		purchaseMode?: "b2b" | "not_buyer" | "blocked";

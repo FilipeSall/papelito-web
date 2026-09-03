@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Package,
   Settings,
-  Store,
   TrendingUp,
   Users,
   Zap,
@@ -17,8 +16,7 @@ export type AdminSectionKey =
   | "products"
   | "categories"
   | "flash-sale"
-  | "vendors"
-  | "users"
+  | "contas"
   | "suporte"
   | "coupons"
   | "assets"
@@ -67,12 +65,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Campanha e janela ativa",
   },
   {
-    key: "vendors",
-    href: "/admin/vendors",
-    icon: Store,
-    label: "Vendors",
-    shortLabel: "Vendors",
-    description: "Contas e cobertura",
+    key: "contas",
+    href: "/admin/contas",
+    icon: Users,
+    label: "Contas",
+    shortLabel: "Contas",
+    description: "Pessoas, empresas e análises",
   },
   {
     key: "coupons",
@@ -97,14 +95,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Suporte",
     shortLabel: "Suporte",
     description: "Conversas escaladas",
-  },
-  {
-    key: "users",
-    href: "/admin/users",
-    icon: Users,
-    label: "Usuários",
-    shortLabel: "Usuários",
-    description: "Contas, perfis e histórico",
   },
   {
     key: "config",

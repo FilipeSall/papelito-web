@@ -39,6 +39,7 @@ export function blockMessageFor(context: {
 }): { title: string; body: string } | null {
 	if (context.purchaseMode === "not_buyer") return null;
 	const reasonMessages: Record<string, { title: string; body: string }> = {
+		account_suspended: { title: "Conta suspensa", body: "Sua conta está suspensa para operações comerciais. Fale com a Papelito para reativá-la." },
 		identity_incomplete: { title: "Perfil incompleto", body: "Complete a verificação do seu perfil para comprar em nome de uma empresa." },
 		identity_rejected: { title: "Perfil não aprovado", body: "Seu perfil pessoal não está apto para realizar compras." },
 		company_missing: { title: "Empresa necessária", body: "Cadastre sua empresa ou solicite acesso a uma empresa existente para comprar." },

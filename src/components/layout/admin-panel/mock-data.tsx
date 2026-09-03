@@ -22,15 +22,10 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "janela", value: "48h" },
     { label: "produtos no slot", value: "08" },
   ],
-  vendors: [
-    { label: "vendors", value: "32" },
-    { label: "com cobertura", value: "31" },
-    { label: "faixas cep", value: "31" },
-  ],
-  users: [
-    { label: "admins", value: "04" },
-    { label: "sellers", value: "32" },
-    { label: "tickets brutos", value: "17" },
+  contas: [
+    { label: "pessoas", value: "148" },
+    { label: "empresas", value: "37" },
+    { label: "na fila", value: "05" },
   ],
   suporte: [
     { label: "escaladas", value: "-" },
@@ -96,20 +91,12 @@ export const SECTION_META: Record<
     railValue: "armed",
     signalTone: "default",
   },
-  vendors: {
-    eyebrow: "Contas e cobertura",
+  contas: {
+    eyebrow: "Pessoas, empresas e análises",
     description:
-      "Gestão dos vendors efetivamente cadastrados, suas faixas de cobertura, estoque e operação.",
-    railLabel: "papel",
-    railValue: "seller",
-    signalTone: "default",
-  },
-  users: {
-    eyebrow: "Contas e roles",
-    description:
-      "Leitura administrativa de usuários, pedidos, vendas e transicoes de role, mantendo favoritos e tickets apenas como contadores brutos.",
-    railLabel: "recorte",
-    railValue: "multi-role",
+      "Gestão unificada de contas: quem é a pessoa, qual empresa representa, se vende, em que situação está e o que aguarda análise.",
+    railLabel: "escopo",
+    railValue: "contas",
     signalTone: "default",
   },
   suporte: {

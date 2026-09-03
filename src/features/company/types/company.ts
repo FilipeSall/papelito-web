@@ -48,8 +48,18 @@ export type OnboardingResumeState = {
   expiresAt?: string | null;
 };
 
+export type AccountSuspensionContext = {
+  actorName?: string;
+  actorUserId?: number;
+  at?: string;
+  reason?: string;
+};
+
 export type CompanyContext = {
 	isB2bCohort?: boolean;
+  accountStatus?: string;
+  accountStatusLabel?: string;
+  accountSuspension?: AccountSuspensionContext | null;
   identityStatus: string;
   companyId: number | null;
   companyStatus: string | null;

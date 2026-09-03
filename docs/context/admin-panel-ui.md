@@ -2,27 +2,129 @@
 
 Decisões de navegação e URL do painel `/admin`. As regras de autorização e os contratos das operações estão em [`../../../docs/flows/admin.md`](../../../docs/flows/admin.md).
 
-## Vendors e interesses são um único domínio
+## Contas: pessoas, empresas e vendors são um domínio só
 
-As manifestações de interesse em se tornar vendor tinham listagem e detalhe próprios em `/admin/vendor-interests`, como se fossem outro domínio. Não são. A decisão, com o motivo:
+Usuários, vendors e empresas tinham listagens separadas — `/admin/users`, `/admin/vendors` e
+`/admin/empresas` — e o administrador precisava saltar entre três telas para responder uma pergunta
+só: *quem é essa pessoa, que empresa ela representa e o que ela pode fazer?* A decisão, com o motivo:
 
-> A navegação deve representar um único domínio administrativo: vendors cadastrados e customers que manifestaram interesse.
+> Quem administra contas navega por relacionamento, não por tabela. Pessoa → empresa → vendor →
+> membros da empresa → solicitações precisa ser um percurso, não três sistemas.
 
-O que passou a valer:
+O que passa a valer:
 
-- `/admin/vendors` é a **única** entrada de navegação.
-- A página tem duas abas: **Vendors cadastrados** e **Interesses em ser vendor**.
-- A aba de interesses é controlada por `/admin/vendors?tab=interesses`.
-- **Busca e paginação vivem na URL da aba ativa**, não em estado local — o estado da tela é compartilhável.
-- O detalhe fica em `/admin/vendors/interesses/[id]`, preservando URL direta e compartilhável.
+- **`/admin/contas` é a única entrada de navegação** para pessoas, empresas e análises.
+- Quatro segmentos controlados por `?tab=`: **Contas** (padrão), **Empresas** e **Vendors** — as três
+  entidades, com o mesmo peso visual — e, depois de um separador, **Análises**, que é fila de
+  trabalho e não uma quarta entidade.
+- **Vendors é segmento, não filtro de perfil.** Vem da mesma fonte das contas (`role=seller`), sem
+  endpoint novo, porque vendor no domínio é uma conta com role `seller`.
+- **Busca, filtros e paginação vivem na URL**, nunca em estado local — a tela é compartilhável.
 - **Só os dados da aba ativa são buscados.**
-- Endpoints, contratos, persistência e autorização administrativos **não** mudaram.
+- Detalhes: `/admin/contas/[id]` para a pessoa e `/admin/contas/empresa/[id]` para a empresa. O
+  painel operacional do vendor continua em `/admin/vendors/[id]`, alcançável pelo detalhe da pessoa
+  — é ferramenta de operação (estoque, cobertura, financeiro), não de gestão de conta.
+- O detalhe da pessoa ganhou a aba **Conta**, que reúne situação comercial, ação de suspender ou
+  reativar, histórico e as empresas vinculadas.
 
-### Interface
+### Contrato de URL da aba Pessoas
 
-As abas reutilizam a paleta, as bordas, a tipografia em caixa alta e os estados de foco do painel. Em telas estreitas a navegação **rola horizontalmente sem truncar os rótulos** — truncar rótulo de aba administrativa é perda de informação, não economia de espaço.
+`role`, `status` (`active`, `suspended`, `email_pending`), `relation` (`company`, `unlinked`),
+`search` e `page`. Os valores padrão são omitidos da URL. `?create=1&sourceUserId=` e
+`&sourceInterestId=` abrem a criação de vendor sobre a listagem, como fazia `/admin/vendors`.
 
-A ação **Novo vendor** permanece na aba de vendors cadastrados. A aba de interesses é focada em busca, leitura e contato.
+### Contrato de URL da aba Análises
+
+`analysisType` (`company`, `vendor`) e `analysisStatus`. A fila junta, numa lista só, candidaturas de
+empresa com conta existente, candidaturas pré-conta e manifestações de interesse em ser vendor —
+cada linha diz o tipo, quem pediu, a empresa, quando chegou e a situação. A decisão continua nas
+telas de origem: `?preAccountApplication=pre:{id}` na própria aba, `/admin/contas/{id}?tab=company-review`
+para candidatura com conta, e `/admin/vendors/interesses/{id}` para interesse de vendor.
+
+### Composição visual
+
+A primeira versão da tela empilhava cabeçalho da seção, caixa de "recorte atual", painel de filtros
+e cinco cards de métrica antes do primeiro resultado. Três defeitos concretos saíram dali:
+
+1. **O mesmo número aparecia duas vezes** — "recorte atual" e "total filtrado" eram a mesma coisa.
+2. **As abas ficavam abaixo dos filtros**, ou seja, filtrava-se antes de escolher o que filtrar.
+3. **Os métricos empurravam a listagem para fora da primeira dobra** numa tela cujo trabalho é achar
+   uma pessoa.
+
+A composição atual segue a Taxonomia e tem uma ordem só:
+
+```
+CABEÇALHO (losango + título + uma linha de contexto + ação primária)
+SEGMENTOS  [Contas] [Empresas] [Vendors] ‖ [Análises]
+ALERTA     (só quando existe conta suspensa)
+FILTROS    (busca + selects, mesma altura, alinhados)
+RESULTADOS (moldura única com faixa amarela; uma linha por registro)
+```
+
+- **Nenhum card de métrica.** A contagem de cada entidade vive no próprio segmento, e o total do
+  recorte no cabeçalho da moldura de resultados. Números com significados diferentes deixaram de
+  compartilhar o mesmo nome.
+- **Uma moldura, não N cards.** `border-2` + `shadow-[8px_8px_0px_#1a1a1a]` + faixa amarela envolvem
+  a lista inteira; as linhas se separam por `divide-y-2` interno. Evita a soma de sombras que fazia a
+  página vibrar.
+- **`ResultRow` tem sempre a mesma gramática** nos quatro segmentos: identidade à esquerda,
+  relacionamento no meio (precedido por uma seta), estado e ação à direita. É o que torna a relação
+  Conta → Empresa → Vendor legível sem legenda.
+- A linha inteira é clicável por um link em `absolute inset-0`; links internos (empresa, titular,
+  operação) sobem com `relative z-10`.
+
+### Alinhamento dos filtros
+
+`AdminSelectField` (variante `vendor-create`) renderiza `label` com altura fixa `h-4` e `gap-2` até
+o controle `h-11`. O campo de busca **precisa repetir essa estrutura** — foi por não repetir, e por
+carregar um losango no label, que o input ficava alguns pixels acima dos selects. `AccountsFilterBar`
+mantém os dois lados idênticos; qualquer campo novo na barra copia esse label.
+
+### Status: ícone + texto, nunca só cor
+
+`status-chip.tsx` concentra o vocabulário. Cada estado real do domínio mapeia para um ícone do
+**lucide-react** (a biblioteca que o painel já usa), sempre com `strokeWidth` 2.4, `h-3.5 w-3.5` e
+`aria-hidden` — o significado fica no texto ao lado, que nunca é omitido.
+
+| Estado | Ícone |
+|---|---|
+| Ativa (conta ou empresa) | `CircleCheck` |
+| Suspensa | `Ban` |
+| E-mail pendente | `MailWarning` |
+| Em análise / aguardando revisão | `Clock` |
+| Aguardando documento | `CircleAlert` |
+| Reprovada | `CircleX` |
+| Arquivada | `CircleDashed` |
+| Pessoa / Empresa / Vendor (entidade) | `User` / `Building2` / `Store` |
+
+Regra que não pode regredir: **nenhum estado é comunicado só por cor**. Em preto e branco, sem
+legenda, ou para quem não distingue as cores da marca, o rótulo continua dizendo tudo. `EntityMark`
+usa `sr-only` para dar nome ao ícone quando ele aparece sozinho.
+
+Em telas estreitas a navegação de segmentos quebra em várias linhas **sem truncar rótulos** —
+truncar rótulo administrativo é perda de informação, não economia de espaço — e cada `ResultRow`
+passa de linha para bloco empilhado, sem scroll horizontal.
+
+Na listagem de contas, o campo do meio é contextual: mostra a empresa e o papel quando existe
+vínculo, a loja e a cobertura quando a conta é vendor, e "sem vínculo empresarial" caso contrário.
+Um campo só, porque as duas informações nunca coexistem no domínio.
+
+### Suspensão de conta na interface
+
+- A ação vive na aba **Conta** do detalhe, e no detalhe da empresa para suspender a empresa inteira.
+- **Suspender abre modal com justificativa obrigatória** (5 a 500 caracteres); reativar aceita
+  justificativa opcional. O histórico aparece logo abaixo, com autor e data.
+- O botão de confirmação do modal diz **Confirmar suspensão** / **Confirmar reativação**, e não
+  repete o rótulo do botão que abriu o modal — dois botões com o mesmo nome acessível na mesma tela
+  são ambíguos para leitor de tela.
+- Quando a suspensão é recusada pelo backend (único titular ativo, administrador, própria conta), a
+  interface **não mostra o botão** e exibe o motivo no lugar. O backend recusa de qualquer forma.
+- Conta suspensa vê um aviso persistente na área autenticada (`AccountSuspensionNotice`), e o painel
+  do vendor troca **Estoque** e **Cobertura** por um bloqueio explicativo. **Pedidos, rastreio e
+  mensagens continuam abertos** — quem já comprou precisa receber.
+- O aviso lê `session.b2b.accountStatus`, que viaja no refresh de identidade do NextAuth **a cada
+  5 minutos**. Ou seja: uma suspensão aplicada agora aparece na tela da pessoa em até 5 minutos. Não
+  é uma brecha — o WordPress recusa compra e venda no mesmo instante; o atraso é só do aviso.
 
 ## Rotas removidas
 
@@ -32,6 +134,9 @@ Registro de migração — links antigos apontam para lugar nenhum:
 - `/admin/vendor-interests/[id]`
 - `/admin/reports` — absorvida por `/admin/sales`; a rota redireciona para `/admin/sales#exportar-vendas`
 - `/vendor/financeiro` — absorvida por `/vendor/dashboard`; a rota redireciona
+- `/admin/users` e `/admin/users/[id]` — absorvidas por `/admin/contas`; redirecionam preservando a query
+- `/admin/vendors` (listagem) — absorvida por `/admin/contas?role=seller`; `?tab=interesses` cai na aba Análises. O **detalhe** `/admin/vendors/[id]` continua existindo
+- `/admin/empresas` (listagem) — absorvida por `/admin/contas?tab=analises`
 
 Todos os pontos de entrada foram repontados para as rotas sob `/admin/vendors`: links de notificação, listagem, paginação e retorno do detalhe. O link de notificação vive em `src/features/notifications/utils/format-notification.ts` — **é o único lugar que conhece os deep links administrativos**, então qualquer nova mudança de rota no painel precisa passar por lá.
 
@@ -39,12 +144,12 @@ Todos os pontos de entrada foram repontados para as rotas sob `/admin/vendors`: 
 
 - `src/components/layout/admin-panel/` — casca do painel.
 - `src/components/layout/admin-panel/admin-config.ts` — itens de navegação. Adicionar seção começa aqui.
-- `src/components/layout/admin-panel/sections/<assunto>/` — conteúdo por seção; `sections/vendors/vendors-tabs.tsx` é a referência de abas controladas por URL.
+- `src/components/layout/admin-panel/sections/<assunto>/` — conteúdo por seção; `sections/accounts/accounts-tabs.tsx` é a referência de abas controladas por URL, e `sections/accounts/accounts-config.ts` concentra rótulos, rotas e formatadores compartilhados da área de contas.
 - `app/admin/` — rotas; `app/api/admin/*` — proxies que mantêm o JWT no servidor.
 
 ## Candidaturas empresariais pré-conta
 
-Uma candidatura documental ainda não é um usuário: não existe `wp_user`, sessão, empresa nem membership antes da decisão. Mesmo assim, ela aparece em `/admin/users` como registro **Candidatura pré-conta** com status **Sob análise**. A ação **Analisar** e a notificação usam `?preAccountApplication=pre:{id}` para abrir, na própria tela, o documento privado e as ações Aprovar/Reprovar. A tabela preserva busca e paginação junto das contas existentes, sem transformar a candidatura em conta.
+Uma candidatura documental ainda não é um usuário: não existe `wp_user`, sessão, empresa nem membership antes da decisão. Mesmo assim, ela aparece em `/admin/contas` como registro **Candidatura pré-conta** com status **Sob análise**. A ação **Analisar** e a notificação usam `?preAccountApplication=pre:{id}` para abrir, na própria tela, o documento privado e as ações Aprovar/Reprovar. A tabela preserva busca e paginação junto das contas existentes, sem transformar a candidatura em conta.
 
 ## Convenções do painel
 
