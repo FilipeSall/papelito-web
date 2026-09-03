@@ -6,6 +6,7 @@ export type NotificationType =
   | "stock_zeroed"
   | "product_missing_weight"
   | "product_data_incomplete"
+  | "vendor_product_data_request"
   | "support_message"
   | "support_escalated"
   | "new_purchase"

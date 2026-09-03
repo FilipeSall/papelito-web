@@ -91,6 +91,19 @@ describe("NotificationBell", () => {
     });
   });
 
+  it("stacks the dropdown above the admin select lists, which render at z-90", async () => {
+    const user = userEvent.setup();
+
+    render(<NotificationBell />);
+
+    await user.click(screen.getByRole("button", { name: /12 não lidas/i }));
+
+    const zIndex = Number(
+      /z-\[(\d+)\]/.exec(screen.getByRole("dialog").className)?.[1] ?? "0",
+    );
+    expect(zIndex).toBeGreaterThan(90);
+  });
+
   it("marks all notifications as read from the dropdown", async () => {
     const user = userEvent.setup();
 

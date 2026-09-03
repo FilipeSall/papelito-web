@@ -76,6 +76,25 @@ describe("formatNotification", () => {
     );
   });
 
+  it("formats a vendor product data request as an actionable admin notification", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "vendor_product_data_request",
+        payload: {
+          message: "Tenho estoque parado.",
+          product_id: 321,
+          product_name: "Tubelito Tradicional",
+        },
+      }),
+    );
+
+    expect(formatted.title).toBe("Solicitação de dados de produto");
+    expect(formatted.body).toContain("Tubelito Tradicional");
+    expect(formatted.href).toBe(
+      "/admin/products?focus=321&issue=product-data-incomplete",
+    );
+  });
+
   it("consolidates missing price and weight into one admin notification", () => {
     const formatted = formatNotification(
       buildNotification({

@@ -13,7 +13,10 @@ import { getVendorPendingRegistrationState } from "@/features/revendedor/server/
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import {
   getVendorStock,
+  getVendorStockSummary,
   getVendorStockTaxonomies,
+  parseVendorStockPerPage,
+  VENDOR_STOCK_FILTERS,
   VENDOR_STOCK_SORTS,
   VENDOR_STOCK_TYPES,
   type VendorStockFilter,
@@ -74,8 +77,9 @@ export default async function VendorStockPage({
   const params = searchParams ? await searchParams : {};
 
   const rawFilter = firstParam(params.filter);
-  const filter: VendorStockFilter =
-    rawFilter === "with_stock" || rawFilter === "zeroed_only" ? rawFilter : "all";
+  const filter: VendorStockFilter = VENDOR_STOCK_FILTERS.includes(rawFilter as VendorStockFilter)
+    ? (rawFilter as VendorStockFilter)
+    : "all";
 
   const rawSort = firstParam(params.sort);
   const sort: VendorStockSort = VENDOR_STOCK_SORTS.includes(rawSort as VendorStockSort)
@@ -98,29 +102,43 @@ export default async function VendorStockPage({
   const rawCollection = (firstParam(params.collection) ?? "").trim().toLowerCase();
   const collection = /^[a-z0-9-]{1,48}$/.test(rawCollection) ? rawCollection : null;
 
+  const perPage = parseVendorStockPerPage(firstParam(params.per_page));
   const search = firstParam(params.search)?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(firstParam(params.page) ?? "", 10) || 1);
   const focus = Number.parseInt(firstParam(params.focus) ?? "", 10);
 
-  const filters: VendorStockFilters = { category, collection, filter, search, sort, tags, type };
+  const filters: VendorStockFilters = {
+    category,
+    collection,
+    filter,
+    perPage,
+    search,
+    sort,
+    tags,
+    type,
+  };
 
-  const [snapshot, taxonomies] = await Promise.all([
+  const [snapshot, taxonomies, summary, contact] = await Promise.all([
     getVendorStock({ ...filters, page }),
     getVendorStockTaxonomies(),
+    getVendorStockSummary(type),
+    getContactConfig(),
   ]);
 
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+        description="Lance saldo na própria linha, aplique a mesma quantidade a vários produtos de uma vez e encontre primeiro o que está acabando."
         eyebrow="Catálogo regional"
         signal="controle direto"
         title="Estoque"
       />
       <VendorStockManager
+        contactPhone={contact.phone}
         filters={filters}
         focusProductId={Number.isInteger(focus) && focus > 0 ? focus : undefined}
         snapshot={snapshot}
+        summary={summary}
         taxonomies={taxonomies}
       />
     </div>

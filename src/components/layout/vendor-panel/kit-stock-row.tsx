@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 import type { VendorStockItem, VendorStockKit } from "@/features/vendor-stock/types/vendor-stock";
+import { vendorStockLevel } from "@/features/vendor-stock/types/vendor-stock";
 
 import {
   formatStockUpdatedAt,
@@ -87,6 +88,7 @@ export function KitStockRow({
   focused,
   item,
   kit,
+  lowStockThreshold,
   onQtyChange,
   quantities,
   savingIds,
@@ -95,12 +97,16 @@ export function KitStockRow({
   focused: boolean;
   item: VendorStockItem;
   kit: VendorStockKit;
+  lowStockThreshold: number;
   onQtyChange: (productId: number, qty: string) => void;
   quantities: Record<string, string>;
   savingIds: Set<number>;
 }) {
   const ref = useRef<HTMLTableRowElement>(null);
   const kitHref = kit.slug ? `/kits/${kit.slug}` : null;
+  // `kit` e não `item.kit`: quem manda é a composição que este componente recebeu. Na listagem os
+  // dois são o mesmo objeto, mas ler o item deixaria a linha ignorar a prop que lhe foi passada.
+  const level = vendorStockLevel({ ...item, kit }, lowStockThreshold);
 
   useEffect(() => {
     if (focused) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -109,7 +115,8 @@ export function KitStockRow({
   return (
     <>
       <tr className={focused ? "bg-brand-yellow/32" : "bg-brand-yellow/20"} data-testid="stock-kit-row" ref={ref}>
-        <td className="border-l-4 border-[#1a1a1a] px-4 pt-4 pb-2">
+        <td className="border-l-4 border-[#1a1a1a] px-2 pt-4 pb-2" />
+        <td className="px-4 pt-4 pb-2">
           <div className="flex min-w-64 items-center gap-3">
             <span className={`${stockThumbFrameClassName} h-14 w-14`}>
               <StockThumb alt={item.productName} src={item.imageUrl} />
@@ -137,10 +144,10 @@ export function KitStockRow({
             </div>
           </div>
         </td>
-        <td className="px-4 pt-4 pb-2 text-sm text-[#1a1a1a]/68">{formatStockUpdatedAt(item.updatedAt)}</td>
         <td className="px-4 pt-4 pb-2">
-          <StockStatusBadge qty={kit.assemblableQty} />
+          <StockStatusBadge level={level} />
         </td>
+        <td className="px-4 pt-4 pb-2 text-sm text-[#1a1a1a]/68">{formatStockUpdatedAt(item.updatedAt)}</td>
         <td className="px-4 pt-4 pb-2">
           <div className="flex flex-col items-end" data-testid="stock-kit-sellable">
             <span className="text-lg leading-none font-black text-[#1a1a1a]">{kit.assemblableQty}</span>

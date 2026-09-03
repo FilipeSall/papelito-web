@@ -210,33 +210,27 @@ export function ProductBenefitsSection({
 
   return (
     <section className="space-y-6">
-      <header className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-        <div className="h-2 bg-brand-yellow" />
-        <div className="flex flex-col gap-5 p-6 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6f6758]">
-              Produtos / Configuração de vitrine
-            </p>
-            <h2 className="mt-2 text-3xl font-black uppercase tracking-[-0.03em] text-[#1a1a1a]">
-              Benefícios do produto
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[#5e574c]">
-              Configure a faixa exibida na página de produto. A prioridade é
-              produto, coleção, categoria e, por último, a configuração global.
-            </p>
-          </div>
-          <button
-            className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isBusy}
-            onClick={() => openModal("new")}
-            type="button"
-          >
-            <span className="flex items-center gap-2">
-              <Plus aria-hidden className="h-4 w-4" />
-              Nova configuração
-            </span>
-          </button>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-3xl">
+          <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
+            Benefícios do produto
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-[#231f20]/70">
+            A faixa exibida na página de produto. A prioridade é produto, coleção, categoria e,
+            por último, a configuração global.
+          </p>
         </div>
+        <button
+          className="cursor-pointer border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isBusy}
+          onClick={() => openModal("new")}
+          type="button"
+        >
+          <span className="flex items-center gap-2">
+            <Plus aria-hidden className="h-4 w-4" />
+            Nova configuração
+          </span>
+        </button>
       </header>
       {snapshot.issues.length > 0 ? (
         <p className="border-2 border-[#c0392b] bg-white px-4 py-3 text-sm font-semibold text-[#c0392b]">

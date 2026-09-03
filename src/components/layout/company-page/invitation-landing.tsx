@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 
 import { acceptInvitation, declineInvitation, previewInvitation } from "@/features/company/client/company-client";
+import { signOutAndClearSession } from "@/features/auth/client/logout";
 import type { InvitationPreview } from "@/features/company/types/company";
 import { roleLabel } from "@/features/company/utils/labels";
 
@@ -15,13 +16,27 @@ type InvitationLandingProps = {
 
 type Phase = "loading" | "invalid" | "ready" | "accepting" | "accepted" | "declined" | "error";
 
+const RETURN_PATH = "/convite";
+
+const PRIMARY_ACTION =
+  "block w-full bg-[#1a1a1a] px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50";
+
+const SECONDARY_ACTION =
+  "block w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50";
+
+const HINT = "text-[12px] font-bold uppercase tracking-[0.14em] text-[#231f20]";
+
 /**
  * Landing de convite (/convite/[token]).
  *
  * 1. Valida o token no backend ANTES de exibir qualquer dado; o backend move o token para um
  *    cookie HttpOnly e devolve só o preview neutro (nome da empresa + papel). O token some da URL.
- * 2. Sem sessão: oferece login OU cadastro; o cookie sobrevive ao fluxo de autenticação.
- * 3. Com sessão: permite aceitar; o backend confere e-mail confirmado, expiração e uso único.
+ * 2. Sem sessão: roteia por `accountExists`/`authMethods` do preview — CTA único de cadastro para
+ *    quem não tem conta, de login para quem tem. A bifurcação cega antiga levava o convidado novo
+ *    para a tela de login, que não cria conta, e o fluxo morria ali.
+ * 3. Com sessão: só oferece aceitar quando o e-mail da sessão é o do convite; caso contrário
+ *    manda trocar de conta, em vez de deixar o backend recusar com 403.
+ * 4. O backend continua sendo a autoridade: e-mail confirmado, expiração e uso único.
  */
 export function InvitationLanding({ token }: InvitationLandingProps) {
   const router = useRouter();
@@ -79,7 +94,21 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
     setPhase("declined");
   }
 
+  async function handleSwitchAccount() {
+    await signOutAndClearSession({
+      callbackUrl: `/entrar?callbackUrl=${encodeURIComponent(RETURN_PATH)}`,
+    });
+  }
+
   const isAuthed = status === "authenticated" && Boolean(session?.user);
+  const sessionEmail = session?.user?.email?.toLowerCase() ?? "";
+  const invitedEmail = preview?.invitedEmail?.toLowerCase() ?? "";
+  const emailMatches = sessionEmail !== "" && sessionEmail === invitedEmail;
+  const busy = phase === "accepting";
+  // authMethods vazio para conta existente é legado sem a meta: senha continua valendo.
+  const allowsPassword =
+    !preview?.authMethods?.length || preview.authMethods.includes("password");
+  const allowsGoogle = Boolean(preview?.authMethods?.includes("google"));
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-12">
@@ -121,45 +150,69 @@ export function InvitationLanding({ token }: InvitationLandingProps) {
 
             {message ? <p className="text-sm font-bold text-[#c0392b]">{message}</p> : null}
 
-            {isAuthed ? (
+            {isAuthed && emailMatches ? (
               <div className="space-y-3">
-                <button
-                  type="button"
-                  disabled={phase === "accepting"}
-                  onClick={handleAccept}
-                  className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow disabled:opacity-50"
-                >
-                  {phase === "accepting" ? "Aceitando..." : "Aceitar convite"}
+                <button type="button" disabled={busy} onClick={handleAccept} className={PRIMARY_ACTION}>
+                  {busy ? "Aceitando..." : "Aceitar convite"}
                 </button>
-                <button
-                  type="button"
-                  disabled={phase === "accepting"}
-                  onClick={handleDecline}
-                  className="w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] disabled:opacity-50"
-                >
+                <button type="button" disabled={busy} onClick={handleDecline} className={SECONDARY_ACTION}>
                   Recusar convite
                 </button>
               </div>
-            ) : (
+            ) : null}
+
+            {isAuthed && !emailMatches ? (
               <div className="space-y-3">
-                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#231f20]">
-                  Entre ou crie sua conta para aceitar
+                <p className="text-sm font-medium text-[#231f20]">
+                  Você está conectado(a) como{" "}
+                  <strong className="font-black">{sessionEmail}</strong>, mas este convite é para{" "}
+                  <strong className="font-black">{preview.invitedEmail}</strong>.
                 </p>
+                <button type="button" onClick={handleSwitchAccount} className={PRIMARY_ACTION}>
+                  Entrar com outra conta
+                </button>
+              </div>
+            ) : null}
+
+            {!isAuthed && preview.accountExists ? (
+              <div className="space-y-3">
+                <p className={HINT}>Entre na sua conta para aceitar</p>
+                {allowsPassword ? (
+                  <button
+                    type="button"
+                    onClick={() => signIn(undefined, { callbackUrl: RETURN_PATH })}
+                    className={PRIMARY_ACTION}
+                  >
+                    Entrar para aceitar
+                  </button>
+                ) : null}
+                {allowsGoogle ? (
+                  <button
+                    type="button"
+                    onClick={() => signIn("google", { callbackUrl: RETURN_PATH })}
+                    className={allowsPassword ? SECONDARY_ACTION : PRIMARY_ACTION}
+                  >
+                    Entrar com Google
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isAuthed && !preview.accountExists ? (
+              <div className="space-y-3">
+                <p className={HINT}>Crie sua conta e defina sua senha para aceitar</p>
+                <Link href="/convite/cadastro" className={PRIMARY_ACTION}>
+                  Criar conta e aceitar
+                </Link>
                 <button
                   type="button"
-                  onClick={() => signIn(undefined, { callbackUrl: "/convite" })}
-                  className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
+                  onClick={() => signIn("google", { callbackUrl: RETURN_PATH })}
+                  className={SECONDARY_ACTION}
                 >
-                  Entrar
+                  Criar conta com Google
                 </button>
-                <Link
-                  href="/convite/cadastro"
-                  className="block w-full border-2 border-[#1a1a1a] bg-white px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] focus:outline-2 focus:outline-offset-2 focus:outline-brand-yellow"
-                >
-                  Criar conta
-                </Link>
               </div>
-            )}
+            ) : null}
           </div>
         ) : null}
 

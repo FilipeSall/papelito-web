@@ -5,6 +5,11 @@ import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout
 import type { SelectOption } from "@/types/admin-products-manager";
 
 type AdminSelectFieldProps = {
+  /**
+   * Ancora o menu em `position: fixed`. Necessário dentro de contêiner com `overflow` — numa
+   * gaveta lateral o menu ficava cortado no fim da área rolável e por baixo do rodapé.
+   */
+  anchoredMenu?: boolean;
   helpText?: string;
   label: string;
   onChange: (value: string) => void;
@@ -15,6 +20,7 @@ type AdminSelectFieldProps = {
 };
 
 export function AdminSelectField({
+  anchoredMenu = false,
   helpText,
   label,
   onChange,
@@ -26,6 +32,7 @@ export function AdminSelectField({
   if (variant === "vendor-create") {
     return (
       <CheckoutCustomSelect
+        anchoredMenu={anchoredMenu}
         iconClassName="text-[#1a1a1a]"
         label={
           <span className="flex h-4 items-center gap-1.5">

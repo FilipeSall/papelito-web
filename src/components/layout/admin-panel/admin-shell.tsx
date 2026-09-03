@@ -134,7 +134,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <main className="flex-1 px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8">{children}</main>
+          {/* pb maior que pt de propósito: os painéis do admin têm shadow dura de 8px, que
+              pinta fora da caixa e comeria o respiro do fim do scroll. */}
+          <main className="flex-1 px-4 pt-5 pb-10 md:px-6 md:pt-6 md:pb-12 lg:px-8 lg:pt-8 lg:pb-16">
+            {children}
+          </main>
         </div>
       </div>
     </div>

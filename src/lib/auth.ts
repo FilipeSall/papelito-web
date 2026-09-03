@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -16,6 +17,8 @@ import {
 import { getWpGraphqlEndpoint } from "@/lib/server/env";
 import { createGoogleRegistrationTicket } from "@/lib/server/google-registration-ticket";
 import { wpRest } from "@/lib/server/wp-rest";
+
+const INVITE_COOKIE = "papelito_invite_token";
 
 const WP_LOGIN_MUTATION = `
   mutation Login($u: String!, $p: String!) {
@@ -129,9 +132,27 @@ type WpGoogleExchangeResult =
   | { ok: true; data: WpAuthResponse }
   | { ok: false; code: string };
 
-async function wpExchangeGoogleToken(idToken: string): Promise<WpGoogleExchangeResult> {
+/**
+ * Lê o token de convite do cookie HttpOnly gravado pelo preview da landing.
+ *
+ * Só existe quando o login parte de um convite; fora do escopo de requisição volta vazio.
+ */
+async function readInvitationToken(): Promise<string> {
+  try {
+    return (await cookies()).get(INVITE_COOKIE)?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
+async function wpExchangeGoogleToken(
+  idToken: string,
+  invitationToken: string,
+): Promise<WpGoogleExchangeResult> {
   const result = await wpRest<WpAuthResponse>("/papelito/v1/auth/google", {
-    json: { id_token: idToken },
+    json: invitationToken
+      ? { id_token: idToken, invitation_token: invitationToken }
+      : { id_token: idToken },
     timeoutMs: 10_000,
   });
 
@@ -227,7 +248,7 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
 
-      const wpAuth = await wpExchangeGoogleToken(idToken);
+      const wpAuth = await wpExchangeGoogleToken(idToken, await readInvitationToken());
 
       if (!wpAuth.ok) {
         if (wpAuth.code === "papelito_pre_account_required") {

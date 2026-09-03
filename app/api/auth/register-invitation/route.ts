@@ -25,11 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Convite não encontrado." }, { status: 400 });
   }
 
-  const result = await wpRest<{ ok: true; requiresEmailVerification: boolean; email: string }>(
-    "/papelito/v1/auth/register-invitation",
-    { json: { ...body, token } },
-  );
+  const result = await wpRest<{
+    ok: true;
+    accountExists: boolean;
+    requiresEmailVerification: boolean;
+    requiresLogin?: boolean;
+    email: string;
+  }>("/papelito/v1/auth/register-invitation", { json: { ...body, token } });
+
+  // 201 só quando a conta nasceu agora; retomada de conta existente volta 200 do WordPress.
   return result.ok
-    ? NextResponse.json(result.data, { status: 201 })
+    ? NextResponse.json(result.data, { status: result.status || 200 })
     : NextResponse.json(result.error, { status: result.status || 502 });
 }

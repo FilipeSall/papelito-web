@@ -42,6 +42,9 @@ export function useVendorCreateForm({ initialOpen = false, sourceUser = null }: 
     setPrefillSource(sourceUser ?? null);
     setIsOpen(true);
     router.replace("/admin/vendors", { scroll: false });
+    // `resetForm` é recriado a cada render e só é chamado aqui na abertura automática, guardada
+    // por `autoOpenedRef`. Declará-lo como dependência reabriria o formulário a cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialOpen, router, sourceUser]);
 
   function resetForm(source: VendorCreateSourceUser | null = null) {

@@ -1,4 +1,17 @@
 import Link from "next/link";
+import {
+  AtSign,
+  Building2,
+  CalendarDays,
+  FileDigit,
+  Mail,
+  MapPin,
+  Phone,
+  Signpost,
+  Store,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
 import type {
   AdminOwnerApplications,
@@ -122,22 +135,49 @@ function buildDetailHref(
     : `${ACCOUNTS_PATH}/${userId}`;
 }
 
-function detailRows(detail: AdminUserDetail) {
-  return [
-    ["Nome", detail.name || detail.displayName || "—"],
-    ["Email", detail.email || "—"],
-    ["Telefone", detail.phoneNumber || "—"],
-    ["Loja", detail.storeName || "—"],
-    ["CNPJ", detail.cnpj || "—"],
-    ["Instagram", detail.instagram || "—"],
-    ["Cadastro", formatDateTime(detail.registeredAt)],
-    ["Cidade", [detail.city, detail.state].filter(Boolean).join(" / ") || "—"],
-    ["CEP", detail.cep || "—"],
-    [
-      "Endereço",
-      [detail.street, detail.number, detail.complement, detail.neighborhood].filter(Boolean).join(", ") || "—",
-    ],
+type DetailRow = { icon: LucideIcon; label: string; value: string };
+
+function detailRows(detail: AdminUserDetail): DetailRow[] {
+  const primaryCompany = detail.companies[0];
+  const rows: DetailRow[] = [
+    { icon: User, label: "Nome", value: detail.name || detail.displayName || "—" },
+    { icon: Mail, label: "Email", value: detail.email || "—" },
+    { icon: Phone, label: "Telefone", value: detail.phoneNumber || "—" },
+    { icon: FileDigit, label: "CNPJ", value: detail.cnpj ? formatCnpj(detail.cnpj) : "—" },
   ];
+
+  if (primaryCompany) {
+    rows.push({
+      icon: Building2,
+      label: "Empresa",
+      value: primaryCompany.tradeName || primaryCompany.legalName || "—",
+    });
+  }
+
+  if (detail.isVendor || detail.storeName) {
+    rows.push({ icon: Store, label: "Loja", value: detail.storeName || "—" });
+  }
+
+  rows.push(
+    { icon: AtSign, label: "Instagram", value: detail.instagram || "—" },
+    { icon: CalendarDays, label: "Cadastro", value: formatDateTime(detail.registeredAt) },
+    {
+      icon: MapPin,
+      label: "Cidade",
+      value: [detail.city, detail.state].filter(Boolean).join(" / ") || "—",
+    },
+    { icon: Signpost, label: "CEP", value: detail.cep || "—" },
+    {
+      icon: MapPin,
+      label: "Endereço",
+      value:
+        [detail.street, detail.number, detail.complement, detail.neighborhood]
+          .filter(Boolean)
+          .join(", ") || "—",
+    },
+  );
+
+  return rows;
 }
 
 function orderStatusLabel(order: AdminUserRelatedOrder) {
@@ -215,10 +255,12 @@ export function UserDetailPage({
     { key: "overview", label: "Visão geral" },
     { key: "conta", label: "Conta" },
     { key: "orders", label: "Pedidos" },
-    { key: "sales", label: "Vendas" },
+    ...(user.isVendor ? ([{ key: "sales", label: "Vendas" }] as const) : []),
     { key: "company-review", label: "Análise empresarial" },
     { key: "role", label: "Role / ações" },
   ];
+  const currentTab: UserDetailTabKey =
+    activeTab === "sales" && !user.isVendor ? "overview" : activeTab;
   const hasPendingOwnerReview =
     ownerApplications.current?.application.status === "pending_manual_review";
 
@@ -280,17 +322,24 @@ export function UserDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div
+        className={[
+          "grid gap-4 md:grid-cols-2",
+          user.isVendor ? "xl:grid-cols-5" : "xl:grid-cols-4",
+        ].join(" ")}
+      >
         <MetricCard
           detail="Pedidos/compras do usuário como customer"
           label="Pedidos"
           value={String(user.metrics.ordersCount).padStart(2, "0")}
         />
-        <MetricCard
-          detail="Vendas operacionais como vendor"
-          label="Vendas"
-          value={String(user.metrics.salesCount).padStart(2, "0")}
-        />
+        {user.isVendor ? (
+          <MetricCard
+            detail="Vendas operacionais como vendor"
+            label="Vendas"
+            value={String(user.metrics.salesCount).padStart(2, "0")}
+          />
+        ) : null}
         <MetricCard
           detail="Quantidade bruta de favoritos"
           label="Favoritos"
@@ -311,7 +360,7 @@ export function UserDetailPage({
 
       <nav aria-label="Abas do usuário" className="-mx-1 flex flex-wrap items-center gap-1">
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
+          const isActive = currentTab === tab.key;
           return (
             <Link
               key={tab.key}
@@ -334,14 +383,15 @@ export function UserDetailPage({
         })}
       </nav>
 
-      {activeTab === "overview" ? (
+      {currentTab === "overview" ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
           <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
             {sectionTitle("Conta e dados basicos")}
             <dl className="grid gap-3 md:grid-cols-2">
-              {detailRows(user).map(([label, value]) => (
+              {detailRows(user).map(({ icon: Icon, label, value }) => (
                 <div key={label} className="border-2 border-[#1a1a1a] bg-white px-3 py-3">
-                  <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/50">
+                  <dt className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/50">
+                    <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
                     {label}
                   </dt>
                   <dd className="mt-2 text-sm leading-6 text-[#1a1a1a]">{value}</dd>
@@ -404,7 +454,7 @@ export function UserDetailPage({
         </div>
       ) : null}
 
-      {activeTab === "orders" ? (
+      {currentTab === "orders" ? (
         <div className="space-y-5">
           {user.recentPurchases.length > 0 ? (
             <Panel className="overflow-hidden rounded-none border-2 border-[#1a1a1a] shadow-[8px_8px_0px_#1a1a1a]">
@@ -453,7 +503,7 @@ export function UserDetailPage({
         </div>
       ) : null}
 
-      {activeTab === "sales" ? (
+      {currentTab === "sales" ? (
         user.recentSales.length > 0 ? (
           <Panel className="overflow-hidden rounded-none border-2 border-[#1a1a1a] shadow-[8px_8px_0px_#1a1a1a]">
             <div className="border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-5 py-4">
@@ -473,11 +523,11 @@ export function UserDetailPage({
         )
       ) : null}
 
-      {activeTab === "company-review" ? (
+      {currentTab === "company-review" ? (
         <CompanyApplicationReview initialData={ownerApplications} />
       ) : null}
 
-      {activeTab === "conta" ? (
+      {currentTab === "conta" ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
             {sectionTitle("Situacao da conta")}
@@ -534,7 +584,7 @@ export function UserDetailPage({
         </div>
       ) : null}
 
-      {activeTab === "role" ? (
+      {currentTab === "role" ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <Panel className="rounded-none border-2 border-[#1a1a1a] px-5 py-5 shadow-[8px_8px_0px_#1a1a1a]">
             {sectionTitle("Transicoes de role")}

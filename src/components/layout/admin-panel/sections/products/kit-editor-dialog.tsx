@@ -588,6 +588,7 @@ function KitImageSection({
     <KitSection title="Imagem">
       <div className="aspect-square overflow-hidden border-2 border-[#1a1a1a] bg-white">
         {draft.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             alt="Prévia da imagem do Kit"
             className="size-full object-cover"
@@ -704,6 +705,7 @@ function ImageUpload({
       </p>
       <div className="aspect-square overflow-hidden border-2 border-[#1a1a1a] bg-[#faf8f2]">
         {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             alt="Prévia da imagem do brinde"
             className="size-full object-cover"

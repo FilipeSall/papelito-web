@@ -39,15 +39,19 @@ import { normalizeKey } from "@/utils/normalize-key";
 
 const EMPTY_FILTERS: ProductFilters = {
   category: "",
+  incomplete: "",
   search: "",
   status: "",
+  stockStatus: "",
 };
 
 function normalizeFilters(filters: ProductFilters): ProductFilters {
   return {
     category: filters.category.trim(),
+    incomplete: filters.incomplete.trim(),
     search: filters.search.trim(),
     status: filters.status.trim(),
+    stockStatus: filters.stockStatus.trim(),
   };
 }
 
@@ -219,6 +223,7 @@ export function useAdminProductsManager(
   const [tags, setTags] = useState(snapshot.tags);
   const [issues, setIssues] = useState(snapshot.issues);
   const [page, setPage] = useState(snapshot.currentPage);
+  const [perPage, setPerPage] = useState(snapshot.perPage);
   const [totalPages, setTotalPages] = useState(snapshot.totalPages);
   const [totalProducts, setTotalProducts] = useState(snapshot.totalProducts);
   const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
@@ -536,7 +541,11 @@ export function useAdminProductsManager(
     };
   }, [excludedProductIds, initialFocusProductId, products, resetDraft, selectProduct]);
 
-  async function loadProducts(nextPage = 1, sourceFilters = appliedFilters) {
+  async function loadProducts(
+    nextPage = 1,
+    sourceFilters = appliedFilters,
+    nextPerPage = perPage,
+  ) {
     setIsLoading(true);
     setNotice("");
 
@@ -544,7 +553,7 @@ export function useAdminProductsManager(
       const normalizedFilters = normalizeFilters(sourceFilters);
       const params = new URLSearchParams({
         page: String(nextPage),
-        perPage: String(snapshot.perPage),
+        perPage: String(nextPerPage),
       });
       if (excludedProductIds.size > 0) {
         params.set("exclude", Array.from(excludedProductIds).join(","));
@@ -556,6 +565,10 @@ export function useAdminProductsManager(
         params.set("status", normalizedFilters.status);
       if (normalizedFilters.category)
         params.set("category", normalizedFilters.category);
+      if (normalizedFilters.stockStatus)
+        params.set("stockStatus", normalizedFilters.stockStatus);
+      if (normalizedFilters.incomplete)
+        params.set("incomplete", normalizedFilters.incomplete);
 
       const response = await fetch(
         `${ADMIN_PRODUCTS_API.list}?${params.toString()}`,
@@ -577,6 +590,7 @@ export function useAdminProductsManager(
       setTags(nextSnapshot.tags);
       setIssues(nextSnapshot.issues);
       setPage(nextSnapshot.currentPage);
+      setPerPage(nextSnapshot.perPage);
       setTotalPages(nextSnapshot.totalPages);
       setTotalProducts(nextSnapshot.totalProducts);
       setAppliedFilters(normalizedFilters);
@@ -902,9 +916,29 @@ export function useAdminProductsManager(
     setFilters((currentFilters) => ({ ...currentFilters, [key]: value }));
   }
 
+  function applyFilters(nextFilters: ProductFilters) {
+    setFilters(nextFilters);
+    return loadProducts(1, nextFilters);
+  }
+
+  /**
+   * Troca o tamanho da página. Volta para a primeira porque a página atual pode não existir mais
+   * no novo recorte, e mantém os filtros aplicados intactos.
+   */
+  function changePerPage(nextPerPage: number) {
+    if (nextPerPage === perPage) {
+      return;
+    }
+
+    setPerPage(nextPerPage);
+    return loadProducts(1, appliedFilters, nextPerPage);
+  }
+
   return {
     appliedFilters,
+    applyFilters,
     catalogSummary,
+    changePerPage,
     closeEditor,
     isTaxonomyLoading,
     setTaxonomyCategory,
@@ -927,7 +961,7 @@ export function useAdminProductsManager(
     newTagName,
     notice,
     page,
-    perPage: snapshot.perPage,
+    perPage,
     products,
     removeImage,
     selectedProduct,

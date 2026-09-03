@@ -15,3 +15,4 @@ export { VendorAccountSection } from "./vendor-account-section";
 export { VendorLeadTimeSection } from "./vendor-lead-time-section";
 export { VendorShell } from "./vendor-shell";
 export { VendorStockManager } from "./vendor-stock-manager";
+export { buildWhatsappHref, buildWhatsappMessage, describeMissingFields } from "./stock-status";

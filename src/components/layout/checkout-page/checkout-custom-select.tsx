@@ -210,9 +210,13 @@ const CheckoutSelectTrigger = ({
     type="button"
     onClick={onToggle}
   >
-    <span className={value ? selectedValueClassName : placeholderClassName}>{triggerLabel}</span>
+    <span
+      className={`min-w-0 truncate text-left ${value ? selectedValueClassName : placeholderClassName}`}
+    >
+      {triggerLabel}
+    </span>
     <ChevronRightIcon
-      className={`h-4 w-4 transition-transform ${iconClassName} ${isOpen ? "rotate-90" : "-rotate-90"}`}
+      className={`h-4 w-4 shrink-0 transition-transform ${iconClassName} ${isOpen ? "rotate-90" : "-rotate-90"}`}
     />
   </button>
 );

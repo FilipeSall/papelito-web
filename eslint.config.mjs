@@ -8,6 +8,16 @@ const eslintConfig = defineConfig([
   {
     files: ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     rules: {
+      // O prefixo `_` já é usado no código para marcar o que se descarta de propósito,
+      // como a chave de cliente removida por desestruturação antes de enviar ao backend.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
       "no-restricted-imports": [
         "error",
         {

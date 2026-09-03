@@ -121,8 +121,23 @@ export const OWNERSHIP_STATUS_LABELS: Record<string, string> = {
   verified: "Titularidade verificada",
 };
 
+export const REGISTRY_STATUS_LABELS: Record<string, string> = {
+  active: "Ativa na Receita",
+  conflict: "Divergência no provedor",
+  inactive: "Baixada na Receita",
+  invalid: "CNPJ inválido",
+  not_found: "Não encontrada na Receita",
+  pending: "Consulta pendente",
+  provider_unsupported: "Provedor não suporta o CNPJ",
+  unavailable: "Provedor indisponível",
+};
+
 export function companyStatusLabel(status: string) {
   return COMPANY_STATUS_LABELS[status] ?? status ?? "—";
+}
+
+export function registryStatusLabel(status: string) {
+  return REGISTRY_STATUS_LABELS[status] ?? status ?? "—";
 }
 
 export function ownershipStatusLabel(status: string) {

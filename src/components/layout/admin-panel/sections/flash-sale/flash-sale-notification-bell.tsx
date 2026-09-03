@@ -96,7 +96,7 @@ export function FlashSaleNotificationBell({ notifications }: Readonly<FlashSaleN
 
       {open ? (
         <div
-          className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-2rem))] border-2 border-[#1a1a1a] bg-[#faf8f2] p-3 shadow-[8px_8px_0px_#1a1a1a]"
+          className="absolute right-0 top-full z-[100] mt-2 w-[min(360px,calc(100vw-2rem))] border-2 border-[#1a1a1a] bg-[#faf8f2] p-3 shadow-[8px_8px_0px_#1a1a1a]"
           id="flash-sale-notifications"
         >
           <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a1a]">

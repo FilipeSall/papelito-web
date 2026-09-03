@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { StockRow } from "./stock-row";
 import { formatStockUpdatedAt } from "./stock-cells";
@@ -9,8 +9,10 @@ const baseItem: VendorStockItem = {
   categories: [{ id: 1, name: "Sedas", slug: "sedas" }],
   imageUrl: "",
   isPubliclyViewable: true,
+  isUnconfigured: false,
   isZeroed: false,
   kit: null,
+  missingFields: [],
   productId: 10,
   publicProductId: 8,
   productName: "Seda King Size",
@@ -23,16 +25,23 @@ const baseItem: VendorStockItem = {
   updatedAt: "ontem",
 };
 
-function renderRow(item: VendorStockItem) {
+function renderRow(item: VendorStockItem, lowStockThreshold = 5) {
   return render(
     <table>
       <tbody>
         <StockRow
+          contactPhone="+55 61 99973-3064"
           focused={false}
           item={item}
+          lowStockThreshold={lowStockThreshold}
           onQtyChange={() => {}}
+          onRequestData={vi.fn()}
+          onToggle={vi.fn()}
           qty={String(item.qty)}
+          requested={false}
+          saved={false}
           saving={false}
+          selected={false}
         />
       </tbody>
     </table>,
@@ -70,8 +79,28 @@ describe("StockRow chips", () => {
     expect(screen.getByText("Seda King Size")).toBeInTheDocument();
   });
 
-  it("warns the vendor to configure the weight when not publicly viewable", () => {
-    renderRow({ ...baseItem, isPubliclyViewable: false });
-    expect(screen.getByTestId("stock-row-unpublishable")).toHaveTextContent(/peso/i);
+  it("still names the weight when the product is not publicly viewable", () => {
+    renderRow({ ...baseItem, isPubliclyViewable: false, missingFields: ["weight"] });
+    expect(screen.getByText(/faltando peso/i)).toBeInTheDocument();
+  });
+});
+
+describe("StockRow situação", () => {
+  it("separates never configured from run out of stock", () => {
+    renderRow({ ...baseItem, isUnconfigured: true, isZeroed: true, qty: 0 });
+    expect(screen.getByText("Não configurado")).toBeInTheDocument();
+
+    renderRow({ ...baseItem, isZeroed: true, productId: 11, qty: 0 });
+    expect(screen.getByText("Sem estoque")).toBeInTheDocument();
+  });
+
+  it("marks a positive balance at or under the threshold as low stock", () => {
+    renderRow({ ...baseItem, qty: 5 }, 5);
+    expect(screen.getByText("Estoque baixo")).toBeInTheDocument();
+  });
+
+  it("marks a balance above the threshold as in stock", () => {
+    renderRow({ ...baseItem, qty: 6 }, 5);
+    expect(screen.getByText("Em estoque")).toBeInTheDocument();
   });
 });

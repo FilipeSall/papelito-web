@@ -9,23 +9,9 @@ import {
   MailWarning,
   Store,
   User,
-  type LucideIcon,
 } from "lucide-react";
 
-export type StatusTone = "neutral" | "positive" | "pending" | "critical";
-
-type StatusShape = {
-  icon: LucideIcon;
-  label: string;
-  tone: StatusTone;
-};
-
-const TONE_CLASS: Record<StatusTone, string> = {
-  critical: "border-[#c0392b] bg-[#c0392b] text-white",
-  neutral: "border-[#1a1a1a] bg-white text-[#1a1a1a]",
-  pending: "border-[#1a1a1a] bg-[#faf8f2] text-[#1a1a1a]",
-  positive: "border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a]",
-};
+import { StatusChip, type StatusShape, type StatusTone } from "../../primitives";
 
 const ACCOUNT_STATUS: Record<string, StatusShape> = {
   active: { icon: CircleCheck, label: "Ativa", tone: "positive" },
@@ -79,39 +65,7 @@ function resolve(map: Record<string, StatusShape>, status: string, fallbackLabel
   );
 }
 
-/**
- * Status sempre como ícone **mais** texto.
- *
- * A cor é reforço, nunca o portador do significado: o rótulo continua legível sem cor, em preto e
- * branco e para quem não distingue as cores da marca.
- */
-export function StatusChip({
-  className,
-  compact = false,
-  icon: Icon,
-  label,
-  tone,
-}: {
-  className?: string;
-  compact?: boolean;
-  icon: LucideIcon;
-  label: string;
-  tone: StatusTone;
-}) {
-  return (
-    <span
-      className={[
-        "inline-flex min-h-7 items-center gap-1.5 border-2 px-2.5 py-1 font-black uppercase tracking-[0.14em]",
-        compact ? "text-[9px]" : "text-[10px]",
-        TONE_CLASS[tone],
-        className ?? "",
-      ].join(" ")}
-    >
-      <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.4} />
-      {label}
-    </span>
-  );
-}
+export { StatusChip, type StatusTone };
 
 export function AccountStatusChip({
   className,
@@ -128,6 +82,16 @@ export function AccountStatusChip({
 
 export function CompanyStatusChip({ status }: { status: string }) {
   return <StatusChip {...resolve(COMPANY_STATUS, status)} />;
+}
+
+/**
+ * Tom do status da empresa, para quem precisa da cor sem renderizar o chip.
+ *
+ * Mantém a paleta de status em um lugar só — cor nova entra em COMPANY_STATUS, não numa segunda
+ * tabela paralela.
+ */
+export function companyStatusTone(status: string): StatusTone {
+  return resolve(COMPANY_STATUS, status).tone;
 }
 
 export function OwnershipStatusChip({ status }: { status: string }) {

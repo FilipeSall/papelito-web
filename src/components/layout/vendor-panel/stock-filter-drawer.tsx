@@ -12,32 +12,41 @@ import type {
   VendorStockTaxonomies,
   VendorStockType,
 } from "@/features/vendor-stock/types/vendor-stock";
+import {
+  VENDOR_STOCK_DEFAULT_PER_PAGE,
+  VENDOR_STOCK_SORTS,
+  VENDOR_STOCK_TYPES,
+} from "@/features/vendor-stock/types/vendor-stock";
 
 import { buildStockHref } from "./stock-href";
+import { STOCK_FILTER_LABELS, STOCK_SORT_LABELS, STOCK_TYPE_LABELS } from "./stock-labels";
 
+/**
+ * Os recortes na ordem em que o vendor procura por eles: primeiro o que exige ação — acabando,
+ * acabado, nunca lançado, cadastro pela metade — e só depois o que já está resolvido.
+ */
 const statusOptions: Array<[VendorStockFilter, string]> = [
-  ["all", "Todos"],
-  ["with_stock", "Com estoque"],
-  ["zeroed_only", "Zerados"],
+  ["all", STOCK_FILTER_LABELS.all],
+  ["low_stock", STOCK_FILTER_LABELS.low_stock],
+  ["zeroed_only", STOCK_FILTER_LABELS.zeroed_only],
+  ["unconfigured", STOCK_FILTER_LABELS.unconfigured],
+  ["incomplete", STOCK_FILTER_LABELS.incomplete],
+  ["with_stock", STOCK_FILTER_LABELS.with_stock],
 ];
 
-const typeOptions: Array<{ label: string; value: VendorStockType }> = [
-  { label: "Produtos", value: "products" },
-  { label: "Kits", value: "kits" },
-];
+const typeOptions: Array<{ label: string; value: VendorStockType }> = VENDOR_STOCK_TYPES.map(
+  (value) => ({ label: STOCK_TYPE_LABELS[value], value }),
+);
 
-const sortOptions: Array<{ label: string; value: VendorStockSort }> = [
-  { label: "Nome (A-Z)", value: "name_asc" },
-  { label: "Nome (Z-A)", value: "name_desc" },
-  { label: "Maior estoque", value: "qty_desc" },
-  { label: "Menor estoque", value: "qty_asc" },
-  { label: "Ajuste mais recente", value: "updated_desc" },
-];
+const sortOptions: Array<{ label: string; value: VendorStockSort }> = VENDOR_STOCK_SORTS.map(
+  (value) => ({ label: STOCK_SORT_LABELS[value], value }),
+);
 
 const DEFAULTS: VendorStockFilters = {
   category: null,
   collection: null,
   filter: "all",
+  perPage: VENDOR_STOCK_DEFAULT_PER_PAGE,
   search: "",
   sort: "name_asc",
   tags: [],
@@ -103,7 +112,9 @@ export function StockFilterDrawer({
 
   function clear() {
     onClose();
-    router.push(buildStockHref({ ...DEFAULTS, search: filters.search }));
+    router.push(
+      buildStockHref({ ...DEFAULTS, perPage: filters.perPage, search: filters.search }),
+    );
   }
 
   return (
@@ -178,7 +189,13 @@ export function StockFilterDrawer({
               Disponibilidade em estoque
             </p>
             <div className="flex flex-wrap gap-2">
-              {statusOptions.map(([value, label]) => (
+              {statusOptions
+                .filter(
+                  ([value]) =>
+                    "kits" !== draft.type ||
+                    ("unconfigured" !== value && "incomplete" !== value),
+                )
+                .map(([value, label]) => (
                 <button
                   className={`inline-flex min-h-9 cursor-pointer items-center border-2 border-[#1a1a1a] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 ${
                     draft.filter === value

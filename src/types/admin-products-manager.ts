@@ -28,8 +28,11 @@ export type ProductDraft = {
 
 export type ProductFilters = {
   category: string;
+  /** "1" restringe aos produtos sem algum dado essencial para a vitrine. */
+  incomplete: string;
   search: string;
   status: string;
+  stockStatus: string;
 };
 
 export type SelectOption = {

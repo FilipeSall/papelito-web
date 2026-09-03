@@ -1,16 +1,18 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const signInMock = vi.fn();
 const clearPreviousSessionBeforeSignInMock = vi.fn();
 const routerPushMock = vi.fn();
 const routerRefreshMock = vi.fn();
 
+let searchParams = new URLSearchParams();
+
 vi.mock("next-auth/react", () => ({ signIn: (...args: unknown[]) => signInMock(...args) }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPushMock, refresh: routerRefreshMock }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => searchParams,
 }));
 vi.mock("@/features/auth/client/logout", () => ({
   clearPreviousSessionBeforeSignIn: () => clearPreviousSessionBeforeSignInMock(),
@@ -19,6 +21,10 @@ vi.mock("@/features/auth/client/logout", () => ({
 import { AuthLoginForm } from "./auth-login-form";
 
 describe("AuthLoginForm", () => {
+  beforeEach(() => {
+    searchParams = new URLSearchParams();
+  });
+
   it("leaves the SPA on success so /pos-login answers with an HTTP redirect", async () => {
     const user = userEvent.setup();
     const assignMock = vi.fn();
@@ -87,5 +93,23 @@ describe("AuthLoginForm", () => {
         screen.getByText("Não foi possível concluir seu login agora. Tente novamente."),
       ).toBeInTheDocument();
     });
+  });
+
+  it("gives an invited visitor a way to create an account, since this screen cannot", () => {
+    searchParams = new URLSearchParams({ callbackUrl: "/convite" });
+
+    render(<AuthLoginForm />);
+
+    expect(
+      screen.getByRole("link", { name: "Criar conta para aceitar o convite" }),
+    ).toHaveAttribute("href", "/convite/cadastro");
+  });
+
+  it("does not advertise the invitation signup outside the invitation flow", () => {
+    render(<AuthLoginForm />);
+
+    expect(
+      screen.queryByRole("link", { name: "Criar conta para aceitar o convite" }),
+    ).not.toBeInTheDocument();
   });
 });

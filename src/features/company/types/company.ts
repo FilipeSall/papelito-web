@@ -144,11 +144,17 @@ export type CompanyAccessRequest = {
   attempts: number;
 };
 
+/** Meios de autenticação que a conta convidada realmente consegue usar hoje. */
+export type InvitationAuthMethod = "password" | "google";
+
 export type InvitationPreview = {
   invitationId: number;
   companyName: string;
   invitedRole: CompanyRole;
   invitedEmail: string;
+  /** Permite rotear o convidado sem bifurcação cega entre "criar conta" e "entrar". */
+  accountExists: boolean;
+  authMethods: InvitationAuthMethod[];
 };
 
 /** Papéis que owner/admin podem atribuir (owner só via transferência). */

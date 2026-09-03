@@ -11,6 +11,7 @@ const filters: VendorStockFilters = {
   category: null,
   collection: null,
   filter: "all",
+  perPage: 20,
   search: "",
   sort: "name_asc",
   tags: [],
@@ -69,7 +70,7 @@ describe("StockFilterDrawer", () => {
     selectField("Ordenar por").choose(/maior estoque/i);
     selectField("Categoria").choose(/sedas/i);
     selectField("Coleção").choose(/premium/i);
-    fireEvent.click(screen.getByRole("button", { name: /^com estoque$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^em estoque$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith(
@@ -92,7 +93,7 @@ describe("StockFilterDrawer", () => {
     selectField("Categoria").choose(/sedas/i);
     selectField("Coleção").choose(/premium/i);
     selectField("Tipo").choose(/^kits$/i);
-    fireEvent.click(screen.getByRole("button", { name: /^com estoque$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^em estoque$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith(

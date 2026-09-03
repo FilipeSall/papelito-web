@@ -34,8 +34,10 @@ const item: VendorStockItem = {
   categories: [],
   imageUrl: "",
   isPubliclyViewable: false,
+  isUnconfigured: false,
   isZeroed: false,
   kit,
+  missingFields: [],
   productId: 30,
   publicProductId: 30,
   productName: "Kit Escolar Completo",
@@ -50,10 +52,11 @@ function renderKit(override: Partial<VendorStockKit> = {}, onQtyChange = () => {
     <table>
       <tbody>
         <KitStockRow
-          columnCount={4}
+          columnCount={5}
           focused={false}
           item={item}
           kit={{ ...kit, ...override }}
+          lowStockThreshold={5}
           onQtyChange={onQtyChange}
           quantities={{}}
           savingIds={new Set()}
@@ -86,10 +89,11 @@ describe("KitStockRow", () => {
       <table>
         <tbody>
           <KitStockRow
-            columnCount={4}
+            columnCount={5}
             focused={false}
             item={item}
             kit={{ ...kit, assemblableQty: 1 }}
+            lowStockThreshold={5}
             onQtyChange={() => {}}
             quantities={{}}
             savingIds={new Set()}
@@ -104,7 +108,7 @@ describe("KitStockRow", () => {
   it("reads the status badge from what the kit can assemble, not from its own stock row", () => {
     renderKit({ assemblableQty: 0 });
 
-    expect(screen.getByText("Zerado")).toBeInTheDocument();
+    expect(screen.getByText("Sem estoque")).toBeInTheDocument();
   });
 
   it("renders the kit components subordinated to the kit, with their quantity in the kit", () => {

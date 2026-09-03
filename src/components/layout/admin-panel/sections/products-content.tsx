@@ -11,18 +11,34 @@ import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sal
 import { buildRichTextContext } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import type { AdminSalesPageSearchParams } from "@/lib/server/admin-sales-filters";
+import { firstParam } from "@/lib/search-params";
+
+import { SectionHeading } from "../primitives";
 
 import { ProductsManager } from "./products/products-manager";
 import { KitsManager } from "./products/kits-manager";
+import { UpcomingCardLayout } from "./products/assets/upcoming-card-layout";
 import { ProductBenefitsSection } from "./assets/product-benefits/product-benefits-section";
-import {
-  ProductsTabs,
-  type ProductsTab,
-} from "./products/components/products-tabs";
+import { ProductsSegments } from "./products/components/products-segments";
+import { parseProductsTab, type ProductsTab } from "./products/products-config";
 
-function firstString(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
+const HEADINGS: Record<ProductsTab, { description: string; title: string }> = {
+  assets: {
+    description:
+      "Os elementos visuais que acompanham o produto na vitrine: o bloco de benefícios exibido abaixo dele e, em breve, o layout do próprio card. Banners, logos e imagens do site continuam em Assets, no menu principal.",
+    title: "Assets do produto",
+  },
+  kits: {
+    description:
+      "Conjuntos vendidos como um item só, com preço próprio e composição congelada no pedido. Um kit fica disponível quando um mesmo vendor tem saldo de todos os componentes.",
+    title: "Kits",
+  },
+  products: {
+    description:
+      "O catálogo que a Papelito cadastra e precifica. A categoria da taxonomia é o que coloca o produto na vitrine: publicado sem categoria, ele não aparece para ninguém.",
+    title: "Produtos",
+  },
+};
 
 export async function ProductsContent({
   searchParams,
@@ -30,13 +46,11 @@ export async function ProductsContent({
   searchParams?: AdminSalesPageSearchParams;
 }) {
   const session = await getServerSession(authOptions);
-  const tab = firstString(searchParams?.tab);
-  const activeTab: ProductsTab =
-    tab === "kits" || tab === "benefits" ? tab : "products";
+  const activeTab = parseProductsTab(firstParam(searchParams?.tab));
+  const heading = HEADINGS[activeTab];
+
   const kits =
-    activeTab === "benefits"
-      ? []
-      : await getAdminKitsSnapshot(session?.accessToken);
+    activeTab === "assets" ? [] : await getAdminKitsSnapshot(session?.accessToken);
   const [
     snapshot,
     taxonomy,
@@ -53,20 +67,20 @@ export async function ProductsContent({
           perPage: "20",
         })
       : null,
-    activeTab === "products" || activeTab === "benefits"
+    activeTab === "products" || activeTab === "assets"
       ? getAdminTaxonomySnapshot(session?.accessToken)
       : null,
     activeTab === "kits"
       ? getAdminFlashSaleProducts(session?.accessToken, { perPage: "48" })
       : null,
-    activeTab === "benefits"
+    activeTab === "assets"
       ? getAdminBenefitGroupsSnapshot(session?.accessToken)
       : null,
-    activeTab === "benefits"
+    activeTab === "assets"
       ? getAdminFreeShippingThreshold(session?.accessToken)
       : null,
-    activeTab === "benefits" ? getPaymentConfig() : null,
-    activeTab === "benefits" ? getHomeFlashSale() : null,
+    activeTab === "assets" ? getPaymentConfig() : null,
+    activeTab === "assets" ? getHomeFlashSale() : null,
   ]);
   const richTextContext = buildRichTextContext({
     freeShippingMinimumCents:
@@ -74,21 +88,24 @@ export async function ProductsContent({
     flashSaleCampaign,
     paymentConfig,
   });
-  const focusParam = firstString(searchParams?.focus);
-  const issueParam = firstString(searchParams?.issue);
+  const focusParam = firstParam(searchParams?.focus);
+  const issueParam = firstParam(searchParams?.issue);
   const initialFocusProductId = Number.parseInt(focusParam ?? "", 10);
   const initialIssue =
     issueParam === "missing-weight" || issueParam === "product-data-incomplete"
       ? issueParam
       : null;
-  const focusKitParam = firstString(searchParams?.focus);
+  const focusKitParam = firstParam(searchParams?.focus);
   const initialFocusKitId = Number.parseInt(focusKitParam ?? "", 10);
   const initialKitIssue =
     issueParam === "shipping-dimensions" ? issueParam : null;
 
   return (
     <div className="space-y-5">
-      <ProductsTabs activeTab={activeTab} />
+      <SectionHeading description={heading.description} title={heading.title} />
+
+      <ProductsSegments activeTab={activeTab} />
+
       {activeTab === "kits" ? (
         <KitsManager
           initialFocusKitId={
@@ -100,12 +117,15 @@ export async function ProductsContent({
           initialKits={kits}
           initialProducts={candidates?.items ?? []}
         />
-      ) : activeTab === "benefits" && benefitsSnapshot && taxonomy ? (
-        <ProductBenefitsSection
-          categories={taxonomy.categories}
-          richTextContext={richTextContext}
-          snapshot={benefitsSnapshot}
-        />
+      ) : activeTab === "assets" && benefitsSnapshot && taxonomy ? (
+        <div className="space-y-5">
+          <ProductBenefitsSection
+            categories={taxonomy.categories}
+            richTextContext={richTextContext}
+            snapshot={benefitsSnapshot}
+          />
+          <UpcomingCardLayout />
+        </div>
       ) : snapshot && taxonomy ? (
         <ProductsManager
           initialFocusProductId={

@@ -43,6 +43,9 @@ function options<T extends string>(values: readonly T[], labels: Record<T, strin
   return values.map((value) => ({ label: labels[value], value })) as readonly SelectOption[];
 }
 
+/** Base de 14rem: abaixo disso o `flex-wrap` quebra a linha em vez de espremer o select. */
+const FILTER_FIELD = "min-w-0 flex-[1_1_14rem]";
+
 /**
  * Campo de busca desenhado para casar exatamente com `AdminSelectField`.
  *
@@ -123,68 +126,71 @@ export function AccountsFilterBar({
   }
 
   return (
-    <form className="relative z-70 space-y-3" onSubmit={submit}>
-      <div
-        className={[
-          "grid items-end gap-3",
-          showRole
-            ? "lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto]"
-            : "lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_auto]",
-        ].join(" ")}
-      >
-        <SearchField
-          onChange={(search) => setDraft((current) => ({ ...current, search }))}
-          value={draft.search}
-        />
-
-        {showRole ? (
-          <AdminSelectField
-            label="Perfil"
-            onChange={(value) =>
-              setDraft((current) => ({ ...current, role: value as AdminUsersFilters["role"] }))
-            }
-            options={options(ADMIN_USER_ROLES, ROLE_LABELS)}
-            placeholder="Todos os perfis"
-            value={draft.role}
-            variant="vendor-create"
+    <form className="@container relative z-70 space-y-3" onSubmit={submit}>
+      <div className="flex flex-col gap-3 @5xl:flex-row @5xl:items-end">
+        <div className="min-w-0 @5xl:flex-[1_1_0%]">
+          <SearchField
+            onChange={(search) => setDraft((current) => ({ ...current, search }))}
+            value={draft.search}
           />
-        ) : null}
+        </div>
 
-        <AdminSelectField
-          label="Situação"
-          onChange={(value) =>
-            setDraft((current) => ({ ...current, status: value as AdminUsersFilters["status"] }))
-          }
-          options={options(ADMIN_USER_STATUSES, STATUS_LABELS)}
-          placeholder="Qualquer situação"
-          value={draft.status}
-          variant="vendor-create"
-        />
+        <div className="flex flex-wrap items-end gap-3 @5xl:flex-[2.5_1_0%] @5xl:flex-nowrap">
+          {showRole ? (
+            <div className={FILTER_FIELD}>
+              <AdminSelectField
+                label="Perfil"
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, role: value as AdminUsersFilters["role"] }))
+                }
+                options={options(ADMIN_USER_ROLES, ROLE_LABELS)}
+                placeholder="Todos os perfis"
+                value={draft.role}
+                variant="vendor-create"
+              />
+            </div>
+          ) : null}
 
-        <AdminSelectField
-          label="Empresa"
-          onChange={(value) =>
-            setDraft((current) => ({
-              ...current,
-              relation: value as AdminUsersFilters["relation"],
-            }))
-          }
-          options={options(ADMIN_USER_RELATIONS, RELATION_LABELS)}
-          placeholder="Com ou sem empresa"
-          value={draft.relation}
-          variant="vendor-create"
-        />
+          <div className={FILTER_FIELD}>
+            <AdminSelectField
+              label="Situação"
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, status: value as AdminUsersFilters["status"] }))
+              }
+              options={options(ADMIN_USER_STATUSES, STATUS_LABELS)}
+              placeholder="Qualquer situação"
+              value={draft.status}
+              variant="vendor-create"
+            />
+          </div>
 
-        <button
-          className={[
-            "h-11 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
-            FOCUS_RING,
-          ].join(" ")}
-          disabled={!dirty}
-          type="submit"
-        >
-          Aplicar
-        </button>
+          <div className={FILTER_FIELD}>
+            <AdminSelectField
+              label="Empresa"
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  relation: value as AdminUsersFilters["relation"],
+                }))
+              }
+              options={options(ADMIN_USER_RELATIONS, RELATION_LABELS)}
+              placeholder="Com ou sem empresa"
+              value={draft.relation}
+              variant="vendor-create"
+            />
+          </div>
+
+          <button
+            className={[
+              "h-11 flex-none border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
+              FOCUS_RING,
+            ].join(" ")}
+            disabled={!dirty}
+            type="submit"
+          >
+            Aplicar
+          </button>
+        </div>
       </div>
 
       {hasActiveFilter ? (

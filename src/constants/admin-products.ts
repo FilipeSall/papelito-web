@@ -8,6 +8,13 @@ export const PRODUCT_STATUS_OPTIONS: readonly SelectOption[] = [
   { label: "Privado", value: "private" },
 ];
 
+export const PRODUCT_STOCK_STATUS_OPTIONS: readonly SelectOption[] = [
+  { label: "Qualquer estoque", value: "" },
+  { label: "Em estoque", value: "instock" },
+  { label: "Sem estoque", value: "outofstock" },
+  { label: "Sob encomenda", value: "onbackorder" },
+];
+
 export const PRODUCT_EDIT_STATUS_OPTIONS: readonly SelectOption[] =
   PRODUCT_STATUS_OPTIONS.filter((option) => option.value);
 
@@ -61,3 +68,9 @@ export const PRODUCT_NOTICES = {
   tagApplied: "Tag aplicada ao produto. Salve o produto para confirmar.",
   tagCreated: "Tag criada e aplicada ao produto. Salve o produto para confirmar.",
 } as const;
+
+/**
+ * Opções de itens por página da listagem administrativa. O teto é 100 porque
+ * `getAdminProductsSnapshot` corta acima disso, e 20 é o `DEFAULT_PER_PAGE` do servidor.
+ */
+export const PRODUCTS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;

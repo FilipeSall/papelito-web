@@ -62,6 +62,7 @@ export type AdminProductsSnapshot = {
 export type AdminProductsFilters = {
   category?: string;
   exclude?: number[];
+  incomplete?: string;
   page?: string;
   perPage?: string;
   search?: string;
@@ -405,6 +406,12 @@ function buildProductsQuery(filters: AdminProductsFilters) {
   const stockStatus = cleanText(filters.stockStatus).toLowerCase();
   if (VALID_STOCK_STATUSES.has(stockStatus)) {
     params.set("stock_status", stockStatus);
+  }
+
+  // `papelito_incomplete` recorta quem não tem peso, dimensão, imagem, preço ou categoria — os
+  // dados sem os quais o produto não chega à vitrine. A conta é do banco, como o de categoria.
+  if (cleanText(filters.incomplete) === "1") {
+    params.set("papelito_incomplete", "true");
   }
 
   // `papelito_category` é entendido pela REST do WooCommerce graças a um filtro

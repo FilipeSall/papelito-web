@@ -5,8 +5,24 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { validateNamePart } from "@/lib/validation/person";
+import type { InvitationAuthMethod } from "@/features/company/types/company";
 
-type Invitation = { invitedEmail: string; companyName: string };
+type Invitation = {
+  invitedEmail: string;
+  companyName: string;
+  accountExists: boolean;
+  authMethods: InvitationAuthMethod[];
+};
+
+type RegisterResult = {
+  email?: string;
+  message?: string;
+  requiresLogin?: boolean;
+};
+
+const RETURN_PATH = "/convite";
+
+const LOGIN_HREF = `/entrar?callbackUrl=${encodeURIComponent(RETURN_PATH)}`;
 
 export function InvitationRegistration() {
   const router = useRouter();
@@ -54,19 +70,53 @@ export function InvitationRegistration() {
         password,
       }),
     });
-    const data = (await response.json().catch(() => null)) as { email?: string; message?: string } | null;
+    const data = (await response.json().catch(() => null)) as RegisterResult | null;
     if (!response.ok) {
       setSubmitting(false);
       setError(data?.message ?? "Não foi possível criar sua conta.");
       return;
     }
-    router.push(`/confirmar-email?email=${encodeURIComponent(data?.email ?? invitation.invitedEmail)}&callbackUrl=%2Fconvite`);
+    // Conta já verificada: o backend não toca na senha enviada, então o caminho é o login.
+    if (data?.requiresLogin) {
+      router.push(LOGIN_HREF);
+      return;
+    }
+    router.push(
+      `/confirmar-email?email=${encodeURIComponent(data?.email ?? invitation.invitedEmail)}&callbackUrl=${encodeURIComponent(RETURN_PATH)}`,
+    );
   }
 
   if (error && !invitation) {
     return <main className="mx-auto max-w-lg px-4 py-16"><p className="text-sm font-bold text-[#c0392b]">{error}</p><Link href="/" className="mt-5 inline-block underline">Voltar ao início</Link></main>;
   }
   if (!invitation) return <main className="mx-auto max-w-lg px-4 py-16">Validando convite...</main>;
+
+  // Já existe conta para o e-mail convidado: oferecer login em vez de deixar o POST falhar.
+  if (invitation.accountExists) {
+    const onlyGoogle =
+      invitation.authMethods.length > 0 && !invitation.authMethods.includes("password");
+
+    return (
+      <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-12">
+        <div className="space-y-4 border-2 border-[#1a1a1a] bg-[#faf8f2] p-8 shadow-[8px_8px_0px_#1a1a1a]">
+          <h1 className="text-xl font-black uppercase">Você já tem uma conta</h1>
+          <p className="text-sm">
+            Já existe uma conta para <strong className="font-black">{invitation.invitedEmail}</strong>.
+            Entre com ela para aceitar o convite — sua senha atual continua valendo.
+          </p>
+          <Link
+            href={LOGIN_HREF}
+            className="block w-full bg-[#1a1a1a] px-5 py-3 text-center text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow"
+          >
+            {onlyGoogle ? "Entrar com Google" : "Entrar para aceitar"}
+          </Link>
+          <Link href="/recuperar-senha" className="block text-center text-sm underline">
+            Esqueci minha senha
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-12">

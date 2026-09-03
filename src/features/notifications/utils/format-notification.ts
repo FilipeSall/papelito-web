@@ -252,6 +252,20 @@ export function formatNotification(
             : "/admin/products",
       };
     }
+    case "vendor_product_data_request": {
+      const productName = stringValue(payload, "product_name") || "Produto";
+      const productId = numberValue(payload, "product_id");
+
+      return {
+        icon: "package",
+        title: "Solicitação de dados de produto",
+        body: `O vendor solicitou dados cadastrais para o produto “${productName}”.`,
+        href:
+          Number.isInteger(productId) && productId > 0
+            ? `/admin/products?focus=${productId}&issue=product-data-incomplete`
+            : "/admin/products",
+      };
+    }
     case "support_message": {
       const senderName = stringValue(payload, "sender_name") || "Atendimento";
       const isPagarmeBankAccountUpdate =

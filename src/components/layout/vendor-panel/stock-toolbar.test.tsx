@@ -13,6 +13,7 @@ function renderToolbar(filters: Partial<VendorStockFilters> = {}) {
     category: null,
     collection: null,
     filter: "all",
+    perPage: 20,
     search: "",
     sort: "name_asc",
     tags: [],
@@ -25,7 +26,7 @@ function renderToolbar(filters: Partial<VendorStockFilters> = {}) {
 describe("StockToolbar", () => {
   it("renders the search input and a Filtrar button", () => {
     renderToolbar();
-    expect(screen.getByPlaceholderText(/buscar produto ou sku/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/nome do produto ou sku/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /filtrar/i })).toBeInTheDocument();
   });
 

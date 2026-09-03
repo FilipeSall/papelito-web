@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       .split(",")
       .map((id) => Number.parseInt(id, 10))
       .filter((id) => Number.isInteger(id) && id > 0),
+    incomplete: url.searchParams.get("incomplete") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     perPage: url.searchParams.get("perPage") ?? undefined,
     search: url.searchParams.get("search") ?? undefined,

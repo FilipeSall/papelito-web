@@ -28,6 +28,9 @@ function AuthLoginFormContent() {
     searchParams.get("error") === "papelito_auth_unavailable" ||
     searchParams.get("error") === "papelito_auth_context_unavailable";
   const cartLoginRequired = searchParams.get("feedback") === "cart_login_required";
+  // Convidado sem conta precisa de saída daqui: esta tela não cria conta, e /cadastro é
+  // candidatura empresarial (CNPJ + aprovação), que não é o caminho de quem foi convidado.
+  const invitationFlow = (callbackUrl ?? "").startsWith("/convite");
 
   /**
    * Conclui o login e sai do SPA para o destino de pós-autenticação.
@@ -174,6 +177,15 @@ function AuthLoginFormContent() {
           provider="google"
           callbackUrl={callbackUrl ?? undefined}
         />
+
+        {invitationFlow ? (
+          <p className="mt-8 text-center text-xs text-white/70">
+            Ainda não tem conta?{" "}
+            <Link href="/convite/cadastro" className="text-brand-yellow hover:underline">
+              Criar conta para aceitar o convite
+            </Link>
+          </p>
+        ) : null}
       </div>
     </div>
   );
