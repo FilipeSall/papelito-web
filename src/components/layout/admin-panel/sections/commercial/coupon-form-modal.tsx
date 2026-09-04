@@ -350,7 +350,7 @@ export function CouponFormModal({ coupon, onClose, onSubmit }: CouponFormModalPr
         <div className="flex items-start justify-between gap-4 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-6 py-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
-              Painel admin · cupons
+              Painel admin · comercial
             </p>
             <h3
               className="text-2xl font-black uppercase tracking-tight text-[#1a1a1a]"

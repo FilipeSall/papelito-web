@@ -21,6 +21,7 @@ import { CompanyOnboardingForm } from "./company-onboarding-form";
 import { CompanySelector } from "./company-selector";
 import { CompanyDetailsSection } from "./company-details-section";
 import { CompanyAuditSection } from "./company-audit-section";
+import { CpfCompletionForm } from "./cpf-completion-form";
 
 type CompanyDashboardProps = {
   initialContext: CompanyContext;
@@ -49,21 +50,31 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
 
   const block = blockMessageFor(context);
   const hasCompany = context.onboardingStatus === "complete";
-  const selectionRequired = context.onboardingStatus === "company_selection_required";
+  const selectionRequired =
+    context.onboardingStatus === "company_selection_required";
   const hasNoCompany = context.onboardingStatus === "none";
+  const hasExistingCompany =
+    context.companyId !== null ||
+    context.availableCompanies.length > 0 ||
+    context.membershipStatus !== null;
   const needsIdentity = context.identityStatus !== "verified";
   const legacyNeedsMigration =
     context.isLegacyCohort === true &&
     context.isB2bCohort !== true &&
-    !["migrated", "exempt", "pending_company_review", "pending_membership_approval"].includes(
-      context.legacyMigrationStatus ?? "",
-    );
+    ![
+      "migrated",
+      "exempt",
+      "pending_company_review",
+      "pending_membership_approval",
+    ].includes(context.legacyMigrationStatus ?? "");
 
   const companyName = hasCompany
-    ? context.availableCompanies.find((company) => company.companyId === context.companyId)
-        ?.legalName ?? "Empresa"
+    ? (context.availableCompanies.find(
+        (company) => company.companyId === context.companyId,
+      )?.legalName ?? "Empresa")
     : "Empresa B2B";
-  const showSelector = selectionRequired || context.availableCompanies.length > 1;
+  const showSelector =
+    selectionRequired || context.availableCompanies.length > 1;
   const hasEnvelopedContent = showSelector || hasCompany;
 
   return (
@@ -84,18 +95,28 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
           body={block.body}
           cta={
             hasNoCompany
-              ? { href: "/cadastro?intent=company", label: "Cadastrar minha empresa" }
+              ? {
+                  href: "/cadastro?intent=company",
+                  label: "Cadastrar minha empresa",
+                }
               : undefined
           }
           title={block.title}
         />
       ) : null}
 
-      {needsIdentity || legacyNeedsMigration ? (
-        <CompanyOnboardingForm isLegacyMigration={legacyNeedsMigration} onComplete={refresh} />
+      {legacyNeedsMigration || (!hasExistingCompany && needsIdentity) ? (
+        <CompanyOnboardingForm
+          isLegacyMigration={legacyNeedsMigration}
+          onComplete={refresh}
+        />
       ) : null}
 
-      {hasNoCompany && !needsIdentity ? <CompanyRequestAccessForm onRequested={refresh} /> : null}
+      {context.requiresCustomerCpf && hasExistingCompany ? <CpfCompletionForm onComplete={refresh} /> : null}
+
+      {hasNoCompany && !hasExistingCompany && !needsIdentity ? (
+        <CompanyRequestAccessForm onRequested={refresh} />
+      ) : null}
 
       {hasEnvelopedContent ? (
         <ProfilePanel accent>
@@ -115,8 +136,13 @@ export function CompanyDashboard({ initialContext }: CompanyDashboardProps) {
                   onChanged={refresh}
                   viewerRole={context.membershipRole}
                 />
-                <CompanyMembersSection onChanged={refresh} viewerRole={context.membershipRole} />
-                <CompanyInvitationsSection viewerRole={context.membershipRole} />
+                <CompanyMembersSection
+                  onChanged={refresh}
+                  viewerRole={context.membershipRole}
+                />
+                <CompanyInvitationsSection
+                  viewerRole={context.membershipRole}
+                />
                 <CompanyAuditSection role={context.membershipRole} />
               </>
             ) : null}

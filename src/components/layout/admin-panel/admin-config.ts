@@ -18,7 +18,7 @@ export type AdminSectionKey =
   | "flash-sale"
   | "contas"
   | "suporte"
-  | "coupons"
+  | "comercial"
   | "assets"
   | "config";
 
@@ -73,12 +73,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Pessoas, empresas e análises",
   },
   {
-    key: "coupons",
-    href: "/admin/coupons",
+    key: "comercial",
+    href: "/admin/comercial",
     icon: BadgePercent,
-    label: "Cupons",
-    shortLabel: "Cupons",
-    description: "Cupons e restrições",
+    label: "Comercial",
+    shortLabel: "Comercial",
+    description: "Cupons, frete grátis e coleções",
   },
   {
     key: "assets",

@@ -1,4 +1,5 @@
 import type { Address } from "@/components/layout/profile-page";
+import type { CompanyDetails } from "@/features/company/types/company";
 import type {
   ProfileAccountFormValues,
   ProfileAddressFormValues,
@@ -82,31 +83,39 @@ export function buildProfileAddressFormValues(
   };
 }
 
-export function buildProfileAddresses(customer: ProfileCustomer): Address[] {
+export function buildProfileAddresses(
+  customer: ProfileCustomer,
+  company?: CompanyDetails | null,
+): Address[] {
   const source = hasAddress(customer.shipping)
     ? customer.shipping
     : hasAddress(customer.billing)
       ? customer.billing
       : null;
 
-  if (!source) {
-    return [];
-  }
+  const addresses: Address[] = [];
 
-  const location = [source.address2, [source.city, source.state].filter(Boolean).join(" - ")]
-    .filter(Boolean)
-    .join(", ");
+  if (source) {
+    const location = [source.address2, [source.city, source.state].filter(Boolean).join(" - ")]
+      .filter(Boolean)
+      .join(", ");
 
-  return [
-    {
+    addresses.push({
       id: "primary-address",
       name: "Endereço principal",
       street: source.address1,
       neighborhood: location,
       zipCode: formatZipCode(source.postcode),
       isDefault: true,
-    },
-  ];
+    });
+  }
+
+  const companyAddress = buildCompanyAddress(company);
+  if (companyAddress) {
+    addresses.push(companyAddress);
+  }
+
+  return addresses;
 }
 
 export function buildProfileName(customer: ProfileCustomer, fallback?: string | null) {
@@ -137,6 +146,30 @@ function createEmptyProfileCustomerAddress(): ProfileCustomerAddress {
 
 function hasAddress(address: ProfileCustomerAddress) {
   return Boolean(address.address1 || address.postcode || address.city || address.state);
+}
+
+function buildCompanyAddress(company?: CompanyDetails | null): Address | null {
+  const fiscalAddress = company?.fiscalAddress;
+  const street = fiscalAddress?.street?.trim() ?? "";
+  const number = fiscalAddress?.number?.trim() ?? "";
+  const city = fiscalAddress?.city?.trim() ?? "";
+  const state = fiscalAddress?.state?.trim() ?? "";
+  const zipCode = formatZipCode(fiscalAddress?.cep ?? "");
+
+  if (!fiscalAddress || !street || !city || !state || zipCode.replace(/\D/g, "").length !== 8) {
+    return null;
+  }
+
+  return {
+    id: "company-fiscal-address",
+    name: company.tradeName || company.legalName || "Endereço da empresa",
+    street: [street, number].filter(Boolean).join(", "),
+    neighborhood: [fiscalAddress.neighborhood, [city, state].filter(Boolean).join(" - ")]
+      .filter(Boolean)
+      .join(", "),
+    zipCode,
+    isEditable: false,
+  };
 }
 
 function splitStreetAndNumber(address1: string) {

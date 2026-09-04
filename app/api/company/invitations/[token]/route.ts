@@ -18,6 +18,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   const result = await wpRest<{
     invitationId: number;
     companyName: string;
+    companyCnpj: string;
     invitedRole: string;
     invitedEmail: string;
   }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);

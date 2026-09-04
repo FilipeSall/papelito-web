@@ -7,7 +7,7 @@ import {
   AssetsContent,
   CategoriesContent,
   ConfigContent,
-  CouponsContent,
+  CommercialContent,
   FlashSaleContent,
   ProductsContent,
   SalesContent,
@@ -31,8 +31,8 @@ function renderSection(
       return <AccountsContent searchParams={searchParams} />;
     case "suporte":
       return <SupportContent searchParams={searchParams} />;
-    case "coupons":
-      return <CouponsContent />;
+    case "comercial":
+      return <CommercialContent searchParams={searchParams} />;
     case "assets":
       return <AssetsContent />;
     case "config":
@@ -57,7 +57,7 @@ export function AdminSectionPage({
       section === "config" ||
       section === "flash-sale" ||
       section === "assets" ||
-      section === "coupons" ||
+      section === "comercial" ||
       section === "contas" ||
       section === "suporte" ? null : (
         <SectionHeader section={section} />

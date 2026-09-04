@@ -5,21 +5,70 @@ import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-
 import {
   getAdminFreeShippingThreshold,
   saveAdminFreeShippingThreshold,
+  type FreeShippingThresholdInput,
+  type FreeShippingZipRange,
 } from "@/features/shipping/services/get-free-shipping-threshold";
 
-function getMinimumOrderCents(payload: unknown): number | null {
+/**
+ * Lê o mínimo distinguindo ausente de inválido.
+ *
+ * Sem essa distinção, um payload com faixas válidas e mínimo negativo gravava só as faixas e
+ * respondia 200 — o administrador via sucesso para um campo que foi descartado.
+ */
+function getMinimumOrderCents(payload: unknown): number | null | "absent" {
+  if (typeof payload !== "object" || payload === null || !("minimumOrderCents" in payload)) {
+    return "absent";
+  }
+
+  const { minimumOrderCents } = payload;
+
   if (
-    typeof payload !== "object" ||
-    payload === null ||
-    !("minimumOrderCents" in payload) ||
-    typeof payload.minimumOrderCents !== "number" ||
-    !Number.isSafeInteger(payload.minimumOrderCents) ||
-    payload.minimumOrderCents <= 0
+    typeof minimumOrderCents !== "number" ||
+    !Number.isSafeInteger(minimumOrderCents) ||
+    minimumOrderCents <= 0
   ) {
     return null;
   }
 
-  return payload.minimumOrderCents;
+  return minimumOrderCents;
+}
+
+/**
+ * Lê as faixas do payload sem julgar o conteúdo além do formato de transporte.
+ *
+ * A regra de negócio — CEP válido, início nunca maior que fim, teto de faixas — é do WordPress,
+ * que já responde 422 com a mensagem indexada por faixa. Repetir a validação aqui só criaria uma
+ * segunda verdade para o mesmo campo.
+ */
+function getZipRanges(payload: unknown): FreeShippingZipRange[] | null | "absent" {
+  if (typeof payload !== "object" || payload === null || !("zipRanges" in payload)) {
+    return "absent";
+  }
+
+  const { zipRanges } = payload;
+
+  if (!Array.isArray(zipRanges)) {
+    return null;
+  }
+
+  const parsed: FreeShippingZipRange[] = [];
+
+  for (const entry of zipRanges) {
+    if (typeof entry !== "object" || entry === null) {
+      return null;
+    }
+
+    const minCep = "minCep" in entry ? entry.minCep : null;
+    const maxCep = "maxCep" in entry ? entry.maxCep : null;
+
+    if (typeof minCep !== "string" || typeof maxCep !== "string") {
+      return null;
+    }
+
+    parsed.push({ minCep, maxCep });
+  }
+
+  return parsed;
 }
 
 export async function GET() {
@@ -45,13 +94,32 @@ export async function PUT(request: Request) {
     return NextResponse.json({ message: auth.error }, { status: auth.status });
   }
 
-  const minimumOrderCents = getMinimumOrderCents(await request.json().catch(() => null));
+  const payload = await request.json().catch(() => null);
+  const minimumOrderCents = getMinimumOrderCents(payload);
+  const zipRanges = getZipRanges(payload);
+
   if (minimumOrderCents === null) {
     return NextResponse.json({ message: "Informe um valor mínimo positivo em centavos." }, { status: 400 });
   }
 
+  if (zipRanges === null) {
+    return NextResponse.json({ message: "Informe as faixas de CEP no formato esperado." }, { status: 400 });
+  }
+
+  if (minimumOrderCents === "absent" && zipRanges === "absent") {
+    return NextResponse.json({ message: "Informe um valor mínimo positivo em centavos." }, { status: 400 });
+  }
+
+  const input: FreeShippingThresholdInput = {};
+  if (minimumOrderCents !== "absent") {
+    input.minimumOrderCents = minimumOrderCents;
+  }
+  if (zipRanges !== "absent") {
+    input.zipRanges = zipRanges;
+  }
+
   try {
-    const threshold = await saveAdminFreeShippingThreshold(auth.accessToken, minimumOrderCents);
+    const threshold = await saveAdminFreeShippingThreshold(auth.accessToken, input);
     revalidateTag("admin-free-shipping-threshold", { expire: 0 });
     revalidateTag("wp:shipping-free-shipping-threshold", { expire: 0 });
     revalidatePath("/");

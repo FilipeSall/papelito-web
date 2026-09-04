@@ -5,6 +5,7 @@ import { fetchProfileCustomer, updateProfileCustomer } from "@/features/profile/
 import { authOptions } from "@/lib/auth";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import { isValidCpf } from "@/lib/validation/brazilian-documents";
+import { wpRest } from "@/lib/server/wp-rest";
 
 type AccountPayload = {
   firstName?: string;
@@ -58,11 +59,22 @@ export async function PATCH(request: Request) {
 
   // O cadastro empresarial já valida o CPF; sem esta guarda o mesmo dado entrava sem verificação
   // pela porta do perfil e ficava gravado sujo em `wp_usermeta`.
-  if (role !== "seller" && cpf && !isValidCpf(cpf)) {
+  if (role === "customer" && !isValidCpf(cpf)) {
     return NextResponse.json({ message: "Informe um CPF válido." }, { status: 422 });
   }
 
   try {
+    if (role === "customer") {
+      const identity = await wpRest("/papelito/v1/identity/cpf", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+        json: { cpf },
+      });
+      if (!identity.ok) {
+        return NextResponse.json(identity.error, { status: identity.status || 502 });
+      }
+    }
+
     const customer = await updateProfileCustomer(session.accessToken, {
       firstName,
       lastName,

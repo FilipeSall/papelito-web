@@ -19,6 +19,14 @@ vi.mock("./get-home-flash-sale", () => ({
   getHomeFlashSale: () => Promise.resolve(activeFlashSale.current),
 }));
 
+vi.mock("./get-collections-config", () => ({
+  getCollectionsConfig: () =>
+    Promise.resolve({
+      newArrivals: { expirationDays: 0, limit: 10 },
+      promotions: { limit: 0 },
+    }),
+}));
+
 const campaignProduct = {
   id: "11760",
   category: "Papel",

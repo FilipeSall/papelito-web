@@ -8,6 +8,7 @@ import {
 } from "@/features/company/client/company-client";
 import type { CompanyContext } from "@/features/company/types/company";
 import { statusLabel } from "@/features/company/utils/status-tone";
+import { formatCnpj } from "@/lib/validation/brazilian-documents";
 import { emailsMatch, normalizeEmail } from "@/lib/validation/email";
 
 import { StatusBadge } from "./atoms";
@@ -104,7 +105,7 @@ export function CompanyDetailsSection({
         <p className="text-sm font-black uppercase tracking-[0.04em] text-[#1a1a1a]">
           {company.legalName}
         </p>
-        <p className="text-[13px] font-medium text-[#231f20]">CNPJ: {company.cnpj}</p>
+        <p className="text-[13px] font-medium text-[#231f20]">CNPJ: {formatCnpj(company.cnpj)}</p>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#231f20]">

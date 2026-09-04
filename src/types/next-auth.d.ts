@@ -20,6 +20,7 @@ declare module "next-auth" {
 		isInternalAdmin?: boolean;
 		isVendor?: boolean;
 		hasCustomerContext?: boolean;
+    requiresCustomerCpf?: boolean;
     companyId?: number | null;
     companyOwnershipStatus?: string | null;
     companyRegistryStatus?: string | null;

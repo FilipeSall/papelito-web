@@ -1,3 +1,5 @@
+import { isCepWithinRanges, type ZipRange } from "@/features/shipping/utils/zip-ranges";
+
 import type {
   CartCoupon,
   CartItem,
@@ -5,6 +7,11 @@ import type {
   CartSummary,
   CartVendorGroup,
 } from "../types/cart";
+
+export type FreeShippingRegion = {
+  destinationCep: string | null;
+  zipRanges: readonly ZipRange[];
+};
 
 function roundMoney(value: number) {
   return Number(value.toFixed(2));
@@ -45,6 +52,7 @@ export function getCartSummary(
   shippingOverride?: number | null,
   pricing?: CartPricingQuote | null,
   freeShippingMinimumCents?: number | null,
+  freeShippingRegion?: FreeShippingRegion | null,
 ): CartSummary {
   // Contrato de `CartItem`, escrito por `applyPricingQuote`: `price` é o unitário JÁ com todos os
   // descontos e `originalPrice` é o de tabela. Enquanto nenhuma cotação chegou os dois são iguais.
@@ -77,10 +85,17 @@ export function getCartSummary(
       ? freeShippingMinimumCents
       : null;
   const subtotalCents = Math.round(subtotal * 100);
+  // A restrição regional entra na promessa, não só no total: sem isto o carrinho anunciava frete
+  // grátis e o cálculo autoritativo cobrava o frete depois da cotação.
+  const regionAllowsFreeShipping = isCepWithinRanges(
+    freeShippingRegion?.destinationCep,
+    freeShippingRegion?.zipRanges ?? [],
+  );
   const isFreeShippingCouponEligible =
     hasItems &&
     validFreeShippingMinimumCents !== null &&
-    subtotalCents >= validFreeShippingMinimumCents;
+    subtotalCents >= validFreeShippingMinimumCents &&
+    regionAllowsFreeShipping;
   // Frete só entra no total quando o comprador escolheu uma modalidade válida.
   // Sem escolha o valor é desconhecido — `null` — e não há total definitivo.
   const quotedShipping =
@@ -101,7 +116,7 @@ export function getCartSummary(
         : 0;
   const isFreeShippingApplied = shipping !== null && shippingDiscount > 0 && shippingDiscount >= shipping;
   const amountToFreeShippingCoupon =
-    validFreeShippingMinimumCents === null
+    validFreeShippingMinimumCents === null || !regionAllowsFreeShipping
       ? null
       : roundMoney(Math.max(0, validFreeShippingMinimumCents - subtotalCents) / 100);
 

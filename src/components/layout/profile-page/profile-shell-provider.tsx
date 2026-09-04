@@ -3,9 +3,11 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 import type { ProfileCustomer } from "@/features/profile/types/profile-customer";
+import type { CompanyDetails } from "@/features/company/types/company";
 
 type ProfileShellData = {
   customer: ProfileCustomer;
+  company?: CompanyDetails | null;
   email: string;
   image?: string | null;
   name: string;

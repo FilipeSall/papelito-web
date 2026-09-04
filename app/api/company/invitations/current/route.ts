@@ -15,6 +15,7 @@ export async function GET() {
   const result = await wpRest<{
     invitationId: number;
     companyName: string;
+    companyCnpj: string;
     invitedRole: string;
     invitedEmail: string;
   }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);

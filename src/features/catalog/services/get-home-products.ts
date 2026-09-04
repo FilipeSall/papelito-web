@@ -4,7 +4,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMockDataEnabled } from "@/lib/server/env";
-import { fetchWpProductsSafe, mapWpProductToHomeCard } from "./wp-catalog";
+import { fetchWpProductsSafe, isWithinNewArrivalWindow, mapWpProductToHomeCard } from "./wp-catalog";
+import { getCollectionsConfig } from "./get-collections-config";
+import { COLLECTIONS_CONFIG_MAX_LIMIT } from "../types/collections-config";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToHomeProductCard } from "./apply-flash-sale-to-product";
 import { resolveProductImage } from "../utils/resolve-product-image";
@@ -183,24 +185,45 @@ async function requestProductsMockFile() {
   return JSON.parse(raw) as ProductsMockFile;
 }
 
+const HOME_PRODUCTS_SCAN_LIMIT = Math.max(48, COLLECTIONS_CONFIG_MAX_LIMIT);
+
 export async function getHomeProducts(): Promise<HomeProductsPayload> {
   if (!isMockDataEnabled()) {
-    const [flashSaleCampaign, products] = await Promise.all([
+    const [flashSaleCampaign, collectionsConfig, products] = await Promise.all([
       getHomeFlashSale(),
-      fetchWpProductsSafe(48, "home-products"),
+      getCollectionsConfig(),
+      // A varredura precisa caber o maior teto que o painel aceita, senão configurar 60 novidades
+      // encheria /novidades e deixaria a prateleira da home curta.
+      fetchWpProductsSafe(HOME_PRODUCTS_SCAN_LIMIT, "home-products"),
     ]);
     const cards = products
       .map((product, index) => mapWpProductToHomeCard(product, index))
       .map((card) => applyFlashSaleToHomeProductCard(card, flashSaleCampaign));
     const bestSellerProducts = cards.slice(0, 8);
-    const newArrivalProducts: HomeNewArrivalProduct[] = cards.slice(0, 8).map((card) => ({
-      id: card.id,
-      name: card.name,
-      originalPrice: card.originalPrice,
-      price: card.price,
-      discount: card.discount,
-      image: card.image,
-    }));
+    // A prateleira consome o mesmo pool da coleção: a busca já chega ordenada por data
+    // decrescente, então basta recortar pela janela e pelo teto configurados.
+    const { limit, expirationDays } = collectionsConfig.newArrivals;
+    const now = Date.now();
+    const newArrivalProducts: HomeNewArrivalProduct[] = [];
+
+    for (const [index, card] of cards.entries()) {
+      if (newArrivalProducts.length >= limit) {
+        break;
+      }
+
+      if (!isWithinNewArrivalWindow(products[index]?.date, expirationDays, now)) {
+        continue;
+      }
+
+      newArrivalProducts.push({
+        id: card.id,
+        name: card.name,
+        originalPrice: card.originalPrice,
+        price: card.price,
+        discount: card.discount,
+        image: card.image,
+      });
+    }
 
     return {
       flashSaleCampaign,
@@ -209,8 +232,9 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
     };
   }
 
-  const [flashSaleCampaign, mockFile] = await Promise.all([
+  const [flashSaleCampaign, mockCollectionsConfig, mockFile] = await Promise.all([
     getHomeFlashSale(),
+    getCollectionsConfig(),
     requestProductsMockFile(),
   ]);
   const products = Array.isArray(mockFile?.products) ? mockFile.products : [];
@@ -225,6 +249,7 @@ export async function getHomeProducts(): Promise<HomeProductsPayload> {
 
   const newArrivalProducts: HomeNewArrivalProduct[] = candidates
     .filter((item) => item.flags.isNewArrival)
+    .slice(0, mockCollectionsConfig.newArrivals.limit)
     .map(({ card }) => ({
       id: card.id,
       name: card.name,

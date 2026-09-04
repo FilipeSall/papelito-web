@@ -196,3 +196,44 @@ describe("getCartSummary", () => {
     expect(atThreshold.amountToFreeShippingCoupon).toBe(0);
   });
 });
+
+describe("getCartSummary — frete grátis por região", () => {
+  const RANGES = [{ maxCep: "70999999", minCep: "70000000" }];
+
+  function summaryFor(destinationCep: string | null, zipRanges = RANGES) {
+    return getCartSummary(
+      [buildCartItem({ originalPrice: 150, price: 150, quantity: 1 })],
+      null,
+      null,
+      null,
+      9900,
+      { destinationCep, zipRanges },
+    );
+  }
+
+  it("promete o benefício quando não há restrição regional", () => {
+    const summary = summaryFor(null, []);
+
+    expect(summary.isFreeShippingCouponEligible).toBe(true);
+    expect(summary.amountToFreeShippingCoupon).toBe(0);
+  });
+
+  it("promete o benefício para CEP dentro da faixa", () => {
+    expect(summaryFor("70123-456").isFreeShippingCouponEligible).toBe(true);
+  });
+
+  it("não promete o benefício para CEP fora da faixa", () => {
+    const summary = summaryFor("88000-000");
+
+    expect(summary.isFreeShippingCouponEligible).toBe(false);
+    expect(summary.amountToFreeShippingCoupon).toBeNull();
+  });
+
+  it("não promete o benefício enquanto o CEP é desconhecido e há faixa configurada", () => {
+    expect(summaryFor(null).isFreeShippingCouponEligible).toBe(false);
+  });
+
+  it("não promete o benefício com CEP incompleto", () => {
+    expect(summaryFor("7000").isFreeShippingCouponEligible).toBe(false);
+  });
+});

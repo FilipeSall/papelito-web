@@ -32,10 +32,10 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "não lidas", value: "-" },
     { label: "sla", value: "-" },
   ],
-  coupons: [
+  comercial: [
     { label: "cupons ativos", value: "-" },
-    { label: "tipos", value: "% / R$" },
-    { label: "restrições", value: "vendor + produto" },
+    { label: "frete grátis", value: "mínimo + região" },
+    { label: "coleções", value: "novidades + promoções" },
   ],
   assets: [
     { label: "banners", value: "07" },
@@ -106,10 +106,10 @@ export const SECTION_META: Record<
     railValue: "aberta",
     signalTone: "warning",
   },
-  coupons: {
-    eyebrow: "Engine de cupons",
+  comercial: {
+    eyebrow: "Mecânicas comerciais",
     description:
-      "Cupons percentuais ou de valor fixo, restrições por role, vendor e produto. Suporta notificação de favorito-em-promoção.",
+      "Cupons, regra de frete grátis por valor e região, e o recorte das coleções de recém-chegados e promoções.",
     railLabel: "status",
     railValue: "ativo",
     signalTone: "default",

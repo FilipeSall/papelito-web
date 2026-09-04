@@ -28,6 +28,7 @@ export const PRODUCTS_QUERY = gql`
         databaseId
         name
         slug
+        date
         description
         shortDescription
         image {
@@ -109,6 +110,7 @@ export const PRODUCTS_LIST_QUERY = gql`
         databaseId
         name
         slug
+        date
         image {
           sourceUrl
           altText

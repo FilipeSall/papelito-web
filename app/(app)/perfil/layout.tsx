@@ -21,6 +21,7 @@ export default async function ProfileLayout({
     <ProfileShellProvider
       value={{
         customer: profile.customer,
+        company: profile.company,
         email: profile.email,
         image: profile.image,
         name: profile.name,

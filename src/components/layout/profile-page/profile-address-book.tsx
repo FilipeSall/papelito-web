@@ -10,6 +10,7 @@ import type {
   ProfileAddressFormValues,
   ProfileCustomer,
 } from "@/features/profile/types/profile-customer";
+import type { CompanyDetails } from "@/features/company/types/company";
 import { buildProfileAddresses, buildProfileAddressFormValues } from "@/features/profile/utils/profile-customer-mappers";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { BRAZIL_STATES } from "@/components/layout/checkout-page/checkout-constants";
@@ -19,6 +20,7 @@ import { AddressList } from "./address-list";
 import { ProfileFormField } from "./profile-form-field";
 
 type ProfileAddressBookProps = {
+  company?: CompanyDetails | null;
   customer: ProfileCustomer;
   openEditorOnMount?: boolean;
 };
@@ -29,6 +31,7 @@ type FeedbackState =
   | null;
 
 export function ProfileAddressBook({
+  company,
   customer,
   openEditorOnMount = false,
 }: ProfileAddressBookProps) {
@@ -38,7 +41,7 @@ export function ProfileAddressBook({
   const [form, setForm] = useState<ProfileAddressFormValues>(() =>
     buildProfileAddressFormValues(customer),
   );
-  const [addresses, setAddresses] = useState(() => buildProfileAddresses(customer));
+  const [addresses, setAddresses] = useState(() => buildProfileAddresses(customer, company));
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isEditorOpen, setIsEditorOpen] = useState(openEditorOnMount);
@@ -150,7 +153,7 @@ export function ProfileAddressBook({
         const nextCustomer = body.customer;
         setCurrentCustomer(nextCustomer);
         setForm(buildProfileAddressFormValues(nextCustomer));
-        setAddresses(buildProfileAddresses(nextCustomer));
+        setAddresses(buildProfileAddresses(nextCustomer, company));
         setFeedback({
           type: "success",
           message: "Endereço salvo com sucesso.",

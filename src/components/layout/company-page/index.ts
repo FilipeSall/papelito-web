@@ -7,6 +7,7 @@ export { CompanyAccessRequestsSection } from "./company-access-requests-section"
 export { CompanyRequestAccessForm } from "./company-request-access-form";
 export { CompanyOnboardingForm } from "./company-onboarding-form";
 export { InvitationLanding } from "./invitation-landing";
+export { CpfCompletionForm } from "./cpf-completion-form";
 export { CompanyDetailsSection } from "./company-details-section";
 export { CompanyAuditSection } from "./company-audit-section";
 export { CompanySelect, type CompanySelectOption, ASSIGNABLE_ROLE_OPTIONS } from "./atoms";

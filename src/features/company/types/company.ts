@@ -71,6 +71,7 @@ export type CompanyContext = {
 	isInternalAdmin?: boolean;
 	isVendor?: boolean;
 	hasCustomerContext?: boolean;
+	requiresCustomerCpf?: boolean;
   isLegacyCohort?: boolean;
   legacyMigrationStatus?: string | null;
   legacyGraceEndsAt?: string | null;
@@ -150,6 +151,8 @@ export type InvitationAuthMethod = "password" | "google";
 export type InvitationPreview = {
   invitationId: number;
   companyName: string;
+  /** CNPJ canônico da empresa do convite. Vem da relação convite → empresa; nunca é digitado. */
+  companyCnpj: string;
   invitedRole: CompanyRole;
   invitedEmail: string;
   /** Permite rotear o convidado sem bifurcação cega entre "criar conta" e "entrar". */

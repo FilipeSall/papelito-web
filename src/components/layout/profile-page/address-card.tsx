@@ -13,6 +13,8 @@ type Address = {
   zipCode: string;
   /** Se este e o endereco principal */
   isDefault?: boolean;
+  /** Endereço fornecido pela empresa e não editável pelo comprador */
+  isEditable?: boolean;
 };
 
 type AddressCardProps = {
@@ -78,6 +80,8 @@ function LocationIcon({ className }: { className?: string }) {
  * ```
  */
 export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
+  const canEdit = address.isEditable !== false && Boolean(onEdit);
+  const canRemove = address.isEditable !== false && Boolean(onRemove);
   const shadowClass = address.isDefault
     ? "shadow-[8px_8px_0px_#ffe500]"
     : "shadow-[8px_8px_0px_#1a1a1a]";
@@ -109,23 +113,29 @@ export function AddressCard({ address, onEdit, onRemove }: AddressCardProps) {
       </div>
 
       {/* Ações */}
-      <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
-        <button
-          className="cursor-pointer text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-          onClick={() => onEdit?.(address.id)}
-          type="button"
-        >
-          Editar
-        </button>
-        <span className="text-[#1a1a1a]/20">|</span>
-        <button
-          className="cursor-pointer text-[#c0392b] transition-colors hover:text-[#c0392b]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
-          onClick={() => onRemove?.(address.id)}
-          type="button"
-        >
-          Remover
-        </button>
-      </div>
+      {canEdit || canRemove ? (
+        <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
+          {canEdit ? (
+            <button
+              className="cursor-pointer text-[#1a1a1a] transition-colors hover:text-[#1a1a1a]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+              onClick={() => onEdit?.(address.id)}
+              type="button"
+            >
+              Editar
+            </button>
+          ) : null}
+          {canEdit && canRemove ? <span className="text-[#1a1a1a]/20">|</span> : null}
+          {canRemove ? (
+            <button
+              className="cursor-pointer text-[#c0392b] transition-colors hover:text-[#c0392b]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+              onClick={() => onRemove?.(address.id)}
+              type="button"
+            >
+              Remover
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

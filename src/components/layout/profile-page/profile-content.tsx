@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
 import { ProfileSidebar } from "./profile-sidebar";
+import { PendingInvitationNotice } from "./pending-invitation-notice";
 
 type ProfileContentProps = {
   children: ReactNode;
@@ -22,6 +23,7 @@ export function ProfileContent({ children }: ProfileContentProps) {
         }}
       />
       <div className="relative mx-auto w-full max-w-391 px-4 py-7 sm:px-6 md:py-9 lg:px-8 lg:py-10">
+        <PendingInvitationNotice />
         <div className="flex flex-col gap-7 lg:flex-row lg:gap-8">
           <ProfileSidebar />
           <div className="min-w-0 flex-1">{children}</div>

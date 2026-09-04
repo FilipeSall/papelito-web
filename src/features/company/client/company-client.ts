@@ -12,7 +12,9 @@ import type {
 } from "../types/company";
 import { DirectUploadError, uploadDirectFile } from "@/lib/client/direct-upload";
 
-type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
+type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; code?: string; message: string };
 
 async function call<T>(
   path: string,
@@ -49,7 +51,12 @@ async function call<T>(
     const message =
       (body as { message?: string } | null)?.message ??
       "Não foi possível concluir a operação.";
-    return { ok: false, status: response.status, message };
+    return {
+      ok: false,
+      status: response.status,
+      code: (body as { code?: string } | null)?.code,
+      message,
+    };
   }
 
   return { ok: true, data: body as T };
@@ -77,6 +84,14 @@ export function saveCustomerProfile(payload: {
   return call<CompanyContext>("/api/company/onboarding/customer-profile", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function saveCustomerCpf(cpf: string) {
+  return call<CompanyContext>("/api/company/identity/cpf", {
+    method: "POST",
+    idempotent: true,
+    body: JSON.stringify({ cpf }),
   });
 }
 

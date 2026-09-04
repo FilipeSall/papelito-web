@@ -24,6 +24,11 @@ import { CheckoutField } from "./checkout-field";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
+import type { ZipRange } from "@/features/shipping/utils/zip-ranges";
+
+
+/** Referência estável: uma lista nova a cada render invalidaria o memo do resumo. */
+const EMPTY_ZIP_RANGES: readonly ZipRange[] = [];
 
 type ShippingStatus = "idle" | "loading" | "success" | "error";
 type ShippingQuoteKey = readonly [
@@ -40,15 +45,17 @@ function shouldShowShippingName(service: string, name: string) {
 type CheckoutAddressStepContentProps = {
 	company?: { legalName: string; cnpj: string; zipCode?: string | null } | null;
 	freeShippingMinimumCents?: number | null;
+	freeShippingZipRanges?: readonly ZipRange[];
 };
 
 export function CheckoutAddressStepContent({
 	company = null,
 	freeShippingMinimumCents = null,
+	freeShippingZipRanges = EMPTY_ZIP_RANGES,
 }: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const cartSummary = useCartSummary(freeShippingMinimumCents);
+  const cartSummary = useCartSummary(freeShippingMinimumCents, { freeShippingZipRanges });
   const hasAutomaticFreeShipping = cartSummary.isFreeShippingCouponEligible;
 
   const beginCheckoutPayload = useMemo(

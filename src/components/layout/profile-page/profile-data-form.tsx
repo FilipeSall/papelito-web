@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import type { ProfileAccountFormValues } from "@/features/profile/types/profile-customer";
+import { isValidCpf } from "@/lib/validation/brazilian-documents";
 import { ArrowRightIcon } from "@/components/ui/icons";
 
 import { ProfileFormField } from "./profile-form-field";
@@ -128,6 +129,7 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
     if (!form.lastName.trim()) nextErrors.lastName = "Informe seu sobrenome.";
     if (!form.displayName.trim()) nextErrors.displayName = "Defina como deseja aparecer.";
     if (!form.email.trim()) nextErrors.email = "Informe seu e-mail.";
+    if (isCustomer && !isValidCpf(form.cpf)) nextErrors.cpf = "Informe um CPF válido.";
 
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;

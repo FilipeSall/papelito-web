@@ -35,6 +35,17 @@ vi.mock("./get-home-flash-sale", () => ({
   getHomeFlashSale: () => Promise.resolve(activeFlashSale.current),
 }));
 
+const collectionsConfig = vi.hoisted(() => ({
+  current: {
+    newArrivals: { expirationDays: 0, limit: 10 },
+    promotions: { limit: 0 },
+  },
+}));
+
+vi.mock("./get-collections-config", () => ({
+  getCollectionsConfig: () => Promise.resolve(collectionsConfig.current),
+}));
+
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
   return { ...actual, cache: <T,>(fn: T) => fn };
@@ -587,15 +598,15 @@ describe("getProductsCatalog — coleções por termo", () => {
       getProductsCatalog({ collection: "novidades", perPage: 9, page: 2 }),
     ]);
 
-    expect(nove.totalItems).toBe(8);
-    expect(trinta.totalItems).toBe(8);
-    expect(segunda.totalItems).toBe(8);
+    expect(nove.totalItems).toBe(10);
+    expect(trinta.totalItems).toBe(10);
+    expect(segunda.totalItems).toBe(10);
     expect(trinta.items.map((item) => item.id)).toEqual(
       expect.arrayContaining(nove.items.map((item) => item.id)),
     );
   });
 
-  it("preserva os oito mais recentes antes de aplicar a faixa de preço", async () => {
+  it("preserva o pool configurado de novidades antes de aplicar a faixa de preço", async () => {
     const { products } = buildProductsResponse();
     const newest = products.nodes[0];
     const productsWithExpensiveNewest = products.nodes.map((product, index) =>
@@ -636,11 +647,28 @@ describe("getProductsCatalog — coleções por termo", () => {
       perPage: 60,
     });
 
-    expect(payload.totalItems).toBe(7);
+    expect(payload.totalItems).toBe(9);
     expect(payload.items.some((item) => item.id === String(newest.databaseId))).toBe(false);
     expect(payload.items.map((item) => item.id)).toEqual(
-      products.nodes.slice(1, 8).map((product) => String(product.databaseId)),
+      products.nodes.slice(1, 10).map((product) => String(product.databaseId)),
     );
+  });
+
+  it("obedece o teto configurado em vez de um número fixo", async () => {
+    collectionsConfig.current = {
+      newArrivals: { expirationDays: 0, limit: 3 },
+      promotions: { limit: 0 },
+    };
+
+    const getProductsCatalog = await loadCatalog();
+    const payload = await getProductsCatalog({ collection: "novidades", perPage: 60 });
+
+    expect(payload.totalItems).toBe(3);
+
+    collectionsConfig.current = {
+      newArrivals: { expirationDays: 0, limit: 10 },
+      promotions: { limit: 0 },
+    };
   });
 });
 

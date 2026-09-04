@@ -24,6 +24,7 @@ export { ProfileFormField } from "./profile-form-field";
 export { ProfileDataForm } from "./profile-data-form";
 export { ProfileDataPageContent } from "./profile-data-page-content";
 export { ProfileAddressBook } from "./profile-address-book";
+export { PendingInvitationNotice } from "./pending-invitation-notice";
 export { ProfileAddressesPageContent } from "./profile-addresses-page-content";
 export { AccountCepNotice } from "./account-cep-notice";
 export { MissingCepModal } from "./missing-cep-modal";

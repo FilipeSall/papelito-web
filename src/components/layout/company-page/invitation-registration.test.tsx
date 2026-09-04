@@ -34,6 +34,7 @@ function invitation(accountExists: boolean, authMethods: Array<"password" | "goo
     body: {
       invitedEmail: "convidado@test.com",
       companyName: "CERRADO PAPEIS",
+      companyCnpj: "99999003000148",
       accountExists,
       authMethods,
     },
@@ -43,6 +44,7 @@ function invitation(accountExists: boolean, authMethods: Array<"password" | "goo
 async function fillAndSubmit() {
   fireEvent.change(screen.getByLabelText(/^nome/i), { target: { value: "Ana" } });
   fireEvent.change(screen.getByLabelText(/sobrenome/i), { target: { value: "Silva" } });
+  fireEvent.change(screen.getByLabelText(/^cpf/i), { target: { value: "52998224725" } });
   fireEvent.change(screen.getByLabelText(/^senha/i), { target: { value: "SenhaForte123" } });
   fireEvent.change(screen.getByLabelText(/confirmar senha/i), {
     target: { value: "SenhaForte123" },
@@ -65,6 +67,54 @@ describe("InvitationRegistration", () => {
 
     expect(await screen.findByLabelText(/^senha/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^cpf/i)).toBeInTheDocument();
+  });
+
+  it("shows the inviting company's CNPJ read-only, and never sends it back", async () => {
+    const calls = stubFetch(invitation(false), {
+      ok: true,
+      status: 201,
+      body: { email: "convidado@test.com", requiresEmailVerification: true },
+    });
+    render(<InvitationRegistration />);
+
+    const cnpj = await screen.findByLabelText(/cnpj da empresa/i);
+    expect(cnpj).toHaveValue("99.999.003/0001-48");
+    expect(cnpj).toBeDisabled();
+    expect(cnpj).toHaveAttribute("readonly");
+
+    // Alterar o campo na marra não muda nada: ele não tem `name`, então nunca entra no payload,
+    // e a empresa continua vindo do convite (cookie do token) no backend.
+    fireEvent.change(cnpj, { target: { value: "11.111.111/1111-11" } });
+    await fillAndSubmit();
+
+    await vi.waitFor(() => expect(calls).toContain("/api/auth/register-invitation"));
+    const submitted = JSON.parse(
+      (vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string,
+    ) as Record<string, unknown>;
+    expect(submitted).not.toHaveProperty("cnpj");
+    expect(submitted).not.toHaveProperty("companyId");
+    expect(submitted.cpf).toBe("529.982.247-25");
+  });
+
+  it("reveals each password field independently", async () => {
+    stubFetch(invitation(false));
+    render(<InvitationRegistration />);
+
+    const password = await screen.findByLabelText(/^senha/i);
+    const confirmation = screen.getByLabelText(/confirmar senha/i);
+    const showButtons = screen.getAllByRole("button", { name: "Mostrar senha" });
+
+    fireEvent.click(showButtons[0]);
+    expect(password).toHaveAttribute("type", "text");
+    expect(confirmation).toHaveAttribute("type", "password");
+
+    fireEvent.click(showButtons[1]);
+    expect(confirmation).toHaveAttribute("type", "text");
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Ocultar senha" })[0]);
+    expect(password).toHaveAttribute("type", "password");
+    expect(confirmation).toHaveAttribute("type", "text");
   });
 
   it("sends an existing account to login instead of failing the registration", async () => {

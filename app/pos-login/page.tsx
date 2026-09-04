@@ -42,6 +42,10 @@ export default async function PostLoginPage({
     redirect(`${ONBOARDING_PATH}?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
+  if (b2b?.requiresCustomerCpf) {
+    redirect(`/convite/cpf?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  }
+
   redirect(callbackUrl);
 }
 

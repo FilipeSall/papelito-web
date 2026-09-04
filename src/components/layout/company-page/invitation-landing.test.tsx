@@ -13,11 +13,12 @@ const nextAuth = vi.hoisted(() => ({
   signIn: vi.fn(),
   useSession: vi.fn(),
 }));
+const push = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/company/client/company-client", () => companyClient);
 vi.mock("next-auth/react", () => nextAuth);
 vi.mock("@/features/auth/client/logout", () => ({ signOutAndClearSession: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 type PreviewOverrides = {
   accountExists?: boolean;
@@ -30,6 +31,7 @@ function givenPreview({ accountExists = false, authMethods = [] }: PreviewOverri
     data: {
       invitationId: 1,
       companyName: "CERRADO PAPEIS",
+      companyCnpj: "99999003000148",
       invitedRole: "buyer",
       invitedEmail: "convidado@test.com",
       accountExists,
@@ -50,6 +52,29 @@ describe("InvitationLanding", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     givenSession(null);
+  });
+
+  it("shows which company the invite binds to, by CNPJ", async () => {
+    givenPreview();
+    render(<InvitationLanding token="abc" />);
+
+    expect(await screen.findByText(/99\.999\.003\/0001-48/)).toBeInTheDocument();
+  });
+
+  it("routes an invited account without CPF to the identity step", async () => {
+    givenSession("convidado@test.com");
+    givenPreview({ accountExists: true, authMethods: ["password"] });
+    companyClient.acceptInvitation.mockResolvedValue({
+      ok: false,
+      status: 422,
+      code: "papelito_b2b_invitation_identity_required",
+      message: "Informe seu CPF antes de aceitar o convite.",
+    });
+    render(<InvitationLanding token="tok" />);
+
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/convite/cpf?callbackUrl=%2Fconvite"),
+    );
   });
 
   it("offers only account creation when the invited e-mail has no account", async () => {
@@ -80,10 +105,10 @@ describe("InvitationLanding", () => {
   it("lets the invited user accept when the session e-mail matches the invitation", async () => {
     givenSession("convidado@test.com");
     givenPreview({ accountExists: true, authMethods: ["password"] });
+    companyClient.acceptInvitation.mockResolvedValue({ ok: true });
     render(<InvitationLanding token="tok" />);
 
-    expect(await screen.findByRole("button", { name: /aceitar convite/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /recusar convite/i })).toBeInTheDocument();
+    await waitFor(() => expect(companyClient.acceptInvitation).toHaveBeenCalledTimes(1));
   });
 
   it("asks to switch accounts instead of letting the backend refuse a mismatched e-mail", async () => {

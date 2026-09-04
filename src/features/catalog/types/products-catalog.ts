@@ -48,6 +48,8 @@ export interface ProductsCatalogItem {
   isKit: boolean;
   /** Slugs das subcategorias da taxonomia Papelito. Vazio antes da classificacao. */
   subcategories: string[];
+  /** Publicação do produto, com offset. Ausente quando a origem não informa data. */
+  publishedAt?: string | null;
   promotionContext?: string;
   bestVendor?: CatalogBestVendor;
 }

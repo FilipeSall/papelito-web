@@ -8,7 +8,11 @@ import { CompanyDashboard } from "./company-dashboard";
 const updateMock = vi.fn();
 
 vi.mock("next-auth/react", () => ({
-  useSession: () => ({ data: { user: { id: "1" } }, status: "authenticated", update: updateMock }),
+  useSession: () => ({
+    data: { user: { id: "1" } },
+    status: "authenticated",
+    update: updateMock,
+  }),
 }));
 
 // Seções internas fazem fetch; isolamos o teste ao roteamento de estado do dashboard.
@@ -19,7 +23,9 @@ vi.mock("./company-invitations-section", () => ({
   CompanyInvitationsSection: () => <div data-testid="invitations-section" />,
 }));
 vi.mock("./company-access-requests-section", () => ({
-  CompanyAccessRequestsSection: () => <div data-testid="access-requests-section" />,
+  CompanyAccessRequestsSection: () => (
+    <div data-testid="access-requests-section" />
+  ),
 }));
 
 function ctx(overrides: Partial<CompanyContext>): CompanyContext {
@@ -45,14 +51,19 @@ describe("CompanyDashboard", () => {
   });
 
   it("sem empresa: mostra bloqueio + CTA de cadastro + form de solicitar acesso", () => {
-    render(<CompanyDashboard initialContext={ctx({ onboardingStatus: "none" })} />);
-
-    expect(screen.getByText(/ainda não faz parte de uma empresa/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /cadastrar minha empresa/i })).toHaveAttribute(
-      "href",
-      "/cadastro?intent=company",
+    render(
+      <CompanyDashboard initialContext={ctx({ onboardingStatus: "none" })} />,
     );
-    expect(screen.getByRole("heading", { name: /entrar em uma empresa/i })).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/ainda não faz parte de uma empresa/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /cadastrar minha empresa/i }),
+    ).toHaveAttribute("href", "/cadastro?intent=company");
+    expect(
+      screen.getByRole("heading", { name: /entrar em uma empresa/i }),
+    ).toBeInTheDocument();
     // Sem empresa não mostra gestão de membros.
     expect(screen.queryByTestId("members-section")).not.toBeInTheDocument();
   });
@@ -64,8 +75,18 @@ describe("CompanyDashboard", () => {
           onboardingStatus: "company_selection_required",
           companySelectionRequired: true,
           availableCompanies: [
-            { companyId: 1, legalName: "A LTDA", tradeName: "A", role: "buyer" },
-            { companyId: 2, legalName: "B LTDA", tradeName: "B", role: "admin" },
+            {
+              companyId: 1,
+              legalName: "A LTDA",
+              tradeName: "A",
+              role: "buyer",
+            },
+            {
+              companyId: 2,
+              legalName: "B LTDA",
+              tradeName: "B",
+              role: "admin",
+            },
           ],
         })}
       />,
@@ -73,8 +94,12 @@ describe("CompanyDashboard", () => {
 
     expect(screen.getByText(/selecione a empresa ativa/i)).toBeInTheDocument();
     // O seletor exibe o trade name (fallback para legal name).
-    expect(screen.getByRole("button", { name: /Comprador/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Administrador/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Comprador/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Administrador/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("members-section")).not.toBeInTheDocument();
   });
 
@@ -88,7 +113,14 @@ describe("CompanyDashboard", () => {
           membershipRole: "owner",
           membershipStatus: "active",
           canPurchase: true,
-          availableCompanies: [{ companyId: 7, legalName: "ACME LTDA", tradeName: "ACME", role: "owner" }],
+          availableCompanies: [
+            {
+              companyId: 7,
+              legalName: "ACME LTDA",
+              tradeName: "ACME",
+              role: "owner",
+            },
+          ],
         })}
       />,
     );
@@ -109,12 +141,48 @@ describe("CompanyDashboard", () => {
           membershipRole: "viewer",
           membershipStatus: "active",
           canPurchase: false,
-          availableCompanies: [{ companyId: 7, legalName: "ACME LTDA", tradeName: "ACME", role: "viewer" }],
+          availableCompanies: [
+            {
+              companyId: 7,
+              legalName: "ACME LTDA",
+              tradeName: "ACME",
+              role: "viewer",
+            },
+          ],
         })}
       />,
     );
 
     expect(screen.getByText(/compra bloqueada/i)).toBeInTheDocument();
     expect(screen.getByText(/compra indisponível/i)).toBeInTheDocument();
+  });
+
+  it("não mostra onboarding para usuário já vinculado mesmo com identidade incompleta", () => {
+    render(
+      <CompanyDashboard
+        initialContext={ctx({
+          identityStatus: "incomplete",
+          onboardingStatus: "complete",
+          companyId: 7,
+          companyStatus: "active",
+          membershipRole: "buyer",
+          membershipStatus: "active",
+          canPurchase: true,
+          availableCompanies: [
+            {
+              companyId: 7,
+              legalName: "ACME LTDA",
+              tradeName: "ACME",
+              role: "buyer",
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: /complete seu onboarding b2b/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/compra liberada/i)).toBeInTheDocument();
   });
 });

@@ -15,9 +15,10 @@ import {
   fetchAllWpProductsResult,
   fetchWpProductsResult,
   mapWpProductToCatalogItem,
-  markNewArrivals,
+  applyCollectionPools,
 } from "./wp-catalog";
 import { searchCatalogProducts } from "./catalog-search";
+import { getCollectionsConfig, type CollectionsConfig } from "./get-collections-config";
 import { getHomeFlashSale } from "./get-home-flash-sale";
 import { applyFlashSaleToCatalogItem } from "./apply-flash-sale-to-product";
 import { isTaxonomySlug, SPECIFIC_PRODUCT_TYPES } from "../utils/product-type-taxonomy";
@@ -586,9 +587,10 @@ async function loadSearchCatalog(
 
 async function loadWpCatalogItems(
   flashSaleCampaign: FlashSaleCampaign,
+  collectionsConfig: CollectionsConfig,
 ): Promise<CatalogItemsResult> {
   // O recorte de preço acontece depois da varredura completa. Isso mantém a
-  // coleção de novidades como os oito produtos globais mais recentes, mesmo
+  // coleção de novidades como os produtos globais mais recentes, mesmo
   // quando a página também recebe uma faixa de preço.
   const catalogResult = await fetchAllWpProductsResult({}, CATALOG_SCAN_LIMIT, "products-catalog");
 
@@ -598,12 +600,13 @@ async function loadWpCatalogItems(
     );
   }
 
-  const items = markNewArrivals(
+  const items = applyCollectionPools(
     catalogResult.products
       .map((product, index) =>
         mapWpProductToCatalogItem(product, index),
       )
       .map((item) => applyFlashSaleToCatalogItem(item, flashSaleCampaign)),
+    collectionsConfig,
   );
 
   return {
@@ -716,7 +719,7 @@ async function loadWpCatalog(
     );
   }
 
-  const catalog = await loadWpCatalogItems(flashSaleCampaign);
+  const catalog = await loadWpCatalogItems(flashSaleCampaign, await getCollectionsConfig());
   return buildCatalogPayload(
     scopedInput,
     catalog.items,
@@ -896,7 +899,7 @@ export async function getProductsCatalog(
 export async function getProductsCollectionsSummary(): Promise<ProductsCollectionsSummary> {
   const catalog = isMockDataEnabled()
     ? await loadMockCatalog()
-    : await loadWpCatalogItems(await getHomeFlashSale());
+    : await loadWpCatalogItems(await getHomeFlashSale(), await getCollectionsConfig());
 
   if (catalog.sourceStatus === "unavailable") {
     return { kitsCount: 0, promotionsMaxDiscountPercent: 0 };

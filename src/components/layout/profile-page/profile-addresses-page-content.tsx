@@ -14,6 +14,7 @@ function ProfileAddressesPageContentInner() {
 
   return (
     <ProfileAddressBook
+      company={profile.company}
       customer={profile.customer}
       openEditorOnMount={openEditorOnMount}
     />

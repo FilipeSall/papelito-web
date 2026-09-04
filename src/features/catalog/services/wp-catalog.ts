@@ -21,6 +21,8 @@ export interface WpProductNode {
   databaseId: number;
   name: string;
   slug: string;
+  /** Publicação do produto, com offset. Fonte única de recência de Recém-chegados. */
+  date?: string | null;
   description?: string | null;
   shortDescription?: string | null;
   image?: {
@@ -517,8 +519,9 @@ export function mapWpProductToCatalogItem(
     image: resolveImage(product) ?? PRODUCT_FALLBACK_IMAGE,
     type,
     subcategories: getPapelitoSubcategorySlugs(product),
+    publishedAt: typeof product.date === "string" ? product.date : null,
     isPremium: hasCollection(product, "premium"),
-    // Quem decide "novidade" é `markNewArrivals`, sobre a lista já ordenada por data:
+    // Quem decide "novidade" é `applyCollectionPools`, sobre a lista já ordenada por data:
     // dentro do mapper só existiria a posição no lote, que varia com perPage e page.
     isNewArrival: false,
     isOnSale: prices.discountPercent > 0,
@@ -526,22 +529,84 @@ export function mapWpProductToCatalogItem(
   };
 }
 
-export const NEW_ARRIVALS_COUNT = 8;
+/**
+ * Diz se uma data de publicação cabe na janela de novidade.
+ *
+ * `expirationDays` igual a zero é "sem prazo" e aceita qualquer data, inclusive ausente. Com prazo
+ * configurado, produto sem data fica de fora: não há como provar que ele é recente, e incluí-lo
+ * faria a coleção mentir justamente na configuração que o administrador ligou para restringi-la.
+ */
+export function isWithinNewArrivalWindow(
+  publishedAt: string | null | undefined,
+  expirationDays: number,
+  now = Date.now(),
+): boolean {
+  if (expirationDays <= 0) {
+    return true;
+  }
+
+  if (typeof publishedAt !== "string" || publishedAt.length === 0) {
+    return false;
+  }
+
+  const published = new Date(publishedAt).getTime();
+
+  if (Number.isNaN(published)) {
+    return false;
+  }
+
+  return now - published <= expirationDays * 24 * 60 * 60 * 1000;
+}
 
 /**
- * Marca os N primeiros itens como novidade.
+ * Aplica os tetos configurados das duas coleções derivadas sobre o catálogo varrido.
  *
- * Depende de a lista chegar ordenada por data decrescente (`orderby` de
- * `PRODUCTS_LIST_QUERY`) e de o lote ser constante — do contrário o conjunto mudaria
- * conforme `perPage` e `page`.
+ * Depende de a lista chegar ordenada por data decrescente (`orderby` de `PRODUCTS_LIST_QUERY`) e de
+ * o lote ser constante — do contrário o conjunto mudaria conforme `perPage` e `page`.
+ *
+ * Em Promoções o teto é gravado zerando `isOnSale` além do corte. Isso é aceitável porque essa flag
+ * é, neste modelo, apenas o predicado de pertinência da coleção (`matchesCollection`) — o desconto
+ * que o card exibe vem de `price`/`originalPrice`, não dela.
  */
-export function markNewArrivals(
+export function applyCollectionPools(
   items: ProductsCatalogItem[],
-  count = NEW_ARRIVALS_COUNT,
+  config: { newArrivals: { limit: number; expirationDays: number }; promotions: { limit: number } },
+  now = Date.now(),
 ): ProductsCatalogItem[] {
-  return items.map((item, index) =>
-    index < count ? { ...item, isNewArrival: true } : item,
-  );
+  const newArrivalIds = new Set<string>();
+
+  if (config.newArrivals.limit > 0) {
+    for (const item of items) {
+      if (newArrivalIds.size >= config.newArrivals.limit) {
+        break;
+      }
+
+      if (isWithinNewArrivalWindow(item.publishedAt, config.newArrivals.expirationDays, now)) {
+        newArrivalIds.add(item.id);
+      }
+    }
+  }
+
+  const promotionsLimit = config.promotions.limit;
+  const promotionIds = new Set<string>();
+
+  if (promotionsLimit > 0) {
+    for (const item of items) {
+      if (promotionIds.size >= promotionsLimit) {
+        break;
+      }
+
+      if (item.isOnSale) {
+        promotionIds.add(item.id);
+      }
+    }
+  }
+
+  return items.map((item) => ({
+    ...item,
+    isNewArrival: newArrivalIds.has(item.id),
+    isOnSale: promotionsLimit > 0 ? promotionIds.has(item.id) : item.isOnSale,
+  }));
 }
 
 export function mapWpProductToHomeCard(

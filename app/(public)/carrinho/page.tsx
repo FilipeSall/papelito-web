@@ -6,5 +6,11 @@ export const metadata = buildPrivatePageMetadata("Carrinho");
 
 export default async function CarrinhoPage() {
   const threshold = await getFreeShippingThreshold();
-  return <CartPageContent freeShippingMinimumCents={threshold?.minimumOrderCents ?? null} />;
+
+  return (
+    <CartPageContent
+      freeShippingMinimumCents={threshold?.minimumOrderCents ?? null}
+      freeShippingZipRanges={threshold?.zipRanges ?? []}
+    />
+  );
 }

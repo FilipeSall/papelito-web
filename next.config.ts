@@ -46,10 +46,10 @@ function browserImageOrigins() {
 }
 
 const isDevelopment = process.env.NODE_ENV === "development";
-const developmentScriptSource = isDevelopment ? " 'unsafe-eval'" : "";
+const developmentScriptSource = isDevelopment ? " 'unsafe-eval' http://localhost:8400" : "";
 // Em dev o Next abre WebSocket de HMR na própria origem; `ws:`/`wss:` são explícitos para não
 // depender de como cada navegador resolve `'self'` em esquema diferente.
-const developmentConnectSource = isDevelopment ? " ws: wss:" : "";
+const developmentConnectSource = isDevelopment ? " ws: wss: http://localhost:8400" : "";
 
 /**
  * `script-src` mantém `'unsafe-inline'` porque o bootstrap do App Router é inline e o nonce teria

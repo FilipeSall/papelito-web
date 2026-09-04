@@ -17,6 +17,7 @@ export default async function CheckoutPage() {
 	return (
 		<CheckoutAddressStepContent
 			freeShippingMinimumCents={freeShippingThreshold?.minimumOrderCents ?? null}
+			freeShippingZipRanges={freeShippingThreshold?.zipRanges ?? []}
 			company={
 				company
 					? {

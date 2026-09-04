@@ -17,6 +17,7 @@ import { formatBRL } from "@/lib/format-currency";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { ShippingSummaryRow } from "@/components/ui/shipping-summary-row";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import type { ZipRange } from "@/features/shipping/utils/zip-ranges";
 import {
   CartPaymentChip,
   CartQuantityControl,
@@ -90,11 +91,19 @@ function TrashIcon() {
   );
 }
 
+
+/** Referência estável: uma lista nova a cada render invalidaria o memo do resumo. */
+const EMPTY_ZIP_RANGES: readonly ZipRange[] = [];
+
 type CartPageContentProps = {
   freeShippingMinimumCents?: number | null;
+  freeShippingZipRanges?: readonly ZipRange[];
 };
 
-export function CartPageContent({ freeShippingMinimumCents = null }: CartPageContentProps) {
+export function CartPageContent({
+  freeShippingMinimumCents = null,
+  freeShippingZipRanges = EMPTY_ZIP_RANGES,
+}: CartPageContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const decreaseItem = useCartStore((state) => state.decreaseItem);
@@ -102,7 +111,7 @@ export function CartPageContent({ freeShippingMinimumCents = null }: CartPageCon
   const clearCart = useCartStore((state) => state.clearCart);
   const applyCoupon = useCartStore((state) => state.applyCoupon);
   const removeCoupon = useCartStore((state) => state.removeCoupon);
-  const summary = useCartSummary(freeShippingMinimumCents);
+  const summary = useCartSummary(freeShippingMinimumCents, { freeShippingZipRanges });
   const pricingError = useCartStore((state) => state.pricingError);
   const pricing = useCartStore((state) => state.pricing);
   const pricingRequiresConfirmation = useCartStore(

@@ -2,6 +2,32 @@
 
 Decisões de navegação e URL do painel `/admin`. As regras de autorização e os contratos das operações estão em [`../../../docs/flows/admin.md`](../../../docs/flows/admin.md).
 
+## Comercial: cupons, frete grátis e coleções
+
+`/admin/coupons` tratava só de cupons e empilhava, sem hierarquia, três blocos que não conversavam:
+frete grátis automático, parcelamento do checkout e a tabela de cupons. Desde 04/09 a rota é
+**`/admin/comercial`**, rotulada `Comercial` no menu, e `/admin/coupons` redireciona.
+
+- Quatro segmentos por `?tab=`: **Cupons** (padrão), **Frete grátis** e **Coleções** — as três
+  mecânicas comerciais, com o mesmo peso — e, depois de um separador, **Parcelamento**, que é
+  configuração de pagamento e não uma quarta mecânica. Mesma gramática do separador de Análises.
+- **Só os dados do segmento ativo são buscados.** São quatro configurações independentes; carregar
+  as quatro a cada visita pagaria três requisições que ninguém leu.
+- **Os segmentos vêm acima do cabeçalho**, e não abaixo como em Contas. Aqui cada segmento tem
+  assunto e ação primária próprios (`Novo cupom`, `Salvar regra`, `Salvar coleções`), então o
+  cabeçalho pertence ao segmento escolhido. Escolher antes de agir continua valendo, e mais forte.
+- **Nenhuma contagem nos segmentos.** O total de cupons vive no cabeçalho da moldura de resultados
+  e o número de regiões na sentença da regra de frete. Repetir o número nas abas recriaria o defeito
+  do "mesmo número em dois lugares" que a unificação de Contas corrigiu.
+- Contrato de URL da aba Cupons: `status` (`publish`, `draft`), `search` e `page`; padrões omitidos.
+  Busca, filtro e paginação existiam no backend desde sempre e estavam desligados no cliente.
+- A **regra de frete grátis é lida como uma frase**, não como dois campos vizinhos: *"Frete grátis a
+  partir de R$ 99,00 · 2 regiões"* fica no topo do segmento e um único botão salva mínimo e faixas.
+  Sem faixa cadastrada a frase diz `todo o Brasil`, que é o padrão.
+- **A máscara de CEP é só de interface.** O estado guarda o texto mascarado, o backend recebe oito
+  dígitos, e nenhum `min`/`max` nativo entra nos campos numéricos: a validação nativa bloquearia o
+  submit e mostraria a bolha do navegador em vez da mensagem no padrão da marca.
+
 ## Contas: pessoas, empresas e vendors são um domínio só
 
 Usuários, vendors e empresas tinham listagens separadas — `/admin/users`, `/admin/vendors` e
