@@ -59,6 +59,22 @@ export type AdminProductsSnapshot = {
   totalProducts: number;
 };
 
+export type AdminProductSkuBackfillSummary = {
+  dryRun: boolean;
+  errors: string[];
+  failed: number;
+  generated: number;
+  items: Array<{
+    id: number;
+    name: string;
+    sku: string;
+    status: string;
+  }>;
+  missing: number;
+  scanned: number;
+  skipped: number;
+};
+
 export type AdminProductsFilters = {
   category?: string;
   exclude?: number[];
@@ -686,6 +702,29 @@ export async function createAdminProduct(
   }
 
   return mapProduct(result.data);
+}
+
+export async function backfillAdminProductSkus(
+  accessToken: string,
+  options: { batch?: number; dryRun?: boolean } = {},
+) {
+  const result = await wpRest<AdminProductSkuBackfillSummary>(
+    "/papelito/v1/admin/products/sku-backfill",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      json: {
+        batch: options.batch ?? 100,
+        dryRun: options.dryRun ?? false,
+      },
+      method: "POST",
+    },
+  );
+
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+
+  return result.data;
 }
 
 export async function getAdminProduct(accessToken: string, productId: number) {

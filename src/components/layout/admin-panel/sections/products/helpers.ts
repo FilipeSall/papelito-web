@@ -156,7 +156,6 @@ export function buildPayload(
   if (hasChanged("regularPrice")) payload.regularPrice = normalizeProductPrice(draft.regularPrice);
   if (hasChanged("salePrice")) payload.salePrice = normalizeProductPrice(draft.salePrice);
   if (hasChanged("shortDescription")) payload.shortDescription = draft.shortDescription;
-  if (hasChanged("sku")) payload.sku = draft.sku;
   if (hasChanged("slug")) payload.slug = draft.slug;
   if (hasChanged("status")) payload.status = draft.status;
   if (hasChanged("tagIds")) payload.tags = draft.tagIds.map(Number);

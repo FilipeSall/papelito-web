@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAdminProductsManager } from "@/hooks/use-admin-products-manager";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import type { AdminProductsSnapshot } from "@/lib/server/admin-products";
+import type {
+  AdminProductSkuBackfillSummary,
+  AdminProductsSnapshot,
+} from "@/lib/server/admin-products";
 import type { AdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 
 import { AdminToast, InlineAlert } from "../../primitives";
@@ -36,6 +39,7 @@ export function ProductsManager({
 }>) {
   const [toast, setToast] = useState<ToastState>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [isBackfillingSkus, setIsBackfillingSkus] = useState(false);
   const toastHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastRemoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -144,6 +148,83 @@ export function ProductsManager({
     return true;
   }, [manager, showToast]);
 
+  const handleBackfillSkus = useCallback(async () => {
+    if (isBackfillingSkus) {
+      return;
+    }
+
+    setIsBackfillingSkus(true);
+
+    try {
+      const previewResponse = await fetch("/api/admin/products/sku-backfill", {
+        body: JSON.stringify({ batch: 100, dryRun: true }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const preview = (await previewResponse.json().catch(() => null)) as
+        | AdminProductSkuBackfillSummary
+        | { message?: string }
+        | null;
+
+      if (!previewResponse.ok || !preview || !("missing" in preview)) {
+        throw new Error(
+          preview && "message" in preview && preview.message
+            ? preview.message
+            : "Não foi possível verificar os SKUs ausentes.",
+        );
+      }
+
+      if (preview.missing === 0) {
+        showToast({
+          description: "Todos os produtos e variações já possuem SKU.",
+          title: "Nenhum SKU pendente.",
+          tone: "success",
+        });
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `${preview.missing} item(ns) sem SKU serão preenchidos automaticamente. Deseja continuar?`,
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      const applyResponse = await fetch("/api/admin/products/sku-backfill", {
+        body: JSON.stringify({ batch: 100, dryRun: false }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const applied = (await applyResponse.json().catch(() => null)) as
+        | AdminProductSkuBackfillSummary
+        | { message?: string }
+        | null;
+
+      if (!applyResponse.ok || !applied || !("generated" in applied)) {
+        throw new Error(
+          applied && "message" in applied && applied.message
+            ? applied.message
+            : "Não foi possível gerar os SKUs.",
+        );
+      }
+
+      await manager.loadProducts(1, appliedFilters, perPage);
+      showToast({
+        description: `${applied.generated} SKU(s) foram gerados. Itens já preenchidos permaneceram inalterados.`,
+        title: "SKUs atualizados.",
+        tone: "success",
+      });
+    } catch (error) {
+      showToast({
+        description: error instanceof Error ? error.message : "Não foi possível gerar os SKUs.",
+        title: "Falha ao gerar SKUs.",
+        tone: "error",
+      });
+    } finally {
+      setIsBackfillingSkus(false);
+    }
+  }, [appliedFilters, isBackfillingSkus, manager, perPage, showToast]);
+
   return (
     <>
       <div className="space-y-4">
@@ -151,8 +232,10 @@ export function ProductsManager({
           appliedFilters={appliedFilters}
           categories={taxonomy.categories}
           filters={filters}
+          isBackfillingSkus={isBackfillingSkus}
           isLoading={isLoading}
           onApply={(next) => void applyFilters(next)}
+          onBackfillSkus={() => void handleBackfillSkus()}
           onCreateNew={startNewProduct}
           onUpdateFilter={updateFilter}
         />

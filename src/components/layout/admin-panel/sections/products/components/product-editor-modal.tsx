@@ -314,9 +314,10 @@ function BasicInfoSection({
             value={draft.slug}
           />
           <TextField
+            disabled
             label="SKU"
-            helpText="Código interno único do produto para busca e integracoes."
-            onChange={(value) => updateDraft("sku", value)}
+            helpText="Gerado automaticamente pelo WordPress e imutável depois que o produto é criado."
+            onChange={() => undefined}
             value={draft.sku}
           />
         </div>

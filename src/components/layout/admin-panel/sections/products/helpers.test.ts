@@ -114,10 +114,7 @@ describe("pricing and shipping draft values", () => {
       width: "2",
     };
 
-    expect(buildPayload(draft, new Set(["sku", "weight"]))).toEqual({
-      sku: "SKU-11856",
-      weight: "0.4",
-    });
+    expect(buildPayload(draft, new Set(["sku", "weight"]))).toEqual({ weight: "0.4" });
 
     expect(
       buildPayload(

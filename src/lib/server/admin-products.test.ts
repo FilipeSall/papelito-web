@@ -252,4 +252,31 @@ describe("admin product media", () => {
     expect(result.products.every((product) => product.tags[0]?.id === 215)).toBe(true);
     expect(result.tags).toEqual([tag]);
   });
+
+  it("runs the SKU backfill through the WordPress admin contract", async () => {
+    const summary = {
+      dryRun: true,
+      errors: [],
+      failed: 0,
+      generated: 0,
+      items: [{ id: 11836, name: "Bandeja M", sku: "PPL-011836", status: "would_generate" }],
+      missing: 1,
+      scanned: 1,
+      skipped: 0,
+    };
+    wpRestMock.mockResolvedValue({
+      data: summary,
+      headers: new Headers(),
+      ok: true,
+      status: 200,
+    });
+    const { backfillAdminProductSkus } = await import("./admin-products");
+
+    await expect(backfillAdminProductSkus("token", { batch: 100, dryRun: true })).resolves.toEqual(summary);
+    expect(wpRestMock).toHaveBeenCalledWith("/papelito/v1/admin/products/sku-backfill", {
+      headers: { Authorization: "Bearer token" },
+      json: { batch: 100, dryRun: true },
+      method: "POST",
+    });
+  });
 });

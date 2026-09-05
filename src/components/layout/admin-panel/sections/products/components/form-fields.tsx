@@ -130,6 +130,7 @@ export function InfoTooltip({ text }: Readonly<{ text: string }>) {
 }
 
 export function TextField({
+  disabled = false,
   error = false,
   helpText,
   inputMode,
@@ -139,6 +140,7 @@ export function TextField({
   type = "text",
   value,
 }: Readonly<{
+  disabled?: boolean;
   error?: boolean;
   helpText?: string;
   inputMode?: "decimal" | "numeric";
@@ -154,11 +156,12 @@ export function TextField({
       <input
         aria-invalid={error || undefined}
         className={[
-          "min-h-12 w-full min-w-0 border bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:ring-1",
+          "min-h-12 w-full min-w-0 border bg-white px-5 text-base text-[#231f20] outline-none transition placeholder:text-[#231f20]/36 focus:ring-1 disabled:cursor-not-allowed disabled:bg-[#f0ead8] disabled:text-[#231f20]/55 disabled:opacity-80",
           error
             ? "border-[#c0392b] focus:border-[#c0392b] focus:ring-[#c0392b]"
             : "border-[#c9bd96] focus:border-[#231f20] focus:ring-[#231f20]",
         ].join(" ")}
+        disabled={disabled}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

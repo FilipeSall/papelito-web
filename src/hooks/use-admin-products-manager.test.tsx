@@ -361,7 +361,7 @@ describe("useAdminProductsManager", () => {
     expect(productCalls(fetchMock)).toHaveLength(2);
   });
 
-  it("sends only changed fields so a SKU update cannot clear existing prices", async () => {
+  it("does not send SKU changes from the product editor", async () => {
     const initialSnapshot = {
       ...snapshot,
       products: [{ ...product, regularPrice: "140", salePrice: "120" }],
@@ -371,7 +371,6 @@ describe("useAdminProductsManager", () => {
     );
 
     render(<ManagerHarness initialSnapshot={initialSnapshot} />);
-    fireEvent.change(screen.getByLabelText("sku"), { target: { value: "SKU-11856" } });
     escolherCategoria();
     fireEvent.click(screen.getByRole("button", { name: "salvar" }));
 
@@ -380,7 +379,7 @@ describe("useAdminProductsManager", () => {
     });
 
     const [, request] = productCalls(fetchMock)[0];
-    expect(JSON.parse(String(request.body))).toEqual({ sku: "SKU-11856" });
+    expect(JSON.parse(String(request.body))).toEqual({});
   });
 
   it("saves both prices with another changed field and keeps the confirmed values", async () => {
