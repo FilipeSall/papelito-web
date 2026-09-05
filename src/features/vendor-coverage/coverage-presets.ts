@@ -88,6 +88,20 @@ const PRESETS_BY_ID = new Map(BRAZIL_COVERAGE_PRESETS.map((preset) => [preset.id
 const NON_CUSTOM_PRESETS = BRAZIL_COVERAGE_PRESETS.filter((preset) => preset.isCustom !== true);
 const MATCHABLE_PRESETS = [...NON_CUSTOM_PRESETS].sort((left, right) => right.ranges.length - left.ranges.length);
 
+/** Só as regiões reais, para telas que já escolhem entre manual e região por outro controle. */
+export const REGION_COVERAGE_PRESETS: readonly CoveragePreset[] = NON_CUSTOM_PRESETS;
+
+export const REGION_COVERAGE_PRESET_OPTIONS = NON_CUSTOM_PRESETS.map((preset) => ({
+  label: preset.label,
+  value: preset.id,
+}));
+
+export function isRegionCoveragePresetId(presetId: string): boolean {
+  const preset = PRESETS_BY_ID.get(presetId);
+
+  return preset !== undefined && preset.isCustom !== true;
+}
+
 export function createEmptyCoverageRange(): CoverageRangeValue {
   return { minCep: "", maxCep: "" };
 }

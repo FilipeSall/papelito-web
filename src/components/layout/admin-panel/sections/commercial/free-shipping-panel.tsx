@@ -2,12 +2,24 @@
 
 import { Globe2, Loader2, MapPin, Plus, Save, Trash2, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition, type FormEvent } from "react";
+import { useId, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 
+import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
+import { formatCep, normalizeCep } from "@/features/revendedor/utils/revendedor-formatters";
 import type {
   FreeShippingThreshold,
   FreeShippingZipRange,
 } from "@/features/shipping/services/get-free-shipping-threshold";
+import {
+  type CoverageRangeValue,
+  CUSTOM_COVERAGE_PRESET_ID,
+  EMPTY_COVERAGE_PRESET_ID,
+  REGION_COVERAGE_PRESET_OPTIONS,
+  buildCoverageBlocksFromRanges,
+  createEmptyCoverageRange,
+  formatCoverageRangesSummary,
+  getCoveragePresetById,
+} from "@/features/vendor-coverage/coverage-presets";
 import { formatBRL } from "@/lib/format-currency";
 
 import {
@@ -23,26 +35,21 @@ import { formatCentsForInput, parseBRLCents } from "./money";
 
 const MAX_RANGES = 50;
 
-type RangeDraft = {
+/**
+ * Uma abrangência é uma região pronta ou uma faixa digitada à mão.
+ *
+ * `presetId` guarda qual: `custom` para faixa manual, `empty` para região ainda não escolhida e o
+ * id da UF para região pronta. Só o rascunho conhece essa distinção — o backend continua recebendo
+ * a lista plana de faixas, e a região é redescoberta na leitura por `buildCoverageBlocksFromRanges`.
+ */
+type ScopeDraft = {
   key: string;
-  maxCep: string;
-  minCep: string;
+  presetId: string;
+  ranges: CoverageRangeValue[];
 };
 
-type FreeShippingPanelProps = {
-  initialIssues: string[];
-  initialThreshold: FreeShippingThreshold | null;
-};
-
-function onlyDigits(value: string): string {
-  return value.replace(/\D+/g, "").slice(0, 8);
-}
-
-/** Máscara de exibição. O valor que vai para o backend é sempre `onlyDigits`. */
-function maskCep(value: string): string {
-  const digits = onlyDigits(value);
-
-  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+function isRegionScope(scope: ScopeDraft): boolean {
+  return scope.presetId !== CUSTOM_COVERAGE_PRESET_ID;
 }
 
 /**
@@ -51,21 +58,93 @@ function maskCep(value: string): string {
  * Um contador em nível de módulo avança no processo do servidor e outra vez no navegador, então o
  * `id` do campo saía diferente nos dois lados e a hidratação quebrava sem erro visível na tela.
  */
-function toDrafts(prefix: string, ranges: FreeShippingZipRange[]): RangeDraft[] {
-  return ranges.map((range, index) => ({
+function toScopeDrafts(prefix: string, ranges: FreeShippingZipRange[]): ScopeDraft[] {
+  if (ranges.length === 0) {
+    return [];
+  }
+
+  return buildCoverageBlocksFromRanges(ranges, "multi").map((block, index) => ({
     key: `${prefix}-${index}`,
-    maxCep: maskCep(range.maxCep),
-    minCep: maskCep(range.minCep),
+    presetId: block.presetId,
+    ranges: block.ranges.length > 0 ? block.ranges : [createEmptyCoverageRange()],
   }));
 }
 
-function describeRegions(count: number): string {
+function countDraftRanges(scopes: ScopeDraft[]): number {
+  return scopes.reduce((total, scope) => total + (scope.ranges.length > 0 ? scope.ranges.length : 1), 0);
+}
+
+function describeScopeCount(count: number): string {
   if (count === 0) {
     return "todo o Brasil";
   }
 
   return count === 1 ? "1 região" : `${count} regiões`;
 }
+
+function describeSavedScopes(ranges: FreeShippingZipRange[]): string[] {
+  if (ranges.length === 0) {
+    return [];
+  }
+
+  return buildCoverageBlocksFromRanges(ranges, "multi").map((block) => {
+    const preset = getCoveragePresetById(block.presetId);
+
+    return preset && preset.isCustom !== true
+      ? preset.label
+      : formatCoverageRangesSummary(block.ranges);
+  });
+}
+
+function scopeLabel(scope: ScopeDraft, index: number): string {
+  const preset = getCoveragePresetById(scope.presetId);
+
+  return preset && preset.isCustom !== true ? preset.label : `Faixa manual ${index + 1}`;
+}
+
+/**
+ * Sobreposição não impede salvar: `papelito_shipping_cep_allows_free_shipping()` resolve as faixas
+ * por união, então um CEP coberto duas vezes segue coberto uma. O aviso existe só para o
+ * administrador não achar que cadastrou duas regras com efeitos diferentes.
+ */
+function describeOverlaps(scopes: ScopeDraft[]): string | null {
+  const entries = scopes.flatMap((scope, index) =>
+    scope.ranges.flatMap((range) => {
+      const minCep = normalizeCep(range.minCep);
+      const maxCep = normalizeCep(range.maxCep);
+
+      if (minCep === "" || maxCep === "" || Number(minCep) > Number(maxCep)) {
+        return [];
+      }
+
+      return [{ index, label: scopeLabel(scope, index), max: Number(maxCep), min: Number(minCep) }];
+    }),
+  );
+
+  const pairs = new Set<string>();
+
+  for (let left = 0; left < entries.length; left += 1) {
+    for (let right = left + 1; right < entries.length; right += 1) {
+      const first = entries[left];
+      const second = entries[right];
+
+      if (first.index === second.index) {
+        continue;
+      }
+
+      if (first.min <= second.max && second.min <= first.max) {
+        pairs.add(`${first.label} e ${second.label}`);
+      }
+    }
+  }
+
+  return pairs.size === 0 ? null : [...pairs].join("; ");
+}
+
+type FreeShippingPanelProps = {
+  initialIssues: string[];
+  initialThreshold: FreeShippingThreshold | null;
+};
 
 export function FreeShippingPanel({
   initialIssues,
@@ -76,11 +155,11 @@ export function FreeShippingPanel({
   const [minimum, setMinimum] = useState(
     formatCentsForInput(initialThreshold?.minimumOrderCents ?? null),
   );
-  const [drafts, setDrafts] = useState<RangeDraft[]>(() =>
-    toDrafts(idPrefix, initialThreshold?.zipRanges ?? []),
+  const [drafts, setDrafts] = useState<ScopeDraft[]>(() =>
+    toScopeDrafts(idPrefix, initialThreshold?.zipRanges ?? []),
   );
   // Só avança em interação do usuário, que é sempre no cliente.
-  const nextIndexRef = useRef(initialThreshold?.zipRanges.length ?? 0);
+  const nextIndexRef = useRef(toScopeDrafts(idPrefix, initialThreshold?.zipRanges ?? []).length);
   const [savedState, setSavedState] = useState<FreeShippingThreshold | null>(initialThreshold);
   const [error, setError] = useState<string | null>(initialIssues[0] ?? null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
@@ -88,10 +167,10 @@ export function FreeShippingPanel({
   const [, startTransition] = useTransition();
   const { dismissToast, isVisible, showToast, toast } = useAdminToast();
 
-  function updateDraft(key: string, field: "maxCep" | "minCep", value: string) {
-    setDrafts((previous) =>
-      previous.map((draft) => (draft.key === key ? { ...draft, [field]: maskCep(value) } : draft)),
-    );
+  const draftRangeCount = countDraftRanges(drafts);
+  const overlapWarning = useMemo(() => describeOverlaps(drafts), [drafts]);
+
+  function clearRowError(key: string) {
     setRowErrors((previous) => {
       if (!previous[key]) {
         return previous;
@@ -104,8 +183,53 @@ export function FreeShippingPanel({
     });
   }
 
-  function addRange() {
-    if (drafts.length >= MAX_RANGES) {
+  function replaceScope(key: string, update: (scope: ScopeDraft) => ScopeDraft) {
+    setDrafts((previous) => previous.map((scope) => (scope.key === key ? update(scope) : scope)));
+    clearRowError(key);
+  }
+
+  function setScopeMode(key: string, mode: "manual" | "region") {
+    setError(null);
+    replaceScope(key, (scope) =>
+      mode === "manual"
+        ? { ...scope, presetId: CUSTOM_COVERAGE_PRESET_ID, ranges: [createEmptyCoverageRange()] }
+        : { ...scope, presetId: EMPTY_COVERAGE_PRESET_ID, ranges: [] },
+    );
+  }
+
+  function selectScopeRegion(key: string, presetId: string) {
+    const preset = getCoveragePresetById(presetId);
+
+    if (!preset || preset.isCustom === true) {
+      return;
+    }
+
+    const current = drafts.find((scope) => scope.key === key);
+    const currentCount = current ? (current.ranges.length > 0 ? current.ranges.length : 1) : 0;
+
+    if (draftRangeCount - currentCount + preset.ranges.length > MAX_RANGES) {
+      setError(`O limite é de ${MAX_RANGES} faixas de CEP.`);
+
+      return;
+    }
+
+    setError(null);
+    replaceScope(key, (scope) => ({
+      ...scope,
+      presetId: preset.id,
+      ranges: preset.ranges.map((range) => ({ ...range })),
+    }));
+  }
+
+  function updateManualRange(key: string, field: keyof CoverageRangeValue, value: string) {
+    replaceScope(key, (scope) => ({
+      ...scope,
+      ranges: [{ ...(scope.ranges[0] ?? createEmptyCoverageRange()), [field]: formatCep(value) }],
+    }));
+  }
+
+  function addScope() {
+    if (draftRangeCount >= MAX_RANGES) {
       setError(`O limite é de ${MAX_RANGES} faixas de CEP.`);
 
       return;
@@ -114,18 +238,80 @@ export function FreeShippingPanel({
     setError(null);
     setDrafts((previous) => [
       ...previous,
-      { key: `${idPrefix}-${nextIndexRef.current++}`, maxCep: "", minCep: "" },
+      {
+        key: `${idPrefix}-${nextIndexRef.current++}`,
+        presetId: EMPTY_COVERAGE_PRESET_ID,
+        ranges: [],
+      },
     ]);
   }
 
-  function removeRange(key: string) {
-    setDrafts((previous) => previous.filter((draft) => draft.key !== key));
-    setRowErrors((previous) => {
-      const next = { ...previous };
-      delete next[key];
+  function removeScope(key: string) {
+    setDrafts((previous) => previous.filter((scope) => scope.key !== key));
+    clearRowError(key);
+  }
 
-      return next;
+  /**
+   * Região pronta grava as faixas do preset, nunca as do rascunho.
+   *
+   * O rascunho carrega uma cópia só para exibir; se a definição da UF mudar no módulo compartilhado,
+   * o que vai para o banco continua sendo a definição vigente e não uma cópia envelhecida na tela.
+   */
+  function collectZipRanges(): { rowErrors: Record<string, string>; zipRanges: FreeShippingZipRange[] } {
+    const nextRowErrors: Record<string, string> = {};
+    const zipRanges: FreeShippingZipRange[] = [];
+    const usedRegions = new Set<string>();
+
+    drafts.forEach((scope, index) => {
+      if (!isRegionScope(scope)) {
+        const minCep = normalizeCep(scope.ranges[0]?.minCep ?? "");
+        const maxCep = normalizeCep(scope.ranges[0]?.maxCep ?? "");
+
+        if (minCep === "" || maxCep === "") {
+          nextRowErrors[scope.key] = "Informe os oito dígitos do CEP inicial e do final.";
+
+          return;
+        }
+
+        if (Number(minCep) > Number(maxCep)) {
+          nextRowErrors[scope.key] = "O CEP final precisa ser maior ou igual ao inicial.";
+
+          return;
+        }
+
+        zipRanges.push({ maxCep, minCep });
+
+        return;
+      }
+
+      if (scope.presetId === EMPTY_COVERAGE_PRESET_ID) {
+        nextRowErrors[scope.key] = "Selecione uma região ou troque para faixa manual.";
+
+        return;
+      }
+
+      const preset = getCoveragePresetById(scope.presetId);
+
+      if (!preset || preset.ranges.length === 0) {
+        nextRowErrors[scope.key] = "Esta região não tem faixa de CEP configurada.";
+
+        return;
+      }
+
+      if (usedRegions.has(preset.id)) {
+        nextRowErrors[scope.key] = `A região ${preset.label} já está na abrangência ${index}.`;
+
+        return;
+      }
+
+      usedRegions.add(preset.id);
+
+      for (const range of preset.ranges) {
+        zipRanges.push({ maxCep: normalizeCep(range.maxCep), minCep: normalizeCep(range.minCep) });
+      }
     });
+
+    return { rowErrors: nextRowErrors, zipRanges };
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -139,30 +325,18 @@ export function FreeShippingPanel({
       return;
     }
 
-    const nextRowErrors: Record<string, string> = {};
-    const zipRanges: FreeShippingZipRange[] = [];
-
-    for (const draft of drafts) {
-      const minCep = onlyDigits(draft.minCep);
-      const maxCep = onlyDigits(draft.maxCep);
-
-      if (minCep.length !== 8 || maxCep.length !== 8) {
-        nextRowErrors[draft.key] = "Informe os oito dígitos do CEP inicial e do final.";
-        continue;
-      }
-
-      if (Number(minCep) > Number(maxCep)) {
-        nextRowErrors[draft.key] = "O CEP final precisa ser maior ou igual ao inicial.";
-        continue;
-      }
-
-      zipRanges.push({ maxCep, minCep });
-    }
+    const { rowErrors: nextRowErrors, zipRanges } = collectZipRanges();
 
     setRowErrors(nextRowErrors);
 
     if (Object.keys(nextRowErrors).length > 0) {
-      setError("Corrija as faixas marcadas antes de salvar.");
+      setError("Corrija as abrangências marcadas antes de salvar.");
+
+      return;
+    }
+
+    if (zipRanges.length > MAX_RANGES) {
+      setError(`O limite é de ${MAX_RANGES} faixas de CEP.`);
 
       return;
     }
@@ -196,13 +370,14 @@ export function FreeShippingPanel({
         minimumOrderCents: payload.minimumOrderCents,
         zipRanges: Array.isArray(payload.zipRanges) ? payload.zipRanges : [],
       };
+      const savedDrafts = toScopeDrafts(idPrefix, saved.zipRanges);
 
       setSavedState(saved);
       setMinimum(formatCentsForInput(saved.minimumOrderCents));
-      nextIndexRef.current = saved.zipRanges.length;
-      setDrafts(toDrafts(idPrefix, saved.zipRanges));
+      nextIndexRef.current = savedDrafts.length;
+      setDrafts(savedDrafts);
       showToast({
-        description: `Pedidos de ${formatBRL(saved.minimumOrderCents / 100)} para ${describeRegions(saved.zipRanges.length)} passam a ter o frete abatido.`,
+        description: `Pedidos de ${formatBRL(saved.minimumOrderCents / 100)} para ${describeScopeCount(savedDrafts.length)} passam a ter o frete abatido.`,
         title: "Regra de frete grátis salva",
       });
       startTransition(() => router.refresh());
@@ -215,7 +390,7 @@ export function FreeShippingPanel({
     }
   }
 
-  const savedRegions = savedState?.zipRanges.length ?? 0;
+  const savedScopes = describeSavedScopes(savedState?.zipRanges ?? []);
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -237,19 +412,27 @@ export function FreeShippingPanel({
       <section className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
         <div aria-hidden className="h-2 w-full bg-brand-yellow" />
 
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b-2 border-[#1a1a1a] px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-[#1a1a1a]">
-          <Truck aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
-          {savedState ? (
-            <>
-              <span>Frete grátis a partir de</span>
-              <span data-numeric>{formatBRL(savedState.minimumOrderCents / 100)}</span>
-              <span aria-hidden>·</span>
-              <span>{describeRegions(savedRegions)}</span>
-            </>
-          ) : (
-            <span>Regra de frete grátis indisponível</span>
-          )}
-        </p>
+        <div className="border-b-2 border-[#1a1a1a] px-5 py-4">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black uppercase tracking-[0.12em] text-[#1a1a1a]">
+            <Truck aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+            {savedState ? (
+              <>
+                <span>Frete grátis a partir de</span>
+                <span data-numeric>{formatBRL(savedState.minimumOrderCents / 100)}</span>
+                <span aria-hidden>·</span>
+                <span>{describeScopeCount(savedScopes.length)}</span>
+              </>
+            ) : (
+              <span>Regra de frete grátis indisponível</span>
+            )}
+          </p>
+
+          {savedScopes.length > 0 ? (
+            <p className="mt-2 text-xs leading-5 text-[#231f20]/64">
+              Abrangência salva: {savedScopes.join(" · ")}
+            </p>
+          ) : null}
+        </div>
 
         <div className="space-y-5 px-5 py-5 md:px-6">
           <div className="max-w-xs">
@@ -286,8 +469,8 @@ export function FreeShippingPanel({
                 </span>
                 <p className="mt-2 max-w-xl text-xs leading-5 text-[#231f20]/70">
                   {drafts.length === 0
-                    ? "Sem nenhuma faixa cadastrada o frete grátis vale para todo o Brasil — é o comportamento atual."
-                    : "Só CEPs dentro de uma destas faixas recebem o frete grátis automático."}
+                    ? "Sem nenhuma abrangência cadastrada o frete grátis vale para todo o Brasil — é o comportamento atual."
+                    : "Escolha uma região pronta para usar a faixa de CEP oficial dela, ou digite uma faixa própria."}
                 </p>
               </div>
               <button
@@ -295,12 +478,12 @@ export function FreeShippingPanel({
                   "inline-flex h-11 items-center gap-2 border-2 border-dashed border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-45",
                   FOCUS_RING,
                 ].join(" ")}
-                disabled={isSaving || drafts.length >= MAX_RANGES}
-                onClick={addRange}
+                disabled={isSaving || draftRangeCount >= MAX_RANGES}
+                onClick={addScope}
                 type="button"
               >
                 <Plus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-                Adicionar faixa
+                Adicionar abrangência
               </button>
             </div>
 
@@ -311,97 +494,28 @@ export function FreeShippingPanel({
               </p>
             ) : (
               <ul className="mt-4 space-y-3">
-                {drafts.map((draft, index) => {
-                  const rowError = rowErrors[draft.key];
-                  const label = `Faixa ${index + 1}`;
-
-                  return (
-                    <li
-                      className="border-2 border-[#1a1a1a] bg-white px-4 py-4"
-                      key={draft.key}
-                    >
-                      <div className="flex flex-wrap items-end gap-3">
-                        <span className="flex h-11 items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#231f20]/60">
-                          <MapPin aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
-                          {label}
-                        </span>
-
-                        <div className="min-w-0 flex-[1_1_10rem]">
-                          <label
-                            className="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
-                            htmlFor={`${draft.key}-min`}
-                          >
-                            <span className="flex h-4 items-center">CEP inicial</span>
-                          </label>
-                          <input
-                            aria-describedby={rowError ? `${draft.key}-error` : undefined}
-                            aria-invalid={Boolean(rowError)}
-                            className={[
-                              "mt-2 h-11 w-full rounded-none border-2 bg-white px-3 text-sm text-[#1a1a1a] outline-none placeholder:text-[#1a1a1a]/40",
-                              rowError ? "border-[#c0392b]" : "border-[#1a1a1a]",
-                              FOCUS_RING,
-                            ].join(" ")}
-                            disabled={isSaving}
-                            id={`${draft.key}-min`}
-                            inputMode="numeric"
-                            onChange={(event) => updateDraft(draft.key, "minCep", event.target.value)}
-                            placeholder="70000-000"
-                            value={draft.minCep}
-                          />
-                        </div>
-
-                        <div className="min-w-0 flex-[1_1_10rem]">
-                          <label
-                            className="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
-                            htmlFor={`${draft.key}-max`}
-                          >
-                            <span className="flex h-4 items-center">CEP final</span>
-                          </label>
-                          <input
-                            aria-describedby={rowError ? `${draft.key}-error` : undefined}
-                            aria-invalid={Boolean(rowError)}
-                            className={[
-                              "mt-2 h-11 w-full rounded-none border-2 bg-white px-3 text-sm text-[#1a1a1a] outline-none placeholder:text-[#1a1a1a]/40",
-                              rowError ? "border-[#c0392b]" : "border-[#1a1a1a]",
-                              FOCUS_RING,
-                            ].join(" ")}
-                            disabled={isSaving}
-                            id={`${draft.key}-max`}
-                            inputMode="numeric"
-                            onChange={(event) => updateDraft(draft.key, "maxCep", event.target.value)}
-                            placeholder="70999-999"
-                            value={draft.maxCep}
-                          />
-                        </div>
-
-                        <button
-                          aria-label={`Remover ${label.toLowerCase()}`}
-                          className={[
-                            "inline-flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-45",
-                            FOCUS_RING,
-                          ].join(" ")}
-                          disabled={isSaving}
-                          onClick={() => removeRange(draft.key)}
-                          type="button"
-                        >
-                          <Trash2 aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-                        </button>
-                      </div>
-
-                      {rowError ? (
-                        <p
-                          className="mt-3 text-xs font-bold text-[#c0392b]"
-                          id={`${draft.key}-error`}
-                          role="alert"
-                        >
-                          ⚠ {rowError}
-                        </p>
-                      ) : null}
-                    </li>
-                  );
-                })}
+                {drafts.map((scope, index) => (
+                  <ScopeRow
+                    error={rowErrors[scope.key]}
+                    index={index}
+                    isSaving={isSaving}
+                    key={scope.key}
+                    onRemove={() => removeScope(scope.key)}
+                    onSelectRegion={(presetId) => selectScopeRegion(scope.key, presetId)}
+                    onSetMode={(mode) => setScopeMode(scope.key, mode)}
+                    onUpdateManualRange={(field, value) => updateManualRange(scope.key, field, value)}
+                    scope={scope}
+                  />
+                ))}
               </ul>
             )}
+
+            {overlapWarning ? (
+              <p className="mt-3 text-xs leading-5 text-[#231f20]/70">
+                As abrangências {overlapWarning} se sobrepõem. O CEP repetido continua elegível uma
+                vez só — remova a duplicata se ela não foi intencional.
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
@@ -422,5 +536,230 @@ export function FreeShippingPanel({
         />
       ) : null}
     </form>
+  );
+}
+
+type ScopeRowProps = {
+  error?: string;
+  index: number;
+  isSaving: boolean;
+  onRemove: () => void;
+  onSelectRegion: (presetId: string) => void;
+  onSetMode: (mode: "manual" | "region") => void;
+  onUpdateManualRange: (field: keyof CoverageRangeValue, value: string) => void;
+  scope: ScopeDraft;
+};
+
+function ScopeRow({
+  error,
+  index,
+  isSaving,
+  onRemove,
+  onSelectRegion,
+  onSetMode,
+  onUpdateManualRange,
+  scope,
+}: Readonly<ScopeRowProps>) {
+  const position = index + 1;
+  const isRegion = isRegionScope(scope);
+  const preset = isRegion ? getCoveragePresetById(scope.presetId) : null;
+  const selectedRegionId = preset && preset.isCustom !== true ? preset.id : "";
+  const errorId = error ? `${scope.key}-error` : undefined;
+
+  return (
+    <li className="border-2 border-[#1a1a1a] bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#1a1a1a]/10 px-4 py-3">
+        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#231f20]/60">
+          <MapPin aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+          Abrangência {position}
+          <span
+            className={[
+              "border-2 border-[#1a1a1a] px-2 py-0.5 text-[9px] tracking-[0.14em] text-[#1a1a1a]",
+              isRegion ? "bg-brand-yellow" : "bg-[#f2eee6]",
+            ].join(" ")}
+          >
+            {isRegion ? "Região pronta" : "Faixa manual"}
+          </span>
+        </span>
+
+        <div className="flex items-center gap-2">
+          <div
+            aria-label={`Tipo de abrangência ${position}`}
+            className="inline-flex border-2 border-[#1a1a1a]"
+            role="group"
+          >
+            <ModeButton
+              disabled={isSaving}
+              isActive={isRegion}
+              label="Região pronta"
+              onClick={() => onSetMode("region")}
+            />
+            <ModeButton
+              className="border-l-2 border-[#1a1a1a]"
+              disabled={isSaving}
+              isActive={!isRegion}
+              label="Faixa manual"
+              onClick={() => onSetMode("manual")}
+            />
+          </div>
+
+          <button
+            aria-label={`Remover abrangência ${position}`}
+            className={[
+              "inline-flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-45",
+              FOCUS_RING,
+            ].join(" ")}
+            disabled={isSaving}
+            onClick={onRemove}
+            type="button"
+          >
+            <Trash2 aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 py-4">
+        {isRegion ? (
+          <div className="max-w-md">
+            <CheckoutCustomSelect
+              anchoredMenu
+              disabled={isSaving}
+              label={<span className="flex h-4 items-center">Região</span>}
+              labelClassName="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
+              listClassName="z-[90] rounded-none border-2 border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
+              onChange={onSelectRegion}
+              optionClassName="tracking-normal"
+              options={REGION_COVERAGE_PRESET_OPTIONS}
+              placeholder="Selecione uma região"
+              searchPlaceholder="Buscar região"
+              searchable
+              selectedValueClassName="text-[#1a1a1a]"
+              triggerClassName="!h-11 w-full rounded-none !border-2 !border-[#1a1a1a] bg-white px-3 text-sm tracking-normal text-[#1a1a1a]"
+              value={selectedRegionId}
+              wrapperClassName="!gap-0"
+            />
+
+            {preset && preset.ranges.length > 0 ? (
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#231f20]/64">
+                <span className="shrink-0 font-black uppercase tracking-[0.14em] text-[#231f20]/70">
+                  Faixa automática de CEP
+                </span>
+                <span data-numeric>{formatCoverageRangesSummary(preset.ranges)}</span>
+              </p>
+            ) : (
+              <p className="mt-2 text-xs leading-5 text-[#231f20]/64">
+                Escolher a região preenche sozinha a faixa de CEP oficial dela.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-end gap-3">
+            <ManualCepInput
+              describedBy={errorId}
+              disabled={isSaving}
+              hasError={Boolean(error)}
+              id={`${scope.key}-min`}
+              label="CEP inicial"
+              onChange={(value) => onUpdateManualRange("minCep", value)}
+              placeholder="70000-000"
+              value={scope.ranges[0]?.minCep ?? ""}
+            />
+            <ManualCepInput
+              describedBy={errorId}
+              disabled={isSaving}
+              hasError={Boolean(error)}
+              id={`${scope.key}-max`}
+              label="CEP final"
+              onChange={(value) => onUpdateManualRange("maxCep", value)}
+              placeholder="70999-999"
+              value={scope.ranges[0]?.maxCep ?? ""}
+            />
+          </div>
+        )}
+
+        {error ? (
+          <p className="mt-3 text-xs font-bold text-[#c0392b]" id={errorId} role="alert">
+            ⚠ {error}
+          </p>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+function ModeButton({
+  className = "",
+  disabled,
+  isActive,
+  label,
+  onClick,
+}: Readonly<{
+  className?: string;
+  disabled: boolean;
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      aria-pressed={isActive}
+      className={[
+        "inline-flex h-9 items-center px-3 text-[10px] font-black uppercase tracking-[0.14em] transition disabled:cursor-not-allowed disabled:opacity-45",
+        isActive ? "bg-[#1a1a1a] text-white" : "bg-white text-[#1a1a1a] hover:bg-brand-yellow",
+        className,
+        FOCUS_RING,
+      ].join(" ")}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
+function ManualCepInput({
+  describedBy,
+  disabled,
+  hasError,
+  id,
+  label,
+  onChange,
+  placeholder,
+  value,
+}: Readonly<{
+  describedBy?: string;
+  disabled: boolean;
+  hasError: boolean;
+  id: string;
+  label: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}>) {
+  return (
+    <div className="min-w-0 flex-[1_1_10rem]">
+      <label
+        className="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
+        htmlFor={id}
+      >
+        <span className="flex h-4 items-center">{label}</span>
+      </label>
+      <input
+        aria-describedby={describedBy}
+        aria-invalid={hasError}
+        className={[
+          "mt-2 h-11 w-full rounded-none border-2 bg-white px-3 text-sm text-[#1a1a1a] outline-none placeholder:text-[#1a1a1a]/40",
+          hasError ? "border-[#c0392b]" : "border-[#1a1a1a]",
+          FOCUS_RING,
+        ].join(" ")}
+        disabled={disabled}
+        id={id}
+        inputMode="numeric"
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        value={value}
+      />
+    </div>
   );
 }

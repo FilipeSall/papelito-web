@@ -27,6 +27,22 @@ frete grátis automático, parcelamento do checkout e a tabela de cupons. Desde 
 - **A máscara de CEP é só de interface.** O estado guarda o texto mascarado, o backend recebe oito
   dígitos, e nenhum `min`/`max` nativo entra nos campos numéricos: a validação nativa bloquearia o
   submit e mostraria a bolha do navegador em vez da mensagem no padrão da marca.
+- **Cada abrangência da regra de frete é uma região pronta ou uma faixa manual**, escolhidas por um
+  alternador na própria linha. As regiões são as mesmas de `src/features/vendor-coverage/coverage-presets.ts`,
+  que já servem a cobertura de vendor — reproduzir a tabela de UFs aqui criaria uma segunda verdade
+  para o mesmo dado. Nova abrangência nasce em **região pronta**: quem restringe por região não deveria
+  precisar saber de cor os CEPs que a formam.
+- **A região não é persistida — é redescoberta na leitura.** O backend continua recebendo a lista plana
+  de `zipRanges`, e `buildCoverageBlocksFromRanges()` reagrupa as faixas salvas na UF correspondente ao
+  abrir a tela. Guardar o id da região exigiria migração e abriria a chance de o rótulo divergir das
+  faixas gravadas; do jeito atual, uma regra manual antiga continua manual e uma que coincide com uma
+  UF passa a se mostrar como região, sem tocar em dado nenhum.
+- **Ao salvar, região pronta grava as faixas do preset, nunca as do rascunho** — se a definição da UF
+  mudar no módulo compartilhado, o que vai ao banco é a definição vigente, não uma cópia envelhecida
+  na tela.
+- **Sobreposição avisa, duplicata recusa.** Duas abrangências que se cruzam continuam corretas, porque
+  a decisão resolve as faixas por união; já a mesma região escolhida duas vezes é erro de digitação e
+  bloqueia o submit.
 
 ## Contas: pessoas, empresas e vendors são um domínio só
 

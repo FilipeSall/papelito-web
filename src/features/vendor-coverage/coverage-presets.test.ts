@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  COVERAGE_PRESET_OPTIONS,
   CUSTOM_COVERAGE_PRESET_ID,
   EMPTY_COVERAGE_PRESET_ID,
+  REGION_COVERAGE_PRESET_OPTIONS,
   buildCoverageBlocksFromRanges,
   findCoveragePresetByRanges,
+  isRegionCoveragePresetId,
   validateCoverageRanges,
 } from "./coverage-presets";
 
@@ -47,5 +50,19 @@ describe("coverage-presets", () => {
     expect(
       validateCoverageRanges([{ minCep: "73000-000", maxCep: "70000-000" }]),
     ).toBe("O CEP final precisa ser maior ou igual ao inicial na faixa 1.");
+  });
+
+  it("expõe as regiões sem a opção de faixa personalizada", () => {
+    expect(REGION_COVERAGE_PRESET_OPTIONS).toHaveLength(COVERAGE_PRESET_OPTIONS.length - 1);
+    expect(REGION_COVERAGE_PRESET_OPTIONS.some((option) => option.value === CUSTOM_COVERAGE_PRESET_ID)).toBe(
+      false,
+    );
+    expect(REGION_COVERAGE_PRESET_OPTIONS.map((option) => option.value)).toContain("SP");
+  });
+
+  it("distingue região de faixa personalizada e de id desconhecido", () => {
+    expect(isRegionCoveragePresetId("DF")).toBe(true);
+    expect(isRegionCoveragePresetId(CUSTOM_COVERAGE_PRESET_ID)).toBe(false);
+    expect(isRegionCoveragePresetId(EMPTY_COVERAGE_PRESET_ID)).toBe(false);
   });
 });
