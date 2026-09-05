@@ -14,6 +14,7 @@ import { authOptions } from "@/lib/auth";
 type AuthenticatedProfile = {
   customer: ProfileCustomer;
   company: CompanyDetails | null;
+  cpfLast4: string | null;
   image?: string | null;
   name: string;
   email: string;
@@ -36,7 +37,8 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile> {
 
   return {
     customer,
-    company: companyContext.ok ? companyContext.data.company ?? null : null,
+    company: companyContext.ok ? (companyContext.data.company ?? null) : null,
+    cpfLast4: companyContext.ok ? (companyContext.data.cpfLast4 ?? null) : null,
     name: buildProfileName(customer, session.user.name),
     email: buildProfileEmail(customer, session.user.email),
     image: session.user.image,

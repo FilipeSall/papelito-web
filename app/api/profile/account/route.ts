@@ -1,8 +1,12 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { fetchProfileCustomer, updateProfileCustomer } from "@/features/profile/server/customer";
+import {
+  fetchProfileCustomer,
+  updateProfileCustomer,
+} from "@/features/profile/server/customer";
 import { authOptions } from "@/lib/auth";
+import { fetchCompanyContext } from "@/lib/server/company-api";
 import { fetchCurrentUserRole } from "@/lib/server/current-user-role";
 import { isValidCpf } from "@/lib/validation/brazilian-documents";
 import { wpRest } from "@/lib/server/wp-rest";
@@ -26,7 +30,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Não autenticado." }, { status: 401 });
   }
 
-  const payload = (await request.json().catch(() => null)) as AccountPayload | null;
+  const payload = (await request
+    .json()
+    .catch(() => null)) as AccountPayload | null;
 
   if (!payload) {
     return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
@@ -48,7 +54,9 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const role = await fetchCurrentUserRole(session.accessToken).catch(() => undefined);
+  const role = await fetchCurrentUserRole(session.accessToken).catch(
+    () => undefined,
+  );
 
   if (!role) {
     return NextResponse.json(
@@ -57,21 +65,31 @@ export async function PATCH(request: Request) {
     );
   }
 
-  // O cadastro empresarial já valida o CPF; sem esta guarda o mesmo dado entrava sem verificação
-  // pela porta do perfil e ficava gravado sujo em `wp_usermeta`.
-  if (role === "customer" && !isValidCpf(cpf)) {
-    return NextResponse.json({ message: "Informe um CPF válido." }, { status: 422 });
+  const companyContext =
+    role === "customer" ? await fetchCompanyContext(session.accessToken) : null;
+  const identityAlreadyVerified =
+    companyContext?.ok && companyContext.data.identityStatus === "verified";
+
+  if (role === "customer" && !isValidCpf(cpf) && !identityAlreadyVerified) {
+    return NextResponse.json(
+      { message: "Informe um CPF válido." },
+      { status: 422 },
+    );
   }
 
   try {
     if (role === "customer") {
-      const identity = await wpRest("/papelito/v1/identity/cpf", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-        json: { cpf },
-      });
-      if (!identity.ok) {
-        return NextResponse.json(identity.error, { status: identity.status || 502 });
+      if (isValidCpf(cpf)) {
+        const identity = await wpRest("/papelito/v1/identity/cpf", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+          json: { cpf },
+        });
+        if (!identity.ok) {
+          return NextResponse.json(identity.error, {
+            status: identity.status || 502,
+          });
+        }
       }
     }
 
@@ -90,14 +108,16 @@ export async function PATCH(request: Request) {
             ]
           : [
               { key: "phone_number", value: phoneNumber },
-              { key: "cpf", value: cpf },
+              ...(isValidCpf(cpf) ? [{ key: "cpf", value: cpf }] : []),
             ],
     });
 
     return NextResponse.json({ customer });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Não foi possível atualizar seus dados.";
+      error instanceof Error
+        ? error.message
+        : "Não foi possível atualizar seus dados.";
 
     return NextResponse.json({ message }, { status: 500 });
   }
@@ -111,11 +131,19 @@ export async function GET() {
   }
 
   try {
-    const customer = await fetchProfileCustomer(session.accessToken);
-    return NextResponse.json({ customer });
+    const [customer, companyContext] = await Promise.all([
+      fetchProfileCustomer(session.accessToken),
+      fetchCompanyContext(session.accessToken),
+    ]);
+    return NextResponse.json({
+      company: companyContext.ok ? companyContext.data.company : null,
+      customer,
+    });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Não foi possível carregar seus dados.";
+      error instanceof Error
+        ? error.message
+        : "Não foi possível carregar seus dados.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

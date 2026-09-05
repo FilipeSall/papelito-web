@@ -22,6 +22,7 @@ type RegisterResult = {
   email?: string;
   message?: string;
   requiresLogin?: boolean;
+  requiresEmailVerification?: boolean;
 };
 
 const RETURN_PATH = "/convite";
@@ -34,16 +35,25 @@ export function InvitationRegistration() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] = useState(false);
+  const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] =
+    useState(false);
 
   useEffect(() => {
     void fetch("/api/company/invitations/current", { cache: "no-store" })
       .then(async (response) => {
-        const data = (await response.json()) as Invitation | { message?: string };
-        if (!response.ok) throw new Error("message" in data ? data.message : "Convite inválido.");
+        const data = (await response.json()) as
+          Invitation | { message?: string };
+        if (!response.ok)
+          throw new Error(
+            "message" in data ? data.message : "Convite inválido.",
+          );
         setInvitation(data as Invitation);
       })
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Convite inválido."));
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error ? reason.message : "Convite inválido.",
+        ),
+      );
   }, []);
 
   async function submit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -82,14 +92,21 @@ export function InvitationRegistration() {
         cpf,
       }),
     });
-    const data = (await response.json().catch(() => null)) as RegisterResult | null;
+    const data = (await response
+      .json()
+      .catch(() => null)) as RegisterResult | null;
     if (!response.ok) {
       setSubmitting(false);
       setError(data?.message ?? "Não foi possível criar sua conta.");
       return;
     }
-    // Conta já verificada: o backend não toca na senha enviada, então o caminho é o login.
+    // Convite valido ja prova o e-mail; a conta nova so precisa entrar para aceitar a membership.
     if (data?.requiresLogin) {
+      router.push(LOGIN_HREF);
+      return;
+    }
+
+    if (data?.requiresEmailVerification === false) {
       router.push(LOGIN_HREF);
       return;
     }
@@ -99,22 +116,37 @@ export function InvitationRegistration() {
   }
 
   if (error && !invitation) {
-    return <main className="mx-auto max-w-lg px-4 py-16"><p className="text-sm font-bold text-[#c0392b]">{error}</p><Link href="/" className="mt-5 inline-block underline">Voltar ao início</Link></main>;
+    return (
+      <main className="mx-auto max-w-lg px-4 py-16">
+        <p className="text-sm font-bold text-[#c0392b]">{error}</p>
+        <Link href="/" className="mt-5 inline-block underline">
+          Voltar ao início
+        </Link>
+      </main>
+    );
   }
-  if (!invitation) return <main className="mx-auto max-w-lg px-4 py-16">Validando convite...</main>;
+  if (!invitation)
+    return (
+      <main className="mx-auto max-w-lg px-4 py-16">Validando convite...</main>
+    );
 
   // Já existe conta para o e-mail convidado: oferecer login em vez de deixar o POST falhar.
   if (invitation.accountExists) {
     const onlyGoogle =
-      invitation.authMethods.length > 0 && !invitation.authMethods.includes("password");
+      invitation.authMethods.length > 0 &&
+      !invitation.authMethods.includes("password");
 
     return (
       <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-12">
         <div className="space-y-4 border-2 border-[#1a1a1a] bg-[#faf8f2] p-8 shadow-[8px_8px_0px_#1a1a1a]">
-          <h1 className="text-xl font-black uppercase">Você já tem uma conta</h1>
+          <h1 className="text-xl font-black uppercase">
+            Você já tem uma conta
+          </h1>
           <p className="text-sm">
-            Já existe uma conta para <strong className="font-black">{invitation.invitedEmail}</strong>.
-            Entre com ela para aceitar o convite — sua senha atual continua valendo.
+            Já existe uma conta para{" "}
+            <strong className="font-black">{invitation.invitedEmail}</strong>.
+            Entre com ela para aceitar o convite — sua senha atual continua
+            valendo.
           </p>
           <Link
             href={LOGIN_HREF}
@@ -122,7 +154,10 @@ export function InvitationRegistration() {
           >
             {onlyGoogle ? "Entrar com Google" : "Entrar para aceitar"}
           </Link>
-          <Link href="/recuperar-senha" className="block text-center text-sm underline">
+          <Link
+            href="/recuperar-senha"
+            className="block text-center text-sm underline"
+          >
             Esqueci minha senha
           </Link>
         </div>
@@ -132,25 +167,57 @@ export function InvitationRegistration() {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-12">
-      <form onSubmit={submit} className="space-y-4 border-2 border-[#1a1a1a] bg-[#faf8f2] p-8 shadow-[8px_8px_0px_#1a1a1a]">
+      <form
+        onSubmit={submit}
+        className="space-y-4 border-2 border-[#1a1a1a] bg-[#faf8f2] p-8 shadow-[8px_8px_0px_#1a1a1a]"
+      >
         <h1 className="text-xl font-black uppercase">Crie sua conta</h1>
-        <p className="text-sm">Você será vinculado(a) a {invitation.companyName || "esta empresa"} depois de confirmar o e-mail e entrar na conta.</p>
-        <label className="block text-sm font-bold">E-mail<input value={invitation.invitedEmail} disabled className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 disabled:text-[#555]" /></label>
+        <p className="text-sm">
+          Você será vinculado(a) a {invitation.companyName || "esta empresa"}{" "}
+          depois de entrar na conta.
+        </p>
+        <label className="block text-sm font-bold">
+          E-mail
+          <input
+            value={invitation.invitedEmail}
+            disabled
+            className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 disabled:text-[#555]"
+          />
+        </label>
         <label className="block text-sm font-bold">
           CNPJ da empresa
           <input
-            value={invitation.companyCnpj ? formatCnpj(invitation.companyCnpj) : ""}
+            value={
+              invitation.companyCnpj ? formatCnpj(invitation.companyCnpj) : ""
+            }
             readOnly
             disabled
             aria-describedby="invitation-cnpj-hint"
             className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3 disabled:text-[#555]"
           />
-          <span id="invitation-cnpj-hint" className="mt-1 block text-xs font-medium text-[#231f20]/70">
+          <span
+            id="invitation-cnpj-hint"
+            className="mt-1 block text-xs font-medium text-[#231f20]/70"
+          >
             Vem do convite e não pode ser alterado. O CPF abaixo é seu.
           </span>
         </label>
-        <label className="block text-sm font-bold">Nome<input name="firstName" required className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3" /></label>
-        <label className="block text-sm font-bold">Sobrenome<input name="lastName" required className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3" /></label>
+        <label className="block text-sm font-bold">
+          Nome
+          <input
+            name="firstName"
+            required
+            className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3"
+          />
+        </label>
+        <label className="block text-sm font-bold">
+          Sobrenome
+          <input
+            name="lastName"
+            required
+            className="mt-1 h-11 w-full border-2 border-[#1a1a1a] bg-white px-3"
+          />
+        </label>
         <label className="block text-sm font-bold">
           CPF
           <input
@@ -196,12 +263,21 @@ export function InvitationRegistration() {
             <PasswordRevealButton
               disabled={submitting}
               isVisible={isPasswordConfirmationVisible}
-              onToggle={() => setIsPasswordConfirmationVisible((visible) => !visible)}
+              onToggle={() =>
+                setIsPasswordConfirmationVisible((visible) => !visible)
+              }
             />
           </div>
         </label>
-        {error ? <p className="text-sm font-bold text-[#c0392b]">{error}</p> : null}
-        <button disabled={submitting} className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow disabled:opacity-50">{submitting ? "Criando..." : "Criar conta"}</button>
+        {error ? (
+          <p className="text-sm font-bold text-[#c0392b]">{error}</p>
+        ) : null}
+        <button
+          disabled={submitting}
+          className="w-full bg-[#1a1a1a] px-5 py-3 text-[12px] font-black uppercase tracking-[0.18em] text-brand-yellow disabled:opacity-50"
+        >
+          {submitting ? "Criando..." : "Criar conta"}
+        </button>
       </form>
     </main>
   );

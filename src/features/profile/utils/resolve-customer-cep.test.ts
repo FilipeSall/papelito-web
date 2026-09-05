@@ -31,4 +31,17 @@ describe("resolveCustomerCep", () => {
       }),
     ).toBe("22041001");
   });
+
+  it("prefers the active company fiscal postcode for B2B customers", () => {
+    expect(
+      resolveCustomerCep(
+        {
+          billing: { postcode: "22041-001" },
+          meta: { cep: "01310-930" },
+          shipping: { postcode: "04101-000" },
+        },
+        { fiscalAddress: { cep: "30130-010" } },
+      ),
+    ).toBe("30130010");
+  });
 });

@@ -32,7 +32,7 @@ O WordPress é a única fonte de verdade. O frontend não tem banco.
 - **Home pública é ISR/cacheável.** Sem `getServerSession`, `cookies()`, `headers()` ou fetch `no-store` no SSR de `app/(public)/page.tsx`. UI de seller é escondida no cliente com `SellerHidden`.
 - **O catálogo público renderiza todos os produtos.** Nenhuma listagem bloqueia SSR em CEP, vendor ativo ou cobertura. Produto indisponível fica opaco com tooltip, não desaparece.
 - **A taxonomia Papelito é a fonte única de classificação.** Produto publicado sem categoria fica fora da vitrine; categorias e abas são dados do backend, sem enum/fallback no frontend.
-- **A fonte da região é apenas o CEP salvo na conta.** Sem prompt, sem cookie, sem store de CEP — esse desenho foi implementado e removido.
+- **A fonte da região é o CEP fiscal da empresa B2B ativa, quando existir; caso contrário, usa o CEP salvo na conta.** Sem prompt, sem cookie, sem store de CEP — esse desenho foi implementado e removido. O CEP fiscal tem precedência para disponibilidade regional.
 - **CPF e data de nascimento nunca voltam em claro do WordPress.** O contexto expõe só `cpfLast4` e `hasBirthDate`.
 - **Sem update otimista na validação de estoque.** Trava por produto antes da chamada, atualização condicional na store, `+` desabilitado durante a validação. Erro é **fail-closed**.
 - **Cartão é tokenizado no browser**; só o `token_id` chega ao backend. PCI fora de escopo.

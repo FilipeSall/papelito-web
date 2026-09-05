@@ -38,10 +38,12 @@ export function buildProfileAccountFormValues(
   fallback?: {
     email?: string | null;
     name?: string | null;
+    cpfLast4?: string | null;
   },
 ): ProfileAccountFormValues {
   const fallbackName = fallback?.name?.trim() ?? "";
-  const { firstName: fallbackFirstName, lastName: fallbackLastName } = splitFullName(fallbackName);
+  const { firstName: fallbackFirstName, lastName: fallbackLastName } =
+    splitFullName(fallbackName);
 
   return {
     firstName: customer.firstName || fallbackFirstName,
@@ -54,10 +56,18 @@ export function buildProfileAccountFormValues(
     phoneNumber: customer.meta.phoneNumber || customer.billing.phone,
     storeName: customer.meta.storeName,
     cnpj: customer.meta.cnpj,
-    cpf: customer.meta.cpf,
+    cpf: customer.meta.cpf || maskCpfLast4(fallback?.cpfLast4),
     instagram: customer.meta.instagram,
     role: customer.role || "customer",
   };
+}
+
+export function maskCpfLast4(last4?: string | null): string {
+  const digits = (last4 ?? "").replace(/\D/g, "").slice(-4);
+
+  return digits.length === 4
+    ? `***.***.***-${digits.slice(0, 2)}-${digits.slice(2)}`
+    : "";
 }
 
 export function buildProfileAddressFormValues(
@@ -96,7 +106,10 @@ export function buildProfileAddresses(
   const addresses: Address[] = [];
 
   if (source) {
-    const location = [source.address2, [source.city, source.state].filter(Boolean).join(" - ")]
+    const location = [
+      source.address2,
+      [source.city, source.state].filter(Boolean).join(" - "),
+    ]
       .filter(Boolean)
       .join(", ");
 
@@ -118,13 +131,19 @@ export function buildProfileAddresses(
   return addresses;
 }
 
-export function buildProfileName(customer: ProfileCustomer, fallback?: string | null) {
+export function buildProfileName(
+  customer: ProfileCustomer,
+  fallback?: string | null,
+) {
   const fullName = `${customer.firstName} ${customer.lastName}`.trim();
 
   return fullName || customer.displayName || fallback || "";
 }
 
-export function buildProfileEmail(customer: ProfileCustomer, fallback?: string | null) {
+export function buildProfileEmail(
+  customer: ProfileCustomer,
+  fallback?: string | null,
+) {
   return customer.email || fallback || "";
 }
 
@@ -145,7 +164,9 @@ function createEmptyProfileCustomerAddress(): ProfileCustomerAddress {
 }
 
 function hasAddress(address: ProfileCustomerAddress) {
-  return Boolean(address.address1 || address.postcode || address.city || address.state);
+  return Boolean(
+    address.address1 || address.postcode || address.city || address.state,
+  );
 }
 
 function buildCompanyAddress(company?: CompanyDetails | null): Address | null {
@@ -156,7 +177,13 @@ function buildCompanyAddress(company?: CompanyDetails | null): Address | null {
   const state = fiscalAddress?.state?.trim() ?? "";
   const zipCode = formatZipCode(fiscalAddress?.cep ?? "");
 
-  if (!fiscalAddress || !street || !city || !state || zipCode.replace(/\D/g, "").length !== 8) {
+  if (
+    !fiscalAddress ||
+    !street ||
+    !city ||
+    !state ||
+    zipCode.replace(/\D/g, "").length !== 8
+  ) {
     return null;
   }
 
@@ -164,7 +191,10 @@ function buildCompanyAddress(company?: CompanyDetails | null): Address | null {
     id: "company-fiscal-address",
     name: company.tradeName || company.legalName || "Endereço da empresa",
     street: [street, number].filter(Boolean).join(", "),
-    neighborhood: [fiscalAddress.neighborhood, [city, state].filter(Boolean).join(" - ")]
+    neighborhood: [
+      fiscalAddress.neighborhood,
+      [city, state].filter(Boolean).join(" - "),
+    ]
       .filter(Boolean)
       .join(", "),
     zipCode,

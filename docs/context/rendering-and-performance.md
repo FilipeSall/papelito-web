@@ -20,7 +20,12 @@ Este documento existe porque a home e o catálogo já foram lentos, o motivo foi
 
 **Produto indisponível não desaparece.** Ele recebe opacidade reduzida, tooltip em hover e em focus, e o `AddToCartButton` recebe `disabledReason`. O texto é exatamente: `O vendor da sua região não tem esse produto.`
 
-**A fonte da região no catálogo continua sendo o CEP salvo na conta do usuário logado.** Não existe prompt de CEP, cookie `papelito_user_cep` nem store de CEP para listagens — esse desenho foi implementado, testado e **removido**. A exceção é a página dedicada do produto: após ação explícita do usuário, ela aceita um CEP temporário para consultar somente aquele produto; esse valor não é persistido nem autoriza compra.
+**A fonte da região no catálogo é o CEP fiscal da empresa B2B ativa, quando disponível; caso contrário,
+é o CEP salvo na conta do usuário logado.** O CEP fiscal tem precedência para disponibilidade regional.
+Não existe prompt de CEP, cookie `papelito_user_cep` nem store de CEP para listagens — esse desenho foi
+implementado, testado e **removido**. A exceção é a página dedicada do produto: após ação explícita do
+usuário, ela aceita um CEP temporário para consultar somente aquele produto; esse valor não é persistido
+nem autoriza compra.
 
 **Cache esperado**: server-side por `accountId + cep + activeVendorId + productIdsHash` por 5 minutos; cliente em `localStorage` + SWR por 5 minutos.
 

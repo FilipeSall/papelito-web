@@ -2,12 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Pencil } from "lucide-react";
 
 import { signOutAndClearSession } from "@/features/auth/client/logout";
 import type { ProfileAccountFormValues } from "@/features/profile/types/profile-customer";
 import { isValidCpf } from "@/lib/validation/brazilian-documents";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { maskCpfLast4 } from "@/features/profile/utils/profile-customer-mappers";
 
+import { ChangeCpfModal } from "./change-cpf-modal";
 import { ProfileFormField } from "./profile-form-field";
 import { ProfilePageTitle } from "./profile-panel";
 
@@ -26,9 +29,13 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
+  const [isCpfChangeOpen, setIsCpfChangeOpen] = useState(false);
+  const [cpfChangeError, setCpfChangeError] = useState<string | null>(null);
+  const [isCpfChanging, setIsCpfChanging] = useState(false);
 
   const isCustomer = form.role === "customer";
   const isSeller = form.role === "seller";
+  const cpfIsMasked = /^\*{3}\.\*{3}\.\*{3}-\d{2}-\d{2}$/.test(form.cpf);
 
   function updateField<Key extends keyof ProfileAccountFormValues>(
     key: Key,
@@ -80,7 +87,10 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
     }
 
     if (digits.length <= 8) {
-      updateField("cnpj", `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`);
+      updateField(
+        "cnpj",
+        `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`,
+      );
       return;
     }
 
@@ -112,7 +122,10 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
     }
 
     if (digits.length <= 9) {
-      updateField("cpf", `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`);
+      updateField(
+        "cpf",
+        `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`,
+      );
       return;
     }
 
@@ -127,9 +140,12 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
 
     if (!form.firstName.trim()) nextErrors.firstName = "Informe seu nome.";
     if (!form.lastName.trim()) nextErrors.lastName = "Informe seu sobrenome.";
-    if (!form.displayName.trim()) nextErrors.displayName = "Defina como deseja aparecer.";
+    if (!form.displayName.trim())
+      nextErrors.displayName = "Defina como deseja aparecer.";
     if (!form.email.trim()) nextErrors.email = "Informe seu e-mail.";
-    if (isCustomer && !isValidCpf(form.cpf)) nextErrors.cpf = "Informe um CPF válido.";
+    if (isCustomer && !cpfIsMasked && !isValidCpf(form.cpf)) {
+      nextErrors.cpf = "Informe um CPF válido.";
+    }
 
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -157,15 +173,15 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
             phoneNumber: form.phoneNumber,
             storeName: form.storeName,
             cnpj: form.cnpj,
-            cpf: form.cpf,
+            ...(cpfIsMasked ? {} : { cpf: form.cpf }),
             instagram: form.instagram,
             role: form.role,
           }),
         });
 
-        const body = (await response.json().catch(() => null)) as
-          | { message?: string }
-          | null;
+        const body = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
 
         if (response.status === 401) {
           await signOutAndClearSession({ callbackUrl: "/entrar" });
@@ -194,6 +210,50 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
     });
   }
 
+  function handleCpfChangeSubmit(currentPassword: string, cpf: string) {
+    setIsCpfChanging(true);
+    setCpfChangeError(null);
+
+    void fetch("/api/profile/identity/cpf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, cpf }),
+    })
+      .then(async (response) => {
+        const body = (await response.json().catch(() => null)) as {
+          cpfLast4?: string | null;
+          message?: string;
+        } | null;
+
+        if (response.status === 401) {
+          await signOutAndClearSession({ callbackUrl: "/entrar" });
+          return;
+        }
+
+        if (!response.ok) {
+          setCpfChangeError(
+            body?.message ?? "Não foi possível alterar seu CPF.",
+          );
+          return;
+        }
+
+        setForm((current) => ({
+          ...current,
+          cpf: maskCpfLast4(body?.cpfLast4),
+        }));
+        setIsCpfChangeOpen(false);
+        setFeedback({
+          type: "success",
+          message: "Seu CPF foi atualizado com sucesso.",
+        });
+        router.refresh();
+      })
+      .catch(() => {
+        setCpfChangeError("Erro de rede ao alterar seu CPF. Tente novamente.");
+      })
+      .finally(() => setIsCpfChanging(false));
+  }
+
   return (
     <section className="flex flex-col gap-7">
       <ProfilePageTitle
@@ -210,7 +270,10 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
         <div className="flex flex-col gap-6 px-6 py-6 sm:px-8">
           <div className="border-t-2 border-[#1a1a1a]/10 pt-5 first:border-t-0 first:pt-0">
             <div className="mb-4 flex items-center gap-2">
-              <span aria-hidden className="inline-block h-3 w-3 rotate-45 bg-brand-yellow" />
+              <span
+                aria-hidden
+                className="inline-block h-3 w-3 rotate-45 bg-brand-yellow"
+              />
               <h4 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
                 Identidade da conta
               </h4>
@@ -260,9 +323,26 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
 
               {isCustomer ? (
                 <ProfileFormField
+                  endAdornment={
+                    cpfIsMasked ? (
+                      <button
+                        aria-label="Trocar CPF"
+                        className="grid h-11 w-11 cursor-pointer place-items-center text-[#1a1a1a] transition-opacity hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={isPending || isCpfChanging}
+                        onClick={() => {
+                          setCpfChangeError(null);
+                          setIsCpfChangeOpen(true);
+                        }}
+                        type="button"
+                      >
+                        <Pencil aria-hidden className="h-4 w-4" />
+                      </button>
+                    ) : undefined
+                  }
                   label="CPF"
-                  onChange={handleCpfChange}
-                  placeholder="123.456.789-00"
+                  onChange={cpfIsMasked ? undefined : handleCpfChange}
+                  placeholder={cpfIsMasked ? "CPF protegido" : "123.456.789-00"}
+                  readOnly={cpfIsMasked}
                   value={form.cpf}
                 />
               ) : null}
@@ -320,12 +400,24 @@ export function ProfileDataForm({ initialValues }: ProfileDataFormProps) {
             >
               {isPending ? "Salvando..." : "Salvar dados"}
               {!isPending ? (
-                <ArrowRightIcon className="h-4 w-4" size={18} strokeWidth={1.8} />
+                <ArrowRightIcon
+                  className="h-4 w-4"
+                  size={18}
+                  strokeWidth={1.8}
+                />
               ) : null}
             </button>
           </div>
         </div>
       </form>
+      <ChangeCpfModal
+        key={isCpfChangeOpen ? "open" : "closed"}
+        errorMessage={cpfChangeError}
+        isSubmitting={isCpfChanging}
+        onClose={() => setIsCpfChangeOpen(false)}
+        onSubmit={handleCpfChangeSubmit}
+        open={isCpfChangeOpen}
+      />
     </section>
   );
 }

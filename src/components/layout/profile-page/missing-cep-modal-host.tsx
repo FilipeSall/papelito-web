@@ -12,10 +12,17 @@ import { MissingCepModal } from "./missing-cep-modal";
 const STORAGE_KEY_PREFIX = "papelito:missing-cep-modal:dismissed:";
 
 type ProfileAccountResponse = {
+  company?: {
+    fiscalAddress?: {
+      cep?: string | null;
+    } | null;
+  } | null;
   customer?: Pick<ProfileCustomer, "billing" | "meta" | "shipping">;
 };
 
-function resolveAccountKey(session: ReturnType<typeof useAuthSession>["session"]) {
+function resolveAccountKey(
+  session: ReturnType<typeof useAuthSession>["session"],
+) {
   const userId = session?.user?.id;
   if (typeof userId === "string" && userId.trim().length > 0) {
     return userId.trim();
@@ -32,14 +39,20 @@ function resolveAccountKey(session: ReturnType<typeof useAuthSession>["session"]
 export function MissingCepModalHost() {
   const router = useRouter();
   const { role, session, status } = useAuthSession();
-  const [visibleAccountKey, setVisibleAccountKey] = useState<string | null>(null);
+  const [visibleAccountKey, setVisibleAccountKey] = useState<string | null>(
+    null,
+  );
   const checkedAccountKeysRef = useRef(new Set<string>());
   const accountKey = useMemo(() => resolveAccountKey(session), [session]);
   // Durante o onboarding B2B o CEP é campo do formulário em /cadastro/completar; abrir o modal
   // isolado por cima duplicaria a pergunta.
-  const isOnboardingIncomplete = session?.b2b?.onboardingStatus === "incomplete";
+  const isOnboardingIncomplete =
+    session?.b2b?.onboardingStatus === "incomplete";
   const isEligibleAccount =
-    status === "authenticated" && role === "customer" && Boolean(accountKey) && !isOnboardingIncomplete;
+    status === "authenticated" &&
+    role === "customer" &&
+    Boolean(accountKey) &&
+    !isOnboardingIncomplete;
 
   useEffect(() => {
     if (!isEligibleAccount || !accountKey || typeof window === "undefined") {
@@ -75,7 +88,7 @@ export function MissingCepModalHost() {
         }
 
         const payload = (await response.json()) as ProfileAccountResponse;
-        const cep = resolveCustomerCep(payload.customer);
+        const cep = resolveCustomerCep(payload.customer, payload.company);
 
         if (!cep && window.sessionStorage.getItem(dismissedKey) !== "1") {
           setVisibleAccountKey(accountKey);

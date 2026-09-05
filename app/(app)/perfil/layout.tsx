@@ -22,6 +22,7 @@ export default async function ProfileLayout({
       value={{
         customer: profile.customer,
         company: profile.company,
+        cpfLast4: profile.cpfLast4,
         email: profile.email,
         image: profile.image,
         name: profile.name,

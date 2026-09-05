@@ -13,6 +13,7 @@ export function ProfileDataPageContent() {
       initialValues={buildProfileAccountFormValues(profile.customer, {
         email: profile.email,
         name: profile.name,
+        cpfLast4: profile.cpfLast4,
       })}
     />
   );

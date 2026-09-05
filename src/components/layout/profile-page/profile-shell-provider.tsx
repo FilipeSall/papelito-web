@@ -8,6 +8,7 @@ import type { CompanyDetails } from "@/features/company/types/company";
 type ProfileShellData = {
   customer: ProfileCustomer;
   company?: CompanyDetails | null;
+  cpfLast4: string | null;
   email: string;
   image?: string | null;
   name: string;
@@ -35,7 +36,9 @@ export function useProfileShell() {
   const context = useContext(ProfileShellContext);
 
   if (!context) {
-    throw new Error("useProfileShell must be used within ProfileShellProvider.");
+    throw new Error(
+      "useProfileShell must be used within ProfileShellProvider.",
+    );
   }
 
   return context;

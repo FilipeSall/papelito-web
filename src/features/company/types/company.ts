@@ -56,22 +56,24 @@ export type AccountSuspensionContext = {
 };
 
 export type CompanyContext = {
-	isB2bCohort?: boolean;
+  isB2bCohort?: boolean;
   accountStatus?: string;
   accountStatusLabel?: string;
   accountSuspension?: AccountSuspensionContext | null;
   identityStatus: string;
+  cpfLast4?: string | null;
+  hasBirthDate?: boolean;
   companyId: number | null;
   companyStatus: string | null;
   companyRegistryStatus: string | null;
   companyOwnershipStatus: string | null;
   purchaseMode?: "b2b" | "not_buyer" | "blocked";
-	requiresB2bOnboarding?: boolean;
-	userContextType?: "internal_admin" | "vendor" | "customer" | "hybrid";
-	isInternalAdmin?: boolean;
-	isVendor?: boolean;
-	hasCustomerContext?: boolean;
-	requiresCustomerCpf?: boolean;
+  requiresB2bOnboarding?: boolean;
+  userContextType?: "internal_admin" | "vendor" | "customer" | "hybrid";
+  isInternalAdmin?: boolean;
+  isVendor?: boolean;
+  hasCustomerContext?: boolean;
+  requiresCustomerCpf?: boolean;
   isLegacyCohort?: boolean;
   legacyMigrationStatus?: string | null;
   legacyGraceEndsAt?: string | null;
@@ -85,7 +87,7 @@ export type CompanyContext = {
   companySelectionRequired: boolean;
   availableCompanies: AvailableCompany[];
   canPurchase: boolean;
-	purchaseBlockReason?: string | null;
+  purchaseBlockReason?: string | null;
   membershipExpiresAt?: string | null;
   company?: CompanyDetails;
 };
@@ -106,7 +108,12 @@ export type CompanyDetails = {
   phone: string | null;
 };
 
-export type CompanyAuditEvent = { action: string; createdAt: string; actor: { displayName: string; role: CompanyRole | null } | null; target: { displayName: string; role: CompanyRole | null } | null };
+export type CompanyAuditEvent = {
+  action: string;
+  createdAt: string;
+  actor: { displayName: string; role: CompanyRole | null } | null;
+  target: { displayName: string; role: CompanyRole | null } | null;
+};
 
 export type AvailableCompany = {
   companyId: number;
@@ -164,6 +171,8 @@ export type InvitationPreview = {
 export const ASSIGNABLE_ROLES: CompanyRole[] = ["admin", "buyer", "viewer"];
 
 /** Um papel pode gerenciar members? (espelha a matriz RBAC do backend, apenas para UI.) */
-export function canManageMembers(role: CompanyRole | null | undefined): boolean {
+export function canManageMembers(
+  role: CompanyRole | null | undefined,
+): boolean {
   return role === "owner" || role === "admin";
 }

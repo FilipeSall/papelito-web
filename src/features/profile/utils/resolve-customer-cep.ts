@@ -12,7 +12,22 @@ type CustomerCepSource = {
   } | null;
 };
 
-export function resolveCustomerCep(customer?: CustomerCepSource | null) {
+export type CompanyCepSource = {
+  fiscalAddress?: {
+    cep?: string | null;
+  } | null;
+};
+
+export function resolveCustomerCep(
+  customer?: CustomerCepSource | null,
+  company?: CompanyCepSource | null,
+) {
+  const companyCep = normalizeUserCep(company?.fiscalAddress?.cep);
+
+  if (companyCep) {
+    return companyCep;
+  }
+
   const metaCep = normalizeUserCep(customer?.meta?.cep);
 
   if (metaCep) {

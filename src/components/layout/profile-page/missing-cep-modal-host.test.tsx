@@ -2,7 +2,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildIncompleteB2bSession, buildSession } from "../../../../test/factories/session";
+import {
+  buildIncompleteB2bSession,
+  buildSession,
+} from "../../../../test/factories/session";
 import { MissingCepModalHost } from "./missing-cep-modal-host";
 
 const pushMock = vi.fn();
@@ -49,9 +52,12 @@ describe("MissingCepModalHost", () => {
     render(<MissingCepModalHost />);
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("/api/profile/account", expect.objectContaining({
-      cache: "no-store",
-    }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/profile/account",
+      expect.objectContaining({
+        cache: "no-store",
+      }),
+    );
   });
 
   it("does not open when the customer already has a valid CEP", async () => {
@@ -61,6 +67,32 @@ describe("MissingCepModalHost", () => {
         customer: {
           meta: {
             cep: "01310-930",
+          },
+        },
+      }),
+    });
+
+    render(<MissingCepModalHost />);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("does not open when the B2B company has a fiscal CEP", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        company: {
+          fiscalAddress: {
+            cep: "30130-010",
+          },
+        },
+        customer: {
+          meta: {
+            cep: "",
           },
         },
       }),
@@ -147,7 +179,9 @@ describe("MissingCepModalHost", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    expect(window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42")).toBe("1");
+    expect(
+      window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42"),
+    ).toBe("1");
 
     unmount();
     render(<MissingCepModalHost />);
@@ -176,7 +210,9 @@ describe("MissingCepModalHost", () => {
     await user.click(screen.getByRole("button", { name: /cadastrar cep/i }));
 
     expect(pushMock).toHaveBeenCalledWith("/perfil/enderecos?openEditor=1");
-    expect(window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42")).toBe("1");
+    expect(
+      window.sessionStorage.getItem("papelito:missing-cep-modal:dismissed:42"),
+    ).toBe("1");
   });
 
   it("stays out of the way during B2B onboarding, where CEP is a form field", () => {

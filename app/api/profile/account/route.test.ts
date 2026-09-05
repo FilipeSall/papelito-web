@@ -3,17 +3,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getServerSessionMock = vi.fn();
 const updateProfileCustomerMock = vi.fn();
 const fetchCurrentUserRoleMock = vi.fn();
+const fetchCompanyContextMock = vi.fn();
 
 vi.mock("next-auth", () => ({
   getServerSession: (...args: unknown[]) => getServerSessionMock(...args),
 }));
 
 vi.mock("@/features/profile/server/customer", () => ({
-  updateProfileCustomer: (...args: unknown[]) => updateProfileCustomerMock(...args),
+  updateProfileCustomer: (...args: unknown[]) =>
+    updateProfileCustomerMock(...args),
 }));
 
 vi.mock("@/lib/server/current-user-role", () => ({
-  fetchCurrentUserRole: (...args: unknown[]) => fetchCurrentUserRoleMock(...args),
+  fetchCurrentUserRole: (...args: unknown[]) =>
+    fetchCurrentUserRoleMock(...args),
+}));
+
+vi.mock("@/lib/server/company-api", () => ({
+  fetchCompanyContext: (...args: unknown[]) => fetchCompanyContextMock(...args),
 }));
 
 vi.mock("@/lib/auth", () => ({ authOptions: {} }));
@@ -23,12 +30,14 @@ describe("PATCH /api/profile/account", () => {
     getServerSessionMock.mockReset();
     updateProfileCustomerMock.mockReset();
     fetchCurrentUserRoleMock.mockReset();
+    fetchCompanyContextMock.mockReset();
     getServerSessionMock.mockResolvedValue({
       accessToken: "token",
       role: "customer",
       user: { id: "42" },
     });
     fetchCurrentUserRoleMock.mockResolvedValue("customer");
+    fetchCompanyContextMock.mockResolvedValue({ ok: false, status: 503 });
   });
 
   it("rejects an invalid CPF even when the browser claims the user is a seller", async () => {

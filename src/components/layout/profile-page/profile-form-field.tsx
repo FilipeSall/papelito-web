@@ -1,6 +1,6 @@
 "use client";
 
-import { InputHTMLAttributes, useId, useState } from "react";
+import { type InputHTMLAttributes, type ReactNode, useId, useState } from "react";
 
 import { PasswordRevealButton } from "@/components/ui/password-reveal-button";
 
@@ -25,6 +25,10 @@ type ProfileFormFieldProps = {
   errorMessage?: string;
   /** Callback de mudanca de valor */
   onChange?: (value: string) => void;
+  /** Se o campo pode ser alterado */
+  readOnly?: boolean;
+  /** Ação posicionada dentro do lado direito do campo */
+  endAdornment?: ReactNode;
 };
 
 /**
@@ -53,6 +57,8 @@ export function ProfileFormField({
   maxLength,
   errorMessage,
   onChange,
+  readOnly = false,
+  endAdornment,
 }: ProfileFormFieldProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const fieldId = useId();
@@ -74,7 +80,7 @@ export function ProfileFormField({
           aria-invalid={errorMessage ? true : undefined}
           autoComplete={autoComplete}
           className={`h-11 w-full rounded-none border-2 bg-white text-sm font-medium text-[#1a1a1a] outline-none transition-[border-color] placeholder:font-normal placeholder:text-[#1a1a1a]/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:bg-[#faf8f2] disabled:text-[#1a1a1a]/40 ${
-            isPassword ? "pl-3 pr-12" : "px-3"
+            isPassword || endAdornment ? "pl-3 pr-12" : "px-3"
           } ${
             errorMessage
               ? "border-[#c0392b] focus:border-[#c0392b]"
@@ -86,6 +92,7 @@ export function ProfileFormField({
           maxLength={maxLength}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
+          readOnly={readOnly}
           type={resolvedType}
           value={value}
         />
@@ -95,6 +102,11 @@ export function ProfileFormField({
             isVisible={isPasswordVisible}
             onToggle={() => setIsPasswordVisible((current) => !current)}
           />
+        ) : null}
+        {endAdornment ? (
+          <div className="absolute bottom-0 right-0 h-11 w-11">
+            {endAdornment}
+          </div>
         ) : null}
       </div>
       {errorMessage ? (
