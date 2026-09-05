@@ -20,21 +20,15 @@ vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
 }));
 
-function post(body: unknown) {
-  return new Request("http://localhost/api/vendor/orders/14094/fiscal-document", {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
+const { DELETE, GET } = await import("./route");
+
+function request(method: "DELETE" | "GET") {
+  return new Request("http://localhost/api/vendor/orders/14094/fiscal-document", { method });
 }
 
 const params = Promise.resolve({ id: "14094" });
 
-function declaredSentToWordPress() {
-  return (wpRestMock.mock.calls[0][1] as { json: Record<string, unknown> }).json;
-}
-
-describe("POST /api/vendor/orders/[id]/fiscal-document", () => {
+describe("/api/vendor/orders/[id]/fiscal-document", () => {
   beforeEach(() => {
     requireVendorAccessTokenMock.mockReset();
     wpRestMock.mockReset();
@@ -42,19 +36,32 @@ describe("POST /api/vendor/orders/[id]/fiscal-document", () => {
     wpRestMock.mockResolvedValue({ ok: true, data: { can_attach: true, enabled: true } });
   });
 
-  it("recusa o pedido não autenticado sem falar com o WordPress", async () => {
-    requireVendorAccessTokenMock.mockResolvedValue({ error: "Não autenticado.", status: 401 });
+  it("não expõe POST: a nota não tem dado digitado para gravar", async () => {
+    const route = await import("./route");
 
-    const { POST } = await import("./route");
-    const response = await POST(post({ accessKey: "1" }), { params });
+    expect("POST" in route).toBe(false);
+  });
+
+  it("lê o bloco do pedido", async () => {
+    const response = await GET(request("GET"), { params });
+
+    expect(response.status).toBe(200);
+    expect(wpRestMock.mock.calls[0][0]).toBe(
+      "/papelito/v1/vendor/me/orders/14094/fiscal-document",
+    );
+  });
+
+  it("recusa a remoção não autenticada sem falar com o WordPress", async () => {
+    requireVendorAccessTokenMock.mockResolvedValue({ error: "Nao autenticado.", status: 401 });
+
+    const response = await DELETE(request("DELETE"), { params });
 
     expect(response.status).toBe(401);
     expect(wpRestMock).not.toHaveBeenCalled();
   });
 
-  it("recusa id de pedido não numérico", async () => {
-    const { POST } = await import("./route");
-    const response = await POST(post({ accessKey: "1" }), {
+  it("recusa pedido que não é um número sem falar com o WordPress", async () => {
+    const response = await DELETE(request("DELETE"), {
       params: Promise.resolve({ id: "14094; DROP" }),
     });
 
@@ -62,49 +69,25 @@ describe("POST /api/vendor/orders/[id]/fiscal-document", () => {
     expect(wpRestMock).not.toHaveBeenCalled();
   });
 
-  it("repassa campo vazio para o vendor poder apagar um dado errado (regressão)", async () => {
-    const { POST } = await import("./route");
-    await POST(post({ docNumber: "777", docSeries: "" }), { params });
+  it("remove pelo método DELETE, e não por um corpo com flag", async () => {
+    const response = await DELETE(request("DELETE"), { params });
 
-    expect(declaredSentToWordPress()).toEqual({ docNumber: "777", docSeries: "" });
+    expect(response.status).toBe(200);
+    expect(wpRestMock.mock.calls[0][1]).toMatchObject({ method: "DELETE" });
   });
 
-  it("repassa totalCents zero como pedido de limpeza", async () => {
-    const { POST } = await import("./route");
-    await POST(post({ totalCents: 0 }), { params });
-
-    expect(declaredSentToWordPress()).toEqual({ totalCents: 0 });
-  });
-
-  it("ignora campo que o WordPress não conhece", async () => {
-    const { POST } = await import("./route");
-    await POST(post({ accessKey: "  53250  ", isCurrent: 0, validationLevel: 5 }), { params });
-
-    expect(declaredSentToWordPress()).toEqual({ accessKey: "53250" });
-  });
-
-  it("recusa corpo sem nenhum campo conhecido", async () => {
-    const { POST } = await import("./route");
-    const response = await POST(post({ validationLevel: 5 }), { params });
-
-    expect(response.status).toBe(422);
-    expect(wpRestMock).not.toHaveBeenCalled();
-  });
-
-  it("propaga o código e o status da recusa do WordPress", async () => {
+  it("repassa o status do WordPress quando ele recusa a remoção", async () => {
     wpRestMock.mockResolvedValue({
       ok: false,
-      status: 409,
-      error: { code: "papelito_fiscal_order_not_ready", message: "Pedido cancelado não recebe nota fiscal." },
+      error: { code: "papelito_fiscal_document_not_found", message: "Nota fiscal não encontrada." },
+      status: 404,
     });
 
-    const { POST } = await import("./route");
-    const response = await POST(post({ accessKey: "53250" }), { params });
+    const response = await DELETE(request("DELETE"), { params });
 
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      code: "papelito_fiscal_order_not_ready",
-      message: "Pedido cancelado não recebe nota fiscal.",
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "papelito_fiscal_document_not_found",
     });
   });
 });

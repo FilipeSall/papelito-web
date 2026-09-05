@@ -1,20 +1,7 @@
 import { DirectUploadError, uploadDirectFile } from "@/lib/client/direct-upload";
 
 import { mapVendorOrderFiscal, type WpVendorFiscal } from "./vendor-order-mappers";
-import type { VendorFiscalRole, VendorOrderFiscal } from "../types/vendor-orders";
-
-export type VendorFiscalDeclared = {
-  accessKey?: string;
-  docNumber?: string;
-  docSeries?: string;
-  docType?: string;
-  issuedAt?: string;
-  issuerCnpj?: string;
-  issuerName?: string;
-  notes?: string;
-  protocol?: string;
-  totalCents?: number;
-};
+import type { VendorOrderFiscal } from "../types/vendor-orders";
 
 /**
  * Erro de nota fiscal que preserva o status HTTP.
@@ -57,15 +44,17 @@ export async function fetchVendorFiscalDocument(orderId: number): Promise<Vendor
   );
 }
 
-export async function saveVendorFiscalDeclared(
-  orderId: number,
-  declared: VendorFiscalDeclared,
-): Promise<VendorOrderFiscal> {
+/**
+ * Remove a nota do pedido: some a linha e some o arquivo.
+ *
+ * O que fica é o registro na trilha — é o único rastro de que existiu uma nota
+ * ali, e é por isso que a trilha continua vindo no bloco depois da remoção.
+ */
+export async function deleteVendorFiscalDocument(orderId: number): Promise<VendorOrderFiscal> {
   return readFiscal(
     await fetch(`/api/vendor/orders/${orderId}/fiscal-document`, {
-      body: JSON.stringify(declared),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
+      headers: { Accept: "application/json" },
+      method: "DELETE",
     }),
   );
 }
@@ -73,30 +62,21 @@ export async function saveVendorFiscalDeclared(
 /**
  * Envia o arquivo da nota direto ao WordPress, pelo mesmo fluxo de tíquete dos
  * outros uploads: o arquivo nunca passa pela Function da Vercel, que tem limite
- * de corpo menor que o DANFE de 10 MB.
+ * de corpo menor que o PDF de 10 MB.
+ *
+ * Sempre substitui a nota que houver — o pedido guarda uma só.
  */
 export async function uploadVendorFiscalFile({
-  declared,
   file,
-  mode,
   orderId,
-  role,
 }: {
-  declared: VendorFiscalDeclared;
   file: File;
-  mode: "attach" | "replace";
   orderId: number;
-  role: VendorFiscalRole;
 }): Promise<VendorOrderFiscal> {
   try {
-    const payload = await uploadDirectFile<WpVendorFiscal>("vendor-fiscal-document", file, {
-      declared,
-      mode,
-      orderId,
-      role,
-    });
-
-    return mapVendorOrderFiscal(payload);
+    return mapVendorOrderFiscal(
+      await uploadDirectFile<WpVendorFiscal>("vendor-fiscal-document", file, { orderId }),
+    );
   } catch (error) {
     if (error instanceof DirectUploadError) {
       throw new VendorFiscalError(error.message, error.status);

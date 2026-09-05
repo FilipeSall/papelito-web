@@ -1,7 +1,19 @@
+"use client";
+
+import { useId, useRef, useState } from "react";
+
 import type { AdminAnalyticsSeriesPoint } from "@/lib/server/admin-sales-analytics";
 
 import { formatCompactNumber, niceMax } from "../formatters";
 import { CardNotification, HardPanel } from "../primitives";
+import { SalesChartTooltip, type SalesChartTooltipAnchor } from "./sales-chart-tooltip";
+
+type ActiveTooltip = {
+  anchor: SalesChartTooltipAnchor;
+  key: string;
+  title: string;
+  value: string;
+};
 
 export function SalesBarsChart({
   label,
@@ -12,6 +24,9 @@ export function SalesBarsChart({
   notifications?: string[];
   points: AdminAnalyticsSeriesPoint[];
 }) {
+  const tooltipId = useId();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [activeTooltip, setActiveTooltip] = useState<ActiveTooltip | null>(null);
   const bars = points.length > 0 ? points.slice(0, 6) : [{ label: "sem dados", value: 0 }];
   const width = 640;
   const height = 280;
@@ -31,6 +46,25 @@ export function SalesBarsChart({
   const groupWidth = usedPlotWidth / bars.length;
   const barWidth = Math.min(72, groupWidth * 0.72);
 
+  function showTooltip(point: (typeof bars)[number], x: number, y: number) {
+    if (!svgRef.current) {
+      return;
+    }
+
+    setActiveTooltip({
+      anchor: {
+        svg: svgRef.current,
+        viewBoxHeight: height,
+        viewBoxWidth: width,
+        x,
+        y,
+      },
+      key: `${point.label}-${point.value}`,
+      title: point.tooltipLabel ?? point.label,
+      value: formatCompactNumber(point.value),
+    });
+  }
+
   return (
     <HardPanel accent="black" className="flex h-full flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 px-5 pt-5">
@@ -42,6 +76,7 @@ export function SalesBarsChart({
           className="h-full w-full flex-1"
           fill="none"
           preserveAspectRatio="xMidYMid meet"
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
         >
           {yTicks.map((value, index) => {
@@ -82,9 +117,10 @@ export function SalesBarsChart({
             const barHeight = (point.value / maxValue) * plotHeight;
             const barY = paddingTop + plotHeight - barHeight;
             const fill = index % 2 === 0 ? "#231F20" : "#FFE500";
+            const pointKey = `${point.label}-${point.value}`;
 
             return (
-              <g key={`${point.label}-${point.value}`}>
+              <g key={pointKey}>
                 <rect
                   className="animate-admin-bar-rise"
                   fill={fill}
@@ -96,6 +132,22 @@ export function SalesBarsChart({
                   width={barWidth}
                   x={barX}
                   y={barY}
+                />
+                <rect
+                  aria-describedby={activeTooltip?.key === pointKey ? tooltipId : undefined}
+                  aria-label={`${point.tooltipLabel ?? point.label}: ${formatCompactNumber(point.value)}`}
+                  fill="transparent"
+                  height={plotHeight + 12}
+                  onBlur={() => setActiveTooltip(null)}
+                  onFocus={() => showTooltip(point, groupX + groupWidth / 2, barY)}
+                  onPointerDown={() => showTooltip(point, groupX + groupWidth / 2, barY)}
+                  onPointerEnter={() => showTooltip(point, groupX + groupWidth / 2, barY)}
+                  onPointerLeave={() => setActiveTooltip(null)}
+                  role="button"
+                  tabIndex={0}
+                  width={groupWidth}
+                  x={groupX}
+                  y={paddingTop - 6}
                 />
                 <text
                   fill="#231f20"
@@ -125,6 +177,12 @@ export function SalesBarsChart({
             );
           })}
         </svg>
+        <SalesChartTooltip
+          anchor={activeTooltip?.anchor ?? null}
+          id={tooltipId}
+          title={activeTooltip?.title ?? ""}
+          value={activeTooltip?.value ?? ""}
+        />
       </div>
     </HardPanel>
   );

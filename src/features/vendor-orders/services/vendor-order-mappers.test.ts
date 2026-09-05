@@ -140,6 +140,7 @@ describe("mapVendorOrderFiscal", () => {
     expect(fiscal.enabled).toBe(false);
     expect(fiscal.canAttach).toBe(false);
     expect(fiscal.document).toBeNull();
+    expect(fiscal.events).toEqual([]);
   });
 
   it("nunca habilita o anexo por omissão de campo", () => {
@@ -157,59 +158,63 @@ describe("mapVendorOrderFiscal", () => {
   it("cai nos limites do spec quando o payload não os traz", () => {
     const fiscal = mapVendorOrderFiscal({ enabled: true });
 
-    expect(fiscal.limits).toEqual({ danfe_pdf: 10 * 1024 * 1024, xml: 2 * 1024 * 1024 });
+    expect(fiscal.limits).toEqual({ pdf: 10 * 1024 * 1024, xml: 2 * 1024 * 1024 });
   });
 
   it("descarta documento sem id", () => {
-    expect(mapVendorOrderFiscal({ document: { access_key: "5325" } }).document).toBeNull();
+    expect(mapVendorOrderFiscal({ document: { original_name: "nota.pdf" } }).document).toBeNull();
   });
 
-  it("normaliza situação e papel desconhecidos sem perder o documento", () => {
+  it("mapeia o arquivo da nota", () => {
     const fiscal = mapVendorOrderFiscal({
       document: {
+        created_at: "2026-09-01 12:00:00",
         id: 42,
-        doc_status: "situacao_nova",
-        access_key_status: "outra",
-        files: [{ id: 7, role: "planilha" }],
+        mime: "application/pdf",
+        original_name: "nota.pdf",
+        size_bytes: 284_000,
+        updated_at: "2026-09-03 15:20:00",
       },
     });
 
-    expect(fiscal.document?.docStatus).toBe("recebida");
-    expect(fiscal.document?.accessKeyStatus).toBe("ausente");
-    expect(fiscal.document?.files[0].role).toBe("other");
+    expect(fiscal.document).toEqual({
+      createdAt: "2026-09-01 12:00:00",
+      id: 42,
+      mime: "application/pdf",
+      originalName: "nota.pdf",
+      sizeBytes: 284_000,
+      updatedAt: "2026-09-03 15:20:00",
+    });
   });
 
-  it("mapeia o histórico do documento", () => {
+  it("lê a trilha do bloco, e não do documento: ela sobrevive à remoção da nota", () => {
     const fiscal = mapVendorOrderFiscal({
-      document: {
-        id: 42,
-        events: [
-          { id: 3, event: "substituida", actor_role: "vendor", created_at: "2026-09-03 15:20:00", role: "xml" },
-          { id: 1, event: "criado", actor_role: "vendor", created_at: "2026-09-01 12:00:00" },
-        ],
-      },
+      document: null,
+      events: [
+        { actor_role: "vendor", created_at: "2026-09-01 12:00:00", event: "anexada", id: 1, original_name: "nota.pdf" },
+        { actor_role: "sistema", created_at: "2026-09-03 15:20:00", event: "removida", id: 3, original_name: "nota.pdf" },
+      ],
     });
 
-    expect(fiscal.document?.events).toHaveLength(2);
-    expect(fiscal.document?.events[0]).toMatchObject({ event: "substituida", role: "xml" });
-    expect(fiscal.document?.events[1].role).toBe("");
+    expect(fiscal.document).toBeNull();
+    expect(fiscal.events).toHaveLength(2);
+    expect(fiscal.events[1]).toMatchObject({ actorRole: "sistema", event: "removida" });
   });
 
-  it("descarta evento sem id ou sem nome, e nunca deixa o histórico indefinido", () => {
+  it("descarta evento sem id ou sem nome, e nunca deixa a trilha indefinida", () => {
     const fiscal = mapVendorOrderFiscal({
-      document: { id: 42, events: [{ event: "criado" }, { id: 7 }, { id: 8, event: "atualizado" }] },
+      events: [{ event: "anexada" }, { id: 7 }, { id: 8, event: "substituida" }],
     });
 
-    expect(fiscal.document?.events.map((entry) => entry.id)).toEqual([8]);
-    expect(mapVendorOrderFiscal({ document: { id: 42 } }).document?.events).toEqual([]);
+    expect(fiscal.events.map((entry) => entry.id)).toEqual([8]);
+    expect(mapVendorOrderFiscal({}).events).toEqual([]);
   });
 
-  it("aceita as observações pelo nome de coluna ou pelo nome de payload", () => {
-    expect(mapVendorOrderFiscal({ document: { id: 1, notes: "do payload" } }).document?.notes).toBe(
-      "do payload",
-    );
-    expect(
-      mapVendorOrderFiscal({ document: { id: 1, internal_notes: "da coluna" } }).document?.notes,
-    ).toBe("da coluna");
+  it("zera papel de ator desconhecido em vez de inventar autor", () => {
+    const fiscal = mapVendorOrderFiscal({
+      events: [{ actor_role: "robo", event: "anexada", id: 1 }],
+    });
+
+    expect(fiscal.events[0].actorRole).toBe("");
   });
 });

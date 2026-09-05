@@ -336,7 +336,6 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
       <VendorOrderDocumentsSection
         initialFiscal={order.fiscal}
         orderId={order.id}
-        orderTotal={order.total}
         receipt={order.receipt}
       />
 

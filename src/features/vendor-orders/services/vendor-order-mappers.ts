@@ -1,9 +1,7 @@
 import { VENDOR_ORDERS_PER_PAGE } from "../types/vendor-orders";
 import type {
-  VendorFiscalDocStatus,
   VendorFiscalDocument,
-  VendorFiscalKeyStatus,
-  VendorFiscalRole,
+  VendorFiscalEvent,
   VendorOrderBilling,
   VendorOrderDetail,
   VendorOrderFiscal,
@@ -107,45 +105,21 @@ export type WpVendorBilling = {
   phone?: string;
 };
 
-export type WpVendorFiscalFile = {
+export type WpVendorFiscalEvent = {
+  actor_role?: string;
+  created_at?: string;
+  event?: string;
+  id?: number;
+  original_name?: string;
+};
+
+export type WpVendorFiscalDocument = {
   created_at?: string;
   id?: number;
   mime?: string;
   original_name?: string;
-  role?: string;
   size_bytes?: number;
-};
-
-export type WpVendorFiscalEvent = {
-  actor_role?: string;
-  created_at?: string;
-  doc_status?: string;
-  event?: string;
-  id?: number;
-  role?: string;
-};
-
-export type WpVendorFiscalDocument = {
-  access_key?: string;
-  access_key_status?: string;
-  created_at?: string;
-  doc_number?: string;
-  doc_series?: string;
-  doc_status?: string;
-  doc_type?: string;
-  events?: WpVendorFiscalEvent[];
-  files?: WpVendorFiscalFile[];
-  flags?: string[];
-  id?: number;
-  issued_at?: string;
-  issuer_cnpj?: string;
-  issuer_name?: string;
-  internal_notes?: string;
-  notes?: string;
-  protocol?: string;
-  total_cents?: number;
   updated_at?: string;
-  validation_level?: number;
 };
 
 export type WpVendorFiscal = {
@@ -153,7 +127,8 @@ export type WpVendorFiscal = {
   can_attach?: boolean;
   document?: WpVendorFiscalDocument | null;
   enabled?: boolean;
-  limits?: { danfe_pdf?: number; xml?: number };
+  events?: WpVendorFiscalEvent[];
+  limits?: { pdf?: number; xml?: number };
 };
 
 export type WpVendorOrdersList = {
@@ -199,64 +174,37 @@ export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary 
   };
 }
 
-const fiscalRoles = new Set<VendorFiscalRole>(["danfe_pdf", "other", "xml"]);
-const fiscalDocStatuses = new Set<VendorFiscalDocStatus>([
-  "aceita",
-  "cancelada",
-  "pendente_revisao",
-  "recebida",
-  "rejeitada",
-  "substituida",
-]);
-const fiscalKeyStatuses = new Set<VendorFiscalKeyStatus>(["ausente", "invalida", "valida"]);
-
 function mapFiscalDocument(document: WpVendorFiscalDocument | null | undefined): VendorFiscalDocument | null {
   if (!document || !document.id) return null;
 
-  const keyStatus = document.access_key_status ?? "";
-  const docStatus = document.doc_status ?? "";
-
   return {
-    accessKey: document.access_key ?? "",
-    accessKeyStatus: fiscalKeyStatuses.has(keyStatus as VendorFiscalKeyStatus)
-      ? (keyStatus as VendorFiscalKeyStatus)
-      : "ausente",
     createdAt: document.created_at ?? "",
-    docNumber: document.doc_number ?? "",
-    docSeries: document.doc_series ?? "",
-    docStatus: fiscalDocStatuses.has(docStatus as VendorFiscalDocStatus)
-      ? (docStatus as VendorFiscalDocStatus)
-      : "recebida",
-    docType: document.doc_type ?? "nfe",
-    events: (document.events ?? [])
-      .filter((entry) => Number(entry.id) > 0 && (entry.event ?? "") !== "")
-      .map((entry) => ({
-        actorRole: entry.actor_role ?? "",
+    id: Number(document.id),
+    mime: document.mime ?? "",
+    originalName: document.original_name ?? "",
+    sizeBytes: Number(document.size_bytes) || 0,
+    updatedAt: document.updated_at ?? "",
+  };
+}
+
+const fiscalActorRoles = new Set<VendorFiscalEvent["actorRole"]>(["admin", "sistema", "vendor"]);
+
+function mapFiscalEvents(events: WpVendorFiscalEvent[] | undefined): VendorFiscalEvent[] {
+  return (events ?? [])
+    .filter((entry) => Number(entry.id) > 0 && (entry.event ?? "") !== "")
+    .map((entry) => {
+      const actorRole = entry.actor_role ?? "";
+
+      return {
+        actorRole: fiscalActorRoles.has(actorRole as VendorFiscalEvent["actorRole"])
+          ? (actorRole as VendorFiscalEvent["actorRole"])
+          : "",
         createdAt: entry.created_at ?? "",
-        docStatus: entry.doc_status ?? "",
         event: entry.event ?? "",
         id: Number(entry.id),
-        role: fiscalRoles.has(entry.role as VendorFiscalRole) ? (entry.role as VendorFiscalRole) : "",
-      })),
-    files: (document.files ?? []).map((file) => ({
-      createdAt: file.created_at ?? "",
-      id: Number(file.id) || 0,
-      mime: file.mime ?? "",
-      originalName: file.original_name ?? "",
-      role: fiscalRoles.has(file.role as VendorFiscalRole) ? (file.role as VendorFiscalRole) : "other",
-      sizeBytes: Number(file.size_bytes) || 0,
-    })),
-    flags: document.flags ?? [],
-    id: Number(document.id),
-    issuedAt: document.issued_at ?? "",
-    issuerCnpj: document.issuer_cnpj ?? "",
-    issuerName: document.issuer_name ?? "",
-    notes: document.notes ?? document.internal_notes ?? "",
-    protocol: document.protocol ?? "",
-    totalCents: Number(document.total_cents) || 0,
-    updatedAt: document.updated_at ?? "",
-    validationLevel: Number(document.validation_level) || 1,
-  };
+        originalName: entry.original_name ?? "",
+      };
+    });
 }
 
 const fiscalBlockReasons = new Set(["aguardando_pagamento", "cancelado"]);
@@ -273,8 +221,9 @@ export function mapVendorOrderFiscal(fiscal: WpVendorFiscal | undefined): Vendor
     canAttach: Boolean(fiscal?.can_attach),
     document: mapFiscalDocument(fiscal?.document),
     enabled: Boolean(fiscal?.enabled),
+    events: mapFiscalEvents(fiscal?.events),
     limits: {
-      danfe_pdf: Number(fiscal?.limits?.danfe_pdf) || 10 * 1024 * 1024,
+      pdf: Number(fiscal?.limits?.pdf) || 10 * 1024 * 1024,
       xml: Number(fiscal?.limits?.xml) || 2 * 1024 * 1024,
     },
   };

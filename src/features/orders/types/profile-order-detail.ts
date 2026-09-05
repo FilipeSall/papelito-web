@@ -79,11 +79,9 @@ export interface ProfileOrderReceipt {
  * emite é o vendor, e a pendência não é do comprador.
  */
 export interface ProfileOrderFiscalDocument {
-  accessKey: string;
-  docNumber: string;
-  docSeries: string;
-  files: Array<{ id: number; role: string; sizeBytes: number }>;
-  issuedAtLabel: string;
+  attachedAtLabel: string;
+  originalName: string;
+  sizeBytes: number;
 }
 
 /**

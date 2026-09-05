@@ -112,21 +112,19 @@ describe("OrderDocumentsSection", () => {
     render(
       <OrderDocumentsSection
         fiscalDocument={{
-          accessKey: "53250965326368000190550010000004561000004",
-          docNumber: "456",
-          docSeries: "1",
-          files: [{ id: 19, role: "xml", sizeBytes: 417 }],
-          issuedAtLabel: "31/08/2026",
+          attachedAtLabel: "31/08/2026",
+          originalName: "nota-456.pdf",
+          sizeBytes: 284_000,
         }}
         orderId="14087"
         receipt={{ available: true, issuedAtLabel: "31/08/2026", number: "PPL-2026-000022" }}
       />,
     );
 
-    expect(screen.getByText(/nota fiscal/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /xml da nf-e/i })).toHaveAttribute(
+    expect(screen.getByText("nota-456.pdf")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /baixar nota fiscal/i })).toHaveAttribute(
       "href",
-      "/api/perfil/pedidos/14087/nota-fiscal/19",
+      "/api/perfil/pedidos/14087/nota-fiscal",
     );
   });
 

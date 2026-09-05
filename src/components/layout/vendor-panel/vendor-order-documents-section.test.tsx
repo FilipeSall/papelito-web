@@ -8,8 +8,8 @@ import type {
 } from "@/features/vendor-orders/types/vendor-orders";
 
 const refreshMock = vi.fn();
-const saveDeclaredMock = vi.fn();
 const uploadFileMock = vi.fn();
+const deleteDocumentMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: refreshMock }),
@@ -22,15 +22,15 @@ vi.mock("@/features/vendor-orders/services/vendor-fiscal-client", async () => {
 
   return {
     ...actual,
-    saveVendorFiscalDeclared: (...args: unknown[]) => saveDeclaredMock(...args),
+    deleteVendorFiscalDocument: (...args: unknown[]) => deleteDocumentMock(...args),
     uploadVendorFiscalFile: (...args: unknown[]) => uploadFileMock(...args),
   };
 });
 
 const { VendorOrderDocumentsSection } = await import("./vendor-order-documents-section");
-
-const ACCESS_KEY = "5325" + "0".repeat(40);
-const OTHER_KEY = "5325" + "1".repeat(40);
+const { VendorFiscalError } = await import(
+  "@/features/vendor-orders/services/vendor-fiscal-client"
+);
 
 function fiscal(overrides: Partial<VendorOrderFiscal> = {}): VendorOrderFiscal {
   return {
@@ -38,51 +38,32 @@ function fiscal(overrides: Partial<VendorOrderFiscal> = {}): VendorOrderFiscal {
     canAttach: true,
     document: null,
     enabled: true,
-    limits: { danfe_pdf: 10 * 1024 * 1024, xml: 2 * 1024 * 1024 },
+    events: [],
+    limits: { pdf: 10 * 1024 * 1024, xml: 2 * 1024 * 1024 },
     ...overrides,
   };
 }
 
-function withDocument(): VendorOrderFiscal {
+function withDocument(overrides: Partial<VendorOrderFiscal> = {}): VendorOrderFiscal {
   return fiscal({
     document: {
-      accessKey: ACCESS_KEY,
-      accessKeyStatus: "valida",
       createdAt: "2026-09-01 12:00:00",
-      docNumber: "777",
-      docSeries: "1",
-      docStatus: "recebida",
-      docType: "nfe",
-      events: [
-        {
-          actorRole: "vendor",
-          createdAt: "2026-09-03 15:20:00",
-          docStatus: "recebida",
-          event: "substituida",
-          id: 3,
-          role: "xml",
-        },
-        {
-          actorRole: "vendor",
-          createdAt: "2026-09-01 12:00:00",
-          docStatus: "recebida",
-          event: "criado",
-          id: 1,
-          role: "",
-        },
-      ],
-      files: [],
-      flags: [],
       id: 42,
-      issuedAt: "2026-09-01 12:00:00",
-      issuerCnpj: "65326368000190",
-      issuerName: "Emitente de Teste",
-      notes: "",
-      protocol: "",
-      totalCents: 11027,
+      mime: "application/pdf",
+      originalName: "nota-777.pdf",
+      sizeBytes: 284_000,
       updatedAt: "2026-09-01 12:00:00",
-      validationLevel: 3,
     },
+    events: [
+      {
+        actorRole: "vendor",
+        createdAt: "2026-09-01 12:00:00",
+        event: "anexada",
+        id: 1,
+        originalName: "nota-777.pdf",
+      },
+    ],
+    ...overrides,
   });
 }
 
@@ -94,134 +75,193 @@ const receipt: VendorOrderReceipt = {
 
 function renderSection(value: VendorOrderFiscal) {
   return render(
-    <VendorOrderDocumentsSection
-      initialFiscal={value}
-      orderId={14094}
-      orderTotal={110.27}
-      receipt={receipt}
-    />,
+    <VendorOrderDocumentsSection initialFiscal={value} orderId={14094} receipt={receipt} />,
   );
+}
+
+function pdf(name = "nota.pdf"): File {
+  return new File(["%PDF-1.4"], name, { type: "application/pdf" });
+}
+
+/**
+ * `applyAccept: false` porque o `accept` do input filtraria o arquivo antes de
+ * o componente ver — e é justamente a guarda do componente que está sob teste.
+ */
+async function pick(file: File) {
+  await userEvent.upload(screen.getByLabelText("Arquivo"), file, { applyAccept: false });
 }
 
 describe("VendorOrderDocumentsSection", () => {
   beforeEach(() => {
     refreshMock.mockReset();
-    saveDeclaredMock.mockReset();
     uploadFileMock.mockReset();
-    saveDeclaredMock.mockImplementation(async () => withDocument());
+    deleteDocumentMock.mockReset();
   });
 
   it("não pede o recibo antes de o vendor mandar (gerar o PDF emite o recibo)", () => {
     renderSection(fiscal());
 
-    expect(document.querySelector('iframe[title="Recibo do pedido"]')).toBeNull();
+    expect(screen.queryByTitle("Recibo do pedido")).not.toBeInTheDocument();
   });
 
-  it("carrega o recibo quando o vendor visualiza", async () => {
+  it("não pede campo nenhum da nota: a nota é só o arquivo", () => {
     renderSection(fiscal());
 
-    await userEvent.click(screen.getByRole("button", { name: /visualizar/i }));
-
-    expect(document.querySelector('iframe[title="Recibo do pedido"]')).not.toBeNull();
+    expect(screen.getByLabelText("Arquivo")).toBeInTheDocument();
+    for (const label of ["Chave de acesso", "Número", "Série", "Emissão", "Valor da nota"]) {
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    }
   });
 
-  it("parte do que já existe ao completar ou corrigir", async () => {
-    renderSection(withDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: /completar ou corrigir/i }));
-
-    expect(screen.getByLabelText("Chave de acesso")).toHaveValue(ACCESS_KEY);
-    expect(screen.getByLabelText("Número")).toHaveValue("777");
-  });
-
-  it("não herda a identificação da nota anterior ao substituir (regressão)", async () => {
-    renderSection(withDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: /substituir nota/i }));
-
-    expect(screen.getByLabelText("Chave de acesso")).toHaveValue("");
-    expect(screen.getByLabelText("Número")).toHaveValue("");
-    expect(screen.getByLabelText("Série")).toHaveValue("");
-    expect(screen.getByLabelText("Valor da nota")).toHaveValue("");
-  });
-
-  it("manda a chave da nota nova, e não a da antiga, ao substituir", async () => {
-    uploadFileMock.mockImplementation(async () => withDocument());
-    renderSection(withDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: /substituir nota/i }));
-    await userEvent.type(screen.getByLabelText("Chave de acesso"), OTHER_KEY);
-    await userEvent.click(screen.getByRole("button", { name: /^substituir nota$/i }));
-
-    await waitFor(() => expect(saveDeclaredMock).toHaveBeenCalled());
-    expect(saveDeclaredMock.mock.calls[0][1]).toMatchObject({ accessKey: OTHER_KEY });
-  });
-
-  it("apaga um campo digitado errado ao limpá-lo", async () => {
-    renderSection(withDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: /completar ou corrigir/i }));
-    await userEvent.clear(screen.getByLabelText("Série"));
-    await userEvent.click(screen.getByRole("button", { name: /salvar nota/i }));
-
-    await waitFor(() => expect(saveDeclaredMock).toHaveBeenCalled());
-    expect(saveDeclaredMock.mock.calls[0][1]).toMatchObject({ docSeries: "" });
-  });
-
-  it("lê o valor da nota com ponto decimal sem multiplicar por cem", async () => {
-    renderSection(withDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: /completar ou corrigir/i }));
-    const total = screen.getByLabelText("Valor da nota");
-    await userEvent.clear(total);
-    await userEvent.type(total, "110.27");
-    await userEvent.click(screen.getByRole("button", { name: /salvar nota/i }));
-
-    await waitFor(() => expect(saveDeclaredMock).toHaveBeenCalled());
-    expect(saveDeclaredMock.mock.calls[0][1]).toMatchObject({ totalCents: 11027 });
-  });
-
-  it("recusa chave de acesso incompleta em vez de deixar o backend truncar", async () => {
+  it("anexa direto quando ainda não há nota, sem pedir confirmação", async () => {
+    uploadFileMock.mockResolvedValue(withDocument());
     renderSection(fiscal());
 
-    await userEvent.click(screen.getByRole("button", { name: /anexar nota fiscal/i }));
-    await userEvent.type(screen.getByLabelText("Chave de acesso"), "1234");
-    await userEvent.click(screen.getByRole("button", { name: /salvar nota/i }));
+    await pick(pdf());
+    await userEvent.click(screen.getByRole("button", { name: /anexar nota/i }));
 
-    expect(await screen.findByText(/44 dígitos; você informou 4/i)).toBeInTheDocument();
-    expect(saveDeclaredMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(uploadFileMock).toHaveBeenCalledTimes(1));
+    expect(uploadFileMock.mock.calls[0][0]).toMatchObject({ orderId: 14094 });
+    expect(refreshMock).toHaveBeenCalled();
   });
 
-  it("mostra o histórico da nota, com o registro da troca", async () => {
+  it("mostra o arquivo anexado com tamanho e data", () => {
     renderSection(withDocument());
+
+    expect(screen.getByText("nota-777.pdf")).toBeInTheDocument();
+    expect(screen.getByText(/277 KB · anexada em/)).toBeInTheDocument();
+  });
+
+  it("exige confirmação antes de substituir, porque o arquivo atual será apagado", async () => {
+    uploadFileMock.mockResolvedValue(withDocument());
+    renderSection(withDocument());
+
+    await pick(pdf("nova.pdf"));
+    await userEvent.click(screen.getByRole("button", { name: /substituir nota/i }));
+
+    expect(uploadFileMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/será apagada e não poderá ser recuperada/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Substituir e apagar" }));
+
+    await waitFor(() => expect(uploadFileMock).toHaveBeenCalledTimes(1));
+  });
+
+  it("não substitui quando o vendor desiste na confirmação", async () => {
+    renderSection(withDocument());
+
+    await pick(pdf("nova.pdf"));
+    await userEvent.click(screen.getByRole("button", { name: /substituir nota/i }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByText(/será apagada e não poderá ser recuperada/)).not.toBeInTheDocument();
+
+    expect(uploadFileMock).not.toHaveBeenCalled();
+  });
+
+  it("exige confirmação para remover, e remove ao confirmar", async () => {
+    deleteDocumentMock.mockResolvedValue(
+      fiscal({
+        events: [
+          {
+            actorRole: "vendor",
+            createdAt: "2026-09-04 10:00:00",
+            event: "removida",
+            id: 2,
+            originalName: "nota-777.pdf",
+          },
+        ],
+      }),
+    );
+    renderSection(withDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Remover" }));
+    expect(deleteDocumentMock).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Remover e apagar" }));
+
+    await waitFor(() => expect(deleteDocumentMock).toHaveBeenCalledWith(14094));
+    expect(await screen.findByText(/Nota fiscal removida do pedido/)).toBeInTheDocument();
+  });
+
+  it("mantém a trilha depois de remover a nota — é o único rastro que sobra", async () => {
+    renderSection(
+      fiscal({
+        events: [
+          {
+            actorRole: "vendor",
+            createdAt: "2026-09-01 12:00:00",
+            event: "anexada",
+            id: 1,
+            originalName: "nota-777.pdf",
+          },
+          {
+            actorRole: "sistema",
+            createdAt: "2026-09-04 10:00:00",
+            event: "removida",
+            id: 2,
+            originalName: "nota-777.pdf",
+          },
+        ],
+      }),
+    );
 
     await userEvent.click(screen.getByRole("button", { name: /histórico da nota/i }));
 
-    expect(screen.getByText("Nota substituída por outra")).toBeVisible();
-    expect(screen.getByText("Nota registrada no pedido")).toBeVisible();
-    // Evento gravado em UTC: 15:20Z é 12:20 em São Paulo.
-    expect(screen.getByText(/03\/09\/2026, 12:20/)).toBeInTheDocument();
+    expect(screen.getByText("Nota anexada ao pedido")).toBeInTheDocument();
+    expect(screen.getByText("Nota removida")).toBeInTheDocument();
+    expect(screen.getByText("· Sistema")).toBeInTheDocument();
   });
 
   it("não abre o histórico sozinho, e conta quantos registros existem", () => {
     renderSection(withDocument());
 
-    expect(screen.getByText("2 registros")).toBeInTheDocument();
-    expect(screen.queryByText("Nota substituída por outra")).not.toBeVisible();
+    expect(screen.getByText("1 registro")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /histórico da nota/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(screen.getByText("Nota anexada ao pedido")).not.toBeVisible();
   });
 
-  it("não mostra bloco de histórico quando a nota não tem eventos", () => {
-    const value = withDocument();
-    value.document!.events = [];
-    renderSection(value);
+  it("recusa arquivo fora de PDF e XML sem chamar o servidor", async () => {
+    renderSection(fiscal());
 
-    expect(screen.queryByRole("button", { name: /histórico da nota/i })).not.toBeInTheDocument();
+    await pick(new File(["oi"], "nota.jpg", { type: "image/jpeg" }));
+    await userEvent.click(screen.getByRole("button", { name: /anexar nota/i }));
+
+    expect(uploadFileMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/Envie a nota em PDF ou XML/)).toBeInTheDocument();
+  });
+
+  it("recusa XML acima do limite do formato, que é menor que o do PDF", async () => {
+    renderSection(fiscal());
+
+    const big = new File([new Uint8Array(3 * 1024 * 1024)], "nota.xml", { type: "text/xml" });
+    await pick(big);
+    await userEvent.click(screen.getByRole("button", { name: /anexar nota/i }));
+
+    expect(uploadFileMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/excede o limite de 2 MB para XML/)).toBeInTheDocument();
+  });
+
+  it("erro do servidor vira aviso e não quebra a seção", async () => {
+    uploadFileMock.mockRejectedValue(new VendorFiscalError("O PDF enviado é inválido.", 422));
+    renderSection(fiscal());
+
+    await pick(pdf());
+    await userEvent.click(screen.getByRole("button", { name: /anexar nota/i }));
+
+    expect(await screen.findByText(/O PDF enviado é inválido/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Arquivo")).toBeInTheDocument();
   });
 
   it("esconde o formulário e explica quando o pedido ainda não aceita nota", () => {
     renderSection(fiscal({ blockReason: "aguardando_pagamento", canAttach: false }));
 
-    expect(screen.getByText(/depois que o pagamento for confirmado/i)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /anexar nota fiscal/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Arquivo")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/pode ser anexada depois que o pagamento for confirmado/),
+    ).toBeInTheDocument();
   });
 });

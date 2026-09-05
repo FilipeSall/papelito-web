@@ -4,7 +4,6 @@ import {
   CircleCheck,
   FileCheck2,
   FileClock,
-  FileWarning,
   Hourglass,
   PackageCheck,
   PackageSearch,
@@ -16,8 +15,6 @@ import type { StatusShape } from "@/components/layout/operational-panel";
 import type {
   ShipmentGenerationStatus,
   ShipmentLogisticsStatus,
-  VendorFiscalDocStatus,
-  VendorFiscalRole,
   VendorOrderStatus,
 } from "@/features/vendor-orders/types/vendor-orders";
 
@@ -91,19 +88,6 @@ export function isVendorOrderTransitionOffered(status: VendorOrderStatus): boole
   return status in TRANSITION_LABEL;
 }
 
-const FISCAL_STATUS: Record<VendorFiscalDocStatus, StatusShape> = {
-  aceita: { icon: FileCheck2, label: "Nota aceita", tone: "positive" },
-  cancelada: { icon: FileWarning, label: "Nota cancelada", tone: "critical" },
-  pendente_revisao: { icon: FileWarning, label: "Nota em revisão", tone: "pending" },
-  recebida: { icon: FileCheck2, label: "Nota anexada", tone: "positive" },
-  rejeitada: { icon: FileWarning, label: "Nota rejeitada", tone: "critical" },
-  substituida: { icon: FileClock, label: "Nota substituída", tone: "neutral" },
-};
-
-export function fiscalStatusShape(status: VendorFiscalDocStatus): StatusShape {
-  return FISCAL_STATUS[status];
-}
-
 /** Marcador positivo da lista: só existe quando a nota foi anexada. */
 export const FISCAL_ATTACHED_SHAPE: StatusShape = {
   icon: FileCheck2,
@@ -118,69 +102,16 @@ export const FISCAL_PENDING_SHAPE: StatusShape = {
   tone: "pending",
 };
 
-const FISCAL_ROLE_LABEL: Record<VendorFiscalRole, string> = {
-  danfe_pdf: "DANFE em PDF",
-  other: "Arquivo",
-  xml: "XML da nota",
-};
-
-export function fiscalRoleLabel(role: VendorFiscalRole): string {
-  return FISCAL_ROLE_LABEL[role];
-}
-
 /**
- * Escala local de conferência, de 1 a 5. Nenhum nível afirma validação perante
- * o fisco — a Papelito não participa da operação fiscal, e a frase acompanha o
- * número na tela para o vendor não ler "5" como "homologada".
- */
-const VALIDATION_LEVEL: Record<number, string> = {
-  1: "Arquivo aceito",
-  2: "Chave estruturalmente válida",
-  3: "XML coerente com a chave",
-  4: "Emitente confere",
-  5: "Valor confere com o pedido",
-};
-
-export function fiscalValidationLabel(level: number): string {
-  return VALIDATION_LEVEL[level] ?? VALIDATION_LEVEL[1];
-}
-
-/**
- * Divergências, em português e ditas por inteiro.
+ * Trilha da nota, em frase de linha do tempo.
  *
- * Um código como `emitente_fora_da_chave` na tela obrigaria o vendor a
- * adivinhar o que conferir; a frase diz onde está a diferença.
- */
-const FLAG_LABEL: Record<string, string> = {
-  chave_divergente: "A chave digitada não é a mesma do XML.",
-  cnpj_emitente_invalido: "O CNPJ do emitente não passa na validação.",
-  emissao_incoerente: "A data de emissão não bate com a competência da chave.",
-  emitente_divergente: "O emitente digitado não é o mesmo do XML.",
-  emitente_fora_da_chave: "O CNPJ do emitente não é o que está embutido na chave.",
-  emitente_nao_e_o_vendor: "O emitente da nota não é o CNPJ da sua loja.",
-  modelo_incoerente: "O modelo na chave não corresponde ao tipo de documento.",
-  numero_divergente: "O número digitado não é o mesmo do XML.",
-  serie_divergente: "A série digitada não é a mesma do XML.",
-  valor_divergente: "O valor digitado não é o mesmo do XML.",
-  valor_fora_do_pedido: "O valor da nota não bate com o total do pedido.",
-};
-
-export function fiscalFlagLabel(flag: string): string {
-  return FLAG_LABEL[flag] ?? flag.replace(/_/g, " ");
-}
-
-/**
- * Histórico da nota, em frase de linha do tempo.
- *
- * O pedido guarda **uma** nota, mas o log é cumulativo: substituir reescreve o
- * documento e acrescenta um evento. É esse log que responde "quando essa nota
- * foi trocada".
+ * O pedido guarda **uma** nota e o arquivo anterior é apagado quando outro
+ * entra no lugar. A trilha é cumulativa e sobrevive à remoção — é ela que
+ * responde "por que a nota que eu vi ontem sumiu?".
  */
 const FISCAL_EVENT_LABEL: Record<string, string> = {
-  arquivo_anexado: "Arquivo anexado",
-  arquivo_substituido: "Arquivo trocado",
-  atualizado: "Dados da nota corrigidos",
-  criado: "Nota registrada no pedido",
+  anexada: "Nota anexada ao pedido",
+  removida: "Nota removida",
   substituida: "Nota substituída por outra",
 };
 
@@ -190,6 +121,7 @@ export function fiscalEventLabel(event: string): string {
 
 const FISCAL_ACTOR_LABEL: Record<string, string> = {
   admin: "Suporte Papelito",
+  sistema: "Sistema",
   vendor: "Você",
 };
 

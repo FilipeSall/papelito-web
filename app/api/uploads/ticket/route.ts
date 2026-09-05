@@ -17,8 +17,6 @@ const UPLOAD_PURPOSES = [
   "vendor-fiscal-document",
 ] as const;
 
-const FISCAL_ROLES = new Set(["danfe_pdf", "xml"]);
-
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 
 type UploadTicket = {
@@ -61,22 +59,16 @@ export async function POST(request: Request) {
     }
 
     const orderId = Number(body?.orderId);
-    const role = body?.role;
 
-    // O pedido e o papel entram no tíquete; a autorização real — pedido do
-    // vendor e situação que aceita nota — continua sendo do WordPress.
-    if (!Number.isInteger(orderId) || orderId <= 0 || typeof role !== "string" || !FISCAL_ROLES.has(role)) {
+    // O pedido entra no tíquete; a autorização real — pedido do vendor e
+    // situação que aceita nota — continua sendo do WordPress. O upload sempre
+    // substitui a nota que houver, então não há modo a escolher.
+    if (!Number.isInteger(orderId) || orderId <= 0) {
       return NextResponse.json({ message: "Anexo de nota fiscal inválido." }, { status: 422 });
     }
 
     headers = { Authorization: `Bearer ${auth.accessToken}` };
-    json = {
-      declared: typeof body?.declared === "object" && body.declared !== null ? body.declared : {},
-      mode: body?.mode === "replace" ? "replace" : "attach",
-      orderId,
-      purpose,
-      role,
-    };
+    json = { orderId, purpose };
   } else {
     const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
     if (!applicationToken) {

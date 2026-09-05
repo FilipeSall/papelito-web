@@ -79,11 +79,10 @@ type WpProfileOrder = {
     issued_at?: string | null;
   };
   fiscal_document?: {
-    access_key?: string;
-    doc_number?: string;
-    doc_series?: string;
-    issued_at?: string;
-    files?: Array<{ id?: number; role?: string; size_bytes?: number }>;
+    created_at?: string;
+    mime?: string;
+    original_name?: string;
+    size_bytes?: number;
   } | null;
 };
 
@@ -134,20 +133,13 @@ function receiptInfo(order: WpProfileOrder): ProfileOrderReceipt {
  */
 function fiscalDocumentInfo(order: WpProfileOrder): ProfileOrderFiscalDocument | null {
   const document = order.fiscal_document;
-  const files = (document?.files ?? []).filter((file) => Number(file.id) > 0);
 
-  if (!document || files.length === 0) return null;
+  if (!document) return null;
 
   return {
-    accessKey: document.access_key ?? "",
-    docNumber: document.doc_number ?? "",
-    docSeries: document.doc_series ?? "",
-    files: files.map((file) => ({
-      id: Number(file.id),
-      role: file.role ?? "other",
-      sizeBytes: Number(file.size_bytes) || 0,
-    })),
-    issuedAtLabel: document.issued_at ?? "",
+    attachedAtLabel: document.created_at ?? "",
+    originalName: document.original_name ?? "",
+    sizeBytes: Number(document.size_bytes) || 0,
   };
 }
 

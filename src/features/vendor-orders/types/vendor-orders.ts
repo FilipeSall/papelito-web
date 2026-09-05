@@ -121,80 +121,53 @@ export type VendorOrdersFilters = {
  */
 export type VendorOrdersSummary = Record<VendorOrderStatus | "all" | "fiscal_pending", number>;
 
-export type VendorFiscalRole = "danfe_pdf" | "other" | "xml";
+export type VendorFiscalEventName = "anexada" | "removida" | "substituida";
 
-export type VendorFiscalDocStatus =
-  | "aceita"
-  | "cancelada"
-  | "pendente_revisao"
-  | "recebida"
-  | "rejeitada"
-  | "substituida";
+/**
+ * Registro da trilha da nota.
+ *
+ * A trilha é o único rastro que sobra quando a nota é removida ou trocada — o
+ * arquivo anterior deixa de existir, e `originalName` é o que permite dizer
+ * *qual* nota era aquela.
+ */
+export type VendorFiscalEvent = {
+  actorRole: "" | "admin" | "sistema" | "vendor";
+  createdAt: string;
+  event: VendorFiscalEventName | string;
+  id: number;
+  originalName: string;
+};
 
-export type VendorFiscalKeyStatus = "ausente" | "invalida" | "valida";
-
-export type VendorFiscalFile = {
+/**
+ * Nota fiscal anexada ao pedido: só o arquivo.
+ *
+ * A Papelito não emite nota nem lê o conteúdo do documento. Não há chave de
+ * acesso, número, série, emissão nem valor — o sistema guarda o arquivo e não
+ * afirma nada sobre ele.
+ */
+export type VendorFiscalDocument = {
   createdAt: string;
   id: number;
   mime: string;
   originalName: string;
-  role: VendorFiscalRole;
   sizeBytes: number;
-};
-
-export type VendorFiscalEventName =
-  | "criado"
-  | "atualizado"
-  | "substituida"
-  | "arquivo_anexado"
-  | "arquivo_substituido";
-
-/**
- * Evento do histórico da nota. O pedido guarda **uma** nota, mas o log é
- * cumulativo: substituir reescreve o documento e acrescenta um evento, sem
- * apagar os anteriores.
- */
-export type VendorFiscalEvent = {
-  actorRole: string;
-  createdAt: string;
-  docStatus: string;
-  event: VendorFiscalEventName | string;
-  id: number;
-  role: VendorFiscalRole | "";
-};
-
-export type VendorFiscalDocument = {
-  accessKey: string;
-  accessKeyStatus: VendorFiscalKeyStatus;
-  createdAt: string;
-  docNumber: string;
-  docSeries: string;
-  docStatus: VendorFiscalDocStatus;
-  docType: string;
-  events: VendorFiscalEvent[];
-  files: VendorFiscalFile[];
-  flags: string[];
-  id: number;
-  issuedAt: string;
-  issuerCnpj: string;
-  issuerName: string;
-  notes: string;
-  protocol: string;
-  totalCents: number;
   updatedAt: string;
-  validationLevel: number;
 };
 
 /**
  * Bloco de nota fiscal do pedido. `blockReason` é vazio quando o pedido aceita
  * anexo — a tela nunca recalcula essa regra por conta própria.
+ *
+ * `events` fica no bloco, e não no documento, porque a trilha sobrevive à
+ * remoção da nota.
  */
 export type VendorOrderFiscal = {
   blockReason: "" | "aguardando_pagamento" | "cancelado";
   canAttach: boolean;
   document: VendorFiscalDocument | null;
   enabled: boolean;
-  limits: { danfe_pdf: number; xml: number };
+  events: VendorFiscalEvent[];
+  limits: { pdf: number; xml: number };
 };
 
 export type VendorOrderBilling = {

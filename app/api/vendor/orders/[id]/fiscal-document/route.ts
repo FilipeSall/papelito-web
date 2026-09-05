@@ -5,47 +5,13 @@ import { wpRest } from "@/lib/server/wp-rest";
 
 import { readWithVendorAccessToken, requireVendorAccessToken } from "../../../_lib/require-vendor-session";
 
-const DECLARED_FIELDS = [
-  "accessKey",
-  "docNumber",
-  "docSeries",
-  "docType",
-  "issuedAt",
-  "issuerCnpj",
-  "issuerName",
-  "notes",
-  "protocol",
-] as const;
-
 /**
- * Só os campos que o WordPress conhece atravessam o proxy, já como string.
- * O que decide validade, nível e divergência continua sendo do backend — aqui
- * é apenas o formato do corpo.
+ * Bloco de nota fiscal do pedido.
  *
- * Campo presente e vazio **atravessa**: é assim que o vendor apaga um dado
- * digitado errado. Campo ausente é "não informei", e o backend preserva o que
- * já estava gravado — descartar os dois igualmente tornava o erro permanente.
+ * A nota é só o arquivo: não há campo digitado para gravar, então não existe
+ * `POST` aqui. Anexar e substituir acontecem pelo upload direto ao WordPress,
+ * que devolve o mesmo bloco.
  */
-function declaredFromBody(body: Record<string, unknown>): Record<string, unknown> {
-  const declared: Record<string, unknown> = {};
-
-  for (const field of DECLARED_FIELDS) {
-    const value = body[field];
-    if (typeof value === "string") {
-      declared[field] = value.trim();
-    }
-  }
-
-  if (body.totalCents !== undefined) {
-    const totalCents = Number(body.totalCents);
-    if (Number.isInteger(totalCents) && totalCents >= 0) {
-      declared.totalCents = totalCents;
-    }
-  }
-
-  return declared;
-}
-
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -73,7 +39,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       );
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * Remove a nota do pedido: some a linha e some o arquivo do disco.
+ *
+ * A trilha permanece — é o único rastro de que existiu uma nota ali.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireVendorAccessToken();
 
   if ("error" in auth) {
@@ -86,17 +57,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
-  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  const declared = declaredFromBody(body ?? {});
-
-  if (Object.keys(declared).length === 0) {
-    return NextResponse.json({ message: "Informe ao menos um dado da nota fiscal." }, { status: 422 });
-  }
-
   const result = await wpRest<unknown>(`/papelito/v1/vendor/me/orders/${id}/fiscal-document`, {
     headers: { Authorization: `Bearer ${auth.accessToken}` },
-    json: declared,
-    method: "POST",
+    method: "DELETE",
   });
 
   if (!result.ok) {

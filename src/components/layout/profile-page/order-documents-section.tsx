@@ -12,17 +12,11 @@ type OrderDocumentsSectionProps = {
   receipt: ProfileOrderReceipt;
 };
 
-const FISCAL_ROLE_LABEL: Record<string, string> = {
-  danfe_pdf: "DANFE em PDF",
-  xml: "XML da NF-e",
-};
-
-function fiscalRoleLabel(role: string): string {
-  return FISCAL_ROLE_LABEL[role] ?? "Arquivo da nota";
-}
-
-function formatAccessKey(key: string): string {
-  return key ? (key.match(/.{1,4}/g) ?? [key]).join(" ") : "";
+function formatSize(bytes: number): string {
+  if (bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
 /**
@@ -48,7 +42,7 @@ export function OrderDocumentsSection({
               Recibo
             </p>
             <div className="mt-1.5 flex items-center justify-between gap-3">
-              <code className="font-mono text-sm font-bold tracking-[0.1em] text-[#1a1a1a]">
+              <code className="font-mono text-sm font-bold tracking-widest text-[#1a1a1a]">
                 {receipt.number}
               </code>
               <OrderTrackingCopyButton label="Copiar número do recibo" value={receipt.number} />
@@ -74,32 +68,23 @@ export function OrderDocumentsSection({
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/60">
               Nota fiscal
             </p>
-            {fiscalDocument.docNumber ? (
-              <p className="mt-1.5 font-mono text-sm font-bold tracking-[0.1em] text-[#1a1a1a]">
-                Nº {fiscalDocument.docNumber}
-                {fiscalDocument.docSeries ? ` / ${fiscalDocument.docSeries}` : ""}
+            <p className="mt-1.5 truncate text-sm font-bold text-[#1a1a1a]">
+              {fiscalDocument.originalName || "Nota fiscal do pedido"}
+            </p>
+            {formatSize(fiscalDocument.sizeBytes) ? (
+              <p className="mt-0.5 text-xs font-semibold tabular-nums text-[#1a1a1a]/60">
+                {formatSize(fiscalDocument.sizeBytes)}
               </p>
             ) : null}
-            {fiscalDocument.accessKey ? (
-              <p className="mt-1.5 break-all font-mono text-[11px] leading-4 text-[#1a1a1a]/65">
-                {formatAccessKey(fiscalDocument.accessKey)}
-              </p>
-            ) : null}
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {fiscalDocument.files.map((file) => (
-                <li key={file.id}>
-                  <a
-                    className="inline-flex h-10 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[10px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
-                    href={`/api/perfil/pedidos/${orderId}/nota-fiscal/${file.id}`}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <Download aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    {fiscalRoleLabel(file.role)}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <a
+              className="mt-3 inline-flex h-10 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[10px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
+              href={`/api/perfil/pedidos/${orderId}/nota-fiscal`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <Download aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+              Baixar nota fiscal
+            </a>
           </div>
         ) : null}
       </article>

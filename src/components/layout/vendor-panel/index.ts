@@ -7,8 +7,6 @@ export { VendorOrderStatusPanel } from "./vendor-order-status-panel";
 export { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
 export { VendorOrdersBoard } from "./vendor-orders-board";
 export {
-  fiscalFlagLabel,
-  fiscalValidationLabel,
   logisticsHeadline,
   paymentMethodLabel,
   paymentStateShape,
