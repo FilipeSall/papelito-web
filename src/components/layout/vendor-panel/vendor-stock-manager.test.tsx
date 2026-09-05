@@ -212,6 +212,18 @@ describe("VendorStockManager seleção em lote", () => {
     expect(screen.queryByLabelText("Definir estoque")).not.toBeInTheDocument();
   });
 
+  it("keeps the bulk bar out of the page flow when it is visible", () => {
+    renderManager(twoProducts);
+
+    fireEvent.click(screen.getByLabelText("Selecionar Seda King Size"));
+
+    const bar = screen.getByText("1 produto").closest("div");
+
+    expect(bar).toHaveClass("fixed");
+    expect(bar).not.toHaveClass("sticky");
+    expect(bar?.parentElement).toBe(document.body);
+  });
+
   it("applies one quantity to every selected product in a single request", async () => {
     renderManager(twoProducts);
 

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   VendorOrderDeliveryCountdown,
@@ -8,7 +8,9 @@ import {
 
 const DAY = 24 * 60 * 60 * 1000;
 const PAID = "2026-06-01 12:00:00";
-const paidTs = new Date(PAID.replace(" ", "T")).getTime();
+// Mesma convenção do componente: `paid_at` é hora de São Paulo. Medir a partir
+// de outra baseline faria "3/4 restantes" significar outra coisa.
+const paidTs = new Date("2026-06-01T12:00:00-03:00").getTime();
 
 function compute(overrides: Partial<Parameters<typeof computeDeliveryCountdown>[0]> = {}) {
   return computeDeliveryCountdown({
@@ -34,6 +36,35 @@ describe("computeDeliveryCountdown", () => {
   it("turns critical (vermelho) once a quarter or less remains", () => {
     const result = compute({ now: paidTs + 3.2 * DAY }); // ~0.2 left
     expect(result).toMatchObject({ kind: "remaining", tone: "critical" });
+  });
+
+  // O fuso da máquina precisa ser fixado: numa máquina em Brasília o parse
+  // ingênuo coincide com o correto, e o teste não distinguiria nada. Em UTC —
+  // que é o do servidor onde a página é renderizada — os dois divergem.
+  describe("com o servidor em UTC", () => {
+    const originalTz = process.env.TZ;
+
+    beforeAll(() => {
+      process.env.TZ = "UTC";
+    });
+
+    afterAll(() => {
+      process.env.TZ = originalTz;
+    });
+
+    it("conta o prazo a partir da hora de São Paulo, não do fuso de quem executa (regressão)", () => {
+      // Pago 01/06 12:00 em São Paulo = 15:00Z. Com 1 dia de prazo, o limite é
+      // 02/06 15:00Z — às 12:00Z ainda restam 3h. Lido como UTC, o prazo já
+      // teria vencido, e servidor e navegador discordariam do mesmo pedido.
+      const result = computeDeliveryCountdown({
+        status: "aguardando_envio",
+        paidAt: "2026-06-01 12:00:00",
+        deliveryTimeDays: 1,
+        now: Date.parse("2026-06-02T12:00:00Z"),
+      });
+
+      expect(result.kind).toBe("remaining");
+    });
   });
 
   it("reports overdue once the deadline passes", () => {

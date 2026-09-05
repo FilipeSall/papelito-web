@@ -24,14 +24,31 @@ describe("VendorOrderStatusStepper", () => {
     expect(within(items[3]).queryByText("Atual")).not.toBeInTheDocument();
   });
 
-  it("shows a check icon on completed steps before the current one", () => {
+  it("separates completed, current and upcoming without relying on colour", () => {
     const { container } = render(<VendorOrderStatusStepper status="enviado" />);
     const items = within(container).getAllByRole("listitem");
 
-    // steps 0..2 are completed -> rendered as svg check, current (3) and upcoming (4) show a number
-    expect(within(items[0]).queryByText("1")).not.toBeInTheDocument();
-    expect(within(items[3]).getByText("4")).toBeInTheDocument();
-    expect(within(items[4]).getByText("5")).toBeInTheDocument();
+    // Cada estado tem uma palavra própria: a esteira é lida também impressa e
+    // por quem não distingue as cores da marca.
+    expect(within(items[0]).getByText("Concluído")).toBeInTheDocument();
+    expect(within(items[3]).getByText("Atual")).toBeInTheDocument();
+    expect(within(items[4]).getByText("A seguir")).toBeInTheDocument();
+  });
+
+  it("swaps the step icon for a check once the step is completed", () => {
+    const { container } = render(<VendorOrderStatusStepper status="enviado" />);
+    const items = within(container).getAllByRole("listitem");
+
+    expect(items[0].querySelector(".lucide-check")).toBeTruthy();
+    expect(items[4].querySelector(".lucide-check")).toBeNull();
+    expect(items[4].querySelector("svg")).toBeTruthy();
+  });
+
+  it("announces the current step position for screen readers", () => {
+    render(<VendorOrderStatusStepper status="em_separacao" />);
+
+    expect(screen.getByRole("list")).toHaveAccessibleName("Etapa 3 de 5: Separação");
+    expect(screen.getAllByRole("listitem")[2]).toHaveAttribute("aria-current", "step");
   });
 
   it("renders the active state on the first step for an unpaid order", () => {

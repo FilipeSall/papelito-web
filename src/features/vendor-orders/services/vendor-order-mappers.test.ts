@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mapVendorOrderFiscal,
   isVendorOrderStatus,
   mapVendorOrderDetail,
   mapVendorOrderStatus,
@@ -129,5 +130,86 @@ describe("mapVendorOrderDetail logistics", () => {
 
     expect(order.logistics.generationStatus).toBe("generated");
     expect(order.logistics.shipments[0].generationStatus).toBe("generated");
+  });
+});
+
+describe("mapVendorOrderFiscal", () => {
+  it("nasce desligado quando o WordPress não manda o bloco", () => {
+    const fiscal = mapVendorOrderFiscal(undefined);
+
+    expect(fiscal.enabled).toBe(false);
+    expect(fiscal.canAttach).toBe(false);
+    expect(fiscal.document).toBeNull();
+  });
+
+  it("nunca habilita o anexo por omissão de campo", () => {
+    const fiscal = mapVendorOrderFiscal({ enabled: true });
+
+    expect(fiscal.canAttach).toBe(false);
+    expect(fiscal.blockReason).toBe("");
+  });
+
+  it("mantém o motivo do bloqueio só quando ele é conhecido", () => {
+    expect(mapVendorOrderFiscal({ block_reason: "cancelado" }).blockReason).toBe("cancelado");
+    expect(mapVendorOrderFiscal({ block_reason: "motivo_novo" }).blockReason).toBe("");
+  });
+
+  it("cai nos limites do spec quando o payload não os traz", () => {
+    const fiscal = mapVendorOrderFiscal({ enabled: true });
+
+    expect(fiscal.limits).toEqual({ danfe_pdf: 10 * 1024 * 1024, xml: 2 * 1024 * 1024 });
+  });
+
+  it("descarta documento sem id", () => {
+    expect(mapVendorOrderFiscal({ document: { access_key: "5325" } }).document).toBeNull();
+  });
+
+  it("normaliza situação e papel desconhecidos sem perder o documento", () => {
+    const fiscal = mapVendorOrderFiscal({
+      document: {
+        id: 42,
+        doc_status: "situacao_nova",
+        access_key_status: "outra",
+        files: [{ id: 7, role: "planilha" }],
+      },
+    });
+
+    expect(fiscal.document?.docStatus).toBe("recebida");
+    expect(fiscal.document?.accessKeyStatus).toBe("ausente");
+    expect(fiscal.document?.files[0].role).toBe("other");
+  });
+
+  it("mapeia o histórico do documento", () => {
+    const fiscal = mapVendorOrderFiscal({
+      document: {
+        id: 42,
+        events: [
+          { id: 3, event: "substituida", actor_role: "vendor", created_at: "2026-09-03 15:20:00", role: "xml" },
+          { id: 1, event: "criado", actor_role: "vendor", created_at: "2026-09-01 12:00:00" },
+        ],
+      },
+    });
+
+    expect(fiscal.document?.events).toHaveLength(2);
+    expect(fiscal.document?.events[0]).toMatchObject({ event: "substituida", role: "xml" });
+    expect(fiscal.document?.events[1].role).toBe("");
+  });
+
+  it("descarta evento sem id ou sem nome, e nunca deixa o histórico indefinido", () => {
+    const fiscal = mapVendorOrderFiscal({
+      document: { id: 42, events: [{ event: "criado" }, { id: 7 }, { id: 8, event: "atualizado" }] },
+    });
+
+    expect(fiscal.document?.events.map((entry) => entry.id)).toEqual([8]);
+    expect(mapVendorOrderFiscal({ document: { id: 42 } }).document?.events).toEqual([]);
+  });
+
+  it("aceita as observações pelo nome de coluna ou pelo nome de payload", () => {
+    expect(mapVendorOrderFiscal({ document: { id: 1, notes: "do payload" } }).document?.notes).toBe(
+      "do payload",
+    );
+    expect(
+      mapVendorOrderFiscal({ document: { id: 1, internal_notes: "da coluna" } }).document?.notes,
+    ).toBe("da coluna");
   });
 });

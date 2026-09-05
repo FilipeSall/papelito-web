@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { BaseModal } from "@/components/ui";
+import { FOCUS_RING } from "@/components/layout/operational-panel";
 
 type VendorCancelShipmentModalProps = {
   open: boolean;
@@ -63,20 +64,22 @@ export function VendorCancelShipmentModal({
       onClose={handleClose}
       open={open}
     >
-      <div className="rounded-2xl border-2 border-brand-dark bg-white p-6 shadow-[8px_8px_0_rgba(35,31,32,0.12)]">
+      <div className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+        <div aria-hidden className="h-2 w-full bg-[#c0392b]" />
+        <div className="p-6">
         <h2
-          className="text-lg font-black uppercase tracking-tight text-brand-dark"
+          className="text-lg font-black uppercase tracking-tight text-[#1a1a1a]"
           id={titleId}
         >
-          Cancelar envio do pedido
+          Cancelar pedido
         </h2>
-        <p className="mt-3 text-sm leading-5 text-text-secondary" id={descriptionId}>
-          O cancelamento e definitivo e a justificativa abaixo será registrada no
-          histórico do pedido. O cliente vera esta atualização.
+        <p className="mt-3 text-sm leading-6 text-[#231f20]/74" id={descriptionId}>
+          O cancelamento é definitivo e a justificativa abaixo fica registrada no histórico do
+          pedido. O comprador vê esta atualização.
         </p>
 
         <label
-          className="mt-5 block text-[11px] font-black uppercase tracking-[0.22em] text-brand-dark/70"
+          className="mt-5 block text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]"
           htmlFor={`${titleId}-reason`}
         >
           Justificativa
@@ -84,7 +87,7 @@ export function VendorCancelShipmentModal({
         <textarea
           aria-describedby={validationError ? `${titleId}-error` : undefined}
           aria-invalid={validationError ? true : undefined}
-          className="mt-2 min-h-28 w-full resize-y rounded-xl border border-brand-dark/16 bg-[#FFFDF8] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-dark focus:ring-4 focus:ring-[#FFF1A6] disabled:opacity-60"
+          className={["mt-2 min-h-28 w-full resize-y border-2 border-[#1a1a1a] bg-white px-4 py-3 text-sm text-[#1a1a1a] outline-none transition placeholder:text-[#1a1a1a]/40 disabled:opacity-60", FOCUS_RING].join(" ")}
           disabled={isSubmitting}
           id={`${titleId}-reason`}
           onChange={(event) => {
@@ -97,22 +100,22 @@ export function VendorCancelShipmentModal({
         />
         {validationError ? (
           <p
-            className="mt-2 text-sm font-semibold text-[#c0392b]"
+            className="mt-2 text-sm font-bold text-[#c0392b]"
             id={`${titleId}-error`}
             role="alert"
           >
-            {validationError}
+            ⚠ {validationError}
           </p>
         ) : null}
         {errorMessage ? (
-          <p className="mt-3 rounded-[12px] border border-[#c0392b] bg-[#c0392b]/10 px-4 py-3 text-sm font-semibold text-[#c0392b]" role="alert">
-            {errorMessage}
+          <p className="mt-3 border-2 border-[#c0392b] bg-white px-4 py-3 text-sm font-bold text-[#c0392b]" role="alert">
+            ⚠ {errorMessage}
           </p>
         ) : null}
 
         <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
           <button
-            className="cursor-pointer rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-wide text-brand-dark transition hover:bg-bg-light disabled:cursor-not-allowed disabled:opacity-50"
+            className={["inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white disabled:cursor-not-allowed disabled:opacity-45", FOCUS_RING].join(" ")}
             disabled={isSubmitting}
             onClick={handleClose}
             type="button"
@@ -120,13 +123,14 @@ export function VendorCancelShipmentModal({
             Voltar
           </button>
           <button
-            className="cursor-pointer rounded-full border border-[#c0392b] bg-[#c0392b] px-5 py-2.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-[#a5301f] disabled:cursor-not-allowed disabled:opacity-60"
+            className={["inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#c0392b] transition hover:bg-[#c0392b]/8 disabled:cursor-not-allowed disabled:opacity-45", FOCUS_RING].join(" ")}
             disabled={isSubmitting}
             onClick={handleConfirm}
             type="button"
           >
-            {isSubmitting ? "Cancelando..." : "Confirmar cancelamento"}
+            {isSubmitting ? "Cancelando…" : "Confirmar cancelamento"}
           </button>
+        </div>
         </div>
       </div>
     </BaseModal>

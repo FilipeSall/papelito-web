@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import { FOCUS_RING } from "@/components/layout/operational-panel";
@@ -75,7 +75,7 @@ export function StockToolbar({
           <input name="sort" type="hidden" value={filters.sort} />
         ) : null}
 
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex w-full max-w-md flex-col gap-2">
           <label
             className="block text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
             htmlFor="stock-search"
@@ -127,37 +127,118 @@ export function StockToolbar({
         </button>
       </form>
 
-      <div className="w-full min-w-0 sm:w-56">
-        <CheckoutCustomSelect
-          label="Ordenar"
-          labelClassName="text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
-          onChange={(value) =>
-            router.push(buildStockHref({ ...filters, sort: value as VendorStockSort }))
-          }
-          options={sortOptions}
-          placeholder="Nome (A-Z)"
-          triggerClassName="min-h-11 rounded-none border-2 border-[#1a1a1a] bg-white text-[#1a1a1a]"
-          value={filters.sort}
-        />
-      </div>
+      <StockSortControl
+        filters={filters}
+        key={buildStockHref(filters)}
+        onChange={(sort) => router.push(buildStockHref({ ...filters, sort }))}
+      />
 
+      <StockFilterControl
+        active={active}
+        filters={filters}
+        key={`filter-${buildStockHref(filters)}`}
+        onClose={() => setDrawerOpen(false)}
+        onOpen={() => setDrawerOpen(true)}
+        open={drawerOpen}
+        taxonomies={taxonomies}
+      />
+    </div>
+  );
+}
+
+function StockFilterControl({
+  active,
+  filters,
+  onClose,
+  onOpen,
+  open,
+  taxonomies,
+}: {
+  active: number;
+  filters: VendorStockFilters;
+  onClose: () => void;
+  onOpen: () => void;
+  open: boolean;
+  taxonomies: VendorStockTaxonomies;
+}) {
+  const [applying, setApplying] = useState(false);
+
+  return (
+    <>
       <button
+        aria-busy={applying}
         className={[
-          "inline-flex h-11 flex-none items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-white px-5 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow",
+          "inline-flex h-11 flex-none items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-white px-5 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:bg-[#f5f5f5] disabled:text-[#1a1a1a]/45",
           FOCUS_RING,
         ].join(" ")}
-        onClick={() => setDrawerOpen(true)}
+        disabled={applying}
+        onClick={onOpen}
         type="button"
       >
-        <SlidersHorizontal aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-        Filtrar{active > 0 ? ` · ${active}` : ""}
+        {applying ? (
+          <Loader2 aria-label="Aplicando filtros" className="h-4 w-4 animate-spin" />
+        ) : (
+          <SlidersHorizontal aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+        )}
+        {applying ? "Aplicando filtros…" : `Filtrar${active > 0 ? ` · ${active}` : ""}`}
       </button>
+
+      {applying ? (
+        <div
+          aria-live="polite"
+          className="fixed left-1/2 top-4 z-70 inline-flex -translate-x-1/2 items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-brand-yellow shadow-[4px_4px_0px_#ffe500]"
+          role="status"
+        >
+          <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+          Aplicando filtros…
+        </div>
+      ) : null}
 
       <StockFilterDrawer
         filters={filters}
-        onClose={() => setDrawerOpen(false)}
-        open={drawerOpen}
+        onClose={onClose}
+        onPending={() => setApplying(true)}
+        open={open}
         taxonomies={taxonomies}
+      />
+    </>
+  );
+}
+
+function StockSortControl({
+  filters,
+  onChange,
+}: {
+  filters: VendorStockFilters;
+  onChange: (sort: VendorStockSort) => void;
+}) {
+  const [pendingSort, setPendingSort] = useState<VendorStockSort | null>(null);
+  const [, startTransition] = useTransition();
+  const sortUpdating = pendingSort !== null;
+
+  function handleChange(value: string) {
+    const sort = value as VendorStockSort;
+
+    if (sort === filters.sort) {
+      return;
+    }
+
+    setPendingSort(sort);
+    startTransition(() => onChange(sort));
+  }
+
+  return (
+    <div className="w-full min-w-0 sm:w-56">
+      <CheckoutCustomSelect
+        label="Ordenar"
+        labelClassName="text-[10px] font-black uppercase leading-none tracking-[0.18em] text-[#1a1a1a]"
+        loading={sortUpdating}
+        loadingLabel="Atualizando ordenação"
+        onChange={handleChange}
+        options={sortOptions}
+        placeholder="Nome (A-Z)"
+        triggerClassName="min-h-11 rounded-none border-2 border-[#1a1a1a] bg-white text-[#1a1a1a]"
+        value={pendingSort ?? filters.sort}
       />
     </div>
   );

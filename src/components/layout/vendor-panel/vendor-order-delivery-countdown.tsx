@@ -1,4 +1,5 @@
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
+import { parseSiteDate } from "@/features/vendor-orders/utils/order-dates";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -12,9 +13,13 @@ export type DeliveryCountdown =
   | { kind: "overdue"; label: string }
   | { kind: "remaining"; label: string; tone: CountdownTone };
 
+/**
+ * O prazo corre a partir do pagamento, e `paid_at` é hora de São Paulo. Sem o
+ * fuso, o servidor (UTC) e o navegador calculavam deadlines com três horas de
+ * diferença para o mesmo pedido.
+ */
 function parseTimestamp(value: string): number {
-  if (!value) return Number.NaN;
-  return new Date(value.replace(" ", "T")).getTime();
+  return parseSiteDate(value)?.getTime() ?? Number.NaN;
 }
 
 function formatRemaining(ms: number): string {

@@ -4,8 +4,10 @@ import {
   mapVendorOrdersSnapshot,
   type WpVendorOrdersList,
 } from "@/features/vendor-orders/services/vendor-order-mappers";
+import { VENDOR_ORDERS_PER_PAGE } from "@/features/vendor-orders/types/vendor-orders";
 import { wpRest } from "@/lib/server/wp-rest";
 import {
+  normalizeVendorOrdersFiscal,
   normalizeVendorOrdersStatus,
   parseVendorOrdersPage,
   parseVendorOrdersSearch,
@@ -18,14 +20,21 @@ export async function GET(request: Request) {
   const page = parseVendorOrdersPage(url.searchParams.get("page"));
   const search = parseVendorOrdersSearch(url.searchParams.get("search"));
   const status = normalizeVendorOrdersStatus(url.searchParams.get("status"));
+  const fiscal = normalizeVendorOrdersFiscal(url.searchParams.get("fiscal"));
+  // A mesma constante do render no servidor: com dois tamanhos de pagina, o
+  // envelope que o SWR recebe tem outro `total_pages` e a lista trocava de
+  // tamanho sozinha na primeira revalidacao.
   const params = new URLSearchParams({
     page: String(page),
-    per_page: "20",
+    per_page: String(VENDOR_ORDERS_PER_PAGE),
     status,
   });
 
   if (search) {
     params.set("search", search);
+  }
+  if (fiscal !== "all") {
+    params.set("fiscal", fiscal);
   }
 
   const session = await readWithVendorAccessToken((accessToken) =>

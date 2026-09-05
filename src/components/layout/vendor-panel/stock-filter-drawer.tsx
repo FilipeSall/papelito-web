@@ -6,7 +6,6 @@ import { useState } from "react";
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import { BaseModal } from "@/components/ui/base-modal";
 import type {
-  VendorStockFilter,
   VendorStockFilters,
   VendorStockSort,
   VendorStockTaxonomies,
@@ -19,20 +18,7 @@ import {
 } from "@/features/vendor-stock/types/vendor-stock";
 
 import { buildStockHref } from "./stock-href";
-import { STOCK_FILTER_LABELS, STOCK_SORT_LABELS, STOCK_TYPE_LABELS } from "./stock-labels";
-
-/**
- * Os recortes na ordem em que o vendor procura por eles: primeiro o que exige ação — acabando,
- * acabado, nunca lançado, cadastro pela metade — e só depois o que já está resolvido.
- */
-const statusOptions: Array<[VendorStockFilter, string]> = [
-  ["all", STOCK_FILTER_LABELS.all],
-  ["low_stock", STOCK_FILTER_LABELS.low_stock],
-  ["zeroed_only", STOCK_FILTER_LABELS.zeroed_only],
-  ["unconfigured", STOCK_FILTER_LABELS.unconfigured],
-  ["incomplete", STOCK_FILTER_LABELS.incomplete],
-  ["with_stock", STOCK_FILTER_LABELS.with_stock],
-];
+import { STOCK_SORT_LABELS, STOCK_TYPE_LABELS } from "./stock-labels";
 
 const typeOptions: Array<{ label: string; value: VendorStockType }> = VENDOR_STOCK_TYPES.map(
   (value) => ({ label: STOCK_TYPE_LABELS[value], value }),
@@ -60,11 +46,13 @@ const selectLabelClassName =
 
 export function StockFilterDrawer({
   filters,
+  onPending,
   onClose,
   open,
   taxonomies,
 }: {
   filters: VendorStockFilters;
+  onPending?: () => void;
   onClose: () => void;
   open: boolean;
   taxonomies: VendorStockTaxonomies;
@@ -79,6 +67,8 @@ export function StockFilterDrawer({
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
+
+  const hasDraftChanges = stockFilterDraftChanged(draft, filters);
 
   const categoryOptions = [
     { label: "Todas", value: "" },
@@ -106,11 +96,17 @@ export function StockFilterDrawer({
   }
 
   function apply() {
+    if (hasDraftChanges) {
+      onPending?.();
+    }
     onClose();
     router.push(buildStockHref({ ...draft, search: filters.search }));
   }
 
   function clear() {
+    if (stockFilterDraftChanged(DEFAULTS, filters)) {
+      onPending?.();
+    }
     onClose();
     router.push(
       buildStockHref({ ...DEFAULTS, perPage: filters.perPage, search: filters.search }),
@@ -184,41 +180,14 @@ export function StockFilterDrawer({
             onChange={(value) => setDraft((c) => ({ ...c, type: value as VendorStockType }))}
           />
 
-          <div className="space-y-2">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72">
-              Disponibilidade em estoque
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {statusOptions
-                .filter(
-                  ([value]) =>
-                    "kits" !== draft.type ||
-                    ("unconfigured" !== value && "incomplete" !== value),
-                )
-                .map(([value, label]) => (
-                <button
-                  className={`inline-flex min-h-9 cursor-pointer items-center border-2 border-[#1a1a1a] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 ${
-                    draft.filter === value
-                      ? "bg-[#1a1a1a] text-brand-yellow"
-                      : "bg-white text-[#1a1a1a] hover:bg-brand-yellow"
-                  }`}
-                  key={value}
-                  onClick={() => setDraft((c) => ({ ...c, filter: value }))}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {taxonomies.tags.length > 0 ? (
             <div className="space-y-2">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72">Tags</p>
               <div className="flex flex-wrap gap-2">
                 {taxonomies.tags.map((term) => (
-                  <button
-                    className={`inline-flex min-h-9 cursor-pointer items-center border-2 border-[#1a1a1a] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 ${
+                <button
+                  aria-pressed={draft.tags.includes(term.id)}
+                  className={`inline-flex min-h-9 cursor-pointer items-center border-2 border-[#1a1a1a] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 ${
                       draft.tags.includes(term.id)
                         ? "bg-[#1a1a1a] text-brand-yellow"
                         : "bg-white text-[#1a1a1a] hover:bg-brand-yellow"
@@ -235,23 +204,46 @@ export function StockFilterDrawer({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t-2 border-[#1a1a1a] bg-white px-5 py-4">
-          <button
-            className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
-            onClick={clear}
-            type="button"
-          >
-            Limpar filtros
-          </button>
-          <button
-            className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-6 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
-            onClick={apply}
-            type="button"
-          >
-            Filtrar
-          </button>
+        <div className="border-t-2 border-[#1a1a1a] bg-white px-5 py-4">
+          {hasDraftChanges ? (
+            <p
+              aria-live="polite"
+              className="mb-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#1a1a1a]/65"
+              role="status"
+            >
+              Seleção atualizada — clique em Filtrar para aplicar
+            </p>
+          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
+              onClick={clear}
+              type="button"
+            >
+              Limpar filtros
+            </button>
+            <button
+              className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-6 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2"
+              onClick={apply}
+              type="button"
+            >
+              Filtrar
+            </button>
+          </div>
         </div>
       </div>
     </BaseModal>
+  );
+}
+
+function stockFilterDraftChanged(draft: VendorStockFilters, filters: VendorStockFilters) {
+  return (
+    draft.category !== filters.category ||
+    draft.collection !== filters.collection ||
+    draft.filter !== filters.filter ||
+    draft.sort !== filters.sort ||
+    draft.type !== filters.type ||
+    draft.tags.length !== filters.tags.length ||
+    draft.tags.some((tag) => !filters.tags.includes(tag))
   );
 }

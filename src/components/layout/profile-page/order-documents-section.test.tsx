@@ -22,7 +22,7 @@ function buildReceipt(overrides: Partial<ProfileOrderReceipt> = {}): ProfileOrde
 
 describe("OrderDocumentsSection", () => {
   it("shows the receipt number, the issue date and the download link", () => {
-    render(<OrderDocumentsSection orderId="42" receipt={buildReceipt()} />);
+    render(<OrderDocumentsSection fiscalDocument={null} orderId="42" receipt={buildReceipt()} />);
 
     expect(screen.getByText("PPL-2026-000482")).toBeInTheDocument();
     expect(screen.getByText(/emitido em 03\/07\/2026 09:31/i)).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("OrderDocumentsSection", () => {
       value: { writeText },
     });
 
-    render(<OrderDocumentsSection orderId="42" receipt={buildReceipt()} />);
+    render(<OrderDocumentsSection fiscalDocument={null} orderId="42" receipt={buildReceipt()} />);
 
     await user.click(screen.getByRole("button", { name: /copiar número do recibo/i }));
 
@@ -50,7 +50,7 @@ describe("OrderDocumentsSection", () => {
   it("sends the receipt by e-mail", async () => {
     const user = userEvent.setup();
 
-    render(<OrderDocumentsSection orderId="42" receipt={buildReceipt()} />);
+    render(<OrderDocumentsSection fiscalDocument={null} orderId="42" receipt={buildReceipt()} />);
 
     await user.click(screen.getByRole("button", { name: /enviar para meu e-mail/i }));
 
@@ -61,7 +61,7 @@ describe("OrderDocumentsSection", () => {
     const user = userEvent.setup();
 
     render(
-      <OrderDocumentsSection orderId={RECEIPT_EMAIL_UNAVAILABLE_ORDER_ID} receipt={buildReceipt()} />,
+      <OrderDocumentsSection fiscalDocument={null} orderId={RECEIPT_EMAIL_UNAVAILABLE_ORDER_ID} receipt={buildReceipt()} />,
     );
 
     await user.click(screen.getByRole("button", { name: /enviar para meu e-mail/i }));
@@ -75,7 +75,7 @@ describe("OrderDocumentsSection", () => {
     const user = userEvent.setup();
 
     render(
-      <OrderDocumentsSection orderId={RECEIPT_EMAIL_RATE_LIMITED_ORDER_ID} receipt={buildReceipt()} />,
+      <OrderDocumentsSection fiscalDocument={null} orderId={RECEIPT_EMAIL_RATE_LIMITED_ORDER_ID} receipt={buildReceipt()} />,
     );
 
     await user.click(screen.getByRole("button", { name: /enviar para meu e-mail/i }));
@@ -86,6 +86,7 @@ describe("OrderDocumentsSection", () => {
   it("hides the actions and explains why when the receipt is not available yet", () => {
     render(
       <OrderDocumentsSection
+        fiscalDocument={null}
         orderId="42"
         receipt={buildReceipt({ available: false, issuedAtLabel: null, number: null })}
       />,
@@ -100,10 +101,48 @@ describe("OrderDocumentsSection", () => {
 
   it("still offers the download while the receipt number was not issued yet", () => {
     render(
-      <OrderDocumentsSection orderId="42" receipt={buildReceipt({ issuedAtLabel: null, number: null })} />,
+      <OrderDocumentsSection fiscalDocument={null} orderId="42" receipt={buildReceipt({ issuedAtLabel: null, number: null })} />,
     );
 
     expect(screen.getByRole("link", { name: /baixar recibo/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /copiar número do recibo/i })).not.toBeInTheDocument();
+  });
+
+  it("mostra a nota fiscal quando o vendor anexou", () => {
+    render(
+      <OrderDocumentsSection
+        fiscalDocument={{
+          accessKey: "53250965326368000190550010000004561000004",
+          docNumber: "456",
+          docSeries: "1",
+          files: [{ id: 19, role: "xml", sizeBytes: 417 }],
+          issuedAtLabel: "31/08/2026",
+        }}
+        orderId="14087"
+        receipt={{ available: true, issuedAtLabel: "31/08/2026", number: "PPL-2026-000022" }}
+      />,
+    );
+
+    expect(screen.getByText(/nota fiscal/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /xml da nf-e/i })).toHaveAttribute(
+      "href",
+      "/api/perfil/pedidos/14087/nota-fiscal/19",
+    );
+  });
+
+  it("nunca avisa o comprador que falta nota fiscal", () => {
+    render(
+      <OrderDocumentsSection
+        fiscalDocument={null}
+        orderId="14087"
+        receipt={{ available: true, issuedAtLabel: "31/08/2026", number: "PPL-2026-000022" }}
+      />,
+    );
+
+    expect(screen.queryByText(/nota fiscal/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ainda não/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/indisponível/i)).not.toBeInTheDocument();
+    // O recibo continua aparecendo normalmente.
+    expect(screen.getByText("PPL-2026-000022")).toBeInTheDocument();
   });
 });

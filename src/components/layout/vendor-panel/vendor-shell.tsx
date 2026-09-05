@@ -32,7 +32,7 @@ export function VendorShell({
   const resolvedLogo = resolveLogo("privateHeader", logo);
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#ede9df] text-brand-dark">
+    <div className="relative h-screen overflow-clip bg-[#ede9df] text-brand-dark">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"
@@ -51,7 +51,7 @@ export function VendorShell({
               height={34}
               priority
               src={resolvedLogo.imageUrl}
-              width={114}
+              width={53}
             />
             <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-yellow/76">
               Área do vendor
@@ -101,7 +101,7 @@ export function VendorShell({
                   className="h-7.5 w-auto lg:hidden"
                   height={30}
                   src={resolvedLogo.imageUrl}
-                  width={100}
+                  width={47}
                 />
                 <div>
                   <p className="hidden text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-dark/48 sm:block">

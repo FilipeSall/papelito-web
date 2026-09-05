@@ -2,6 +2,8 @@
 
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+
 import { ChevronRightIcon } from "@/components/ui/icons";
 
 type CheckoutCustomSelectOption =
@@ -44,6 +46,8 @@ export interface CheckoutCustomSelectProps {
   readonly listClassName?: string;
   readonly optionClassName?: string;
   readonly searchable?: boolean;
+  readonly loading?: boolean;
+  readonly loadingLabel?: string;
   readonly searchInputClassName?: string;
   readonly searchPlaceholder?: string;
   readonly selectedOptionClassName?: string;
@@ -69,6 +73,8 @@ export function CheckoutCustomSelect({
   listClassName = "",
   optionClassName = "",
   searchable = false,
+  loading = false,
+  loadingLabel = "Atualizando…",
   searchInputClassName = "h-9 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3 text-sm outline-none focus:border-brand-dark/25",
   searchPlaceholder = "Buscar...",
   selectedOptionClassName = "bg-brand-dark text-white",
@@ -110,7 +116,7 @@ export function CheckoutCustomSelect({
       <select
         aria-label={typeof label === "string" ? label : undefined}
         className="sr-only"
-        disabled={disabled}
+        disabled={disabled || loading}
         id={selectId}
         value={value}
         onChange={(event) => {
@@ -128,7 +134,7 @@ export function CheckoutCustomSelect({
 
       <div className="relative">
         <CheckoutSelectTrigger
-          disabled={disabled}
+          disabled={disabled || loading}
           errorMessage={errorMessage}
           iconClassName={iconClassName}
           isOpen={isOpen}
@@ -140,6 +146,8 @@ export function CheckoutCustomSelect({
           triggerLabel={triggerLabel}
           triggerRef={triggerRef}
           value={value}
+          loading={loading}
+          loadingLabel={loadingLabel}
         />
 
         {isOpen ? (
@@ -183,6 +191,8 @@ type CheckoutSelectTriggerProps = {
   readonly triggerLabel: ReactNode;
   readonly triggerRef: RefObject<HTMLButtonElement | null>;
   readonly value: string;
+  readonly loading: boolean;
+  readonly loadingLabel: string;
 };
 
 const CheckoutSelectTrigger = ({
@@ -198,14 +208,17 @@ const CheckoutSelectTrigger = ({
   triggerLabel,
   triggerRef,
   value,
+  loading,
+  loadingLabel,
 }: CheckoutSelectTriggerProps) => (
   <button
     aria-controls={listboxId}
     aria-disabled={disabled}
     aria-expanded={isOpen}
     aria-haspopup="true"
+    aria-busy={loading}
     className={getTriggerClassName({ disabled, errorMessage, isOpen, triggerClassName })}
-    disabled={disabled}
+    disabled={disabled || loading}
     ref={triggerRef}
     type="button"
     onClick={onToggle}
@@ -215,9 +228,13 @@ const CheckoutSelectTrigger = ({
     >
       {triggerLabel}
     </span>
-    <ChevronRightIcon
-      className={`h-4 w-4 shrink-0 transition-transform ${iconClassName} ${isOpen ? "rotate-90" : "-rotate-90"}`}
-    />
+    {loading ? (
+      <Loader2 aria-label={loadingLabel} className="h-4 w-4 shrink-0 animate-spin" />
+    ) : (
+      <ChevronRightIcon
+        className={`h-4 w-4 shrink-0 transition-transform ${iconClassName} ${isOpen ? "rotate-90" : "-rotate-90"}`}
+      />
+    )}
   </button>
 );
 

@@ -52,6 +52,9 @@ describe("StockFilterDrawer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Combo" }));
     selectField("Categoria").choose(/sedas/i);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Seleção atualizada — clique em Filtrar para aplicar",
+    );
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith("/vendor/estoque?filter=all&category=7&tags=12");
@@ -65,12 +68,18 @@ describe("StockFilterDrawer", () => {
   });
 
   it("combines the collection with category, stock status and sort", () => {
-    render(<StockFilterDrawer filters={filters} onClose={() => {}} open taxonomies={taxonomies} />);
+    render(
+      <StockFilterDrawer
+        filters={{ ...filters, filter: "with_stock" }}
+        onClose={() => {}}
+        open
+        taxonomies={taxonomies}
+      />,
+    );
 
     selectField("Ordenar por").choose(/maior estoque/i);
     selectField("Categoria").choose(/sedas/i);
     selectField("Coleção").choose(/premium/i);
-    fireEvent.click(screen.getByRole("button", { name: /^em estoque$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith(
@@ -88,17 +97,30 @@ describe("StockFilterDrawer", () => {
   });
 
   it("combines the type with collection, category and stock status", () => {
-    render(<StockFilterDrawer filters={filters} onClose={() => {}} open taxonomies={taxonomies} />);
+    render(
+      <StockFilterDrawer
+        filters={{ ...filters, filter: "with_stock" }}
+        onClose={() => {}}
+        open
+        taxonomies={taxonomies}
+      />,
+    );
 
     selectField("Categoria").choose(/sedas/i);
     selectField("Coleção").choose(/premium/i);
     selectField("Tipo").choose(/^kits$/i);
-    fireEvent.click(screen.getByRole("button", { name: /^em estoque$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^filtrar$/i }));
 
     expect(push).toHaveBeenCalledWith(
       "/vendor/estoque?filter=with_stock&category=7&collection=premium&type=kits",
     );
+  });
+
+  it("does not render the stock availability filter in the drawer", () => {
+    render(<StockFilterDrawer filters={filters} onClose={() => {}} open taxonomies={taxonomies} />);
+
+    expect(screen.queryByText("Disponibilidade em estoque")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ESTOQUE BAIXO" })).not.toBeInTheDocument();
   });
 
   it("clears to defaults, collection included", () => {

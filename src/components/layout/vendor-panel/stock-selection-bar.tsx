@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Layers, Loader2, X } from "lucide-react";
 
 import { FOCUS_RING } from "@/components/layout/operational-panel";
@@ -29,12 +30,15 @@ export function StockSelectionBar({
   const parsed = Number(value);
   const valid = value.trim() !== "" && Number.isInteger(parsed) && parsed >= 0;
 
-  if (selectedCount === 0) {
+  // `document` não existe no render do servidor. Hoje o early return acima
+  // salva por acaso — a seleção nasce vazia —, mas qualquer seleção hidratada
+  // de URL ou props derrubaria a página de estoque com 500.
+  if (selectedCount === 0 || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <div className="pointer-events-none sticky bottom-4 z-40 flex justify-center px-4">
+  return createPortal(
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 lg:left-72">
       <form
         className="pointer-events-auto flex w-full max-w-3xl flex-col gap-3 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-4 py-3 shadow-[8px_8px_0px_#ffe500] sm:flex-row sm:items-center"
         onSubmit={(event) => {
@@ -97,6 +101,7 @@ export function StockSelectionBar({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

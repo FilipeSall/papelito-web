@@ -1,24 +1,28 @@
 import { Headset } from "lucide-react";
 import Link from "next/link";
 
-const TOOLTIP_LABEL = "Entrar em contato com o cliente";
+import { FOCUS_RING } from "@/components/layout/operational-panel";
 
+const LABEL = "Entrar em contato com o cliente";
+
+/**
+ * Ação de suporte do pedido.
+ *
+ * Ficava num botão flutuante no canto da tela, que a 1024px cobria os valores
+ * do pedido — a largura útil encolhe quando a sidebar aparece, e o flutuante
+ * não sabia disso. Agora é ação normal, ao lado dos dados do comprador.
+ */
 export function VendorContactCustomerButton({ orderId }: { orderId: number }) {
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      <Link
-        aria-label={TOOLTIP_LABEL}
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-dark text-brand-yellow shadow-lg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-        href={`/vendor/pedidos/${orderId}/suporte`}
-      >
-        <Headset aria-hidden className="h-6 w-6" />
-        <span
-          className="pointer-events-none absolute bottom-full right-0 mb-3 whitespace-nowrap rounded-full bg-brand-dark px-3 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition group-focus-visible:opacity-100 group-hover:opacity-100"
-          role="tooltip"
-        >
-          {TOOLTIP_LABEL}
-        </span>
-      </Link>
-    </div>
+    <Link
+      className={[
+        "inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow",
+        FOCUS_RING,
+      ].join(" ")}
+      href={`/vendor/pedidos/${orderId}/suporte`}
+    >
+      <Headset aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+      {LABEL}
+    </Link>
   );
 }

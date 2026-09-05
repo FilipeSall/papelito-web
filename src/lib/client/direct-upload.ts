@@ -4,7 +4,17 @@ export type DirectUploadPurpose =
   | "catalog"
   | "media"
   | "owner-document"
-  | "pre-account-document";
+  | "pre-account-document"
+  | "vendor-fiscal-document";
+
+/**
+ * Contexto que a rota Next repassa ao WordPress na emissão do tíquete.
+ *
+ * Ele viaja pelo canal autenticado, e não junto do arquivo: o endpoint direto
+ * não exige JWT, então nada que decida autorização pode chegar do navegador no
+ * momento do upload.
+ */
+export type DirectUploadContext = Record<string, unknown>;
 
 type UploadTicket = {
   code?: string;
@@ -49,7 +59,11 @@ async function readJson<T>(response: Response): Promise<T | null> {
   return (await response.json().catch(() => null)) as T | null;
 }
 
-export async function uploadDirectFile<T>(purpose: DirectUploadPurpose, file: File): Promise<T> {
+export async function uploadDirectFile<T>(
+  purpose: DirectUploadPurpose,
+  file: File,
+  context?: DirectUploadContext,
+): Promise<T> {
   if (file.size <= 0) {
     throw new DirectUploadError("O arquivo selecionado está vazio.", 422);
   }
@@ -58,7 +72,7 @@ export async function uploadDirectFile<T>(purpose: DirectUploadPurpose, file: Fi
   }
 
   const ticketResponse = await fetch("/api/uploads/ticket", {
-    body: JSON.stringify({ purpose }),
+    body: JSON.stringify(context ? { ...context, purpose } : { purpose }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

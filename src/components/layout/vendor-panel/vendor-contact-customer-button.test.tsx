@@ -11,10 +11,10 @@ describe("VendorContactCustomerButton", () => {
     expect(link).toHaveAttribute("href", "/vendor/pedidos/42/suporte");
   });
 
-  it("exposes the contact label as a tooltip", () => {
+  it("keeps the label visible instead of hiding it in a tooltip", () => {
     render(<VendorContactCustomerButton orderId={1} />);
 
-    const tooltip = screen.getByRole("tooltip");
-    expect(tooltip).toHaveTextContent("Entrar em contato com o cliente");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(screen.getByRole("link")).toHaveTextContent(/entrar em contato com o cliente/i);
   });
 });

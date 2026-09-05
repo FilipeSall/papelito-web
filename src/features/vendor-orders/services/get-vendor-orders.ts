@@ -9,26 +9,50 @@ import {
   type WpVendorOrder,
   type WpVendorOrdersList,
 } from "./vendor-order-mappers";
-import type { VendorOrderDetail, VendorOrderStatus, VendorOrdersSnapshot } from "../types/vendor-orders";
+import { VENDOR_ORDERS_PER_PAGE } from "../types/vendor-orders";
+import type {
+  VendorOrderDetail,
+  VendorOrdersFilters,
+  VendorOrdersSnapshot,
+  VendorOrdersSummary,
+} from "../types/vendor-orders";
 
-export const VENDOR_ORDERS_PER_PAGE = 10;
+const emptySummary: VendorOrdersSummary = {
+  all: 0,
+  aguardando_pagamento: 0,
+  aguardando_estoque: 0,
+  aguardando_envio: 0,
+  em_separacao: 0,
+  enviado: 0,
+  entregue: 0,
+  cancelado: 0,
+  fiscal_pending: 0,
+};
 
-export async function getVendorOrders(filters: {
-  page: number;
-  search: string;
-  status: VendorOrderStatus | "all";
-}): Promise<VendorOrdersSnapshot> {
-  const accessToken = await getSellerAccessToken();
-  const empty = {
+/**
+ * Snapshot vazio marcado como falha de leitura.
+ *
+ * `unavailable` existe para a tela não dizer "fila vazia" quando o que houve
+ * foi sessão morta ou WordPress fora do ar — o vendor concluiria que não tem
+ * pedido nenhum.
+ */
+function unavailableSnapshot(filters: VendorOrdersFilters): VendorOrdersSnapshot {
+  return {
     items: [],
     page: filters.page,
     perPage: VENDOR_ORDERS_PER_PAGE,
+    summary: emptySummary,
     total: 0,
     totalPages: 1,
+    unavailable: true,
   };
+}
+
+export async function getVendorOrders(filters: VendorOrdersFilters): Promise<VendorOrdersSnapshot> {
+  const accessToken = await getSellerAccessToken();
 
   if (!accessToken) {
-    return empty;
+    return unavailableSnapshot(filters);
   }
 
   const params = new URLSearchParams({
@@ -39,6 +63,9 @@ export async function getVendorOrders(filters: {
   if (filters.search) {
     params.set("search", filters.search);
   }
+  if (filters.fiscal !== "all") {
+    params.set("fiscal", filters.fiscal);
+  }
 
   const result = await wpRest<WpVendorOrdersList>(`/papelito/v1/vendor/me/orders?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -46,21 +73,55 @@ export async function getVendorOrders(filters: {
     tags: ["vendor-orders"],
   });
 
-  return result.ok ? mapVendorOrdersSnapshot(result.data) : empty;
+  return result.ok ? mapVendorOrdersSnapshot(result.data) : unavailableSnapshot(filters);
 }
 
-export async function getVendorOrderDetail(orderId: string): Promise<VendorOrderDetail | null> {
-  const accessToken = await getSellerAccessToken();
+/**
+ * Resultado do detalhe, com os três desfechos separados.
+ *
+ * Colapsar tudo em `null` fazia a tela responder 404 para sessão expirada e
+ * para WordPress fora do ar — o vendor lia "este pedido não existe" quando o
+ * pedido existe e o problema é outro, e não tinha como agir sobre isso.
+ */
+export type VendorOrderDetailResult =
+  | { order: VendorOrderDetail; status: "ok" }
+  | { status: "not-found" }
+  | { status: "unauthenticated" }
+  | { message: string; status: "error" };
 
-  if (!accessToken || !/^\d+$/.test(orderId)) {
-    return null;
+export async function getVendorOrderDetail(orderId: string): Promise<VendorOrderDetailResult> {
+  if (!/^\d+$/.test(orderId)) {
+    return { status: "not-found" };
   }
 
+  const accessToken = await getSellerAccessToken();
+
+  if (!accessToken) {
+    return { status: "unauthenticated" };
+  }
+
+  // Sem cache, pelo mesmo motivo de `getAdminUserDetail`: depois de uma ação do
+  // vendor — transição de status, postagem, nota fiscal — o `router.refresh()`
+  // precisa reler o pedido. Com `revalidate`, a tela mostrava a confirmação de
+  // sucesso e o estado anterior ao mesmo tempo.
   const result = await wpRest<WpVendorOrder>(`/papelito/v1/vendor/me/orders/${orderId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    revalidate: 30,
-    tags: ["vendor-orders"],
   });
 
-  return result.ok ? mapVendorOrderDetail(result.data) : null;
+  if (result.ok) {
+    return { order: mapVendorOrderDetail(result.data), status: "ok" };
+  }
+
+  // 404 é a resposta do WordPress tanto para pedido inexistente quanto para
+  // pedido de outro vendor, e as duas devem virar a mesma tela: confirmar qual
+  // dos dois é entregaria a existência do pedido alheio.
+  if (result.status === 404) {
+    return { status: "not-found" };
+  }
+
+  if (result.status === 401 || result.status === 403) {
+    return { status: "unauthenticated" };
+  }
+
+  return { message: result.error.message, status: "error" };
 }

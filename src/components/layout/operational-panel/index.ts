@@ -1,8 +1,10 @@
 export {
   CompactTable,
+  EmptyResult,
   EmptyStateCard,
   FOCUS_RING,
   FramedPanel,
+  InlineAlert,
   MetricCard,
   Panel,
   StatusBadge,

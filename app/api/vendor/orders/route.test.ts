@@ -49,9 +49,9 @@ describe("GET /api/vendor/orders", () => {
           },
         ],
         page: 2,
-        per_page: 20,
+        per_page: 10,
         total: 21,
-        total_pages: 2,
+        total_pages: 3,
       },
     });
 
@@ -61,7 +61,7 @@ describe("GET /api/vendor/orders", () => {
     );
 
     expect(wpRestMock).toHaveBeenCalledWith(
-      "/papelito/v1/vendor/me/orders?page=2&per_page=20&status=aguardando_envio&search=Filipe",
+      "/papelito/v1/vendor/me/orders?page=2&per_page=10&status=aguardando_envio&search=Filipe",
       {
         headers: { Authorization: "Bearer vendor-token" },
       },
@@ -72,18 +72,32 @@ describe("GET /api/vendor/orders", () => {
         {
           createdAt: "2026-06-12 10:00:00",
           customerName: "Filipe",
+          fiscalPending: false,
+          hasFiscalDocument: false,
           id: 11883,
           itemsCount: 3,
           itemsLabel: "Seda Slim Longa",
+          nextStatuses: [],
           orderNumber: "11883",
           status: "aguardando_envio",
           total: 100.36,
         },
       ],
       page: 2,
-      perPage: 20,
+      perPage: 10,
+      summary: {
+        all: 0,
+        aguardando_pagamento: 0,
+        aguardando_estoque: 0,
+        aguardando_envio: 0,
+        em_separacao: 0,
+        enviado: 0,
+        entregue: 0,
+        cancelado: 0,
+        fiscal_pending: 0,
+      },
       total: 21,
-      totalPages: 2,
+      totalPages: 3,
     });
   });
 
@@ -102,7 +116,7 @@ describe("GET /api/vendor/orders", () => {
     const response = await GET(new Request("http://localhost/api/vendor/orders?status=pending&page=0"));
 
     expect(wpRestMock).toHaveBeenCalledWith(
-      "/papelito/v1/vendor/me/orders?page=1&per_page=20&status=all",
+      "/papelito/v1/vendor/me/orders?page=1&per_page=10&status=all",
       {
         headers: { Authorization: "Bearer vendor-token" },
       },

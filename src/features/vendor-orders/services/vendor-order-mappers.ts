@@ -1,13 +1,20 @@
+import { VENDOR_ORDERS_PER_PAGE } from "../types/vendor-orders";
 import type {
+  VendorFiscalDocStatus,
+  VendorFiscalDocument,
+  VendorFiscalKeyStatus,
+  VendorFiscalRole,
+  VendorOrderBilling,
   VendorOrderDetail,
+  VendorOrderFiscal,
   VendorOrderStatus,
   ShipmentLogisticsStatus,
   ShipmentGenerationStatus,
   VendorOrdersSnapshot,
+  VendorOrdersSummary,
   VendorOrderSummary,
 } from "../types/vendor-orders";
 
-import { VENDOR_ORDERS_PER_PAGE } from "./get-vendor-orders";
 
 export type WpVendorOrder = {
   created_at?: string;
@@ -33,6 +40,14 @@ export type WpVendorOrder = {
   total?: number;
   tracking_code?: string | null;
   vendor_status?: string;
+  next_statuses?: string[];
+  cancel_reason?: string;
+  has_fiscal_document?: boolean;
+  fiscal_pending?: boolean;
+  payment?: { method?: string; state?: string };
+  receipt?: { available?: boolean; issued_at?: string | null; number?: string | null };
+  billing?: WpVendorBilling;
+  fiscal?: WpVendorFiscal;
   logistics?: {
     automatic_generation_enabled?: boolean;
     all_packages_done?: boolean;
@@ -75,10 +90,77 @@ export type WpVendorOrder = {
   };
 };
 
+export type WpVendorBilling = {
+  cnpj?: string;
+  contact_name?: string;
+  email?: string;
+  fiscal_address?: {
+    city?: string;
+    complement?: string;
+    neighborhood?: string;
+    number?: string;
+    postcode?: string;
+    state?: string;
+    street?: string;
+  };
+  legal_name?: string;
+  phone?: string;
+};
+
+export type WpVendorFiscalFile = {
+  created_at?: string;
+  id?: number;
+  mime?: string;
+  original_name?: string;
+  role?: string;
+  size_bytes?: number;
+};
+
+export type WpVendorFiscalEvent = {
+  actor_role?: string;
+  created_at?: string;
+  doc_status?: string;
+  event?: string;
+  id?: number;
+  role?: string;
+};
+
+export type WpVendorFiscalDocument = {
+  access_key?: string;
+  access_key_status?: string;
+  created_at?: string;
+  doc_number?: string;
+  doc_series?: string;
+  doc_status?: string;
+  doc_type?: string;
+  events?: WpVendorFiscalEvent[];
+  files?: WpVendorFiscalFile[];
+  flags?: string[];
+  id?: number;
+  issued_at?: string;
+  issuer_cnpj?: string;
+  issuer_name?: string;
+  internal_notes?: string;
+  notes?: string;
+  protocol?: string;
+  total_cents?: number;
+  updated_at?: string;
+  validation_level?: number;
+};
+
+export type WpVendorFiscal = {
+  block_reason?: string;
+  can_attach?: boolean;
+  document?: WpVendorFiscalDocument | null;
+  enabled?: boolean;
+  limits?: { danfe_pdf?: number; xml?: number };
+};
+
 export type WpVendorOrdersList = {
   items?: WpVendorOrder[];
   page?: number;
   per_page?: number;
+  summary?: Record<string, number>;
   total?: number;
   total_pages?: number;
 };
@@ -105,12 +187,115 @@ export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary 
   return {
     createdAt: order.created_at ?? "",
     customerName: order.customer_name?.trim() || "Cliente não identificado",
+    fiscalPending: Boolean(order.fiscal_pending),
+    hasFiscalDocument: Boolean(order.has_fiscal_document),
     id: Number(order.id) || 0,
     itemsCount: Number(order.items_count) || 0,
     itemsLabel: order.items_label?.trim() || "Sem itens",
+    nextStatuses: (order.next_statuses ?? []).filter(isVendorOrderStatus),
     orderNumber: order.order_number ?? "",
     status: mapVendorOrderStatus(order.vendor_status),
     total: Number(order.total) || 0,
+  };
+}
+
+const fiscalRoles = new Set<VendorFiscalRole>(["danfe_pdf", "other", "xml"]);
+const fiscalDocStatuses = new Set<VendorFiscalDocStatus>([
+  "aceita",
+  "cancelada",
+  "pendente_revisao",
+  "recebida",
+  "rejeitada",
+  "substituida",
+]);
+const fiscalKeyStatuses = new Set<VendorFiscalKeyStatus>(["ausente", "invalida", "valida"]);
+
+function mapFiscalDocument(document: WpVendorFiscalDocument | null | undefined): VendorFiscalDocument | null {
+  if (!document || !document.id) return null;
+
+  const keyStatus = document.access_key_status ?? "";
+  const docStatus = document.doc_status ?? "";
+
+  return {
+    accessKey: document.access_key ?? "",
+    accessKeyStatus: fiscalKeyStatuses.has(keyStatus as VendorFiscalKeyStatus)
+      ? (keyStatus as VendorFiscalKeyStatus)
+      : "ausente",
+    createdAt: document.created_at ?? "",
+    docNumber: document.doc_number ?? "",
+    docSeries: document.doc_series ?? "",
+    docStatus: fiscalDocStatuses.has(docStatus as VendorFiscalDocStatus)
+      ? (docStatus as VendorFiscalDocStatus)
+      : "recebida",
+    docType: document.doc_type ?? "nfe",
+    events: (document.events ?? [])
+      .filter((entry) => Number(entry.id) > 0 && (entry.event ?? "") !== "")
+      .map((entry) => ({
+        actorRole: entry.actor_role ?? "",
+        createdAt: entry.created_at ?? "",
+        docStatus: entry.doc_status ?? "",
+        event: entry.event ?? "",
+        id: Number(entry.id),
+        role: fiscalRoles.has(entry.role as VendorFiscalRole) ? (entry.role as VendorFiscalRole) : "",
+      })),
+    files: (document.files ?? []).map((file) => ({
+      createdAt: file.created_at ?? "",
+      id: Number(file.id) || 0,
+      mime: file.mime ?? "",
+      originalName: file.original_name ?? "",
+      role: fiscalRoles.has(file.role as VendorFiscalRole) ? (file.role as VendorFiscalRole) : "other",
+      sizeBytes: Number(file.size_bytes) || 0,
+    })),
+    flags: document.flags ?? [],
+    id: Number(document.id),
+    issuedAt: document.issued_at ?? "",
+    issuerCnpj: document.issuer_cnpj ?? "",
+    issuerName: document.issuer_name ?? "",
+    notes: document.notes ?? document.internal_notes ?? "",
+    protocol: document.protocol ?? "",
+    totalCents: Number(document.total_cents) || 0,
+    updatedAt: document.updated_at ?? "",
+    validationLevel: Number(document.validation_level) || 1,
+  };
+}
+
+const fiscalBlockReasons = new Set(["aguardando_pagamento", "cancelado"]);
+
+/**
+ * Bloco de nota fiscal. Sem o bloco no payload a superfície fica desligada, e
+ * não habilitada por omissão: só o WordPress decide se o pedido aceita anexo.
+ */
+export function mapVendorOrderFiscal(fiscal: WpVendorFiscal | undefined): VendorOrderFiscal {
+  const reason = fiscal?.block_reason ?? "";
+
+  return {
+    blockReason: fiscalBlockReasons.has(reason) ? (reason as "aguardando_pagamento" | "cancelado") : "",
+    canAttach: Boolean(fiscal?.can_attach),
+    document: mapFiscalDocument(fiscal?.document),
+    enabled: Boolean(fiscal?.enabled),
+    limits: {
+      danfe_pdf: Number(fiscal?.limits?.danfe_pdf) || 10 * 1024 * 1024,
+      xml: Number(fiscal?.limits?.xml) || 2 * 1024 * 1024,
+    },
+  };
+}
+
+function mapVendorOrderBilling(billing: WpVendorBilling | undefined): VendorOrderBilling {
+  return {
+    cnpj: billing?.cnpj ?? "",
+    contactName: billing?.contact_name?.trim() ?? "",
+    email: billing?.email ?? "",
+    fiscalAddress: {
+      city: billing?.fiscal_address?.city ?? "",
+      complement: billing?.fiscal_address?.complement ?? "",
+      neighborhood: billing?.fiscal_address?.neighborhood ?? "",
+      number: billing?.fiscal_address?.number ?? "",
+      postcode: billing?.fiscal_address?.postcode ?? "",
+      state: billing?.fiscal_address?.state ?? "",
+      street: billing?.fiscal_address?.street ?? "",
+    },
+    legalName: billing?.legal_name?.trim() ?? "",
+    phone: billing?.phone ?? "",
   };
 }
 
@@ -161,8 +346,20 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
   }));
   return {
     ...mapVendorOrderSummary(order),
+    billing: mapVendorOrderBilling(order.billing),
+    cancelReason: order.cancel_reason?.trim() ?? "",
     deliveryTimeDays: Number(order.delivery_time_days) || 0,
+    fiscal: mapVendorOrderFiscal(order.fiscal),
     paidAt: order.paid_at ?? "",
+    payment: {
+      method: order.payment?.method ?? "",
+      state: order.payment?.state ?? "",
+    },
+    receipt: {
+      available: Boolean(order.receipt?.available),
+      issuedAt: order.receipt?.issued_at ?? "",
+      number: order.receipt?.number ?? "",
+    },
     items: (order.items ?? []).map((item) => ({
       itemId: Number(item.item_id) || 0,
       name: item.name ?? "Produto",
@@ -208,11 +405,30 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
   };
 }
 
+const summaryKeys: Array<keyof VendorOrdersSummary> = [
+  "all",
+  "aguardando_pagamento",
+  "aguardando_estoque",
+  "aguardando_envio",
+  "em_separacao",
+  "enviado",
+  "entregue",
+  "cancelado",
+  "fiscal_pending",
+];
+
+export function mapVendorOrdersSummary(summary: Record<string, number> | undefined): VendorOrdersSummary {
+  return Object.fromEntries(
+    summaryKeys.map((key) => [key, Number(summary?.[key]) || 0]),
+  ) as VendorOrdersSummary;
+}
+
 export function mapVendorOrdersSnapshot(data: WpVendorOrdersList): VendorOrdersSnapshot {
   return {
     items: (data.items ?? []).map(mapVendorOrderSummary),
     page: Number(data.page) || 1,
     perPage: Number(data.per_page) || VENDOR_ORDERS_PER_PAGE,
+    summary: mapVendorOrdersSummary(data.summary),
     total: Number(data.total) || 0,
     totalPages: Number(data.total_pages) || 1,
   };

@@ -73,6 +73,20 @@ export interface ProfileOrderReceipt {
 }
 
 /**
+ * Nota fiscal anexada pelo vendor.
+ *
+ * `null` quando não há nota — e a tela **não** anuncia essa ausência: quem
+ * emite é o vendor, e a pendência não é do comprador.
+ */
+export interface ProfileOrderFiscalDocument {
+  accessKey: string;
+  docNumber: string;
+  docSeries: string;
+  files: Array<{ id: number; role: string; sizeBytes: number }>;
+  issuedAtLabel: string;
+}
+
+/**
  * Dados de detalhe exibidos na página de pedido.
  */
 export interface ProfileOrderDetail {
@@ -91,4 +105,5 @@ export interface ProfileOrderDetail {
   total: number;
   payment: ProfileOrderPaymentInfo;
   receipt: ProfileOrderReceipt;
+  fiscalDocument: ProfileOrderFiscalDocument | null;
 }

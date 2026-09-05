@@ -362,7 +362,11 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </article>
           </ProfilePanel>
 
-          <OrderDocumentsSection orderId={order.id} receipt={order.receipt} />
+          <OrderDocumentsSection
+            fiscalDocument={order.fiscalDocument}
+            orderId={order.id}
+            receipt={order.receipt}
+          />
 
           <div className="border-2 border-[#1a1a1a] bg-brand-yellow p-5 shadow-[8px_8px_0px_#1a1a1a]">
             <p className="text-base font-black uppercase tracking-tight text-[#1a1a1a]">

@@ -1,9 +1,20 @@
 export { VendorContactCustomerButton } from "./vendor-contact-customer-button";
 export { VendorOrderActions } from "./vendor-order-actions";
 export { VendorOrderDeliveryCountdown } from "./vendor-order-delivery-countdown";
+export { VendorOrderDocumentsSection } from "./vendor-order-documents-section";
 export { VendorOrderStatusBadge, vendorStatusLabel } from "./vendor-order-status-badge";
+export { VendorOrderStatusPanel } from "./vendor-order-status-panel";
 export { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
-export { VendorOrdersTable } from "./vendor-orders-table";
+export { VendorOrdersBoard } from "./vendor-orders-board";
+export {
+  fiscalFlagLabel,
+  fiscalValidationLabel,
+  logisticsHeadline,
+  paymentMethodLabel,
+  paymentStateShape,
+  vendorOrderNextAction,
+  vendorOrderStatusShape,
+} from "./order-status";
 export { VendorCoverageManager } from "./vendor-coverage-manager";
 export { VendorOnboardingRequiredNotice } from "./vendor-onboarding-required-notice";
 export { VendorSuspendedNotice } from "./vendor-suspended-notice";

@@ -5,6 +5,8 @@ import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getUserApiSession } from "@/lib/server/company-api";
 import { wpRest } from "@/lib/server/wp-rest";
 
+import { requireVendorAccessToken } from "../../vendor/_lib/require-vendor-session";
+
 const APPLICATION_COOKIE = "__Host-papelito_application";
 
 const UPLOAD_PURPOSES = [
@@ -12,7 +14,10 @@ const UPLOAD_PURPOSES = [
   "media",
   "owner-document",
   "pre-account-document",
+  "vendor-fiscal-document",
 ] as const;
+
+const FISCAL_ROLES = new Set(["danfe_pdf", "xml"]);
 
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 
@@ -27,7 +32,7 @@ function isUploadPurpose(value: unknown): value is UploadPurpose {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { purpose?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const purpose = body?.purpose;
 
   if (!isUploadPurpose(purpose)) {
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
   }
 
   let headers: Record<string, string> = {};
+  let json: Record<string, unknown> = { purpose };
 
   if (purpose === "media" || purpose === "catalog") {
     const auth = await getAdminApiSession();
@@ -48,6 +54,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
     headers = { Authorization: `Bearer ${auth.accessToken}` };
+  } else if (purpose === "vendor-fiscal-document") {
+    const auth = await requireVendorAccessToken();
+    if ("error" in auth) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
+    const orderId = Number(body?.orderId);
+    const role = body?.role;
+
+    // O pedido e o papel entram no tíquete; a autorização real — pedido do
+    // vendor e situação que aceita nota — continua sendo do WordPress.
+    if (!Number.isInteger(orderId) || orderId <= 0 || typeof role !== "string" || !FISCAL_ROLES.has(role)) {
+      return NextResponse.json({ message: "Anexo de nota fiscal inválido." }, { status: 422 });
+    }
+
+    headers = { Authorization: `Bearer ${auth.accessToken}` };
+    json = {
+      declared: typeof body?.declared === "object" && body.declared !== null ? body.declared : {},
+      mode: body?.mode === "replace" ? "replace" : "attach",
+      orderId,
+      purpose,
+      role,
+    };
   } else {
     const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
     if (!applicationToken) {
@@ -58,7 +87,7 @@ export async function POST(request: Request) {
 
   const result = await wpRest<UploadTicket>("/papelito/v1/uploads/tickets", {
     headers,
-    json: { purpose },
+    json,
     method: "POST",
   });
 

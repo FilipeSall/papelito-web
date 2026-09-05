@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { VendorPageHeader } from "@/components/layout/vendor-panel";
 import { MessageThreadPanel, getOrderSupportThread } from "@/features/messages";
@@ -11,9 +11,21 @@ export default async function VendorOrderSupportPage({ params }: { params: Promi
 
   await redirectIfVendorOnboardingPending(`/vendor/pedidos/${id}/suporte`);
 
-  const [order, thread] = await Promise.all([getVendorOrderDetail(id), getOrderSupportThread(id)]);
+  const [result, thread] = await Promise.all([getVendorOrderDetail(id), getOrderSupportThread(id)]);
 
-  if (!order) notFound();
+  if (result.status === "not-found") notFound();
+
+  // Mesma separação do detalhe: sessão morta manda para o login, e falha de
+  // leitura volta ao pedido em vez de afirmar que ele não existe.
+  if (result.status === "unauthenticated") {
+    redirect(`/entrar?callbackUrl=${encodeURIComponent(`/vendor/pedidos/${id}/suporte`)}`);
+  }
+
+  if (result.status === "error") {
+    redirect(`/vendor/pedidos/${id}`);
+  }
+
+  const { order } = result;
 
   return (
     <div className="space-y-4 md:space-y-5">

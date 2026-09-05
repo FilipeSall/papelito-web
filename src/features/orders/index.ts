@@ -3,6 +3,7 @@ export type {
   ProfileOrderDetail,
   ProfileOrderItem,
   ProfileOrderPaymentInfo,
+  ProfileOrderFiscalDocument,
   ProfileOrderReceipt,
   ProfileOrderTimelineEvent,
   ProfileOrderTrackingInfo,

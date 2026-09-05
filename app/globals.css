@@ -227,6 +227,47 @@ a:hover .menu-underline path:nth-child(3),
     }
 }
 
+@keyframes stepper-connector-fill {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes stepper-connector-fill-vertical {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes stepper-node-stamp {
+    0% {
+        transform: scale(0.82);
+    }
+    60% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes stepper-check-in {
+    from {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 @keyframes filter-subtree-reveal {
     from {
         opacity: 0;
@@ -287,6 +328,41 @@ a:hover .menu-underline path:nth-child(3),
     .animate-countdown {
         animation: countdown-flip 0.25s ease-out;
     }
+    /*
+     * Esteira do pedido: a linha preenche como tinta correndo até o próximo nó,
+     * e o nó concluído "carimba" o check. Só `transform` e `opacity` — nada que
+     * force layout — e a animação roda apenas na transição real de status, não
+     * a cada render.
+     */
+    .animate-stepper-fill {
+        animation: stepper-connector-fill 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        transform-origin: left center;
+    }
+
+    .animate-stepper-fill-vertical {
+        animation: stepper-connector-fill-vertical 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        transform-origin: center top;
+    }
+
+    .animate-stepper-node {
+        animation: stepper-node-stamp 260ms cubic-bezier(0.22, 0.61, 0.36, 1) 120ms both;
+    }
+
+    .animate-stepper-check {
+        animation: stepper-check-in 220ms ease-out 200ms both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .animate-stepper-fill,
+        .animate-stepper-fill-vertical,
+        .animate-stepper-node,
+        .animate-stepper-check {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+
     .animate-admin-panel-enter {
         animation: admin-panel-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
