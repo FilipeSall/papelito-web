@@ -13,11 +13,18 @@ import { getAdminFreeShippingThreshold } from "@/features/shipping/services/get-
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
 import { buildRichTextContext } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
+import { firstParam } from "@/lib/search-params";
 
+import { parseAssetsPage } from "./assets/assets-config";
 import { AssetsManager } from "./assets/assets-manager";
 
-export async function AssetsContent() {
+export async function AssetsContent({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
+  const initialPage = parseAssetsPage(firstParam(searchParams?.pagina));
   const [
     heroSnapshot,
     partnerSnapshot,
@@ -49,6 +56,7 @@ export async function AssetsContent() {
   return (
     <div className="space-y-5">
       <AssetsManager
+        initialPage={initialPage}
         richTextContext={richTextContext}
         initialFeaturesSnapshot={featuresSnapshot}
         initialHeroSnapshot={heroSnapshot}

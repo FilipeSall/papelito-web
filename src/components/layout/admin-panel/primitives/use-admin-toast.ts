@@ -13,9 +13,9 @@ export type AdminToastState = {
 /**
  * Ciclo de vida do aviso de sucesso do painel.
  *
- * Os quatro painéis desta seção salvam de forma independente e todos precisam do mesmo par
- * entrada/saída com dois temporizadores e um quadro de animação. A lógica estava escrita dentro do
- * gerenciador de cupons; extrair aqui evita quatro cópias que envelheceriam separado.
+ * Painéis que salvam de forma independente precisam do mesmo par entrada/saída, com dois
+ * temporizadores e um quadro de animação. A lógica estava escrita dentro do gerenciador de
+ * cupons; viver aqui evita uma cópia por painel, envelhecendo separado.
  */
 export function useAdminToast() {
   const [toast, setToast] = useState<AdminToastState>(null);

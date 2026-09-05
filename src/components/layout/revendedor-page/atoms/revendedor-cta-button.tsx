@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { RevendedorFormLink } from "../revendedor-form-link";
 
 type RevendedorCtaButtonProps = {
   children: React.ReactNode;
@@ -58,9 +60,9 @@ export function RevendedorCtaButton({
     }
 
     return (
-      <Link className={sharedClassName} href={href}>
+      <RevendedorFormLink className={sharedClassName} href={href} target={target}>
         {content}
-      </Link>
+      </RevendedorFormLink>
     );
   }
 

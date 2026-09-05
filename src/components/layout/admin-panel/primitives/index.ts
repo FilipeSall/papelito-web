@@ -11,6 +11,7 @@ export { EmptyStateCard, type EmptyStateCardProps } from "./empty-state-card";
 export { LoadingStateCard } from "./loading-state-card";
 export { CardNotification } from "./card-notification";
 export { AdminToast } from "./admin-toast";
+export { useAdminToast, type AdminToastState } from "./use-admin-toast";
 export {
   EmptyResult,
   InlineAlert,

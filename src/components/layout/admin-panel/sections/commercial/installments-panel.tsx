@@ -14,10 +14,10 @@ import {
   InlineAlert,
   PrimaryButton,
   SectionHeading,
+  useAdminToast,
 } from "../../primitives";
 
 import { formatCentsForInput, parseBRLCents } from "./money";
-import { useAdminToast } from "./use-admin-toast";
 
 type InstallmentsPanelProps = {
   initialConfig: PaymentConfig | null;

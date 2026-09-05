@@ -131,15 +131,20 @@ type GraphqlEnvelope<T> = {
   errors?: Array<{ message?: string }>;
 };
 
-export async function fetchProfileCustomer(accessToken?: string): Promise<ProfileCustomer> {
+export async function fetchProfileCustomer(
+  accessToken?: string,
+): Promise<ProfileCustomer> {
   if (!accessToken) {
     return createEmptyProfileCustomer();
   }
 
   try {
-    const response = await executeProfileGraphql<{ customer: CustomerPayload }>(accessToken, {
-      query: CUSTOMER_PROFILE_BASE_QUERY,
-    });
+    const response = await executeProfileGraphql<{ customer: CustomerPayload }>(
+      accessToken,
+      {
+        query: CUSTOMER_PROFILE_BASE_QUERY,
+      },
+    );
 
     const customer = normalizeCustomer(response.customer);
 
@@ -156,14 +161,16 @@ export async function fetchProfileCustomer(accessToken?: string): Promise<Profil
     ]);
 
     if (identityResult?.customer) {
-      customer.displayName = identityResult.customer.displayName ?? customer.displayName;
+      customer.displayName =
+        identityResult.customer.displayName ?? customer.displayName;
       customer.role =
         typeof identityResult.customer.role === "string"
           ? identityResult.customer.role.toLowerCase()
           : customer.role;
     }
 
-    customer.role = (await fetchCurrentUserRole(accessToken).catch(() => undefined)) ?? customer.role;
+    customer.role =
+      (await fetchCurrentUserRole(accessToken).catch(() => undefined)) ?? "";
 
     if (metaResult?.customer?.metaData) {
       customer.meta = normalizeMeta(metaResult.customer.metaData);
@@ -172,7 +179,9 @@ export async function fetchProfileCustomer(accessToken?: string): Promise<Profil
 
     return customer;
   } catch {
-    return createEmptyProfileCustomer();
+    const empty = createEmptyProfileCustomer();
+    empty.role = "";
+    return empty;
   }
 }
 
@@ -213,8 +222,10 @@ async function executeProfileGraphql<TData>(
 
   if (!response.ok || payload.errors?.length) {
     const message =
-      payload.errors?.map((error) => error.message).filter(Boolean).join(" ") ||
-      "Não foi possível processar os dados do perfil.";
+      payload.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join(" ") || "Não foi possível processar os dados do perfil.";
     throw new Error(message);
   }
 
@@ -237,7 +248,10 @@ function normalizeCustomer(customer: CustomerPayload): ProfileCustomer {
     lastName: customer.lastName ?? "",
     email: customer.email ?? "",
     displayName: customer.displayName ?? "",
-    role: typeof customer.role === "string" ? customer.role.toLowerCase() : "customer",
+    role:
+      typeof customer.role === "string"
+        ? customer.role.toLowerCase()
+        : "customer",
     meta: normalizeMeta(customer.metaData),
     preferences: normalizePreferences(customer.metaData),
     billing: normalizeAddress(customer.billing, empty.billing),

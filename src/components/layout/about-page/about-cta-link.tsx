@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
 
 type AboutCtaLinkProps = {
   href: string;
@@ -15,7 +15,7 @@ export function AboutCtaLink({
   const isOutline = variant === "outline";
 
   return (
-    <Link
+    <RevendedorFormLink
       className={`inline-flex h-11 items-center gap-3 rounded-full px-6 text-sm font-black uppercase tracking-[-0.150391px] transition hover:opacity-85 md:h-12 ${
         isOutline
           ? "border-2 border-brand-dark bg-white text-brand-dark md:min-w-[216px]"
@@ -25,6 +25,6 @@ export function AboutCtaLink({
     >
       <span>{label}</span>
       <ArrowRightIcon className="size-4 shrink-0" size={20} strokeWidth={1.8} />
-    </Link>
+    </RevendedorFormLink>
   );
 }

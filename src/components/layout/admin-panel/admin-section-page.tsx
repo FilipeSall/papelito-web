@@ -34,7 +34,7 @@ function renderSection(
     case "comercial":
       return <CommercialContent searchParams={searchParams} />;
     case "assets":
-      return <AssetsContent />;
+      return <AssetsContent searchParams={searchParams} />;
     case "config":
       return <ConfigContent />;
     default:

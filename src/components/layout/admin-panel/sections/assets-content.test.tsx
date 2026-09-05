@@ -31,15 +31,29 @@ vi.mock("@/features/catalog/services/get-home-flash-sale", () => ({
 }));
 
 vi.mock("./assets/assets-manager", () => ({
-  AssetsManager: () => <div data-testid="assets-manager" />,
+  AssetsManager: ({ initialPage }: { initialPage: string }) => (
+    <div data-page={initialPage} data-testid="assets-manager" />
+  ),
 }));
 
 import { AssetsContent } from "./assets-content";
 
 describe("AssetsContent", () => {
   it("loads the Home feature snapshot into Assets", async () => {
-    render(await AssetsContent());
+    render(await AssetsContent({}));
 
     expect(screen.getByTestId("assets-manager")).toBeInTheDocument();
+  });
+
+  it("resolve a página inicial a partir da querystring", async () => {
+    render(await AssetsContent({ searchParams: { pagina: "sobre" } }));
+
+    expect(screen.getByTestId("assets-manager")).toHaveAttribute("data-page", "sobre");
+  });
+
+  it("cai na Home quando a querystring traz uma página inexistente", async () => {
+    render(await AssetsContent({ searchParams: { pagina: "contato" } }));
+
+    expect(screen.getByTestId("assets-manager")).toHaveAttribute("data-page", "home");
   });
 });

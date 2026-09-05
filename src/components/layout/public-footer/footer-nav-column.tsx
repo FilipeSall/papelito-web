@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
 
 interface FooterNavLink {
   /**
@@ -48,13 +48,13 @@ export function FooterNavColumn({ title, links }: FooterNavColumnProps) {
       <ul className="flex flex-col gap-2">
         {links.map((link) => (
           <li key={link.href}>
-            <Link
+            <RevendedorFormLink
               href={link.href}
               prefetch={false}
               className="text-sm leading-5 tracking-normal text-white/60 transition-colors hover:text-white"
             >
               {link.label}
-            </Link>
+            </RevendedorFormLink>
           </li>
         ))}
       </ul>

@@ -28,9 +28,7 @@ type WpRefreshGraphqlResponse = {
 };
 
 export type RefreshAuthTokenError =
-  | "invalid_refresh_token"
-  | "missing_refresh_token"
-  | "token_refresh_failed";
+  "invalid_refresh_token" | "missing_refresh_token" | "token_refresh_failed";
 
 type RefreshAuthTokenResult =
   | { ok: true; accessToken: string }
@@ -118,8 +116,30 @@ function normalizeRole(role: unknown): string | undefined {
   return typeof role === "string" ? role.trim().toLowerCase() : undefined;
 }
 
+function hasRoleContextMismatch(token: JWT): boolean {
+  const context = token.b2b as WpB2bContext | undefined;
+
+  if (context?.isInternalAdmin === true) {
+    return token.role !== "administrator";
+  }
+
+  if (context?.isVendor === true) {
+    return token.role !== "seller";
+  }
+
+  if (context?.hasCustomerContext === true) {
+    return token.role !== "customer";
+  }
+
+  return false;
+}
+
 function shouldRevalidateRole(token: JWT): boolean {
   if (!token.role) {
+    return true;
+  }
+
+  if (hasRoleContextMismatch(token)) {
     return true;
   }
 
@@ -142,7 +162,9 @@ function getRefreshErrorCode(
   return "token_refresh_failed";
 }
 
-async function wpRefreshAuthToken(refreshToken: string): Promise<RefreshAuthTokenResult> {
+async function wpRefreshAuthToken(
+  refreshToken: string,
+): Promise<RefreshAuthTokenResult> {
   try {
     const response = await fetch(getWpGraphqlEndpoint(), {
       method: "POST",
@@ -164,14 +186,22 @@ async function wpRefreshAuthToken(refreshToken: string): Promise<RefreshAuthToke
       try {
         json = JSON.parse(text) as WpRefreshGraphqlResponse;
       } catch {
-        console.error("[auth] JWT refresh returned non-JSON response", response.status);
+        console.error(
+          "[auth] JWT refresh returned non-JSON response",
+          response.status,
+        );
         return { ok: false, error: "token_refresh_failed" };
       }
     }
 
-    if (!response.ok || json?.errors?.length || !json?.data?.refreshJwtAuthToken?.authToken) {
+    if (
+      !response.ok ||
+      json?.errors?.length ||
+      !json?.data?.refreshJwtAuthToken?.authToken
+    ) {
       const errorCode = getRefreshErrorCode(json?.errors);
-      const logger = errorCode === "invalid_refresh_token" ? console.warn : console.error;
+      const logger =
+        errorCode === "invalid_refresh_token" ? console.warn : console.error;
       logger("[auth] JWT refresh failed", response.status, json?.errors);
       return { ok: false, error: errorCode };
     }
@@ -191,11 +221,14 @@ export async function wpFetchAuthenticatedIdentity(
   accessToken: string,
 ): Promise<WpAuthenticatedIdentity> {
   try {
-    const identity = await wpRest<WpAuthIdentityResponse>("/papelito/v1/auth/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+    const identity = await wpRest<WpAuthIdentityResponse>(
+      "/papelito/v1/auth/me",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    });
+    );
 
     if (identity.ok) {
       return {
@@ -209,7 +242,11 @@ export async function wpFetchAuthenticatedIdentity(
       };
     }
 
-    console.error("[auth] identity lookup /auth/me failed", identity.status, identity.error);
+    console.error(
+      "[auth] identity lookup /auth/me failed",
+      identity.status,
+      identity.error,
+    );
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     console.error("[auth] identity lookup /auth/me threw", message);
@@ -235,7 +272,9 @@ export function getAccessTokenExpiresAt(accessToken?: string) {
       Buffer.from(normalizedPayload, "base64").toString("utf-8"),
     ) as { exp?: number };
 
-    return typeof decodedPayload.exp === "number" ? decodedPayload.exp * 1000 : undefined;
+    return typeof decodedPayload.exp === "number"
+      ? decodedPayload.exp * 1000
+      : undefined;
   } catch {
     return undefined;
   }
@@ -294,7 +333,8 @@ export async function syncRequestedB2bContext(
   session: unknown,
 ) {
   const refreshRequested =
-    trigger === "update" && (session as { refreshB2b?: boolean } | undefined)?.refreshB2b === true;
+    trigger === "update" &&
+    (session as { refreshB2b?: boolean } | undefined)?.refreshB2b === true;
 
   if (!refreshRequested || typeof token.accessToken !== "string") {
     return;
@@ -318,7 +358,10 @@ export async function revalidateStaleIdentity(token: JWT) {
     return;
   }
 
-  applyIdentityToToken(token, await wpFetchAuthenticatedIdentity(token.accessToken));
+  applyIdentityToToken(
+    token,
+    await wpFetchAuthenticatedIdentity(token.accessToken),
+  );
 }
 
 export async function ensureFreshAccessToken(token: JWT): Promise<JWT> {
@@ -327,7 +370,10 @@ export async function ensureFreshAccessToken(token: JWT): Promise<JWT> {
       ? token.accessTokenExpires
       : getAccessTokenExpiresAt(token.accessToken);
 
-  if (!accessTokenExpires || Date.now() < accessTokenExpires - ACCESS_TOKEN_REFRESH_SKEW_MS) {
+  if (
+    !accessTokenExpires ||
+    Date.now() < accessTokenExpires - ACCESS_TOKEN_REFRESH_SKEW_MS
+  ) {
     token.accessTokenExpires = accessTokenExpires;
     return token;
   }
@@ -345,8 +391,13 @@ export async function ensureFreshAccessToken(token: JWT): Promise<JWT> {
   }
 
   token.accessToken = refreshedToken.accessToken;
-  token.accessTokenExpires = getAccessTokenExpiresAt(refreshedToken.accessToken);
-  applyIdentityToToken(token, await wpFetchAuthenticatedIdentity(refreshedToken.accessToken));
+  token.accessTokenExpires = getAccessTokenExpiresAt(
+    refreshedToken.accessToken,
+  );
+  applyIdentityToToken(
+    token,
+    await wpFetchAuthenticatedIdentity(refreshedToken.accessToken),
+  );
   delete token.authError;
 
   return token;

@@ -83,4 +83,20 @@ describe("useAuthSession", () => {
     expect(result.current.isAdministrator).toBe(false);
     expect(result.current.isRoleLoading).toBe(false);
   });
+
+  it("does not trust a stale privileged B2B context after identity validation failed", () => {
+    useSessionMock.mockReturnValue({
+      data: buildSession({
+        authIdentityError: true,
+        b2b: { isInternalAdmin: true, isVendor: true },
+        role: "customer",
+      }),
+      status: "authenticated",
+    });
+
+    const { result } = renderHook(() => useAuthSession());
+
+    expect(result.current.isAdministrator).toBe(false);
+    expect(result.current.isSeller).toBe(false);
+  });
 });

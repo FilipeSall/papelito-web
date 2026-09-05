@@ -8,9 +8,9 @@ import { authOptions } from "./auth";
 const AUTH_ME_URL = "http://localhost:8080/wp-json/papelito/v1/auth/me";
 
 function makeJwt(exp: number) {
-  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString(
-    "base64url",
-  );
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
   const payload = Buffer.from(JSON.stringify({ exp })).toString("base64url");
 
   return `${header}.${payload}.signature`;
@@ -36,11 +36,14 @@ async function runJwtCallback(
 }
 
 function getCredentialsAuthorize() {
-  const provider = authOptions.providers.find((item) => item.id === "credentials") as {
+  const provider = authOptions.providers.find(
+    (item) => item.id === "credentials",
+  ) as {
     options?: {
-      authorize?: (
-        credentials: { username?: string; password?: string },
-      ) => Promise<Record<string, unknown> | null>;
+      authorize?: (credentials: {
+        username?: string;
+        password?: string;
+      }) => Promise<Record<string, unknown> | null>;
     };
   };
 
@@ -171,7 +174,10 @@ describe("authOptions callbacks", () => {
       refreshToken: "refresh-token",
     });
 
-    expect(result.b2b).toMatchObject({ onboardingStatus: "incomplete", canPurchase: false });
+    expect(result.b2b).toMatchObject({
+      onboardingStatus: "incomplete",
+      canPurchase: false,
+    });
   });
 
   it("re-validates a stale role so a WP role change propagates without logout", async () => {
@@ -213,6 +219,27 @@ describe("authOptions callbacks", () => {
 
     expect(result.role).toBe("customer");
     expect(calls).toBe(0);
+  });
+
+  it("revalidates when a fresh role contradicts the internal admin context", async () => {
+    let calls = 0;
+    server.use(
+      http.get(AUTH_ME_URL, () => {
+        calls += 1;
+        return HttpResponse.json({ user: { role: "administrator" } });
+      }),
+    );
+
+    const result = await runJwtCallback({
+      accessToken: makeJwt(Math.floor(Date.now() / 1000) + 3600),
+      refreshToken: "refresh-token",
+      role: "customer",
+      roleCheckedAt: Date.now() - 1_000,
+      b2b: { isInternalAdmin: true },
+    });
+
+    expect(result.role).toBe("administrator");
+    expect(calls).toBe(1);
   });
 
   it("refreshes an expired token when a refresh token exists", async () => {
@@ -316,7 +343,9 @@ describe("authOptions callbacks", () => {
       user: undefined,
       newSession: undefined,
       trigger: "update",
-    } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.session>>[0]);
+    } as unknown as Parameters<
+      NonNullable<typeof authOptions.callbacks.session>
+    >[0]);
 
     expect(session).toMatchObject({
       user: { id: "42" },
@@ -348,7 +377,9 @@ describe("authOptions callbacks", () => {
       user: undefined,
       newSession: undefined,
       trigger: "update",
-    } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.session>>[0])) as Session;
+    } as unknown as Parameters<
+      NonNullable<typeof authOptions.callbacks.session>
+    >[0])) as Session;
 
     expect(session.authIdentityError).toBe(true);
     expect(session.role).toBeUndefined();
@@ -360,7 +391,11 @@ describe("authOptions callbacks", () => {
         http.get(AUTH_ME_URL, () =>
           HttpResponse.json({
             user: { role: "customer", profileComplete: true },
-            b2b: { companyId: 7, onboardingStatus: "complete", canPurchase: true },
+            b2b: {
+              companyId: 7,
+              onboardingStatus: "complete",
+              canPurchase: true,
+            },
           }),
         ),
       );
@@ -411,7 +446,9 @@ describe("authOptions callbacks", () => {
     });
 
     it("does not create a partial session when the canonical identity cannot load", async () => {
-      server.use(http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })));
+      server.use(
+        http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })),
+      );
 
       await expect(
         getCredentialsAuthorize()({
@@ -430,11 +467,17 @@ describe("authOptions callbacks", () => {
 
       return authOptions.callbacks.signIn({
         user,
-        account: { provider: "google", id_token: "google-id-token", type: "oauth" },
+        account: {
+          provider: "google",
+          id_token: "google-id-token",
+          type: "oauth",
+        },
         profile: undefined,
         email: undefined,
         credentials: undefined,
-      } as unknown as Parameters<NonNullable<typeof authOptions.callbacks.signIn>>[0]);
+      } as unknown as Parameters<
+        NonNullable<typeof authOptions.callbacks.signIn>
+      >[0]);
     }
 
     it("consulta /auth/me uma única vez por login", async () => {
@@ -486,20 +529,28 @@ describe("authOptions callbacks", () => {
       server.use(
         http.post("http://localhost:8080/wp-json/papelito/v1/auth/google", () =>
           HttpResponse.json(
-            { code: "papelito_pre_account_required", message: "Candidatura necessária." },
+            {
+              code: "papelito_pre_account_required",
+              message: "Candidatura necessária.",
+            },
             { status: 422 },
           ),
         ),
       );
 
-      await expect(runSignIn()).resolves.toBe("/cadastro?feedback=google_account_required");
+      await expect(runSignIn()).resolves.toBe(
+        "/cadastro?feedback=google_account_required",
+      );
     });
 
     it("leva o e-mail Google ao cadastro em ticket opaco", async () => {
       server.use(
         http.post("http://localhost:8080/wp-json/papelito/v1/auth/google", () =>
           HttpResponse.json(
-            { code: "papelito_pre_account_required", message: "Candidatura necessária." },
+            {
+              code: "papelito_pre_account_required",
+              message: "Candidatura necessária.",
+            },
             { status: 422 },
           ),
         ),
@@ -507,14 +558,20 @@ describe("authOptions callbacks", () => {
 
       const result = await runSignIn({ email: "google@example.test" });
 
-      expect(result).toContain("/cadastro?feedback=google_account_required&googleRegistration=");
+      expect(result).toContain(
+        "/cadastro?feedback=google_account_required&googleRegistration=",
+      );
       expect(result).not.toContain("google@example.test");
     });
 
     it("does not continue OAuth when the canonical identity cannot load", async () => {
-      server.use(http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })));
+      server.use(
+        http.get(AUTH_ME_URL, () => new HttpResponse(null, { status: 503 })),
+      );
 
-      await expect(runSignIn()).resolves.toBe("/entrar?error=papelito_auth_context_unavailable");
+      await expect(runSignIn()).resolves.toBe(
+        "/entrar?error=papelito_auth_context_unavailable",
+      );
     });
   });
 });

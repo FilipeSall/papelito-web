@@ -4,7 +4,8 @@ const fetchCurrentUserRoleMock = vi.fn();
 const fetchMock = vi.fn();
 
 vi.mock("@/lib/server/current-user-role", () => ({
-  fetchCurrentUserRole: (...args: unknown[]) => fetchCurrentUserRoleMock(...args),
+  fetchCurrentUserRole: (...args: unknown[]) =>
+    fetchCurrentUserRoleMock(...args),
 }));
 
 vi.mock("@/lib/server/env", () => ({
@@ -67,5 +68,49 @@ describe("fetchProfileCustomer", () => {
     const customer = await fetchProfileCustomer("token");
 
     expect(customer.preferences.favoritePromotionEmailEnabled).toBe(true);
+  });
+
+  it("does not fall back to customer when the authoritative role lookup fails", async () => {
+    fetchCurrentUserRoleMock.mockResolvedValue(undefined);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            customer: {
+              firstName: "Admin",
+              lastName: "Papelito",
+              email: "admin@test.com",
+              billing: null,
+              shipping: null,
+            },
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: { customer: { displayName: "Admin", role: "customer" } },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { customer: { metaData: [] } } }),
+      });
+
+    const { fetchProfileCustomer } = await import("./customer");
+    const customer = await fetchProfileCustomer("token");
+
+    expect(customer.role).toBe("");
+  });
+
+  it("does not expose customer when the profile query itself fails", async () => {
+    fetchCurrentUserRoleMock.mockResolvedValue("administrator");
+    fetchMock.mockRejectedValue(new Error("wordpress indisponivel"));
+
+    const { fetchProfileCustomer } = await import("./customer");
+    const customer = await fetchProfileCustomer("token");
+
+    expect(customer.role).toBe("");
   });
 });

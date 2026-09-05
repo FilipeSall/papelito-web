@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import { BrandArrowIcon } from "@/components/ui/icons";
+import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
 
 interface PromoCardProps {
   variant: "dark" | "yellow";
@@ -49,7 +49,7 @@ export function PromoCard({
   const linkLabel = linkText.split("\n").join(" ");
 
   return (
-    <Link
+    <RevendedorFormLink
       className={`group relative flex min-h-62 items-stretch overflow-hidden border-2 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 ${PLATE[variant]}`}
       href={href}
     >
@@ -103,6 +103,6 @@ export function PromoCard({
           </span>
         ) : null}
       </div>
-    </Link>
+    </RevendedorFormLink>
   );
 }

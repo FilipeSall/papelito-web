@@ -12,17 +12,12 @@ import { RevendedorBusinessListItem } from "../molecules/revendedor-business-lis
  * Mostra o mosaico de imagens e a lista de formatos comerciais atendidos.
  */
 export function RevendedorBusinessTypesSection({
-  illustrationImage,
   mainImage,
   secondaryImage,
 }: {
-  illustrationImage?: ManagedImageAsset;
   mainImage?: ManagedImageAsset;
   secondaryImage?: ManagedImageAsset;
 }) {
-  const useDefaultIllustration =
-    !illustrationImage || illustrationImage.imageUrl === "/images/revendedor/business-card-vector.svg";
-
   return (
     <section className="bg-bg-light py-20">
       <div className="mx-auto max-w-[1088px] px-4 md:px-8 lg:px-0">
@@ -49,44 +44,32 @@ export function RevendedorBusinessTypesSection({
             </div>
 
             <div className="relative flex min-h-50 items-center justify-center overflow-hidden rounded-2xl bg-brand-yellow shadow-[0px_10px_15px_0px_rgba(0,0,0,0.1),0px_4px_6px_0px_rgba(0,0,0,0.1)]">
-              {!useDefaultIllustration && illustrationImage ? (
-                <div className="relative h-44.5 w-36.75">
+              <div className="relative h-44.5 w-36.75">
+                <div className="absolute left-0 top-9.5 h-29.5 w-27">
                   <Image
-                    alt={illustrationImage.alt}
+                    alt=""
                     className="object-contain"
                     fill
-                    sizes="147px"
-                    src={illustrationImage.imageUrl}
+                    src="/images/revendedor/business-card-vector.svg"
                   />
                 </div>
-              ) : (
-                <div className="relative h-44.5 w-36.75">
-                  <div className="absolute left-0 top-9.5 h-29.5 w-27">
-                    <Image
-                      alt=""
-                      className="object-contain"
-                      fill
-                      src="/images/revendedor/business-card-vector.svg"
-                    />
-                  </div>
-                  <div className="absolute left-3.5 top-0 h-19 w-18.75">
-                    <Image
-                      alt=""
-                      className="object-contain"
-                      fill
-                      src="/images/revendedor/business-card-group-top.svg"
-                    />
-                  </div>
-                  <div className="absolute bottom-0 right-0 h-22.25 w-33.75">
-                    <Image
-                      alt=""
-                      className="object-contain"
-                      fill
-                      src="/images/revendedor/business-card-group-bottom.svg"
-                    />
-                  </div>
+                <div className="absolute left-3.5 top-0 h-19 w-18.75">
+                  <Image
+                    alt=""
+                    className="object-contain"
+                    fill
+                    src="/images/revendedor/business-card-group-top.svg"
+                  />
                 </div>
-              )}
+                <div className="absolute bottom-0 right-0 h-22.25 w-33.75">
+                  <Image
+                    alt=""
+                    className="object-contain"
+                    fill
+                    src="/images/revendedor/business-card-group-bottom.svg"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

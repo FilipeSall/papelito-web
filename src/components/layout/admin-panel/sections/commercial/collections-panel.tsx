@@ -16,9 +16,9 @@ import {
   InlineAlert,
   PrimaryButton,
   SectionHeading,
+  useAdminToast,
 } from "../../primitives";
 
-import { useAdminToast } from "./use-admin-toast";
 
 type CollectionsPanelProps = {
   initialConfig: CollectionsConfig;

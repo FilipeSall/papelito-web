@@ -304,10 +304,84 @@ a classificação anterior é preservada. O editor não envia categorias WooComm
   (502/504 de gateway, função que estourou tempo). Sem isso, qualquer falha vira "Nenhum produto
   encontrado." e fica indistinguível de zero resultados.
 
+## Assets: a página do site é o eixo, não o tipo de arquivo
+
+`/admin/assets` empilhava cinco painéis recolhíveis cuja única pista de a que página pública o asset
+pertencia era a palavra do `eyebrow` — `home`, `global` e, o revelador, `produtos / sobre / revendedor`:
+três páginas espremidas num painel só chamado "Imagens das paginas", atrás de um botão Salvar. Como
+painel e card tinham chevron próprio, chegar a **uma** imagem custava até três cliques e a primeira
+dobra não mostrava asset nenhum. A decisão, com o motivo:
+
+> Quem edita assets pensa por página do site — "preciso trocar a foto da Sobre" —, não por tipo de
+> arquivo. A página é o eixo de navegação; o tipo é detalhe do editor.
+
+O que passa a valer:
+
+- **Cinco segmentos por página pública**, na mesma gramática de Contas e Produtos: **Global**, **Home**,
+  **Produtos**, **Sobre** e **Revendedor**. O registro vive em `sections/assets/assets-config.ts` —
+  página nova entra ali e em nenhum outro lugar da navegação.
+- **Cada asset é uma linha em `ResultFrame`**, com miniatura, onde ele aparece no site, `StatusChip` e
+  `Editar`; clicar abre um modal (`asset-editor-modal.tsx`, no desenho de `vendor-create-content.tsx`).
+  Não há mais accordion dentro de accordion.
+- **Um `ResultFrame` por grupo de salvamento**, e os grupos são exatamente os seis `PUT` que já existiam
+  — hero, faixa, benefícios, PDV Perfeito, imagens de página e logos. O Salvar do modal dispara o mesmo
+  `PUT` do bloco: nenhum contrato de backend mudou.
+- **O catálogo PDF mudou de lugar.** Estava dentro do bloco PDV Perfeito, na Home; o link `/api/catalog`
+  só existe em `/revendedor`, então é lá que ele aparece.
+
+### Contrato de URL
+
+`?pagina=` com `global`, `home`, `produtos`, `sobre` ou `revendedor`; `home` é o padrão e é omitido.
+
+**Diferente de Contas e Comercial, a troca de página não navega.** Ela é estado de cliente espelhado na
+URL com `window.history.replaceState` (`use-assets-page.ts`), e essa é a única divergência deliberada do
+contrato `?tab=`. O motivo é que Assets é um **editor**, não uma listagem: navegação do Next remontaria
+o gerenciador e descartaria edição ainda não salva ao trocar de página. `pushState` também está fora —
+o router não escuta esse `popstate`, então o Voltar mudaria a URL sem mudar a tela.
+
+Pela mesma razão, **os seis snapshots continuam sendo buscados de uma vez** no servidor, e não só os da
+página ativa: eles alimentam o contador de todos os segmentos e precisam sobreviver à troca de página.
+
+### Estado do asset: ícone mais texto, como no resto do painel
+
+`assets-status.ts` concentra o vocabulário, mapeando cada estado real para um ícone do **lucide-react**:
+
+| Estado | Chip | Tom |
+|---|---|---|
+| Imagem e alt preenchidos | `Configurado` | positivo |
+| Ainda no arquivo padrão do projeto | `Padrão do projeto` | neutro |
+| Sem texto alternativo | `Sem texto alternativo` | pendente |
+| Sem imagem | `Imagem ausente` | crítico |
+| Editado e ainda não publicado | `Não salvo` | pendente |
+
+`crítico` fica reservado a "ausente" porque esse estado **bloqueia o salvamento de verdade**: o validador
+do plugin devolve 422 com `Imagem {key} precisa ter arquivo e alt preenchidos.` Não é ênfase decorativa.
+
+**`Padrão do projeto` vale para logo e para imagem de página.** Os defaults ficam em `src/lib/site-logos.ts`
+e `src/lib/site-images.ts`, os dois client-safe, porque a listagem precisa deles no navegador. Sem essa
+distinção o chip mentia: toda imagem de página nasce apontando para um arquivo em `public/`, então
+todas liam como `Configurado` sem ninguém ter subido nada.
+
+### Armadilhas registradas
+
+- **O card amarelo de `/revendedor` deixou de ser asset.** Ele era `revendedorBusinessIllustration`,
+  mas o desenho padrão são três SVGs cravados no componente e o asset não editava esse desenho —
+  substituía a composição inteira por uma imagem só. Como ninguém pretende trocá-lo, a chave saiu do
+  tipo, dos defaults dos dois lados e do payload de `/site/image-assets`: a arte agora é puramente
+  frontend, em `revendedor-business-types-section.tsx`. **Sobraram cinco imagens de página.**
+- **As cinco imagens de página compartilham um `PUT`.** Salvar a partir de Sobre publica também o que
+  estiver pendente em Produtos e Revendedor. O botão libera quando qualquer uma mudou — é o que a
+  requisição faz — e o selo `Não salvo` diz quais mudaram.
+- **Erro de salvamento aparece no bloco que falhou**, e dentro do modal quando veio de lá. O aviso único
+  no topo da tela, que nunca sumia e era sobrescrito pela ação seguinte, saiu. Sucesso é `AdminToast`.
+- **Upload não publica.** O arquivo sobe para a mídia temporária e a linha passa a `Não salvo`; só o
+  Salvar do bloco publica.
+
 ## Benefícios do produto ficam em Assets, não em rota própria
 
-A faixa de benefícios da página de produto é editada num painel recolhível dentro de `/admin/assets`
-(`sections/assets/product-benefits/`). **Não existe `/admin/beneficios`**: apesar de a tela ser um CRUD
+A faixa de benefícios da página de produto é editada na aba **Assets de Produtos**
+(`/admin/products?tab=assets`), a partir de `sections/assets/product-benefits/` — a pasta continua sob
+`assets/` porque nasceu lá, mas quem a renderiza é `products-content.tsx`. **Não existe `/admin/beneficios`**: apesar de a tela ser um CRUD
 com modal e picker, o que ela edita é conteúdo editorial do site, igual aos banners, à faixa de avisos e
 aos benefícios da Home — todos já morando em Assets. Uma entrada de menu para isso seria cosmética e
 fragmentaria o mesmo domínio em dois lugares.

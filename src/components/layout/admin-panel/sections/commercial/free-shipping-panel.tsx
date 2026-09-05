@@ -16,10 +16,10 @@ import {
   InlineAlert,
   PrimaryButton,
   SectionHeading,
+  useAdminToast,
 } from "../../primitives";
 
 import { formatCentsForInput, parseBRLCents } from "./money";
-import { useAdminToast } from "./use-admin-toast";
 
 const MAX_RANGES = 50;
 

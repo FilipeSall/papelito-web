@@ -1,24 +1,20 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronDown,
-  ImagePlus,
-  LoaderCircle,
-  Save,
-  Trash2,
-} from "lucide-react";
+import { ExternalLink, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { CollapsiblePanel } from "@/components/layout/admin-panel/primitives";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import {
+  AdminToast,
+  InlineAlert,
+  SectionHeading,
+  useAdminToast,
+} from "@/components/layout/admin-panel/primitives";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
 import type { RichTextResolutionContext } from "@/features/rich-text";
-import { messageFromError } from "@/utils/error-message";
 import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
+import { messageFromError } from "@/utils/error-message";
 import type {
   AdminHeroBannersSnapshot,
   AdminHomeFeaturesSnapshot,
@@ -29,33 +25,41 @@ import type {
   HeroBanner,
   HomeFeatureItem,
   ManagedImageAsset,
+  PartnerBannerConfig,
   PromoMarqueeItem,
   SiteImageAssetKey,
   SiteLogoKey,
 } from "@/types/home-assets";
 
+import type { AssetNoticeState } from "./asset-notice";
+import { SECONDARY_ACTION_CLASS } from "./assets-classes";
+import { assetsPageDefinition, type AssetsPageKey } from "./assets-config";
+import { isSameAsset } from "./assets-dirty";
+import { SITE_LOGO_FIELDS, siteImageFieldsFor } from "./assets-fields";
 import {
-  ALERT_ERROR_CLASS,
-  ALERT_SUCCESS_CLASS,
-  BUTTON_CLASS,
-  CARD_CLASS,
-  CARD_HEADER_CLASS,
-  COMPACT_BUTTON_CLASS,
-  DESTRUCTIVE_BUTTON_CLASS,
-  ICON_BUTTON_CLASS,
-  INPUT_CLASS,
-  LABEL_CLASS,
-  MUTED_TEXT_CLASS,
-  SECONDARY_BUTTON_CLASS,
-  TEXTAREA_CLASS,
-} from "./field-classes";
-import { ImageAssetCard, type ImageFieldConfig } from "./image-asset-card";
-import { IssuesList } from "./issues-list";
-import { LogosSection } from "./logos-section";
-import { CatalogPdfManager } from "../catalog-pdf-manager";
-import { PromoMarqueeSection } from "./promo-marquee-section";
-import { UploadCard } from "./upload-card";
+  AssetsPageTabs,
+  assetsPanelId,
+  assetsTabId,
+  type AssetsPageSummary,
+} from "./assets-page-tabs";
+import {
+  countAttention,
+  featureItemStatus,
+  heroBannerStatus,
+  imageAssetStatus,
+  logoStatus,
+  marqueeMessageStatus,
+  partnerBannerStatus,
+} from "./assets-status";
+import { CatalogGroup } from "./groups/catalog-group";
+import { FeaturesGroup } from "./groups/features-group";
+import { HeroGroup } from "./groups/hero-group";
+import { LogosGroup } from "./groups/logos-group";
+import { MarqueeGroup } from "./groups/marquee-group";
+import { PartnerGroup } from "./groups/partner-group";
+import { SiteImagesGroup } from "./groups/site-images-group";
 import { parseJson, uploadMedia } from "./upload-media";
+import { useAssetsPage } from "./use-assets-page";
 
 const HERO_API = "/api/admin/assets/hero-banners";
 const PARTNER_API = "/api/admin/assets/partner-banner";
@@ -64,7 +68,10 @@ const LOGOS_API = "/api/admin/assets/logos";
 const PROMO_MARQUEE_API = "/api/admin/assets/promo-marquee";
 const HOME_FEATURES_API = "/api/admin/assets/features";
 
+type AssetGroupKey = "features" | "hero" | "logos" | "marquee" | "partner" | "siteImages";
+
 type AssetsManagerProps = {
+  initialPage: AssetsPageKey;
   richTextContext: RichTextResolutionContext;
   initialFeaturesSnapshot: AdminHomeFeaturesSnapshot;
   initialHeroSnapshot: AdminHeroBannersSnapshot;
@@ -74,64 +81,14 @@ type AssetsManagerProps = {
   initialSiteImagesSnapshot: AdminSiteImageAssetsSnapshot;
 };
 
-type NoticeTone = "error" | "success";
-
-type NoticeState = {
-  message: string;
-  tone: NoticeTone;
+const EMPTY_NOTICES: Record<AssetGroupKey, AssetNoticeState | null> = {
+  features: null,
+  hero: null,
+  logos: null,
+  marquee: null,
+  partner: null,
+  siteImages: null,
 };
-
-const SITE_IMAGE_FIELDS: ImageFieldConfig[] = [
-  {
-    key: "productHero",
-    eyebrow: "Produtos",
-    title: "Imagem de produtos",
-    description:
-      "Banner do topo da página /produtos, atrás do título Nossos Produtos.",
-    formatHint: "Formato ideal: horizontal largo, aproximadamente 3.5:1.",
-  },
-  {
-    key: "aboutHero",
-    eyebrow: "Sobre",
-    title: "Banner da página Sobre",
-    description: "Imagem larga no topo da página /sobre.",
-    formatHint: "Formato ideal: horizontal, aproximadamente 16:10.",
-  },
-  {
-    key: "aboutStory",
-    eyebrow: "Sobre",
-    title: "Imagem da história",
-    description:
-      'Foto ao lado do bloco "Mais de uma década de história" na página /sobre.',
-    formatHint: "Formato ideal: foto horizontal 3:2 com assunto central.",
-  },
-  {
-    key: "revendedorBusinessMain",
-    eyebrow: "Revendedor",
-    title: "Imagem principal dos negócios",
-    description:
-      'Foto grande ao lado do título "Atendemos Diferentes Tipos de Negócios!" em /revendedor.',
-    formatHint: "Formato ideal: foto vertical 2:3 com foco no centro.",
-  },
-  {
-    key: "revendedorBusinessSecondary",
-    eyebrow: "Revendedor",
-    title: "Imagem secundária dos negócios",
-    description: "Foto menor do mosaico de negócios atendidos em /revendedor.",
-    formatHint:
-      "Formato ideal: foto horizontal ou vertical com crop seguro no centro.",
-  },
-  {
-    key: "revendedorBusinessIllustration",
-    eyebrow: "Revendedor",
-    title: "Ilustração do card amarelo",
-    description:
-      "Imagem do card amarelo no mosaico de negócios atendidos em /revendedor.",
-    formatHint:
-      "Formato ideal: quadrado 1:1, PNG ou SVG com fundo transparente.",
-    previewClass: "object-contain bg-brand-yellow",
-  },
-];
 
 function createEmptyHeroBanner(index: number): HeroBanner {
   return {
@@ -179,6 +136,7 @@ function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
 }
 
 export function AssetsManager({
+  initialPage,
   richTextContext,
   initialFeaturesSnapshot,
   initialHeroSnapshot,
@@ -187,73 +145,58 @@ export function AssetsManager({
   initialPromoMarqueeSnapshot,
   initialSiteImagesSnapshot,
 }: AssetsManagerProps) {
-  const [heroBanners, setHeroBanners] = useState(() =>
-    normalizeHeroOrder(
-      initialHeroSnapshot.banners.length > 0
-        ? initialHeroSnapshot.banners
-        : [createEmptyHeroBanner(0)],
-    ),
+  const initialHeroBanners = normalizeHeroOrder(
+    initialHeroSnapshot.banners.length > 0
+      ? initialHeroSnapshot.banners
+      : [createEmptyHeroBanner(0)],
   );
+  const initialFeatureItems =
+    initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
+      ? initialFeaturesSnapshot.items
+      : FEATURES_BAR_ITEMS;
+  const initialPartner = { ...initialPartnerSnapshot.banner, isActive: true };
+
+  const { activePage, selectPage } = useAssetsPage(initialPage);
+
+  const [heroBanners, setHeroBanners] = useState(initialHeroBanners);
+  const [persistedHeroBanners, setPersistedHeroBanners] = useState(initialHeroBanners);
   const [heroIssues, setHeroIssues] = useState(initialHeroSnapshot.issues);
-  const [expandedHeroBannerIds, setExpandedHeroBannerIds] = useState<string[]>(
-    [],
-  );
-  const [isHeroPanelOpen, setIsHeroPanelOpen] = useState(false);
-  const [pendingHeroBannerId, setPendingHeroBannerId] = useState<string | null>(
-    null,
-  );
-  const [partnerBanner, setPartnerBanner] = useState(() => ({
-    ...initialPartnerSnapshot.banner,
-    isActive: true,
-  }));
-  const [partnerIssues, setPartnerIssues] = useState(
-    initialPartnerSnapshot.issues,
-  );
-  const [isPartnerEditorOpen, setIsPartnerEditorOpen] = useState(false);
+  const [partnerBanner, setPartnerBanner] = useState<PartnerBannerConfig>(initialPartner);
+  const [persistedPartnerBanner, setPersistedPartnerBanner] =
+    useState<PartnerBannerConfig>(initialPartner);
+  const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
   const [promoMarquee, setPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
   const [persistedPromoMarquee, setPersistedPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
-  const [marqueeItemToRemove, setMarqueeItemToRemove] = useState<string | null>(null);
   const [promoMarqueeIssues, setPromoMarqueeIssues] = useState(
     initialPromoMarqueeSnapshot.issues,
   );
-  const [features, setFeatures] = useState<HomeFeatureItem[]>(() =>
-    initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
-      ? initialFeaturesSnapshot.items
-      : FEATURES_BAR_ITEMS,
-  );
-  const [persistedFeatures, setPersistedFeatures] = useState<HomeFeatureItem[]>(
-    () =>
-      initialFeaturesSnapshot.items.length === FEATURES_BAR_ITEMS.length
-        ? initialFeaturesSnapshot.items
-        : FEATURES_BAR_ITEMS,
-  );
-  const [featureIssues, setFeatureIssues] = useState(
-    initialFeaturesSnapshot.issues,
-  );
-  const [siteImages, setSiteImages] = useState(
+  const [features, setFeatures] = useState<HomeFeatureItem[]>(initialFeatureItems);
+  const [persistedFeatures, setPersistedFeatures] =
+    useState<HomeFeatureItem[]>(initialFeatureItems);
+  const [featureIssues, setFeatureIssues] = useState(initialFeaturesSnapshot.issues);
+  const [siteImages, setSiteImages] = useState(initialSiteImagesSnapshot.images);
+  const [persistedSiteImages, setPersistedSiteImages] = useState(
     initialSiteImagesSnapshot.images,
   );
-  const [siteImageIssues, setSiteImageIssues] = useState(
-    initialSiteImagesSnapshot.issues,
-  );
+  const [siteImageIssues, setSiteImageIssues] = useState(initialSiteImagesSnapshot.issues);
   const [logos, setLogos] = useState(initialLogosSnapshot.logos);
+  const [persistedLogos, setPersistedLogos] = useState(initialLogosSnapshot.logos);
   const [logoIssues, setLogoIssues] = useState(initialLogosSnapshot.issues);
-  const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [notices, setNotices] = useState(EMPTY_NOTICES);
   const [isSavingHero, setIsSavingHero] = useState(false);
   const [isSavingPartner, setIsSavingPartner] = useState(false);
   const [isSavingPromoMarquee, setIsSavingPromoMarquee] = useState(false);
   const [isSavingFeatures, setIsSavingFeatures] = useState(false);
   const [isSavingSiteImages, setIsSavingSiteImages] = useState(false);
   const [isSavingLogos, setIsSavingLogos] = useState(false);
-  const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(
-    null,
-  );
+  const [restoringLogoKey, setRestoringLogoKey] = useState<SiteLogoKey | null>(null);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const temporaryMedia = useTemporaryAdminMedia();
+  const { dismissToast, isVisible, showToast, toast } = useAdminToast();
   const assetsSession = useRef(0);
 
   useEffect(() => {
@@ -262,16 +205,27 @@ export function AssetsManager({
     };
   }, []);
 
-  function showNotice(tone: NoticeTone, message: string) {
-    setNotice({ message, tone });
+  function setGroupNotice(group: AssetGroupKey, notice: AssetNoticeState | null) {
+    setNotices((current) => ({ ...current, [group]: notice }));
+  }
+
+  function failGroup(group: AssetGroupKey, message: string) {
+    setGroupNotice(group, { message, tone: "error" });
+  }
+
+  function informGroup(group: AssetGroupKey, message: string) {
+    setGroupNotice(group, { message, tone: "success" });
+  }
+
+  function confirmSave(group: AssetGroupKey, title: string, description: string) {
+    setGroupNotice(group, null);
+    showToast({ description, title });
   }
 
   function updateHeroBanner(id: string, patch: Partial<HeroBanner>) {
     setHeroBanners((current) =>
       normalizeHeroOrder(
-        current.map((banner) =>
-          banner.id === id ? { ...banner, ...patch } : banner,
-        ),
+        current.map((banner) => (banner.id === id ? { ...banner, ...patch } : banner)),
       ),
     );
   }
@@ -298,6 +252,11 @@ export function AssetsManager({
   }
 
   function removeHeroBanner(id: string) {
+    if (heroBanners.length <= 1) {
+      failGroup("hero", "A Hero Section precisa manter pelo menos uma opção.");
+      return;
+    }
+
     const removed = heroBanners.find((banner) => banner.id === id);
     const removedIds = [removed?.desktopImageId, removed?.mobileImageId].filter(
       (mediaId): mediaId is number => temporaryMedia.isTracked(mediaId),
@@ -306,23 +265,18 @@ export function AssetsManager({
       void temporaryMedia.discard(removedIds).catch(() => undefined);
     }
 
-    setHeroBanners((current) => {
-      if (current.length <= 1) {
-        showNotice(
-          "error",
-          "A Hero Section precisa manter pelo menos uma opção.",
-        );
-        return current;
-      }
-
-      return normalizeHeroOrder(current.filter((banner) => banner.id !== id));
-    });
+    setHeroBanners((current) =>
+      normalizeHeroOrder(current.filter((banner) => banner.id !== id)),
+    );
   }
 
-  function updateSiteImage(
-    key: SiteImageAssetKey,
-    patch: Partial<ManagedImageAsset>,
-  ) {
+  function addHeroBanner() {
+    const banner = createEmptyHeroBanner(heroBanners.length);
+    setHeroBanners((current) => normalizeHeroOrder([...current, banner]));
+    return banner.id;
+  }
+
+  function updateSiteImage(key: SiteImageAssetKey, patch: Partial<ManagedImageAsset>) {
     setSiteImages((current) => ({
       ...current,
       [key]: {
@@ -342,14 +296,9 @@ export function AssetsManager({
     }));
   }
 
-  function updatePromoMarqueeItem(
-    id: string,
-    patch: Partial<PromoMarqueeItem>,
-  ) {
+  function updatePromoMarqueeItem(id: string, patch: Partial<PromoMarqueeItem>) {
     setPromoMarquee((current) =>
-      current.map((message) =>
-        message.id === id ? { ...message, ...patch } : message,
-      ),
+      current.map((message) => (message.id === id ? { ...message, ...patch } : message)),
     );
   }
 
@@ -361,35 +310,9 @@ export function AssetsManager({
 
   function addPromoMarqueeItem() {
     const item = createEmptyPromoMarqueeItem(promoMarquee.length);
-    setPromoMarquee((current) => [...current, item]);
+    setPromoMarquee((current) => normalizePromoMarqueeOrder([...current, item]));
     return item.id;
   }
-
-  function addHeroBanner() {
-    const banner = createEmptyHeroBanner(heroBanners.length);
-    setHeroBanners((current) => [...current, banner]);
-    setExpandedHeroBannerIds((current) => [...current, banner.id]);
-    setIsHeroPanelOpen(true);
-    setPendingHeroBannerId(banner.id);
-  }
-
-  useEffect(() => {
-    if (!pendingHeroBannerId) {
-      return;
-    }
-
-    const card = document.getElementById(
-      `hero-option-card-${pendingHeroBannerId}`,
-    );
-    const editor = document.getElementById(`hero-alt-${pendingHeroBannerId}`);
-    if (!card || !editor) {
-      return;
-    }
-
-    card.scrollIntoView?.({ behavior: "smooth", block: "center" });
-    editor.focus({ preventScroll: true });
-    setPendingHeroBannerId(null);
-  }, [heroBanners, pendingHeroBannerId]);
 
   function movePromoMarqueeItem(id: string, direction: -1 | 1) {
     setPromoMarquee((current) => {
@@ -413,22 +336,15 @@ export function AssetsManager({
   }
 
   function removePromoMarqueeItem(id: string) {
-    setMarqueeItemToRemove(null);
     setPromoMarquee((current) =>
-      normalizePromoMarqueeOrder(
-        current.filter((message) => message.id !== id),
-      ),
+      normalizePromoMarqueeOrder(current.filter((message) => message.id !== id)),
     );
   }
 
-  async function handleHeroUpload(
-    id: string,
-    field: "desktop" | "mobile",
-    file: File,
-  ) {
+  async function handleHeroUpload(id: string, field: "desktop" | "mobile", file: File) {
     const session = assetsSession.current;
-    const uploadSlot = `hero:${id}:${field}`;
-    setUploadingKey(uploadSlot);
+    setUploadingKey(`hero:${id}:${field}`);
+    setGroupNotice("hero", null);
 
     try {
       const media = await uploadMedia(file);
@@ -444,22 +360,16 @@ export function AssetsManager({
         ...(field === "desktop"
           ? { desktopImageId: media.id, desktopImageUrl: media.src }
           : { mobileImageId: media.id, mobileImageUrl: media.src }),
-        alt:
-          media.alt ||
-          heroBanners.find((banner) => banner.id === id)?.alt ||
-          "",
+        alt: media.alt || current?.alt || "",
       });
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId!]).catch(() => undefined);
       }
-      showNotice("success", "Imagem da Hero Section enviada com sucesso.");
+      informGroup("hero", "Imagem enviada. Salve a Hero Section para publicar.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(
-          error,
-          "Não foi possível enviar a imagem da Hero Section.",
-        ),
+      failGroup(
+        "hero",
+        messageFromError(error, "Não foi possível enviar a imagem da Hero Section."),
       );
     } finally {
       setUploadingKey(null);
@@ -468,8 +378,8 @@ export function AssetsManager({
 
   async function handlePartnerUpload(field: "desktop" | "mobile", file: File) {
     const session = assetsSession.current;
-    const uploadSlot = `partner:${field}`;
-    setUploadingKey(uploadSlot);
+    setUploadingKey(`partner:${field}`);
+    setGroupNotice("partner", null);
 
     try {
       const media = await uploadMedia(file);
@@ -478,9 +388,7 @@ export function AssetsManager({
         return;
       }
       const previousId =
-        field === "desktop"
-          ? partnerBanner.desktopImageId
-          : partnerBanner.mobileImageId;
+        field === "desktop" ? partnerBanner.desktopImageId : partnerBanner.mobileImageId;
       temporaryMedia.track(media.id);
       setPartnerBanner((current) => ({
         ...current,
@@ -493,14 +401,11 @@ export function AssetsManager({
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId!]).catch(() => undefined);
       }
-      showNotice("success", "Imagem do PDV Perfeito enviada com sucesso.");
+      informGroup("partner", "Imagem enviada. Salve o PDV Perfeito para publicar.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(
-          error,
-          "Não foi possível enviar a imagem do PDV Perfeito.",
-        ),
+      failGroup(
+        "partner",
+        messageFromError(error, "Não foi possível enviar a imagem do PDV Perfeito."),
       );
     } finally {
       setUploadingKey(null);
@@ -509,8 +414,8 @@ export function AssetsManager({
 
   async function handleSiteImageUpload(key: SiteImageAssetKey, file: File) {
     const session = assetsSession.current;
-    const uploadSlot = `site:${key}`;
-    setUploadingKey(uploadSlot);
+    setUploadingKey(`site:${key}`);
+    setGroupNotice("siteImages", null);
 
     try {
       const media = await uploadMedia(file);
@@ -528,12 +433,9 @@ export function AssetsManager({
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId!]).catch(() => undefined);
       }
-      showNotice("success", "Imagem enviada com sucesso.");
+      informGroup("siteImages", "Imagem enviada. Salve as imagens do site para publicar.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível enviar a imagem."),
-      );
+      failGroup("siteImages", messageFromError(error, "Não foi possível enviar a imagem."));
     } finally {
       setUploadingKey(null);
     }
@@ -541,8 +443,8 @@ export function AssetsManager({
 
   async function handleLogoUpload(key: SiteLogoKey, file: File) {
     const session = assetsSession.current;
-    const uploadSlot = `logo:${key}`;
-    setUploadingKey(uploadSlot);
+    setUploadingKey(`logo:${key}`);
+    setGroupNotice("logos", null);
 
     try {
       const media = await uploadMedia(file);
@@ -560,12 +462,9 @@ export function AssetsManager({
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId!]).catch(() => undefined);
       }
-      showNotice("success", "Logo enviada com sucesso. Salve para publicar.");
+      informGroup("logos", "Logo enviada. Salve as logos para publicar.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível enviar a logo."),
-      );
+      failGroup("logos", messageFromError(error, "Não foi possível enviar a logo."));
     } finally {
       setUploadingKey(null);
     }
@@ -577,16 +476,17 @@ export function AssetsManager({
     const validMime = !file.type || file.type === "image/svg+xml";
 
     if (!isSvg || !validMime) {
-      showNotice("error", "Selecione um arquivo SVG válido.");
+      failGroup("features", "Selecione um arquivo SVG válido.");
       return;
     }
 
     if (file.size <= 0 || file.size > 2 * 1024 * 1024) {
-      showNotice("error", "O SVG deve ter entre 1 byte e 2 MB.");
+      failGroup("features", "O SVG deve ter entre 1 byte e 2 MB.");
       return;
     }
 
     setUploadingKey(`feature:${id}`);
+    setGroupNotice("features", null);
 
     try {
       const media = await uploadMedia(file);
@@ -600,17 +500,11 @@ export function AssetsManager({
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId!]).catch(() => undefined);
       }
-      showNotice(
-        "success",
-        "Ícone do benefício enviado. Salve os benefícios para publicar.",
-      );
+      informGroup("features", "Ícone enviado. Salve os benefícios para publicar.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(
-          error,
-          "Não foi possível enviar o ícone do benefício.",
-        ),
+      failGroup(
+        "features",
+        messageFromError(error, "Não foi possível enviar o ícone do benefício."),
       );
     } finally {
       setUploadingKey(null);
@@ -624,35 +518,27 @@ export function AssetsManager({
     try {
       const response = await fetch(HERO_API, {
         body: JSON.stringify({ banners: normalizeHeroOrder(heroBanners) }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminHeroBannersSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminHeroBannersSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(
-          json?.message ?? "Não foi possível salvar a Hero Section.",
-        );
+        throw new Error(json?.message ?? "Não foi possível salvar a Hero Section.");
       }
 
-      setHeroBanners(normalizeHeroOrder(json.banners));
+      const confirmed = normalizeHeroOrder(json.banners);
+      setHeroBanners(confirmed);
+      setPersistedHeroBanners(confirmed);
       temporaryMedia.commit(
-        json.banners.flatMap((banner) => [
-          banner.desktopImageId,
-          banner.mobileImageId,
-        ]),
+        json.banners.flatMap((banner) => [banner.desktopImageId, banner.mobileImageId]),
       );
       setHeroIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Hero Section atualizada.");
+      confirmSave("hero", "Hero Section atualizada", "As opções do topo da home já estão no ar.");
+      return true;
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível salvar a Hero Section."),
-      );
+      failGroup("hero", messageFromError(error, "Não foi possível salvar a Hero Section."));
+      return false;
     } finally {
       setIsSavingHero(false);
       temporaryMedia.endSave();
@@ -666,36 +552,32 @@ export function AssetsManager({
     try {
       const response = await fetch(PARTNER_API, {
         body: JSON.stringify({ banner: { ...partnerBanner, isActive: true } }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminPartnerBannerSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminPartnerBannerSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(
-          json?.message ?? "Não foi possível salvar a imagem do PDV Perfeito.",
-        );
+        throw new Error(json?.message ?? "Não foi possível salvar a imagem do PDV Perfeito.");
       }
 
-      setPartnerBanner({ ...json.banner, isActive: true });
-      temporaryMedia.commit([
-        json.banner.desktopImageId,
-        json.banner.mobileImageId,
-      ]);
+      const confirmed = { ...json.banner, isActive: true };
+      setPartnerBanner(confirmed);
+      setPersistedPartnerBanner(confirmed);
+      temporaryMedia.commit([json.banner.desktopImageId, json.banner.mobileImageId]);
       setPartnerIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Imagem do PDV Perfeito atualizada.");
-    } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(
-          error,
-          "Não foi possível salvar a imagem do PDV Perfeito.",
-        ),
+      confirmSave(
+        "partner",
+        "PDV Perfeito atualizado",
+        "O bloco de parceria da home já está no ar.",
       );
+      return true;
+    } catch (error) {
+      failGroup(
+        "partner",
+        messageFromError(error, "Não foi possível salvar a imagem do PDV Perfeito."),
+      );
+      return false;
     } finally {
       setIsSavingPartner(false);
       temporaryMedia.endSave();
@@ -709,30 +591,28 @@ export function AssetsManager({
     try {
       const response = await fetch(SITE_IMAGES_API, {
         body: JSON.stringify({ images: siteImages }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminSiteImageAssetsSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminSiteImageAssetsSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
         throw new Error(json?.message ?? "Não foi possível salvar as imagens.");
       }
 
       setSiteImages(json.images);
-      temporaryMedia.commit(
-        Object.values(json.images).map((image) => image.imageId),
-      );
+      setPersistedSiteImages(json.images);
+      temporaryMedia.commit(Object.values(json.images).map((image) => image.imageId));
       setSiteImageIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Imagens das paginas atualizadas.");
-    } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível salvar as imagens."),
+      confirmSave(
+        "siteImages",
+        "Imagens do site atualizadas",
+        "Produtos, Sobre e Revendedor já usam as imagens novas.",
       );
+      return true;
+    } catch (error) {
+      failGroup("siteImages", messageFromError(error, "Não foi possível salvar as imagens."));
+      return false;
     } finally {
       setIsSavingSiteImages(false);
       temporaryMedia.endSave();
@@ -746,30 +626,28 @@ export function AssetsManager({
     try {
       const response = await fetch(LOGOS_API, {
         body: JSON.stringify({ logos }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminSiteLogosSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
         throw new Error(json?.message ?? "Não foi possível salvar as logos.");
       }
 
       setLogos(json.logos);
-      temporaryMedia.commit(
-        Object.values(json.logos).map((logo) => logo.imageId),
-      );
+      setPersistedLogos(json.logos);
+      temporaryMedia.commit(Object.values(json.logos).map((logo) => logo.imageId));
       setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Logos do site atualizadas.");
-    } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível salvar as logos."),
+      confirmSave(
+        "logos",
+        "Logos atualizadas",
+        "O cabeçalho e o rodapé já usam as logos novas.",
       );
+      return true;
+    } catch (error) {
+      failGroup("logos", messageFromError(error, "Não foi possível salvar as logos."));
+      return false;
     } finally {
       setIsSavingLogos(false);
       temporaryMedia.endSave();
@@ -778,14 +656,14 @@ export function AssetsManager({
 
   async function savePromoMarquee() {
     if (isSavingPromoMarquee) {
-      return;
+      return false;
     }
 
     const validation = getPromoMarqueeValidation(promoMarquee);
 
     if (!validation.isValid) {
-      showNotice("error", validation.message);
-      return;
+      failGroup("marquee", validation.message);
+      return false;
     }
 
     const previousPersistedPromoMarquee = persistedPromoMarquee;
@@ -793,35 +671,30 @@ export function AssetsManager({
 
     try {
       const response = await fetch(PROMO_MARQUEE_API, {
-        body: JSON.stringify({
-          messages: normalizePromoMarqueeOrder(promoMarquee),
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: JSON.stringify({ messages: normalizePromoMarqueeOrder(promoMarquee) }),
+        headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminPromoMarqueeSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminPromoMarqueeSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(
-          json?.message ?? "Não foi possível salvar a faixa de avisos.",
-        );
+        throw new Error(json?.message ?? "Não foi possível salvar a faixa de avisos.");
       }
 
       const confirmedMessages = normalizePromoMarqueeOrder(json.messages);
       setPromoMarquee(confirmedMessages);
       setPersistedPromoMarquee(confirmedMessages);
       setPromoMarqueeIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Faixa de avisos atualizada.");
+      confirmSave(
+        "marquee",
+        "Faixa de avisos atualizada",
+        "As mensagens ativas já aparecem no topo do site.",
+      );
+      return true;
     } catch (error) {
       setPromoMarquee(previousPersistedPromoMarquee);
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível salvar a faixa de avisos."),
-      );
+      failGroup("marquee", messageFromError(error, "Não foi possível salvar a faixa de avisos."));
+      return false;
     } finally {
       setIsSavingPromoMarquee(false);
     }
@@ -829,14 +702,14 @@ export function AssetsManager({
 
   async function saveHomeFeatures() {
     if (isSavingFeatures) {
-      return;
+      return false;
     }
 
     const validation = getHomeFeaturesValidation(features);
 
     if (!validation.isValid) {
-      showNotice("error", validation.message);
-      return;
+      failGroup("features", validation.message);
+      return false;
     }
 
     const previousPersistedFeatures = persistedFeatures;
@@ -849,34 +722,31 @@ export function AssetsManager({
         headers: { "Content-Type": "application/json" },
         method: "PUT",
       });
-      const json = await parseJson<
-        AdminHomeFeaturesSnapshot & { message?: string }
-      >(response);
+      const json = await parseJson<AdminHomeFeaturesSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(
-          json?.message ?? "Não foi possível salvar os benefícios da Home.",
-        );
+        throw new Error(json?.message ?? "Não foi possível salvar os benefícios da Home.");
       }
 
       const confirmedItems =
-        json.items.length === FEATURES_BAR_ITEMS.length
-          ? json.items
-          : FEATURES_BAR_ITEMS;
+        json.items.length === FEATURES_BAR_ITEMS.length ? json.items : FEATURES_BAR_ITEMS;
       setFeatures(confirmedItems);
       setPersistedFeatures(confirmedItems);
       temporaryMedia.commit(confirmedItems.map((item) => item.iconId));
       setFeatureIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Benefícios comerciais atualizados.");
+      confirmSave(
+        "features",
+        "Benefícios atualizados",
+        "A faixa abaixo do Hero já mostra os textos novos.",
+      );
+      return true;
     } catch (error) {
       setFeatures(previousPersistedFeatures);
-      showNotice(
-        "error",
-        messageFromError(
-          error,
-          "Não foi possível salvar os benefícios da Home.",
-        ),
+      failGroup(
+        "features",
+        messageFromError(error, "Não foi possível salvar os benefícios da Home."),
       );
+      return false;
     } finally {
       setIsSavingFeatures(false);
       temporaryMedia.endSave();
@@ -886,546 +756,219 @@ export function AssetsManager({
   async function restoreLogo(key: SiteLogoKey) {
     const previousId = logos[key].imageId;
     setRestoringLogoKey(key);
+    setGroupNotice("logos", null);
 
     try {
-      const response = await fetch(
-        `${LOGOS_API}?key=${encodeURIComponent(key)}`,
-        {
-          method: "DELETE",
-        },
-      );
-      const json = await parseJson<
-        AdminSiteLogosSnapshot & { message?: string }
-      >(response);
+      const response = await fetch(`${LOGOS_API}?key=${encodeURIComponent(key)}`, {
+        method: "DELETE",
+      });
+      const json = await parseJson<AdminSiteLogosSnapshot & { message?: string }>(response);
 
       if (!response.ok || !json) {
-        throw new Error(
-          json?.message ?? "Não foi possível restaurar a logo padrão.",
-        );
+        throw new Error(json?.message ?? "Não foi possível restaurar a logo padrão.");
       }
 
       setLogos(json.logos);
+      setPersistedLogos(json.logos);
       if (temporaryMedia.isTracked(previousId)) {
         void temporaryMedia.discard([previousId]).catch(() => undefined);
       }
       setLogoIssues(Array.isArray(json.issues) ? json.issues : []);
-      showNotice("success", "Logo padrão restaurada.");
+      confirmSave("logos", "Logo padrão restaurada", "A área voltou a usar a logo do projeto.");
     } catch (error) {
-      showNotice(
-        "error",
-        messageFromError(error, "Não foi possível restaurar a logo padrão."),
-      );
+      failGroup("logos", messageFromError(error, "Não foi possível restaurar a logo padrão."));
     } finally {
       setRestoringLogoKey(null);
     }
   }
 
+  const page = assetsPageDefinition(activePage);
+  const produtosFields = siteImageFieldsFor("produtos");
+  const sobreFields = siteImageFieldsFor("sobre");
+  const revendedorFields = siteImageFieldsFor("revendedor");
+  const activeImageFields = siteImageFieldsFor(activePage);
+
+  function imagesAttention(fields: typeof produtosFields) {
+    return countAttention(
+      fields.map((field) => imageAssetStatus(siteImages[field.key], field.key)),
+    );
+  }
+
+  function imagesDirty(fields: typeof produtosFields) {
+    return fields.some(
+      (field) => !isSameAsset(siteImages[field.key], persistedSiteImages[field.key]),
+    );
+  }
+
+  const summaries: Record<AssetsPageKey, AssetsPageSummary> = {
+    global: {
+      attention: countAttention(
+        SITE_LOGO_FIELDS.map((field) => logoStatus(field.key, logos[field.key])),
+      ),
+      total: SITE_LOGO_FIELDS.length,
+    },
+    home: {
+      attention: countAttention([
+        ...heroBanners.map(heroBannerStatus),
+        ...promoMarquee.map(marqueeMessageStatus),
+        ...features.map(featureItemStatus),
+        partnerBannerStatus(partnerBanner),
+      ]),
+      total: heroBanners.length + promoMarquee.length + features.length + 1,
+    },
+    produtos: { attention: imagesAttention(produtosFields), total: produtosFields.length },
+    revendedor: {
+      attention: imagesAttention(revendedorFields),
+      total: revendedorFields.length + 1,
+    },
+    sobre: { attention: imagesAttention(sobreFields), total: sobreFields.length },
+  };
+
+  const unsavedPages = [
+    !isSameAsset(logos, persistedLogos) ? "Global" : null,
+    !isSameAsset(heroBanners, persistedHeroBanners) ||
+    !isSameAsset(promoMarquee, persistedPromoMarquee) ||
+    !isSameAsset(features, persistedFeatures) ||
+    !isSameAsset(partnerBanner, persistedPartnerBanner)
+      ? "Home"
+      : null,
+    imagesDirty(produtosFields) ? "Produtos" : null,
+    imagesDirty(sobreFields) ? "Sobre" : null,
+    imagesDirty(revendedorFields) ? "Revendedor" : null,
+  ].filter((label): label is string => label !== null);
+
   return (
     <div className="space-y-5">
-      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/50">
-            <span>Papelito</span>
-            <span aria-hidden>·</span>
-            <span>Admin</span>
-            <span aria-hidden>·</span>
-            <span className="text-[#1a1a1a]">Assets</span>
-          </p>
-          <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-[#1a1a1a] md:text-[2rem]">
-            Assets das páginas
-          </h2>
-          <p className={`mt-2 max-w-3xl ${MUTED_TEXT_CLASS}`}>
-            Configure as logos do site e as imagens públicas usadas na Hero
-            Section, página de produtos, página Sobre, PDV Perfeito e página de
-            revendedores. Abra uma seção para editar seus assets; nenhuma seção
-            pode ser salva sem imagem.
-          </p>
-        </div>
-      </section>
-
-      {notice ? (
-        <div
-          className={
-            notice.tone === "success" ? ALERT_SUCCESS_CLASS : ALERT_ERROR_CLASS
-          }
-          role="status"
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <SectionHeading description={page.description} title={`Assets · ${page.label}`} />
+        <a
+          className={SECONDARY_ACTION_CLASS}
+          href={page.publicHref}
+          rel="noopener noreferrer"
+          target="_blank"
         >
-          {notice.tone === "success" ? "✓" : "⚠"} {notice.message}
-        </div>
+          <ExternalLink aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          {page.publicLabel}
+        </a>
+      </div>
+
+      <AssetsPageTabs activePage={activePage} onSelect={selectPage} summaries={summaries} />
+
+      {unsavedPages.length > 0 ? (
+        <InlineAlert icon={Pencil}>
+          Alterações ainda não publicadas em {unsavedPages.join(", ")}. Use o botão de salvar do
+          bloco correspondente.
+        </InlineAlert>
       ) : null}
 
-      <LogosSection
-        isRestoring={restoringLogoKey}
-        isSaving={isSavingLogos}
-        issues={logoIssues}
-        logos={logos}
-        onAltChange={(key, alt) => updateLogo(key, { alt })}
-        onFileSelect={handleLogoUpload}
-        onRestore={restoreLogo}
-        onSave={saveLogos}
-        uploadingKey={uploadingKey}
-      />
+      <div
+        aria-labelledby={assetsTabId(activePage)}
+        className="space-y-5"
+        id={assetsPanelId(activePage)}
+        role="tabpanel"
+      >
+        {activePage === "global" ? (
+          <LogosGroup
+            isRestoring={restoringLogoKey}
+            isSaving={isSavingLogos}
+            issues={logoIssues}
+            logos={logos}
+            notice={notices.logos}
+            onAltChange={(key, alt) => updateLogo(key, { alt })}
+            onFileSelect={handleLogoUpload}
+            onRestore={restoreLogo}
+            onSave={saveLogos}
+            persistedLogos={persistedLogos}
+            uploadingKey={uploadingKey}
+          />
+        ) : null}
 
-      <PromoMarqueeSection
-        featureItems={features}
-        featureIssues={featureIssues}
-        richTextContext={richTextContext}
-        featureUploadingId={
-          uploadingKey?.startsWith("feature:")
-            ? uploadingKey.slice("feature:".length)
-            : null
-        }
-        isSaving={isSavingPromoMarquee}
-        isSavingFeatures={isSavingFeatures}
-        issues={promoMarqueeIssues}
-        messages={promoMarquee}
-        onAdd={addPromoMarqueeItem}
-        onChange={updatePromoMarqueeItem}
-        onFeatureChange={updateFeatureItem}
-        onFeatureSave={saveHomeFeatures}
-        onFeatureUploadIcon={handleFeatureIconUpload}
-        onMove={movePromoMarqueeItem}
-        onRemove={setMarqueeItemToRemove}
-        onSave={savePromoMarquee}
-      />
-
-      <CollapsiblePanel
-        actions={
+        {activePage === "home" ? (
           <>
-            <button
-              className={SECONDARY_BUTTON_CLASS}
-              onClick={addHeroBanner}
-              type="button"
-            >
-              <ImagePlus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-              Nova opção
-            </button>
-            <button
-              className={BUTTON_CLASS}
-              disabled={isSavingHero}
-              onClick={saveHeroBanners}
-              type="button"
-            >
-              {isSavingHero ? (
-                <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-              )}
-              Salvar Hero Section
-            </button>
-          </>
-        }
-        description="Aparece no topo da home. Com uma opção vira banner fixo; com mais de uma vira carrossel. Sempre deve existir pelo menos uma opção."
-        eyebrow="home"
-        hint="Formato ideal: desktop 16:5 e mobile 1:2."
-        onOpenChange={setIsHeroPanelOpen}
-        open={isHeroPanelOpen}
-        title="Hero Section"
-      >
-        {heroIssues.length > 0 ? <IssuesList issues={heroIssues} /> : null}
-
-        <div className="space-y-4">
-          {heroBanners.map((banner, index) => {
-            const isOpen = expandedHeroBannerIds.includes(banner.id);
-            const regionId = `hero-option-${banner.id}`;
-
-            return (
-              <article
-                className={CARD_CLASS}
-                id={`hero-option-card-${banner.id}`}
-                key={banner.id}
-              >
-                <header
-                  className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${CARD_HEADER_CLASS}`}
-                >
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
-                      Opção {index + 1}
-                    </p>
-                    <p className={`mt-1.5 ${MUTED_TEXT_CLASS}`}>
-                      Esta imagem aparece na área principal da home. Ordem{" "}
-                      {banner.order}.
-                    </p>
-                  </div>
-                  <button
-                    aria-controls={regionId}
-                    aria-expanded={isOpen}
-                    aria-label={
-                      isOpen
-                        ? `Recolher opção ${index + 1}`
-                        : `Expandir opção ${index + 1}`
-                    }
-                    className={ICON_BUTTON_CLASS}
-                    onClick={() =>
-                      setExpandedHeroBannerIds((current) =>
-                        current.includes(banner.id)
-                          ? current.filter((id) => id !== banner.id)
-                          : [...current, banner.id],
-                      )
-                    }
-                    type="button"
-                  >
-                    <ChevronDown
-                      aria-hidden
-                      className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                </header>
-
-                <div
-                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-                    isOpen
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div
-                    aria-label={`Editor da opção ${index + 1}`}
-                    className="overflow-hidden"
-                    id={regionId}
-                    inert={!isOpen}
-                    role="region"
-                  >
-                    <div className="p-4">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          className={COMPACT_BUTTON_CLASS}
-                          disabled={index === 0}
-                          onClick={() => moveHeroBanner(banner.id, -1)}
-                          type="button"
-                        >
-                          <ArrowUp
-                            aria-hidden
-                            className="h-3.5 w-3.5"
-                            strokeWidth={2.4}
-                          />
-                          Subir
-                        </button>
-                        <button
-                          className={COMPACT_BUTTON_CLASS}
-                          disabled={index === heroBanners.length - 1}
-                          onClick={() => moveHeroBanner(banner.id, 1)}
-                          type="button"
-                        >
-                          <ArrowDown
-                            aria-hidden
-                            className="h-3.5 w-3.5"
-                            strokeWidth={2.4}
-                          />
-                          Descer
-                        </button>
-                        <button
-                          className={DESTRUCTIVE_BUTTON_CLASS}
-                          disabled={heroBanners.length <= 1}
-                          onClick={() => removeHeroBanner(banner.id)}
-                          type="button"
-                        >
-                          <Trash2
-                            aria-hidden
-                            className="h-3.5 w-3.5"
-                            strokeWidth={2.4}
-                          />
-                          Remover
-                        </button>
-                      </div>
-
-                      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                        <UploadCard
-                          formatHint="Desktop: banner largo 16:5."
-                          imageUrl={banner.desktopImageUrl}
-                          isUploading={
-                            uploadingKey === `hero:${banner.id}:desktop`
-                          }
-                          label="Imagem desktop"
-                          onFileSelect={(file) =>
-                            handleHeroUpload(banner.id, "desktop", file)
-                          }
-                        />
-                        <UploadCard
-                          formatHint="Mobile: arte vertical 1:2."
-                          imageUrl={banner.mobileImageUrl}
-                          isUploading={
-                            uploadingKey === `hero:${banner.id}:mobile`
-                          }
-                          label="Imagem mobile"
-                          onFileSelect={(file) =>
-                            handleHeroUpload(banner.id, "mobile", file)
-                          }
-                          previewClass="object-contain object-top"
-                        />
-                      </div>
-
-                      <div className="mt-4">
-                        <div>
-                          <label
-                            className={LABEL_CLASS}
-                            htmlFor={`hero-alt-${banner.id}`}
-                          >
-                            Texto alternativo
-                          </label>
-                          <input
-                            className={INPUT_CLASS}
-                            id={`hero-alt-${banner.id}`}
-                            onChange={(event) =>
-                              updateHeroBanner(banner.id, {
-                                alt: event.target.value,
-                              })
-                            }
-                            placeholder="Ex: Banner de piteiras Papelito"
-                            type="text"
-                            value={banner.alt}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </CollapsiblePanel>
-
-      <CollapsiblePanel
-        actions={
-          <button
-            className={BUTTON_CLASS}
-            disabled={isSavingPartner}
-            onClick={savePartnerBanner}
-            type="button"
-          >
-            {isSavingPartner ? (
-              <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-            )}
-            Salvar PDV Perfeito
-          </button>
-        }
-        description="Imagem lateral do bloco PDV Perfeito na home, ao lado do convite para virar parceiro. Enquanto nenhuma imagem for enviada, a home exibe a imagem padrão."
-        eyebrow="home"
-        title="Imagem do PDV Perfeito"
-      >
-        {partnerIssues.length > 0 ? (
-          <IssuesList issues={partnerIssues} />
-        ) : null}
-
-        <article className={CARD_CLASS}>
-          <header
-            className={`flex items-center justify-between gap-3 ${CARD_HEADER_CLASS}`}
-          >
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/56">
-                Bloco parceiro
-              </p>
-              <p className="mt-1.5 truncate text-sm font-black uppercase tracking-tight text-[#1a1a1a]">
-                {partnerBanner.tag || "Sem texto pequeno"}
-              </p>
-            </div>
-            <button
-              aria-controls="partner-banner-editor"
-              aria-expanded={isPartnerEditorOpen}
-              aria-label={
-                isPartnerEditorOpen
-                  ? "Recolher bloco parceiro"
-                  : "Expandir bloco parceiro"
-              }
-              className={ICON_BUTTON_CLASS}
-              onClick={() => setIsPartnerEditorOpen((current) => !current)}
-              type="button"
-            >
-              <ChevronDown
-                aria-hidden
-                className={`h-4 w-4 transition-transform ${isPartnerEditorOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-          </header>
-
-          <div
-            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-              isPartnerEditorOpen
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
-            }`}
-          >
-            <div
-              aria-label="Editor da Imagem do PDV Perfeito"
-              className="overflow-hidden"
-              id="partner-banner-editor"
-              inert={!isPartnerEditorOpen}
-              role="region"
-            >
-              <div className="p-4">
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <UploadCard
-                    formatHint="Desktop: foto horizontal, aproximadamente 5:3."
-                    imageUrl={partnerBanner.desktopImageUrl}
-                    isUploading={uploadingKey === "partner:desktop"}
-                    label="Imagem desktop"
-                    onFileSelect={(file) =>
-                      handlePartnerUpload("desktop", file)
-                    }
-                  />
-                  <UploadCard
-                    formatHint="Mobile: foto vertical 2:3."
-                    imageUrl={partnerBanner.mobileImageUrl}
-                    isUploading={uploadingKey === "partner:mobile"}
-                    label="Imagem mobile"
-                    onFileSelect={(file) => handlePartnerUpload("mobile", file)}
-                  />
-                </div>
-
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <label className={LABEL_CLASS} htmlFor="partner-alt">
-                      Texto alternativo
-                    </label>
-                    <input
-                      className={INPUT_CLASS}
-                      id="partner-alt"
-                      onChange={(event) =>
-                        setPartnerBanner((current) => ({
-                          ...current,
-                          alt: event.target.value,
-                        }))
-                      }
-                      placeholder="Parceiros no espaco PDV Perfeito"
-                      type="text"
-                      value={partnerBanner.alt}
-                    />
-                  </div>
-                  <div>
-                    <label className={LABEL_CLASS} htmlFor="partner-href">
-                      Link interno do botão
-                    </label>
-                    <input
-                      className={INPUT_CLASS}
-                      id="partner-href"
-                      onChange={(event) =>
-                        setPartnerBanner((current) => ({
-                          ...current,
-                          href: event.target.value,
-                        }))
-                      }
-                      placeholder="/revendedor"
-                      type="text"
-                      value={partnerBanner.href}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <label className={LABEL_CLASS} htmlFor="partner-tag">
-                      Texto pequeno
-                    </label>
-                    <input
-                      className={INPUT_CLASS}
-                      id="partner-tag"
-                      onChange={(event) =>
-                        setPartnerBanner((current) => ({
-                          ...current,
-                          tag: event.target.value,
-                        }))
-                      }
-                      placeholder="Seja um parceiro"
-                      type="text"
-                      value={partnerBanner.tag}
-                    />
-                  </div>
-                  <div>
-                    <label className={LABEL_CLASS} htmlFor="partner-cta">
-                      Texto do botão
-                    </label>
-                    <input
-                      className={INPUT_CLASS}
-                      id="partner-cta"
-                      onChange={(event) =>
-                        setPartnerBanner((current) => ({
-                          ...current,
-                          ctaLabel: event.target.value,
-                        }))
-                      }
-                      placeholder="Quero ser um parceiro"
-                      type="text"
-                      value={partnerBanner.ctaLabel}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className={LABEL_CLASS} htmlFor="partner-description">
-                    Descrição
-                  </label>
-                  <textarea
-                    className={TEXTAREA_CLASS}
-                    id="partner-description"
-                    onChange={(event) =>
-                      setPartnerBanner((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
-                    }
-                    placeholder="Copy principal do bloco PDV Perfeito."
-                    value={partnerBanner.description}
-                  />
-                </div>
-
-                <CatalogPdfManager />
-              </div>
-            </div>
-          </div>
-        </article>
-      </CollapsiblePanel>
-
-      <CollapsiblePanel
-        actions={
-          <button
-            className={BUTTON_CLASS}
-            disabled={isSavingSiteImages}
-            onClick={saveSiteImages}
-            type="button"
-          >
-            {isSavingSiteImages ? (
-              <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-            )}
-            Salvar imagens
-          </button>
-        }
-        description="Cada imagem abaixo corresponde a uma seção pública específica. Todas já iniciam com o asset atual do site e não podem ser salvas vazias."
-        eyebrow="produtos / sobre / revendedor"
-        title="Imagens das paginas"
-      >
-        {siteImageIssues.length > 0 ? (
-          <IssuesList issues={siteImageIssues} />
-        ) : null}
-
-        <div className="grid gap-4 xl:grid-cols-2">
-          {SITE_IMAGE_FIELDS.map((field) => (
-            <ImageAssetCard
-              asset={siteImages[field.key]}
-              config={field}
-              isUploading={uploadingKey === `site:${field.key}`}
-              key={field.key}
-              onAltChange={(alt) => updateSiteImage(field.key, { alt })}
-              onFileSelect={(file) => handleSiteImageUpload(field.key, file)}
+            <HeroGroup
+              banners={heroBanners}
+              isSaving={isSavingHero}
+              issues={heroIssues}
+              notice={notices.hero}
+              onAdd={addHeroBanner}
+              onChange={updateHeroBanner}
+              onFileSelect={handleHeroUpload}
+              onMove={moveHeroBanner}
+              onRemove={removeHeroBanner}
+              onSave={saveHeroBanners}
+              persistedBanners={persistedHeroBanners}
+              uploadingKey={uploadingKey}
             />
-          ))}
-        </div>
-      </CollapsiblePanel>
 
-      <ConfirmModal
-        confirmLabel="Remover mensagem"
-        description="A mensagem sai da faixa promocional da home assim que você salvar as alterações."
-        open={marqueeItemToRemove !== null}
-        title="Remover mensagem da faixa"
-        tone="danger"
-        onClose={() => setMarqueeItemToRemove(null)}
-        onConfirm={() => {
-          if (marqueeItemToRemove) removePromoMarqueeItem(marqueeItemToRemove);
-        }}
+            <MarqueeGroup
+              isSaving={isSavingPromoMarquee}
+              issues={promoMarqueeIssues}
+              messages={promoMarquee}
+              notice={notices.marquee}
+              onAdd={addPromoMarqueeItem}
+              onChange={updatePromoMarqueeItem}
+              onMove={movePromoMarqueeItem}
+              onRemove={removePromoMarqueeItem}
+              onSave={savePromoMarquee}
+              persistedMessages={persistedPromoMarquee}
+              richTextContext={richTextContext}
+            />
+
+            <FeaturesGroup
+              isSaving={isSavingFeatures}
+              issues={featureIssues}
+              items={features}
+              notice={notices.features}
+              onChange={updateFeatureItem}
+              onSave={saveHomeFeatures}
+              onUploadIcon={handleFeatureIconUpload}
+              persistedItems={persistedFeatures}
+              richTextContext={richTextContext}
+              uploadingId={
+                uploadingKey?.startsWith("feature:")
+                  ? uploadingKey.slice("feature:".length)
+                  : null
+              }
+            />
+
+            <PartnerGroup
+              banner={partnerBanner}
+              isSaving={isSavingPartner}
+              issues={partnerIssues}
+              notice={notices.partner}
+              onChange={(patch) => setPartnerBanner((current) => ({ ...current, ...patch }))}
+              onFileSelect={handlePartnerUpload}
+              onSave={savePartnerBanner}
+              persistedBanner={persistedPartnerBanner}
+              uploadingKey={uploadingKey}
+            />
+          </>
+        ) : null}
+
+        {activeImageFields.length > 0 ? (
+          <SiteImagesGroup
+            eyebrow={`Painel admin · Assets · ${page.label}`}
+            fields={activeImageFields}
+            images={siteImages}
+            isSaving={isSavingSiteImages}
+            issues={siteImageIssues}
+            notice={notices.siteImages}
+            onAltChange={(key, alt) => updateSiteImage(key, { alt })}
+            onFileSelect={handleSiteImageUpload}
+            onSave={saveSiteImages}
+            persistedImages={persistedSiteImages}
+            uploadingKey={uploadingKey}
+          />
+        ) : null}
+
+        {activePage === "revendedor" ? <CatalogGroup /> : null}
+      </div>
+
+      <AdminToast
+        description={toast?.description ?? ""}
+        onClose={dismissToast}
+        title={toast?.title ?? ""}
+        visible={isVisible}
       />
     </div>
   );

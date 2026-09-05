@@ -4,6 +4,7 @@ import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/components/layout/promo-mar
 import { normalizeRichTextDocument } from "@/features/rich-text";
 import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
 import { wpRest } from "@/lib/server/wp-rest";
+import { SITE_IMAGE_DEFAULTS, SITE_IMAGE_KEYS } from "@/lib/site-images";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   HeroBanner,
@@ -107,40 +108,6 @@ function mapHomeFeatureItem(
   };
 }
 
-const SITE_IMAGE_DEFAULTS: SiteImageAssets = {
-  productHero: {
-    imageId: 0,
-    imageUrl: "/images/Rectangle21.png",
-    alt: "Produtos Papelito - Made in Brazil.",
-  },
-  aboutHero: {
-    imageId: 0,
-    imageUrl: "/images/sobre-page/sobre-banner.png",
-    alt: "Mulher sorrindo e segurando papéis Papelito diante de um fundo amarelo.",
-  },
-  aboutStory: {
-    imageId: 0,
-    imageUrl: "/images/sobre-page/fabrica-papelito.jpg",
-    alt: "Sócios da Papelito em pé diante da linha de produção da fábrica.",
-  },
-  revendedorBusinessMain: {
-    imageId: 0,
-    imageUrl: "/images/revendedor/business-main.jpg",
-    alt: "Parceira Papelito sorrindo em um ponto de venda.",
-  },
-  revendedorBusinessSecondary: {
-    imageId: 0,
-    imageUrl: "/images/revendedor/business-secondary.jpg",
-    alt: "Equipe parceira Papelito em loja.",
-  },
-  revendedorBusinessIllustration: {
-    imageId: 0,
-    imageUrl: "/images/revendedor/business-card-vector.svg",
-    alt: "Ilustração de atendimento a negócios revendedores.",
-  },
-};
-
-const SITE_IMAGE_KEYS = Object.keys(SITE_IMAGE_DEFAULTS) as SiteImageAssetKey[];
 
 function mapHeroBanner(banner: Partial<HeroBanner> | undefined, index: number): HeroBanner | null {
   if (!banner) {

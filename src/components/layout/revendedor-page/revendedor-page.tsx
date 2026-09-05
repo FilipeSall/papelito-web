@@ -35,7 +35,6 @@ export function RevendedorPage({
       />
       <RevendedorBenefitsSection />
       <RevendedorBusinessTypesSection
-        illustrationImage={images?.revendedorBusinessIllustration}
         mainImage={images?.revendedorBusinessMain}
         secondaryImage={images?.revendedorBusinessSecondary}
       />

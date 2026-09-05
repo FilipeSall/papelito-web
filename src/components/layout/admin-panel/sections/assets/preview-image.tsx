@@ -14,12 +14,13 @@ export function PreviewImage({
   tone?: "dark" | "light";
 }>) {
   const isDark = tone === "dark";
+  const borderColor = isDark ? "border-white/25" : "border-[#1a1a1a]/25";
 
   return (
     <div
-      className={`mt-4 overflow-hidden rounded-none border-2 border-dashed ${
-        isDark ? "border-white/25" : "border-[#1a1a1a]/25"
-      } ${frameClass ?? "bg-white"}`}
+      className={`mt-4 overflow-hidden rounded-none border-2 ${
+        imageUrl ? "" : "border-dashed"
+      } ${borderColor} ${frameClass ?? "bg-white"}`}
     >
       {imageUrl ? (
         <div className="relative h-48 w-full">

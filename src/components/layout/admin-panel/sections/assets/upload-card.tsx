@@ -1,6 +1,7 @@
 "use client";
 
-import { HINT_CLASS, SUBPANEL_CLASS } from "./field-classes";
+import { HARD_BOX_CLASS } from "./assets-classes";
+import { HINT_CLASS } from "./field-classes";
 import { PreviewImage } from "./preview-image";
 import { UploadButton } from "./upload-button";
 
@@ -20,7 +21,7 @@ export function UploadCard({
   previewClass?: string;
 }>) {
   return (
-    <div className={SUBPANEL_CLASS}>
+    <div className={HARD_BOX_CLASS}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">

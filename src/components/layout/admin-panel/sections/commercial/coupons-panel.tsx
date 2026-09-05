@@ -29,6 +29,7 @@ import {
   SectionHeading,
   StatusChip,
   type StatusShape,
+  useAdminToast,
 } from "../../primitives";
 import { Pagination } from "../accounts/pagination";
 
@@ -40,7 +41,6 @@ import {
 import { CouponDeleteModal } from "./coupon-delete-modal";
 import { CouponFormModal } from "./coupon-form-modal";
 import { CouponsFilterBar } from "./coupons-filter-bar";
-import { useAdminToast } from "./use-admin-toast";
 
 type CouponsPanelProps = {
   filters: CouponsPageFilters;

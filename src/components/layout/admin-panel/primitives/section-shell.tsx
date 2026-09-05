@@ -38,20 +38,33 @@ export function SectionHeading({
  * dezenas de sombras concorrendo.
  */
 export function ResultFrame({
+  action,
   children,
   footer,
+  id,
+  notice,
   summary,
 }: {
+  action?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  id?: string;
+  notice?: React.ReactNode;
   summary: string;
 }) {
   return (
-    <section className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
+    <section
+      className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
+      id={id}
+    >
       <div aria-hidden className="h-2 w-full bg-brand-yellow" />
-      <p className="border-b-2 border-[#1a1a1a] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/55">
-        {summary}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#1a1a1a] px-5 py-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#231f20]/55">
+          {summary}
+        </p>
+        {action ? <div className="flex flex-wrap items-center gap-2">{action}</div> : null}
+      </div>
+      {notice ? <div className="border-b-2 border-[#1a1a1a]/10 px-5 py-3">{notice}</div> : null}
       <ul className="divide-y-2 divide-[#1a1a1a]/10">{children}</ul>
       {footer ? (
         <div className="border-t-2 border-[#1a1a1a] px-5 py-3">{footer}</div>

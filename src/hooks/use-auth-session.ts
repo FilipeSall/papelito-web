@@ -9,12 +9,14 @@ function normalizeRole(role: unknown) {
 
 export function useAuthSession() {
   const { data: session, status } = useSession();
-  const authError = typeof session?.authError === "string" ? session.authError : undefined;
+  const authError =
+    typeof session?.authError === "string" ? session.authError : undefined;
   const authIdentityError = session?.authIdentityError === true;
   const role = useMemo(
     () => (authIdentityError ? undefined : normalizeRole(session?.role)),
     [authIdentityError, session?.role],
   );
+  const identityIsValid = !authIdentityError;
   const hasAccessToken =
     status === "authenticated" &&
     typeof session?.accessToken === "string" &&
@@ -34,16 +36,20 @@ export function useAuthSession() {
     isLoading: status === "loading",
     isRoleLoading: hasAccessToken && role === undefined && !authIdentityError,
     requiresReauth: status === "authenticated" && !hasAccessToken,
-		isAdministrator: session?.b2b?.isInternalAdmin === true || role === "administrator",
-		isSeller: session?.b2b?.isVendor === true || role === "seller",
-		b2b: session?.b2b,
+    isAdministrator:
+      identityIsValid &&
+      (session?.b2b?.isInternalAdmin === true || role === "administrator"),
+    isSeller:
+      identityIsValid && (session?.b2b?.isVendor === true || role === "seller"),
+    b2b: session?.b2b,
     isLegacyMigrationVisible:
       session?.b2b?.isLegacyCohort === true &&
       session.b2b.isB2bCohort !== true &&
       session.b2b.legacyMigrationStatus !== "migrated" &&
       session.b2b.legacyMigrationStatus !== "exempt",
-		isB2bPurchaseBlocked:
-			session?.b2b?.hasCustomerContext === true && session.b2b.canPurchase !== true,
-		isNotBuyer: session?.b2b?.purchaseMode === "not_buyer",
+    isB2bPurchaseBlocked:
+      session?.b2b?.hasCustomerContext === true &&
+      session.b2b.canPurchase !== true,
+    isNotBuyer: session?.b2b?.purchaseMode === "not_buyer",
   };
 }

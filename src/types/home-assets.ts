@@ -23,8 +23,7 @@ export type SiteImageAssetKey =
   | "aboutHero"
   | "aboutStory"
   | "revendedorBusinessMain"
-  | "revendedorBusinessSecondary"
-  | "revendedorBusinessIllustration";
+  | "revendedorBusinessSecondary";
 
 export type SiteImageAssets = Record<SiteImageAssetKey, ManagedImageAsset>;
 
