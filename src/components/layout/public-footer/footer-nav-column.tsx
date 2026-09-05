@@ -1,4 +1,4 @@
-import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
+import { RevendedorFormLink } from "@/components/ui/revendedor-form-link";
 
 interface FooterNavLink {
   /**

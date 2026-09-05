@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRightIcon } from "@/components/ui/icons";
-import { RevendedorFormLink } from "../revendedor-form-link";
+import { RevendedorFormLink } from "@/components/ui/revendedor-form-link";
 
 type RevendedorCtaButtonProps = {
   children: React.ReactNode;

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { BrandArrowIcon } from "@/components/ui/icons";
-import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
+import { RevendedorFormLink } from "@/components/ui/revendedor-form-link";
 
 interface PromoCardProps {
   variant: "dark" | "yellow";

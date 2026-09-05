@@ -72,6 +72,19 @@ describe("proxy", () => {
     expect(response.status).toBe(200);
   });
 
+  it.each(["customer", "seller", "administrator"])(
+    "does not redirect %s away from the public revendedor route",
+    async (role) => {
+      const response = (await proxy(
+        buildRequest("/revendedor", { accessToken: "access-token", role, b2b: { onboardingStatus: "complete" } }) as never,
+        {} as never,
+      )) as Response;
+
+      expect(response.headers.get("location")).toBeNull();
+      expect(response.status).toBe(200);
+    },
+  );
+
   it("redirects non-admin users away from admin routes", async () => {
     const response = (await proxy(
       buildRequest("/admin/cupons", "customer") as never,

@@ -1,5 +1,5 @@
 import { ArrowRightIcon } from "@/components/ui/icons";
-import { RevendedorFormLink } from "@/components/layout/revendedor-page/revendedor-form-link";
+import { RevendedorFormLink } from "@/components/ui/revendedor-form-link";
 
 type AboutCtaLinkProps = {
   href: string;
