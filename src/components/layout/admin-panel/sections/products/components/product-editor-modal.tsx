@@ -205,7 +205,7 @@ export function ProductEditorModal({
               >
                 <TaxonomyPicker
                   categories={taxonomy.categories}
-                  collections={taxonomy.collections}
+                  collections={taxonomy.collectionsCatalog}
                   isLoading={isTaxonomyLoading}
                   onCategoryChange={setTaxonomyCategory}
                   onToggleCollection={(slug) => toggleDraftTerm("taxonomyCollections", slug)}

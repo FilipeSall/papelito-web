@@ -4,9 +4,11 @@ import { getAdminCollectionsConfig } from "@/features/catalog/services/get-colle
 import { getAdminCouponsSnapshot } from "@/features/coupons/services/get-admin-coupons";
 import { getAdminPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import { getAdminFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
+import { getAdminCollections } from "@/lib/server/admin-taxonomy";
 import { authOptions } from "@/lib/auth";
 
 import { CollectionsPanel } from "./collections-panel";
+import { CuratedCollectionsPanel } from "./curated-collections-panel";
 import {
   parseCommercialTab,
   parseCouponsPageFilters,
@@ -62,10 +64,29 @@ async function FreeShippingSegment({ accessToken }: { accessToken: string | unde
   return <FreeShippingPanel initialIssues={issues} initialThreshold={threshold} />;
 }
 
+/**
+ * Duas naturezas diferentes na mesma aba, e a separação é do domínio: coleção
+ * manual é curadoria persistida em `wp_papelito_collections`; recém-chegados e
+ * promoções são calculadas por regra e só têm dimensionamento.
+ *
+ * As duas leituras são paralelas de propósito — encadeá-las somaria as latências
+ * de duas chamadas independentes ao WordPress.
+ */
 async function CollectionsSegment({ accessToken }: { accessToken: string | undefined }) {
-  const { config, issues } = await getAdminCollectionsConfig(accessToken);
+  const [curated, automatic] = await Promise.all([
+    getAdminCollections(accessToken),
+    getAdminCollectionsConfig(accessToken),
+  ]);
 
-  return <CollectionsPanel initialConfig={config} initialIssues={issues} />;
+  return (
+    <div className="space-y-8">
+      <CuratedCollectionsPanel collections={curated.collections} issues={curated.issues} />
+
+      <div aria-hidden className="border-t-2 border-dashed border-[#1a1a1a]/20" />
+
+      <CollectionsPanel initialConfig={automatic.config} initialIssues={automatic.issues} />
+    </div>
+  );
 }
 
 async function InstallmentsSegment({ accessToken }: { accessToken: string | undefined }) {

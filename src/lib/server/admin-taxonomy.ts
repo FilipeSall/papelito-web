@@ -31,9 +31,35 @@ export type AdminCategory = {
   subcategories: AdminSubcategory[];
 };
 
+/**
+ * Coleção manual do catálogo Papelito.
+ *
+ * Não é `product_tag`: a taxonomia do WooCommerce continua sendo palavra-chave
+ * de busca. O vínculo com o produto vive em `wp_papelito_product_collection`.
+ */
+export type AdminCollection = {
+  archivedAt: string | null;
+  description: string;
+  id: number;
+  isActive: boolean;
+  name: string;
+  productCount: { published: number; total: number };
+  slug: string;
+  sortOrder: number;
+};
+
 export type AdminTaxonomySnapshot = {
   categories: AdminCategory[];
+  /** Slugs ativos, que é o que o editor de produto consome. */
   collections: string[];
+  /** Catálogo completo, com nome, status e contagem. */
+  collectionsCatalog: AdminCollection[];
+  issues: string[];
+  version: number;
+};
+
+export type AdminCollectionsSnapshot = {
+  collections: AdminCollection[];
   issues: string[];
   version: number;
 };
@@ -94,6 +120,7 @@ export async function getAdminTaxonomySnapshot(
   const result = await wpRest<{
     categories: AdminCategory[];
     collections: string[];
+    collectionsCatalog: AdminCollection[];
     version: number;
   }>("/papelito/v1/admin/categories", {
     headers: authHeaders(accessToken),
@@ -105,6 +132,7 @@ export async function getAdminTaxonomySnapshot(
     return {
       categories: [],
       collections: [],
+      collectionsCatalog: [],
       issues: [`[taxonomia] ${result.error.message}`],
       version: 0,
     };
@@ -112,6 +140,34 @@ export async function getAdminTaxonomySnapshot(
 
   return {
     categories: Array.isArray(result.data.categories) ? result.data.categories : [],
+    collections: Array.isArray(result.data.collections) ? result.data.collections : [],
+    collectionsCatalog: Array.isArray(result.data.collectionsCatalog)
+      ? result.data.collectionsCatalog
+      : [],
+    issues: [],
+    version: Number(result.data.version) || 0,
+  };
+}
+
+/**
+ * Catálogo de coleções manuais para a aba Comercial.
+ *
+ * Mesma disciplina da taxonomia: falha de origem vira `issues` na tela, nunca
+ * lista vazia silenciosa.
+ */
+export async function getAdminCollections(
+  accessToken?: string,
+): Promise<AdminCollectionsSnapshot> {
+  const result = await wpRest<{ collections: AdminCollection[]; version: number }>(
+    "/papelito/v1/admin/collections",
+    { headers: authHeaders(accessToken), tags: [ADMIN_TAXONOMY_TAG], revalidate: 0 },
+  );
+
+  if (!result.ok) {
+    return { collections: [], issues: [`[coleções] ${result.error.message}`], version: 0 };
+  }
+
+  return {
     collections: Array.isArray(result.data.collections) ? result.data.collections : [],
     issues: [],
     version: Number(result.data.version) || 0,
@@ -222,6 +278,22 @@ export function archiveCategory(accessToken: string | undefined, categoryId: num
   );
 }
 
+/**
+ * Exclusão permanente. `?force=true` é a convenção da REST do WordPress para
+ * separar arquivamento de destruição — o backend recusa se a categoria não
+ * estiver arquivada ou ainda tiver produto vinculado.
+ */
+export function deleteCategoryPermanently(
+  accessToken: string | undefined,
+  categoryId: number,
+) {
+  return taxonomyMutation<AdminTaxonomySnapshot>(
+    accessToken,
+    `/papelito/v1/admin/categories/${categoryId}?force=true`,
+    { method: "DELETE" },
+  );
+}
+
 export function restoreCategory(accessToken: string | undefined, categoryId: number) {
   return taxonomyMutation<AdminCategory>(
     accessToken,
@@ -234,6 +306,61 @@ export function reorderCategories(accessToken: string | undefined, ids: number[]
   return taxonomyMutation<{ categories: AdminCategory[] }>(
     accessToken,
     "/papelito/v1/admin/categories/reorder",
+    { json: { ids }, method: "PUT" },
+  );
+}
+
+export function createCollection(accessToken: string | undefined, json: unknown) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    "/papelito/v1/admin/collections",
+    { json, method: "POST" },
+  );
+}
+
+export function updateCollection(
+  accessToken: string | undefined,
+  collectionId: number,
+  json: unknown,
+) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    `/papelito/v1/admin/collections/${collectionId}`,
+    { json, method: "PUT" },
+  );
+}
+
+export function archiveCollection(accessToken: string | undefined, collectionId: number) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    `/papelito/v1/admin/collections/${collectionId}`,
+    { method: "DELETE" },
+  );
+}
+
+export function deleteCollectionPermanently(
+  accessToken: string | undefined,
+  collectionId: number,
+) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    `/papelito/v1/admin/collections/${collectionId}?force=true`,
+    { method: "DELETE" },
+  );
+}
+
+export function restoreCollection(accessToken: string | undefined, collectionId: number) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    `/papelito/v1/admin/collections/${collectionId}/restore`,
+    { method: "POST" },
+  );
+}
+
+export function reorderCollections(accessToken: string | undefined, ids: number[]) {
+  return taxonomyMutation<AdminCollectionsSnapshot>(
+    accessToken,
+    "/papelito/v1/admin/collections/reorder",
     { json: { ids }, method: "PUT" },
   );
 }

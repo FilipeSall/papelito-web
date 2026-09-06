@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Trash2, XCircle } from "lucide-react";
 
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import type { AdminCategory, AdminSubcategory, AdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
 import { messageFromError } from "@/utils/error-message";
 
@@ -36,6 +37,7 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
    * aparecer dentro dele, senão salvar parece não fazer nada.
    */
   const [modalError, setModalError] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<AdminCategory | null>(null);
 
   const categories = useMemo(
     () =>
@@ -289,23 +291,34 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
                       Editar
                     </button>
                     {isArchived ? (
-                      <button
-                        className="flex cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={isBusy}
-                        onClick={() =>
-                          void run(
-                            () =>
-                              fetch(`/api/admin/categories/${category.id}/restore`, {
-                                method: "POST",
-                              }),
-                            "Categoria restaurada.",
-                          )
-                        }
-                        type="button"
-                      >
-                        <RotateCcw aria-hidden className="h-4 w-4" />
-                        Restaurar
-                      </button>
+                      <>
+                        <button
+                          className="flex cursor-pointer items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={isBusy}
+                          onClick={() =>
+                            void run(
+                              () =>
+                                fetch(`/api/admin/categories/${category.id}/restore`, {
+                                  method: "POST",
+                                }),
+                              "Categoria restaurada.",
+                            )
+                          }
+                          type="button"
+                        >
+                          <RotateCcw aria-hidden className="h-4 w-4" />
+                          Restaurar
+                        </button>
+                        <button
+                          className="flex cursor-pointer items-center gap-2 border-2 border-[#c0392b] bg-[#c0392b] px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#991b1b] disabled:cursor-not-allowed disabled:opacity-45"
+                          disabled={isBusy}
+                          onClick={() => setPendingDelete(category)}
+                          type="button"
+                        >
+                          <XCircle aria-hidden className="h-4 w-4" />
+                          Excluir
+                        </button>
+                      </>
                     ) : (
                       <button
                         className="flex cursor-pointer items-center gap-2 border-2 border-[#c0392b] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#c0392b] transition hover:bg-[#c0392b] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -388,6 +401,32 @@ export function CategoriesManager({ snapshot }: Readonly<{ snapshot: AdminTaxono
           })}
         </ul>
       )}
+
+      <ConfirmModal
+        confirmLabel="Excluir para sempre"
+        description={
+          pendingDelete
+            ? `A categoria “${pendingDelete.name}”, suas ${pendingDelete.subcategories.length} subcategoria(s) e os vínculos serão apagados do banco. Não há como desfazer.`
+            : ""
+        }
+        isSubmitting={isBusy}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+
+          const target = pendingDelete;
+
+          void run(
+            () => fetch(`/api/admin/categories/${target.id}?force=true`, { method: "DELETE" }),
+            "Categoria excluída em definitivo.",
+          ).then((result) => {
+            if (result.ok) setPendingDelete(null);
+          });
+        }}
+        open={pendingDelete !== null}
+        title="Excluir categoria"
+        tone="danger"
+      />
 
       {categoryModal ? (
         <CategoryEditorModal

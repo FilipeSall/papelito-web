@@ -44,7 +44,7 @@ function snapshot(subcategories: AdminSubcategory[]): AdminTaxonomySnapshot {
     subcategories,
   };
 
-  return { categories: [category], collections: [], issues: [], version: 1 };
+  return { categories: [category], collections: [], collectionsCatalog: [], issues: [], version: 1 };
 }
 
 function modal() {

@@ -192,7 +192,7 @@ export function CollectionsPanel({
           </PrimaryButton>
         }
         description="Recorte das duas vitrines que a plataforma calcula sozinha. A pertinência é automática; aqui você governa quantos produtos entram."
-        title="Coleções"
+        title="Coleções automáticas"
       />
 
       <CollectionBlock

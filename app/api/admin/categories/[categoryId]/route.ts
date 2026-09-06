@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import {
   archiveCategory,
+  deleteCategoryPermanently,
   taxonomyErrorResponse,
   updateCategory,
 } from "@/lib/server/admin-taxonomy";
@@ -51,7 +52,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ categoryId: string }> },
 ) {
   const auth = await getAdminApiSession();
@@ -66,12 +67,25 @@ export async function DELETE(
     return NextResponse.json({ message: "Categoria inválida." }, { status: 422 });
   }
 
+  const isPermanent = new URL(request.url).searchParams.get("force") === "true";
+
   try {
+    if (isPermanent) {
+      const taxonomy = await deleteCategoryPermanently(auth.accessToken, categoryId);
+      invalidate();
+      return NextResponse.json(taxonomy);
+    }
+
     const category = await archiveCategory(auth.accessToken, categoryId);
     invalidate();
     return NextResponse.json({ category });
   } catch (error) {
-    const response = taxonomyErrorResponse(error, "Não foi possível arquivar a categoria.");
+    const response = taxonomyErrorResponse(
+      error,
+      isPermanent
+        ? "Não foi possível excluir a categoria."
+        : "Não foi possível arquivar a categoria.",
+    );
     return NextResponse.json(response.body, { status: response.status });
   }
 }

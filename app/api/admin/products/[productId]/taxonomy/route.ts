@@ -1,8 +1,12 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { getAdminApiSession, readWithAdminApiSession } from "@/lib/server/admin-api-auth";
-import { getProductTaxonomy, saveProductTaxonomy } from "@/lib/server/admin-taxonomy";
+import {
+  getProductTaxonomy,
+  saveProductTaxonomy,
+  taxonomyErrorResponse,
+} from "@/lib/server/admin-taxonomy";
 
 function parseId(value: string) {
   const parsed = Number.parseInt(value, 10);
@@ -83,13 +87,22 @@ export async function PUT(
     revalidateTag("wp:categories", "max");
     revalidateTag("wp:products", "max");
     revalidateTag(`wp:product:${productId}`, "max");
+    revalidatePath("/premium");
+    revalidatePath("/colecoes");
 
     return NextResponse.json({ taxonomy });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Não foi possível salvar a classificação do produto.";
-    return NextResponse.json({ message }, { status: 500 });
+    // Sem o erro tipado, uma recusa de regra (422 de coleção inativa, 422 de
+    // subcategoria de outra categoria) virava 500 e o painel dizia "não foi
+    // possível salvar" sem contar o motivo.
+    const response = taxonomyErrorResponse(
+      error,
+      "Não foi possível salvar a classificação do produto.",
+    );
+
+    return NextResponse.json(
+      { ...response.body, message: response.body.message },
+      { status: response.status },
+    );
   }
 }

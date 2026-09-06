@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AdminCategory } from "@/lib/server/admin-taxonomy";
+import type { AdminCategory, AdminCollection } from "@/lib/server/admin-taxonomy";
 
 import { TaxonomyPicker } from "./taxonomy-picker";
 
@@ -44,13 +44,31 @@ function category(overrides: Partial<AdminCategory> = {}): AdminCategory {
   };
 }
 
+function collection(overrides: Partial<AdminCollection> = {}): AdminCollection {
+  return {
+    archivedAt: null,
+    description: "",
+    id: 1,
+    isActive: true,
+    name: "Premium",
+    productCount: { published: 0, total: 0 },
+    slug: "premium",
+    sortOrder: 0,
+    ...overrides,
+  };
+}
+
 const noop = vi.fn();
 
 function renderPicker(props: Partial<Parameters<typeof TaxonomyPicker>[0]> = {}) {
   return render(
     <TaxonomyPicker
       categories={[category(), category({ id: 2, name: "Piteiras", slug: "piteiras", subcategories: [] })]}
-      collections={["premium", "kits"]}
+      collections={[
+        collection(),
+        collection({ id: 2, name: "Edição Limitada", slug: "edicao-limitada", sortOrder: 1 }),
+        collection({ id: 3, name: "Seleção Especial", slug: "selecao-especial", sortOrder: 2 }),
+      ]}
       onCategoryChange={noop}
       onToggleCollection={noop}
       onToggleSubcategory={noop}
@@ -156,11 +174,81 @@ describe("TaxonomyPicker", () => {
     expect(onToggleSubcategory).toHaveBeenCalledWith("12");
   });
 
-  it("mantém apenas Premium entre as coleções curadas", () => {
+  it("renderiza todas as coleções manuais que o backend devolve", () => {
     renderPicker({ selectedCategoryId: "1" });
 
     expect(screen.getByRole("checkbox", { name: "Premium" })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: /kits/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Edição Limitada" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Seleção Especial" })).toBeInTheDocument();
+  });
+
+  it("funciona com uma única coleção e com nenhuma", () => {
+    const { rerender } = renderPicker({ collections: [collection()], selectedCategoryId: "1" });
+
+    expect(screen.getByRole("checkbox", { name: "Premium" })).toBeInTheDocument();
+
+    rerender(
+      <TaxonomyPicker
+        categories={[category()]}
+        collections={[]}
+        onCategoryChange={noop}
+        onToggleCollection={noop}
+        onToggleSubcategory={noop}
+        selectedCategoryId="1"
+        selectedCollections={[]}
+        selectedSubcategoryIds={[]}
+      />,
+    );
+
+    expect(screen.queryByText("Coleções manuais")).not.toBeInTheDocument();
+  });
+
+  it("marca várias coleções ao mesmo tempo no mesmo produto", () => {
+    renderPicker({
+      selectedCategoryId: "1",
+      selectedCollections: ["premium", "edicao-limitada"],
+    });
+
+    expect(screen.getByRole("checkbox", { name: "Premium" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Edição Limitada" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Seleção Especial" })).not.toBeChecked();
+  });
+
+  it("propaga o slug da coleção alternada sem tocar nas outras", () => {
+    const onToggleCollection = vi.fn();
+
+    renderPicker({
+      onToggleCollection,
+      selectedCategoryId: "1",
+      selectedCollections: ["premium", "edicao-limitada"],
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Premium" }));
+
+    expect(onToggleCollection).toHaveBeenCalledTimes(1);
+    expect(onToggleCollection).toHaveBeenCalledWith("premium");
+  });
+
+  it("esconde coleção inativa que o produto não tem", () => {
+    renderPicker({
+      collections: [collection(), collection({ id: 2, isActive: false, name: "Aposentada", slug: "aposentada" })],
+      selectedCategoryId: "1",
+    });
+
+    expect(screen.queryByRole("checkbox", { name: /Aposentada/ })).not.toBeInTheDocument();
+  });
+
+  it("mantém visível a coleção inativa que o produto já tem", () => {
+    renderPicker({
+      collections: [collection(), collection({ id: 2, isActive: false, name: "Aposentada", slug: "aposentada" })],
+      selectedCategoryId: "1",
+      selectedCollections: ["aposentada"],
+    });
+
+    const checkbox = screen.getByRole("checkbox", { name: /Aposentada/ });
+
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).toBeChecked();
   });
 
   it("não oferece categoria arquivada", () => {

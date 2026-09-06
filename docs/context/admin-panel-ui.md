@@ -19,6 +19,25 @@ frete grátis automático, parcelamento do checkout e a tabela de cupons. Desde 
 - **Nenhuma contagem nos segmentos.** O total de cupons vive no cabeçalho da moldura de resultados
   e o número de regiões na sentença da regra de frete. Repetir o número nas abas recriaria o defeito
   do "mesmo número em dois lugares" que a unificação de Contas corrigiu.
+- **A aba Coleções tem duas regiões, e a separação é do domínio.** *Coleções manuais* é o catálogo
+  persistido (`wp_papelito_collections`): criar, renomear, ativar, desativar, arquivar, restaurar e
+  reordenar. *Coleções automáticas* é o dimensionamento de Recém-chegados e Promoções, que a
+  plataforma calcula por regra e não são entidade. Unificar as duas modelaria o domínio errado.
+- **A tela de coleções não cadastra produto.** O produto entra e sai pela seleção da coleção no
+  próprio editor de produto; um seletor de produtos aqui duplicaria a relação.
+- **O identificador aparece em `font-mono` e trava depois do primeiro vínculo.** Ele é a chave do
+  vínculo, não um rótulo. Renomear a coleção continua livre — o backend recusa apenas a troca de slug,
+  e sem essa trava no formulário quem só queria corrigir o nome perderia a edição inteira.
+- **A lista é uma `ResultFrame`, não uma pilha de cards.** Vale a Regra da Folha Única: a soma de
+  sombras duras de N cards faz a página vibrar. `categories-manager.tsx` desenha cards à mão e é
+  divergência conhecida — não sirva de referência.
+- **Identificador e contagem moram no `lead` da linha, não numa coluna `meta`.** A 1024px a sidebar
+  leva 292px e as três colunas do `ResultRow` disputam a mesma linha: o nome colapsava para zero.
+  Toda linha de painel precisa ser conferida nessa faixa, não só em mobile e desktop largo.
+- **Excluir em definitivo só aparece depois de arquivar.** O botão vermelho sólido convive com
+  *Restaurar* na linha arquivada, nunca na linha ativa, e passa por `ConfirmModal` em tom `danger`
+  dizendo exatamente o que se perde — quantos vínculos, quantas subcategorias. Vale para Coleções e
+  para Categorias.
 - Contrato de URL da aba Cupons: `status` (`publish`, `draft`), `search` e `page`; padrões omitidos.
   Busca, filtro e paginação existiam no backend desde sempre e estavam desligados no cliente.
 - A **regra de frete grátis é lida como uma frase**, não como dois campos vizinhos: *"Frete grátis a

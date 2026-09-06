@@ -211,9 +211,10 @@ export function useAdminProductsManager(
     () => new Set(options.excludedProductIds ?? []),
     [options.excludedProductIds],
   );
-  const taxonomy = options.taxonomy ?? {
+  const taxonomy: AdminTaxonomySnapshot = options.taxonomy ?? {
     categories: [],
     collections: [],
+    collectionsCatalog: [],
     issues: [],
     version: 0,
   };
