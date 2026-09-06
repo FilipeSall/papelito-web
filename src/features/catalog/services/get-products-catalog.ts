@@ -190,20 +190,21 @@ function normalizeSelectedSubcategories(value: string[] | undefined) {
   return Array.from(new Set(normalized));
 }
 
+/**
+ * Normaliza o slug de coleção sem lista fechada.
+ *
+ * Aparar contra os cinco slugs do bundle fazia `?colecao=<coleção criada no
+ * painel>` cair em `todos` e devolver o catálogo inteiro — um filtro que
+ * silenciosamente não filtra. Slug desconhecido agora não casa com nenhum
+ * produto e devolve conjunto vazio, que é o mesmo fail-closed do
+ * `/catalog/search` do WordPress.
+ */
 function normalizeCollection(
   value: GetProductsCatalogInput["collection"],
 ): ProductCollectionId {
-  if (
-    value === "todos" ||
-    value === "premium" ||
-    value === "novidades" ||
-    value === "promocoes" ||
-    value === "kits"
-  ) {
-    return value;
-  }
+  const slug = typeof value === "string" ? value.trim().toLowerCase() : "";
 
-  return "todos";
+  return slug === "" ? "todos" : slug;
 }
 
 function normalizePriceValue(value: number | null | undefined) {
@@ -352,6 +353,9 @@ function mapMockProductToCatalogItem(
         homeImageUrl: product.homeData?.imageUrl,
       }) ?? PRODUCT_FALLBACK_IMAGE,
     type,
+    // No modo mock não existe taxonomia persistida: a heurística de nome é a
+    // única fonte, e `collections` a espelha para o filtro se comportar igual.
+    collections: isPremium ? ["premium"] : [],
     isPremium,
     isNewArrival,
     isOnSale,
@@ -730,15 +734,22 @@ async function loadWpCatalog(
   );
 }
 
+/**
+ * `novidades` e `promocoes` são derivadas — calculadas por regra, não
+ * persistidas. `todos` é a pseudo-coleção da UI. Todo o resto é pertinência
+ * real do produto, então basta checar o vínculo: coleção manual nova funciona
+ * sem tocar neste arquivo.
+ */
 function matchesCollection(
   item: ProductsCatalogItem,
   collection: ProductCollectionId,
 ) {
-  if (collection === "premium") return item.isPremium;
+  if (collection === "todos") return true;
   if (collection === "novidades") return item.isNewArrival;
   if (collection === "promocoes") return item.isOnSale;
   if (collection === "kits") return item.isKit;
-  return true;
+
+  return item.collections.includes(collection);
 }
 
 /**

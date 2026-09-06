@@ -494,6 +494,19 @@ function hasCollection(product: WpProductNode, collection: string) {
   );
 }
 
+/**
+ * Slugs de coleção manual do produto.
+ *
+ * É a fonte do filtro por coleção no catálogo: o recorte é pertinência do
+ * produto, não uma lista de slugs conhecida pelo bundle. Coleção criada no
+ * painel passa a filtrar sem deploy.
+ */
+export function getPapelitoCollectionSlugs(product: WpProductNode) {
+  return (product.papelitoCollections ?? []).filter(
+    (slug): slug is string => typeof slug === "string" && slug.length > 0,
+  );
+}
+
 export function getPapelitoSubcategorySlugs(product: WpProductNode) {
   return (product.papelitoSubcategories ?? [])
     .map((node) => node?.slug)
@@ -520,6 +533,7 @@ export function mapWpProductToCatalogItem(
     type,
     subcategories: getPapelitoSubcategorySlugs(product),
     publishedAt: typeof product.date === "string" ? product.date : null,
+    collections: getPapelitoCollectionSlugs(product),
     isPremium: hasCollection(product, "premium"),
     // Quem decide "novidade" é `applyCollectionPools`, sobre a lista já ordenada por data:
     // dentro do mapper só existiria a posição no lote, que varia com perPage e page.

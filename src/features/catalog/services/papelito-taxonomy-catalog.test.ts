@@ -167,6 +167,28 @@ describe("coleções curadas", () => {
 
     expect(item.isPremium).toBe(false);
     expect(item.isKit).toBe(false);
+    expect(item.collections).toEqual([]);
+  });
+
+  it("carrega qualquer coleção manual, não só as conhecidas pelo bundle", () => {
+    const item = mapWpProductToCatalogItem(
+      node({
+        name: "Seda Insane King Size",
+        papelitoCollections: ["premium", "edicao-limitada", "selecao-especial"],
+      }),
+      0,
+    );
+
+    expect(item.collections).toEqual(["premium", "edicao-limitada", "selecao-especial"]);
+  });
+
+  it("descarta entrada nula sem derrubar as outras coleções", () => {
+    const item = mapWpProductToCatalogItem(
+      node({ papelitoCollections: [null, "edicao-limitada", ""] }),
+      0,
+    );
+
+    expect(item.collections).toEqual(["edicao-limitada"]);
   });
 });
 

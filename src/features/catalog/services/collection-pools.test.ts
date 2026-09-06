@@ -15,6 +15,7 @@ function item(overrides: Partial<ProductsCatalogItem> & { id: string }): Product
     isKit: false,
     isNewArrival: false,
     isOnSale: false,
+    collections: [],
     isPremium: false,
     name: `Produto ${overrides.id}`,
     originalPrice: 10,

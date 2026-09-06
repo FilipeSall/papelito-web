@@ -36,7 +36,7 @@ interface ProductsDiscoveryPageProps {
   initialCollection?: ProductCollectionId;
 }
 
-const COLLECTION_LIST_NAMES: Record<ProductCollectionId, string> = {
+const COLLECTION_LIST_NAMES: Record<string, string> = {
   todos: "Catálogo Papelito",
   premium: "Linha Premium Papelito",
   novidades: "Novidades Papelito",
@@ -44,20 +44,23 @@ const COLLECTION_LIST_NAMES: Record<ProductCollectionId, string> = {
   kits: "Kits Papelito",
 };
 
+/**
+ * Nome da lista no JSON-LD. Coleção criada no painel não tem entrada aqui, e
+ * indexar `undefined` como nome do `ItemList` é pior do que cair no rótulo do
+ * catálogo.
+ */
+function collectionListName(collection: ProductCollectionId) {
+  return COLLECTION_LIST_NAMES[collection] ?? COLLECTION_LIST_NAMES.todos;
+}
+
+/**
+ * Mesma regra do servidor: sem lista fechada, para que uma coleção criada no
+ * painel sobreviva ao `?colecao=` em vez de virar `todos`.
+ */
 function normalizeCollection(value: string | undefined): ProductCollectionId {
-  const normalized = value?.toLowerCase();
+  const normalized = value?.trim().toLowerCase() ?? "";
 
-  if (
-    normalized === "todos" ||
-    normalized === "premium" ||
-    normalized === "novidades" ||
-    normalized === "promocoes" ||
-    normalized === "kits"
-  ) {
-    return normalized;
-  }
-
-  return "todos";
+  return normalized === "" ? "todos" : normalized;
 }
 
 function normalizePage(value: string | undefined) {
@@ -133,7 +136,7 @@ export function ProductsDiscoveryPage({
     <main className="flex flex-col bg-white">
       <JsonLd
         data={buildItemListJsonLd(
-          COLLECTION_LIST_NAMES[catalog.activeCollection],
+          collectionListName(catalog.activeCollection),
           catalog.items.map((item) => ({ name: item.name, path: `/produtos/${item.id}` })),
         )}
       />

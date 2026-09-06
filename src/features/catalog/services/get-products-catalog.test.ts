@@ -554,6 +554,20 @@ describe("getProductsCatalog — coleções por termo", () => {
     );
   });
 
+  it("coleção criada no painel não cai em `todos` e devolve o catálogo inteiro", async () => {
+    const getProductsCatalog = await loadCatalog();
+
+    const [manual, tudo] = await Promise.all([
+      getProductsCatalog({ collection: "edicao-limitada", perPage: 60 }),
+      getProductsCatalog({ collection: "todos", perPage: 60 }),
+    ]);
+
+    expect(tudo.totalItems).toBeGreaterThan(0);
+    expect(manual.items).toEqual([]);
+    expect(manual.totalItems).toBe(0);
+    expect(manual.sourceStatus).toBe("ok");
+  });
+
   it("kits fica vazio enquanto a categoria não existir no WordPress", async () => {
     const getProductsCatalog = await loadCatalog();
 

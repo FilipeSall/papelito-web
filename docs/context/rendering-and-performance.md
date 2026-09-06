@@ -43,7 +43,20 @@ nem autoriza compra.
 
 **`first` não passa de 100, e pedir mais é cortado em silêncio.** `AbstractConnectionResolver::max_query_amount()` do WPGraphQL devolve 100 e nada sobrescreve o filtro `graphql_connection_max_query_amount`. Por isso a listagem varre o catálogo com `fetchAllWpProductsResult`, paginando por cursor (`after`/`endCursor`) em blocos de `WP_GRAPHQL_MAX_FIRST`. **Não volte a confiar num `first` alto**: coleção, tipo e preço são filtrados em memória sobre o resultado, então um recorte silencioso produz contagem, filtro e coleção errados. `CATALOG_SCAN_LIMIT` é rede de segurança contra varredura infinita, não recorte — bater nele emite `console.warn`. Home e detalhe seguem pedindo uma página só, de propósito: querem amostra, não o catálogo.
 
-**Coleção é relação curada da Papelito, nunca substring do nome.** `isPremium` e `isKit` saem de `papelitoCollections` (`premium`, `kits`).
+**Coleção é relação curada da Papelito, nunca substring do nome.** O item do catálogo carrega
+`collections: string[]`, vindo de `papelitoCollections`; `isPremium` e `isKit` são conveniências
+derivadas dela.
+
+**O filtro por coleção não tem lista fechada no bundle.** `matchesCollection` trata `novidades` e
+`promocoes` como derivadas e `todos` como pseudo-coleção; qualquer outro slug é testado por
+pertinência, então coleção criada no painel filtra sem deploy. Slug sem produto vinculado devolve
+conjunto vazio — o mesmo fail-closed de `/catalog/search`. Aparar o slug contra uma lista fixa fazia
+`?colecao=<coleção nova>` cair em `todos` e devolver o catálogo inteiro.
+
+**Filtrar não é aparecer na navegação.** A barra de chips, os cards da home e as rotas `/premium`,
+`/novidades` e `/promocoes` continuam com a lista fixa: são superfícies de espaço limitado, e criar a
+décima coleção não pode desmontar o layout. Coleção nova é navegável por `?colecao=<slug>`, não ganha
+chip automático.
 
 **Novidade é posição na ordenação por data, decidida fora do mapper.** `PRODUCTS_LIST_QUERY` ordena por `orderby: [{ field: DATE, order: DESC }]` e `markNewArrivals` marca os N primeiros. O `isNewArrival: index < 8` que vivia dentro de `mapWpProductToCatalogItem` era posição no lote — mudava com `perPage` e com a página.
 

@@ -1,12 +1,12 @@
 /** Slug da categoria Papelito; `todos` é a única opção reservada da UI. */
 export type ProductTypeId = string;
 
-export type ProductCollectionId =
-  | "todos"
-  | "premium"
-  | "novidades"
-  | "promocoes"
-  | "kits";
+/**
+ * Slug de coleção. `todos` é a pseudo-coleção da UI; `novidades` e `promocoes`
+ * são derivadas, calculadas em runtime; o resto vem do catálogo de coleções
+ * manuais, que o admin cria sem passar por deploy — por isso não é union fechado.
+ */
+export type ProductCollectionId = string;
 
 export interface CatalogBestVendor {
   vendorId: number;
@@ -42,6 +42,8 @@ export interface ProductsCatalogItem {
   reviews: number;
   image?: string;
   type: Exclude<ProductTypeId, "todos">;
+  /** Coleções manuais às quais o produto pertence, vindas de `papelitoCollections`. */
+  collections: string[];
   isPremium: boolean;
   isNewArrival: boolean;
   isOnSale: boolean;
