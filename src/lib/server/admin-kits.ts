@@ -11,17 +11,28 @@ export type AdminKitItem = {
   currentPriceCents: number;
 };
 
+/**
+ * Brinde de um Kit resolvido contra o catálogo global.
+ *
+ * Nome, imagem, peso e dimensões são do brinde; `quantity` é do vínculo com este
+ * Kit e não existe no catálogo.
+ */
 export type AdminKitMerchandise = {
-  id?: number;
+  merchandiseId: number;
   name: string;
-  imageAttachmentId?: number;
-  imageUrl?: string;
+  imageAttachmentId: number;
+  imageUrl: string;
   quantity: number;
   weight: string;
   length: string;
   width: string;
   height: string;
 };
+
+export type AdminKitMerchandiseRef = Pick<
+  AdminKitMerchandise,
+  "merchandiseId" | "quantity"
+>;
 
 export type AdminKit = {
   id: number;
@@ -62,7 +73,7 @@ export type AdminKitPayload = {
     height: string;
   };
   items: Array<Pick<AdminKitItem, "productId" | "quantity">>;
-  merchandise: AdminKitMerchandise[];
+  merchandise: AdminKitMerchandiseRef[];
 };
 
 export type AdminKitDeletion = {

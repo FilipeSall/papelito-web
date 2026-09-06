@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAdminProductsSnapshot } from "@/lib/server/admin-products";
 import { getAdminKitsSnapshot } from "@/lib/server/admin-kits";
+import { getAdminMerchandiseSnapshot } from "@/lib/server/admin-merchandise";
 import { getAdminFlashSaleProducts } from "@/lib/server/admin-flash-sale";
 import { getAdminBenefitGroupsSnapshot } from "@/lib/server/admin-product-benefits";
 import { getAdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
@@ -17,6 +18,7 @@ import { SectionHeading } from "../primitives";
 
 import { ProductsManager } from "./products/products-manager";
 import { KitsManager } from "./products/kits-manager";
+import { MerchandiseManager } from "./products/merchandise/merchandise-manager";
 import { UpcomingCardLayout } from "./products/assets/upcoming-card-layout";
 import { ProductBenefitsSection } from "./assets/product-benefits/product-benefits-section";
 import { ProductsSegments } from "./products/components/products-segments";
@@ -27,6 +29,11 @@ const HEADINGS: Record<ProductsTab, { description: string; title: string }> = {
     description:
       "Os elementos visuais que acompanham o produto na vitrine: o bloco de benefícios exibido abaixo dele e, em breve, o layout do próprio card. Banners, logos e imagens do site continuam em Assets, no menu principal.",
     title: "Assets do produto",
+  },
+  brindes: {
+    description:
+      "O catálogo reutilizável de brindes. O mesmo registro entra em quantos Kits você quiser: peso e dimensões saem daqui para a cotação de frete, e editar aqui vale para todos os Kits de uma vez.",
+    title: "Brindes",
   },
   kits: {
     description:
@@ -50,7 +57,9 @@ export async function ProductsContent({
   const heading = HEADINGS[activeTab];
 
   const kits =
-    activeTab === "assets" ? [] : await getAdminKitsSnapshot(session?.accessToken);
+    activeTab === "assets" || activeTab === "brindes"
+      ? []
+      : await getAdminKitsSnapshot(session?.accessToken);
   const [
     snapshot,
     taxonomy,
@@ -59,6 +68,7 @@ export async function ProductsContent({
     freeShipping,
     paymentConfig,
     flashSaleCampaign,
+    merchandise,
   ] = await Promise.all([
     activeTab === "products"
       ? getAdminProductsSnapshot(session?.accessToken, {
@@ -81,6 +91,9 @@ export async function ProductsContent({
       : null,
     activeTab === "assets" ? getPaymentConfig() : null,
     activeTab === "assets" ? getHomeFlashSale() : null,
+    activeTab === "kits" || activeTab === "brindes"
+      ? getAdminMerchandiseSnapshot(session?.accessToken)
+      : null,
   ]);
   const richTextContext = buildRichTextContext({
     freeShippingMinimumCents:
@@ -115,8 +128,11 @@ export async function ProductsContent({
           }
           initialIssue={initialKitIssue}
           initialKits={kits}
+          initialMerchandise={merchandise ?? []}
           initialProducts={candidates?.items ?? []}
         />
+      ) : activeTab === "brindes" ? (
+        <MerchandiseManager initialMerchandise={merchandise ?? []} />
       ) : activeTab === "assets" && benefitsSnapshot && taxonomy ? (
         <div className="space-y-5">
           <ProductBenefitsSection

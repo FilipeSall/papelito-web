@@ -39,7 +39,13 @@ describe("KitsManager", () => {
 
     const fetchMock = vi.spyOn(globalThis, "fetch");
 
-    render(<KitsManager initialKits={[]} initialProducts={[]} />);
+    render(
+      <KitsManager
+        initialKits={[]}
+        initialMerchandise={[]}
+        initialProducts={[]}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: /criar kit/i }));
 
@@ -93,6 +99,7 @@ describe("KitsManager", () => {
             status: "draft",
           },
         ]}
+        initialMerchandise={[]}
         initialProducts={[]}
       />,
     );
@@ -160,6 +167,7 @@ describe("KitsManager", () => {
         initialFocusKitId={12}
         initialIssue="shipping-dimensions"
         initialKits={[kit]}
+        initialMerchandise={[]}
         initialProducts={[]}
       />,
     );

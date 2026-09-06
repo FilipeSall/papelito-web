@@ -1,17 +1,13 @@
-import type {
-  AdminKit,
-  AdminKitMerchandise,
-  AdminKitPayload,
-} from "@/lib/server/admin-kits";
+import type { AdminKit, AdminKitPayload } from "@/lib/server/admin-kits";
 
-export type DraftMerchandise = AdminKitMerchandise & { clientId: string };
-
-export type KitDraft = Omit<AdminKitPayload, "merchandise"> & {
+/**
+ * O rascunho carrega apenas a referência do brinde e a quantidade daquele
+ * vínculo. Os atributos físicos vivem no catálogo e são lidos de lá.
+ */
+export type KitDraft = AdminKitPayload & {
   id?: number;
   imageUrl: string;
   invalidDimensionFields: Array<"length" | "width" | "height">;
-  merchandise: DraftMerchandise[];
 };
 
-export type UploadTarget = "kit" | `merchandise:${string}`;
 export type KitStatus = AdminKit["status"];

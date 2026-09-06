@@ -5,10 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 import { uploadDirectFile } from "@/lib/client/direct-upload";
 import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
-import type { AdminKit, AdminKitMerchandise } from "@/lib/server/admin-kits";
+import type { AdminKit } from "@/lib/server/admin-kits";
+import type { AdminMerchandise } from "@/lib/server/admin-merchandise";
 
 import {
-  createDraftMerchandise,
   createKitDraft,
   createKitDraftFrom,
   invalidKitDimensionFields,
@@ -16,12 +16,15 @@ import {
   parseKitMoney,
 } from "./kits-manager-draft";
 import { deleteKitDraft, saveKitDraft } from "./kits-manager-service";
-import type { KitDraft, UploadTarget } from "./kits-manager-types";
+import type { KitDraft } from "./kits-manager-types";
+import { describeMerchandiseSettlement } from "./merchandise/merchandise-draft";
+import { useMerchandiseForm } from "./merchandise/use-merchandise-form";
 
 type KitsManagerControllerArgs = Readonly<{
   initialFocusKitId?: number | null;
   initialIssue?: "shipping-dimensions" | null;
   initialKits: AdminKit[];
+  initialMerchandise: AdminMerchandise[];
   initialProducts: AdminFlashSaleCandidate[];
 }>;
 
@@ -29,6 +32,7 @@ export function useKitsManager({
   initialFocusKitId = null,
   initialIssue = null,
   initialKits,
+  initialMerchandise,
   initialProducts,
 }: KitsManagerControllerArgs) {
   const [kits, setKits] = useState(initialKits);
@@ -39,8 +43,10 @@ export function useKitsManager({
   const [deleteTarget, setDeleteTarget] = useState<AdminKit | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [uploadNotice, setUploadNotice] = useState("");
-  const [uploadingTargets, setUploadingTargets] = useState<UploadTarget[]>([]);
+  const [editorNotice, setEditorNotice] = useState("");
+  const [uploadingKitImage, setUploadingKitImage] = useState(false);
+  const [merchandise, setMerchandise] = useState(initialMerchandise);
+  const [merchandiseSearch, setMerchandiseSearch] = useState("");
   const editorSession = useRef(0);
   const temporaryMedia = useTemporaryAdminMedia();
   const handledInitialFocus = useRef(false);
@@ -71,6 +77,63 @@ export function useKitsManager({
     () => calculateReferenceCents(draft, initialProducts),
     [draft, initialProducts],
   );
+  const merchandiseById = useMemo(
+    () => new Map(merchandise.map((item) => [item.id, item])),
+    [merchandise],
+  );
+  const selectedMerchandiseIds = useMemo(
+    () => new Set(draft?.merchandise.map((item) => item.merchandiseId) ?? []),
+    [draft],
+  );
+  const filteredMerchandise = useMemo(
+    () => filterMerchandise(merchandise, merchandiseSearch),
+    [merchandise, merchandiseSearch],
+  );
+
+  /**
+   * Um brinde criado daqui é salvo no catálogo antes do Kit e já entra vinculado.
+   * Se o Kit for abandonado depois, o brinde continua existindo na aba Brindes —
+   * é o preço de ele ser global, e o comportamento desejado.
+   */
+  const merchandiseForm = useMerchandiseForm({
+    onSaved: ({ merchandise: saved, unpublishedKits, failedKits }, { isNew }) => {
+      setMerchandise((current) => upsertMerchandise(current, saved, isNew));
+
+      if (isNew) {
+        setDraft((current) =>
+          current &&
+          !current.merchandise.some((item) => item.merchandiseId === saved.id)
+            ? {
+                ...current,
+                merchandise: [
+                  ...current.merchandise,
+                  { merchandiseId: saved.id, quantity: 1 },
+                ],
+              }
+            : current,
+        );
+      }
+
+      const settlement = describeMerchandiseSettlement({
+        failedKits,
+        isNew,
+        name: saved.name,
+        unpublishedKits,
+      });
+
+      if (settlement.tone === "error") {
+        setError(settlement.message);
+        setEditorNotice("");
+        return;
+      }
+
+      setEditorNotice(
+        isNew && failedKits.length === 0 && unpublishedKits.length === 0
+          ? `"${saved.name}" foi criado no catálogo de brindes e adicionado a este Kit.`
+          : settlement.message,
+      );
+    },
+  });
 
   function patchDraft(patch: Partial<KitDraft>) {
     setDraft((current) => (current ? { ...current, ...patch } : current));
@@ -88,15 +151,19 @@ export function useKitsManager({
     editorSession.current += 1;
     setError("");
     setNotice("");
-    setUploadNotice("");
+    setEditorNotice("");
+    setMerchandiseSearch("");
     setDraft(nextDraft);
   }
 
   function closeDraft() {
     if (saving) return;
     editorSession.current += 1;
+    // O formulário de brinde vive dentro deste dialog: deixá-lo aberto o traria
+    // de volta, com rascunho velho, na próxima abertura do editor.
+    merchandiseForm.close();
     setDraft(null);
-    setUploadNotice("");
+    setEditorNotice("");
     temporaryMedia.discardAllExcept().catch(() => undefined);
   }
 
@@ -125,43 +192,50 @@ export function useKitsManager({
     });
   }
 
-  function addMerchandise() {
-    if (!draft) return;
+  function attachMerchandise(merchandiseId: number) {
+    if (!draft || selectedMerchandiseIds.has(merchandiseId)) return;
     patchDraft({
-      merchandise: [...draft.merchandise, createDraftMerchandise()],
+      merchandise: [...draft.merchandise, { merchandiseId, quantity: 1 }],
     });
   }
 
-  function removeMerchandise(clientId: string) {
+  /**
+   * Desfaz o vínculo com o Kit. O brinde continua no catálogo e nos outros Kits.
+   */
+  function detachMerchandise(merchandiseId: number) {
     if (!draft) return;
     patchDraft({
       merchandise: draft.merchandise.filter(
-        (item) => item.clientId !== clientId,
+        (item) => item.merchandiseId !== merchandiseId,
       ),
     });
   }
 
-  function patchMerchandise(
-    clientId: string,
-    patch: Partial<AdminKitMerchandise>,
-  ) {
-    setDraft((current) => {
-      if (!current) return current;
-
-      return {
-        ...current,
-        merchandise: current.merchandise.map((item) =>
-          item.clientId === clientId ? { ...item, ...patch } : item,
-        ),
-      };
-    });
+  function setMerchandiseQuantity(merchandiseId: number, quantity: number) {
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            merchandise: current.merchandise.map((item) =>
+              item.merchandiseId === merchandiseId
+                ? { ...item, quantity: Math.max(1, quantity) }
+                : item,
+            ),
+          }
+        : current,
+    );
   }
 
-  async function uploadImage(file: File, target: UploadTarget) {
+  function openMerchandiseEdit(merchandiseId: number) {
+    const target = merchandiseById.get(merchandiseId);
+    if (target) merchandiseForm.openEdit(target);
+  }
+
+  async function uploadImage(file: File) {
     const session = editorSession.current;
     setError("");
-    setUploadNotice("");
-    setUploadingTargets((current) => [...current, target]);
+    setEditorNotice("");
+    setUploadingKitImage(true);
 
     try {
       const media = await uploadKitMedia(file);
@@ -171,16 +245,21 @@ export function useKitsManager({
       }
 
       temporaryMedia.track(media.id);
-      const previousId = previousAttachmentId(draft, target);
-      updateDraftImage(target, media);
+      const previousId = draft?.imageAttachmentId;
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              imageSource: "custom",
+              imageAttachmentId: media.id,
+              imageUrl: media.src,
+            }
+          : current,
+      );
       if (previousId && temporaryMedia.isTracked(previousId)) {
         temporaryMedia.discard([previousId]).catch(() => undefined);
       }
-      setUploadNotice(
-        target === "kit"
-          ? "Imagem do Kit enviada."
-          : "Imagem do brinde enviada.",
-      );
+      setEditorNotice("Imagem do Kit enviada.");
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
@@ -188,36 +267,8 @@ export function useKitsManager({
           : "Não foi possível enviar a imagem.",
       );
     } finally {
-      setUploadingTargets((current) =>
-        current.filter((currentTarget) => currentTarget !== target),
-      );
+      setUploadingKitImage(false);
     }
-  }
-
-  function updateDraftImage(
-    target: UploadTarget,
-    media: { id: number; src: string },
-  ) {
-    setDraft((current) => {
-      if (!current) return current;
-      if (target === "kit") {
-        return {
-          ...current,
-          imageSource: "custom",
-          imageAttachmentId: media.id,
-          imageUrl: media.src,
-        };
-      }
-
-      const clientId = target.slice("merchandise:".length);
-      return {
-        ...current,
-        merchandise: current.merchandise.map((item) => {
-          if (item.clientId !== clientId) return item;
-          return { ...item, imageAttachmentId: media.id, imageUrl: media.src };
-        }),
-      };
-    });
   }
 
   async function save() {
@@ -300,35 +351,42 @@ export function useKitsManager({
   }
 
   return {
-    addMerchandise,
     addProduct,
+    attachMerchandise,
     closeDraft,
     cancelDelete,
     confirmDelete,
     deleteTarget,
+    detachMerchandise,
     draft,
     deletingKitId,
+    editorNotice,
     error,
+    filteredMerchandise,
     filteredProducts,
     kits,
+    merchandiseById,
+    merchandiseForm,
+    merchandiseSearch,
     openCreate,
     openEdit,
+    openMerchandiseEdit,
     notice,
     patchDraft,
-    patchMerchandise,
     referenceCents,
-    removeMerchandise,
     removeProduct,
     requestDelete,
     saving,
     search,
+    selectedMerchandiseIds,
     selectedProductIds,
+    setMerchandiseQuantity,
+    setMerchandiseSearch,
     setProductQuantity,
     setSearch,
     save,
-    uploadingTargets,
+    uploadingKitImage,
     uploadImage,
-    uploadNotice,
   };
 }
 
@@ -373,13 +431,22 @@ function isImageMissing(draft: KitDraft) {
   );
 }
 
-function previousAttachmentId(draft: KitDraft | null, target: UploadTarget) {
-  if (!draft) return undefined;
-  if (target === "kit") return draft.imageAttachmentId;
-  const clientId = target.slice("merchandise:".length);
+function filterMerchandise(merchandise: AdminMerchandise[], search: string) {
+  const term = search.trim().toLowerCase();
 
-  return draft.merchandise.find((item) => item.clientId === clientId)
-    ?.imageAttachmentId;
+  return term === ""
+    ? merchandise
+    : merchandise.filter((item) => item.name.toLowerCase().includes(term));
+}
+
+function upsertMerchandise(
+  current: AdminMerchandise[],
+  saved: AdminMerchandise,
+  isNew: boolean,
+) {
+  return isNew
+    ? [...current, saved].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    : current.map((item) => (item.id === saved.id ? saved : item));
 }
 
 function replaceOrPrependKit(

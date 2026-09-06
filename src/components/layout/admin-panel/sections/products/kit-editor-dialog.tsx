@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
   Image as ImageIcon,
   LoaderCircle,
+  Minus,
   Plus,
   Search,
   Trash2,
@@ -13,7 +14,7 @@ import {
 import { FieldLabel } from "@/components/layout/admin-panel/sections/products/components/form-fields";
 import { LongDescriptionEditor } from "@/components/layout/admin-panel/sections/products/components/long-description-editor";
 import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
-import type { AdminKitMerchandise } from "@/lib/server/admin-kits";
+import type { AdminMerchandise } from "@/lib/server/admin-merchandise";
 import { formatBRL } from "@/lib/format-currency";
 
 import { AdminSelectField } from "./components/admin-select-field";
@@ -23,7 +24,13 @@ import {
   kitDimensionRange,
   parseKitMoney,
 } from "./kits-manager-draft";
-import type { KitDraft, UploadTarget } from "./kits-manager-types";
+import type { KitDraft } from "./kits-manager-types";
+import {
+  formatMerchandiseDimensions,
+  formatMerchandiseWeight,
+} from "./merchandise/merchandise-draft";
+import { MerchandiseFormDialog } from "./merchandise/merchandise-form-dialog";
+import type { useMerchandiseForm } from "./merchandise/use-merchandise-form";
 
 const statusOptions = [
   { label: "Rascunho", value: "draft" },
@@ -32,35 +39,39 @@ const statusOptions = [
 
 type KitEditorDialogProps = Readonly<{
   draft: KitDraft | null;
+  editorNotice: string;
   error: string;
+  filteredMerchandise: AdminMerchandise[];
   filteredProducts: AdminFlashSaleCandidate[];
   initialProducts: AdminFlashSaleCandidate[];
-  onAddMerchandise: () => void;
+  merchandiseById: Map<number, AdminMerchandise>;
+  merchandiseForm: ReturnType<typeof useMerchandiseForm>;
+  merchandiseSearch: string;
   onAddProduct: (product: AdminFlashSaleCandidate) => void;
+  onAttachMerchandise: (merchandiseId: number) => void;
+  onDetachMerchandise: (merchandiseId: number) => void;
+  onEditMerchandise: (merchandiseId: number) => void;
+  onMerchandiseSearchChange: (search: string) => void;
   onPatchDraft: (patch: Partial<KitDraft>) => void;
-  onPatchMerchandise: (
-    clientId: string,
-    patch: Partial<AdminKitMerchandise>,
-  ) => void;
-  onRemoveMerchandise: (clientId: string) => void;
   onRemoveProduct: (productId: number) => void;
   onRequestClose: () => void;
   onSave: () => Promise<void>;
   onSearchChange: (search: string) => void;
+  onSetMerchandiseQuantity: (merchandiseId: number, quantity: number) => void;
   onSetProductQuantity: (productId: number, quantity: number) => void;
-  onUploadImage: (file: File, target: UploadTarget) => Promise<void>;
+  onUploadImage: (file: File) => Promise<void>;
   referenceCents: number;
   saving: boolean;
   saveDisabled: boolean;
   search: string;
   selectedProductIds: Set<number>;
-  uploadingTargets: UploadTarget[];
-  uploadNotice: string;
+  uploadingKitImage: boolean;
 }>;
 
 export function KitEditorDialog(props: KitEditorDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { draft, saving } = props;
+  const { draft, merchandiseForm, saving } = props;
+  const merchandiseFormOpen = Boolean(merchandiseForm.draft);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -87,7 +98,9 @@ export function KitEditorDialog(props: KitEditorDialogProps) {
   }, [draft]);
 
   function handleCancel(event: React.SyntheticEvent<HTMLDialogElement>) {
-    if (saving) event.preventDefault();
+    // O formulário de brinde vive dentro deste dialog; o Esc dele não pode
+    // levar o editor de Kit junto e descartar o rascunho.
+    if (saving || merchandiseFormOpen) event.preventDefault();
   }
 
   function handleClose() {
@@ -102,24 +115,39 @@ export function KitEditorDialog(props: KitEditorDialogProps) {
       ref={dialogRef}
     >
       {draft ? <KitEditorContent {...props} draft={draft} /> : null}
+      <MerchandiseFormDialog
+        controller={merchandiseForm}
+        usedByKits={
+          merchandiseForm.draft?.id
+            ? (props.merchandiseById.get(merchandiseForm.draft.id)?.kits ?? [])
+            : []
+        }
+      />
     </dialog>
   );
 }
 
 function KitEditorContent({
   draft,
+  editorNotice,
   error,
+  filteredMerchandise,
   filteredProducts,
   initialProducts,
-  onAddMerchandise,
+  merchandiseById,
+  merchandiseForm,
+  merchandiseSearch,
   onAddProduct,
+  onAttachMerchandise,
+  onDetachMerchandise,
+  onEditMerchandise,
+  onMerchandiseSearchChange,
   onPatchDraft,
-  onPatchMerchandise,
-  onRemoveMerchandise,
   onRemoveProduct,
   onRequestClose,
   onSave,
   onSearchChange,
+  onSetMerchandiseQuantity,
   onSetProductQuantity,
   onUploadImage,
   referenceCents,
@@ -127,12 +155,11 @@ function KitEditorContent({
   saveDisabled,
   search,
   selectedProductIds,
-  uploadingTargets,
-  uploadNotice,
+  uploadingKitImage,
 }: KitEditorDialogProps & { draft: KitDraft }) {
   const title = draft.id ? "Editar Kit" : "Criar Kit";
   const kitUploadText = uploadButtonText(
-    uploadingTargets.includes("kit"),
+    uploadingKitImage,
     draft.imageUrl,
     "imagem",
   );
@@ -198,18 +225,22 @@ function KitEditorContent({
           <KitDescriptionsSection draft={draft} onPatchDraft={onPatchDraft} />
           <KitMerchandiseSection
             draft={draft}
-            onAddMerchandise={onAddMerchandise}
-            onPatchMerchandise={onPatchMerchandise}
-            onRemoveMerchandise={onRemoveMerchandise}
-            onUploadImage={onUploadImage}
+            filteredMerchandise={filteredMerchandise}
+            merchandiseById={merchandiseById}
+            merchandiseSearch={merchandiseSearch}
+            onAttachMerchandise={onAttachMerchandise}
+            onCreateMerchandise={merchandiseForm.openCreate}
+            onDetachMerchandise={onDetachMerchandise}
+            onEditMerchandise={onEditMerchandise}
+            onMerchandiseSearchChange={onMerchandiseSearchChange}
+            onSetMerchandiseQuantity={onSetMerchandiseQuantity}
             saving={saving}
-            uploadingTargets={uploadingTargets}
           />
         </div>
         <aside className="space-y-6">
           <KitImageSection
             draft={draft}
-            isUploading={uploadingTargets.includes("kit")}
+            isUploading={uploadingKitImage}
             onUploadImage={onUploadImage}
             uploadText={kitUploadText}
           />
@@ -221,13 +252,13 @@ function KitEditorContent({
           <KitSummary draft={draft} />
         </aside>
       </div>
-      {uploadNotice ? (
+      {editorNotice ? (
         <p
           aria-live="polite"
           className="border-t-2 border-[#1a1a1a] bg-[#eff8e9] px-5 py-3 text-sm text-[#275a1d]"
           role="status"
         >
-          {uploadNotice}
+          {editorNotice}
         </p>
       ) : null}
       {error ? (
@@ -447,127 +478,202 @@ function KitDescriptionsSection({
 
 function KitMerchandiseSection({
   draft,
-  onAddMerchandise,
-  onPatchMerchandise,
-  onRemoveMerchandise,
-  onUploadImage,
+  filteredMerchandise,
+  merchandiseById,
+  merchandiseSearch,
+  onAttachMerchandise,
+  onCreateMerchandise,
+  onDetachMerchandise,
+  onEditMerchandise,
+  onMerchandiseSearchChange,
+  onSetMerchandiseQuantity,
   saving,
-  uploadingTargets,
 }: Readonly<
   Pick<
     KitEditorDialogProps,
-    | "draft"
-    | "onAddMerchandise"
-    | "onPatchMerchandise"
-    | "onRemoveMerchandise"
-    | "onUploadImage"
+    | "filteredMerchandise"
+    | "merchandiseById"
+    | "merchandiseSearch"
+    | "onAttachMerchandise"
+    | "onDetachMerchandise"
+    | "onEditMerchandise"
+    | "onMerchandiseSearchChange"
+    | "onSetMerchandiseQuantity"
     | "saving"
-    | "uploadingTargets"
-  >
+  > & { draft: KitDraft; onCreateMerchandise: () => void }
 >) {
-  if (!draft) return null;
+  const selectedIds = new Set(draft.merchandise.map((item) => item.merchandiseId));
+
   return (
-    <KitSection title="Merchandise e Brindes">
+    <KitSection title="Brindes">
       <p className="text-xs leading-5 text-[#5e574c]">
         Brindes não aparecem na vitrine, mas entram no peso e nas dimensões do
-        pacote.
+        pacote. O catálogo é global: o mesmo brinde serve vários Kits, e editá-lo
+        vale para todos.
       </p>
-      <div className="mt-3 space-y-4">
-        {draft.merchandise.map((item, index) => (
-          <MerchandiseCard
-            item={item}
-            key={item.clientId}
-            onPatch={onPatchMerchandise}
-            onRemove={onRemoveMerchandise}
-            onUpload={onUploadImage}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-3">
+          <Search className="size-4 shrink-0" />
+          <input
+            className="min-w-0 flex-1 outline-none"
+            onChange={(event) => onMerchandiseSearchChange(event.target.value)}
+            placeholder="Buscar brinde do catálogo"
+            value={merchandiseSearch}
+          />
+        </label>
+        <button
+          className="inline-flex h-10 shrink-0 items-center gap-2 border-2 border-dashed border-[#1a1a1a] px-3 text-[10px] font-black uppercase tracking-widest hover:bg-brand-yellow"
+          onClick={onCreateMerchandise}
+          type="button"
+        >
+          <Plus className="size-4" />
+          Criar novo brinde
+        </button>
+      </div>
+
+      <div className="mt-3 max-h-44 overflow-y-auto border-2 border-[#1a1a1a] bg-white">
+        {filteredMerchandise.map((item) => {
+          const isSelected = selectedIds.has(item.id);
+
+          return (
+            <div
+              className="flex items-center justify-between gap-3 border-b border-[#1a1a1a]/15 p-3 last:border-0"
+              key={item.id}
+            >
+              <span className="min-w-0">
+                <b className="block truncate">{item.name}</b>
+                <small className="text-[#5e574c]">
+                  {`${formatMerchandiseWeight(item.weight)} · ${formatMerchandiseDimensions(item)}`}
+                </small>
+              </span>
+              <button
+                className="shrink-0 border-2 border-[#1a1a1a] bg-brand-yellow px-2 py-1 text-[10px] font-black uppercase disabled:opacity-40"
+                disabled={isSelected || saving}
+                onClick={() => onAttachMerchandise(item.id)}
+                type="button"
+              >
+                {isSelected ? "Adicionado" : "Adicionar"}
+              </button>
+            </div>
+          );
+        })}
+        {filteredMerchandise.length === 0 ? (
+          <p className="p-4 text-center text-xs text-[#5e574c]">
+            {merchandiseSearch.trim() === ""
+              ? "Nenhum brinde no catálogo ainda. Crie o primeiro aqui mesmo."
+              : "Nenhum brinde corresponde à busca."}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-3 space-y-3">
+        {draft.merchandise.map((item) => (
+          <KitMerchandiseCard
+            key={item.merchandiseId}
+            merchandise={merchandiseById.get(item.merchandiseId)}
+            merchandiseId={item.merchandiseId}
+            onDetach={onDetachMerchandise}
+            onEdit={onEditMerchandise}
+            onSetQuantity={onSetMerchandiseQuantity}
+            quantity={item.quantity}
             saving={saving}
-            uploading={uploadingTargets.includes(
-              `merchandise:${item.clientId}`,
-            )}
-            index={index}
           />
         ))}
       </div>
-      <button
-        className="mt-3 inline-flex items-center gap-2 border-2 border-dashed border-[#1a1a1a] px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-brand-yellow"
-        onClick={onAddMerchandise}
-        type="button"
-      >
-        <Plus className="size-4" />
-        Adicionar brinde
-      </button>
     </KitSection>
   );
 }
 
-function MerchandiseCard({
-  index,
-  item,
-  onPatch,
-  onRemove,
-  onUpload,
+/**
+ * Dados globais em leitura; só a quantidade é do vínculo e editável aqui.
+ */
+function KitMerchandiseCard({
+  merchandise,
+  merchandiseId,
+  onDetach,
+  onEdit,
+  onSetQuantity,
+  quantity,
   saving,
-  uploading,
 }: Readonly<{
-  index: number;
-  item: KitDraft["merchandise"][number];
-  onPatch: KitEditorDialogProps["onPatchMerchandise"];
-  onRemove: KitEditorDialogProps["onRemoveMerchandise"];
-  onUpload: KitEditorDialogProps["onUploadImage"];
+  merchandise: AdminMerchandise | undefined;
+  merchandiseId: number;
+  onDetach: (merchandiseId: number) => void;
+  onEdit: (merchandiseId: number) => void;
+  onSetQuantity: (merchandiseId: number, quantity: number) => void;
+  quantity: number;
   saving: boolean;
-  uploading: boolean;
 }>) {
+  const name = merchandise?.name ?? `Brinde #${merchandiseId}`;
+
   return (
-    <article className="border-2 border-[#1a1a1a] bg-white">
-      <header className="flex items-center justify-between gap-3 border-b-2 border-[#1a1a1a] bg-[#faf8f2] px-3 py-2">
-        <p className="text-[10px] font-black uppercase tracking-[.18em]">
-          Brinde {index + 1}
+    <article className="flex flex-wrap items-center gap-3 border-2 border-[#1a1a1a] bg-white p-3">
+      <div className="size-14 shrink-0 overflow-hidden border-2 border-[#1a1a1a] bg-[#faf8f2]">
+        {merchandise ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            alt=""
+            className="size-full object-cover"
+            src={merchandise.imageUrl}
+          />
+        ) : null}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-bold">{name}</p>
+        <p className="text-xs text-[#5e574c]">
+          {merchandise
+            ? `${formatMerchandiseWeight(merchandise.weight)} · ${formatMerchandiseDimensions(merchandise)}`
+            : "Brinde não encontrado no catálogo."}
         </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
         <button
-          aria-label={`Remover brinde ${index + 1}`}
-          className="grid size-8 place-items-center border-2 border-[#1a1a1a] bg-white hover:bg-[#c0392b] hover:text-white"
-          disabled={saving}
-          onClick={() => onRemove(item.clientId)}
+          aria-label={`Diminuir quantidade de ${name}`}
+          className="grid size-9 place-items-center border-2 border-[#1a1a1a] bg-white hover:bg-brand-yellow disabled:opacity-40"
+          disabled={saving || quantity <= 1}
+          onClick={() => onSetQuantity(merchandiseId, quantity - 1)}
           type="button"
         >
-          <Trash2 className="size-4" />
+          <Minus className="size-4" />
         </button>
-      </header>
-      <div className="grid gap-4 p-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
-        <ImageUpload
-          imageUrl={item.imageUrl}
-          isUploading={uploading}
-          onChange={(file) => onUpload(file, `merchandise:${item.clientId}`)}
+        <input
+          aria-label={`Quantidade de ${name}`}
+          className="h-9 w-14 border-2 border-[#1a1a1a] px-2 text-center"
+          min="1"
+          onChange={(event) =>
+            onSetQuantity(merchandiseId, Number(event.target.value))
+          }
+          type="number"
+          value={quantity}
         />
-        <div className="grid content-start gap-3">
-          <TextField
-            label="Nome"
-            onChange={(name) => onPatch(item.clientId, { name })}
-            value={item.name}
-          />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <NumberField
-              label="Qtd."
-              onChange={(quantity) => onPatch(item.clientId, { quantity })}
-              value={item.quantity}
-            />
-            {(
-              [
-                ["weight", "Peso kg"],
-                ["length", "Comp. cm"],
-                ["width", "Larg. cm"],
-                ["height", "Alt. cm"],
-              ] as const
-            ).map(([key, label]) => (
-              <TextField
-                key={key}
-                label={label}
-                onChange={(value) => onPatch(item.clientId, { [key]: value })}
-                value={item[key]}
-              />
-            ))}
-          </div>
-        </div>
+        <button
+          aria-label={`Aumentar quantidade de ${name}`}
+          className="grid size-9 place-items-center border-2 border-[#1a1a1a] bg-white hover:bg-brand-yellow disabled:opacity-40"
+          disabled={saving}
+          onClick={() => onSetQuantity(merchandiseId, quantity + 1)}
+          type="button"
+        >
+          <Plus className="size-4" />
+        </button>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          className="h-9 border-2 border-[#1a1a1a] px-3 text-[10px] font-black uppercase tracking-widest hover:bg-brand-yellow disabled:opacity-40"
+          disabled={saving || !merchandise}
+          onClick={() => onEdit(merchandiseId)}
+          type="button"
+        >
+          Editar brinde
+        </button>
+        <button
+          className="h-9 border-2 border-[#1a1a1a] px-3 text-[10px] font-black uppercase tracking-widest hover:bg-[#f2e9d8] disabled:opacity-40"
+          disabled={saving}
+          onClick={() => onDetach(merchandiseId)}
+          type="button"
+        >
+          Remover do kit
+        </button>
       </div>
     </article>
   );
@@ -615,7 +721,7 @@ function KitImageSection({
           className="sr-only"
           disabled={isUploading}
           onChange={(event) =>
-            selectFile(event, (file) => onUploadImage(file, "kit"))
+            selectFile(event, onUploadImage)
           }
           type="file"
         />
@@ -688,56 +794,6 @@ function SummaryRow({
     </div>
   );
 }
-function ImageUpload({
-  imageUrl,
-  isUploading,
-  onChange,
-}: Readonly<{
-  imageUrl?: string;
-  isUploading: boolean;
-  onChange: (file: File) => Promise<void>;
-}>) {
-  const label = uploadButtonText(isUploading, imageUrl, "");
-  return (
-    <div className="grid content-start gap-1">
-      <p className="text-[9px] font-black uppercase tracking-[.12em]">
-        Imagem *
-      </p>
-      <div className="aspect-square overflow-hidden border-2 border-[#1a1a1a] bg-[#faf8f2]">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt="Prévia da imagem do brinde"
-            className="size-full object-cover"
-            src={imageUrl}
-          />
-        ) : (
-          <div className="grid size-full place-items-center text-center text-[9px] font-black uppercase leading-4 text-[#6f6758]">
-            Imagem obrigatória
-          </div>
-        )}
-      </div>
-      <label
-        aria-busy={isUploading}
-        className="mt-1 flex min-h-9 cursor-pointer flex-wrap items-center justify-center gap-1 border-2 border-dashed border-[#1a1a1a] px-2 py-1 text-center text-[9px] font-black uppercase leading-[1.2] hover:bg-brand-yellow has-disabled:cursor-not-allowed has-disabled:opacity-60"
-      >
-        {isUploading ? (
-          <LoaderCircle className="size-3 animate-spin" />
-        ) : (
-          <ImageIcon className="size-3" />
-        )}
-        {label}
-        <input
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          disabled={isUploading}
-          onChange={(event) => selectFile(event, onChange)}
-          type="file"
-        />
-      </label>
-    </div>
-  );
-}
 function KitSection({
   children,
   title,
@@ -767,28 +823,6 @@ function TextField({
       <input
         className="h-11 min-w-0 border-2 border-[#1a1a1a] bg-white px-3 text-sm font-medium normal-case tracking-normal"
         onChange={(event) => onChange(event.target.value)}
-        value={value}
-      />
-    </label>
-  );
-}
-function NumberField({
-  label,
-  onChange,
-  value,
-}: Readonly<{
-  label: string;
-  onChange: (value: number) => void;
-  value: number;
-}>) {
-  return (
-    <label className="grid min-w-0 gap-1 text-[9px] font-black uppercase tracking-[.12em]">
-      {label}
-      <input
-        className="h-11 min-w-0 border-2 border-[#1a1a1a] bg-white px-3 text-sm font-medium normal-case tracking-normal"
-        min="1"
-        onChange={(event) => onChange(Math.max(1, Number(event.target.value)))}
-        type="number"
         value={value}
       />
     </label>

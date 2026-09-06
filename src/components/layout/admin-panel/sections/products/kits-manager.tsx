@@ -2,6 +2,7 @@
 
 import type { AdminFlashSaleCandidate } from "@/lib/server/admin-flash-sale";
 import type { AdminKit } from "@/lib/server/admin-kits";
+import type { AdminMerchandise } from "@/lib/server/admin-merchandise";
 
 import { KitEditorDialog } from "./kit-editor-dialog";
 import { KitDeleteModal } from "./kit-delete-modal";
@@ -12,6 +13,7 @@ type KitsManagerProps = Readonly<{
   initialFocusKitId?: number | null;
   initialIssue?: "shipping-dimensions" | null;
   initialKits: AdminKit[];
+  initialMerchandise: AdminMerchandise[];
   initialProducts: AdminFlashSaleCandidate[];
 }>;
 
@@ -19,12 +21,14 @@ export function KitsManager({
   initialFocusKitId = null,
   initialIssue = null,
   initialKits,
+  initialMerchandise,
   initialProducts,
 }: KitsManagerProps) {
   const manager = useKitsManager({
     initialFocusKitId,
     initialIssue,
     initialKits,
+    initialMerchandise,
     initialProducts,
   });
 
@@ -41,27 +45,33 @@ export function KitsManager({
       />
       <KitEditorDialog
         draft={manager.draft}
+        editorNotice={manager.editorNotice}
         error={manager.error}
+        filteredMerchandise={manager.filteredMerchandise}
         filteredProducts={manager.filteredProducts}
         initialProducts={initialProducts}
-        onAddMerchandise={manager.addMerchandise}
+        merchandiseById={manager.merchandiseById}
+        merchandiseForm={manager.merchandiseForm}
+        merchandiseSearch={manager.merchandiseSearch}
         onAddProduct={manager.addProduct}
+        onAttachMerchandise={manager.attachMerchandise}
+        onDetachMerchandise={manager.detachMerchandise}
+        onEditMerchandise={manager.openMerchandiseEdit}
+        onMerchandiseSearchChange={manager.setMerchandiseSearch}
         onPatchDraft={manager.patchDraft}
-        onPatchMerchandise={manager.patchMerchandise}
-        onRemoveMerchandise={manager.removeMerchandise}
         onRemoveProduct={manager.removeProduct}
         onRequestClose={manager.closeDraft}
         onSave={manager.save}
         onSearchChange={manager.setSearch}
+        onSetMerchandiseQuantity={manager.setMerchandiseQuantity}
         onSetProductQuantity={manager.setProductQuantity}
         onUploadImage={manager.uploadImage}
         referenceCents={manager.referenceCents}
         saving={manager.saving}
-        saveDisabled={manager.saving || manager.uploadingTargets.length > 0}
+        saveDisabled={manager.saving || manager.uploadingKitImage}
         search={manager.search}
         selectedProductIds={manager.selectedProductIds}
-        uploadingTargets={manager.uploadingTargets}
-        uploadNotice={manager.uploadNotice}
+        uploadingKitImage={manager.uploadingKitImage}
       />
       {manager.deleteTarget ? (
         <KitDeleteModal

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, Images, Package, type LucideIcon } from "lucide-react";
+import { Boxes, Gift, Images, Package, type LucideIcon } from "lucide-react";
 
 import { FOCUS_RING } from "../../../primitives";
 
@@ -8,6 +8,7 @@ import { productsHref, type ProductsTab } from "../products-config";
 const SEGMENTS: Array<{ icon: LucideIcon; key: ProductsTab; label: string }> = [
   { icon: Package, key: "products", label: "Produtos" },
   { icon: Boxes, key: "kits", label: "Kits" },
+  { icon: Gift, key: "brindes", label: "Brindes" },
   { icon: Images, key: "assets", label: "Assets" },
 ];
 
@@ -41,9 +42,9 @@ function Segment({
 }
 
 /**
- * As três responsabilidades do catálogo no mesmo peso: o que se vende, o que se agrupa e o que
- * se mostra. A gramática é a mesma dos segmentos de contas, para as duas áreas se lerem como um
- * painel só.
+ * As responsabilidades do catálogo no mesmo peso: o que se vende, o que se agrupa, o que se dá
+ * junto e o que se mostra. A gramática é a mesma dos segmentos de contas, para as duas áreas se
+ * lerem como um painel só.
  */
 export function ProductsSegments({ activeTab }: { activeTab: ProductsTab }) {
   return (

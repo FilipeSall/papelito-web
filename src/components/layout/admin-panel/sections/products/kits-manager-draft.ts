@@ -1,10 +1,6 @@
-import type {
-  AdminKit,
-  AdminKitMerchandise,
-  AdminKitPayload,
-} from "@/lib/server/admin-kits";
+import type { AdminKit, AdminKitPayload } from "@/lib/server/admin-kits";
 
-import type { DraftMerchandise, KitDraft } from "./kits-manager-types";
+import type { KitDraft } from "./kits-manager-types";
 
 export type KitDimensionField = "length" | "width" | "height";
 
@@ -34,21 +30,6 @@ export function createKitDraft(): KitDraft {
   };
 }
 
-export function createDraftMerchandise(
-  merchandise?: Omit<AdminKitMerchandise, "id">,
-): DraftMerchandise {
-  return {
-    name: "",
-    quantity: 1,
-    weight: "",
-    length: "",
-    width: "",
-    height: "",
-    ...merchandise,
-    clientId: crypto.randomUUID(),
-  };
-}
-
 export function createKitDraftFrom(
   kit: AdminKit,
   options: { highlightMissingDimensions?: boolean } = {},
@@ -73,7 +54,10 @@ export function createKitDraftFrom(
       productId,
       quantity,
     })),
-    merchandise: kit.merchandise.map(createDraftMerchandise),
+    merchandise: kit.merchandise.map(({ merchandiseId, quantity }) => ({
+      merchandiseId,
+      quantity,
+    })),
     shortDescription: kit.shortDescription,
     description: kit.description,
     packageDimensions,
@@ -128,11 +112,12 @@ function formatCentimeters(value: number) {
   return value.toString().replace(".", ",");
 }
 
+/**
+ * Só a imagem do Kit é temporária aqui: a do brinde pertence ao catálogo global e
+ * já foi salva quando o brinde foi criado.
+ */
 export function kitDraftAttachmentIds(draft: KitDraft) {
-  return [
-    draft.imageAttachmentId,
-    ...draft.merchandise.map((item) => item.imageAttachmentId),
-  ].filter(
+  return [draft.imageAttachmentId].filter(
     (id): id is number =>
       typeof id === "number" && Number.isInteger(id) && id > 0,
   );
@@ -151,9 +136,7 @@ export function toKitPayload(draft: KitDraft): AdminKitPayload {
     description: draft.description,
     packageDimensions: draft.packageDimensions,
     items: draft.items,
-    merchandise: draft.merchandise.map(
-      ({ clientId: _clientId, ...item }) => item,
-    ),
+    merchandise: draft.merchandise,
   };
 }
 

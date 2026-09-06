@@ -412,6 +412,40 @@ todas liam como `Configurado` sem ninguém ter subido nada.
 - **Upload não publica.** O arquivo sobe para a mídia temporária e a linha passa a `Não salvo`; só o
   Salvar do bloco publica.
 
+## Brindes são catálogo próprio, e o formulário é um só
+
+A área de Produtos tem quatro segmentos por `?tab=`: **Produtos** (padrão), **Kits**, **Brindes** e
+**Assets**, registrados em `products/products-config.ts` e `products/components/products-segments.tsx`.
+`brindes` entrou entre Kits e Assets porque brinde só existe dentro de Kit — Assets é outro assunto. Aba
+desconhecida continua caindo em `products` sem erro.
+
+> Antes, brinde era um bloco de campos soltos dentro do editor de Kit. Cadastrar o mesmo objeto físico em
+> dois Kits significava digitar tudo de novo e subir a imagem de novo, e os dois pesos divergiam sem que
+> nada acusasse.
+
+Decisões de interface que não são óbvias pelo código:
+
+- **`MerchandiseFormDialog` é o único formulário de brinde**, usado pela aba Brindes e pelo editor de Kit.
+  A validação vive em `merchandise/merchandise-draft.ts` e espelha os limites do backend; `use-merchandise-form.ts`
+  concentra rascunho, upload e confirmação de impacto. Não existe um segundo formulário com as mesmas regras.
+- **Quantidade não está no formulário.** Ela é do vínculo Kit ↔ brinde e só aparece no card dentro do Kit,
+  com stepper. Pôr quantidade no catálogo faria parecer que ela é do objeto.
+- **O card de brinde dentro do Kit mostra imagem, nome, peso e dimensões em leitura.** Editar ali abre o
+  mesmo formulário, avisando em quantos Kits a mudança vale. A ação de tirar do Kit chama-se **Remover do
+  kit**, não uma lixeira: o registro global não é excluído, e um ícone de lixo prometeria o contrário.
+- **Criar brinde de dentro do Kit salva global na hora.** O editor de Kit não fecha e o rascunho não se perde
+  — por isso `MerchandiseFormDialog` é renderizado **dentro** do `<dialog>` do Kit (elemento em top layer
+  ignora `z-index` de irmãos) e o `onCancel` do Kit é bloqueado enquanto o formulário está aberto, senão o
+  Esc do brinde descartaria o Kit. Se o Kit for abandonado, o brinde continua na aba Brindes como
+  **Não utilizado**.
+- **Alteração de peso ou dimensão passa por confirmação nominal.** O backend devolve `409` com os Kits que
+  deixariam de atender à publicação, `MerchandiseImpactDialog` lista os nomes e só então o mesmo payload é
+  reenviado com `confirmImpact`. Trocar só nome ou imagem não dispara o aviso.
+- **Brinde em uso tem a lixeira desabilitada**, com o motivo no `title`, e o modal repete os Kits que
+  bloqueiam. O botão existir e falhar seria pior do que ele não convidar ao clique.
+- **A busca é filtro em memória**, como a de componentes do Kit: o catálogo de brindes é pequeno e já vem
+  inteiro no server component. Um endpoint de busca aqui seria latência sem ganho.
+
 ## Benefícios do produto ficam em Assets, não em rota própria
 
 A faixa de benefícios da página de produto é editada na aba **Assets de Produtos**

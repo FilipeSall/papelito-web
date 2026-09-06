@@ -1,6 +1,6 @@
 export const PRODUCTS_PATH = "/admin/products";
 
-export type ProductsTab = "products" | "kits" | "assets";
+export type ProductsTab = "products" | "kits" | "brindes" | "assets";
 
 /**
  * `benefits` era o nome da terceira aba antes de a área ganhar arquitetura própria. Continua
@@ -9,6 +9,10 @@ export type ProductsTab = "products" | "kits" | "assets";
 export function parseProductsTab(value: string | undefined): ProductsTab {
   if (value === "kits") {
     return "kits";
+  }
+
+  if (value === "brindes") {
+    return "brindes";
   }
 
   if (value === "assets" || value === "benefits") {
