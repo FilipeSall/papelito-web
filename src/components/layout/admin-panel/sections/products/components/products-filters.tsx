@@ -16,9 +16,7 @@ type ProductsFiltersProps = {
   categories: AdminCategory[];
   filters: ProductFilters;
   isLoading: boolean;
-  isBackfillingSkus?: boolean;
   onApply: (filters: ProductFilters) => void;
-  onBackfillSkus?: () => void;
   onCreateNew: () => void;
   onUpdateFilter: <K extends keyof ProductFilters>(key: K, value: ProductFilters[K]) => void;
 };
@@ -67,10 +65,8 @@ export function ProductsFilters({
   appliedFilters,
   categories,
   filters,
-  isBackfillingSkus = false,
   isLoading,
   onApply,
-  onBackfillSkus,
   onCreateNew,
   onUpdateFilter,
 }: ProductsFiltersProps) {
@@ -199,20 +195,6 @@ export function ProductsFilters({
             <Plus aria-hidden className="h-4 w-4" strokeWidth={3} />
             Novo produto
           </button>
-
-          {onBackfillSkus ? (
-            <button
-              className={[
-                "inline-flex h-13 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.15em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-50",
-                FOCUS_RING,
-              ].join(" ")}
-              disabled={isBackfillingSkus || isLoading}
-              onClick={onBackfillSkus}
-              type="button"
-            >
-              {isBackfillingSkus ? "Gerando SKUs..." : "Gerar SKUs ausentes"}
-            </button>
-          ) : null}
         </div>
       </form>
 
