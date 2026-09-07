@@ -1,3 +1,4 @@
+import { http, HttpResponse } from "msw";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -8,8 +9,11 @@ vi.mock("next/navigation", () => ({
 
 import {
   getContactConfigPhone,
+  getContactConfigSocial,
   setContactConfigPhone,
+  setContactConfigSocial,
 } from "../../../../../test/msw/handlers/contact-config";
+import { server } from "../../../../../test/msw/server";
 import { ConfigContent } from "./config-content";
 
 describe("ConfigContent", () => {
@@ -46,6 +50,94 @@ describe("ConfigContent", () => {
 
     expect(await screen.findByText("Telefone salvo.")).toBeInTheDocument();
     expect(getContactConfigPhone()).toBe("+556133334444");
+  });
+
+  it("loads the stored social profile links", async () => {
+    setContactConfigSocial({ instagram: "https://www.instagram.com/outra/" });
+    render(<ConfigContent />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Instagram")).toHaveValue("https://www.instagram.com/outra/");
+    });
+    expect(screen.getByLabelText("TikTok")).toHaveValue("https://www.tiktok.com/@papelitobrasil");
+  });
+
+  it("saves an emptied social link as hidden instead of restoring the default", async () => {
+    setContactConfigSocial({});
+    const user = userEvent.setup();
+    render(<ConfigContent />);
+
+    const field = await screen.findByLabelText("X");
+    await user.clear(field);
+    await user.click(screen.getByRole("button", { name: /salvar redes sociais/i }));
+
+    expect(await screen.findByText("Redes sociais salvas.")).toBeInTheDocument();
+    expect(getContactConfigSocial().x).toBe("");
+  });
+
+  it("refuses a social link that is not http or https", async () => {
+    setContactConfigSocial({});
+    const user = userEvent.setup();
+    render(<ConfigContent />);
+
+    const field = await screen.findByLabelText("YouTube");
+    await user.clear(field);
+    await user.type(field, "youtube.com/papelito");
+    await user.click(screen.getByRole("button", { name: /salvar redes sociais/i }));
+
+    expect(
+      await screen.findByText(/Informe uma URL http ou https para YouTube/),
+    ).toBeInTheDocument();
+    expect(getContactConfigSocial().youtube).toBe("https://www.youtube.com/c/PapelitoBrasil");
+  });
+
+  it("does not allow saving defaults when the social config cannot be loaded", async () => {
+    server.use(
+      http.get("*/api/admin/contact-config", () =>
+        HttpResponse.json({ message: "Falha temporária" }, { status: 500 }),
+      ),
+    );
+    setContactConfigSocial({ instagram: "https://www.instagram.com/outra/" });
+    render(<ConfigContent />);
+
+    const loadingButton = screen.getByRole("button", { name: /carregando/i });
+
+    expect(loadingButton).toBeDisabled();
+    expect(await screen.findByText("Não foi possível carregar as redes sociais.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /salvar redes sociais/i })).toBeDisabled();
+
+    expect(screen.getByLabelText("Instagram")).toHaveValue(
+      "https://www.instagram.com/papelitobrasil/",
+    );
+  });
+
+  it("preserves an edit made while the social config request is pending", async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      http.get("*/api/admin/contact-config", async () => {
+        await pending;
+
+        return HttpResponse.json({
+          phone: "+556198364920",
+          social: { instagram: "https://www.instagram.com/outra/" },
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<ConfigContent />);
+
+    const field = screen.getByLabelText("Instagram");
+    await user.clear(field);
+    await user.type(field, "https://www.instagram.com/editado/");
+    release();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /salvar redes sociais/i })).not.toBeDisabled();
+    });
+    expect(field).toHaveValue("https://www.instagram.com/editado/");
   });
 
   it("shows only masked integration metadata", async () => {

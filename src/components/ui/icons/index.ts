@@ -5,3 +5,11 @@ export { ChevronRightIcon } from "./chevron-right-icon";
 export { PercentIcon } from "./percent-icon";
 export { StarIcon } from "./star-icon";
 export { BrandArrowIcon } from "./brand-arrow-icon";
+export {
+  InstagramIcon,
+  LinkedinIcon,
+  SOCIAL_ICONS,
+  TiktokIcon,
+  XIcon,
+  YoutubeIcon,
+} from "./social-icons";

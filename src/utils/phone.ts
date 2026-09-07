@@ -7,6 +7,8 @@ import {
   type CountryCode,
 } from "libphonenumber-js";
 
+import { COUNTRY_NAMES_PT_BR } from "./country-names-pt-br";
+
 export const DEFAULT_PHONE_COUNTRY: CountryCode = "BR";
 
 const E164_MAX_DIGITS = 15;
@@ -30,26 +32,33 @@ function countryFlag(code: string) {
   );
 }
 
-function countryNameResolver() {
-  try {
-    return new Intl.DisplayNames(["pt-BR"], { type: "region" });
-  } catch {
-    return null;
-  }
+/**
+ * Chave de ordenacao estavel: os nomes sao comparados sem acento e sem depender de ICU,
+ * porque a lista e renderizada no servidor e no navegador.
+ */
+function sortKey(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 }
 
 function buildPhoneCountries(): readonly PhoneCountry[] {
-  const resolver = countryNameResolver();
-  const collator = new Intl.Collator("pt-BR");
-
   const countries = getCountries().map((code) => ({
     code,
-    name: resolver?.of(code) ?? code,
+    name: COUNTRY_NAMES_PT_BR[code] ?? code,
     callingCode: getCountryCallingCode(code),
     flag: countryFlag(code),
   }));
 
-  countries.sort((first, second) => collator.compare(first.name, second.name));
+  countries.sort((first, second) => {
+    const firstKey = sortKey(first.name);
+    const secondKey = sortKey(second.name);
+
+    if (firstKey === secondKey) return 0;
+
+    return firstKey < secondKey ? -1 : 1;
+  });
 
   const defaultIndex = countries.findIndex((country) => country.code === DEFAULT_PHONE_COUNTRY);
 

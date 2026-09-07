@@ -64,6 +64,8 @@ export interface ProductsCatalogItem {
  */
 export interface ProductsCollectionsSummary {
   kitsCount: number;
+  /** Produtos em promoção vigente. Decide se a coleção aparece na navegação. */
+  promotionsCount: number;
   promotionsMaxDiscountPercent: number;
 }
 

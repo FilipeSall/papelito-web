@@ -92,6 +92,7 @@ describe("getProductsCollectionsSummary", () => {
 
     expect(await getProductsCollectionsSummary()).toEqual({
       kitsCount: 2,
+      promotionsCount: 0,
       promotionsMaxDiscountPercent: 0,
     });
   });
@@ -130,6 +131,7 @@ describe("getProductsCollectionsSummary", () => {
     const getProductsCollectionsSummary = await loadSummary();
     const summary = await getProductsCollectionsSummary();
 
+    expect(summary.promotionsCount).toBe(3);
     expect(summary.promotionsMaxDiscountPercent).toBe(25);
   });
 
@@ -142,6 +144,7 @@ describe("getProductsCollectionsSummary", () => {
 
     expect(await getProductsCollectionsSummary()).toEqual({
       kitsCount: 0,
+      promotionsCount: 0,
       promotionsMaxDiscountPercent: 0,
     });
   });
@@ -153,6 +156,7 @@ describe("getProductsCollectionsSummary", () => {
 
     expect(await getProductsCollectionsSummary()).toEqual({
       kitsCount: 0,
+      promotionsCount: 0,
       promotionsMaxDiscountPercent: 0,
     });
   });

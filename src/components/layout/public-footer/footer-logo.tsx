@@ -2,10 +2,12 @@ import Image from "next/image";
 import { FooterSocialLinks } from "./footer-social-links";
 
 import { resolveLogo } from "@/lib/site-logos";
+import type { SocialProfileLink } from "@/features/site-contact/social-profiles";
 import type { ManagedImageAsset } from "@/types/home-assets";
 
 type FooterLogoProps = {
   logo?: ManagedImageAsset;
+  socialProfiles?: readonly SocialProfileLink[];
 };
 
 /**
@@ -19,7 +21,7 @@ type FooterLogoProps = {
  * <FooterLogo />
  * ```
  */
-export function FooterLogo({ logo }: FooterLogoProps) {
+export function FooterLogo({ logo, socialProfiles }: FooterLogoProps) {
   const resolved = resolveLogo("footer", logo);
 
   return (
@@ -35,7 +37,7 @@ export function FooterLogo({ logo }: FooterLogoProps) {
         A primeira e única indústria de papéis para enrolar do Brasil.
         Qualidade, inovação e sustentabilidade.
       </p>
-      <FooterSocialLinks />
+      <FooterSocialLinks profiles={socialProfiles} />
     </div>
   );
 }

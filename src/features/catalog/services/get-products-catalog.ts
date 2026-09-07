@@ -905,7 +905,8 @@ export async function getProductsCatalog(
  *
  * Reaproveita a varredura já cacheada do catálogo e os mesmos predicados de coleção da
  * listagem (`matchesCollection`), para o card não contar um universo diferente do que a
- * página da coleção mostra. Origem indisponível devolve zeros, e o card cai no texto fixo.
+ * página da coleção mostra. Origem indisponível devolve zeros: o card cai no texto fixo e
+ * a coleção de promoções sai da navegação, em vez de anunciar oferta que não podemos servir.
  */
 export async function getProductsCollectionsSummary(): Promise<ProductsCollectionsSummary> {
   const catalog = isMockDataEnabled()
@@ -913,10 +914,11 @@ export async function getProductsCollectionsSummary(): Promise<ProductsCollectio
     : await loadWpCatalogItems(await getHomeFlashSale(), await getCollectionsConfig());
 
   if (catalog.sourceStatus === "unavailable") {
-    return { kitsCount: 0, promotionsMaxDiscountPercent: 0 };
+    return { kitsCount: 0, promotionsCount: 0, promotionsMaxDiscountPercent: 0 };
   }
 
   let kitsCount = 0;
+  let promotionsCount = 0;
   let promotionsMaxDiscountPercent = 0;
 
   for (const item of catalog.items) {
@@ -925,6 +927,8 @@ export async function getProductsCollectionsSummary(): Promise<ProductsCollectio
     }
 
     if (matchesCollection(item, "promocoes")) {
+      promotionsCount += 1;
+
       const discountPercent = calculateDiscountPercent(item.originalPrice, item.price);
 
       if (discountPercent > promotionsMaxDiscountPercent) {
@@ -933,5 +937,5 @@ export async function getProductsCollectionsSummary(): Promise<ProductsCollectio
     }
   }
 
-  return { kitsCount, promotionsMaxDiscountPercent };
+  return { kitsCount, promotionsCount, promotionsMaxDiscountPercent };
 }

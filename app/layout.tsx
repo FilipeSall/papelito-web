@@ -11,6 +11,11 @@ import { JsonLd, buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo/j
 import { resolveRobots } from "@/lib/seo/metadata";
 import { PAPELITO_COMPANY } from "@/lib/seo/company";
 import {
+  CONTACT_CONFIG_LAYOUT_TIMEOUT_MS,
+  getContactConfig,
+} from "@/features/site-contact/services/contact-config";
+import { resolveSocialProfiles } from "@/features/site-contact/social-profiles";
+import {
   SITE_DESCRIPTION,
   SITE_LOCALE,
   SITE_NAME,
@@ -106,11 +111,14 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->`;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const contact = await getContactConfig(undefined, { timeoutMs: CONTACT_CONFIG_LAYOUT_TIMEOUT_MS });
+  const socialProfileUrls = resolveSocialProfiles(contact.social).map((profile) => profile.href);
+
   return (
     <html lang="pt-BR" className={inter.variable}>
       <head>
@@ -118,7 +126,7 @@ export default function RootLayout({
           rel="manifest"
           href="/site.webmanifest"
         />
-        <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd data={buildOrganizationJsonLd(socialProfileUrls)} />
         <JsonLd data={buildWebSiteJsonLd()} />
         {GTM_CONTAINER_ID ? (
           <Script id="google-tag-manager" strategy="beforeInteractive">

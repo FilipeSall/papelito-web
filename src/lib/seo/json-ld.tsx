@@ -41,8 +41,14 @@ export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 /**
  * Identidade da empresa. Sem `LocalBusiness`: o endereço é sede e fábrica, não ponto de venda com
  * atendimento presencial e horário publicado.
+ *
+ * `socialProfileUrls` são os perfis vigentes na configuração de atendimento — os mesmos que o
+ * rodapé exibe. Sem eles valem os padrões, para que uma chamada sem contexto de configuração ainda
+ * declare a identidade correta.
  */
-export function buildOrganizationJsonLd(): JsonLdValue {
+export function buildOrganizationJsonLd(
+  socialProfileUrls: readonly string[] = PAPELITO_SOCIAL_PROFILES.map((profile) => profile.href),
+): JsonLdValue {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -72,10 +78,7 @@ export function buildOrganizationJsonLd(): JsonLdValue {
       "@type": "Country",
       name: "Brasil",
     },
-    sameAs: [
-      PAPELITO_COMPANY.officialSiteUrl,
-      ...PAPELITO_SOCIAL_PROFILES.map((profile) => profile.href),
-    ],
+    sameAs: [PAPELITO_COMPANY.officialSiteUrl, ...socialProfileUrls],
   };
 }
 

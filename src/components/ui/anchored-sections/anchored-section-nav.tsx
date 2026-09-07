@@ -76,8 +76,7 @@ export function AnchoredSectionNav({
         return;
       }
 
-      const { bottom, top } = readingBounds(offset);
-      const focusLine = top + (bottom - top) / 2;
+      const { top: focusLine } = readingBounds(offset);
       let current = sections[0].id;
 
       for (const section of sections) {

@@ -7,6 +7,7 @@ import { PAPELITO_COMPANY } from "@/lib/seo/company";
 import type { ManagedImageAsset } from "@/types/home-assets";
 import { contactPhoneHref } from "@/features/site-contact/contact-phone";
 import { getContactConfig } from "@/features/site-contact/services/contact-config";
+import { resolveSocialProfiles } from "@/features/site-contact/social-profiles";
 
 type PublicFooterProps = {
   logo?: ManagedImageAsset;
@@ -46,6 +47,7 @@ export async function PublicFooter({ logo }: PublicFooterProps) {
   const taxonomy = await getPapelitoTaxonomy();
   const contact = await getContactConfig();
   const footerSupportLinks = [...supportLinks, { label: "Fale Conosco", href: contactPhoneHref(contact.phone) }];
+  const socialProfiles = resolveSocialProfiles(contact.social);
   const productLinks = taxonomy.categories.map((category) => ({
     label: category.name,
     href: `/produtos?tipo=${encodeURIComponent(category.slug)}`,
@@ -56,7 +58,7 @@ export async function PublicFooter({ logo }: PublicFooterProps) {
       <div className="mx-auto flex max-w-391 flex-col gap-12">
         {/* Main Content */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:min-h-55 lg:grid-cols-4">
-          <FooterLogo logo={logo} />
+          <FooterLogo logo={logo} socialProfiles={socialProfiles} />
           <FooterNavColumn title="Produtos" links={productLinks} />
           <FooterNavColumn title="Empresa" links={companyLinks} />
           <FooterNavColumn title="Atendimento" links={footerSupportLinks} />

@@ -1,5 +1,9 @@
 import { CategoryNavItem } from "./category-nav-item";
-import { CATEGORIES_NAV_ITEMS, resolveCategoryNavSubtitle } from "./constants";
+import {
+  CATEGORIES_NAV_ITEMS,
+  isCategoryNavItemVisible,
+  resolveCategoryNavSubtitle,
+} from "./constants";
 import type { ProductsCollectionsSummary } from "@/features/catalog";
 
 interface CategoriesNavProps {
@@ -9,7 +13,9 @@ interface CategoriesNavProps {
 const TILTS = [-1.4, 0.9, -0.7, 1.2];
 
 export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProps>) {
-  const items = CATEGORIES_NAV_ITEMS.map((item, index) => ({
+  const items = CATEGORIES_NAV_ITEMS.filter((item) =>
+    isCategoryNavItemVisible(item, collectionsSummary),
+  ).map((item, index) => ({
     href: item.href,
     subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
     tilt: TILTS[index % TILTS.length],

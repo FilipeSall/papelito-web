@@ -30,7 +30,7 @@ export const CATEGORIES_NAV_ITEMS: readonly CategoriesNavItem[] = [
     collection: "promocoes",
     iconSrc: "/images/categorias/icons/promocoes.webp",
     title: "Promoções",
-    subtitle: "Até 15% off",
+    subtitle: "Ofertas disponíveis",
     href: "/promocoes",
   },
   {
@@ -43,10 +43,32 @@ export const CATEGORIES_NAV_ITEMS: readonly CategoriesNavItem[] = [
 ];
 
 /**
+ * Decide se o chip da coleção entra na navegação.
+ *
+ * Promoções é coleção derivada: sem promoção vigente ela não tem o que listar, então o chip
+ * some em vez de levar a uma vitrine vazia. Resumo ausente não esconde nada — falta de número
+ * não é prova de que não há oferta.
+ */
+export function isCategoryNavItemVisible(
+  item: CategoriesNavItem,
+  summary?: ProductsCollectionsSummary | null,
+) {
+  if (!summary) {
+    return true;
+  }
+
+  if (item.collection === "promocoes") {
+    return summary.promotionsCount > 0;
+  }
+
+  return true;
+}
+
+/**
  * Texto auxiliar do card: número real de kits e maior desconto real das promoções.
  *
- * O `subtitle` do item continua sendo o fallback — coleção vazia mantém o texto fixo em vez
- * de anunciar "0 kits disponíveis" ou "Até 0% off".
+ * O `subtitle` do item continua sendo o fallback — coleção sem número próprio mantém o texto
+ * fixo genérico em vez de anunciar "0 kits disponíveis" ou "Até 0% off".
  */
 export function resolveCategoryNavSubtitle(
   item: CategoriesNavItem,

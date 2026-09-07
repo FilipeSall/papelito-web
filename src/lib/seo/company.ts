@@ -1,3 +1,5 @@
+import { SOCIAL_NETWORKS } from "@/features/site-contact/social-profiles";
+
 /**
  * Dados públicos da Papelito Brasil usados em rodapé e dados estruturados.
  *
@@ -23,18 +25,16 @@ export const PAPELITO_COMPANY = {
 } as const;
 
 /**
- * Perfis sociais oficiais, na ordem em que o rodapé os exibe.
+ * Perfis sociais padrao, na ordem em que o rodape os exibe.
  *
- * Os quatro links anteriores (`instagram.com/papelito` e afins) eram placeholders e apontavam para
- * perfis que não são da empresa. Facebook não entra: não existe no site oficial.
+ * Sao apenas o padrao: o valor vigente vem da configuracao de atendimento
+ * (`/admin/config#atendimento`) e chega ao `sameAs` por parametro. Facebook nao entra: nao existe
+ * no site oficial.
  */
-export const PAPELITO_SOCIAL_PROFILES = [
-  { name: "Instagram", href: "https://www.instagram.com/papelitobrasil/" },
-  { name: "YouTube", href: "https://www.youtube.com/c/PapelitoBrasil" },
-  { name: "LinkedIn", href: "https://www.linkedin.com/company/papelitobrasil/" },
-  { name: "TikTok", href: "https://www.tiktok.com/@papelitobrasil" },
-  { name: "X", href: "https://x.com/papelito_brasil" },
-] as const;
+export const PAPELITO_SOCIAL_PROFILES = SOCIAL_NETWORKS.map((network) => ({
+  name: network.name,
+  href: network.defaultHref,
+}));
 
 /**
  * Segmentos comerciais atendidos, alinhados a `REVENDEDOR_BUSINESS_TYPES`.
