@@ -46,6 +46,9 @@ export type AdminCollection = {
   productCount: { published: number; total: number };
   slug: string;
   sortOrder: number;
+  systemKey?: string;
+  imageAttachmentId?: number;
+  imageUrl?: string;
 };
 
 export type AdminTaxonomySnapshot = {

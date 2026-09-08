@@ -50,10 +50,53 @@ export type CollectionNavItem = {
   title: string;
   subtitle: string;
   href: string;
-  /** Coleção derivada que alimenta o texto auxiliar ao vivo. Vazio = usa o texto fixo. */
+  collectionId?: number;
+  collectionData?: CollectionNavCollection;
   collection: string;
+  indicatorKey?: CollectionIndicatorKey;
+  highlight?: CollectionHighlight;
+  indicatorOptions?: CollectionIndicatorOption[];
   order: number;
   isActive: boolean;
+};
+
+export type CollectionIndicatorKey =
+  | "NONE"
+  | "ITEM_COUNT"
+  | "MAX_DISCOUNT_PERCENT"
+  | "NEW_ITEMS_COUNT"
+  | "ACTIVE_DEALS_COUNT";
+
+export type CollectionHighlight = {
+  label: string;
+  text: string;
+  value: number;
+};
+
+export type CollectionIndicatorOption = {
+  key: CollectionIndicatorKey;
+  label: string;
+  description: string;
+  preview: string;
+};
+
+export type CollectionIndicatorPolicy = {
+  required: CollectionIndicatorKey | null;
+  locked: boolean;
+  allowed: CollectionIndicatorKey[];
+};
+
+export type CollectionNavCollection = {
+  id: number;
+  name: string;
+  slug: string;
+  imageAttachmentId: number;
+  imageUrl: string;
+  path: string;
+  systemKey: string;
+  isActive: boolean;
+  indicatorPolicy?: CollectionIndicatorPolicy;
+  indicatorOptions?: CollectionIndicatorOption[];
 };
 
 export type HomeFeatureItem = {
@@ -105,6 +148,7 @@ export type AdminPromoMarqueeSnapshot = {
 
 export type AdminCollectionsNavSnapshot = {
   items: CollectionNavItem[];
+  collections?: CollectionNavCollection[];
   issues: string[];
 };
 

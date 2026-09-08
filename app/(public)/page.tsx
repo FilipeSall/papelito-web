@@ -17,7 +17,6 @@ import {
   getHomePromoMarquee,
 } from "@/features/catalog/services/get-home-assets";
 import { getHomeProducts } from "@/features/catalog/services/get-home-products";
-import { getProductsCollectionsSummary } from "@/features/catalog/services/get-products-catalog";
 import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import {
   buildRichTextContext,
@@ -41,7 +40,7 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function Home() {
-  const [homeProducts, heroBanners, partnerBanner, promoMarquee, homeFeatures, collectionsNav, freeShippingThreshold, paymentConfig, collectionsSummary] = await Promise.all([
+  const [homeProducts, heroBanners, partnerBanner, promoMarquee, homeFeatures, collectionsNav, freeShippingThreshold, paymentConfig] = await Promise.all([
     getHomeProducts(),
     getHomeHeroBanners(),
     getHomePartnerBanner(),
@@ -50,7 +49,6 @@ export default async function Home() {
     getHomeCollectionsNav(),
     getFreeShippingThreshold(),
     getPaymentConfig(),
-    getProductsCollectionsSummary(),
   ]);
 
   const { flashSaleCampaign, bestSellerProducts, newArrivalProducts } = homeProducts;
@@ -94,7 +92,7 @@ export default async function Home() {
           <FeaturesBar items={resolvedHomeFeatures} />
         </div>
 
-        <CategoriesNav collectionsSummary={collectionsSummary} items={collectionsNav} />
+        <CategoriesNav items={collectionsNav} />
 
         {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
 

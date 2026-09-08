@@ -9,6 +9,8 @@ import { SITE_IMAGE_DEFAULTS, SITE_IMAGE_KEYS } from "@/lib/site-images";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
   CollectionNavItem,
+  CollectionNavCollection,
+  CollectionIndicatorKey,
   HeroBanner,
   ManagedImageAsset,
   HomeFeatureItem,
@@ -41,6 +43,8 @@ type WpCollectionsNavResponse = {
   items?: Partial<CollectionNavItem>[];
 };
 
+export type PublicCollection = Pick<CollectionNavCollection, "id" | "name" | "slug" | "imageUrl" | "path">;
+
 type WpPartnerResponse = {
   banner?: Partial<PartnerBannerConfig>;
 };
@@ -63,6 +67,21 @@ function toNumber(value: unknown) {
 
 function toBoolean(value: unknown) {
   return typeof value === "boolean" ? value : false;
+}
+
+function indicatorKey(value: unknown): CollectionIndicatorKey | undefined {
+  return ["NONE", "ITEM_COUNT", "MAX_DISCOUNT_PERCENT", "NEW_ITEMS_COUNT", "ACTIVE_DEALS_COUNT"].includes(String(value)) ? String(value) as CollectionIndicatorKey : undefined;
+}
+
+function mapCollection(value: Partial<CollectionNavCollection> | undefined): CollectionNavCollection | undefined {
+  if (!value) return undefined;
+  return {
+    id: toNumber(value.id), name: cleanText(value.name), slug: cleanText(value.slug),
+    imageAttachmentId: toNumber(value.imageAttachmentId), imageUrl: cleanText(value.imageUrl),
+    path: cleanText(value.path), systemKey: cleanText(value.systemKey), isActive: toBoolean(value.isActive),
+    indicatorPolicy: value.indicatorPolicy ? { required: indicatorKey(value.indicatorPolicy.required) ?? null, locked: toBoolean(value.indicatorPolicy.locked), allowed: (value.indicatorPolicy.allowed ?? []).map(indicatorKey).filter(Boolean) as CollectionIndicatorKey[] } : undefined,
+    indicatorOptions: Array.isArray(value.indicatorOptions) ? value.indicatorOptions.map((option) => ({ key: indicatorKey(option.key) ?? "NONE", label: cleanText(option.label), description: cleanText(option.description), preview: cleanText(option.preview) })) : undefined,
+  };
 }
 
 function mapPromoMarqueeItem(
@@ -95,7 +114,7 @@ function mapCollectionNavItem(
   const href = cleanText(item?.href);
 
   // Card sem texto ou sem destino é atalho quebrado: sai sozinho em vez de derrubar o corredor.
-  if (!item || title === "" || subtitle === "" || !href.startsWith("/")) {
+  if (!item || title === "" || !href.startsWith("/")) {
     return null;
   }
 
@@ -104,7 +123,12 @@ function mapCollectionNavItem(
     title,
     subtitle,
     href,
+    collectionId: toNumber(item.collectionId),
+    collectionData: mapCollection(item.collectionData),
     collection: cleanText(item.collection),
+    indicatorKey: indicatorKey(item.indicatorKey),
+    highlight: item.highlight ? { label: cleanText(item.highlight.label), text: cleanText(item.highlight.text), value: toNumber(item.highlight.value) } : undefined,
+    indicatorOptions: Array.isArray(item.indicatorOptions) ? item.indicatorOptions.map((option) => ({ key: indicatorKey(option.key) ?? "NONE", label: cleanText(option.label), description: cleanText(option.description), preview: cleanText(option.preview) })) : undefined,
     order: toNumber(item.order) || index + 1,
     isActive: toBoolean(item.isActive),
   };
@@ -373,6 +397,12 @@ export async function getHomeCollectionsNav(): Promise<CollectionNavItem[]> {
     .map((item, index) => mapCollectionNavItem(item, index))
     .filter((item): item is CollectionNavItem => item?.isActive === true)
     .sort((left, right) => left.order - right.order);
+}
+
+export async function getPublicCollections(): Promise<PublicCollection[]> {
+  const result = await wpRest<{ collections?: Partial<CollectionNavCollection>[] }>("/papelito/v1/categories", { revalidate: 60, tags: ["public-taxonomy"] });
+  if (!result.ok || !Array.isArray(result.data.collections)) return [];
+  return result.data.collections.map((collection) => ({ id: toNumber(collection.id), name: cleanText(collection.name), slug: cleanText(collection.slug), imageUrl: cleanText(collection.imageUrl), path: cleanText(collection.path) })).filter((collection) => collection.id > 0 && collection.slug !== "");
 }
 
 export async function getHomePartnerBanner(): Promise<PartnerBannerConfig | null> {

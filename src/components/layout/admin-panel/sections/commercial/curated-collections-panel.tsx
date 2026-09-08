@@ -107,7 +107,7 @@ export function CuratedCollectionsPanel({
     setModal(target);
   }
 
-  async function save(values: CollectionFormValues) {
+  async function save(values: CollectionFormValues): Promise<boolean> {
     const isNew = modal === "new";
     const result = await run(
       () =>
@@ -121,10 +121,11 @@ export function CuratedCollectionsPanel({
 
     if (result.ok) {
       openModal(null);
-      return;
+      return true;
     }
 
     setModalError(result.message);
+    return false;
   }
 
   function move(collectionId: number, direction: -1 | 1) {

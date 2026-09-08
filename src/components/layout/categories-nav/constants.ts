@@ -1,26 +1,13 @@
-import type { ProductsCollectionsSummary } from "@/features/catalog";
 import type { CollectionNavItem } from "@/types/home-assets";
 
 /**
- * Decide se o chip da coleção entra na navegação.
- *
- * Promoções é coleção derivada: sem promoção vigente ela não tem o que listar, então o chip
- * some em vez de levar a uma vitrine vazia. Resumo ausente não esconde nada — falta de número
- * não é prova de que não há oferta.
+ * Cards ativos já chegam filtrados pelo backend; mesmo sem ofertas a coleção Promoções continua
+ * visível para comunicar o estado vazio calculado pelo backend ("Confira as ofertas").
  */
 export function isCategoryNavItemVisible(
   item: CollectionNavItem,
-  summary?: ProductsCollectionsSummary | null,
 ) {
-  if (!summary) {
-    return true;
-  }
-
-  if (item.collection === "promocoes") {
-    return summary.promotionsCount > 0;
-  }
-
-  return true;
+  return Boolean(item.isActive);
 }
 
 /**
@@ -31,24 +18,6 @@ export function isCategoryNavItemVisible(
  */
 export function resolveCategoryNavSubtitle(
   item: CollectionNavItem,
-  summary?: ProductsCollectionsSummary | null,
 ) {
-  if (!summary) {
-    return item.subtitle;
-  }
-
-  if (item.collection === "kits" && summary.kitsCount > 0) {
-    return summary.kitsCount === 1
-      ? "1 kit disponível"
-      : `${summary.kitsCount} kits disponíveis`;
-  }
-
-  if (
-    item.collection === "promocoes" &&
-    summary.promotionsMaxDiscountPercent > 0
-  ) {
-    return `Até ${summary.promotionsMaxDiscountPercent}% off`;
-  }
-
-  return item.subtitle;
+  return item.highlight?.text || item.subtitle;
 }

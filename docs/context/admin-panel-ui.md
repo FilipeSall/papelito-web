@@ -441,22 +441,24 @@ A decisão que não é óbvia, e o motivo:
 > catálogo: quem escolhe quais atalhos merecem um chip, com que texto e em que ordem, é o admin.
 
 Isso também evita uma armadilha de modelagem. Os quatro cards de fábrica **não são a mesma coisa**:
-`Premium` é uma coleção manual real (linha em `wp_papelito_collections`), enquanto `Kits`,
-`Novidades` e `Promoções` são coleções **derivadas** por regra de catálogo (`matchesCollection()`
-resolve para `isKit`, `isNewArrival`, `isOnSale`). Listar a seção a partir da tabela de coleções
-perderia os três derivados — ou exigiria um híbrido fixo-mais-dinâmico que ninguém consegue explicar.
+`Premium` e as coleções sistêmicas são representadas pela mesma entidade canônica; `Tudo` continua
+virtual. As projeções de Kits, Recém Chegados e Promoções preservam as regras do catálogo, mas agora
+também podem possuir imagem, rota calculada e política de destaque no registro da coleção.
 
 O que existe no editor do card, e por quê:
 
 | Campo | Papel |
 |---|---|
 | Título / Texto auxiliar | 24 e 40 caracteres, texto simples. HTML é recusado com 422 |
-| Destino | `AdminSelectField` com as **coleções cadastradas ativas** (monta `/colecoes?colecao=<slug>`) ou caminho digitado. Coleção nova aparece no select sem ninguém decorar URL |
-| Número ao vivo | Liga o card a `kits` ou `promocoes` — as duas coleções derivadas com número próprio. **Na Home** troca o texto por "6 kits disponíveis" / "Até 25% off" e some com o card de promoções sem oferta |
+| Coleção | Primeiro campo ao criar. Ao editar, mostra a coleção vinculada somente como informação; não permite trocar o vínculo |
+| Destino | Informação calculada a partir do slug da coleção; não editável |
+| Imagem | Prévia da imagem da coleção, sem cópia no card; permite adicionar, trocar ou remover o ícone canônico diretamente no editor; fallback visual quando ausente |
+| Destaque dinâmico | Política centralizada: Promoções força maior desconto; Recém Chegados força novidades; Kits força quantidade; comuns podem escolher `Sem destaque dinâmico` ou métricas confiáveis |
 | Ativo | Card inativo não sai na rota pública |
 
-`/kits`, `/premium`, `/novidades` e `/promocoes` são **páginas dedicadas**, não a listagem genérica —
-por isso não casam com o select de coleção e continuam sendo editados como caminho. Não é bug.
+`/kits`, `/premium`, `/novidades` e `/promocoes` são **páginas dedicadas**, mas continuam sendo
+coleções selecionáveis no mesmo fluxo. O backend preserva o caminho público específico de cada slug;
+o administrador apenas escolhe a coleção, sem editar a rota.
 
 **A inclinação dos chips continua no código** (`COLLECTION_NAV_TILTS`, em `src/lib/home-collections-nav.ts`
 junto do fallback `COLLECTION_NAV_DEFAULTS`), consumida tanto pela vitrine quanto pela prévia do painel. É recorte da marca, não conteúdo editorial: persistir grau por card só
@@ -466,16 +468,27 @@ antigo não foi persistido — ele nunca foi renderizado pelo componente.
 **Sem card ativo a seção some da Home inteira**, em vez de deixar um título com fila vazia. A prévia
 do bloco mostra exatamente isso, com o contador de ativos.
 
-**Os dois selects do editor são `AdminSelectField` com `anchoredMenu`**, não `<select>` nativo: é o
+Quando todas as coleções disponíveis já estão associadas ao corredor, o painel informa **“Todas as
+coleções já estão na tela”** e desabilita `Novo card`. Remover um card libera a coleção novamente.
+O teto de seis é apenas a capacidade máxima do corredor: se o catálogo tiver quatro coleções ativas,
+quatro é o máximo possível até que outra coleção real seja criada. O item virtual `Tudo` não entra
+nesse seletor.
+
+O editor trata criação e edição como fluxos diferentes: `Novo card` abre a escolha da coleção; `Editar`
+mantém a coleção do card fixa, permite atualizar a imagem canônica da coleção e alterar apenas a
+apresentação e o indicador compatível. A atualização da imagem é persistida na coleção imediatamente,
+porque ela é compartilhada por todos os usos da entidade.
+
+**Os selects do editor são `AdminSelectField` com `anchoredMenu`**, não `<select>` nativo: é o
 select do projeto, e a casca do modal rola — sem ancorar, o menu ficaria cortado no fim da área
-rolável, por baixo do rodapé de ações. Como o componente não distingue "sem seleção" de valor vazio,
-as escolhas neutras carregam sentinela (`custom`, `none`) em vez de string vazia.
+rolável, por baixo do rodapé de ações. O seletor de coleção aparece somente na criação; como o
+componente não distingue "sem seleção" de valor vazio, a escolha neutra carrega a sentinela `none`.
 
 **A prévia não resolve o número ao vivo, de propósito.** Ela renderiza só o que está no formulário, e
 o card ligado a `kits` ou `promocoes` ganha o selo `nº ao vivo na Home` em vez do valor calculado.
 Resolver o número aqui exigiria `getProductsCollectionsSummary()`, que varre o catálogo inteiro — um
-custo que a tela de assets não tem motivo para pagar a cada abertura. Pela mesma razão, a prévia não
-antecipa que um card de promoções some sem oferta vigente; quem decide isso é a Home.
+custo que a tela de assets não tem motivo para pagar a cada abertura. Quando não há oferta vigente,
+a Home mantém Promoções visível e exibe o estado calculado `Confira as ofertas`.
 
 ## Brindes são catálogo próprio, e o formulário é um só
 

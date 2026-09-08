@@ -14,6 +14,8 @@ import type {
   AdminSiteImageAssetsSnapshot,
   AdminSiteLogosSnapshot,
   CollectionNavItem,
+  CollectionNavCollection,
+  CollectionIndicatorKey,
   HeroBanner,
   HomeFeatureItem,
   ManagedImageAsset,
@@ -56,6 +58,7 @@ type WpFeaturesSnapshot = {
 
 type WpCollectionsNavSnapshot = {
   items?: Partial<CollectionNavItem>[];
+  collections?: Partial<CollectionNavCollection>[];
   issues?: string[];
 };
 
@@ -171,9 +174,56 @@ function mapCollectionNavItem(
     title: cleanText(item?.title),
     subtitle: cleanText(item?.subtitle),
     href: cleanText(item?.href),
+    collectionId: toNumber(item?.collectionId),
+    collectionData: item?.collectionData
+      ? mapCollectionNavCollection(item.collectionData)
+      : undefined,
     collection: cleanText(item?.collection),
+    indicatorKey: mapIndicatorKey(item?.indicatorKey),
+    highlight: item?.highlight
+      ? { label: cleanText(item.highlight.label), text: cleanText(item.highlight.text), value: toNumber(item.highlight.value) }
+      : undefined,
+    indicatorOptions: Array.isArray(item?.indicatorOptions)
+      ? item.indicatorOptions.map((option) => ({ key: mapIndicatorKey(option.key) ?? "NONE", label: cleanText(option.label), description: cleanText(option.description), preview: cleanText(option.preview) }))
+      : undefined,
     order: toNumber(item?.order) || index + 1,
     isActive: toBoolean(item?.isActive),
+  };
+}
+
+function mapIndicatorKey(value: unknown): CollectionIndicatorKey | undefined {
+  return ["NONE", "ITEM_COUNT", "MAX_DISCOUNT_PERCENT", "NEW_ITEMS_COUNT", "ACTIVE_DEALS_COUNT"].includes(String(value))
+    ? (String(value) as CollectionIndicatorKey)
+    : undefined;
+}
+
+function mapCollectionNavCollection(value: Partial<CollectionNavCollection>): CollectionNavCollection {
+  return {
+    id: toNumber(value.id),
+    name: cleanText(value.name),
+    slug: cleanText(value.slug),
+    imageAttachmentId: toNumber(value.imageAttachmentId),
+    imageUrl: cleanText(value.imageUrl),
+    path: cleanText(value.path),
+    systemKey: cleanText(value.systemKey),
+    isActive: toBoolean(value.isActive),
+    indicatorPolicy: value.indicatorPolicy
+      ? {
+          required: mapIndicatorKey(value.indicatorPolicy.required) ?? null,
+          locked: toBoolean(value.indicatorPolicy.locked),
+          allowed: Array.isArray(value.indicatorPolicy.allowed)
+            ? value.indicatorPolicy.allowed.map(mapIndicatorKey).filter(Boolean) as CollectionIndicatorKey[]
+            : [],
+        }
+      : undefined,
+    indicatorOptions: Array.isArray(value.indicatorOptions)
+      ? value.indicatorOptions.map((option) => ({
+          key: mapIndicatorKey(option.key) ?? "NONE",
+          label: cleanText(option.label),
+          description: cleanText(option.description),
+          preview: cleanText(option.preview),
+        }))
+      : undefined,
   };
 }
 
@@ -185,6 +235,9 @@ function mapCollectionsNavSnapshot(data: WpCollectionsNavSnapshot): AdminCollect
           .sort((left, right) => left.order - right.order)
       : [],
     issues: mapIssues(data.issues),
+    collections: Array.isArray(data.collections)
+      ? data.collections.map(mapCollectionNavCollection)
+      : [],
   };
 }
 
@@ -590,6 +643,7 @@ export async function getAdminCollectionsNavSnapshot(
   if (!accessToken) {
     return {
       items: [],
+      collections: [],
       issues: ["Sessão sem access token para consultar o corredor de coleções."],
     };
   }
@@ -602,6 +656,7 @@ export async function getAdminCollectionsNavSnapshot(
   if (!result.ok) {
     return {
       items: [],
+      collections: [],
       issues: [result.error.message],
     };
   }

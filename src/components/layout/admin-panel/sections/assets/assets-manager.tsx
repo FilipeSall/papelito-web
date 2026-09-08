@@ -34,7 +34,10 @@ import type {
   SiteLogoKey,
 } from "@/types/home-assets";
 
-import type { CollectionNavDestinationOption } from "./editors/collection-nav-item-editor";
+import type {
+  CollectionImagePatch,
+  CollectionNavDestinationOption,
+} from "./editors/collection-nav-item-editor";
 import type { AssetNoticeState } from "./asset-notice";
 import { SECONDARY_ACTION_CLASS } from "./assets-classes";
 import { assetsPageDefinition, type AssetsPageKey } from "./assets-config";
@@ -153,6 +156,9 @@ function createEmptyCollectionNavItem(index: number): CollectionNavItem {
     subtitle: "",
     href: "",
     collection: "",
+    collectionId: undefined,
+    collectionData: undefined,
+    indicatorKey: undefined,
     order: index + 1,
     isActive: true,
   };
@@ -174,7 +180,7 @@ function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
 export function AssetsManager({
   initialPage,
   richTextContext,
-  collectionOptions,
+  collectionOptions: initialCollectionOptions,
   initialCollectionsNavSnapshot,
   initialFeaturesSnapshot,
   initialHeroSnapshot,
@@ -193,6 +199,8 @@ export function AssetsManager({
       ? initialFeaturesSnapshot.items
       : FEATURES_BAR_ITEMS;
   const initialPartner = { ...initialPartnerSnapshot.banner, isActive: true };
+
+  const [collectionOptions, setCollectionOptions] = useState(initialCollectionOptions);
 
   const { activePage, selectPage } = useAssetsPage(initialPage);
 
@@ -246,6 +254,10 @@ export function AssetsManager({
   const temporaryMedia = useTemporaryAdminMedia();
   const { dismissToast, isVisible, showToast, toast } = useAdminToast();
   const assetsSession = useRef(0);
+
+  useEffect(() => {
+    setCollectionOptions(initialCollectionOptions);
+  }, [initialCollectionOptions]);
 
   useEffect(() => {
     return () => {
@@ -387,6 +399,37 @@ export function AssetsManager({
     setCollectionsNav((current) =>
       current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
+  }
+
+  async function updateCollectionImage(collectionId: number, patch: CollectionImagePatch) {
+    try {
+      const response = await fetch(`/api/admin/collections/${collectionId}`, {
+        body: JSON.stringify(patch),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+      const json = await parseJson<{ collections?: CollectionNavDestinationOption[]; issues?: string[]; message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível atualizar o ícone da coleção.");
+      }
+
+      const updated = json.collections?.find((collection) => collection.id === collectionId);
+      const imageAttachmentId = typeof updated?.imageAttachmentId === "number" ? updated.imageAttachmentId : patch.imageAttachmentId ?? 0;
+      const imageUrl = typeof updated?.imageUrl === "string" ? updated.imageUrl : patch.imageUrl ?? "";
+      const image = { imageAttachmentId, imageUrl };
+      const updateItemImage = (items: CollectionNavItem[]) => items.map((item) => item.collectionId === collectionId && item.collectionData ? { ...item, collectionData: { ...item.collectionData, ...image } } : item);
+
+      setCollectionOptions((current) => current.map((collection) => collection.id === collectionId ? { ...collection, ...image } : collection));
+      setCollectionsNav(updateItemImage);
+      setPersistedCollectionsNav(updateItemImage);
+      setCollectionsNavIssues(Array.isArray(json.issues) ? json.issues : []);
+      informGroup("collectionsNav", "Ícone da coleção atualizado em todos os cards.");
+      return true;
+    } catch (error) {
+      failGroup("collectionsNav", messageFromError(error, "Não foi possível atualizar o ícone da coleção."));
+      return false;
+    }
   }
 
   function addCollectionNavItem() {
@@ -817,6 +860,9 @@ export function AssetsManager({
       const confirmedItems = normalizeCollectionsNavOrder(json.items);
       setCollectionsNav(confirmedItems);
       setPersistedCollectionsNav(confirmedItems);
+      if (Array.isArray(json.collections)) {
+        setCollectionOptions(json.collections);
+      }
       setCollectionsNavIssues(Array.isArray(json.issues) ? json.issues : []);
       confirmSave(
         "collectionsNav",
@@ -1082,6 +1128,7 @@ export function AssetsManager({
               notice={notices.collectionsNav}
               onAdd={addCollectionNavItem}
               onChange={updateCollectionNavItem}
+              onCollectionImageChange={updateCollectionImage}
               onMove={moveCollectionNavItem}
               onRemove={removeCollectionNavItem}
               onSave={saveCollectionsNav}

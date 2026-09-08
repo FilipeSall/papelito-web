@@ -2,7 +2,7 @@ import { use } from "react";
 import { ProductsHeroBanner, ProductsSection } from "@/components/layout/products-page";
 import type { ProductCollectionId } from "@/features/catalog";
 import { useProductsCatalog } from "@/features/catalog";
-import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
+import { getPublicCollections, getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import {
   readSingleQueryParam,
   normalizeSubcategoryParam,
@@ -114,7 +114,7 @@ export function ProductsDiscoveryPage({
   const { minPrice, maxPrice } = priceRange;
   const search = normalizeProductSearch(readSingleQueryParam(resolvedSearchParams.busca));
 
-  const [catalog, siteImages] = use(
+  const [catalog, siteImages, collectionCatalog] = use(
     Promise.all([
       useProductsCatalog({
         type: queryType,
@@ -128,6 +128,7 @@ export function ProductsDiscoveryPage({
         search,
       }),
       siteImagesPromise,
+      getPublicCollections(),
     ]),
   );
   const isAllCollection = catalog.activeCollection === "todos";
@@ -169,6 +170,7 @@ export function ProductsDiscoveryPage({
         showCategoryFilters={isAllCollection}
         showCategoryTabs={false}
         gridLayout={gridLayout}
+        collectionCatalog={collectionCatalog}
       />
     </main>
   );

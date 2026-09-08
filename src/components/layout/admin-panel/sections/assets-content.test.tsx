@@ -31,12 +31,6 @@ vi.mock("@/features/catalog/services/get-home-flash-sale", () => ({
   getHomeFlashSale: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@/features/catalog/services/get-products-catalog", () => ({
-  getProductsCollectionsSummary: vi
-    .fn()
-    .mockResolvedValue({ kitsCount: 0, promotionsCount: 0, promotionsMaxDiscountPercent: 0 }),
-}));
-
 vi.mock("@/lib/server/admin-taxonomy", () => ({
   getAdminCollections: vi.fn().mockResolvedValue({ collections: [], issues: [], version: 0 }),
 }));

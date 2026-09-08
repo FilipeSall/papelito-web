@@ -8,7 +8,13 @@ import { revalidatePath, revalidateTag } from "next/cache";
 export function invalidateCollections() {
   revalidateTag("admin-taxonomy", "max");
   revalidateTag("wp:categories", "max");
+  revalidateTag("public-taxonomy", "max");
+  revalidateTag("wp:home-collections-nav", "max");
   revalidateTag("wp:products", "max");
   revalidatePath("/premium");
   revalidatePath("/colecoes");
+  revalidatePath("/promocoes");
+  revalidatePath("/novidades");
+  revalidatePath("/kits");
+  revalidatePath("/");
 }

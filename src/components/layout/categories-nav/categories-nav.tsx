@@ -1,24 +1,21 @@
 import { CategoryNavItem } from "./category-nav-item";
 import { isCategoryNavItemVisible, resolveCategoryNavSubtitle } from "./constants";
 import { COLLECTION_NAV_TILTS } from "@/lib/home-collections-nav";
-import type { ProductsCollectionsSummary } from "@/features/catalog";
 import type { CollectionNavItem } from "@/types/home-assets";
 
 interface CategoriesNavProps {
   items: readonly CollectionNavItem[];
-  collectionsSummary?: ProductsCollectionsSummary | null;
 }
 
 export function CategoriesNav({
   items: configuredItems,
-  collectionsSummary,
 }: Readonly<CategoriesNavProps>) {
   const items = configuredItems
-    .filter((item) => isCategoryNavItemVisible(item, collectionsSummary))
+    .filter(isCategoryNavItemVisible)
     .map((item, index) => ({
       href: item.href,
       id: item.id,
-      subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
+      subtitle: resolveCategoryNavSubtitle(item),
       tilt: COLLECTION_NAV_TILTS[index % COLLECTION_NAV_TILTS.length],
       title: item.title,
     }));

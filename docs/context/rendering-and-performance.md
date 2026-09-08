@@ -60,7 +60,7 @@ automático.
 
 Os cards de **Explore por coleção** na home deixaram de ser lista fixa e passaram a ser
 administráveis em `/admin/assets` → Home, mas a regra acima continua valendo: eles são **curadoria**,
-com teto de 8 cards, e não um índice da tabela de coleções. Coleção criada no painel não entra sozinha
+com teto de 6 cards, e não um índice da tabela de coleções. Coleção criada no painel não entra sozinha
 — ela só aparece no seletor de destino do card.
 
 **Novidade é posição na ordenação por data, decidida fora do mapper.** `PRODUCTS_LIST_QUERY` ordena por `orderby: [{ field: DATE, order: DESC }]` e `markNewArrivals` marca os N primeiros. O `isNewArrival: index < 8` que vivia dentro de `mapWpProductToCatalogItem` era posição no lote — mudava com `perPage` e com a página.

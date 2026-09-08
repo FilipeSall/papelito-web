@@ -12,7 +12,6 @@ import {
 } from "@/lib/server/admin-home-assets";
 import { getAdminFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
-import { getAdminCollections } from "@/lib/server/admin-taxonomy";
 import { buildRichTextContext } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import { firstParam } from "@/lib/search-params";
@@ -35,7 +34,6 @@ export async function AssetsContent({
     promoMarqueeSnapshot,
     featuresSnapshot,
     collectionsNavSnapshot,
-    collectionsCatalog,
     freeShipping,
     paymentConfig,
     flashSaleCampaign,
@@ -47,15 +45,12 @@ export async function AssetsContent({
     getAdminPromoMarqueeSnapshot(session?.accessToken),
     getAdminHomeFeaturesSnapshot(session?.accessToken),
     getAdminCollectionsNavSnapshot(session?.accessToken),
-    getAdminCollections(session?.accessToken),
     getAdminFreeShippingThreshold(session?.accessToken),
     getPaymentConfig(),
     getHomeFlashSale(),
   ]);
 
-  const collectionOptions = collectionsCatalog.collections
-    .filter((collection) => collection.isActive)
-    .map((collection) => ({ name: collection.name, slug: collection.slug }));
+  const collectionOptions = collectionsNavSnapshot.collections ?? [];
 
   const richTextContext = buildRichTextContext({
     freeShippingMinimumCents: freeShipping.threshold?.minimumOrderCents ?? null,

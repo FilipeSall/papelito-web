@@ -5,13 +5,16 @@ import { useState } from "react";
 
 import { ResultFrame } from "@/components/layout/admin-panel/primitives";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { getCollectionsNavValidation } from "@/components/layout/categories-nav/collections-nav-validation";
+import {
+  COLLECTION_NAV_MAX_ITEMS,
+  getCollectionsNavValidation,
+} from "@/components/layout/categories-nav/collections-nav-validation";
 import { COLLECTION_NAV_TILTS } from "@/lib/home-collections-nav";
 import type { CollectionNavItem } from "@/types/home-assets";
 
 import { AssetEditorModal } from "../asset-editor-modal";
 import { AssetNotice, AssetWarning, type AssetNoticeState } from "../asset-notice";
-import { AssetEmptyRow, AssetIconThumb, AssetRow } from "../asset-row";
+import { AssetEmptyRow, AssetRow, AssetThumb } from "../asset-row";
 import {
   COMPACT_DESTRUCTIVE_CLASS,
   COMPACT_PRIMARY_CLASS,
@@ -23,6 +26,7 @@ import { isSameAsset } from "../assets-dirty";
 import { attentionSuffix, collectionNavItemStatus, countAttention } from "../assets-status";
 import {
   CollectionNavItemEditor,
+  type CollectionImagePatch,
   type CollectionNavDestinationOption,
 } from "../editors/collection-nav-item-editor";
 
@@ -34,6 +38,7 @@ export function CollectionsNavGroup({
   notice,
   onAdd,
   onChange,
+  onCollectionImageChange,
   onMove,
   onRemove,
   onSave,
@@ -46,6 +51,7 @@ export function CollectionsNavGroup({
   notice: AssetNoticeState | null;
   onAdd: () => string;
   onChange: (id: string, patch: Partial<CollectionNavItem>) => void;
+  onCollectionImageChange?: (collectionId: number, patch: CollectionImagePatch) => Promise<boolean>;
   onMove: (id: string, direction: -1 | 1) => void;
   onRemove: (id: string) => void;
   onSave: () => Promise<boolean>;
@@ -53,6 +59,7 @@ export function CollectionsNavGroup({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const validation = getCollectionsNavValidation(items);
   const statuses = items.map(collectionNavItemStatus);
   const attention = countAttention(statuses);
@@ -67,7 +74,8 @@ export function CollectionsNavGroup({
     .filter((item) => item.isActive)
     .map((item, index) => ({
       href: item.href,
-      hasLiveNumber: item.collection !== "",
+      hasLiveNumber: Boolean(item.highlight?.text || (item.indicatorKey && item.indicatorKey !== "NONE")),
+      highlight: item.highlight?.text,
       id: item.id,
       subtitle: item.subtitle,
       tilt: COLLECTION_NAV_TILTS[index % COLLECTION_NAV_TILTS.length],
@@ -88,7 +96,7 @@ export function CollectionsNavGroup({
           <>
             <button
               className={COMPACT_SECONDARY_CLASS}
-              disabled={isSaving}
+              disabled={isSaving || collectionOptions.length === 0 || items.length >= COLLECTION_NAV_MAX_ITEMS}
               onClick={() => setEditingId(onAdd())}
               type="button"
             >
@@ -97,7 +105,7 @@ export function CollectionsNavGroup({
             </button>
             <button
               className={COMPACT_PRIMARY_CLASS}
-              disabled={isSaving || !isDirty || !validation.isValid}
+              disabled={isSaving || isUploadingImage || !isDirty || !validation.isValid}
               onClick={() => void handleSave()}
               type="button"
             >
@@ -147,7 +155,7 @@ export function CollectionsNavGroup({
                           </span>
                           {item.hasLiveNumber ? (
                             <span className="text-[0.5rem] font-black uppercase leading-3 tracking-[0.1em] text-[#231f20]/45">
-                              nº ao vivo na Home
+                            {item.highlight || "destaque calculado ao vivo"}
                             </span>
                           ) : null}
                         </span>
@@ -170,6 +178,22 @@ export function CollectionsNavGroup({
             body="A seção fica oculta na Home enquanto não houver card ativo. Crie o primeiro para começar."
             title="Nenhum card cadastrado"
           />
+        ) : null}
+
+        {collectionOptions.length === 0 ? (
+          <div className="flex items-start gap-3 border-2 border-dashed border-[#1a1a1a]/30 bg-[#faf8f2] p-4">
+            <Compass aria-hidden className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-sm font-black">Todas as coleções já estão na tela.</p>
+              <p className="mt-1 text-xs font-semibold text-[#231f20]/65">{items.length === 1 ? "Há 1 coleção ativa cadastrada" : `Há ${items.length} coleções ativas cadastradas`}, e cada uma pode aparecer uma vez. Crie outra coleção para adicionar mais cards, até o limite de {COLLECTION_NAV_MAX_ITEMS}.</p>
+            </div>
+          </div>
+        ) : null}
+
+        {items.length >= COLLECTION_NAV_MAX_ITEMS && collectionOptions.length > 0 ? (
+          <div className="border-2 border-dashed border-[#1a1a1a]/30 bg-[#faf8f2] p-4 text-sm font-semibold text-[#231f20]/70">
+            Limite de {COLLECTION_NAV_MAX_ITEMS} coleções atingido. Remova um card para adicionar outra coleção.
+          </div>
         ) : null}
 
         {items.map((item, index) => (
@@ -215,8 +239,8 @@ export function CollectionsNavGroup({
             onOpen={() => setEditingId(item.id)}
             status={statuses[index]}
             thumbnail={
-              <AssetIconThumb
-                icon={Compass}
+              <AssetThumb
+                imageUrl={item.collectionData?.imageUrl ?? ""}
                 label={`Card ${index + 1}`}
                 tone={item.isActive ? "yellow" : "light"}
               />
@@ -229,10 +253,10 @@ export function CollectionsNavGroup({
 
       {editingItem ? (
         <AssetEditorModal
-          description="Título curto, texto auxiliar e um destino interno. A ordem da lista é a ordem pública."
+          description="Escolha uma coleção; rota e destaque vêm dela. Você também pode atualizar aqui a imagem canônica da coleção. A ordem da lista é a ordem pública."
           eyebrow="Painel admin · Assets · Home"
-          isSaveDisabled={!validation.isValid}
-          isSaving={isSaving}
+          isSaveDisabled={isUploadingImage || !validation.isValid}
+          isSaving={isSaving || isUploadingImage}
           notice={notice}
           onClose={() => setEditingId(null)}
           onSave={() => void handleSave()}
@@ -241,11 +265,22 @@ export function CollectionsNavGroup({
           title={`Explore por coleção · card ${editingIndex + 1}`}
         >
           <CollectionNavItemEditor
-            collectionOptions={collectionOptions}
+            collectionOptions={collectionOptions.filter(
+              (option) =>
+                !items.some(
+                  (other) =>
+                    other.id !== editingItem.id &&
+                    other.isActive &&
+                    other.collectionId === option.id,
+                ),
+            )}
             index={editingIndex}
+            isNew={editingItem.collectionId == null}
             isSaving={isSaving}
             item={editingItem}
             onChange={(patch) => onChange(editingItem.id, patch)}
+            onCollectionImageChange={onCollectionImageChange}
+            onUploadingChange={setIsUploadingImage}
           />
         </AssetEditorModal>
       ) : null}

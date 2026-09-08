@@ -52,6 +52,7 @@ interface ProductsSectionProps {
   search?: string;
   showSearch?: boolean;
   gridLayout?: ProductsGridLayout;
+  collectionCatalog?: Array<{ slug: string; name: string; imageUrl: string; path: string }>;
 }
 
 /**
@@ -99,6 +100,7 @@ export function ProductsSection({
   search = "",
   showSearch = false,
   gridLayout = "default",
+  collectionCatalog = [],
 }: Readonly<ProductsSectionProps>) {
   const showCoverageWarning = coverageStatus === "unavailable";
   const isSourceUnavailable = sourceStatus === "unavailable";
@@ -123,6 +125,7 @@ export function ProductsSection({
                 viewMode={viewMode}
                 perPage={perPage}
                 search={search}
+                collectionCatalog={collectionCatalog}
               />
             </div>
           ) : null}

@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { InfoTooltip } from "./form-fields";
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import type { SelectOption } from "@/types/admin-products-manager";
@@ -11,7 +13,7 @@ type AdminSelectFieldProps = {
    */
   anchoredMenu?: boolean;
   helpText?: string;
-  label: string;
+  label: ReactNode;
   onChange: (value: string) => void;
   options: readonly SelectOption[];
   placeholder: string;
