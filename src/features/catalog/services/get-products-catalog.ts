@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -907,8 +909,11 @@ export async function getProductsCatalog(
  * listagem (`matchesCollection`), para o card não contar um universo diferente do que a
  * página da coleção mostra. Origem indisponível devolve zeros: o card cai no texto fixo e
  * a coleção de promoções sai da navegação, em vez de anunciar oferta que não podemos servir.
+ *
+ * Memoizado com `cache()` do React: a varredura percorre o catálogo inteiro, e dois componentes
+ * do mesmo render pedindo o resumo não podem pagar por ela duas vezes.
  */
-export async function getProductsCollectionsSummary(): Promise<ProductsCollectionsSummary> {
+export const getProductsCollectionsSummary = cache(async function getProductsCollectionsSummary(): Promise<ProductsCollectionsSummary> {
   const catalog = isMockDataEnabled()
     ? await loadMockCatalog()
     : await loadWpCatalogItems(await getHomeFlashSale(), await getCollectionsConfig());
@@ -938,4 +943,4 @@ export async function getProductsCollectionsSummary(): Promise<ProductsCollectio
   }
 
   return { kitsCount, promotionsCount, promotionsMaxDiscountPercent };
-}
+})

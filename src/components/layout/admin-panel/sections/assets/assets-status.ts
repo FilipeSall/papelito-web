@@ -4,6 +4,7 @@ import type { StatusShape } from "@/components/layout/admin-panel/primitives";
 import { isDefaultSiteImage } from "@/lib/site-images";
 import { isDefaultLogo } from "@/lib/site-logos";
 import type {
+  CollectionNavItem,
   HeroBanner,
   HomeFeatureItem,
   ManagedImageAsset,
@@ -94,6 +95,14 @@ export function featureItemStatus(item: HomeFeatureItem): AssetStatus {
   }
 
   return ASSET_STATUS.configured;
+}
+
+export function collectionNavItemStatus(item: CollectionNavItem): AssetStatus {
+  if (isBlank(item.title) || isBlank(item.subtitle) || isBlank(item.href)) {
+    return ASSET_STATUS.incomplete;
+  }
+
+  return item.isActive ? ASSET_STATUS.active : ASSET_STATUS.inactive;
 }
 
 export function countAttention(statuses: AssetStatus[]): number {

@@ -1,12 +1,14 @@
 import "server-only";
 
-import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/components/layout/promo-marquee/constants";
+import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/lib/promo-marquee-limits";
 import { normalizeRichTextDocument } from "@/features/rich-text";
-import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
+import { FEATURES_BAR_ITEMS } from "@/lib/home-features";
+import { COLLECTION_NAV_DEFAULTS } from "@/lib/home-collections-nav";
 import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_IMAGE_DEFAULTS, SITE_IMAGE_KEYS } from "@/lib/site-images";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
+  CollectionNavItem,
   HeroBanner,
   ManagedImageAsset,
   HomeFeatureItem,
@@ -33,6 +35,10 @@ type WpPromoMarqueeResponse = {
 
 type WpFeaturesResponse = {
   items?: Partial<HomeFeatureItem>[];
+};
+
+type WpCollectionsNavResponse = {
+  items?: Partial<CollectionNavItem>[];
 };
 
 type WpPartnerResponse = {
@@ -75,6 +81,30 @@ function mapPromoMarqueeItem(
     id: cleanText(item.id) || `marquee-${index + 1}`,
     text: item.text.trim(),
     content,
+    order: toNumber(item.order) || index + 1,
+    isActive: toBoolean(item.isActive),
+  };
+}
+
+function mapCollectionNavItem(
+  item: Partial<CollectionNavItem> | undefined,
+  index: number,
+): CollectionNavItem | null {
+  const title = cleanText(item?.title);
+  const subtitle = cleanText(item?.subtitle);
+  const href = cleanText(item?.href);
+
+  // Card sem texto ou sem destino é atalho quebrado: sai sozinho em vez de derrubar o corredor.
+  if (!item || title === "" || subtitle === "" || !href.startsWith("/")) {
+    return null;
+  }
+
+  return {
+    id: cleanText(item.id) || `collection-nav-${index + 1}`,
+    title,
+    subtitle,
+    href,
+    collection: cleanText(item.collection),
     order: toNumber(item.order) || index + 1,
     isActive: toBoolean(item.isActive),
   };
@@ -311,6 +341,38 @@ export async function getHomeFeatures(): Promise<HomeFeatureItem[]> {
     .filter((item): item is HomeFeatureItem => item !== null);
 
   return items.length === FEATURES_BAR_ITEMS.length ? items : FEATURES_BAR_ITEMS;
+}
+
+/**
+ * Cards do corredor "Explore por coleção".
+ *
+ * Backend fora do ar cai no corredor de sempre — perder a seção inteira seria pior do que exibir
+ * os quatro atalhos que existem desde o lançamento. Lista vazia devolvida com sucesso, ao
+ * contrário, é decisão do admin e some da Home.
+ */
+export async function getHomeCollectionsNav(): Promise<CollectionNavItem[]> {
+  const result = await wpRest<WpCollectionsNavResponse>(
+    "/papelito/v1/home/collections-nav",
+    process.env.NODE_ENV === "development"
+      ? {}
+      : {
+          revalidate: 60,
+          tags: ["wp:home-collections-nav"],
+        },
+  );
+
+  if (!result.ok || !Array.isArray(result.data.items)) {
+    if (!result.ok && result.status !== 404) {
+      console.warn("[home-collections-nav] Falha ao consultar o corredor.", result.error.message);
+    }
+
+    return [...COLLECTION_NAV_DEFAULTS];
+  }
+
+  return result.data.items
+    .map((item, index) => mapCollectionNavItem(item, index))
+    .filter((item): item is CollectionNavItem => item?.isActive === true)
+    .sort((left, right) => left.order - right.order);
 }
 
 export async function getHomePartnerBanner(): Promise<PartnerBannerConfig | null> {

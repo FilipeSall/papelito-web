@@ -5,7 +5,8 @@ import { getPapelitoTaxonomy } from "@/features/catalog/services/get-papelito-ca
 /**
  * Árvore pública de categorias, para a navegação e os filtros do catálogo.
  *
- * Substitui os hardcodes do frontend — `CATEGORIES_NAV_ITEMS` carregava um
+ * Substitui os hardcodes do frontend — a lista de navegação de coleções (hoje
+ * `COLLECTION_NAV_DEFAULTS`, em `src/lib/home-collections-nav.ts`) carregava um
  * `// TODO: Substituir por requisição ao backend — GET /api/categories` desde a
  * primeira versão.
  */

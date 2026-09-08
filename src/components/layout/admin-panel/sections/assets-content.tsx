@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import {
+  getAdminCollectionsNavSnapshot,
   getAdminHomeFeaturesSnapshot,
   getAdminHeroBannersSnapshot,
   getAdminPartnerBannerSnapshot,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/server/admin-home-assets";
 import { getAdminFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
+import { getAdminCollections } from "@/lib/server/admin-taxonomy";
 import { buildRichTextContext } from "@/features/rich-text";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
 import { firstParam } from "@/lib/search-params";
@@ -32,6 +34,8 @@ export async function AssetsContent({
     logosSnapshot,
     promoMarqueeSnapshot,
     featuresSnapshot,
+    collectionsNavSnapshot,
+    collectionsCatalog,
     freeShipping,
     paymentConfig,
     flashSaleCampaign,
@@ -42,10 +46,16 @@ export async function AssetsContent({
     getAdminSiteLogosSnapshot(session?.accessToken),
     getAdminPromoMarqueeSnapshot(session?.accessToken),
     getAdminHomeFeaturesSnapshot(session?.accessToken),
+    getAdminCollectionsNavSnapshot(session?.accessToken),
+    getAdminCollections(session?.accessToken),
     getAdminFreeShippingThreshold(session?.accessToken),
     getPaymentConfig(),
     getHomeFlashSale(),
   ]);
+
+  const collectionOptions = collectionsCatalog.collections
+    .filter((collection) => collection.isActive)
+    .map((collection) => ({ name: collection.name, slug: collection.slug }));
 
   const richTextContext = buildRichTextContext({
     freeShippingMinimumCents: freeShipping.threshold?.minimumOrderCents ?? null,
@@ -56,6 +66,8 @@ export async function AssetsContent({
   return (
     <div className="space-y-5">
       <AssetsManager
+        collectionOptions={collectionOptions}
+        initialCollectionsNavSnapshot={collectionsNavSnapshot}
         initialPage={initialPage}
         richTextContext={richTextContext}
         initialFeaturesSnapshot={featuresSnapshot}

@@ -356,11 +356,12 @@ O que passa a valer:
   **Produtos**, **Sobre** e **Revendedor**. O registro vive em `sections/assets/assets-config.ts` —
   página nova entra ali e em nenhum outro lugar da navegação.
 - **Cada asset é uma linha em `ResultFrame`**, com miniatura, onde ele aparece no site, `StatusChip` e
-  `Editar`; clicar abre um modal (`asset-editor-modal.tsx`, no desenho de `vendor-create-content.tsx`).
+  `Editar`; o `Editar` abre um modal (`asset-editor-modal.tsx`, no desenho de `vendor-create-content.tsx`).
   Não há mais accordion dentro de accordion.
-- **Um `ResultFrame` por grupo de salvamento**, e os grupos são exatamente os seis `PUT` que já existiam
-  — hero, faixa, benefícios, PDV Perfeito, imagens de página e logos. O Salvar do modal dispara o mesmo
-  `PUT` do bloco: nenhum contrato de backend mudou.
+- **Um `ResultFrame` por grupo de salvamento**, e os grupos são exatamente os `PUT` que existem —
+  hero, faixa, benefícios, Explore por coleção, PDV Perfeito, imagens de página e logos. O Salvar do
+  modal dispara o mesmo `PUT` do bloco: um grupo novo é sempre um `PUT` novo, nunca um recorte de um
+  existente.
 - **O catálogo PDF mudou de lugar.** Estava dentro do bloco PDV Perfeito, na Home; o link `/api/catalog`
   só existe em `/revendedor`, então é lá que ele aparece.
 
@@ -374,8 +375,24 @@ contrato `?tab=`. O motivo é que Assets é um **editor**, não uma listagem: na
 o gerenciador e descartaria edição ainda não salva ao trocar de página. `pushState` também está fora —
 o router não escuta esse `popstate`, então o Voltar mudaria a URL sem mudar a tela.
 
-Pela mesma razão, **os seis snapshots continuam sendo buscados de uma vez** no servidor, e não só os da
+Pela mesma razão, **todos os snapshots continuam sendo buscados de uma vez** no servidor, e não só os da
 página ativa: eles alimentam o contador de todos os segmentos e precisam sobreviver à troca de página.
+
+### O `Editar` da linha é o botão, e a linha não é clicável
+
+`AssetRow` já usou `ResultButtonRow`: a linha inteira virava um overlay `absolute inset-0` e o
+`Editar` era um `span` `aria-hidden` com `pointer-events-none`, para não aninhar controle dentro de
+controle. **Isso nunca funcionou no navegador.** O contêiner das ações é `relative z-10` e fica por
+cima do overlay: o clique atravessava o `span` e morria nesse contêiner. Só clicar no vazio da linha
+abria o editor — e jsdom não modela z-index nem hit-testing, então a suíte passava verde.
+
+Agora `AssetRow` monta a própria `li` e o `Editar` é um `<button>` de verdade. A regra:
+
+> Se um alvo parece botão, ele é o botão. Overlay de linha só onde a linha inteira é o único
+> controle — em Cupons, Coleções e Produtos, que continuam com `ResultButtonRow`.
+
+Também some o segundo ponto de tabulação por linha: antes o leitor de tela anunciava o overlay
+"Editar Kits" e as setas de ordem como controles irmãos do mesmo assunto.
 
 ### Estado do asset: ícone mais texto, como no resto do painel
 
@@ -411,6 +428,54 @@ todas liam como `Configurado` sem ninguém ter subido nada.
   no topo da tela, que nunca sumia e era sobrescrito pela ação seguinte, saiu. Sucesso é `AdminToast`.
 - **Upload não publica.** O arquivo sobe para a mídia temporária e a linha passa a `Não salvo`; só o
   Salvar do bloco publica.
+
+### Explore por coleção: curadoria, não espelho do catálogo
+
+A seção **Explore por coleção** da Home era uma lista cravada em `categories-nav/constants.ts`. Ela
+passou a ser um grupo de Assets · Home, com `GET|PUT /api/admin/assets/collections-nav`, add/remover,
+reordenar por seta e ativo/inativo — a mesma gramática da faixa de avisos.
+
+A decisão que não é óbvia, e o motivo:
+
+> **Coleção criada no painel não entra sozinha na Home.** A seção é vitrine curada, não índice do
+> catálogo: quem escolhe quais atalhos merecem um chip, com que texto e em que ordem, é o admin.
+
+Isso também evita uma armadilha de modelagem. Os quatro cards de fábrica **não são a mesma coisa**:
+`Premium` é uma coleção manual real (linha em `wp_papelito_collections`), enquanto `Kits`,
+`Novidades` e `Promoções` são coleções **derivadas** por regra de catálogo (`matchesCollection()`
+resolve para `isKit`, `isNewArrival`, `isOnSale`). Listar a seção a partir da tabela de coleções
+perderia os três derivados — ou exigiria um híbrido fixo-mais-dinâmico que ninguém consegue explicar.
+
+O que existe no editor do card, e por quê:
+
+| Campo | Papel |
+|---|---|
+| Título / Texto auxiliar | 24 e 40 caracteres, texto simples. HTML é recusado com 422 |
+| Destino | `AdminSelectField` com as **coleções cadastradas ativas** (monta `/colecoes?colecao=<slug>`) ou caminho digitado. Coleção nova aparece no select sem ninguém decorar URL |
+| Número ao vivo | Liga o card a `kits` ou `promocoes` — as duas coleções derivadas com número próprio. **Na Home** troca o texto por "6 kits disponíveis" / "Até 25% off" e some com o card de promoções sem oferta |
+| Ativo | Card inativo não sai na rota pública |
+
+`/kits`, `/premium`, `/novidades` e `/promocoes` são **páginas dedicadas**, não a listagem genérica —
+por isso não casam com o select de coleção e continuam sendo editados como caminho. Não é bug.
+
+**A inclinação dos chips continua no código** (`COLLECTION_NAV_TILTS`, em `src/lib/home-collections-nav.ts`
+junto do fallback `COLLECTION_NAV_DEFAULTS`), consumida tanto pela vitrine quanto pela prévia do painel. É recorte da marca, não conteúdo editorial: persistir grau por card só
+daria ao admin uma forma de desalinhar a fila. Pelo mesmo motivo o `iconSrc` que existia no tipo
+antigo não foi persistido — ele nunca foi renderizado pelo componente.
+
+**Sem card ativo a seção some da Home inteira**, em vez de deixar um título com fila vazia. A prévia
+do bloco mostra exatamente isso, com o contador de ativos.
+
+**Os dois selects do editor são `AdminSelectField` com `anchoredMenu`**, não `<select>` nativo: é o
+select do projeto, e a casca do modal rola — sem ancorar, o menu ficaria cortado no fim da área
+rolável, por baixo do rodapé de ações. Como o componente não distingue "sem seleção" de valor vazio,
+as escolhas neutras carregam sentinela (`custom`, `none`) em vez de string vazia.
+
+**A prévia não resolve o número ao vivo, de propósito.** Ela renderiza só o que está no formulário, e
+o card ligado a `kits` ou `promocoes` ganha o selo `nº ao vivo na Home` em vez do valor calculado.
+Resolver o número aqui exigiria `getProductsCollectionsSummary()`, que varre o catálogo inteiro — um
+custo que a tela de assets não tem motivo para pagar a cada abertura. Pela mesma razão, a prévia não
+antecipa que um card de promoções some sem oferta vigente; quem decide isso é a Home.
 
 ## Brindes são catálogo próprio, e o formulário é um só
 

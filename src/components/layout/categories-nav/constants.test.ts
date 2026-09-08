@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  CATEGORIES_NAV_ITEMS,
-  isCategoryNavItemVisible,
-  resolveCategoryNavSubtitle,
-} from "./constants";
+import { COLLECTION_NAV_DEFAULTS } from "@/lib/home-collections-nav";
 
-function itemFor(collection: string) {
-  const item = CATEGORIES_NAV_ITEMS.find(
-    (candidate) => candidate.collection === collection,
-  );
+import { isCategoryNavItemVisible, resolveCategoryNavSubtitle } from "./constants";
+
+function itemFor(id: string) {
+  const item = COLLECTION_NAV_DEFAULTS.find((candidate) => candidate.id === id);
 
   if (!item) {
-    throw new Error(`Item de navegação ausente: ${collection}`);
+    throw new Error(`Item de navegação ausente: ${id}`);
   }
 
   return item;
@@ -21,6 +17,32 @@ function itemFor(collection: string) {
 const kits = itemFor("kits");
 const promocoes = itemFor("promocoes");
 const premium = itemFor("premium");
+
+describe("COLLECTION_NAV_DEFAULTS", () => {
+  it("espelha o seed do WordPress, para a Home degradar no corredor de sempre", () => {
+    expect(COLLECTION_NAV_DEFAULTS.map((item) => item.id)).toEqual([
+      "kits",
+      "premium",
+      "promocoes",
+      "novidades",
+    ]);
+    expect(COLLECTION_NAV_DEFAULTS.map((item) => item.href)).toEqual([
+      "/kits",
+      "/premium",
+      "/promocoes",
+      "/novidades",
+    ]);
+    expect(COLLECTION_NAV_DEFAULTS.map((item) => item.order)).toEqual([1, 2, 3, 4]);
+    expect(COLLECTION_NAV_DEFAULTS.every((item) => item.isActive)).toBe(true);
+  });
+
+  it("só amarra número ao vivo onde o catálogo tem número", () => {
+    expect(itemFor("kits").collection).toBe("kits");
+    expect(itemFor("promocoes").collection).toBe("promocoes");
+    expect(itemFor("premium").collection).toBe("");
+    expect(itemFor("novidades").collection).toBe("");
+  });
+});
 
 describe("resolveCategoryNavSubtitle", () => {
   it("usa o texto fixo quando o resumo não veio", () => {

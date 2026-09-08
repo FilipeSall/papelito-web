@@ -53,10 +53,15 @@ pertinência, então coleção criada no painel filtra sem deploy. Slug sem prod
 conjunto vazio — o mesmo fail-closed de `/catalog/search`. Aparar o slug contra uma lista fixa fazia
 `?colecao=<coleção nova>` cair em `todos` e devolver o catálogo inteiro.
 
-**Filtrar não é aparecer na navegação.** A barra de chips, os cards da home e as rotas `/premium`,
-`/novidades` e `/promocoes` continuam com a lista fixa: são superfícies de espaço limitado, e criar a
-décima coleção não pode desmontar o layout. Coleção nova é navegável por `?colecao=<slug>`, não ganha
-chip automático.
+**Filtrar não é aparecer na navegação.** A barra de chips e as rotas `/premium`, `/novidades` e
+`/promocoes` continuam com a lista fixa: são superfícies de espaço limitado, e criar a décima coleção
+não pode desmontar o layout. Coleção nova é navegável por `?colecao=<slug>`, não ganha chip
+automático.
+
+Os cards de **Explore por coleção** na home deixaram de ser lista fixa e passaram a ser
+administráveis em `/admin/assets` → Home, mas a regra acima continua valendo: eles são **curadoria**,
+com teto de 8 cards, e não um índice da tabela de coleções. Coleção criada no painel não entra sozinha
+— ela só aparece no seletor de destino do card.
 
 **Novidade é posição na ordenação por data, decidida fora do mapper.** `PRODUCTS_LIST_QUERY` ordena por `orderby: [{ field: DATE, order: DESC }]` e `markNewArrivals` marca os N primeiros. O `isNewArrival: index < 8` que vivia dentro de `mapWpProductToCatalogItem` era posição no lote — mudava com `perPage` e com a página.
 
@@ -77,6 +82,8 @@ Por isso as duas camadas têm políticas opostas de erro, e isso é intencional:
 - `getAdminUserDetail` precisa continuar `wpRest` com `cache: "no-store"`; com cache, `router.refresh()` não re-busca e ações administrativas ficam visíveis depois de já executadas.
 - A chamada do Next ao WordPress para revalidar estoque **não** tem cache no Next — o transient versionado do backend já resolve.
 - Troca de vendor ativo chama `revalidateTag('wp:coverage', 'max')`.
+- `getProductsCollectionsSummary()` varre o catálogo inteiro para contar kits e promoções. É memoizado com `cache()` do React, então dois componentes do mesmo render pagam uma vez; as páginas da varredura ainda passam pelo Data Cache (`revalidate: 60`, tag `wp:products`), compartilhado com a listagem. **Não chame esse resumo em tela administrativa** — o painel de assets já usou e voltou atrás.
+- Os assets da Home são ISR de 60 s por tag (`wp:home-hero-banners`, `wp:home-promo-marquee`, `wp:home-features`, `wp:home-collections-nav`, `wp:home-partner-banner`). Cada `PUT` do painel invalida a **sua** tag mais `revalidatePath("/")`, para a alteração aparecer sem esperar o TTL. Bloco novo na Home entra com tag própria: reaproveitar a tag de outro asset faria um salvamento invalidar cache que não é dele.
 
 ## Como verificar que não regrediu
 

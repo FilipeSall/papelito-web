@@ -1,6 +1,6 @@
 import { RichText, type ResolvedRichTextNode } from "@/features/rich-text";
 
-import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "./constants";
+import { PROMO_MARQUEE_MIN_ACTIVE_MESSAGES } from "@/lib/promo-marquee-limits";
 
 export type PromoMarqueeMessage = {
   id: string;

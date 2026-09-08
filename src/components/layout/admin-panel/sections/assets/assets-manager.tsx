@@ -9,19 +9,22 @@ import {
   SectionHeading,
   useAdminToast,
 } from "@/components/layout/admin-panel/primitives";
-import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
+import { getCollectionsNavValidation } from "@/components/layout/categories-nav/collections-nav-validation";
+import { FEATURES_BAR_ITEMS } from "@/lib/home-features";
 import { getHomeFeaturesValidation } from "@/components/layout/features-bar/home-features-validation";
 import { getPromoMarqueeValidation } from "@/components/layout/promo-marquee/promo-marquee-validation";
 import type { RichTextResolutionContext } from "@/features/rich-text";
 import { useTemporaryAdminMedia } from "@/hooks/use-temporary-admin-media";
 import { messageFromError } from "@/utils/error-message";
 import type {
+  AdminCollectionsNavSnapshot,
   AdminHeroBannersSnapshot,
   AdminHomeFeaturesSnapshot,
   AdminPartnerBannerSnapshot,
   AdminPromoMarqueeSnapshot,
   AdminSiteImageAssetsSnapshot,
   AdminSiteLogosSnapshot,
+  CollectionNavItem,
   HeroBanner,
   HomeFeatureItem,
   ManagedImageAsset,
@@ -31,6 +34,7 @@ import type {
   SiteLogoKey,
 } from "@/types/home-assets";
 
+import type { CollectionNavDestinationOption } from "./editors/collection-nav-item-editor";
 import type { AssetNoticeState } from "./asset-notice";
 import { SECONDARY_ACTION_CLASS } from "./assets-classes";
 import { assetsPageDefinition, type AssetsPageKey } from "./assets-config";
@@ -43,6 +47,7 @@ import {
   type AssetsPageSummary,
 } from "./assets-page-tabs";
 import {
+  collectionNavItemStatus,
   countAttention,
   featureItemStatus,
   heroBannerStatus,
@@ -52,6 +57,7 @@ import {
   partnerBannerStatus,
 } from "./assets-status";
 import { CatalogGroup } from "./groups/catalog-group";
+import { CollectionsNavGroup } from "./groups/collections-nav-group";
 import { FeaturesGroup } from "./groups/features-group";
 import { HeroGroup } from "./groups/hero-group";
 import { LogosGroup } from "./groups/logos-group";
@@ -67,12 +73,22 @@ const SITE_IMAGES_API = "/api/admin/assets/site-images";
 const LOGOS_API = "/api/admin/assets/logos";
 const PROMO_MARQUEE_API = "/api/admin/assets/promo-marquee";
 const HOME_FEATURES_API = "/api/admin/assets/features";
+const COLLECTIONS_NAV_API = "/api/admin/assets/collections-nav";
 
-type AssetGroupKey = "features" | "hero" | "logos" | "marquee" | "partner" | "siteImages";
+type AssetGroupKey =
+  | "collectionsNav"
+  | "features"
+  | "hero"
+  | "logos"
+  | "marquee"
+  | "partner"
+  | "siteImages";
 
 type AssetsManagerProps = {
   initialPage: AssetsPageKey;
   richTextContext: RichTextResolutionContext;
+  collectionOptions: CollectionNavDestinationOption[];
+  initialCollectionsNavSnapshot: AdminCollectionsNavSnapshot;
   initialFeaturesSnapshot: AdminHomeFeaturesSnapshot;
   initialHeroSnapshot: AdminHeroBannersSnapshot;
   initialLogosSnapshot: AdminSiteLogosSnapshot;
@@ -82,6 +98,7 @@ type AssetsManagerProps = {
 };
 
 const EMPTY_NOTICES: Record<AssetGroupKey, AssetNoticeState | null> = {
+  collectionsNav: null,
   features: null,
   hero: null,
   logos: null,
@@ -122,6 +139,25 @@ function normalizePromoMarqueeOrder(messages: PromoMarqueeItem[]) {
   }));
 }
 
+function normalizeCollectionsNavOrder(items: CollectionNavItem[]) {
+  return items.map((item, index) => ({ ...item, order: index + 1 }));
+}
+
+function createEmptyCollectionNavItem(index: number): CollectionNavItem {
+  return {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `collection-nav-${Date.now()}-${index + 1}`,
+    title: "",
+    subtitle: "",
+    href: "",
+    collection: "",
+    order: index + 1,
+    isActive: true,
+  };
+}
+
 function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
   return {
     id:
@@ -138,6 +174,8 @@ function createEmptyPromoMarqueeItem(index: number): PromoMarqueeItem {
 export function AssetsManager({
   initialPage,
   richTextContext,
+  collectionOptions,
+  initialCollectionsNavSnapshot,
   initialFeaturesSnapshot,
   initialHeroSnapshot,
   initialLogosSnapshot,
@@ -165,6 +203,16 @@ export function AssetsManager({
   const [persistedPartnerBanner, setPersistedPartnerBanner] =
     useState<PartnerBannerConfig>(initialPartner);
   const [partnerIssues, setPartnerIssues] = useState(initialPartnerSnapshot.issues);
+  const [collectionsNav, setCollectionsNav] = useState(() =>
+    normalizeCollectionsNavOrder(initialCollectionsNavSnapshot.items),
+  );
+  const [persistedCollectionsNav, setPersistedCollectionsNav] = useState(() =>
+    normalizeCollectionsNavOrder(initialCollectionsNavSnapshot.items),
+  );
+  const [collectionsNavIssues, setCollectionsNavIssues] = useState(
+    initialCollectionsNavSnapshot.issues,
+  );
+  const [isSavingCollectionsNav, setIsSavingCollectionsNav] = useState(false);
   const [promoMarquee, setPromoMarquee] = useState(() =>
     normalizePromoMarqueeOrder(initialPromoMarqueeSnapshot.messages),
   );
@@ -333,6 +381,45 @@ export function AssetsManager({
       clone.splice(nextIndex, 0, item);
       return normalizePromoMarqueeOrder(clone);
     });
+  }
+
+  function updateCollectionNavItem(id: string, patch: Partial<CollectionNavItem>) {
+    setCollectionsNav((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
+
+  function addCollectionNavItem() {
+    const item = createEmptyCollectionNavItem(collectionsNav.length);
+    setCollectionsNav((current) => normalizeCollectionsNavOrder([...current, item]));
+    return item.id;
+  }
+
+  function moveCollectionNavItem(id: string, direction: -1 | 1) {
+    setCollectionsNav((current) => {
+      const index = current.findIndex((item) => item.id === id);
+
+      if (index < 0) {
+        return current;
+      }
+
+      const nextIndex = index + direction;
+
+      if (nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const clone = [...current];
+      const [item] = clone.splice(index, 1);
+      clone.splice(nextIndex, 0, item);
+      return normalizeCollectionsNavOrder(clone);
+    });
+  }
+
+  function removeCollectionNavItem(id: string) {
+    setCollectionsNav((current) =>
+      normalizeCollectionsNavOrder(current.filter((item) => item.id !== id)),
+    );
   }
 
   function removePromoMarqueeItem(id: string) {
@@ -700,6 +787,55 @@ export function AssetsManager({
     }
   }
 
+  async function saveCollectionsNav() {
+    if (isSavingCollectionsNav) {
+      return false;
+    }
+
+    const validation = getCollectionsNavValidation(collectionsNav);
+
+    if (!validation.isValid) {
+      failGroup("collectionsNav", validation.message);
+      return false;
+    }
+
+    const previousPersisted = persistedCollectionsNav;
+    setIsSavingCollectionsNav(true);
+
+    try {
+      const response = await fetch(COLLECTIONS_NAV_API, {
+        body: JSON.stringify({ items: normalizeCollectionsNavOrder(collectionsNav) }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+      const json = await parseJson<AdminCollectionsNavSnapshot & { message?: string }>(response);
+
+      if (!response.ok || !json) {
+        throw new Error(json?.message ?? "Não foi possível salvar o corredor de coleções.");
+      }
+
+      const confirmedItems = normalizeCollectionsNavOrder(json.items);
+      setCollectionsNav(confirmedItems);
+      setPersistedCollectionsNav(confirmedItems);
+      setCollectionsNavIssues(Array.isArray(json.issues) ? json.issues : []);
+      confirmSave(
+        "collectionsNav",
+        "Corredor de coleções atualizado",
+        "Os cards ativos já aparecem em Explore por coleção.",
+      );
+      return true;
+    } catch (error) {
+      setCollectionsNav(previousPersisted);
+      failGroup(
+        "collectionsNav",
+        messageFromError(error, "Não foi possível salvar o corredor de coleções."),
+      );
+      return false;
+    } finally {
+      setIsSavingCollectionsNav(false);
+    }
+  }
+
   async function saveHomeFeatures() {
     if (isSavingFeatures) {
       return false;
@@ -811,10 +947,16 @@ export function AssetsManager({
       attention: countAttention([
         ...heroBanners.map(heroBannerStatus),
         ...promoMarquee.map(marqueeMessageStatus),
+        ...collectionsNav.map(collectionNavItemStatus),
         ...features.map(featureItemStatus),
         partnerBannerStatus(partnerBanner),
       ]),
-      total: heroBanners.length + promoMarquee.length + features.length + 1,
+      total:
+        heroBanners.length +
+        promoMarquee.length +
+        collectionsNav.length +
+        features.length +
+        1,
     },
     produtos: { attention: imagesAttention(produtosFields), total: produtosFields.length },
     revendedor: {
@@ -828,6 +970,7 @@ export function AssetsManager({
     !isSameAsset(logos, persistedLogos) ? "Global" : null,
     !isSameAsset(heroBanners, persistedHeroBanners) ||
     !isSameAsset(promoMarquee, persistedPromoMarquee) ||
+    !isSameAsset(collectionsNav, persistedCollectionsNav) ||
     !isSameAsset(features, persistedFeatures) ||
     !isSameAsset(partnerBanner, persistedPartnerBanner)
       ? "Home"
@@ -929,6 +1072,20 @@ export function AssetsManager({
                   ? uploadingKey.slice("feature:".length)
                   : null
               }
+            />
+
+            <CollectionsNavGroup
+              collectionOptions={collectionOptions}
+              isSaving={isSavingCollectionsNav}
+              issues={collectionsNavIssues}
+              items={collectionsNav}
+              notice={notices.collectionsNav}
+              onAdd={addCollectionNavItem}
+              onChange={updateCollectionNavItem}
+              onMove={moveCollectionNavItem}
+              onRemove={removeCollectionNavItem}
+              onSave={saveCollectionsNav}
+              persistedItems={persistedCollectionsNav}
             />
 
             <PartnerGroup

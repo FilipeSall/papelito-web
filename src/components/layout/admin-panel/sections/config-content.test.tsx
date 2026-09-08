@@ -52,6 +52,30 @@ describe("ConfigContent", () => {
     expect(getContactConfigPhone()).toBe("+556133334444");
   });
 
+  it("does not let a failed load overwrite the stored phone with the default", async () => {
+    server.use(
+      http.get("*/api/admin/contact-config", () =>
+        HttpResponse.json({ message: "Falha temporária" }, { status: 500 }),
+      ),
+    );
+    setContactConfigPhone("+5561999999999");
+    const user = userEvent.setup();
+    render(<ConfigContent />);
+
+    expect(
+      await screen.findByText("Não foi possível carregar o telefone."),
+    ).toBeInTheDocument();
+
+    const saveButton = screen.getByRole("button", { name: /salvar telefone/i });
+    expect(saveButton).toBeDisabled();
+
+    await user.click(saveButton);
+
+    // O campo ficou com DEFAULT_CONTACT_PHONE porque a leitura falhou; salvar publicaria esse
+    // padrão por cima do número real que está no ar.
+    expect(getContactConfigPhone()).toBe("+5561999999999");
+  });
+
   it("loads the stored social profile links", async () => {
     setContactConfigSocial({ instagram: "https://www.instagram.com/outra/" });
     render(<ConfigContent />);
@@ -100,9 +124,11 @@ describe("ConfigContent", () => {
     setContactConfigSocial({ instagram: "https://www.instagram.com/outra/" });
     render(<ConfigContent />);
 
-    const loadingButton = screen.getByRole("button", { name: /carregando/i });
-
-    expect(loadingButton).toBeDisabled();
+    // Telefone e redes sociais leem a mesma rota: as duas seções entram em "Carregando" juntas.
+    expect(screen.getAllByRole("button", { name: /carregando/i })).toHaveLength(2);
+    for (const loadingButton of screen.getAllByRole("button", { name: /carregando/i })) {
+      expect(loadingButton).toBeDisabled();
+    }
     expect(await screen.findByText("Não foi possível carregar as redes sociais.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar redes sociais/i })).toBeDisabled();
 

@@ -234,18 +234,54 @@ function SocialProfilesFields() {
 function ContactSection() {
   const [phone, setPhone] = useState(DEFAULT_CONTACT_PHONE);
   const [feedback, setFeedback] = useState("");
+  const [loadStatus, setLoadStatus] = useState<"loading" | "ready" | "error">("loading");
   const [saving, setSaving] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
+  const isPhoneDirtyRef = useRef(false);
 
+  /**
+   * Falha de leitura precisa travar o salvamento, não cair no número padrão.
+   *
+   * Sem isso o campo continua com `DEFAULT_CONTACT_PHONE` e o botão habilitado: um GET com erro
+   * seguido de "Salvar telefone" publica o padrão por cima do número real que está no ar.
+   */
   useEffect(() => {
+    let active = true;
+    setLoadStatus("loading");
+
     void fetch("/api/admin/contact-config")
-      .then((response) => response.json())
-      .then((data: { phone?: string }) => {
-        if (data.phone) setPhone(data.phone);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Não foi possível carregar o telefone.");
+        }
+
+        return response.json();
       })
-      .catch(() => undefined);
-  }, []);
+      .then((data: { phone?: string }) => {
+        if (!active) return;
+        if (typeof data.phone !== "string") {
+          throw new Error("Não foi possível carregar o telefone.");
+        }
+        if (!isPhoneDirtyRef.current && data.phone) {
+          setPhone(data.phone);
+        }
+        setLoadStatus("ready");
+      })
+      .catch(() => {
+        if (active) {
+          setLoadStatus("error");
+          setFeedback("Não foi possível carregar o telefone.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [reloadToken]);
 
   async function save() {
+    if (loadStatus !== "ready") return;
+
     setSaving(true);
     try {
       const response = await fetch("/api/admin/contact-config", {
@@ -277,6 +313,7 @@ function ContactSection() {
             inputClassName="h-11 w-full rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
             listClassName="z-[90] !rounded-none border-2 border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a]"
             onChange={(value) => {
+              isPhoneDirtyRef.current = true;
               setPhone(value);
               setFeedback("");
             }}
@@ -286,13 +323,25 @@ function ContactSection() {
           />
           <button
             className={ACTION_BUTTON_CLASSNAME}
-            disabled={!phone || saving}
+            disabled={!phone || saving || loadStatus !== "ready"}
             onClick={() => void save()}
             type="button"
           >
-            {saving ? "Salvando..." : "Salvar telefone"}
+            {saving ? "Salvando..." : loadStatus === "loading" ? "Carregando..." : "Salvar telefone"}
           </button>
         </div>
+        {loadStatus === "error" ? (
+          <button
+            className={`${ACTION_BUTTON_CLASSNAME} mt-3 !bg-white !text-[#1a1a1a] !shadow-none`}
+            onClick={() => {
+              setFeedback("");
+              setReloadToken((current) => current + 1);
+            }}
+            type="button"
+          >
+            Tentar novamente
+          </button>
+        ) : null}
         <SectionFeedback message={feedback} />
       </div>
 

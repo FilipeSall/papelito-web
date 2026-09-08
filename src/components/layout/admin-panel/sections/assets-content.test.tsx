@@ -8,6 +8,7 @@ vi.mock("next-auth", () => ({
 vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
 vi.mock("@/lib/server/admin-home-assets", () => ({
+  getAdminCollectionsNavSnapshot: vi.fn().mockResolvedValue({ items: [], issues: [] }),
   getAdminHeroBannersSnapshot: vi.fn().mockResolvedValue({ banners: [], issues: [] }),
   getAdminHomeFeaturesSnapshot: vi.fn().mockResolvedValue({ items: [], issues: [] }),
   getAdminPartnerBannerSnapshot: vi.fn().mockResolvedValue({ banner: {}, issues: [] }),
@@ -28,6 +29,16 @@ vi.mock("@/features/rich-text/services/get-payment-config", () => ({
 
 vi.mock("@/features/catalog/services/get-home-flash-sale", () => ({
   getHomeFlashSale: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock("@/features/catalog/services/get-products-catalog", () => ({
+  getProductsCollectionsSummary: vi
+    .fn()
+    .mockResolvedValue({ kitsCount: 0, promotionsCount: 0, promotionsMaxDiscountPercent: 0 }),
+}));
+
+vi.mock("@/lib/server/admin-taxonomy", () => ({
+  getAdminCollections: vi.fn().mockResolvedValue({ collections: [], issues: [], version: 0 }),
 }));
 
 vi.mock("./assets/assets-manager", () => ({

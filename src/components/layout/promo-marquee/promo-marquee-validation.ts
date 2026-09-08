@@ -3,7 +3,7 @@ import type { PromoMarqueeItem } from "@/types/home-assets";
 import {
   PROMO_MARQUEE_MAX_LENGTH,
   PROMO_MARQUEE_MIN_ACTIVE_MESSAGES,
-} from "./constants";
+} from "@/lib/promo-marquee-limits";
 
 export type PromoMarqueeValidation = {
   activeCount: number;

@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getHomeFeatures, getHomePromoMarquee } from "./get-home-assets";
-import { FEATURES_BAR_ITEMS } from "@/components/layout/features-bar/constants";
+import {
+  getHomeCollectionsNav,
+  getHomeFeatures,
+  getHomePromoMarquee,
+} from "./get-home-assets";
+import { COLLECTION_NAV_DEFAULTS } from "@/lib/home-collections-nav";
+import { FEATURES_BAR_ITEMS } from "@/lib/home-features";
 
 const wpRest = vi.hoisted(() => vi.fn());
 
@@ -104,5 +109,76 @@ describe("getHomeFeatures", () => {
     });
 
     expect(await getHomeFeatures()).toEqual(FEATURES_BAR_ITEMS);
+  });
+});
+
+function navCard(id: string, order: number, overrides: Record<string, unknown> = {}) {
+  return {
+    id,
+    title: id,
+    subtitle: "Sub",
+    href: `/${id}`,
+    collection: "",
+    order,
+    isActive: true,
+    ...overrides,
+  };
+}
+
+describe("getHomeCollectionsNav", () => {
+  it("respeita a ordem do admin e descarta o card inativo", async () => {
+    wpRest.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        items: [
+          navCard("terceiro", 3),
+          navCard("oculto", 2, { isActive: false }),
+          navCard("primeiro", 1),
+        ],
+      },
+    });
+
+    const items = await getHomeCollectionsNav();
+
+    expect(items.map((item) => item.id)).toEqual(["primeiro", "terceiro"]);
+  });
+
+  it("descarta o card sem destino interno em vez de derrubar o corredor", async () => {
+    wpRest.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        items: [
+          navCard("valido", 1),
+          navCard("externo", 2, { href: "https://exemplo.com" }),
+          navCard("vazio", 3, { title: "  " }),
+        ],
+      },
+    });
+
+    const items = await getHomeCollectionsNav();
+
+    expect(items.map((item) => item.id)).toEqual(["valido"]);
+  });
+
+  it("lista vazia é decisão do admin e some da Home", async () => {
+    wpRest.mockResolvedValue({ ok: true, status: 200, data: { items: [] } });
+
+    await expect(getHomeCollectionsNav()).resolves.toEqual([]);
+  });
+
+  it("cai no corredor de sempre quando o WordPress não responde", async () => {
+    wpRest.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: new Error("indisponível"),
+    });
+
+    const items = await getHomeCollectionsNav();
+
+    expect(items.map((item) => item.id)).toEqual(
+      COLLECTION_NAV_DEFAULTS.map((item) => item.id),
+    );
   });
 });

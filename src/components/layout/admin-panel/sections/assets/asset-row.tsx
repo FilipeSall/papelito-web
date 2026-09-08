@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { ImageOff, type LucideIcon } from "lucide-react";
 
-import { ResultButtonRow, StatusChip } from "@/components/layout/admin-panel/primitives";
+import { StatusChip } from "@/components/layout/admin-panel/primitives";
 
+import { ROW_EDIT_BUTTON_CLASS } from "./assets-classes";
 import { ASSET_STATUS, type AssetStatus } from "./assets-status";
 
 const THUMB_TONE_CLASS = {
@@ -69,8 +70,12 @@ export function AssetIconThumb({
 
 /**
  * Uma linha por asset, sempre na mesma gramática: identidade à esquerda, onde ele aparece no meio,
- * estado e ações à direita. O `EDITAR` é um `span` de propósito — o clicável é o overlay da linha,
- * e um botão de verdade aqui dentro seria um controle dentro de outro controle.
+ * estado e ações à direita.
+ *
+ * O `EDITAR` é um botão de verdade, e a linha inteira não é mais clicável. Antes o clicável era um
+ * overlay `absolute inset-0`, mas o contêiner das ações é `relative z-10` e fica por cima dele:
+ * clicar no próprio `EDITAR` não abria nada, só clicar no vazio da linha abria. Um alvo que parece
+ * botão precisa ser o botão.
  */
 export function AssetRow({
   actions,
@@ -90,26 +95,26 @@ export function AssetRow({
   thumbnail: React.ReactNode;
 }) {
   return (
-    <ResultButtonRow
-      ariaLabel={`Editar ${title}`}
-      lead={
-        <div className="flex min-w-0 items-center gap-3">
-          {thumbnail}
-          <div className="min-w-0">
-            <p className="truncate font-black uppercase tracking-tight text-[#1a1a1a]">{title}</p>
-            <p className="mt-0.5 truncate text-xs text-[#231f20]/60 lg:hidden">{where}</p>
+    <li className="bg-[#faf8f2] transition hover:bg-white">
+      <div className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:gap-6">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-3">
+            {thumbnail}
+            <div className="min-w-0">
+              <p className="truncate font-black uppercase tracking-tight text-[#1a1a1a]">{title}</p>
+              <p className="mt-0.5 truncate text-xs text-[#231f20]/60 lg:hidden">{where}</p>
+            </div>
           </div>
         </div>
-      }
-      meta={
-        <p className="hidden text-[10px] font-black uppercase leading-4 tracking-[0.14em] text-[#231f20]/55 lg:block">
-          {where}
-        </p>
-      }
-      onOpen={onOpen}
-      trailing={
-        <>
-          <span className="pointer-events-none flex flex-wrap items-center gap-3">
+
+        <div className="min-w-0 lg:w-[30%]">
+          <p className="hidden text-[10px] font-black uppercase leading-4 tracking-[0.14em] text-[#231f20]/55 lg:block">
+            {where}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+          <span className="flex flex-wrap items-center gap-3">
             {isUnsaved ? (
               <StatusChip
                 compact
@@ -121,15 +126,17 @@ export function AssetRow({
             <StatusChip icon={status.icon} label={status.label} tone={status.tone} />
           </span>
           {actions}
-          <span
-            aria-hidden
-            className="pointer-events-none inline-flex h-8 items-center border-2 border-[#1a1a1a] bg-white px-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a] transition group-hover:bg-brand-yellow"
+          <button
+            aria-label={`Editar ${title}`}
+            className={ROW_EDIT_BUTTON_CLASS}
+            onClick={onOpen}
+            type="button"
           >
             Editar
-          </span>
-        </>
-      }
-    />
+          </button>
+        </div>
+      </div>
+    </li>
   );
 }
 

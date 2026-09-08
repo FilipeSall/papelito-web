@@ -5,6 +5,7 @@ import { wpRest } from "@/lib/server/wp-rest";
 import { SITE_IMAGE_DEFAULTS, SITE_IMAGE_KEYS } from "@/lib/site-images";
 import { SITE_LOGO_DEFAULTS, mapSiteLogos } from "@/lib/site-logos";
 import type {
+  AdminCollectionsNavSnapshot,
   AdminHeroBannersSnapshot,
   AdminHomeFeaturesSnapshot,
   AdminPartnerBannerSnapshot,
@@ -12,6 +13,7 @@ import type {
   AdminPromoMarqueeSnapshot,
   AdminSiteImageAssetsSnapshot,
   AdminSiteLogosSnapshot,
+  CollectionNavItem,
   HeroBanner,
   HomeFeatureItem,
   ManagedImageAsset,
@@ -49,6 +51,11 @@ type WpPromoMarqueeSnapshot = {
 
 type WpFeaturesSnapshot = {
   items?: Partial<HomeFeatureItem>[];
+  issues?: string[];
+};
+
+type WpCollectionsNavSnapshot = {
+  items?: Partial<CollectionNavItem>[];
   issues?: string[];
 };
 
@@ -152,6 +159,32 @@ function mapPromoMarqueeItem(
     content,
     order: toNumber(item.order) || index + 1,
     isActive: toBoolean(item.isActive),
+  };
+}
+
+function mapCollectionNavItem(
+  item: Partial<CollectionNavItem> | null | undefined,
+  index: number,
+): CollectionNavItem {
+  return {
+    id: cleanText(item?.id) || `collection-nav-${index + 1}`,
+    title: cleanText(item?.title),
+    subtitle: cleanText(item?.subtitle),
+    href: cleanText(item?.href),
+    collection: cleanText(item?.collection),
+    order: toNumber(item?.order) || index + 1,
+    isActive: toBoolean(item?.isActive),
+  };
+}
+
+function mapCollectionsNavSnapshot(data: WpCollectionsNavSnapshot): AdminCollectionsNavSnapshot {
+  return {
+    items: Array.isArray(data.items)
+      ? data.items
+          .map((item, index) => mapCollectionNavItem(item, index))
+          .sort((left, right) => left.order - right.order)
+      : [],
+    issues: mapIssues(data.issues),
   };
 }
 
@@ -549,6 +582,48 @@ export async function saveAdminHomeFeatures(accessToken: string, items: HomeFeat
       : [],
     issues: mapIssues(result.data.issues),
   } satisfies AdminHomeFeaturesSnapshot;
+}
+
+export async function getAdminCollectionsNavSnapshot(
+  accessToken: string | undefined,
+): Promise<AdminCollectionsNavSnapshot> {
+  if (!accessToken) {
+    return {
+      items: [],
+      issues: ["Sessão sem access token para consultar o corredor de coleções."],
+    };
+  }
+
+  const result = await wpRest<WpCollectionsNavSnapshot>(
+    "/papelito/v1/admin/assets/collections-nav",
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!result.ok) {
+    return {
+      items: [],
+      issues: [result.error.message],
+    };
+  }
+
+  return mapCollectionsNavSnapshot(result.data);
+}
+
+export async function saveAdminCollectionsNav(accessToken: string, items: CollectionNavItem[]) {
+  const result = await wpRest<WpCollectionsNavSnapshot>(
+    "/papelito/v1/admin/assets/collections-nav",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      json: { items },
+      method: "PUT",
+    },
+  );
+
+  if (!result.ok) {
+    throw buildHttpError(result.error.message, result.status);
+  }
+
+  return mapCollectionsNavSnapshot(result.data) satisfies AdminCollectionsNavSnapshot;
 }
 
 export async function getAdminPartnerBannerSnapshot(

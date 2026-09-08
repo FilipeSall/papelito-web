@@ -63,6 +63,11 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(saved);
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "Não foi possível salvar." }, { status: 502 });
+    const status =
+      typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+        ? error.status
+        : 502;
+
+    return NextResponse.json({ message: error instanceof Error ? error.message : "Não foi possível salvar." }, { status });
   }
 }

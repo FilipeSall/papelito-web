@@ -45,6 +45,17 @@ export type PromoMarqueeItem = {
   isActive: boolean;
 };
 
+export type CollectionNavItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  /** Coleção derivada que alimenta o texto auxiliar ao vivo. Vazio = usa o texto fixo. */
+  collection: string;
+  order: number;
+  isActive: boolean;
+};
+
 export type HomeFeatureItem = {
   id: string;
   title: string;
@@ -89,6 +100,11 @@ export type AdminPromoBannerSnapshot = {
 
 export type AdminPromoMarqueeSnapshot = {
   messages: PromoMarqueeItem[];
+  issues: string[];
+};
+
+export type AdminCollectionsNavSnapshot = {
+  items: CollectionNavItem[];
   issues: string[];
 };
 

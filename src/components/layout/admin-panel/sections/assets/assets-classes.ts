@@ -12,6 +12,8 @@ export const SECONDARY_ACTION_CLASS = `${ACTION_BASE} h-11 border-[#1a1a1a] bg-w
 
 export const ROW_ICON_BUTTON_CLASS = `${ACTION_BASE} h-8 w-8 shrink-0 border-[#1a1a1a] bg-white p-0 text-[#1a1a1a] hover:bg-brand-yellow`;
 
+export const ROW_EDIT_BUTTON_CLASS = `${ACTION_BASE} h-8 shrink-0 border-[#1a1a1a] bg-white px-3 text-[10px] tracking-[0.16em] text-[#1a1a1a] hover:bg-brand-yellow`;
+
 export const MODAL_CLOSE_CLASS = `${ACTION_BASE} h-9 w-9 shrink-0 border-transparent bg-transparent p-0 text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-brand-yellow`;
 
 export const HARD_BOX_CLASS = "rounded-none border-2 border-[#1a1a1a] bg-white p-4";

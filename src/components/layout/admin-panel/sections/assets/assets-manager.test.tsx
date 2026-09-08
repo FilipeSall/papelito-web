@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMPTY_RICH_TEXT_CONTEXT } from "@/features/rich-text";
 import { SITE_LOGO_DEFAULTS } from "@/lib/site-logos";
 import type {
+  CollectionNavItem,
   HeroBanner,
   HomeFeatureItem,
   PromoMarqueeItem,
@@ -53,6 +54,27 @@ const features: HomeFeatureItem[] = [
   title,
 }));
 
+const collectionsNav: CollectionNavItem[] = [
+  {
+    collection: "kits",
+    href: "/kits",
+    id: "kits",
+    isActive: true,
+    order: 1,
+    subtitle: "Kits exclusivos",
+    title: "Kits",
+  },
+  {
+    collection: "",
+    href: "/premium",
+    id: "premium",
+    isActive: true,
+    order: 2,
+    subtitle: "Top sellers",
+    title: "Premium",
+  },
+];
+
 function image(name: string) {
   return { alt: `Alt de ${name}`, imageId: 1, imageUrl: `/${name}.png` };
 }
@@ -68,6 +90,8 @@ const siteImages: SiteImageAssets = {
 function renderManager(initialPage: Parameters<typeof AssetsManager>[0]["initialPage"] = "home") {
   return render(
     <AssetsManager
+      collectionOptions={[{ name: "Premium", slug: "premium" }]}
+      initialCollectionsNavSnapshot={{ issues: [], items: collectionsNav }}
       initialFeaturesSnapshot={{ issues: [], items: features }}
       initialHeroSnapshot={{ banners: heroBanners, issues: [] }}
       initialLogosSnapshot={{ issues: [], logos: SITE_LOGO_DEFAULTS }}

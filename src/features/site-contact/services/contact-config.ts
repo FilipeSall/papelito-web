@@ -42,8 +42,22 @@ export async function getContactConfig(
   return normalizeContactConfig(result.ok ? result.data : null);
 }
 
+/**
+ * Erro de escrita carregando o status que o WordPress devolveu.
+ *
+ * Sem ele a rota respondia 502 para tudo, e 401, 403 e 422 — sessão expirada, falta de permissão e
+ * telefone recusado pelo validador — chegavam ao painel indistinguíveis de gateway fora do ar.
+ */
+export type ContactConfigHttpError = Error & { status?: number };
+
 export async function saveContactConfig(token: string, config: ContactConfigInput) {
   const result = await wpRest<unknown>("/papelito/v1/admin/contact-config", { method: "PUT", headers: { Authorization: `Bearer ${token}` }, json: config });
-  if (!result.ok) throw new Error(result.error.message);
+
+  if (!result.ok) {
+    const error = new Error(result.error.message) as ContactConfigHttpError;
+    error.status = result.status;
+    throw error;
+  }
+
   return normalizeContactConfig(result.data);
 }

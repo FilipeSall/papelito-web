@@ -1,46 +1,5 @@
-import type {
-  ProductCollectionId,
-  ProductsCollectionsSummary,
-} from "@/features/catalog";
-
-export interface CategoriesNavItem {
-  collection: Exclude<ProductCollectionId, "todos">;
-  iconSrc: string;
-  title: string;
-  subtitle: string;
-  href: string;
-}
-
-export const CATEGORIES_NAV_ITEMS: readonly CategoriesNavItem[] = [
-  {
-    collection: "kits",
-    iconSrc: "/images/categorias/icons/kit.webp",
-    title: "Kits",
-    subtitle: "Kits exclusivos",
-    href: "/kits",
-  },
-  {
-    collection: "premium",
-    iconSrc: "/images/categorias/icons/premium.webp",
-    title: "Premium",
-    subtitle: "Top sellers",
-    href: "/premium",
-  },
-  {
-    collection: "promocoes",
-    iconSrc: "/images/categorias/icons/promocoes.webp",
-    title: "Promoções",
-    subtitle: "Ofertas disponíveis",
-    href: "/promocoes",
-  },
-  {
-    collection: "novidades",
-    iconSrc: "/images/categorias/icons/novidades.webp",
-    title: "Novidades",
-    subtitle: "Recém chegados",
-    href: "/novidades",
-  },
-];
+import type { ProductsCollectionsSummary } from "@/features/catalog";
+import type { CollectionNavItem } from "@/types/home-assets";
 
 /**
  * Decide se o chip da coleção entra na navegação.
@@ -50,7 +9,7 @@ export const CATEGORIES_NAV_ITEMS: readonly CategoriesNavItem[] = [
  * não é prova de que não há oferta.
  */
 export function isCategoryNavItemVisible(
-  item: CategoriesNavItem,
+  item: CollectionNavItem,
   summary?: ProductsCollectionsSummary | null,
 ) {
   if (!summary) {
@@ -71,7 +30,7 @@ export function isCategoryNavItemVisible(
  * fixo genérico em vez de anunciar "0 kits disponíveis" ou "Até 0% off".
  */
 export function resolveCategoryNavSubtitle(
-  item: CategoriesNavItem,
+  item: CollectionNavItem,
   summary?: ProductsCollectionsSummary | null,
 ) {
   if (!summary) {

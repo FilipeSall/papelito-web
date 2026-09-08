@@ -10,6 +10,7 @@ import { PromoCardsSection } from "@/components/layout/promo-cards";
 import { PromoMarquee } from "@/components/layout/promo-marquee/promo-marquee";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import {
+  getHomeCollectionsNav,
   getHomeFeatures,
   getHomeHeroBanners,
   getHomePartnerBanner,
@@ -40,12 +41,13 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function Home() {
-  const [homeProducts, heroBanners, partnerBanner, promoMarquee, homeFeatures, freeShippingThreshold, paymentConfig, collectionsSummary] = await Promise.all([
+  const [homeProducts, heroBanners, partnerBanner, promoMarquee, homeFeatures, collectionsNav, freeShippingThreshold, paymentConfig, collectionsSummary] = await Promise.all([
     getHomeProducts(),
     getHomeHeroBanners(),
     getHomePartnerBanner(),
     getHomePromoMarquee(),
     getHomeFeatures(),
+    getHomeCollectionsNav(),
     getFreeShippingThreshold(),
     getPaymentConfig(),
     getProductsCollectionsSummary(),
@@ -92,7 +94,7 @@ export default async function Home() {
           <FeaturesBar items={resolvedHomeFeatures} />
         </div>
 
-        <CategoriesNav collectionsSummary={collectionsSummary} />
+        <CategoriesNav collectionsSummary={collectionsSummary} items={collectionsNav} />
 
         {flashSaleCampaign ? <FlashSaleSection campaign={flashSaleCampaign} /> : null}
 

@@ -1,26 +1,31 @@
 import { CategoryNavItem } from "./category-nav-item";
-import {
-  CATEGORIES_NAV_ITEMS,
-  isCategoryNavItemVisible,
-  resolveCategoryNavSubtitle,
-} from "./constants";
+import { isCategoryNavItemVisible, resolveCategoryNavSubtitle } from "./constants";
+import { COLLECTION_NAV_TILTS } from "@/lib/home-collections-nav";
 import type { ProductsCollectionsSummary } from "@/features/catalog";
+import type { CollectionNavItem } from "@/types/home-assets";
 
 interface CategoriesNavProps {
+  items: readonly CollectionNavItem[];
   collectionsSummary?: ProductsCollectionsSummary | null;
 }
 
-const TILTS = [-1.4, 0.9, -0.7, 1.2];
+export function CategoriesNav({
+  items: configuredItems,
+  collectionsSummary,
+}: Readonly<CategoriesNavProps>) {
+  const items = configuredItems
+    .filter((item) => isCategoryNavItemVisible(item, collectionsSummary))
+    .map((item, index) => ({
+      href: item.href,
+      id: item.id,
+      subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
+      tilt: COLLECTION_NAV_TILTS[index % COLLECTION_NAV_TILTS.length],
+      title: item.title,
+    }));
 
-export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProps>) {
-  const items = CATEGORIES_NAV_ITEMS.filter((item) =>
-    isCategoryNavItemVisible(item, collectionsSummary),
-  ).map((item, index) => ({
-    href: item.href,
-    subtitle: resolveCategoryNavSubtitle(item, collectionsSummary),
-    tilt: TILTS[index % TILTS.length],
-    title: item.title,
-  }));
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section
@@ -30,7 +35,7 @@ export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProp
       <div className="mx-auto max-w-450 px-4 sm:px-6 lg:px-8 xl:px-43.5">
         <div className="flex flex-col items-center gap-8">
           <h2
-            className="flex items-center gap-3 text-xl font-black uppercase leading-none tracking-[-0.02em] text-brand-dark sm:text-2xl"
+            className="flex items-center gap-3 text-xl font-black uppercase leading-none tracking-tight text-brand-dark sm:text-2xl"
             id="corredor-colecoes"
           >
             <span aria-hidden className="inline-block size-3 rounded-full bg-brand-yellow" />
@@ -38,8 +43,8 @@ export function CategoriesNav({ collectionsSummary }: Readonly<CategoriesNavProp
           </h2>
 
           <ul className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-            {items.map((item) => (
-              <li key={item.title}>
+            {items.map(({ id, ...item }) => (
+              <li key={id}>
                 <CategoryNavItem {...item} />
               </li>
             ))}
