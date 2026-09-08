@@ -7,6 +7,7 @@ import {
   isValidCep,
   isValidCnpj,
   isValidEmail,
+  isValidPhone,
   normalizeCep,
   sanitizeInstagramHandle,
 } from "./revendedor-formatters";
@@ -26,6 +27,13 @@ describe("revendedor-formatters", () => {
   it("formats phone and cep with Brazilian masks", () => {
     expect(formatPhone("11987654321")).toBe("(11) 98765-4321");
     expect(formatCep("01310930")).toBe("01310-930");
+  });
+
+  it("rejects repeated-digit phone placeholders", () => {
+    expect(isValidPhone("(61) 99999-9999")).toBe(true);
+    expect(isValidPhone("(61) 3333-4444")).toBe(true);
+    expect(isValidPhone("0000000000")).toBe(false);
+    expect(isValidPhone("11111111111")).toBe(false);
   });
 
   it("normalizes cep and validates complete values only", () => {

@@ -23,6 +23,7 @@ import {
   isValidCep,
   isValidCnpj,
   isValidEmail,
+  isValidPhone,
   normalizeCep,
   sanitizeInstagramHandle,
 } from "./revendedor-formatters";
@@ -376,7 +377,7 @@ export function validateStep1(values: VendorRegistrationStep1Data): RevendedorSt
   if (!values.firstName.trim()) errors.firstName = "Informe o nome do responsável.";
   if (!values.lastName.trim()) errors.lastName = "Informe o sobrenome.";
   if (!isValidCnpj(values.cnpj)) errors.cnpj = "Informe um CNPJ válido.";
-  if (values.phone.replace(/\D/g, "").length < 10) errors.phone = "Informe um telefone com DDD.";
+  if (!isValidPhone(values.phone)) errors.phone = "Informe um telefone com DDD.";
   if (!isValidEmail(values.email)) errors.email = "Informe um e-mail válido.";
   if (!values.instagram.trim()) errors.instagram = "Informe o Instagram da loja.";
   if (!values.hasSoldPapelito) {
@@ -422,8 +423,9 @@ export function validateStep3(values: VendorRegistrationStep3Data): RevendedorSt
 
   if (!values.companyName.trim()) errors.companyName = "Informe a razão social.";
   if (!values.tradingName.trim()) errors.tradingName = "Informe o nome fantasia.";
-  if (!values.corporationType.trim()) errors.corporationType = "Informe a natureza jurídica.";
-  if (!isValidIsoDate(values.foundingDate)) errors.foundingDate = "Informe uma data válida.";
+  if (values.foundingDate.trim() && !isValidIsoDate(values.foundingDate)) {
+    errors.foundingDate = "Informe uma data válida.";
+  }
   if (!isPositiveNumber(values.annualRevenue)) {
     errors.annualRevenue = "Informe o faturamento anual.";
   }
@@ -434,7 +436,6 @@ export function validateStep3(values: VendorRegistrationStep3Data): RevendedorSt
     if (!partner.name.trim()) currentErrors.name = "Informe o nome do sócio.";
     if (!isValidEmail(partner.email)) currentErrors.email = "Informe um e-mail válido.";
     if (!isValidCpf(partner.document)) currentErrors.document = "Informe um CPF válido.";
-    if (!partner.motherName.trim()) currentErrors.motherName = "Informe o nome da mãe.";
     if (!isValidIsoDate(partner.birthdate)) currentErrors.birthdate = "Informe uma data válida.";
     if (!isPositiveNumber(partner.monthlyIncome)) {
       currentErrors.monthlyIncome = "Informe a renda mensal.";

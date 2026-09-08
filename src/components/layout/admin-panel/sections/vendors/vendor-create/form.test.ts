@@ -74,4 +74,17 @@ describe("vendor create form", () => {
   it("preserves the existing required-field validation order", () => {
     expect(validateVendorCreateForm(createInitialVendorCreateForm())).toBe("Informe um e-mail válido.");
   });
+
+  it("rejects a repeated-digit phone before creating a vendor", () => {
+    const form = createInitialVendorCreateForm();
+    Object.assign(form, {
+      email: "vendor@example.com",
+      temporaryPassword: "senha temporaria",
+      storeName: "Papelaria Ana",
+      cnpj: "65.326.368/0001-90",
+      phoneNumber: "0000000000",
+    });
+
+    expect(validateVendorCreateForm(form)).toBe("Informe um telefone com DDD.");
+  });
 });

@@ -4,6 +4,7 @@ import {
   buildRevendedorSubmitPayload,
   createEmptyVendorRegistrationDraft,
   normalizeDraft,
+  validateStep1,
   validateStep2,
 } from "./revendedor-registration";
 
@@ -58,6 +59,23 @@ describe("revendedor-registration", () => {
       cep: "Informe um CEP de operação válido.",
       maxCep: "O CEP final precisa ser maior ou igual ao CEP inicial.",
     });
+  });
+
+  it("rejects a repeated-digit phone in the vendor registration", () => {
+    const step1 = createEmptyVendorRegistrationDraft().step1;
+    Object.assign(step1, {
+      storeName: "Loja Papelito",
+      firstName: "Ana",
+      lastName: "Souza",
+      cnpj: "12.345.678/0001-95",
+      phone: "11111111111",
+      email: "ana@papelito.com",
+      instagram: "papelito",
+      hasSoldPapelito: "sim",
+      discoveryChannel: "indicacao",
+    });
+
+    expect(validateStep1(step1)).toMatchObject({ phone: "Informe um telefone com DDD." });
   });
 
   it("builds a normalized submit payload", () => {

@@ -9,7 +9,7 @@ export function AuthIconButton({ children, ...props }: AuthIconButtonProps) {
     <button
       type="button"
       {...props}
-      className="absolute top-1/2 right-4 -translate-y-1/2 text-white/50 transition hover:text-white"
+      className="absolute top-1/2 right-4 -translate-y-1/2 text-text-faint transition hover:text-white"
     >
       {children}
     </button>

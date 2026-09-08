@@ -28,7 +28,7 @@ describe("cabeçalhos de segurança", () => {
     expect((await config.headers!())[0].source).toBe("/(.*)");
   });
 
-  it("mantém as diretivas que fecham clickjacking, plugins e base injetada", async () => {
+  it("mantém as diretivas globais que fecham clickjacking, plugins e base injetada", async () => {
     const headers = await loadSecurityHeaders();
     const csp = headers["Content-Security-Policy"];
 
@@ -38,6 +38,67 @@ describe("cabeçalhos de segurança", () => {
     expect(directive(csp, "form-action")).toBe("'self'");
     expect(headers["X-Frame-Options"]).toBe("DENY");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
+  });
+
+  /**
+   * O dashboard da Vercel embute o deployment num iframe. A exceção existe só no
+   * Preview e só para a origem do dashboard — produção não pode afrouxar.
+   */
+  it("libera o embed do dashboard da Vercel apenas no Preview", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    const headers = await loadSecurityHeaders();
+    const ancestors = directive(headers["Content-Security-Policy"], "frame-ancestors");
+
+    expect(ancestors?.split(" ")).toEqual(["'self'", "https://vercel.com", "https://*.vercel.com"]);
+    expect(headers["X-Frame-Options"]).toBeUndefined();
+  });
+
+  it("nao libera embed global em producao nem em qualquer outro ambiente", async () => {
+    for (const env of ["production", "development"]) {
+      vi.stubEnv("VERCEL_ENV", env);
+      const headers = await loadSecurityHeaders();
+
+      expect(directive(headers["Content-Security-Policy"], "frame-ancestors")).toBe("'none'");
+      expect(headers["X-Frame-Options"]).toBe("DENY");
+    }
+  });
+
+  it("nao autoriza origem arbitraria como frame-ancestor no Preview", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    const ancestors = directive(
+      (await loadSecurityHeaders())["Content-Security-Policy"],
+      "frame-ancestors",
+    );
+
+    const sources = ancestors?.split(" ") ?? [];
+
+    expect(sources).not.toContain("*");
+    expect(sources).not.toContain("https:");
+    expect(sources).not.toContain("http:");
+    expect(sources.every((source) => source === "'self'" || source.endsWith("vercel.com"))).toBe(
+      true,
+    );
+  });
+
+  it("libera apenas visualizadores same-origin nos endpoints que usam iframe", async () => {
+    vi.resetModules();
+    const { default: config } = await import("../next.config");
+    const rules = await config.headers!();
+    const viewerRules = rules.slice(1);
+
+    expect(viewerRules.map(({ source }) => source)).toEqual([
+      "/api/vendor/orders/:id/receipt",
+      "/api/vendor/orders/:id/fiscal-document/file",
+      "/api/admin/owner-applications/:id/document",
+      "/api/admin/pre-account-applications/:id/document",
+    ]);
+
+    for (const rule of viewerRules) {
+      const headers = Object.fromEntries(rule.headers.map(({ key, value }) => [key, value]));
+
+      expect(headers["Content-Security-Policy"]).toBe("frame-ancestors 'self'");
+      expect(headers["X-Frame-Options"]).toBe("SAMEORIGIN");
+    }
   });
 
   /**

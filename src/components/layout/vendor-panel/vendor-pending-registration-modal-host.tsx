@@ -46,6 +46,7 @@ import {
   isValidCep,
   isValidCnpj,
   isValidEmail,
+  isValidPhone,
 } from "@/features/revendedor/utils/revendedor-formatters";
 import { validateCoverageRanges } from "@/features/vendor-coverage/coverage-presets";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
@@ -211,6 +212,7 @@ function validateForm(form: PendingForm): string | null {
   if (!isValidEmail(form.email)) return "Informe um e-mail válido.";
   if (!form.storeName.trim()) return "Informe o nome da loja.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ válido.";
+  if (!isValidPhone(form.phoneNumber)) return "Informe um telefone com DDD.";
   if (!isValidCep(form.cep)) return "Informe um CEP válido para a loja.";
   if (!form.street.trim()) return "Informe o logradouro da loja.";
   if (!form.number.trim()) return "Informe o número da loja.";
@@ -809,9 +811,12 @@ export function VendorPendingRegistrationModalHost({
                 value={form.cnpj}
               />
               <Field
+                error={isPendingField("phoneNumber")}
                 inputMode="tel"
                 label="Telefone"
+                helpText="A Pagar.me exige um telefone com DDD no cadastro do recebedor e do responsável legal."
                 onChange={(value) => update("phoneNumber", formatPhone(value))}
+                required
                 value={form.phoneNumber}
               />
             </div>
@@ -912,7 +917,7 @@ export function VendorPendingRegistrationModalHost({
 
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <AdminSelectField
-                label="Natureza jurídica"
+                label="Natureza jurídica (opcional)"
                 onChange={(value) => {
                   updatePagarmeDraft("corporationTypeSelection", value);
                   updatePagarmeDraft(
@@ -926,8 +931,7 @@ export function VendorPendingRegistrationModalHost({
                 variant="vendor-create"
               />
               <Field
-                error={isPendingField("foundingDate")}
-                label="Data de fundacao"
+                label="Data de fundacao (opcional)"
                 onChange={(value) => updatePagarmeDraft("foundingDate", value)}
                 type="date"
                 value={form.pagarmeDraft.foundingDate}
@@ -944,7 +948,6 @@ export function VendorPendingRegistrationModalHost({
             {form.pagarmeDraft.corporationTypeSelection === "outro" ? (
               <div className="mt-4">
                 <Field
-                  error={isPendingField("corporationType")}
                   label="Qual é a natureza jurídica?"
                   onChange={(value) => {
                     updatePagarmeDraft("corporationTypeOther", value);
@@ -982,8 +985,7 @@ export function VendorPendingRegistrationModalHost({
                 value={partner.document}
               />
               <Field
-                error={isPendingField("partner.motherName")}
-                label="Nome da mae"
+                label="Nome da mae (opcional)"
                 onChange={(value) => updateManagingPartnerField("motherName", value)}
                 value={partner.motherName}
               />

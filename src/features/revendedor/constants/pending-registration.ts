@@ -1,4 +1,5 @@
 export const VENDOR_PENDING_SECTION_ORDER = [
+  "account",
   "company",
   "partner",
   "bank",
@@ -7,15 +8,13 @@ export const VENDOR_PENDING_SECTION_ORDER = [
 export type VendorPendingSectionKey = (typeof VENDOR_PENDING_SECTION_ORDER)[number];
 
 export const VENDOR_PENDING_FIELD_KEYS = [
+  "phoneNumber",
   "companyName",
   "tradingName",
-  "corporationType",
-  "foundingDate",
   "annualRevenue",
   "partner.name",
   "partner.email",
   "partner.document",
-  "partner.motherName",
   "partner.birthdate",
   "partner.monthlyIncome",
   "partner.professionalOccupation",
@@ -36,21 +35,20 @@ export const VENDOR_PENDING_FIELD_KEYS = [
 export type VendorPendingFieldKey = (typeof VENDOR_PENDING_FIELD_KEYS)[number];
 
 export const VENDOR_PENDING_SECTION_LABELS: Record<VendorPendingSectionKey, string> = {
+  account: "Conta",
   company: "KYC da empresa",
   partner: "Socio administrador / responsável legal",
   bank: "Dados bancários",
 };
 
 export const VENDOR_PENDING_FIELD_LABELS: Record<VendorPendingFieldKey, string> = {
+  phoneNumber: "Telefone",
   companyName: "Razao social",
   tradingName: "Nome fantasia",
-  corporationType: "Natureza jurídica",
-  foundingDate: "Data de fundacao",
   annualRevenue: "Faturamento anual",
   "partner.name": "Nome do socio administrador",
   "partner.email": "E-mail do socio administrador",
   "partner.document": "CPF do socio administrador",
-  "partner.motherName": "Nome da mae do socio administrador",
   "partner.birthdate": "Data de nascimento do socio administrador",
   "partner.monthlyIncome": "Renda mensal do socio administrador",
   "partner.professionalOccupation": "Ocupacao profissional do socio administrador",
@@ -69,15 +67,13 @@ export const VENDOR_PENDING_FIELD_LABELS: Record<VendorPendingFieldKey, string> 
 };
 
 export const VENDOR_PENDING_FIELD_SECTIONS: Record<VendorPendingFieldKey, VendorPendingSectionKey> = {
+  phoneNumber: "account",
   companyName: "company",
   tradingName: "company",
-  corporationType: "company",
-  foundingDate: "company",
   annualRevenue: "company",
   "partner.name": "partner",
   "partner.email": "partner",
   "partner.document": "partner",
-  "partner.motherName": "partner",
   "partner.birthdate": "partner",
   "partner.monthlyIncome": "partner",
   "partner.professionalOccupation": "partner",

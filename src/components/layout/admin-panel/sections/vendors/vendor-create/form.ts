@@ -3,6 +3,7 @@ import {
   isValidCep,
   isValidCnpj,
   isValidEmail,
+  isValidPhone,
 } from "@/features/revendedor/utils/revendedor-formatters";
 import {
   createEmptyStep3Data,
@@ -118,6 +119,9 @@ export function validateVendorCreateForm(form: VendorCreateForm): string | null 
   if (!form.sourceUserId && !form.temporaryPassword.trim()) return "Informe uma senha temporária para o vendor.";
   if (!form.storeName?.trim()) return "Informe o nome da loja.";
   if (!isValidCnpj(form.cnpj)) return "Informe um CNPJ válido.";
+  if (!isValidPhone(form.phoneNumber ?? "")) {
+    return "Informe um telefone com DDD.";
+  }
   if (!isValidCep(form.cep ?? "")) return "Informe um CEP válido para a loja.";
   if (!form.street?.trim()) return "Informe o logradouro da loja.";
   if (!form.number?.trim()) return "Informe o número da loja.";

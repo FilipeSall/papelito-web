@@ -39,6 +39,15 @@ export function formatPhone(value: string) {
 }
 
 /**
+ * Valida telefone brasileiro com DDD e rejeita sequencias ficticias repetidas.
+ */
+export function isValidPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+
+  return (digits.length === 10 || digits.length === 11) && !/^(\d)\1+$/.test(digits);
+}
+
+/**
  * Aplica a mascara visual de CEP (00000-000) mantendo apenas os digitos.
  */
 export function formatCep(value: string) {

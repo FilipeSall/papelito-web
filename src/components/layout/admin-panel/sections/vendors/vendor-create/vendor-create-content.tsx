@@ -226,6 +226,7 @@ export function VendorCreateContent(props: VendorCreateLauncherProps) {
                     inputMode="tel"
                     label="Telefone"
                     onChange={(value) => update("phoneNumber", formatPhone(value))}
+                    required
                     value={form.phoneNumber ?? ""}
                   />
                 </div>
@@ -319,7 +320,7 @@ export function VendorCreateContent(props: VendorCreateLauncherProps) {
 
                 <div className="mt-4 grid gap-4 md:grid-cols-3">
                   <AdminSelectField
-                    label="Natureza jurídica"
+                    label="Natureza jurídica (opcional)"
                     onChange={(value) => {
                       updatePagarmeDraft("corporationTypeSelection", value);
                       updatePagarmeDraft(
@@ -333,7 +334,7 @@ export function VendorCreateContent(props: VendorCreateLauncherProps) {
                     variant="vendor-create"
                   />
                   <Field
-                    label="Data de fundacao"
+                    label="Data de fundacao (opcional)"
                     onChange={(value) => updatePagarmeDraft("foundingDate", value)}
                     type="date"
                     value={form.pagarmeDraft.foundingDate}
@@ -384,7 +385,7 @@ export function VendorCreateContent(props: VendorCreateLauncherProps) {
                     value={form.pagarmeDraft.managingPartners[0]?.document ?? ""}
                   />
                   <Field
-                    label="Nome da mae"
+                    label="Nome da mae (opcional)"
                     onChange={(value) => updateManagingPartnerField("motherName", value)}
                     value={form.pagarmeDraft.managingPartners[0]?.motherName ?? ""}
                   />

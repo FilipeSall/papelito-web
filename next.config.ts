@@ -45,6 +45,19 @@ function browserImageOrigins() {
   return [...origins].join(" ");
 }
 
+/**
+ * O dashboard da Vercel renderiza o deployment dentro de um iframe em vercel.com.
+ * Com `frame-ancestors 'none'` esse painel fica em branco e o navegador registra
+ * "Framing '<deployment>' violates ... frame-ancestors 'none'".
+ *
+ * A liberação vale SÓ para `VERCEL_ENV=preview` e SÓ para a origem do dashboard.
+ * Produção continua com `frame-ancestors 'none'` e `X-Frame-Options: DENY`.
+ */
+const isVercelPreview = process.env.VERCEL_ENV === "preview";
+const frameAncestors = isVercelPreview
+  ? "frame-ancestors 'self' https://vercel.com https://*.vercel.com"
+  : "frame-ancestors 'none'";
+
 const isDevelopment = process.env.NODE_ENV === "development";
 const developmentScriptSource = isDevelopment ? " 'unsafe-eval' http://localhost:8400" : "";
 // Em dev o Next abre WebSocket de HMR na própria origem; `ws:`/`wss:` são explícitos para não
@@ -60,7 +73,7 @@ const developmentConnectSource = isDevelopment ? " ws: wss: http://localhost:840
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
-  "frame-ancestors 'none'",
+  frameAncestors,
   "object-src 'none'",
   "form-action 'self'",
   `img-src 'self' https: data: blob: ${browserImageOrigins()}`,
@@ -71,6 +84,18 @@ const contentSecurityPolicy = [
   "frame-src 'self' https://accounts.google.com https://www.googletagmanager.com",
 ].join("; ");
 
+const documentViewerHeaders = [
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+];
+
+const documentViewerSources = [
+  "/api/vendor/orders/:id/receipt",
+  "/api/vendor/orders/:id/fiscal-document/file",
+  "/api/admin/owner-applications/:id/document",
+  "/api/admin/pre-account-applications/:id/document",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
@@ -80,12 +105,19 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
+          // `X-Frame-Options` não tem allow-list — `ALLOW-FROM` foi descontinuado —,
+          // então mantê-lo como DENY no Preview anularia o `frame-ancestors` acima nos
+          // navegadores que ainda dão precedência a ele. Fora do Preview ele permanece.
+          ...(isVercelPreview ? [] : [{ key: "X-Frame-Options", value: "DENY" }]),
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
+      ...documentViewerSources.map((source) => ({
+        source,
+        headers: documentViewerHeaders,
+      })),
     ];
   },
   images: {
