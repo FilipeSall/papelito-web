@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Compass, LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { ResultFrame } from "@/components/layout/admin-panel/primitives";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -60,12 +60,18 @@ export function CollectionsNavGroup({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const newCardTooltipId = useId();
   const validation = getCollectionsNavValidation(items);
   const statuses = items.map(collectionNavItemStatus);
   const attention = countAttention(statuses);
   const isDirty = !isSameAsset(items, persistedItems);
   const editingIndex = items.findIndex((item) => item.id === editingId);
   const editingItem = editingIndex >= 0 ? items[editingIndex] : null;
+  const newCardDisabledReason = collectionOptions.length === 0
+    ? "Crie uma nova coleção no painel de coleções para adicionar outro card."
+    : items.length >= COLLECTION_NAV_MAX_ITEMS
+      ? `O corredor já atingiu o limite de ${COLLECTION_NAV_MAX_ITEMS} cards.`
+      : null;
 
   // A prévia usa só o que está no formulário. Resolver o número ao vivo aqui custaria uma varredura
   // do catálogo inteiro a cada abertura do painel — o card ligado a uma coleção ganha um selo em vez
@@ -94,15 +100,40 @@ export function CollectionsNavGroup({
       <ResultFrame
         action={
           <>
-            <button
-              className={COMPACT_SECONDARY_CLASS}
-              disabled={isSaving || collectionOptions.length === 0 || items.length >= COLLECTION_NAV_MAX_ITEMS}
-              onClick={() => setEditingId(onAdd())}
-              type="button"
-            >
-              <Plus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-              Novo card
-            </button>
+            {newCardDisabledReason ? (
+              <span
+                aria-describedby={newCardTooltipId}
+                className="group/new-card-tooltip relative inline-flex"
+                tabIndex={0}
+              >
+                <span
+                  className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 w-64 max-w-[calc(100vw-2rem)] -translate-x-1/2 border-2 border-[#1a1a1a] bg-[#231f20] px-3 py-2 text-center text-[11px] font-bold leading-4 text-white opacity-0 shadow-[0_10px_24px_rgba(35,31,32,0.2)] transition-opacity group-hover/new-card-tooltip:opacity-100 group-focus-within/new-card-tooltip:opacity-100"
+                  id={newCardTooltipId}
+                  role="tooltip"
+                >
+                  {newCardDisabledReason}
+                </span>
+                <button
+                  className={COMPACT_SECONDARY_CLASS}
+                  disabled
+                  onClick={() => setEditingId(onAdd())}
+                  type="button"
+                >
+                  <Plus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+                  Novo card
+                </button>
+              </span>
+            ) : (
+              <button
+                className={COMPACT_SECONDARY_CLASS}
+                disabled={isSaving}
+                onClick={() => setEditingId(onAdd())}
+                type="button"
+              >
+                <Plus aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+                Novo card
+              </button>
+            )}
             <button
               className={COMPACT_PRIMARY_CLASS}
               disabled={isSaving || isUploadingImage || !isDirty || !validation.isValid}
@@ -242,7 +273,7 @@ export function CollectionsNavGroup({
               <AssetThumb
                 imageUrl={item.collectionData?.imageUrl ?? ""}
                 label={`Card ${index + 1}`}
-                tone={item.isActive ? "yellow" : "light"}
+                tone="light"
               />
             }
             title={item.title.trim() || `Card ${index + 1} sem título`}

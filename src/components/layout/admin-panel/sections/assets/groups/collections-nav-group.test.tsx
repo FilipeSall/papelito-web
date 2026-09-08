@@ -142,6 +142,7 @@ describe("CollectionsNavGroup", () => {
     renderGroup({ collectionOptions: [] });
 
     expect(screen.getAllByText(/todas as coleções já estão na tela/i)).toHaveLength(1);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(/crie uma nova coleção no painel de coleções/i);
     expect(screen.getByRole("button", { name: /novo card/i })).toBeDisabled();
   });
 
