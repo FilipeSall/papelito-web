@@ -14,6 +14,9 @@ type WpVendorKpis = {
   average_ticket?: number;
   awaiting_payment_orders?: number;
   gross_revenue?: number;
+  manual_refunds?: number;
+  net_revenue?: number;
+  return_requests?: number;
   orders_count?: number;
   pending_orders?: number;
   period?: { from?: string; interval?: SalesSeriesInterval | string; to?: string };
@@ -27,6 +30,9 @@ function emptySnapshot(filters: AdminSalesFilters): VendorDashboardSnapshot {
     averageTicket: 0,
     awaitingPaymentOrders: 0,
     grossRevenue: 0,
+    manualRefunds: 0,
+    netRevenue: 0,
+    returnRequests: 0,
     ordersCount: 0,
     pendingOrders: 0,
     period: { from: filters.from, interval: filters.interval, to: filters.to },
@@ -51,8 +57,6 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
   });
   const result = await wpRest<WpVendorKpis>(`/papelito/v1/vendor/me/kpis?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    revalidate: 60,
-    tags: ["vendor-kpis"],
   });
 
   if (!result.ok) {
@@ -71,6 +75,9 @@ export async function getVendorKpis(filters: AdminSalesFilters): Promise<VendorD
     averageTicket: Number(data.average_ticket) || 0,
     awaitingPaymentOrders: Number(data.awaiting_payment_orders) || 0,
     grossRevenue: Number(data.gross_revenue) || 0,
+    manualRefunds: Math.max(0, Number(data.manual_refunds) || 0),
+    netRevenue: Math.max(0, Number(data.net_revenue) || 0),
+    returnRequests: Math.max(0, Number(data.return_requests) || 0),
     ordersCount: Number(data.orders_count) || 0,
     pendingOrders: Number(data.pending_orders) || 0,
     period: {

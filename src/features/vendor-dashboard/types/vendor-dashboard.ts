@@ -13,6 +13,9 @@ export type VendorDashboardSnapshot = {
   averageTicket: number;
   awaitingPaymentOrders: number;
   grossRevenue: number;
+  manualRefunds: number;
+  netRevenue: number;
+  returnRequests: number;
   ordersCount: number;
   pendingOrders: number;
   previousGrossRevenue: number | null;

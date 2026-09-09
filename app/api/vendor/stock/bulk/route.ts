@@ -70,7 +70,6 @@ export async function POST(request: Request) {
   }
 
   revalidateTag("vendor-stock", "max");
-  revalidateTag("vendor-kpis", "max");
   revalidatePath("/vendor/estoque");
   revalidatePath("/vendor/dashboard");
 

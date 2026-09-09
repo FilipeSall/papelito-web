@@ -61,6 +61,21 @@ export default async function VendorDashboardPage({
       value: String(snapshot.ordersCount).padStart(2, "0"),
     },
     {
+      label: "Estornos manuais",
+      note: "Registrados por data de estorno no recorte; não alteram o faturamento bruto.",
+      value: formatBRLIntl(snapshot.manualRefunds),
+    },
+    {
+      label: "Vendas líquidas",
+      note: "Faturamento bruto menos estornos manuais registrados no recorte.",
+      value: formatBRLIntl(snapshot.netRevenue),
+    },
+    {
+      label: "Solicitações de devolução",
+      note: "Solicitadas no recorte, pela data da abertura.",
+      value: String(snapshot.returnRequests).padStart(2, "0"),
+    },
+    {
       label: "Pedidos pendentes",
       note: "Requerem separação ou envio.",
       tone: snapshot.pendingOrders > 0 ? "warning" : "default",

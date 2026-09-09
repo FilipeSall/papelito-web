@@ -44,7 +44,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   revalidateTag("vendor-orders", "max");
-  revalidateTag("vendor-kpis", "max");
   revalidatePath(`/vendor/pedidos/${id}`);
   revalidatePath("/vendor/pedidos");
   revalidatePath("/vendor/dashboard");

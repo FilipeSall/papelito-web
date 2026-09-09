@@ -418,6 +418,27 @@ export function formatNotification(
         body: "O envio exige acompanhamento da Papelito e do vendor.",
         href: logisticsHref(payload),
       };
+    case "return_requested":
+      return {
+        icon: "package",
+        title: "Nova solicitação de devolução",
+        body: "Uma solicitação de devolução aguarda sua análise.",
+        href: "/vendor/devolucoes",
+      };
+    case "return_tracking_updated":
+      return {
+        icon: "package",
+        title: "Rastreio da devolução atualizado",
+        body: "A devolução teve uma atualização de rastreio.",
+        href: "/perfil",
+      };
+    case "return_refunded":
+      return {
+        icon: "check",
+        title: "Estorno registrado",
+        body: "O vendor registrou o estorno manual da sua devolução.",
+        href: "/perfil",
+      };
     default:
       return {
         icon: "megaphone",

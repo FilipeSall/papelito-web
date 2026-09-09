@@ -50,7 +50,6 @@ export async function PUT(request: Request) {
   }
 
   revalidateTag("vendor-stock", "max");
-  revalidateTag("vendor-kpis", "max");
   revalidatePath("/vendor/estoque");
   revalidatePath("/vendor/dashboard");
   return NextResponse.json(result.data);

@@ -20,6 +20,9 @@ export type NotificationType =
   | "shipment_pickup_available"
   | "shipment_returned"
   | "shipment_exception"
+  | "return_requested"
+  | "return_tracking_updated"
+  | "return_refunded"
   | "company_owner_review_pending"
   | "company_owner_approved"
   | "company_owner_rejected";

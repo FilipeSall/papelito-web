@@ -20,6 +20,7 @@ export type AdminSalesAnalyticsSnapshot = {
   issues: string[];
   itemsSold: number;
   leaderboard: AdminSalesLeaderboardItem[];
+  manualRefunds: number;
   mixSeries: AdminAnalyticsSeriesPoint[];
   netRevenue: number;
   orderStatusSeries: AdminAnalyticsSeriesPoint[];
@@ -31,6 +32,7 @@ export type AdminSalesAnalyticsSnapshot = {
   periodLabel: string;
   previousGrossRevenue: number | null;
   refundsTotal: number;
+  returnRequests: number;
   revenueDeltaRate: number | null;
   revenueSeries: AdminAnalyticsSeriesPoint[];
   shippingTotal: number;
@@ -44,6 +46,7 @@ type CanonicalSalesSnapshot = {
   avgOrderValue?: unknown;
   discountsTotal?: unknown;
   grossRevenue?: unknown;
+	manualRefunds?: unknown;
   itemsSold?: unknown;
   leaderboard?: unknown;
   netRevenue?: unknown;
@@ -53,6 +56,7 @@ type CanonicalSalesSnapshot = {
   paymentMixSeries?: unknown;
   previousGrossRevenue?: unknown;
   refundsTotal?: unknown;
+	returnRequests?: unknown;
   revenueByInterval?: unknown;
   shippingTotal?: unknown;
   taxesTotal?: unknown;
@@ -138,6 +142,7 @@ function buildEmptySnapshot(
     issues,
     itemsSold: 0,
     leaderboard: [],
+    manualRefunds: 0,
     mixSeries: [],
     netRevenue: 0,
     orderStatusSeries: [],
@@ -154,6 +159,7 @@ function buildEmptySnapshot(
     periodLabel: filters.periodLabel,
     previousGrossRevenue: null,
     refundsTotal: 0,
+    returnRequests: 0,
     revenueDeltaRate: null,
     revenueSeries: buildSalesSeriesPoints({
       from: filters.from,
@@ -187,8 +193,6 @@ export async function getAdminSalesAnalyticsSnapshot(
     `/papelito/v1/admin/sales/snapshot?${query.toString()}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
-      revalidate: 300,
-      tags: ["admin-sales"],
     },
   );
 
@@ -218,6 +222,7 @@ export async function getAdminSalesAnalyticsSnapshot(
     dataSource: "live",
     discountsTotal: Math.max(0, toNumber(result.data.discountsTotal)),
     grossRevenue,
+    manualRefunds: Math.max(0, toNumber(result.data.manualRefunds)),
     issues: [],
     itemsSold: Math.max(0, toNumber(result.data.itemsSold)),
     leaderboard: mapLeaderboard(result.data.leaderboard),
@@ -232,6 +237,7 @@ export async function getAdminSalesAnalyticsSnapshot(
     periodLabel: filters.periodLabel,
     previousGrossRevenue,
     refundsTotal: Math.max(0, toNumber(result.data.refundsTotal)),
+    returnRequests: Math.max(0, toNumber(result.data.returnRequests)),
     revenueDeltaRate,
     revenueSeries,
     shippingTotal: Math.max(0, toNumber(result.data.shippingTotal)),

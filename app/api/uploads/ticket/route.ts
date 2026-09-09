@@ -15,6 +15,7 @@ const UPLOAD_PURPOSES = [
   "owner-document",
   "pre-account-document",
   "vendor-fiscal-document",
+  "return-refund-proof",
 ] as const;
 
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
@@ -52,23 +53,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
     headers = { Authorization: `Bearer ${auth.accessToken}` };
-  } else if (purpose === "vendor-fiscal-document") {
+  } else if (purpose === "vendor-fiscal-document" || purpose === "return-refund-proof") {
     const auth = await requireVendorAccessToken();
     if ("error" in auth) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
 
-    const orderId = Number(body?.orderId);
+    const id = Number(purpose === "vendor-fiscal-document" ? body?.orderId : body?.returnId);
 
     // O pedido entra no tíquete; a autorização real — pedido do vendor e
     // situação que aceita nota — continua sendo do WordPress. O upload sempre
     // substitui a nota que houver, então não há modo a escolher.
-    if (!Number.isInteger(orderId) || orderId <= 0) {
-      return NextResponse.json({ message: "Anexo de nota fiscal inválido." }, { status: 422 });
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json(
+        { message: purpose === "vendor-fiscal-document" ? "Anexo de nota fiscal inválido." : "Comprovante de estorno inválido." },
+        { status: 422 },
+      );
     }
 
     headers = { Authorization: `Bearer ${auth.accessToken}` };
-    json = { orderId, purpose };
+    json = purpose === "vendor-fiscal-document" ? { orderId: id, purpose } : { returnId: id, purpose };
   } else {
     const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
     if (!applicationToken) {

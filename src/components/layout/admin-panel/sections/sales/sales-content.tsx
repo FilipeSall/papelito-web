@@ -97,13 +97,19 @@ export async function SalesContent({
       value: formatCompactCurrency(analytics.shippingTotal),
     },
     {
-      label: "Reembolsos",
+      label: "Reembolsos WooCommerce",
       note:
         analytics.refundsTotal > 0
           ? "Pedidos devolvidos no período."
           : "Sem reembolsos no período.",
       tone: analytics.refundsTotal > 0 ? "warning" : "default",
       value: formatCompactCurrency(analytics.refundsTotal),
+    },
+    {
+      label: "Estornos manuais",
+      note: `Devoluções solicitadas no recorte: ${formatCompactNumber(analytics.returnRequests)}.`,
+      tone: analytics.manualRefunds > 0 ? "warning" : "default",
+      value: formatCompactCurrency(analytics.manualRefunds),
     },
   ];
 
