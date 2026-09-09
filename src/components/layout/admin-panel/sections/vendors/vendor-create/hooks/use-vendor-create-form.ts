@@ -1,103 +1,75 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { bankHasBranchCheckDigit, findBankOptionByCode, OTHER_BANK_OPTION_VALUE } from "@/features/revendedor/constants/bank-codes";
-import type { VendorRegistrationStep3Data } from "@/features/revendedor/types/revendedor-application";
-import { createEmptyStep3Data } from "@/features/revendedor/utils/revendedor-registration";
+import { useVendorForm } from "@/features/vendor-registration/hooks/use-vendor-form";
+import {
+  buildVendorCreatePayload,
+  createEmptyVendorFormValues,
+  createVendorFormValuesFromSourceUser,
+  validateVendorFormValues,
+} from "@/features/vendor-registration/vendor-form-values";
 
-import { buildVendorCreatePayload, createInitialVendorCreateForm, createVendorCreateFormFromSourceUser, validateVendorCreateForm } from "../form";
 import { createAdminVendor } from "../service";
-import type { VendorCreateForm, VendorCreateLauncherProps, VendorCreateSourceUser } from "../types";
-import { useVendorCreateCep } from "./use-vendor-create-cep";
+import type { CreatedVendor, VendorCreateLauncherProps, VendorCreateSourceUser } from "../types";
 
-export function useVendorCreateForm({ initialOpen = false, sourceUser = null }: VendorCreateLauncherProps) {
+export function useVendorCreateForm({
+  initialOpen = false,
+  sourceUser = null,
+}: VendorCreateLauncherProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState<VendorCreateForm>(() => createVendorCreateFormFromSourceUser(sourceUser));
-  const [useCustomBankCode, setUseCustomBankCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdVendor, setCreatedVendor] = useState<Awaited<ReturnType<typeof createAdminVendor>>>(null);
+  const [createdVendor, setCreatedVendor] = useState<CreatedVendor | null>(null);
   const [prefillSource, setPrefillSource] = useState(initialOpen ? sourceUser : null);
   const autoOpenedRef = useRef(false);
-  const cep = useVendorCreateCep({ setForm });
-  const bankCode = form.bankAccount.bankCode.trim();
-  const selectedBankOption = findBankOptionByCode(bankCode);
-  const branchHasCheckDigit = bankHasBranchCheckDigit(bankCode);
-  const bankSelectValue = useCustomBankCode ? OTHER_BANK_OPTION_VALUE : selectedBankOption?.value ?? "";
-
-  useEffect(() => {
-    if (bankCode && !selectedBankOption) setUseCustomBankCode(true);
-  }, [bankCode, selectedBankOption]);
-
-  useEffect(() => {
-    if (branchHasCheckDigit || !form.bankAccount.branchCheckDigit) return;
-    setForm((form) => ({ ...form, bankAccount: { ...form.bankAccount, branchCheckDigit: "" } }));
-  }, [branchHasCheckDigit, form.bankAccount.branchCheckDigit]);
+  const controller = useVendorForm({
+    initialValues: createVendorFormValuesFromSourceUser(sourceUser),
+    onDirty: () => setError(null),
+  });
+  const { resetValues, values } = controller;
 
   useEffect(() => {
     if (!initialOpen || autoOpenedRef.current) return;
     autoOpenedRef.current = true;
-    resetForm(sourceUser);
+    setError(null);
+    setCreatedVendor(null);
+    resetValues(createVendorFormValuesFromSourceUser(sourceUser));
     setPrefillSource(sourceUser ?? null);
     setIsOpen(true);
     router.replace("/admin/vendors", { scroll: false });
-    // `resetForm` é recriado a cada render e só é chamado aqui na abertura automática, guardada
-    // por `autoOpenedRef`. Declará-lo como dependência reabriria o formulário a cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialOpen, router, sourceUser]);
+  }, [initialOpen, resetValues, router, sourceUser]);
 
   function resetForm(source: VendorCreateSourceUser | null = null) {
     setError(null);
     setCreatedVendor(null);
-    cep.resetCepLookup();
-    setUseCustomBankCode(false);
-    setForm(source ? createVendorCreateFormFromSourceUser(source) : createInitialVendorCreateForm());
-  }
-
-  function update<K extends keyof VendorCreateForm>(key: K, value: VendorCreateForm[K]) {
-    setForm((form) => ({ ...form, [key]: value }));
-  }
-
-  function updateBank<K extends keyof VendorCreateForm["bankAccount"]>(key: K, value: VendorCreateForm["bankAccount"][K]) {
-    setForm((form) => ({ ...form, bankAccount: { ...form.bankAccount, [key]: value } }));
-  }
-
-  function updatePagarmeDraft<K extends keyof VendorRegistrationStep3Data>(key: K, value: VendorRegistrationStep3Data[K]) {
-    setForm((form) => ({ ...form, pagarmeDraft: { ...form.pagarmeDraft, [key]: value } }));
-  }
-
-  function updateManagingPartnerField(key: keyof VendorRegistrationStep3Data["managingPartners"][number], value: string | boolean) {
-    setForm((form) => {
-      const partner = form.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
-      return { ...form, pagarmeDraft: { ...form.pagarmeDraft, managingPartners: [{ ...partner, [key]: value }] } };
-    });
-  }
-
-  function updateManagingPartnerAddressField(key: keyof VendorRegistrationStep3Data["managingPartners"][number]["address"], value: string) {
-    setForm((form) => {
-      const partner = form.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
-      return { ...form, pagarmeDraft: { ...form.pagarmeDraft, managingPartners: [{ ...partner, address: { ...partner.address, [key]: value } }] } };
-    });
+    resetValues(
+      source ? createVendorFormValuesFromSourceUser(source) : createEmptyVendorFormValues(),
+    );
   }
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+
     setError(null);
     setCreatedVendor(null);
-    const validation = validateVendorCreateForm(form);
-    if (validation) return setError(validation);
+
+    const validation = validateVendorFormValues(values, "admin-create");
+    if (validation) {
+      setError(validation);
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const vendor = await createAdminVendor(buildVendorCreatePayload(form));
-      setForm(createInitialVendorCreateForm());
-      setUseCustomBankCode(false);
+      const vendor = await createAdminVendor(buildVendorCreatePayload(values));
+      resetValues(createEmptyVendorFormValues());
       setCreatedVendor(vendor);
       setIsOpen(false);
       router.refresh();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Não foi possível criar o vendor.");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Não foi possível criar o vendor.");
     } finally {
       setSubmitting(false);
     }
@@ -113,5 +85,15 @@ export function useVendorCreateForm({ initialOpen = false, sourceUser = null }: 
     if (!submitting) setIsOpen(false);
   }
 
-  return { ...cep, bankSelectValue, branchHasCheckDigit, closeModal, createdVendor, error, form, handleSubmit, isOpen, openNewForm, prefillSource, setUseCustomBankCode, submitting, update, updateBank, updateManagingPartnerAddressField, updateManagingPartnerField, updatePagarmeDraft, useCustomBankCode };
+  return {
+    closeModal,
+    controller,
+    createdVendor,
+    error,
+    handleSubmit,
+    isOpen,
+    openNewForm,
+    prefillSource,
+    submitting,
+  };
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createInitialVendorCreateForm } from "./form";
+import { buildVendorCreatePayload, createEmptyVendorFormValues } from "@/features/vendor-registration/vendor-form-values";
 import { createAdminVendor } from "./service";
 
 afterEach(() => {
@@ -15,7 +15,7 @@ describe("createAdminVendor", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const form = createInitialVendorCreateForm();
+    const form = buildVendorCreatePayload(createEmptyVendorFormValues());
     const vendor = await createAdminVendor(form);
 
     expect(vendor).toEqual({ id: 7, email: "vendor@example.com" });
@@ -32,6 +32,8 @@ describe("createAdminVendor", () => {
       json: async () => ({ message: "CNPJ já cadastrado." }),
     }));
 
-    await expect(createAdminVendor(createInitialVendorCreateForm())).rejects.toThrow("CNPJ já cadastrado.");
+    await expect(
+      createAdminVendor(buildVendorCreatePayload(createEmptyVendorFormValues())),
+    ).rejects.toThrow("CNPJ já cadastrado.");
   });
 });

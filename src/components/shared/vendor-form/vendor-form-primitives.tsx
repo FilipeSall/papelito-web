@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { PasswordRevealButton } from "@/components/ui/password-reveal-button";
 
-import { InfoTooltip } from "../../products/components/form-fields";
+import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/components/form-fields";
 
 function fieldClass(hasError = false, disabled = false) {
   const stateClass = disabled
@@ -103,5 +103,3 @@ export function Section({ children, title }: Readonly<{ children: React.ReactNod
     </section>
   );
 }
-
-
