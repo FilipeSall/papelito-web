@@ -31,6 +31,7 @@ import { UserRoleBadge } from "./user-badges";
 import { UserOrderActionButton } from "./user-order-action-button";
 import { UserRoleActions } from "./user-role-actions";
 import { CompanyApplicationReview } from "../company-application-review";
+import { VendorEditLauncher } from "../vendors/vendor-edit/vendor-edit-launcher";
 import { AccountStatusActions } from "../accounts/account-status-actions";
 import { AccountStatusChip } from "../accounts/status-chip";
 import {
@@ -310,6 +311,9 @@ export function UserDetailPage({
             >
               Painel do vendor
             </Link>
+          ) : null}
+          {user.isVendor ? (
+            <VendorEditLauncher vendorId={user.id} vendorName={fullName} />
           ) : null}
           {user.availableActions.canUseVendorRedirect ? (
             <Link

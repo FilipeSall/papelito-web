@@ -116,6 +116,29 @@ Do sistema do corredor da vitrine pública, descrito em [../brand/identidade-vis
 
 `BaseModal` fornece **apenas a casca**: portal, `role="dialog"`/`aria-modal`, ESC, overlay, trava de scroll, foco preso e retorno de foco. **Não tem header nem footer** — cada uso monta os seus. `vendor-cancel-shipment-modal.tsx` é o precedente de uso; `vendor-reject-modal.tsx` é o precedente da paleta de perigo (`#b91c1c`, hover `#991b1b`) mas monta o próprio diálogo.
 
+### `src/features/vendor-registration/` + `src/components/shared/vendor-form/` — o formulário do vendor
+
+**Há um único formulário de vendor, em três modos.** Não crie uma quarta cópia: os campos, o estado, a validação e a montagem do payload são compartilhados, e o que muda entre os modos é prop.
+
+| Peça | Papel |
+|---|---|
+| `types.ts` | `VendorFormValues` (forma canônica) e `VendorFormMode` |
+| `vendor-form-values.ts` | `createEmptyVendorFormValues`, `createVendorFormValuesFromSourceUser`, `createVendorFormValuesFromRegistration`, `validateVendorFormValues(values, mode)`, `buildVendorCreatePayload`, `buildVendorRegistrationPayload` |
+| `hooks/use-vendor-form.ts` | estado, atualizadores por bloco, busca de CEP (loja e responsável), código de banco / dígito de agência |
+| `components/shared/vendor-form/vendor-form-sections.tsx` | as seis seções de campos (Conta, Dados comerciais, Endereço e cobertura, KYC da empresa, Responsável legal, Dados bancários) |
+
+Os três consumidores:
+
+| Modo | Consumidor | Escreve em |
+|---|---|---|
+| `admin-create` | `sections/vendors/vendor-create/` | `POST /api/admin/vendors` |
+| `admin-edit` | `sections/vendors/vendor-edit/` | `GET|PUT /api/admin/vendors/{id}/registration` |
+| `vendor-self` | `vendor-panel/vendor-pending-registration-modal-host.tsx` | `POST /api/vendor/registration-pending` |
+
+O `admin-edit` carrega o cadastro **sob demanda**, ao abrir o modal — o rascunho financeiro (CPF, renda e conta bancária do responsável) não entra no payload RSC de `/admin/contas/{id}` em visitas que não editam, e cada abertura relê o estado atual em vez de reaproveitar props potencialmente velhas.
+
+O `mode` só controla três coisas: **senha temporária** (existe apenas em `admin-create` sem `sourceUserId`, e só aí é obrigatória), o **destaque de pendências** (`fieldError`, alimentado por `pendingFields`) e o **aviso de conta** (`accountNotice`). A ordem das validações bloqueantes é idêntica nos três — editar não pede de novo o que já tem valor, porque KYC e dados bancários nunca bloqueiam o submit: eles viram `pendingFields` no backend.
+
 ## Convenções
 
 - **Sem barrel exports profundos.** Cada `index.ts` re-exporta apenas o conteúdo da própria pasta.

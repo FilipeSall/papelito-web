@@ -1,9 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { AdminOwnerApplications, AdminUserDetail } from "@/lib/server/admin-users";
 
 import { UserDetailPage, type UserDetailOrigin } from "./user-detail-page";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
+}));
 
 const origin: UserDetailOrigin = {
   page: 1,
@@ -153,6 +157,19 @@ describe("detalhe administrativo da conta", () => {
     expect(screen.queryByText("Sem vendas recentes")).not.toBeInTheDocument();
   });
 
+  it("não oferece edição de vendor para uma conta customer", () => {
+    render(
+      <UserDetailPage
+        activeTab="overview"
+        origin={origin}
+        ownerApplications={ownerApplications}
+        user={buildUser()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /Editar dados/ })).not.toBeInTheDocument();
+  });
+
   it("mantém vendas e loja para uma conta vendor", () => {
     render(
       <UserDetailPage
@@ -183,5 +200,6 @@ describe("detalhe administrativo da conta", () => {
     expect(screen.getByText("Vendas operacionais como vendor")).toBeInTheDocument();
     expect(screen.getByText("Papeloto")).toBeInTheDocument();
     expect(screen.getByText("65.326.368/0001-90")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Editar dados/ })).toBeInTheDocument();
   });
 });
