@@ -21,6 +21,8 @@ export type NotificationType =
   | "shipment_returned"
   | "shipment_exception"
   | "return_requested"
+  | "return_opened"
+  | "return_authorization_issued"
   | "return_tracking_updated"
   | "return_refunded"
   | "company_owner_review_pending"

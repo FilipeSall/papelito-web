@@ -85,6 +85,30 @@ export interface ProfileOrderFiscalDocument {
 }
 
 /**
+ * Item do pedido ainda passível de devolução, já descontado o que outras
+ * solicitações consumiram.
+ */
+export interface ProfileOrderReturnableItem {
+  orderItemId: number;
+  name: string;
+  purchasedQty: number;
+  returnableQty: number;
+}
+
+/**
+ * Decisão do WordPress sobre abrir uma devolução deste pedido. O front apenas
+ * renderiza: a janela e o saldo por item nunca são recalculados no cliente.
+ */
+export interface ProfileOrderReturnEligibility {
+  canRequest: boolean;
+  reason: string;
+  message: string;
+  windowDays: number;
+  windowEndsAt: string;
+  items: ProfileOrderReturnableItem[];
+}
+
+/**
  * Dados de detalhe exibidos na página de pedido.
  */
 export interface ProfileOrderDetail {
@@ -104,4 +128,5 @@ export interface ProfileOrderDetail {
   payment: ProfileOrderPaymentInfo;
   receipt: ProfileOrderReceipt;
   fiscalDocument: ProfileOrderFiscalDocument | null;
+  returns: ProfileOrderReturnEligibility;
 }

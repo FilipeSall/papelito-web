@@ -11,6 +11,7 @@ import type {
   ProfileOrderDetail,
   ProfileOrderFiscalDocument,
   ProfileOrderReceipt,
+  ProfileOrderReturnEligibility,
   ProfileOrderTimelineEvent,
 } from "../types/profile-order-detail";
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
@@ -29,6 +30,14 @@ type WpProfileShipment = {
 
 type WpProfileOrder = {
   created_at?: string;
+  returns?: {
+    can_request?: boolean;
+    reason?: string;
+    message?: string;
+    window_days?: number;
+    window_ends_at?: string;
+    items?: Array<{ order_item_id?: number; name?: string; purchased_qty?: number; returnable_qty?: number }>;
+  };
   delivery_time_days?: number;
   id?: number;
   items?: Array<{ item_id?: number; name?: string; qty?: number; total?: number }>;
@@ -112,6 +121,31 @@ export function mapStatus(status: string | undefined): OrderStatus {
     default:
       return "awaiting_payment";
   }
+}
+
+/**
+ * Elegibilidade de devolução vinda do WordPress. Ausente ou malformada vira
+ * "não pode" — a interface nunca infere a janela por conta própria.
+ */
+function returnsInfo(order: WpProfileOrder): ProfileOrderReturnEligibility {
+  const source = order.returns;
+  const items = Array.isArray(source?.items) ? source.items : [];
+
+  return {
+    canRequest: source?.can_request === true,
+    reason: typeof source?.reason === "string" ? source.reason : "",
+    message: typeof source?.message === "string" ? source.message : "",
+    windowDays: Number(source?.window_days) || 0,
+    windowEndsAt: typeof source?.window_ends_at === "string" ? source.window_ends_at : "",
+    items: items
+      .map((item) => ({
+        orderItemId: Number(item?.order_item_id) || 0,
+        name: typeof item?.name === "string" && item.name ? item.name : "Produto",
+        purchasedQty: Number(item?.purchased_qty) || 0,
+        returnableQty: Math.max(0, Number(item?.returnable_qty) || 0),
+      }))
+      .filter((item) => item.orderItemId > 0),
+  };
 }
 
 function receiptInfo(order: WpProfileOrder): ProfileOrderReceipt {
@@ -410,6 +444,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     payment: paymentInfo(order),
     fiscalDocument: fiscalDocumentInfo(order),
     receipt: receiptInfo(order),
+    returns: returnsInfo(order),
   };
 }
 

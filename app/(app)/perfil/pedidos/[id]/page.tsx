@@ -10,6 +10,7 @@ import {
 } from "@/features/orders/utils/payment-deadline";
 import {
   OrderDocumentsSection,
+  OrderReturnRequest,
   OrderStatusBadge,
   OrderTrackingCopyButton,
   ProfilePageTitle,
@@ -367,6 +368,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             orderId={order.id}
             receipt={order.receipt}
           />
+
+          <OrderReturnRequest orderId={order.id} returns={order.returns} />
 
           <div className="border-2 border-[#1a1a1a] bg-brand-yellow p-5 shadow-[8px_8px_0px_#1a1a1a]">
             <p className="text-base font-black uppercase tracking-tight text-[#1a1a1a]">

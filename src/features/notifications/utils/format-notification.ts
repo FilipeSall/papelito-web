@@ -425,19 +425,35 @@ export function formatNotification(
         body: "Uma solicitação de devolução aguarda sua análise.",
         href: "/vendor/devolucoes",
       };
+    case "return_opened":
+      return {
+        icon: "package",
+        title: "Devolução aberta",
+        body: "O vendor registrou a devolução que vocês combinaram no suporte.",
+        href: "/perfil/devolucoes",
+      };
+    case "return_authorization_issued": {
+      const returnId = numberValue(payload, "return_id");
+      return {
+        icon: "package",
+        title: "Autorização de postagem disponível",
+        body: "O vendor enviou o código e as instruções para sua devolução.",
+        href: Number.isInteger(returnId) && returnId > 0 ? `/perfil/devolucoes/${returnId}` : "/perfil/devolucoes",
+      };
+    }
     case "return_tracking_updated":
       return {
         icon: "package",
         title: "Rastreio da devolução atualizado",
         body: "A devolução teve uma atualização de rastreio.",
-        href: "/perfil",
+        href: Number.isInteger(numberValue(payload, "return_id")) && numberValue(payload, "return_id") > 0 ? `/perfil/devolucoes/${numberValue(payload, "return_id")}` : "/perfil/devolucoes",
       };
     case "return_refunded":
       return {
         icon: "check",
         title: "Estorno registrado",
         body: "O vendor registrou o estorno manual da sua devolução.",
-        href: "/perfil",
+        href: Number.isInteger(numberValue(payload, "return_id")) && numberValue(payload, "return_id") > 0 ? `/perfil/devolucoes/${numberValue(payload, "return_id")}` : "/perfil/devolucoes",
       };
     default:
       return {
