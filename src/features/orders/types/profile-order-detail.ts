@@ -108,6 +108,11 @@ export interface ProfileOrderReturnEligibility {
   items: ProfileOrderReturnableItem[];
 }
 
+export interface ProfileOrderReturnRequest {
+  id: number;
+  status: string;
+}
+
 /**
  * Dados de detalhe exibidos na página de pedido.
  */
@@ -129,4 +134,5 @@ export interface ProfileOrderDetail {
   receipt: ProfileOrderReceipt;
   fiscalDocument: ProfileOrderFiscalDocument | null;
   returns: ProfileOrderReturnEligibility;
+  returnRequests: ProfileOrderReturnRequest[];
 }

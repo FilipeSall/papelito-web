@@ -38,6 +38,7 @@ type WpProfileOrder = {
     window_ends_at?: string;
     items?: Array<{ order_item_id?: number; name?: string; purchased_qty?: number; returnable_qty?: number }>;
   };
+  return_requests?: Array<{ id?: number; status?: string }>;
   delivery_time_days?: number;
   id?: number;
   items?: Array<{ item_id?: number; name?: string; qty?: number; total?: number }>;
@@ -146,6 +147,12 @@ function returnsInfo(order: WpProfileOrder): ProfileOrderReturnEligibility {
       }))
       .filter((item) => item.orderItemId > 0),
   };
+}
+
+function returnRequestsInfo(order: WpProfileOrder) {
+  return (order.return_requests ?? [])
+    .map((request) => ({ id: Number(request.id) || 0, status: typeof request.status === "string" ? request.status : "" }))
+    .filter((request) => request.id > 0 && request.status);
 }
 
 function receiptInfo(order: WpProfileOrder): ProfileOrderReceipt {
@@ -394,6 +401,7 @@ function mapSummary(order: WpProfileOrder): Order {
     date: formatDate(order.created_at),
     itemsCount: Number(order.items_count) || 0,
     trackingCode: typeof order.tracking_code === "string" && order.tracking_code ? order.tracking_code : null,
+    returnRequests: returnRequestsInfo(order),
     total: Number(order.total) || 0,
   };
 }
@@ -445,6 +453,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     fiscalDocument: fiscalDocumentInfo(order),
     receipt: receiptInfo(order),
     returns: returnsInfo(order),
+    returnRequests: returnRequestsInfo(order),
   };
 }
 

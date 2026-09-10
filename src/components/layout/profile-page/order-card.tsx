@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { ProfilePanel, profilePrimaryActionClass, profileSecondaryActionClass } from "./profile-panel";
 import { OrderStatus, OrderStatusBadge } from "./order-status-badge";
+import { returnStatusMeta } from "@/features/returns/return-status";
+import type { VendorReturnStatus } from "@/features/returns/types/vendor-return";
 
 export type Order = {
   id: string;
@@ -10,6 +12,7 @@ export type Order = {
   date: string;
   itemsCount: number;
   trackingCode?: string | null;
+  returnRequests?: Array<{ id: number; status: string }>;
   total: number;
 };
 
@@ -48,6 +51,15 @@ export function OrderCard({ order }: OrderCardProps) {
               Rastreio {order.trackingCode}
             </p>
           ) : null}
+          {(order.returnRequests ?? []).map((request) => (
+            <Link
+              className="text-xs font-black uppercase tracking-[0.12em] text-[#1a1a1a] underline underline-offset-4"
+              href={`/perfil/devolucoes/${request.id}`}
+              key={request.id}
+            >
+              {returnStatusMeta(request.status as VendorReturnStatus).label}
+            </Link>
+          ))}
         </div>
 
         <div className="flex flex-col gap-4 md:items-end">

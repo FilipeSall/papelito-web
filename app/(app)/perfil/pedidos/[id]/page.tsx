@@ -6,6 +6,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import { getProfileOrderDetail } from "@/features/orders";
+import { returnStatusMeta } from "@/features/returns/return-status";
+import type { VendorReturnStatus } from "@/features/returns/types/vendor-return";
 import {
   formatPaymentDeadline,
   getPaymentExpiresAt,
@@ -370,6 +372,26 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             orderId={order.id}
             receipt={order.receipt}
           />
+
+          {order.returnRequests.length > 0 ? (
+            <ProfilePanel tone="white">
+              <article className="px-5 py-5 md:px-6">
+                <ProfileSectionHeading>Devoluções deste pedido</ProfileSectionHeading>
+                <div className="mt-4 flex flex-col gap-3">
+                  {order.returnRequests.map((request) => (
+                    <Link
+                      className="flex items-center justify-between gap-3 border-2 border-[#1a1a1a] px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#1a1a1a] hover:bg-brand-yellow"
+                      href={`/perfil/devolucoes/${request.id}`}
+                      key={request.id}
+                    >
+                      {returnStatusMeta(request.status as VendorReturnStatus).label}
+                      <span>Acompanhar devolução</span>
+                    </Link>
+                  ))}
+                </div>
+              </article>
+            </ProfilePanel>
+          ) : null}
 
           <OrderReturnRequest orderId={order.id} returns={order.returns} />
 
