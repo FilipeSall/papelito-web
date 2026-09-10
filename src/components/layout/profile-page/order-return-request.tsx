@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { ProfileOrderReturnEligibility } from "@/features/orders/types/profile-order-detail";
 
 import { profileSecondaryActionClass } from "./profile-panel";
+import { ReturnReasonModal, type ReturnReasonChoice } from "./return-reason-modal";
 
 const BLOCKED_HEADLINES: Record<string, string> = {
   papelito_return_delivery_required: "Disponível após a entrega",
@@ -22,34 +23,40 @@ function formatDeadline(value: string) {
 }
 
 /**
- * A devolução começa como conversa com o vendor, não como formulário: o cliente
- * cai no suporte do pedido com a mensagem já redigida e só precisa completar o
- * motivo. Quem abre o registro formal é o vendor, depois de combinar ali.
+ * A devolução começa como chamado com a loja, não como formulário — mas o motivo é escolhido
+ * antes de o chamado existir: era possível abrir a solicitação sem motivo nenhum, e a loja
+ * recebia uma mensagem terminada em "Motivo:" vazio.
  */
 export function OrderReturnRequest({
   orderId,
   returns,
 }: Readonly<{ orderId: string; returns: ProfileOrderReturnEligibility }>) {
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function openReturnSupport() {
+  async function openReturnChamado({ reason, reasonOther }: ReturnReasonChoice) {
     if (busy) return;
+
     setBusy(true);
     setError("");
+
     try {
       const response = await fetch("/api/messages/return-support", {
-        body: JSON.stringify({ orderId: Number(orderId) }),
+        body: JSON.stringify({ orderId: Number(orderId), reason, reasonOther }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
       const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        setError(payload?.message ?? "Não foi possível abrir o suporte da devolução.");
+        setError(payload?.message ?? "Não foi possível abrir o chamado da devolução.");
         return;
       }
-      router.push(`/perfil/pedidos/${orderId}/suporte`);
+
+      setIsModalOpen(false);
+      router.push(`/perfil/chamados/${payload?.thread_id ?? ""}`);
       router.refresh();
     } catch {
       setError("Não foi possível falar com o servidor. Verifique sua conexão.");
@@ -79,18 +86,27 @@ export function OrderReturnRequest({
         {deadline ? `Você tem até ${deadline}` : `Prazo de ${returns.windowDays} dias após a entrega`}
       </p>
       <p className="mt-3 text-xs font-semibold leading-5 text-[#1a1a1a]/70">
-        Abriremos agora um chamado direto com o vendor, já preenchido com os dados do pedido e dos itens
-        disponíveis. Você poderá complementar o motivo na conversa.
+        Escolha o motivo e abriremos um chamado com a loja, já com os dados do pedido no contexto.
       </p>
       <button
         className={`${profileSecondaryActionClass} mt-4 w-full`}
         disabled={busy}
-        onClick={() => void openReturnSupport()}
+        onClick={() => {
+          setError("");
+          setIsModalOpen(true);
+        }}
         type="button"
       >
-        {busy ? "Abrindo chamado..." : "Solicitar devolução"}
+        Solicitar devolução
       </button>
       {error ? <p className="mt-3 text-xs font-bold text-[#c0392b]">⚠ {error}</p> : null}
+
+      <ReturnReasonModal
+        isSubmitting={busy}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={(choice) => void openReturnChamado(choice)}
+        open={isModalOpen}
+      />
     </div>
   );
 }

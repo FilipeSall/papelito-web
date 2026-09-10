@@ -5,6 +5,7 @@ import { Paperclip, ScanBarcode } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
+import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/components/form-fields";
 import { FOCUS_RING } from "@/components/layout/operational-panel";
 import { DirectUploadError, uploadDirectFile } from "@/lib/client/direct-upload";
 import type { VendorReturn } from "@/features/returns/types/vendor-return";
@@ -71,7 +72,31 @@ function isS10(value: string) {
   return /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(value.replace(/\s+/g, "").toUpperCase());
 }
 
-function Field({ children, label }: Readonly<{ children: ReactNode; label: string }>) {
+function Field({
+  children,
+  helpText,
+  id,
+  label,
+}: Readonly<{
+  children: ReactNode;
+  helpText?: string;
+  id?: string;
+  label: string;
+}>) {
+  if (id) {
+    return (
+      <div className="block">
+        <span className="flex items-center gap-2">
+          <label className={labelClassName} htmlFor={id}>
+            {label}
+          </label>
+          {helpText ? <InfoTooltip text={helpText} /> : null}
+        </span>
+        <span className="mt-1.5 block">{children}</span>
+      </div>
+    );
+  }
+
   return (
     <label className="block">
       <span className={labelClassName}>{label}</span>
@@ -317,14 +342,15 @@ export function VendorReturnActions({ data }: Readonly<{ data: VendorReturn }>) 
 
       {meta.action === "authorization" ? (
         <div className="space-y-4">
-          <p className="text-sm leading-6 text-[#231f20]/74">
-            O código de autorização é o que o cliente apresenta para postar. Ele não é o rastreio: o S10 entra
-            depois, quando existir.
-          </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Código de autorização *">
+            <Field
+              helpText="É o código emitido pela loja, pelo seu contrato com os Correios, para o cliente postar a devolução sem pagar o frete. Não é código de rastreio; informe o S10 depois, quando estiver disponível."
+              id="return-authorization-code"
+              label="Código de autorização *"
+            >
               <input
                 className={fieldClassName}
+                id="return-authorization-code"
                 maxLength={96}
                 onChange={(event) => setAuthCode(event.target.value)}
                 placeholder="Ex.: AUT-2026-0031"

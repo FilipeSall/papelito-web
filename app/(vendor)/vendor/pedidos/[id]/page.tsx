@@ -9,7 +9,6 @@ import {
   paymentMethodLabel,
   paymentStateShape,
   VendorContactCustomerButton,
-  VendorOpenReturn,
   VendorOrderActions,
   VendorOrderDeliveryCountdown,
   VendorOrderDocumentsSection,
@@ -333,10 +332,6 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         shippingService={order.shippingService}
         status={order.status}
       />
-
-      <Panel title="Devolução">
-        <VendorOpenReturn items={order.items} orderId={Number(order.id)} />
-      </Panel>
 
       <VendorOrderDocumentsSection
         initialFiscal={order.fiscal}

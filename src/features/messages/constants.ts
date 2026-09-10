@@ -1,3 +1,0 @@
-export const MESSAGES_DEFAULT_PER_PAGE = 20;
-export const MESSAGE_BODY_MAX_LENGTH = 2000;
-export const MESSAGE_POLL_INTERVAL_MS = 15_000;

@@ -1,32 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-type PendingInvitation = {
-  companyName?: string;
-};
+import { getPendingInvitationPreview } from "@/lib/server/company-invitation-preview";
 
-export function PendingInvitationNotice() {
-  const [invitation, setInvitation] = useState<PendingInvitation | null>(null);
+/**
+ * Aviso de convite pendente. Roda no servidor porque o token do convite só existe em cookie
+ * HttpOnly: perguntar isso do cliente gerava um 404 garantido em toda rota de `/perfil`.
+ */
+export async function PendingInvitationNotice() {
+  const invitation = await getPendingInvitationPreview();
 
-  useEffect(() => {
-    let active = true;
-
-    void fetch("/api/company/invitations/current", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data = (await response.json()) as PendingInvitation;
-        if (active) setInvitation(data);
-      })
-      .catch(() => undefined);
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (!invitation) return null;
+  if (invitation.kind !== "ok") return null;
 
   return (
     <div className="mb-7 flex flex-col gap-4 border-2 border-[#1a1a1a] bg-brand-yellow px-5 py-4 shadow-[5px_5px_0px_#1a1a1a] sm:flex-row sm:items-center sm:justify-between">

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ProfilePanel } from "./profile-panel";
 import {
   AddressIcon,
+  ChamadosIcon,
   FavoritesIcon,
   LogoutIcon,
   OrdersIcon,
@@ -16,6 +17,7 @@ import { useProfileShell } from "./profile-shell-provider";
 
 const menuItems = [
   { href: "/perfil", label: "Meus pedidos", icon: OrdersIcon },
+  { href: "/perfil/chamados", label: "Meus chamados", icon: ChamadosIcon },
   { href: "/perfil/dados", label: "Meus dados", icon: UserDataIcon },
   { href: "/perfil/empresa", label: "Minha empresa", icon: UserDataIcon },
   { href: "/perfil/enderecos", label: "Endereços", icon: AddressIcon },

@@ -27,7 +27,7 @@ test/                       infra compartilhada
   factories/                cart, notification, product, session, vendor
   msw/
     server.ts
-    handlers/               auth, availability, cart, cep, checkout, coupons, notifications
+    handlers/               auth, availability, cart, cep, chamados, checkout, coupons, notifications
   utils/
     render-with-providers.tsx
     reset-stores.ts
@@ -43,6 +43,7 @@ src/**/*.test.ts(x)         testes co-localizados com o código
 - **Mocke somente a fronteira**: rede (via MSW), sessão, relógio e APIs de browser. **A lógica de domínio nunca é mockada** — se você está mockando a função que quer testar, o teste não vale nada.
 - **Evite snapshot como asserção principal.** Snapshot documenta, não valida comportamento.
 - Resete stores entre testes com `reset-stores.ts`; rate limits e caches são baseados em `localStorage`/transient e vazam entre casos.
+- O handler de chamados guarda estado (`sentMessages` + `resetChamadosState()` no `vitest.setup.ts`): o backend devolve a conversa inteira em toda leitura, e sem isso o `PUT /read` do dublê apagaria a mensagem recém-enviada — o teste mediria o dublê, não o componente. Fixtures com identidade própria (`CHAMADO_ENCERRADO_ID`, `CHAMADO_CLOSE_FORBIDDEN_ID`, …) existem pelo mesmo motivo: o SWR revalida e sobrescreve override passado só na montagem.
 - Handlers MSW ficam em `test/msw/handlers/<assunto>.ts`, um por superfície do backend. Ao criar um contrato novo com o WordPress, o handler correspondente é parte da entrega — é ele que mantém o contrato alinhado.
 
 ## O que a suíte cobre hoje

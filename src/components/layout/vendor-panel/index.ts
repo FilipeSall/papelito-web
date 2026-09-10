@@ -17,7 +17,6 @@ export { VendorCoverageManager } from "./vendor-coverage-manager";
 export { VendorOnboardingRequiredNotice } from "./vendor-onboarding-required-notice";
 export { VendorSuspendedNotice } from "./vendor-suspended-notice";
 export { VendorPageHeader } from "./vendor-page-header";
-export { VendorOpenReturn } from "./vendor-open-return";
 export { VendorReturnsBoard } from "./vendor-returns-board";
 export { VendorReturnActions } from "./vendor-return-actions";
 export { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";

@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { ChamadoOpenDialog } from "@/features/chamados";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 
@@ -378,11 +380,17 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-[#1a1a1a]/75">
               Dúvidas sobre o pedido?
             </p>
+            <ChamadoOpenDialog
+              label="Abrir chamado"
+              orderId={Number(order.id)}
+              role="customer"
+              triggerClassName={`${profileSecondaryActionClass} mt-4 w-full`}
+            />
             <Link
-              className={`${profileSecondaryActionClass} mt-4 w-full`}
-              href={`/perfil/pedidos/${order.id}/suporte`}
+              className="mt-3 inline-flex w-full justify-center text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/70 underline decoration-2 underline-offset-4 hover:text-[#1a1a1a]"
+              href={`/perfil/chamados?pedido=${order.id}`}
             >
-              Falar com vendor
+              Ver chamados deste pedido
             </Link>
           </div>
         </aside>

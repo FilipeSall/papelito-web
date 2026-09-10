@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
+import { resetChamadosState } from "./test/msw/handlers/chamados";
 import { server } from "./test/msw/server";
 import { resetAllStores } from "./test/utils/reset-stores";
 
@@ -31,6 +32,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 afterEach(() => {
   server.resetHandlers();
+  resetChamadosState();
   resetAllStores();
   cleanup();
   window.localStorage.clear();

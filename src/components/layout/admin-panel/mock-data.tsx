@@ -27,8 +27,8 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "empresas", value: "37" },
     { label: "na fila", value: "05" },
   ],
-  suporte: [
-    { label: "escaladas", value: "-" },
+  chamados: [
+    { label: "abertos", value: "-" },
     { label: "não lidas", value: "-" },
     { label: "sla", value: "-" },
   ],
@@ -99,9 +99,9 @@ export const SECTION_META: Record<
     railValue: "contas",
     signalTone: "default",
   },
-  suporte: {
-    eyebrow: "Atendimento escalado",
-    description: "Conversas de pedidos encaminhadas para acompanhamento da Papelito.",
+  chamados: {
+    eyebrow: "Atendimento",
+    description: "Chamados abertos pelos clientes nos pedidos do marketplace.",
     railLabel: "fila",
     railValue: "aberta",
     signalTone: "warning",

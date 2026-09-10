@@ -54,6 +54,25 @@ export function resolveRichTextDocument(
   return merged.length > 0 ? merged : null;
 }
 
+/**
+ * Projeta o documento para exibição sem passar pelo registro de tokens.
+ *
+ * O chat não pode usar `resolveRichTextDocument`: ela devolve `null` quando qualquer token é
+ * desconhecido e exige um contexto de resolução que uma mensagem não tem por que possuir. Aqui
+ * nós de token são simplesmente descartados.
+ */
+export function projectRichTextForDisplay(document: RichTextDocument): ResolvedRichTextNode[] {
+  const resolved = document
+    .filter((node) => node.type === "text")
+    .map((node) => ({
+      text: node.type === "text" ? node.text : "",
+      bold: node.bold === true,
+      italic: node.italic === true,
+    }));
+
+  return mergeAdjacent(resolved).filter((node) => node.text !== "");
+}
+
 export function resolveRichTextToPlainText(
   document: RichTextDocument,
   context: RichTextResolutionContext,

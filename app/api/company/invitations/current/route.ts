@@ -1,28 +1,23 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { wpRest } from "@/lib/server/wp-rest";
+import { getPendingInvitationPreview } from "@/lib/server/company-invitation-preview";
 
-const INVITE_COOKIE = "papelito_invite_token";
-
-/** Obtém o preview do convite guardado apenas em cookie HttpOnly. */
+/**
+ * Preview do convite guardado apenas em cookie HttpOnly, para o cadastro por convite.
+ *
+ * O painel do perfil não consome esta rota: `PendingInvitationNotice` chama o mesmo helper direto
+ * no servidor. As duas leituras compartilham o helper para não divergirem.
+ */
 export async function GET() {
-  const token = (await cookies()).get(INVITE_COOKIE)?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Convite não encontrado." }, { status: 404 });
-  }
+  const invitation = await getPendingInvitationPreview();
 
-  const result = await wpRest<{
-    invitationId: number;
-    companyName: string;
-    companyCnpj: string;
-    invitedRole: string;
-    invitedEmail: string;
-  }>(`/papelito/v1/company-invitations/${encodeURIComponent(token)}`);
+  const response =
+    invitation.kind === "ok"
+      ? NextResponse.json(invitation.payload)
+      : invitation.kind === "error"
+        ? NextResponse.json(invitation.error, { status: invitation.status || 404 })
+        : NextResponse.json({ message: "Convite não encontrado." }, { status: 404 });
 
-  const response = result.ok
-    ? NextResponse.json(result.data)
-    : NextResponse.json(result.error, { status: result.status || 404 });
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Referrer-Policy", "no-referrer");
   return response;

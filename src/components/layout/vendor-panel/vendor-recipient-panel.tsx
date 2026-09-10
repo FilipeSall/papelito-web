@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import type { VendorRecipient } from "@/features/vendor-recipient/types/vendor-recipient";
-import { createPagarmeBankAccountSupportThread } from "@/features/messages/services/message-client";
+import { createPagarmeBankAccountSupportThread } from "@/features/chamados/services/chamado-client";
 
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 
@@ -22,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const EDIT_FINANCIAL_DATA_HREF = buildVendorOnboardingHref("/vendor/configuracoes");
-const SUPPORT_HREF = "/vendor/mensagens";
+const SUPPORT_HREF = "/vendor/solicitacoes";
 const recipientDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "long",
   timeStyle: "short",
@@ -332,7 +332,7 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
     setSupportPending(true);
     try {
       const thread = await createPagarmeBankAccountSupportThread();
-      router.push(`/vendor/mensagens/${thread.threadId}`);
+      router.push(`/vendor/solicitacoes/${thread.threadId}`);
     } catch (cause) {
       setFeedback({
         error: true,

@@ -1,5 +1,15 @@
 export { documentFromPlainText, documentToPlainText, normalizeRichTextDocument, resolveRichTextSource } from "./parse";
-export { resolveRichTextDocument, resolveRichTextToPlainText } from "./resolve";
+export {
+  projectRichTextForDisplay,
+  resolveRichTextDocument,
+  resolveRichTextToPlainText,
+} from "./resolve";
+export {
+  serializeRichTextDom,
+  TOKEN_ATTRIBUTE,
+  TOKEN_PARAMS_ATTRIBUTE,
+  type SerializeDomOptions,
+} from "./serialize-dom";
 export { RichText } from "./rich-text";
 export { EMPTY_RICH_TEXT_CONTEXT } from "./tokens/context";
 export type {

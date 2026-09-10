@@ -232,6 +232,54 @@ describe("formatNotification", () => {
     expect(formatted.title).toBe("Nova mensagem sobre a conta Pagar.me");
     expect(formatted.body).toContain("conta bancária");
     expect(formatted.body).not.toContain("pedido");
-    expect(formatted.href).toBe("/vendor/mensagens/42");
+    expect(formatted.href).toBe("/vendor/solicitacoes/42");
+  });
+
+  it("chamado encerrado leva cada audiência ao próprio chamado", () => {
+    const payload = {
+      order_id: 14094,
+      order_number: "14094",
+      sender_name: "Papeloto",
+      thread_id: 42,
+    };
+
+    const cliente = formatNotification(
+      buildNotification({
+        type: "support_closed",
+        payload: { ...payload, recipient_role: "customer" },
+      }),
+    );
+    expect(cliente.title).toBe("Chamado encerrado");
+    expect(cliente.body).toBe("Papeloto encerrou o chamado do pedido #14094.");
+    expect(cliente.href).toBe("/perfil/chamados/42");
+
+    expect(
+      formatNotification(
+        buildNotification({
+          type: "support_closed",
+          payload: { ...payload, recipient_role: "seller" },
+        }),
+      ).href,
+    ).toBe("/vendor/chamados/42");
+
+    expect(
+      formatNotification(
+        buildNotification({
+          type: "support_closed",
+          payload: { ...payload, recipient_role: "administrator" },
+        }),
+      ).href,
+    ).toBe("/admin/chamados?chamado=42");
+  });
+
+  it("chamado encerrado sem número de pedido continua legível", () => {
+    expect(
+      formatNotification(
+        buildNotification({
+          type: "support_closed",
+          payload: { thread_id: 42, recipient_role: "customer" },
+        }),
+      ).body,
+    ).toBe("A loja encerrou o chamado.");
   });
 });

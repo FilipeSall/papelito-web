@@ -9,6 +9,7 @@ export type NotificationType =
   | "vendor_product_data_request"
   | "support_message"
   | "support_escalated"
+  | "support_closed"
   | "new_purchase"
   | "vendor_processing_overdue"
   | "vendor_registration_pending"

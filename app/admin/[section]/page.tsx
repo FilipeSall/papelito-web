@@ -32,6 +32,23 @@ export default async function AdminSectionRoute({
     redirect(search ? `/admin/comercial?${search}` : "/admin/comercial");
   }
 
+  // "Suporte" virou "Chamados" em 09/09. O link salvo e o deep link de notificação continuam
+  // respondendo, remapeando `?thread=` para `?chamado=`.
+  if (section === "suporte") {
+    const query = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(resolvedSearchParams ?? {})) {
+      const first = Array.isArray(value) ? value[0] : value;
+
+      if (typeof first === "string" && first !== "") {
+        query.set(key === "thread" ? "chamado" : key, first);
+      }
+    }
+
+    const search = query.toString();
+    redirect(search ? `/admin/chamados?${search}` : "/admin/chamados");
+  }
+
   if (!isAdminSection(section)) {
     notFound();
   }

@@ -26,7 +26,7 @@ describe("POST /api/messages/return-support", () => {
 
     const response = await POST(
       new Request("http://localhost/api/messages/return-support", {
-        body: JSON.stringify({ orderId: 14094 }),
+        body: JSON.stringify({ orderId: 14094, reason: "defective", reasonOther: "" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       }),
@@ -35,8 +35,29 @@ describe("POST /api/messages/return-support", () => {
     expect(response.status).toBe(201);
     expect(wpRestMock).toHaveBeenCalledWith(
       "/papelito/v1/messages/orders/14094/return-support",
-      expect.objectContaining({ headers: { Authorization: "Bearer customer-token" }, method: "POST" }),
+      expect.objectContaining({
+        headers: { Authorization: "Bearer customer-token" },
+        json: { reason: "defective", reasonOther: "" },
+        method: "POST",
+      }),
     );
+  });
+
+  it("recusa devolução sem motivo antes de falar com o WordPress", async () => {
+    requireMessageAccessTokenMock.mockResolvedValue({ accessToken: "customer-token" });
+    const { POST } = await import("./route");
+
+    const response = await POST(
+      new Request("http://localhost/api/messages/return-support", {
+        body: JSON.stringify({ orderId: 14094 }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ code: "papelito_return_reason_invalid" });
+    expect(wpRestMock).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid order before contacting WordPress", async () => {
@@ -45,7 +66,7 @@ describe("POST /api/messages/return-support", () => {
 
     const response = await POST(
       new Request("http://localhost/api/messages/return-support", {
-        body: JSON.stringify({ orderId: "x" }),
+        body: JSON.stringify({ orderId: "x", reason: "defective" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       }),

@@ -17,7 +17,7 @@ export type AdminSectionKey =
   | "categories"
   | "flash-sale"
   | "contas"
-  | "suporte"
+  | "chamados"
   | "comercial"
   | "assets"
   | "config";
@@ -89,12 +89,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description: "Banners e biblioteca de imagens",
   },
   {
-    key: "suporte",
-    href: "/admin/suporte",
+    key: "chamados",
+    href: "/admin/chamados",
     icon: MessageSquare,
-    label: "Suporte",
-    shortLabel: "Suporte",
-    description: "Conversas escaladas",
+    label: "Chamados",
+    shortLabel: "Chamados",
+    description: "Atendimento por pedido",
   },
   {
     key: "config",

@@ -2,6 +2,7 @@ import {
   Boxes,
   Clock3,
   LayoutDashboard,
+  LifeBuoy,
   MapPinned,
   MessageSquare,
   Settings,
@@ -21,7 +22,8 @@ export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: "/vendor/cobertura", icon: MapPinned, label: "Cobertura", description: "CEPs atendidos" },
   { href: "/vendor/estoque", icon: Boxes, label: "Estoque", description: "Produtos e saldo" },
   { href: "/vendor/pedidos", icon: ShoppingBag, label: "Pedidos", description: "Separacao e envio" },
-  { href: "/vendor/mensagens", icon: MessageSquare, label: "Mensagens", description: "Atendimento" },
+  { href: "/vendor/chamados", icon: MessageSquare, label: "Chamados", description: "Atendimento" },
+  { href: "/vendor/solicitacoes", icon: LifeBuoy, label: "Solicitações", description: "Direto com a Papelito" },
   { href: "/vendor/configuracoes", icon: Settings, label: "Configuracoes", description: "Operacao" },
 ];
 

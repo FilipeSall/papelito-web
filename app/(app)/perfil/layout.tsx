@@ -3,6 +3,7 @@ import {
   ProfileHero,
   ProfileShellProvider,
 } from "@/components/layout/profile-page";
+import { PendingInvitationNotice } from "@/components/layout/profile-page/pending-invitation-notice";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { redirect } from "next/navigation";
 
@@ -33,7 +34,7 @@ export default async function ProfileLayout({
         image={profile.image}
         name={profile.name}
       />
-      <ProfileContent>{children}</ProfileContent>
+      <ProfileContent notice={<PendingInvitationNotice />}>{children}</ProfileContent>
       <AddToCartToastHost />
     </ProfileShellProvider>
   );

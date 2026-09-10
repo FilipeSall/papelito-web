@@ -39,22 +39,24 @@ function supportHref(payload: NotificationPayload) {
   const threadId = numberValue(payload, "thread_id");
   const orderId = numberValue(payload, "order_id");
   const recipientRole = stringValue(payload, "recipient_role");
+  const hasThread = Number.isInteger(threadId) && threadId > 0;
+  // Conversa sem pedido é solicitação à Papelito, não chamado, e mora em outra área do vendor.
+  const isSolicitacao = !(Number.isInteger(orderId) && orderId > 0);
 
   if (recipientRole === "administrator") {
-    return Number.isInteger(threadId) && threadId > 0
-      ? `/admin/suporte?thread=${threadId}`
-      : "/admin/suporte";
+    return hasThread ? `/admin/chamados?chamado=${threadId}` : "/admin/chamados";
   }
 
   if (recipientRole === "seller") {
-    return Number.isInteger(threadId) && threadId > 0
-      ? `/vendor/mensagens/${threadId}`
-      : "/vendor/mensagens";
+    if (isSolicitacao) {
+      return hasThread ? `/vendor/solicitacoes/${threadId}` : "/vendor/solicitacoes";
+    }
+
+    return hasThread ? `/vendor/chamados/${threadId}` : "/vendor/chamados";
   }
 
-  return Number.isInteger(orderId) && orderId > 0
-    ? `/perfil/pedidos/${orderId}/suporte`
-    : "/perfil";
+  // O cliente agora tem URL por chamado; antes só conseguia chegar à página do pedido.
+  return hasThread ? `/perfil/chamados/${threadId}` : "/perfil/chamados";
 }
 
 function logisticsHref(payload: NotificationPayload) {
@@ -289,6 +291,19 @@ export function formatNotification(
         body: "O cliente solicitou acompanhamento da Papelito nesta conversa.",
         href: supportHref(payload),
       };
+    case "support_closed": {
+      const senderName = stringValue(payload, "sender_name") || "A loja";
+      const orderNumber = stringValue(payload, "order_number");
+
+      return {
+        icon: "message",
+        title: "Chamado encerrado",
+        body: orderNumber
+          ? `${senderName} encerrou o chamado do pedido #${orderNumber}.`
+          : `${senderName} encerrou o chamado.`,
+        href: supportHref(payload),
+      };
+    }
     case "new_purchase": {
       const orderId = numberValue(payload, "order_id");
       const orderNumber =

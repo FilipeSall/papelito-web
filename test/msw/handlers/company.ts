@@ -2,7 +2,34 @@ import { HttpResponse, http } from "msw";
 
 const WP_REST_BASE = "http://localhost:8080/wp-json";
 
+export const COMPANY_INVITATION_TOKEN = "convitevalido";
+
 export const companyHandlers = [
+  http.get(
+    `${WP_REST_BASE}/papelito/v1/company-invitations/:token`,
+    ({ params }) => {
+      if (params.token !== COMPANY_INVITATION_TOKEN) {
+        return HttpResponse.json(
+          {
+            code: "papelito_company_invitation_not_found",
+            message: "Convite não encontrado.",
+            data: { status: 404 },
+          },
+          { status: 404 },
+        );
+      }
+
+      return HttpResponse.json({
+        invitationId: 42,
+        companyName: "Papelaria Central",
+        companyCnpj: "12.345.678/0001-90",
+        invitedRole: "buyer",
+        invitedEmail: "convidado@example.com",
+        accountExists: false,
+        authMethods: ["password"],
+      });
+    },
+  ),
   http.post(`${WP_REST_BASE}/papelito/v1/companies/billing-email/confirm`, async ({ request }) => {
     const body = (await request.json().catch(() => null)) as { token?: string } | null;
     const token = body?.token ?? "";

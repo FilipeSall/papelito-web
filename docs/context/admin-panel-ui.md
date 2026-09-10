@@ -554,4 +554,4 @@ Decisões de interface que não são óbvias pelo código:
 
 - Os botões de troca de papel de usuário ainda usam `window.confirm`, por decisão de escopo — não foram migrados para `BaseModal`.
 - A UI de filtros de estoque por categoria/tag existe no painel do vendor mas não no admin, embora o backend tenha paridade.
-- Não existe seção de suporte escalado (`/admin/suporte`).
+- A seção de chamados vive em `/admin/chamados`, com `?chamado=<id>` selecionando um. O `?thread=<id>` legado continua sendo lido por uma release, e `/admin/suporte` redireciona preservando os filtros.

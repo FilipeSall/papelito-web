@@ -6,4 +6,4 @@ export { ConfigContent } from "./config-content";
 export { FlashSaleContent } from "./flash-sale-content";
 export { ProductsContent } from "./products-content";
 export { SalesContent } from "./sales/sales-content";
-export { SupportContent } from "./support-content";
+export { ChamadosContent } from "./chamados-content";

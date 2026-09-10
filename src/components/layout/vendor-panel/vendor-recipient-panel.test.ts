@@ -89,7 +89,7 @@ describe("buildRecipientVerdict", () => {
     const verdict = buildRecipientVerdict(recipient({ recipientId: "re_1", status: "suspended" }));
 
     expect(verdict.tone).toBe("impedido");
-    expect(verdict.primaryAction?.href).toBe("/vendor/mensagens");
+    expect(verdict.primaryAction?.href).toBe("/vendor/solicitacoes");
   });
 
   it("names an unknown Pagar.me status instead of guessing it is fine", () => {
@@ -97,6 +97,6 @@ describe("buildRecipientVerdict", () => {
 
     expect(verdict.tone).toBe("andamento");
     expect(verdict.detail).toContain("quarantined");
-    expect(verdict.primaryAction?.href).toBe("/vendor/mensagens");
+    expect(verdict.primaryAction?.href).toBe("/vendor/solicitacoes");
   });
 });

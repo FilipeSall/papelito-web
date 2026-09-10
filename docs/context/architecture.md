@@ -87,7 +87,7 @@ A distinção que importa:
 Domínios em `features/`:
 
 ```
-active-vendor  auth  cart  catalog  checkout  company  coupons  favorites  messages
+active-vendor  auth  cart  catalog  chamados  checkout  company  coupons  favorites
 notifications  orders  profile  revendedor  vendor-coverage  vendor-dashboard
 vendor-orders  vendor-recipient  vendor-settings  vendor-stock
 ```

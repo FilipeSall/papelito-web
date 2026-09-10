@@ -81,13 +81,21 @@ export function documentFromPlainText(text: string): RichTextDocument {
     );
 }
 
-export function normalizeRichTextDocument(value: unknown): RichTextDocument | null {
+/**
+ * `maxNodes` existe porque o limite da faixa promocional (40) truncaria silenciosamente uma
+ * mensagem longa de chamado. Truncar sem erro é perda de dado, então cada superfície declara o
+ * próprio limite.
+ */
+export function normalizeRichTextDocument(
+  value: unknown,
+  { maxNodes = RICH_TEXT_MAX_NODES }: { maxNodes?: number } = {},
+): RichTextDocument | null {
   if (!Array.isArray(value)) {
     return null;
   }
 
   const nodes = value
-    .slice(0, RICH_TEXT_MAX_NODES)
+    .slice(0, maxNodes)
     .map(normalizeNode)
     .filter((node): node is RichTextNode => node !== null)
     .filter((node) => node.type === "token" || node.text !== "");
@@ -102,8 +110,9 @@ export function normalizeRichTextDocument(value: unknown): RichTextDocument | nu
 export function resolveRichTextSource(
   content: unknown,
   plainText: string,
+  options?: { maxNodes?: number },
 ): RichTextDocument {
-  return normalizeRichTextDocument(content) ?? documentFromPlainText(plainText);
+  return normalizeRichTextDocument(content, options) ?? documentFromPlainText(plainText);
 }
 
 export function documentToPlainText(document: RichTextDocument): string {

@@ -4,6 +4,7 @@ import { authHandlers } from "./handlers/auth";
 import { availabilityHandlers } from "./handlers/availability";
 import { cartHandlers } from "./handlers/cart";
 import { cepHandlers } from "./handlers/cep";
+import { chamadosHandlers } from "./handlers/chamados";
 import { checkoutHandlers } from "./handlers/checkout";
 import { companyHandlers } from "./handlers/company";
 import { contactConfigHandlers } from "./handlers/contact-config";
@@ -17,6 +18,7 @@ export const server = setupServer(
   ...availabilityHandlers,
   ...cartHandlers,
   ...cepHandlers,
+  ...chamadosHandlers,
   ...checkoutHandlers,
   ...companyHandlers,
   ...contactConfigHandlers,

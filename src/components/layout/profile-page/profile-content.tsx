@@ -1,16 +1,23 @@
 import { ReactNode } from "react";
 
 import { ProfileSidebar } from "./profile-sidebar";
-import { PendingInvitationNotice } from "./pending-invitation-notice";
 
 type ProfileContentProps = {
   children: ReactNode;
+  /**
+   * Aviso de convite pendente, resolvido no servidor pelo layout.
+   *
+   * Vem por slot em vez de import: o aviso lê cookie e por isso é `server-only`, e o barrel deste
+   * diretório é importado por client components — importá-lo aqui arrastaria `server-only` para o
+   * bundle do navegador.
+   */
+  notice?: ReactNode;
 };
 
 /**
  * Campo de trabalho do painel do comprador: papel kraft com a trama usada nos painéis de vendor e admin.
  */
-export function ProfileContent({ children }: ProfileContentProps) {
+export function ProfileContent({ children, notice }: ProfileContentProps) {
   return (
     <div className="relative z-10 w-full bg-[#ede9df]">
       <div
@@ -23,7 +30,7 @@ export function ProfileContent({ children }: ProfileContentProps) {
         }}
       />
       <div className="relative mx-auto w-full max-w-391 px-4 py-7 sm:px-6 md:py-9 lg:px-8 lg:py-10">
-        <PendingInvitationNotice />
+        {notice}
         <div className="flex flex-col gap-7 lg:flex-row lg:gap-8">
           <ProfileSidebar />
           <div className="min-w-0 flex-1">{children}</div>
