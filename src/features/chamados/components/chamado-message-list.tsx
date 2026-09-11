@@ -64,8 +64,13 @@ export function ChamadoMessageList({
       <ol className="space-y-1.5">
         {messages.map((message, index) => {
           const previous = messages[index - 1];
-          // Nome e crachá só na primeira mensagem de cada bloco do mesmo falante.
-          const startsRun = !previous || previous.senderId !== message.senderId;
+          // Nome e crachá só na primeira mensagem de cada bloco do mesmo falante. O papel entra
+          // na conta porque é ele que decide o lado: um balão que troca de lado precisa dizer de
+          // quem é, mesmo quando o id do remetente não mudou.
+          const startsRun =
+            !previous ||
+            previous.senderId !== message.senderId ||
+            previous.senderRole !== message.senderRole;
 
           return (
             <li

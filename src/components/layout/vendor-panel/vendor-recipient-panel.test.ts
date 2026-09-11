@@ -33,8 +33,9 @@ describe("buildRecipientVerdict", () => {
     return {
       recipientId: "",
       status: "",
+      kycStatus: "",
+      kycStatusReason: "",
       lastSyncAt: "",
-      kycUrl: "",
       lastError: "",
       lastErrorCode: "",
       loadFailed: false,
@@ -55,41 +56,49 @@ describe("buildRecipientVerdict", () => {
 
     expect(verdict.tone).toBe("ilegivel");
     expect(verdict.headline).not.toContain("pode receber pagamentos");
-    expect(verdict.primarySync).toEqual({ label: "Tentar de novo", refreshKyc: false });
+    expect(verdict.primarySync).toEqual({ label: "Tentar de novo" });
   });
 
   it("sends a vendor with no recipient to the financial form", () => {
     const verdict = buildRecipientVerdict(recipient());
 
     expect(verdict.tone).toBe("andamento");
-    expect(verdict.primaryAction?.label).toBe("Preencher dados financeiros");
-    expect(verdict.primaryAction?.href).toContain("/vendor/onboarding");
+    expect(verdict.primaryAction).toMatchObject({ label: "Preencher dados financeiros", type: "href" });
+    expect(verdict.primaryAction?.type === "href" && verdict.primaryAction.href).toContain("/vendor/onboarding");
   });
 
-  it("opens the existing KYC link when the Pagar.me verification is pending", () => {
+  it("offers KYC only for the official action-required combination", () => {
     const verdict = buildRecipientVerdict(
-      recipient({ recipientId: "re_1", status: "affiliation", kycUrl: "https://kyc.example/1" }),
+      recipient({
+        recipientId: "rp_1",
+        status: "affiliation",
+        kycStatus: "partially_denied",
+        kycStatusReason: "additional_documents_required",
+      }),
     );
 
-    expect(verdict.primaryAction).toEqual({
-      external: true,
-      href: "https://kyc.example/1",
-      label: "Abrir verificação (KYC)",
-    });
+    expect(verdict.primaryAction).toEqual({ label: "Concluir verificação no Pagar.me", type: "kyc" });
   });
 
-  it("offers to generate the KYC link when the vendor has none", () => {
-    const verdict = buildRecipientVerdict(recipient({ recipientId: "re_1", status: "affiliation" }));
+  it("does not offer KYC while the affiliation is under analysis", () => {
+    const verdict = buildRecipientVerdict(
+      recipient({
+        recipientId: "rp_1",
+        status: "affiliation",
+        kycStatus: "pending",
+        kycStatusReason: "waiting_manual_risk_analysis",
+      }),
+    );
 
     expect(verdict.primaryAction).toBeNull();
-    expect(verdict.primarySync).toEqual({ label: "Gerar link de KYC", refreshKyc: true });
+    expect(verdict.primarySync).toEqual({ label: "Atualizar situação" });
   });
 
   it("routes a suspended recipient to Papelito instead of to the form", () => {
     const verdict = buildRecipientVerdict(recipient({ recipientId: "re_1", status: "suspended" }));
 
     expect(verdict.tone).toBe("impedido");
-    expect(verdict.primaryAction?.href).toBe("/vendor/solicitacoes");
+    expect(verdict.primaryAction).toMatchObject({ href: "/vendor/solicitacoes", type: "href" });
   });
 
   it("names an unknown Pagar.me status instead of guessing it is fine", () => {
@@ -97,6 +106,6 @@ describe("buildRecipientVerdict", () => {
 
     expect(verdict.tone).toBe("andamento");
     expect(verdict.detail).toContain("quarantined");
-    expect(verdict.primaryAction?.href).toBe("/vendor/solicitacoes");
+    expect(verdict.primaryAction).toMatchObject({ href: "/vendor/solicitacoes", type: "href" });
   });
 });

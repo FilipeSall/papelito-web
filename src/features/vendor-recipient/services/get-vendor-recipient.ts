@@ -8,8 +8,9 @@ import type { VendorRecipient } from "../types/vendor-recipient";
 type WpVendorRecipient = {
   recipient_id?: string;
   status?: string;
+  kyc_status?: string;
+  kyc_status_reason?: string;
   last_sync_at?: string;
-  kyc_url?: string;
   last_error?: string;
   last_error_code?: string;
 };
@@ -18,8 +19,9 @@ function unreadableRecipient(): VendorRecipient {
   return {
     recipientId: "",
     status: "",
+    kycStatus: "",
+    kycStatusReason: "",
     lastSyncAt: "",
-    kycUrl: "",
     lastError: "",
     lastErrorCode: "",
     loadFailed: true,
@@ -48,8 +50,9 @@ export async function getVendorRecipient(): Promise<VendorRecipient> {
   return {
     recipientId: result.data.recipient_id || "",
     status: result.data.status || "",
+    kycStatus: result.data.kyc_status || "",
+    kycStatusReason: result.data.kyc_status_reason || "",
     lastSyncAt: result.data.last_sync_at || "",
-    kycUrl: result.data.kyc_url || "",
     lastError: result.data.last_error || "",
     lastErrorCode: result.data.last_error_code || "",
     loadFailed: false,

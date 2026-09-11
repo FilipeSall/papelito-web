@@ -350,6 +350,30 @@ a:hover .menu-underline path:nth-child(3),
         }
     }
 
+    /* Cauda do balão do chamado: um quadrado de 2px girado 45°, centrado na borda superior do
+       balão. Nesse ângulo exato os dois cantos laterais pousam rentes à face de fora da borda
+       do balão — daí o `top` de -2px, a espessura dela — e o miolo cobre o trecho de borda
+       embaixo: os dois contornos viram uma silhueta só, sem degrau na emenda.
+       O preenchimento não vem daqui: quem usa passa o mesmo `bg-*` do balão. */
+    .chamado-tail {
+        position: absolute;
+        top: -2px;
+        height: 0.625rem;
+        width: 0.625rem;
+        border-top: 2px solid #1a1a1a;
+        border-left: 2px solid #1a1a1a;
+        transform: translateY(-50%) rotate(45deg);
+    }
+
+    /* A cauda fica no canto de fora, embaixo do nome de quem escreveu. */
+    .chamado-tail-left {
+        left: 0.5rem;
+    }
+
+    .chamado-tail-right {
+        right: 0.5rem;
+    }
+
     /* A mensagem enviada assenta na conversa em vez de pular: 200ms é curto o bastante para o
        chamado continuar parecendo instantâneo. Só as mensagens que chegam depois da montagem
        recebem a classe — a lista inicial aparece pronta. */

@@ -31,11 +31,15 @@ const recipientDateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 type VerdictTone = "apto" | "andamento" | "impedido" | "ilegivel";
 
+type RecipientAction =
+  | { href: string; label: string; type: "href" }
+  | { label: string; type: "kyc" };
+
 type RecipientVerdict = {
   detail: string;
   headline: string;
-  primaryAction: { href: string; label: string; external?: boolean } | null;
-  primarySync: { label: string; refreshKyc: boolean } | null;
+  primaryAction: RecipientAction | null;
+  primarySync: { label: string } | null;
   tone: VerdictTone;
 };
 
@@ -61,7 +65,7 @@ export function buildRecipientVerdict(recipient: VendorRecipient): RecipientVerd
         "A Papelito não conseguiu consultar a Pagar.me agora, então este painel não sabe dizer se sua loja pode vender.",
       headline: "Estado do recebedor indisponível",
       primaryAction: null,
-      primarySync: { label: "Tentar de novo", refreshKyc: false },
+      primarySync: { label: "Tentar de novo" },
       tone: "ilegivel",
     };
   }
@@ -89,7 +93,7 @@ export function buildRecipientVerdict(recipient: VendorRecipient): RecipientVerd
     return {
       ...inProgress,
       detail: "O recebedor da sua loja ainda não foi criado na Pagar.me.",
-      primaryAction: { href: EDIT_FINANCIAL_DATA_HREF, label: "Preencher dados financeiros" },
+      primaryAction: { href: EDIT_FINANCIAL_DATA_HREF, label: "Preencher dados financeiros", type: "href" },
       primarySync: null,
     };
   }
@@ -98,53 +102,73 @@ export function buildRecipientVerdict(recipient: VendorRecipient): RecipientVerd
     case "registration":
       return {
         ...inProgress,
-        detail: "O cadastro do recebedor está em andamento na Pagar.me.",
-        primaryAction: { href: EDIT_FINANCIAL_DATA_HREF, label: "Revisar dados financeiros" },
-        primarySync: null,
+        detail: "A Pagar.me está analisando o cadastro inicial do recebedor. Ainda não há uma ação de verificação disponível.",
+        primaryAction: null,
+        primarySync: { label: "Atualizar situação" },
       };
     case "affiliation":
+      if (
+        recipient.kycStatus === "partially_denied" &&
+        recipient.kycStatusReason === "additional_documents_required"
+      ) {
+        return {
+          ...inProgress,
+          detail:
+            "A Pagar.me solicitou a verificação do responsável legal. Você receberá o link por e-mail e seguirá agora para a prova de vida.",
+          primaryAction: { label: "Concluir verificação no Pagar.me", type: "kyc" },
+          primarySync: null,
+        };
+      }
+
+      if (recipient.kycStatus === "pending") {
+        return {
+          ...inProgress,
+          detail: "A Pagar.me recebeu sua documentação e a verificação está em análise.",
+          primaryAction: null,
+          primarySync: { label: "Atualizar situação" },
+        };
+      }
+
       return {
-        ...inProgress,
+        ...blocked,
         detail:
-          "A Pagar.me ainda precisa verificar os documentos do responsável legal antes de liberar os pagamentos.",
-        primaryAction: recipient.kycUrl
-          ? { external: true, href: recipient.kycUrl, label: "Abrir verificação (KYC)" }
-          : null,
-        primarySync: recipient.kycUrl ? null : { label: "Gerar link de KYC", refreshKyc: true },
+          "A Pagar.me devolveu uma pendência de credenciamento que a Papelito ainda não reconhece. Fale com o suporte antes de tentar vender.",
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
+        primarySync: null,
       };
     case "refused":
       return {
         ...blocked,
         detail: "A Pagar.me recusou o cadastro do recebedor da sua loja.",
-        primaryAction: { href: EDIT_FINANCIAL_DATA_HREF, label: "Revisar dados financeiros" },
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
         primarySync: null,
       };
     case "suspended":
       return {
         ...blocked,
         detail: "O recebedor da sua loja está suspenso na Pagar.me.",
-        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito" },
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
         primarySync: null,
       };
     case "blocked":
       return {
         ...blocked,
         detail: "O recebedor da sua loja está bloqueado na Pagar.me.",
-        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito" },
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
         primarySync: null,
       };
     case "inactive":
       return {
         ...blocked,
         detail: "O recebedor da sua loja está inativo na Pagar.me.",
-        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito" },
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
         primarySync: null,
       };
     default:
       return {
         ...inProgress,
         detail: `A Pagar.me devolveu um estado que este painel ainda não conhece (${recipient.status}). Fale com a Papelito antes de contar com esta loja para vender.`,
-        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito" },
+        primaryAction: { href: SUPPORT_HREF, label: "Falar com a Papelito", type: "href" },
         primarySync: null,
       };
   }
@@ -209,6 +233,20 @@ export function buildRecipientErrorFeedback(body: {
         message: "A Pagar.me exige uma autorização adicional para trocar a conta bancária cadastrada.",
         title: "Atualização bancária requer autorização",
       };
+    case "papelito_pagarme_kyc_not_required":
+      return {
+        error: true,
+        hint: "Atualize a situação antes de tentar novamente. A Pagar.me só libera o link quando solicita essa etapa.",
+        message: "A verificação ainda não está disponível para este recebedor.",
+        title: "Aguardando solicitação da Pagar.me",
+      };
+    case "papelito_pagarme_kyc_link_rate_limited":
+      return {
+        error: true,
+        hint: "O último link enviado continua válido por 20 minutos. Aguarde antes de pedir outro.",
+        message: "Você pediu links de verificação recentemente.",
+        title: "Aguarde para gerar outro link",
+      };
     case "papelito_pagarme_request_failed":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
@@ -267,33 +305,26 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
   const verdict = buildRecipientVerdict(recipient);
   const { primaryAction, primarySync } = verdict;
   const isActive = recipient.status === "active";
-  const showPlainSync = !primarySync || primarySync.refreshKyc;
-  const kycIsPrimary = primaryAction?.external === true || primarySync?.refreshKyc === true;
   const lastSync = formatRecipientSyncAt(recipient.lastSyncAt);
   const persistedError =
     !isActive && !recipient.loadFailed && (recipient.lastErrorCode || recipient.lastError)
       ? buildRecipientErrorFeedback({ code: recipient.lastErrorCode })
       : null;
 
-  function syncRecipient(refreshKyc: boolean) {
+  function syncRecipient() {
     setFeedback(null);
 
     startTransition(async () => {
-      const response = await fetch("/api/vendor/recipient", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refresh_kyc: refreshKyc }),
-      });
+      const response = await fetch("/api/vendor/recipient", { cache: "no-store" });
 
       const body = (await response.json().catch(() => null)) as
         | {
             code?: string;
             recipient_id?: string;
             status?: string;
+            kyc_status?: string;
+            kyc_status_reason?: string;
             last_sync_at?: string;
-            kyc_url?: string;
             last_error?: string;
             last_error_code?: string;
             message?: string;
@@ -313,16 +344,56 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
       setRecipient({
         recipientId: body?.recipient_id || "",
         status: body?.status || "",
+        kycStatus: body?.kyc_status || "",
+        kycStatusReason: body?.kyc_status_reason || "",
         lastSyncAt: body?.last_sync_at || "",
-        kycUrl: body?.kyc_url || "",
         lastError: body?.last_error || "",
         lastErrorCode: body?.last_error_code || "",
         loadFailed: false,
       });
       setFeedback({
         error: false,
-        message: refreshKyc ? "Link de verificação atualizado." : "Leitura atualizada.",
+        message: "Leitura atualizada.",
       });
+    });
+  }
+
+  function startKyc() {
+    setFeedback(null);
+
+    startTransition(async () => {
+      const response = await fetch("/api/vendor/recipient/kyc-link", { method: "POST" });
+      const body = (await response.json().catch(() => null)) as
+        | {
+            code?: string;
+            message?: string;
+            url?: string;
+            recipientId?: string;
+            status?: string;
+            kycStatus?: string;
+            kycStatusReason?: string;
+            lastSyncAt?: string;
+            lastError?: string;
+            lastErrorCode?: string;
+          }
+        | null;
+
+      if (!response.ok || !body?.url) {
+        setFeedback(buildRecipientErrorFeedback({ code: body?.code, message: body?.message }));
+        return;
+      }
+
+      setRecipient({
+        recipientId: body.recipientId || recipient.recipientId,
+        status: body.status || recipient.status,
+        kycStatus: body.kycStatus || recipient.kycStatus,
+        kycStatusReason: body.kycStatusReason || recipient.kycStatusReason,
+        lastSyncAt: body.lastSyncAt || recipient.lastSyncAt,
+        lastError: body.lastError || "",
+        lastErrorCode: body.lastErrorCode || "",
+        loadFailed: false,
+      });
+      window.location.assign(body.url);
     });
   }
 
@@ -365,41 +436,33 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          {primaryAction ? (
+          {primaryAction?.type === "href" ? (
             <a
               className={`inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
               href={primaryAction.href}
-              rel={primaryAction.external ? "noreferrer" : undefined}
-              target={primaryAction.external ? "_blank" : undefined}
             >
               {primaryAction.label}
             </a>
+          ) : null}
+          {primaryAction?.type === "kyc" ? (
+            <button
+              className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
+              disabled={pending}
+              onClick={startKyc}
+              type="button"
+            >
+              {pending ? "Preparando..." : primaryAction.label}
+            </button>
           ) : null}
           {primarySync ? (
             <button
               className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
               disabled={pending}
-              onClick={() => syncRecipient(primarySync.refreshKyc)}
+              onClick={syncRecipient}
               type="button"
             >
               {pending ? "Consultando..." : primarySync.label}
             </button>
-          ) : null}
-          {showPlainSync ? (
-          <button
-            className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 bg-transparent px-5 text-xs font-black uppercase tracking-widest underline-offset-4 transition hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-              verdict.tone === "impedido"
-                ? "border-[#7a3428]/40 text-[#7a3428] focus-visible:outline-[#7a3428]"
-                : verdict.tone === "apto"
-                  ? "border-[#1a1a1a]/35 text-[#1a1a1a] focus-visible:outline-[#1a1a1a]"
-                  : "border-[#f5f1e8]/35 text-[#f5f1e8] focus-visible:outline-brand-yellow"
-            }`}
-            disabled={pending}
-            onClick={() => syncRecipient(false)}
-            type="button"
-          >
-            {pending ? "Consultando..." : "Atualizar leitura"}
-          </button>
           ) : null}
         </div>
       </div>
@@ -465,14 +528,9 @@ export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: V
           <a className={SECONDARY_BUTTON_CLASSNAME} href={EDIT_FINANCIAL_DATA_HREF}>
             Editar dados financeiros
           </a>
-          {!isActive && !kycIsPrimary ? (
-            <button
-              className={SECONDARY_BUTTON_CLASSNAME}
-              disabled={pending}
-              onClick={() => syncRecipient(true)}
-              type="button"
-            >
-              Gerar link de verificação (KYC)
+          {!isActive ? (
+            <button className={SECONDARY_BUTTON_CLASSNAME} disabled={pending} onClick={syncRecipient} type="button">
+              Atualizar situação
             </button>
           ) : null}
         </div>
