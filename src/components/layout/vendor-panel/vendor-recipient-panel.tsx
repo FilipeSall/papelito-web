@@ -247,6 +247,15 @@ export function buildRecipientErrorFeedback(body: {
         message: "Você pediu links de verificação recentemente.",
         title: "Aguarde para gerar outro link",
       };
+    case "papelito_pagarme_bank_holder_mismatch":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Trocar conta bancária",
+        error: true,
+        hint: "A Pagar.me só aceita conta bancária no mesmo CNPJ do recebedor. Informe uma conta PJ aberta no CNPJ da empresa; MEI também pode abrir conta PJ.",
+        message: "A conta bancária cadastrada não está no CNPJ da empresa.",
+        title: "Conta bancária fora do CNPJ da empresa",
+      };
     case "papelito_pagarme_request_failed":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
@@ -295,7 +304,9 @@ const VERDICT_PRIMARY_CLASSNAME: Record<VerdictTone, string> = {
 const SECONDARY_BUTTON_CLASSNAME =
   "inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60";
 
-export function VendorRecipientPanel({ initialRecipient }: { initialRecipient: VendorRecipient }) {
+export function VendorRecipientPanel({
+  initialRecipient,
+}: Readonly<{ initialRecipient: VendorRecipient }>) {
   const router = useRouter();
   const [recipient, setRecipient] = useState(initialRecipient);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);

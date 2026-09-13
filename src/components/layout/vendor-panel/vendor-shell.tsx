@@ -23,10 +23,10 @@ function navClassName(active: boolean) {
 export function VendorShell({
   children,
   logo,
-}: {
+}: Readonly<{
   children: React.ReactNode;
   logo?: ManagedImageAsset;
-}) {
+}>) {
   const pathname = usePathname();
   const title = getVendorPageTitle(pathname);
   const resolvedLogo = resolveLogo("privateHeader", logo);
@@ -136,7 +136,7 @@ export function VendorShell({
               ))}
             </nav>
           </header>
-          <main className="flex-1 px-4 py-5 md:px-7 md:py-7 xl:has-[[data-fill-viewport]]:min-h-0">{children}</main>
+          <main className="flex-1 px-4 py-5 md:px-7 md:py-7 xl:has-data-fill-viewport:min-h-0">{children}</main>
         </div>
       </div>
     </div>

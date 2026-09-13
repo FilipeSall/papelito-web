@@ -17,7 +17,12 @@ import { formatCnpj, formatPhone } from "@/features/revendedor/utils/revendedor-
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
 import type { VendorFormController } from "@/features/vendor-registration/hooks/use-vendor-form";
 import type { VendorFormMode } from "@/features/vendor-registration/types";
-import { digits, getDocumentError } from "@/features/vendor-registration/vendor-form-values";
+import {
+  bankHolderMatchesRecipient,
+  digits,
+  getDocumentError,
+  getInvalidVendorPendingFields,
+} from "@/features/vendor-registration/vendor-form-values";
 
 import { Field, Section } from "./vendor-form-primitives";
 
@@ -31,6 +36,10 @@ const CEP_HELP = "Use o CEP para preencher logradouro, bairro, cidade e estado a
 const MANUAL_ADJUST_HELP = "Pode ser ajustado manualmente se a busca vier incompleta.";
 const BANK_HELP =
   "Selecione um banco da lista ou use Outro para informar manualmente o código de 3 digitos.";
+const BANK_HOLDER_HELP =
+  "A Pagar.me só aceita conta bancária no mesmo CNPJ do recebedor. Informe uma conta PJ aberta no CNPJ da empresa; MEI também pode abrir conta PJ.";
+const BANK_HOLDER_MISMATCH_ERROR =
+  "A conta cadastrada não está no CNPJ da empresa. Se ela já é a conta PJ da empresa, confirme abaixo; se não, informe banco, agência e conta de uma conta PJ.";
 const TEMPORARY_PASSWORD_HELP =
   "Informe uma senha temporária para o primeiro acesso do vendor. Essa senha deve ser comunicada ao vendor e alterada por ele após o login.";
 
@@ -66,8 +75,19 @@ export function VendorFormSections({
     values,
   } = controller;
 
-  const errorFor = (field: VendorPendingFieldKey) => fieldError?.(field);
+  const invalidPendingFields = getInvalidVendorPendingFields(values);
+  const errorFor = (field: VendorPendingFieldKey) =>
+    invalidPendingFields.includes(field) ? fieldError?.(field) : undefined;
   const showTemporaryPassword = mode === "admin-create" && !values.sourceUserId;
+  const bankHolderError = errorFor("bankAccount.holderDocument");
+  const bankHolderNeedsConfirmation = Boolean(bankHolderError) && !bankHolderMatchesRecipient(values);
+  let storeCepHelperText: string | undefined;
+
+  if (isCepLookingUp) {
+    storeCepHelperText = "Buscando endereço pelo CEP...";
+  } else if (cepStatus?.tone === "info") {
+    storeCepHelperText = cepStatus.message;
+  }
 
   return (
     <>
@@ -154,13 +174,7 @@ export function VendorFormSections({
           <Field
             error={cepStatus?.tone === "error" ? cepStatus.message : undefined}
             helpText={CEP_HELP}
-            helperText={
-              isCepLookingUp
-                ? "Buscando endereço pelo CEP..."
-                : cepStatus?.tone === "info"
-                  ? cepStatus.message
-                  : undefined
-            }
+            helperText={storeCepHelperText}
             inputMode="numeric"
             label="CEP da loja"
             onChange={(value) => {
@@ -429,41 +443,35 @@ export function VendorFormSections({
             onChange={(value) => updateBank("holderName", value)}
             value={values.bankAccount.holderName}
           />
-          <AdminSelectField
+          <Field
+            disabled
             label="Tipo do titular"
-            onChange={(value) => {
-              const holderType = value === "individual" ? "individual" : "company";
-              updateBank("holderType", holderType);
-              updateBank("holderDocument", holderType === "company" ? values.cnpj : "");
-            }}
-            options={[
-              { label: "Pessoa jurídica", value: "company" },
-              { label: "Pessoa física", value: "individual" },
-            ]}
-            placeholder="Selecione"
-            value={values.bankAccount.holderType}
-            variant="vendor-create"
+            onChange={() => undefined}
+            value="Pessoa jurídica"
           />
           <Field
-            error={
-              errorFor("bankAccount.holderDocument") ??
-              getDocumentError(
-                values.bankAccount.holderDocument,
-                values.bankAccount.holderType === "company" ? "cnpj" : "cpf",
-              )
-            }
+            disabled
+            error={bankHolderError ? BANK_HOLDER_MISMATCH_ERROR : getDocumentError(values.cnpj, "cnpj")}
+            helpText={BANK_HOLDER_HELP}
             inputMode="numeric"
-            label={
-              values.bankAccount.holderType === "company" ? "CNPJ do titular" : "CPF do titular"
-            }
-            onChange={(value) =>
-              updateBank(
-                "holderDocument",
-                values.bankAccount.holderType === "company" ? formatCnpj(value) : formatCpf(value),
-              )
-            }
-            value={values.bankAccount.holderDocument}
+            label="CNPJ do titular"
+            onChange={() => undefined}
+            value={values.cnpj}
           />
+          {bankHolderNeedsConfirmation ? (
+            <div className="md:col-span-3">
+              <button
+                className="inline-flex h-10 cursor-pointer items-center border-2 border-[#1a1a1a] bg-white px-4 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white"
+                onClick={() => {
+                  updateBank("holderType", "company");
+                  updateBank("holderDocument", values.cnpj);
+                }}
+                type="button"
+              >
+                Confirmar que esta conta está no CNPJ da empresa
+              </button>
+            </div>
+          ) : null}
           <AdminSelectField
             helpText={BANK_HELP}
             label="Banco"

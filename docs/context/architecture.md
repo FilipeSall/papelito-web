@@ -139,6 +139,10 @@ O `admin-edit` carrega o cadastro **sob demanda**, ao abrir o modal — o rascun
 
 O `mode` só controla três coisas: **senha temporária** (existe apenas em `admin-create` sem `sourceUserId`, e só aí é obrigatória), o **destaque de pendências** (`fieldError`, alimentado por `pendingFields`) e o **aviso de conta** (`accountNotice`). A ordem das validações bloqueantes é idêntica nos três — editar não pede de novo o que já tem valor, porque KYC e dados bancários nunca bloqueiam o submit: eles viram `pendingFields` no backend.
 
+O destaque de pendência **acompanha o valor atual**: `VendorFormSections` só pinta um campo quando ele está em `pendingFields` **e** ainda falha em `getInvalidVendorPendingFields(values)`, que reaproveita `validateStep3` e as mesmas regras do WordPress. A lista do backend define quem começa em erro; corrigido o valor, o erro some sem salvar.
+
+**Dados bancários: o titular não é escolhido.** "Tipo do titular" e "CNPJ do titular" são campos desabilitados que mostram `Pessoa jurídica` e o CNPJ da loja, porque a Pagar.me só aceita conta no documento do recebedor (regra em [`../../../docs/pagarme-integration.md`](../../../docs/pagarme-integration.md#titularidade-da-conta-bancária)). O `updateBank` de `hooks/use-vendor-form.ts` grava `holderType: "company"` e `holderDocument` = CNPJ quando banco, agência, conta, dígitos ou tipo da conta mudam. Editar só o nome do titular não troca a titularidade: um draft antigo em pessoa física continua pendente até alguém informar a conta PJ ou clicar em "Confirmar que esta conta está no CNPJ da empresa", que grava o mesmo par sem exigir redigitar a conta. Esse botão só aparece com a pendência ativa e o titular gravado fora do CNPJ (`bankHolderMatchesRecipient`).
+
 ## Convenções
 
 - **Sem barrel exports profundos.** Cada `index.ts` re-exporta apenas o conteúdo da própria pasta.

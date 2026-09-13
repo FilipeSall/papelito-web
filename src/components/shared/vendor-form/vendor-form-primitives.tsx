@@ -8,14 +8,14 @@ import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/c
 
 function fieldClass(hasError = false, disabled = false) {
   const stateClass = disabled
-    ? "cursor-not-allowed border-dashed border-[#1a1a1a]/25 bg-[#1a1a1a]/5 text-[#1a1a1a]/40 placeholder:text-[#1a1a1a]/30"
+    ? "cursor-not-allowed border-dashed bg-[#1a1a1a]/5 text-[#1a1a1a]/40 placeholder:text-[#1a1a1a]/30"
     : "bg-white text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 focus:border-[#1a1a1a]";
   let borderClass = "border-[#1a1a1a]";
 
-  if (disabled) {
-    borderClass = "";
-  } else if (hasError) {
+  if (hasError) {
     borderClass = "border-[#c0392b]";
+  } else if (disabled) {
+    borderClass = "border-[#1a1a1a]/25";
   }
 
   return [

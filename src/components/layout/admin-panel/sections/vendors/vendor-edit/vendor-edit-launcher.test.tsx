@@ -340,4 +340,20 @@ describe("VendorEditLauncher — salvamento", () => {
     expect(screen.getByText(/Pendências que bloqueiam as vendas/)).toBeInTheDocument();
     expect(screen.getAllByText("Conta").length).toBeGreaterThan(0);
   });
+
+  it("tira o erro visual da pendência assim que o campo fica válido", async () => {
+    const base = registration();
+    stubFetch({
+      draft: { ...base.draft!, bankAccount: { ...base.draft!.bankAccount, accountNumber: "" } },
+      pendingFields: ["bankAccount.accountNumber"],
+    });
+    renderLauncher();
+    const user = await openEditor();
+
+    expect(campoPorRotulo("Conta")).toHaveClass("border-[#c0392b]");
+
+    await user.type(campoPorRotulo("Conta"), "123456");
+
+    expect(campoPorRotulo("Conta")).not.toHaveClass("border-[#c0392b]");
+  });
 });

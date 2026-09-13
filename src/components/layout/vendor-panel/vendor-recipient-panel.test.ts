@@ -26,6 +26,14 @@ describe("formatRecipientSyncAt", () => {
     expect(feedback.actionLabel).toBe("Falar com o suporte da Papelito");
     expect(feedback.actionType).toBe("pagarme-bank-account-support");
   });
+
+  it("tells the vendor the bank account must belong to the company CNPJ", () => {
+    const feedback = buildRecipientErrorFeedback({ code: "papelito_pagarme_bank_holder_mismatch" });
+
+    expect(feedback.title).toBe("Conta bancária fora do CNPJ da empresa");
+    expect(feedback.actionLabel).toBe("Trocar conta bancária");
+    expect(feedback.error).toBe(true);
+  });
 });
 
 describe("buildRecipientVerdict", () => {

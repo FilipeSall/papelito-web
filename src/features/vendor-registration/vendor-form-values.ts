@@ -1,3 +1,7 @@
+import {
+  VENDOR_PENDING_FIELD_KEYS,
+  type VendorPendingFieldKey,
+} from "@/features/revendedor/constants/pending-registration";
 import type {
   UpdateVendorPendingRegistrationInput,
   VendorPendingRegistrationResponse,
@@ -18,6 +22,7 @@ import {
   normalizeStep1Data,
   normalizeStep2Data,
   normalizeStep3Data,
+  validateStep3,
 } from "@/features/revendedor/utils/revendedor-registration";
 import { validateCoverageRanges } from "@/features/vendor-coverage/coverage-presets";
 import type { AdminVendorCreatePayload } from "@/lib/admin-vendors-types";
@@ -152,6 +157,56 @@ export function getDocumentError(value: string, kind: "cnpj" | "cpf"): string | 
   return kind === "cnpj"
     ? "CNPJ inválido: os dígitos verificadores não conferem."
     : "CPF inválido: os dígitos verificadores não conferem.";
+}
+
+export function getInvalidVendorPendingFields(values: VendorFormValues): VendorPendingFieldKey[] {
+  const partner =
+    values.pagarmeDraft.managingPartners[0] ?? createEmptyStep3Data().managingPartners[0];
+  const errors = validateStep3({
+    ...values.pagarmeDraft,
+    bankAccount: values.bankAccount,
+    managingPartners: [partner],
+  });
+  const partnerErrors = errors.managingPartners?.[0] ?? {};
+  const addressErrors = partnerErrors.address ?? {};
+  const bankErrors = errors.bankAccount ?? {};
+  const invalidByField: Record<VendorPendingFieldKey, boolean> = {
+    annualRevenue: Boolean(errors.annualRevenue),
+    "bankAccount.accountCheckDigit": Boolean(bankErrors.accountCheckDigit),
+    "bankAccount.accountNumber": Boolean(bankErrors.accountNumber),
+    "bankAccount.bankCode": Boolean(bankErrors.bankCode),
+    "bankAccount.branchNumber": Boolean(bankErrors.branchNumber),
+    "bankAccount.holderDocument":
+      Boolean(bankErrors.holderDocument) || !bankHolderMatchesRecipient(values),
+    "bankAccount.holderName": Boolean(bankErrors.holderName),
+    companyName: Boolean(errors.companyName),
+    "partner.address.city": Boolean(addressErrors.city),
+    "partner.address.neighborhood": Boolean(addressErrors.neighborhood),
+    "partner.address.state": Boolean(addressErrors.state),
+    "partner.address.street": Boolean(addressErrors.street),
+    "partner.address.streetNumber": Boolean(addressErrors.streetNumber),
+    "partner.address.zipCode": Boolean(addressErrors.zipCode),
+    "partner.birthdate": Boolean(partnerErrors.birthdate),
+    "partner.document": Boolean(partnerErrors.document),
+    "partner.email": Boolean(partnerErrors.email),
+    "partner.monthlyIncome": Boolean(partnerErrors.monthlyIncome),
+    "partner.name": Boolean(partnerErrors.name),
+    "partner.professionalOccupation": Boolean(partnerErrors.professionalOccupation),
+    phoneNumber: !isValidPhone(values.phoneNumber),
+    tradingName: Boolean(errors.tradingName),
+  };
+
+  return VENDOR_PENDING_FIELD_KEYS.filter((field) => invalidByField[field]);
+}
+
+export function bankHolderMatchesRecipient(values: VendorFormValues) {
+  const holderDocument = digits(values.bankAccount.holderDocument);
+
+  return (
+    values.bankAccount.holderType === "company" &&
+    holderDocument !== "" &&
+    holderDocument === digits(values.cnpj)
+  );
 }
 
 export function validateVendorFormValues(

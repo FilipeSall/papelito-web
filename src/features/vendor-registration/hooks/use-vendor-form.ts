@@ -114,7 +114,15 @@ export function useVendorForm({
   );
 
   const updateBank = useCallback<VendorFormController["updateBank"]>(
-    (key, value) => mutate((current) => withBankAccount(current, { [key]: value })),
+    (key, value) =>
+      mutate((current) =>
+        withBankAccount(
+          current,
+          key === "holderName" || key === "holderDocument" || key === "holderType"
+            ? { [key]: value }
+            : { [key]: value, holderDocument: current.cnpj, holderType: "company" },
+        ),
+      ),
     [mutate],
   );
 

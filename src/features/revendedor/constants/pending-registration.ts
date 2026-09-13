@@ -59,7 +59,7 @@ export const VENDOR_PENDING_FIELD_LABELS: Record<VendorPendingFieldKey, string> 
   "partner.address.city": "Cidade do socio administrador",
   "partner.address.state": "Estado do socio administrador",
   "bankAccount.holderName": "Titular da conta",
-  "bankAccount.holderDocument": "Documento do titular",
+  "bankAccount.holderDocument": "Conta bancária no CNPJ da empresa",
   "bankAccount.bankCode": "Código do banco",
   "bankAccount.branchNumber": "Agência",
   "bankAccount.accountNumber": "Conta",

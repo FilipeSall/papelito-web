@@ -141,4 +141,16 @@ describe("VendorCreateLauncher — dígitos verificadores do documento", () => {
     expect(screen.getByText(/Informe um CNPJ válido\./)).toBeInTheDocument();
     expect(criarButton()).toBeDisabled();
   });
+
+  it("espelha o CNPJ da loja como titular fixo da conta, sem opção de pessoa física", async () => {
+    const user = userEvent.setup();
+    render(<VendorCreateLauncher initialOpen />);
+
+    await user.type(campoPorRotulo("CNPJ *"), "65326368000190");
+
+    expect(campoPorRotulo("CNPJ do titular")).toHaveValue("65.326.368/0001-90");
+    expect(campoPorRotulo("CNPJ do titular")).toBeDisabled();
+    expect(campoPorRotulo("Tipo do titular")).toHaveValue("Pessoa jurídica");
+    expect(screen.queryByText("Pessoa física")).not.toBeInTheDocument();
+  });
 });

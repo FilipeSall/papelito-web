@@ -10,6 +10,7 @@ import {
   createVendorFormValuesFromRegistration,
   createVendorFormValuesFromSourceUser,
   getDocumentError,
+  getInvalidVendorPendingFields,
   validateVendorFormValues,
 } from "./vendor-form-values";
 
@@ -275,6 +276,69 @@ describe("getDocumentError", () => {
   it("keeps incomplete documents neutral and reports an invalid completed CNPJ", () => {
     expect(getDocumentError("65.326.368", "cnpj")).toBeUndefined();
     expect(getDocumentError("65.326.368/0001-91", "cnpj")).toContain("dígitos verificadores");
+  });
+});
+
+describe("getInvalidVendorPendingFields", () => {
+  function withPartner(
+    values: VendorFormValues,
+    patch: Partial<VendorFormValues["pagarmeDraft"]["managingPartners"][number]>,
+  ): VendorFormValues {
+    const partner = values.pagarmeDraft.managingPartners[0];
+
+    return {
+      ...values,
+      pagarmeDraft: { ...values.pagarmeDraft, managingPartners: [{ ...partner, ...patch }] },
+    };
+  }
+
+  it("reports nothing when every pending-tracked field already satisfies its rule", () => {
+    expect(getInvalidVendorPendingFields(completeValues())).toEqual([]);
+  });
+
+  it("keeps a partially typed CPF invalid and releases it once the check digits match", () => {
+    expect(
+      getInvalidVendorPendingFields(withPartner(completeValues(), { document: "037.122" })),
+    ).toEqual(["partner.document"]);
+    expect(
+      getInvalidVendorPendingFields(withPartner(completeValues(), { document: "037.122.851-40" })),
+    ).toEqual([]);
+  });
+
+  it("flags each broken field independently", () => {
+    const values = withPartner(
+      { ...completeValues(), phoneNumber: "" },
+      { birthdate: "", monthlyIncome: "0", professionalOccupation: "   " },
+    );
+
+    expect(getInvalidVendorPendingFields(values)).toEqual([
+      "phoneNumber",
+      "partner.birthdate",
+      "partner.monthlyIncome",
+      "partner.professionalOccupation",
+    ]);
+  });
+
+  it("validates the bank holder document against the selected holder type", () => {
+    const values = completeValues();
+
+    expect(
+      getInvalidVendorPendingFields({
+        ...values,
+        bankAccount: { ...values.bankAccount, holderType: "individual" },
+      }),
+    ).toEqual(["bankAccount.holderDocument"]);
+  });
+
+  it("flags a company account registered under a CNPJ other than the vendor's", () => {
+    const values = completeValues();
+
+    expect(
+      getInvalidVendorPendingFields({
+        ...values,
+        bankAccount: { ...values.bankAccount, holderDocument: "11.444.777/0001-61" },
+      }),
+    ).toEqual(["bankAccount.holderDocument"]);
   });
 });
 
