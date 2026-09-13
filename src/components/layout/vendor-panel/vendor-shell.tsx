@@ -9,7 +9,7 @@ import { NotificationBell } from "@/components/layout/site-header";
 import { resolveLogo } from "@/lib/site-logos";
 import type { ManagedImageAsset } from "@/types/home-assets";
 
-import { getVendorPageTitle, VENDOR_NAV_ITEMS } from "./vendor-config";
+import { getVendorPageTitle, isVendorNavItemActive, VENDOR_NAV_ITEMS } from "./vendor-config";
 
 function navClassName(active: boolean) {
   return [
@@ -59,7 +59,7 @@ export function VendorShell({
           </Link>
           <nav aria-label="Navegacao do vendor" className="flex-1 space-y-1.5 overflow-y-auto px-4 py-5">
             {VENDOR_NAV_ITEMS.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active = isVendorNavItemActive(item, pathname);
               const Icon = item.icon;
               return (
                 <Link className={navClassName(active)} href={item.href} key={item.href}>
@@ -124,7 +124,7 @@ export function VendorShell({
               {VENDOR_NAV_ITEMS.map((item) => (
                 <Link
                   className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
-                    pathname.startsWith(item.href)
+                    isVendorNavItemActive(item, pathname)
                       ? "border-brand-dark bg-brand-dark text-brand-yellow"
                       : "border-brand-dark/15 bg-white/65 text-brand-dark/70"
                   }`}
