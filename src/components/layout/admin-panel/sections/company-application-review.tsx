@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { ConfirmModal } from "@/components/ui";
+import { isDateOnly } from "@/features/vendor-orders/utils/order-dates";
 import type {
   AdminOwnerApplicationDetail,
   AdminOwnerApplications,
 } from "@/lib/server/admin-users";
+import { formatCnpj } from "@/lib/validation/brazilian-documents";
 
 const STATUS_LABELS: Record<string, string> = {
   document_required: "Aguardando documento",
@@ -47,6 +49,13 @@ function formatEvidenceValue(value: unknown) {
   }
 }
 
+const LONG_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+};
+
 function formatDate(value: string | null) {
   if (!value) return "—";
   const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value);
@@ -58,13 +67,15 @@ function formatDate(value: string | null) {
     hour12: false,
     timeZone: "America/Sao_Paulo",
   }).format(date);
-  const day = new Intl.DateTimeFormat("pt-BR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "America/Sao_Paulo",
-  }).format(date);
+  const day = new Intl.DateTimeFormat("pt-BR", LONG_DATE_OPTIONS).format(date);
   return `${time}, ${day}`;
+}
+
+function formatCalendarDate(value: string | null) {
+  if (!value || !isDateOnly(value)) return value;
+  const date = new Date(`${value}T12:00:00-03:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR", LONG_DATE_OPTIONS).format(date);
 }
 
 function formatBytes(value: number | null) {
@@ -279,10 +290,10 @@ export function CompanyApplicationReview({
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <DataCard label="Nome completo" value={person.fullName} />
             <DataCard label="CPF" value={person.cpf} />
-            <DataCard label="Data de nascimento" value={person.birthDate} />
+            <DataCard label="Data de nascimento" value={formatCalendarDate(person.birthDate)} />
             <DataCard label="Telefone" value={person.phone} />
             <DataCard label="E-mail" value={person.email} />
-            <DataCard label="CNPJ" value={company.cnpj} />
+            <DataCard label="CNPJ" value={formatCnpj(company.cnpj)} />
             <DataCard label="Razão social" value={company.legalName} />
             <DataCard label="Nome fantasia" value={company.tradeName} />
             <DataCard

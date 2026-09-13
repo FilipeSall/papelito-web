@@ -107,6 +107,34 @@ describe("CompanyApplicationReview", () => {
     vi.unstubAllGlobals();
   });
 
+  it("exibe o CNPJ com máscara e a data de nascimento por extenso sem perder o dia", () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = "America/Sao_Paulo";
+
+    try {
+      const current = {
+        ...detail,
+        person: { ...detail.person, birthDate: "1975-05-22" },
+        company: { ...detail.company, cnpj: "99999003000148" },
+      };
+
+      render(<CompanyApplicationReview initialData={{ current, history: [current] }} />);
+
+      expect(screen.getByText("99.999.003/0001-48")).toBeInTheDocument();
+      expect(screen.getByText("22 de maio de 1975")).toBeInTheDocument();
+      expect(screen.queryByText("1975-05-22")).not.toBeInTheDocument();
+    } finally {
+      process.env.TZ = originalTz;
+    }
+  });
+
+  it("mantém o traço quando a data de nascimento não foi informada", () => {
+    render(<CompanyApplicationReview initialData={initialData} />);
+
+    const birthDate = screen.getByText("Data de nascimento").nextElementSibling;
+    expect(birthDate).toHaveTextContent("—");
+  });
+
   it("não abre o modal de reprovação sem o motivo interno", () => {
     render(<CompanyApplicationReview initialData={initialData} />);
 
