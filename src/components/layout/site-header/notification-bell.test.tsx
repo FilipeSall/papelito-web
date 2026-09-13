@@ -149,4 +149,25 @@ describe("NotificationBell", () => {
       expect(screen.queryByText("Abrindo notificação...")).not.toBeInTheDocument();
     });
   });
+
+  it("renders the redirect loader outside the header that hosts the bell", async () => {
+    const user = userEvent.setup();
+    markNotificationReadMock.mockResolvedValue({
+      unreadCount: 11,
+      item: buildNotification({ readAt: "2026-06-11T20:00:00.000Z" }),
+    });
+
+    render(
+      <header className="sticky top-0 backdrop-blur" data-testid="host-header">
+        <NotificationBell />
+      </header>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /12 não lidas/i }));
+    await user.click(screen.getByRole("button", { name: /favorito em promoção/i }));
+
+    const loader = screen.getByRole("status");
+    expect(screen.getByTestId("host-header")).not.toContainElement(loader);
+    expect(loader.parentElement?.parentElement).toBe(document.body);
+  });
 });

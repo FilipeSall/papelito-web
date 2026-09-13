@@ -3,6 +3,7 @@
 import { Bell } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { NotificationDropdown } from "./notification-dropdown";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
@@ -181,15 +182,18 @@ function NotificationBellContent({ inverted = false }: Readonly<NotificationBell
         />
       ) : null}
 
-      {isRedirecting ? (
-        <div className="fixed inset-0 z-120 flex items-center justify-center bg-brand-dark/15 backdrop-blur-[2px]">
-          <LogoSpinnerLoader
-            className="min-h-[70vh] w-[min(32rem,calc(100vw-2rem))] p-6"
-            label=""
-            message="Abrindo notificação..."
-          />
-        </div>
-      ) : null}
+      {isRedirecting && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-120 flex items-center justify-center bg-brand-dark/15 backdrop-blur-[2px]">
+              <LogoSpinnerLoader
+                className="min-h-[70vh] w-[min(32rem,calc(100vw-2rem))] p-6"
+                label=""
+                message="Abrindo notificação..."
+              />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
