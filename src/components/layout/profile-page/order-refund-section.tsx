@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download, Paperclip } from "lucide-react";
 
-import { ChamadoOpenDialog } from "@/features/chamados";
+import { ChamadoOpenDialog } from "@/features/chamados/components/chamado-open-dialog";
 import type { ProfileOrderRefund } from "@/features/orders/types/profile-order-detail";
 
 import { ProfilePanel, ProfileSectionHeading, profileSecondaryActionClass } from "./profile-panel";
