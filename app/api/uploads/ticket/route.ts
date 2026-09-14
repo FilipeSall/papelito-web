@@ -16,6 +16,7 @@ const UPLOAD_PURPOSES = [
   "pre-account-document",
   "vendor-fiscal-document",
   "return-refund-proof",
+  "order-refund-proof",
 ] as const;
 
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
@@ -53,13 +54,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
     headers = { Authorization: `Bearer ${auth.accessToken}` };
-  } else if (purpose === "vendor-fiscal-document" || purpose === "return-refund-proof") {
+  } else if (purpose === "vendor-fiscal-document" || purpose === "return-refund-proof" || purpose === "order-refund-proof") {
     const auth = await requireVendorAccessToken();
     if ("error" in auth) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
 
-    const id = Number(purpose === "vendor-fiscal-document" ? body?.orderId : body?.returnId);
+    const id = Number(purpose === "return-refund-proof" ? body?.returnId : body?.orderId);
 
     // O pedido entra no tíquete; a autorização real — pedido do vendor e
     // situação que aceita nota — continua sendo do WordPress. O upload sempre
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     }
 
     headers = { Authorization: `Bearer ${auth.accessToken}` };
-    json = purpose === "vendor-fiscal-document" ? { orderId: id, purpose } : { returnId: id, purpose };
+    json = purpose === "return-refund-proof" ? { returnId: id, purpose } : { orderId: id, purpose };
   } else {
     const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
     if (!applicationToken) {

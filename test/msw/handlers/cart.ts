@@ -9,7 +9,11 @@ export const cartHandlers = [
         vendor_id?: number;
         promotion_context?: string;
       }>;
-      shipping?: { destination_cep?: string; selected_code?: string };
+      shipping?: {
+        destination_cep?: string;
+        selected_option_key?: string;
+        selected_code?: string;
+      };
     };
     const lines = (body.items ?? []).map((item) => {
       const quantity = Math.max(1, item.qty ?? 1);
@@ -32,10 +36,12 @@ export const cartHandlers = [
       (total, line) => total + line.subtotalCents,
       0,
     );
+    const selectedShippingKey =
+      body.shipping?.selected_option_key ?? body.shipping?.selected_code;
     const shippingCents =
-      body.shipping?.selected_code === "03298"
+      selectedShippingKey === "correios:03298" || selectedShippingKey === "03298"
         ? 1588
-        : body.shipping?.selected_code === "03220"
+        : selectedShippingKey === "correios:03220" || selectedShippingKey === "03220"
           ? 2230
           : 0;
 

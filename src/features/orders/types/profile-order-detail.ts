@@ -108,6 +108,21 @@ export interface ProfileOrderReturnEligibility {
   items: ProfileOrderReturnableItem[];
 }
 
+/**
+ * Estorno do pedido pago que a loja cancelou. Enquanto não chega a
+ * `reembolsado`, o dinheiro ainda não voltou ao comprador.
+ */
+export interface ProfileOrderRefund {
+  amountCents: number;
+  mode: "api" | "manual";
+  overdue: boolean;
+  proofId: number;
+  receiptNumber: string;
+  refundDueAt: string;
+  settledAt: string;
+  status: "processando" | "reembolsado" | "falhou" | "manual_pendente";
+}
+
 export interface ProfileOrderReturnRequest {
   id: number;
   status: string;
@@ -135,4 +150,5 @@ export interface ProfileOrderDetail {
   fiscalDocument: ProfileOrderFiscalDocument | null;
   returns: ProfileOrderReturnEligibility;
   returnRequests: ProfileOrderReturnRequest[];
+  refund: ProfileOrderRefund | null;
 }

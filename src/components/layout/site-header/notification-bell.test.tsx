@@ -135,7 +135,7 @@ describe("NotificationBell", () => {
     await user.click(screen.getByRole("button", { name: /favorito em promoção/i }));
 
     expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.getAllByText("Abrindo notificação...")).not.toHaveLength(0);
+    expect(screen.queryByText("Abrindo notificação...")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /11 não lidas/i })).toBeDisabled();
 
     await waitFor(() => {
@@ -146,7 +146,7 @@ describe("NotificationBell", () => {
     rerender(<NotificationBell />);
 
     await waitFor(() => {
-      expect(screen.queryByText("Abrindo notificação...")).not.toBeInTheDocument();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
   });
 

@@ -6,7 +6,9 @@ export type OrderStatus =
   | "picking"
   | "shipped"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "cancellation_requested"
+  | "refunded";
 
 type OrderStatusBadgeProps = {
   status: OrderStatus;
@@ -29,6 +31,8 @@ const statusConfig: Record<OrderStatus, { label: string; tone: keyof typeof tone
   shipped: { label: "Enviado", tone: "moving" },
   delivered: { label: "Entregue", tone: "done" },
   cancelled: { label: "Cancelado", tone: "danger" },
+  cancellation_requested: { label: "Estorno em andamento", tone: "danger" },
+  refunded: { label: "Estornado", tone: "waiting" },
 };
 
 /**

@@ -9,6 +9,9 @@ const PAC: ShippingQuoteOption = {
   name: "PAC CONTRATO AG",
   price: 16.27,
   deliveryTime: 5,
+  customerPriceCents: 1627,
+  expiresAt: null,
+  fingerprint: "pac-fingerprint",
 };
 
 const SEDEX: ShippingQuoteOption = {
@@ -17,6 +20,9 @@ const SEDEX: ShippingQuoteOption = {
   name: "SEDEX CONTRATO AG",
   price: 10.36,
   deliveryTime: 1,
+  customerPriceCents: 1036,
+  expiresAt: null,
+  fingerprint: "sedex-fingerprint",
 };
 
 function state(overrides: Partial<CheckoutShippingQuoteState> = {}): CheckoutShippingQuoteState {
@@ -59,6 +65,19 @@ describe("resolveSelectedShipping", () => {
     });
 
     expect(resolveSelectedShipping(repriced, "71200-100")).toBeNull();
+  });
+
+  it("rejects a selection whose integrity snapshot changed", () => {
+    const revalidated = state({
+      quote: {
+        originCep: "70000000",
+        destinationCep: "71200100",
+        vendorId: 10,
+        options: [{ ...PAC, fingerprint: "new-fingerprint", customerPriceCents: 1990 }, SEDEX],
+      },
+    });
+
+    expect(resolveSelectedShipping(revalidated, "71200-100")).toBeNull();
   });
 
   it("rejects anything while the address has no complete zip code", () => {

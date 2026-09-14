@@ -132,7 +132,12 @@ export async function placeOrder(
           state: input.address.state,
         },
         shipping: {
-          selected_code: input.shipping.selectedCode,
+          selected_option_key:
+            input.shipping.selectedOptionKey ?? input.shipping.selectedCode,
+          expected_fingerprint: input.shipping.expectedFingerprint,
+          expected_customer_price_cents: input.shipping.expectedCustomerPriceCents,
+          expected_delivery_time: input.shipping.expectedDeliveryTime,
+          expected_expires_at: input.shipping.expectedExpiresAt,
           destination_cep: input.shipping.destinationCep,
         },
         payment: {

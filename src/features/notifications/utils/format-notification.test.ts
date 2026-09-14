@@ -282,4 +282,23 @@ describe("formatNotification", () => {
       ).body,
     ).toBe("A loja encerrou o chamado.");
   });
+
+  it("avisa o comprador do estorno manual com link para o pedido", () => {
+    const formatted = formatNotification(
+      buildNotification({ type: "order_refund_pending", payload: { mode: "manual", order_id: 7788 } }),
+    );
+
+    expect(formatted.title).toBe("Pedido cancelado pela loja");
+    expect(formatted.body).toContain("transferência");
+    expect(formatted.href).toBe("/perfil/pedidos/7788");
+  });
+
+  it("confirma o estorno concluído com link para o pedido", () => {
+    const formatted = formatNotification(
+      buildNotification({ type: "order_refunded", payload: { order_id: 7788 } }),
+    );
+
+    expect(formatted.title).toBe("Estorno concluído");
+    expect(formatted.href).toBe("/perfil/pedidos/7788");
+  });
 });

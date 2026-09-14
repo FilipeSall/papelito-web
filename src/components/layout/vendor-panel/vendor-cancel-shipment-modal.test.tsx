@@ -59,4 +59,37 @@ describe("VendorCancelShipmentModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onConfirm).not.toHaveBeenCalled();
   });
+
+  it("avisa que o estorno sai pela Pagar.me quando o pedido pago volta pela API", () => {
+    render(
+      <VendorCancelShipmentModal
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        open
+        refundPreview={{ amountCents: 15990, manualDueDays: 7, mode: "api" }}
+      />,
+    );
+
+    expect(screen.getByText(/devolução de r\$\s?159,90/i)).toBeInTheDocument();
+    expect(screen.getByText(/pedimos à pagar\.me o estorno/i)).toBeInTheDocument();
+  });
+
+  it("avisa o prazo da devolução manual antes de confirmar", () => {
+    render(
+      <VendorCancelShipmentModal
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        open
+        refundPreview={{ amountCents: 15990, manualDueDays: 7, mode: "manual" }}
+      />,
+    );
+
+    expect(screen.getByText(/você tem 7 dias para devolver/i)).toBeInTheDocument();
+  });
+
+  it("não fala de devolução quando o pedido não foi pago", () => {
+    render(<VendorCancelShipmentModal onClose={vi.fn()} onConfirm={vi.fn()} open />);
+
+    expect(screen.queryByText(/devolução de/i)).not.toBeInTheDocument();
+  });
 });

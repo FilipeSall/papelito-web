@@ -24,6 +24,7 @@ export { VendorPeriodFilters } from "./vendor-period-filters";
 export { VendorRecipientPanel } from "./vendor-recipient-panel";
 export { VendorAccountSection } from "./vendor-account-section";
 export { VendorLeadTimeSection } from "./vendor-lead-time-section";
+export { VendorBraspressSection } from "./vendor-braspress-section";
 export { VendorShell } from "./vendor-shell";
 export { VendorStockManager } from "./vendor-stock-manager";
 export { buildWhatsappHref, buildWhatsappMessage, describeMissingFields } from "./stock-status";

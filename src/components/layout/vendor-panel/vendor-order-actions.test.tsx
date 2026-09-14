@@ -66,3 +66,33 @@ describe("VendorOrderActions manual shipping", () => {
     expect(fetchMock.mock.calls[0][1].body).toContain("2026-07-10");
   });
 });
+
+describe("VendorOrderActions Braspress shipping", () => {
+  beforeEach(() => { refreshMock.mockReset(); vi.unstubAllGlobals(); });
+
+  it("registers the external order number through the Braspress endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorOrderActions {...props} manualRegistrationEnabled={false} shippingProvider="braspress" />);
+
+    expect(screen.getByText(/confirmar postagem braspress/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: /número de pedido braspress/i }), { target: { value: "PED-2026/001" } });
+    fireEvent.click(screen.getByRole("button", { name: /revisar postagem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirmar postagem/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/vendor/orders/11887/shipments/braspress");
+    expect(fetchMock.mock.calls[0][1].body).toContain("PED-2026/001");
+  });
+
+  it("shows the external Braspress reference and status", () => {
+    render(<VendorOrderActions {...props} shippingProvider="braspress" shipments={[{
+      creationOutcome: "created", deliveredAt: "", externalReference: "PED-2026/001", externalStatus: "Em rota", generationStatus: "generated", hasError: false, id: 5,
+      isTest: false, labelAvailable: false, lastEventAt: "", lastEventCode: "", lastEventDescription: "", lastEventLocation: "", lastEventType: "",
+      nextReconciliationAt: "", postedAt: "2026-07-10", provider: "braspress", reconciliationAttempts: 0, reconciliationStatus: "none", serviceCode: "byNumPedido", status: "posted", supportReviewRequired: false, trackingCode: "",
+    }]} status="enviado" />);
+
+    expect(screen.getByText("PED-2026/001")).toBeInTheDocument();
+    expect(screen.getByText("Em rota")).toBeInTheDocument();
+  });
+});

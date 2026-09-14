@@ -5,7 +5,7 @@ import { CircleCheck, Lock, TriangleAlert } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { FOCUS_RING, StatusChip } from "@/components/layout/operational-panel";
-import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
+import type { VendorOrderRefundPreview, VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
 import {
@@ -33,12 +33,14 @@ export function VendorOrderStatusPanel({
   hasShipments,
   nextStatuses,
   orderId,
+  refundPreview = null,
   status,
 }: {
   cancelReason?: string;
   hasShipments: boolean;
   nextStatuses: VendorOrderStatus[];
   orderId: number;
+  refundPreview?: VendorOrderRefundPreview | null;
   status: VendorOrderStatus;
 }) {
   const router = useRouter();
@@ -80,7 +82,10 @@ export function VendorOrderStatusPanel({
           setIsCancelOpen(false);
           setFeedback({
             error: false,
-            message: `✓ Pedido atualizado para ${vendorOrderStatusShape(target).label.toLowerCase()}.`,
+            message:
+              isCancellation && refundPreview
+                ? "✓ Pedido cancelado. O estorno ao comprador foi aberto."
+                : `✓ Pedido atualizado para ${vendorOrderStatusShape(target).label.toLowerCase()}.`,
           });
           router.refresh();
           return;
@@ -171,9 +176,11 @@ export function VendorOrderStatusPanel({
                 <Lock aria-hidden className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.4} />
               )}
               <span>
-                {status === "entregue" || status === "cancelado"
+                {status === "entregue" || status === "cancelado" || status === "estornado"
                   ? "Situação final: não há mais transição a executar neste pedido."
-                  : "Nenhuma transição depende de você agora."}
+                  : status === "cancelamento_solicitado"
+                    ? "O pedido só se encerra quando o estorno ao comprador for concluído — acompanhe no quadro de estorno."
+                    : "Nenhuma transição depende de você agora."}
               </span>
             </p>
           )}
@@ -199,6 +206,7 @@ export function VendorOrderStatusPanel({
         }}
         onConfirm={(reason) => updateStatus("cancelado", reason)}
         open={isCancelOpen}
+        refundPreview={refundPreview}
       />
     </section>
   );

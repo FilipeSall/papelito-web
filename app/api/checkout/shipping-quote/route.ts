@@ -13,6 +13,7 @@ type ShippingQuoteRequestBody = {
   vendor_id?: unknown;
   destination_cep?: unknown;
   items?: unknown;
+  coupon_code?: unknown;
 };
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -122,6 +123,7 @@ export async function POST(request: Request) {
   const vendorId = Number(payload.vendor_id);
   const destinationCep = typeof payload.destination_cep === "string" ? payload.destination_cep : "";
   const items = normalizeItems(payload.items);
+  const couponCode = typeof payload.coupon_code === "string" ? payload.coupon_code : "";
 
   if (!Number.isInteger(vendorId) || vendorId <= 0 || !destinationCep || items.length === 0) {
     return NextResponse.json(
@@ -145,6 +147,7 @@ export async function POST(request: Request) {
       vendor_id: vendorId,
       destination_cep: destinationCep,
       items,
+      coupon_code: couponCode || undefined,
     },
   });
 

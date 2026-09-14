@@ -32,6 +32,8 @@ const summary: VendorOrdersSummary = {
   enviado: 1,
   entregue: 0,
   cancelado: 1,
+  cancelamento_solicitado: 0,
+  estornado: 0,
   fiscal_pending: 3,
 };
 

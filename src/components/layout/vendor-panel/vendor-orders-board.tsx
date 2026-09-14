@@ -44,6 +44,8 @@ const emptySummary: VendorOrdersSnapshot["summary"] = {
   enviado: 0,
   entregue: 0,
   cancelado: 0,
+  cancelamento_solicitado: 0,
+  estornado: 0,
   fiscal_pending: 0,
 };
 

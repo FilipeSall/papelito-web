@@ -12,6 +12,7 @@ import {
   ProductsContent,
   SalesContent,
   ChamadosContent,
+  OrderRefundsContent,
 } from "./sections";
 
 function renderSection(
@@ -31,6 +32,8 @@ function renderSection(
       return <AccountsContent searchParams={searchParams} />;
     case "chamados":
       return <ChamadosContent searchParams={searchParams} />;
+    case "estornos":
+      return <OrderRefundsContent searchParams={searchParams} />;
     case "comercial":
       return <CommercialContent searchParams={searchParams} />;
     case "assets":
@@ -59,7 +62,8 @@ export function AdminSectionPage({
       section === "assets" ||
       section === "comercial" ||
       section === "contas" ||
-      section === "chamados" ? null : (
+      section === "chamados" ||
+      section === "estornos" ? null : (
         <SectionHeader section={section} />
       )}
       {renderSection(section, searchParams)}

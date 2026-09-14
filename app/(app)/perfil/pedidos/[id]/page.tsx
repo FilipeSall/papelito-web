@@ -14,6 +14,7 @@ import {
 } from "@/features/orders/utils/payment-deadline";
 import {
   OrderDocumentsSection,
+  OrderRefundSection,
   OrderReturnRequest,
   OrderStatusBadge,
   OrderTrackingCopyButton,
@@ -366,6 +367,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               ) : null}
             </article>
           </ProfilePanel>
+
+          {order.refund ? <OrderRefundSection orderId={order.id} refund={order.refund} /> : null}
 
           <OrderDocumentsSection
             fiscalDocument={order.fiscalDocument}

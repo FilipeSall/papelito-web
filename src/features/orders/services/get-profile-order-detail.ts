@@ -11,6 +11,7 @@ import type {
   ProfileOrderDetail,
   ProfileOrderFiscalDocument,
   ProfileOrderReceipt,
+  ProfileOrderRefund,
   ProfileOrderReturnEligibility,
   ProfileOrderTimelineEvent,
 } from "../types/profile-order-detail";
@@ -88,6 +89,16 @@ type WpProfileOrder = {
     available?: boolean;
     issued_at?: string | null;
   };
+  refund?: {
+    amountCents?: number;
+    mode?: string;
+    overdue?: boolean;
+    proofId?: number;
+    receiptNumber?: string;
+    refundDueAt?: string;
+    settledAt?: string;
+    status?: string;
+  } | null;
   fiscal_document?: {
     created_at?: string;
     mime?: string;
@@ -118,6 +129,10 @@ export function mapStatus(status: string | undefined): OrderStatus {
       return "delivered";
     case "cancelado":
       return "cancelled";
+    case "cancelamento_solicitado":
+      return "cancellation_requested";
+    case "estornado":
+      return "refunded";
     case "aguardando_pagamento":
     default:
       return "awaiting_payment";
@@ -257,6 +272,52 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
         id: "expired",
         state: "current",
         title: "Pagamento expirado",
+      },
+    ];
+  }
+
+  if (status === "cancellation_requested") {
+    return [
+      {
+        description: "O pedido foi registrado na plataforma.",
+        id: "received",
+        state: "done",
+        title: "Pedido realizado",
+      },
+      {
+        description: "Pagamento confirmado.",
+        id: "payment",
+        state: "done",
+        title: "Pagamento confirmado",
+      },
+      {
+        description: "A loja cancelou o pedido e o valor está sendo devolvido.",
+        id: "refund",
+        state: "current",
+        title: "Estorno em andamento",
+      },
+    ];
+  }
+
+  if (status === "refunded") {
+    return [
+      {
+        description: "O pedido foi registrado na plataforma.",
+        id: "received",
+        state: "done",
+        title: "Pedido realizado",
+      },
+      {
+        description: "Pagamento confirmado.",
+        id: "payment",
+        state: "done",
+        title: "Pagamento confirmado",
+      },
+      {
+        description: "O pedido foi cancelado e o valor foi devolvido.",
+        id: "refunded",
+        state: "current",
+        title: "Pedido estornado",
       },
     ];
   }
@@ -454,6 +515,31 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     receipt: receiptInfo(order),
     returns: returnsInfo(order),
     returnRequests: returnRequestsInfo(order),
+    refund: refundInfo(order),
+  };
+}
+
+const REFUND_STATUSES = new Set<ProfileOrderRefund["status"]>(["processando", "reembolsado", "falhou", "manual_pendente"]);
+
+/**
+ * Estorno vindo do WordPress. Estado desconhecido vira ausência: a tela não
+ * anuncia devolução que o backend não confirmou existir.
+ */
+function refundInfo(order: WpProfileOrder): ProfileOrderRefund | null {
+  const source = order.refund;
+  const status = source?.status ?? "";
+
+  if (!source || !REFUND_STATUSES.has(status as ProfileOrderRefund["status"])) return null;
+
+  return {
+    amountCents: Number(source.amountCents) || 0,
+    mode: source.mode === "api" ? "api" : "manual",
+    overdue: source.overdue === true,
+    proofId: Number(source.proofId) || 0,
+    receiptNumber: typeof source.receiptNumber === "string" ? source.receiptNumber : "",
+    refundDueAt: typeof source.refundDueAt === "string" ? source.refundDueAt : "",
+    settledAt: typeof source.settledAt === "string" ? source.settledAt : "",
+    status: status as ProfileOrderRefund["status"],
   };
 }
 

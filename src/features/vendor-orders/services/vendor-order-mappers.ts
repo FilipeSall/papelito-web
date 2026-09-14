@@ -5,6 +5,9 @@ import type {
   VendorOrderBilling,
   VendorOrderDetail,
   VendorOrderFiscal,
+  VendorOrderRefund,
+  VendorOrderRefundPreview,
+  VendorOrderRefundStatus,
   VendorOrderStatus,
   ShipmentLogisticsStatus,
   ShipmentGenerationStatus,
@@ -33,6 +36,7 @@ export type WpVendorOrder = {
     state?: string;
   };
   shipping_service?: string;
+  shipping_provider?: string;
   shipping_total?: number;
   subtotal?: number;
   total?: number;
@@ -40,6 +44,8 @@ export type WpVendorOrder = {
   vendor_status?: string;
   next_statuses?: string[];
   cancel_reason?: string;
+  refund?: WpVendorOrderRefund | null;
+  refund_preview?: { amountCents?: number; manualDueDays?: number; mode?: string } | null;
   has_fiscal_document?: boolean;
   fiscal_pending?: boolean;
   payment?: { method?: string; state?: string };
@@ -65,6 +71,8 @@ export type WpVendorOrder = {
     shipments?: Array<{
       creation_outcome?: string;
       delivered_at?: string;
+      external_reference?: string;
+      external_status?: string;
       has_error?: boolean;
       id?: number;
       generation_status?: string;
@@ -131,6 +139,23 @@ export type WpVendorFiscal = {
   limits?: { pdf?: number; xml?: number };
 };
 
+export type WpVendorOrderRefund = {
+  amountCents?: number;
+  attempts?: number;
+  customerHasPixKey?: boolean;
+  id?: number;
+  lastError?: string;
+  manualReference?: string;
+  mode?: string;
+  overdue?: boolean;
+  proofId?: number;
+  receiptNumber?: string;
+  refundDueAt?: string;
+  requestedAt?: string;
+  settledAt?: string;
+  status?: string;
+};
+
 export type WpVendorOrdersList = {
   items?: WpVendorOrder[];
   page?: number;
@@ -148,6 +173,8 @@ const statuses = new Set<VendorOrderStatus>([
   "enviado",
   "entregue",
   "cancelado",
+  "cancelamento_solicitado",
+  "estornado",
 ]);
 
 export function isVendorOrderStatus(value: unknown): value is VendorOrderStatus {
@@ -229,6 +256,41 @@ export function mapVendorOrderFiscal(fiscal: WpVendorFiscal | undefined): Vendor
   };
 }
 
+const refundStatuses = new Set<VendorOrderRefundStatus>(["processando", "reembolsado", "falhou", "manual_pendente"]);
+
+export function mapVendorOrderRefund(refund: WpVendorOrderRefund | null | undefined): VendorOrderRefund | null {
+  const status = refund?.status ?? "";
+
+  if (!refund || !Number(refund.id) || !refundStatuses.has(status as VendorOrderRefundStatus)) return null;
+
+  return {
+    amountCents: Number(refund.amountCents) || 0,
+    attempts: Number(refund.attempts) || 0,
+    customerHasPixKey: Boolean(refund.customerHasPixKey),
+    id: Number(refund.id),
+    lastError: refund.lastError ?? "",
+    manualReference: refund.manualReference ?? "",
+    mode: refund.mode === "api" ? "api" : "manual",
+    overdue: Boolean(refund.overdue),
+    proofId: Number(refund.proofId) || 0,
+    receiptNumber: refund.receiptNumber ?? "",
+    refundDueAt: refund.refundDueAt ?? "",
+    requestedAt: refund.requestedAt ?? "",
+    settledAt: refund.settledAt ?? "",
+    status: status as VendorOrderRefundStatus,
+  };
+}
+
+export function mapVendorOrderRefundPreview(preview: WpVendorOrder["refund_preview"]): VendorOrderRefundPreview | null {
+  if (!preview || (preview.mode !== "api" && preview.mode !== "manual")) return null;
+
+  return {
+    amountCents: Number(preview.amountCents) || 0,
+    manualDueDays: Number(preview.manualDueDays) || 0,
+    mode: preview.mode,
+  };
+}
+
 function mapVendorOrderBilling(billing: WpVendorBilling | undefined): VendorOrderBilling {
   return {
     cnpj: billing?.cnpj ?? "",
@@ -270,6 +332,8 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
   const shipments = (order.logistics?.shipments ?? []).map((shipment) => ({
     creationOutcome: shipment.creation_outcome ?? "created",
     deliveredAt: shipment.delivered_at ?? "",
+    externalReference: shipment.external_reference ?? "",
+    externalStatus: shipment.external_status ?? "",
     hasError: Boolean(shipment.has_error),
     id: Number(shipment.id) || 0,
     generationStatus: mapGenerationStatus(
@@ -309,6 +373,8 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       issuedAt: order.receipt?.issued_at ?? "",
       number: order.receipt?.number ?? "",
     },
+    refund: mapVendorOrderRefund(order.refund),
+    refundPreview: mapVendorOrderRefundPreview(order.refund_preview),
     items: (order.items ?? []).map((item) => ({
       itemId: Number(item.item_id) || 0,
       name: item.name ?? "Produto",
@@ -325,6 +391,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       state: order.shipping_address?.state ?? "",
     },
     shippingService: order.shipping_service ?? "",
+    shippingProvider: order.shipping_provider ?? "",
     shippingTotal: Number(order.shipping_total) || 0,
     subtotal: Number(order.subtotal) || 0,
     trackingCode: typeof order.tracking_code === "string" ? order.tracking_code : null,
@@ -363,6 +430,8 @@ const summaryKeys: Array<keyof VendorOrdersSummary> = [
   "enviado",
   "entregue",
   "cancelado",
+  "cancelamento_solicitado",
+  "estornado",
   "fiscal_pending",
 ];
 

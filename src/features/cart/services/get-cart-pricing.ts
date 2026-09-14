@@ -112,7 +112,7 @@ function quoteMatchesItems(quote: CartPricingQuote, items: CartItem[]) {
 export async function getCartPricing(
   items: CartItem[],
   couponCode: string | null,
-  shipping?: { destinationCep: string; selectedCode: string } | null,
+  shipping?: { destinationCep: string; selectedOptionKey: string } | null,
 ): Promise<PricingSuccess | PricingFailure> {
   const requestItems = items.map((item) => ({
     product_id: Number.parseInt(item.id, 10),
@@ -142,7 +142,7 @@ export async function getCartPricing(
         shipping: shipping
           ? {
               destination_cep: shipping.destinationCep,
-              selected_code: shipping.selectedCode,
+              selected_option_key: shipping.selectedOptionKey,
             }
           : undefined,
       }),

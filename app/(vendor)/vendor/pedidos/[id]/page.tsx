@@ -15,6 +15,7 @@ import {
   VendorOrderStatusPanel,
   VendorPageHeader,
 } from "@/components/layout/vendor-panel";
+import { VendorOrderRefundPanel } from "@/components/layout/vendor-panel/vendor-order-refund-panel";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
 import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-orders";
@@ -227,8 +228,11 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         hasShipments={order.logistics.shipments.length > 0}
         nextStatuses={order.nextStatuses}
         orderId={order.id}
+        refundPreview={order.refundPreview}
         status={order.status}
       />
+
+      {order.refund ? <VendorOrderRefundPanel orderId={order.id} refund={order.refund} /> : null}
 
       <div className="grid gap-4 md:gap-5 xl:grid-cols-[1.05fr_0.95fr]">
         <Panel title="Produtos e valores">
@@ -329,6 +333,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         manualRegistrationEnabled={order.logistics.manualRegistrationEnabled}
         orderId={order.id}
         shipments={order.logistics.shipments}
+        shippingProvider={order.shippingProvider}
         shippingService={order.shippingService}
         status={order.status}
       />

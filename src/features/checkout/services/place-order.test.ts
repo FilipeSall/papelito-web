@@ -8,6 +8,12 @@ type PlaceOrderRequestPayload = {
   checkout_attempt_id?: string;
 	expected_company_id?: number;
   analytics?: { client_id?: string; session_id?: string };
+  shipping?: {
+    expected_customer_price_cents?: number;
+    expected_delivery_time?: number | null;
+    expected_expires_at?: string | null;
+    expected_fingerprint?: string;
+  };
 };
 
 const baseInput = {
@@ -24,6 +30,10 @@ const baseInput = {
   },
   shipping: {
     selectedCode: "sedex",
+    expectedFingerprint: "shipping-fingerprint",
+    expectedCustomerPriceCents: 1937,
+    expectedDeliveryTime: 2,
+    expectedExpiresAt: null,
     destinationCep: "01310930",
   },
   payment: {
@@ -84,6 +94,27 @@ describe("placeOrder", () => {
 
     expect(payload).toMatchObject({
       checkout_attempt_id: "attempt-123",
+    });
+  });
+
+  it("sends the shipping snapshot so the backend can reject a stale quote", async () => {
+    let payload: PlaceOrderRequestPayload | null = null;
+    server.use(
+      http.post("/api/checkout/place-order", async ({ request }) => {
+        payload = (await request.json()) as PlaceOrderRequestPayload;
+        return HttpResponse.json({ orderId: 321, orderNumber: "321", status: "pending", payment: { method: "pix", state: "waiting_payment" }, totals: validTotals });
+      }),
+    );
+
+    await placeOrder(baseInput);
+
+    expect(payload).toMatchObject({
+      shipping: {
+        expected_customer_price_cents: 1937,
+        expected_delivery_time: 2,
+        expected_expires_at: null,
+        expected_fingerprint: "shipping-fingerprint",
+      },
     });
   });
 

@@ -14,7 +14,9 @@ export type VendorOrderStatus =
   | "em_separacao"
   | "enviado"
   | "entregue"
-  | "cancelado";
+  | "cancelado"
+  | "cancelamento_solicitado"
+  | "estornado";
 
 export type VendorOrderItem = {
   itemId: number;
@@ -62,6 +64,8 @@ export type VendorOrderShipment = {
   postedAt: string;
   serviceCode: string;
   provider: "correios" | "manual" | "mock" | string;
+  externalReference?: string;
+  externalStatus?: string;
   reconciliationAttempts: number;
   reconciliationStatus: string;
   isTest: boolean;
@@ -199,6 +203,38 @@ export type VendorOrderPayment = {
   state: string;
 };
 
+export type VendorOrderRefundMode = "api" | "manual";
+
+export type VendorOrderRefundStatus = "processando" | "reembolsado" | "falhou" | "manual_pendente";
+
+/**
+ * Estorno do pedido pago que foi cancelado. O pedido só vira `estornado` quando
+ * este bloco chega a `reembolsado`.
+ */
+export type VendorOrderRefund = {
+  amountCents: number;
+  attempts: number;
+  customerHasPixKey: boolean;
+  id: number;
+  lastError: string;
+  manualReference: string;
+  mode: VendorOrderRefundMode;
+  overdue: boolean;
+  proofId: number;
+  receiptNumber: string;
+  refundDueAt: string;
+  requestedAt: string;
+  settledAt: string;
+  status: VendorOrderRefundStatus;
+};
+
+/** O que acontece com o dinheiro se o pedido for cancelado agora. Decidido pelo WordPress. */
+export type VendorOrderRefundPreview = {
+  amountCents: number;
+  manualDueDays: number;
+  mode: VendorOrderRefundMode;
+};
+
 export type VendorOrderDetail = VendorOrderSummary & {
   billing: VendorOrderBilling;
   /** Justificativa registrada na transição para `cancelado`. Vazia nos demais estados. */
@@ -209,6 +245,8 @@ export type VendorOrderDetail = VendorOrderSummary & {
   paidAt: string;
   payment: VendorOrderPayment;
   receipt: VendorOrderReceipt;
+  refund: VendorOrderRefund | null;
+  refundPreview: VendorOrderRefundPreview | null;
   phone: string;
   shippingAddress: {
     address1: string;
@@ -218,6 +256,7 @@ export type VendorOrderDetail = VendorOrderSummary & {
     state: string;
   };
   shippingService: string;
+  shippingProvider?: string;
   shippingTotal: number;
   subtotal: number;
   trackingCode: string | null;

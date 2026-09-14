@@ -470,6 +470,23 @@ export function formatNotification(
         body: "O vendor registrou o estorno manual da sua devolução.",
         href: Number.isInteger(numberValue(payload, "return_id")) && numberValue(payload, "return_id") > 0 ? `/perfil/devolucoes/${numberValue(payload, "return_id")}` : "/perfil/devolucoes",
       };
+    case "order_refund_pending":
+      return {
+        icon: "package",
+        title: "Pedido cancelado pela loja",
+        body:
+          stringValue(payload, "mode") === "manual"
+            ? "A loja vai devolver o valor do pedido por transferência."
+            : "O estorno do valor do pedido está a caminho.",
+        href: logisticsHref(payload),
+      };
+    case "order_refunded":
+      return {
+        icon: "check",
+        title: "Estorno concluído",
+        body: "O valor do pedido cancelado foi devolvido.",
+        href: logisticsHref(payload),
+      };
     default:
       return {
         icon: "megaphone",

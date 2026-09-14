@@ -4,6 +4,8 @@ import {
   mapVendorOrderFiscal,
   isVendorOrderStatus,
   mapVendorOrderDetail,
+  mapVendorOrderRefund,
+  mapVendorOrderRefundPreview,
   mapVendorOrderStatus,
   mapVendorOrderSummary,
 } from "./vendor-order-mappers";
@@ -216,5 +218,66 @@ describe("mapVendorOrderFiscal", () => {
     });
 
     expect(fiscal.events[0].actorRole).toBe("");
+  });
+});
+
+describe("mapVendorOrderRefund", () => {
+  it("reconhece os status de pedido pago cancelado", () => {
+    expect(isVendorOrderStatus("cancelamento_solicitado")).toBe(true);
+    expect(isVendorOrderStatus("estornado")).toBe(true);
+  });
+
+  it("mapeia o estorno manual pendente vindo do WordPress", () => {
+    const refund = mapVendorOrderRefund({
+      amountCents: 15990,
+      customerHasPixKey: true,
+      id: 12,
+      mode: "manual",
+      overdue: false,
+      refundDueAt: "2026-09-21 13:02:11",
+      status: "manual_pendente",
+    });
+
+    expect(refund).toMatchObject({
+      amountCents: 15990,
+      customerHasPixKey: true,
+      id: 12,
+      mode: "manual",
+      proofId: 0,
+      refundDueAt: "2026-09-21 13:02:11",
+      status: "manual_pendente",
+    });
+  });
+
+  it("descarta estorno sem id ou com estado desconhecido em vez de inventar situação", () => {
+    expect(mapVendorOrderRefund(null)).toBeNull();
+    expect(mapVendorOrderRefund({ id: 0, status: "reembolsado" })).toBeNull();
+    expect(mapVendorOrderRefund({ id: 3, status: "estornado_talvez" })).toBeNull();
+  });
+
+  it("trata modo desconhecido como manual, que obriga alguém a devolver", () => {
+    expect(mapVendorOrderRefund({ id: 4, mode: "outro", status: "processando" })?.mode).toBe("manual");
+  });
+});
+
+describe("mapVendorOrderRefundPreview", () => {
+  it("mapeia a prévia do estorno pela API", () => {
+    expect(mapVendorOrderRefundPreview({ amountCents: 9990, manualDueDays: 7, mode: "api" })).toEqual({
+      amountCents: 9990,
+      manualDueDays: 7,
+      mode: "api",
+    });
+  });
+
+  it("ignora prévia sem caminho reconhecido", () => {
+    expect(mapVendorOrderRefundPreview(null)).toBeNull();
+    expect(mapVendorOrderRefundPreview({ amountCents: 1, mode: "boleto" })).toBeNull();
+  });
+
+  it("deixa estorno e prévia nulos no detalhe quando o WordPress não os manda", () => {
+    const detail = mapVendorOrderDetail({ id: 1, vendor_status: "aguardando_envio" });
+
+    expect(detail.refund).toBeNull();
+    expect(detail.refundPreview).toBeNull();
   });
 });

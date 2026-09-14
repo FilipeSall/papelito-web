@@ -46,7 +46,7 @@ export function useCartPricing({
     return selected && shippingQuote.quote
       ? {
           destinationCep: shippingQuote.quote.destinationCep,
-          selectedCode: selected.code,
+          selectedOptionKey: selected.optionKey ?? `correios:${selected.code}`,
         }
       : null;
   }, [addressZipCode, includeCheckoutShipping, shippingQuote]);

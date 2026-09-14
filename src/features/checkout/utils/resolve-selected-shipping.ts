@@ -21,7 +21,19 @@ export function resolveSelectedShipping(
     return null;
   }
 
-  const option = quote.options.find((item) => item.code === selectedOption.code);
+  const selectedOptionKey = selectedOption.optionKey ?? `correios:${selectedOption.code}`;
+  const option = quote.options.find(
+    (item) => (item.optionKey ?? `correios:${item.code}`) === selectedOptionKey,
+  );
 
-  return option && option.price === selectedOption.price ? option : null;
+  return option &&
+    option.price === selectedOption.price &&
+    typeof option.fingerprint === "string" &&
+    option.fingerprint === selectedOption.fingerprint &&
+    Number.isInteger(option.customerPriceCents) &&
+    option.customerPriceCents === selectedOption.customerPriceCents &&
+    option.deliveryTime === selectedOption.deliveryTime &&
+    option.expiresAt === selectedOption.expiresAt
+    ? option
+    : null;
 }

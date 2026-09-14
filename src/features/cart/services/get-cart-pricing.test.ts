@@ -44,12 +44,12 @@ describe("getCartPricing", () => {
       http.post("/api/cart/pricing", async ({ request }) => {
         const body = (await request.json()) as {
           items: Array<{ promotion_context?: string }>;
-          shipping?: { destination_cep?: string; selected_code?: string };
+          shipping?: { destination_cep?: string; selected_option_key?: string };
         };
         expect(body.items[0]?.promotion_context).toBe("signed-context");
         expect(body.shipping).toEqual({
           destination_cep: "01310930",
-          selected_code: "03298",
+          selected_option_key: "correios:03298",
         });
         return HttpResponse.json({
           lines: [
@@ -88,7 +88,7 @@ describe("getCartPricing", () => {
 
     const result = await getCartPricing([item], null, {
       destinationCep: "01310930",
-      selectedCode: "03298",
+      selectedOptionKey: "correios:03298",
     });
     expect(result.ok).toBe(true);
     if (result.ok) {

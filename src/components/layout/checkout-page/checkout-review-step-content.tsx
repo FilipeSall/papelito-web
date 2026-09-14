@@ -124,7 +124,9 @@ export function CheckoutReviewStepContent() {
     items: placeOrderItems,
     address: addressForm,
     shipping: {
-      selectedCode: selectedShippingQuote?.code ?? null,
+      selectedOptionKey:
+        selectedShippingQuote?.optionKey ??
+        (selectedShippingQuote ? `correios:${selectedShippingQuote.code}` : null),
       destinationCep: addressForm.zipCode.replace(/\D/g, ""),
     },
     payment: {
@@ -195,7 +197,12 @@ export function CheckoutReviewStepContent() {
           items: placeOrderItems,
           address: addressForm,
           shipping: {
-            selectedCode: selectedShippingQuote.code,
+            selectedOptionKey:
+              selectedShippingQuote.optionKey ?? `correios:${selectedShippingQuote.code}`,
+            expectedFingerprint: selectedShippingQuote.fingerprint,
+            expectedCustomerPriceCents: selectedShippingQuote.customerPriceCents,
+            expectedDeliveryTime: selectedShippingQuote.deliveryTime,
+            expectedExpiresAt: selectedShippingQuote.expiresAt,
             destinationCep: addressForm.zipCode.replace(/\D/g, ""),
           },
           payment: {

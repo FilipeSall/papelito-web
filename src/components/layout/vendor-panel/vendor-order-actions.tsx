@@ -128,18 +128,21 @@ export function VendorOrderActions({
   manualRegistrationEnabled,
   orderId,
   shipments,
+  shippingProvider = "",
   shippingService,
   status,
 }: {
   manualRegistrationEnabled: boolean;
   orderId: number;
   shipments: VendorOrderShipment[];
+  shippingProvider?: string;
   shippingService: string;
   status: VendorOrderStatus;
 }) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [trackingCode, setTrackingCode] = useState("");
+  const [externalOrderNumber, setExternalOrderNumber] = useState("");
   const [postedAt, setPostedAt] = useState(today);
   const [correctionPostedAt, setCorrectionPostedAt] = useState("");
   const [reviewing, setReviewing] = useState(false);
@@ -148,7 +151,10 @@ export function VendorOrderActions({
   const [isPending, startTransition] = useTransition();
 
   const isBusy = isPending || activeAction !== null;
-  const canRegister = manualRegistrationEnabled && status === "em_separacao" && shipments.length === 0;
+  const isBraspressOrder = shippingProvider === "braspress";
+  const canRegister = status === "em_separacao" && shipments.length === 0;
+  const canRegisterManual = canRegister && manualRegistrationEnabled && !isBraspressOrder;
+  const canRegisterBraspress = canRegister && isBraspressOrder;
   const correctable = shipments.filter(
     (shipment) => shipment.provider === "manual" && shipment.status !== "delivered",
   );
@@ -206,6 +212,50 @@ export function VendorOrderActions({
     });
   }
 
+  function reviewBraspressShipment() {
+    if (!/^[A-Za-z0-9._/-]{1,96}$/.test(externalOrderNumber.trim())) {
+      setFeedback({ error: true, message: "⚠ Informe o número de pedido confirmado na Braspress." });
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(postedAt)) {
+      setFeedback({ error: true, message: "⚠ Informe a data da postagem." });
+      return;
+    }
+    setFeedback(null);
+    setReviewing(true);
+  }
+
+  function confirmBraspressShipment() {
+    if (isBusy) return;
+    setActiveAction("braspress");
+
+    startTransition(async () => {
+      try {
+        const response = await request(`/api/vendor/orders/${orderId}/shipments/braspress`, "POST", {
+          externalOrderNumber: externalOrderNumber.trim(),
+          postedAt,
+        });
+        const body = (await response.json().catch(() => null)) as { message?: string } | null;
+
+        if (response.ok) {
+          setReviewing(false);
+          setFeedback({ error: false, message: "✓ Postagem Braspress confirmada. O rastreio será atualizado pela transportadora." });
+          router.refresh();
+          return;
+        }
+
+        setFeedback({
+          error: true,
+          message: `⚠ ${body?.message ?? "Não foi possível confirmar a postagem Braspress."}`,
+        });
+      } catch {
+        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor." });
+      } finally {
+        setActiveAction(null);
+      }
+    });
+  }
+
   function correctShipment(shipment: VendorOrderShipment) {
     if (isBusy) return;
     if (!isS10(normalizeTracking(trackingCode))) {
@@ -253,7 +303,7 @@ export function VendorOrderActions({
       <div className="px-5 py-5 md:px-6">
         <FeedbackBanner className="mb-4" feedback={feedback} />
 
-        {shipments.length === 0 && !canRegister ? (
+        {shipments.length === 0 && !canRegisterManual && !canRegisterBraspress ? (
           <p className="text-sm leading-6 text-[#231f20]/74">
             {status === "aguardando_envio"
               ? "Marque o pedido como separado para liberar o registro da postagem."
@@ -262,7 +312,7 @@ export function VendorOrderActions({
         ) : null}
 
         {shipments.length > 0 ? (
-          <ul aria-label="Pacotes dos Correios" className="space-y-3">
+          <ul aria-label="Pacotes do pedido" className="space-y-3">
             {shipments.map((shipment, index) => (
               <li className="border-2 border-[#1a1a1a]/15 bg-white" key={shipment.id}>
                 {/* STATUS: a situação da entrega vem primeiro e com peso, porque é
@@ -286,9 +336,9 @@ export function VendorOrderActions({
                   <dl className="grid gap-4 sm:grid-cols-2">
                     <ShipmentFact
                       icon={ScanBarcode}
-                      label="Código de rastreamento"
+                      label={shipment.provider === "braspress" ? "Pedido Braspress" : "Código de rastreamento"}
                       mono
-                      value={shipment.trackingCode || generationStatusLabel(shipment.generationStatus)}
+                      value={shipment.externalReference || shipment.trackingCode || generationStatusLabel(shipment.generationStatus)}
                     />
                     <ShipmentFact
                       icon={Tag}
@@ -308,6 +358,9 @@ export function VendorOrderActions({
                         label="Entregue em"
                         value={formatStamp(shipment.deliveredAt) || shipment.deliveredAt}
                       />
+                    ) : null}
+                    {shipment.externalStatus ? (
+                      <ShipmentFact icon={Truck} label="Status Braspress" value={shipment.externalStatus} />
                     ) : null}
                   </dl>
 
@@ -405,7 +458,7 @@ export function VendorOrderActions({
           </ul>
         ) : null}
 
-        {canRegister ? (
+        {canRegisterManual ? (
           <section aria-labelledby="manual-shipping-title" className="mt-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]" id="manual-shipping-title">
               Enviar pelos Correios
@@ -475,6 +528,68 @@ export function VendorOrderActions({
             ) : (
               <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={reviewShipment} type="button">
                 Revisar envio
+              </button>
+            )}
+          </section>
+        ) : null}
+
+        {canRegisterBraspress ? (
+          <section aria-labelledby="braspress-shipping-title" className="mt-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]" id="braspress-shipping-title">
+              Confirmar postagem Braspress
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[#231f20]/74">
+              Depois de postar, informe o número de pedido confirmado na Braspress. A plataforma acompanha as atualizações no rastreio.
+            </p>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClassName} htmlFor="braspress-order-number">
+                  Número de pedido Braspress
+                </label>
+                <input
+                  className={`${fieldClassName} mt-2 font-mono`}
+                  disabled={isBusy || reviewing}
+                  id="braspress-order-number"
+                  maxLength={96}
+                  onChange={(event) => setExternalOrderNumber(event.target.value)}
+                  placeholder="PED-2026/001"
+                  value={externalOrderNumber}
+                />
+              </div>
+              <div>
+                <label className={labelClassName} htmlFor="braspress-posted-at">
+                  Data da postagem
+                </label>
+                <input
+                  className={`${fieldClassName} mt-2`}
+                  disabled={isBusy || reviewing}
+                  id="braspress-posted-at"
+                  onChange={(event) => setPostedAt(event.target.value)}
+                  type="date"
+                  value={postedAt}
+                />
+              </div>
+            </div>
+
+            {reviewing ? (
+              <div className="mt-4 border-2 border-[#1a1a1a] bg-white p-4">
+                <p className="text-sm text-[#1a1a1a]">
+                  Confirme: <code className="font-mono font-bold">{externalOrderNumber.trim()}</code> · <span className="tabular-nums">{postedAt}</span>
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <button className={primaryButton} disabled={isBusy} onClick={confirmBraspressShipment} type="button">
+                    <PackageCheck aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+                    {activeAction === "braspress" ? "Confirmando…" : "Confirmar postagem"}
+                  </button>
+                  <button className={secondaryButton} disabled={isBusy} onClick={() => setReviewing(false)} type="button">
+                    Revisar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={reviewBraspressShipment} type="button">
+                Revisar postagem
               </button>
             )}
           </section>

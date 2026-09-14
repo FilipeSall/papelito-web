@@ -4,6 +4,7 @@ const cookiesMock = vi.fn();
 const getAdminApiSessionMock = vi.fn();
 const getUserApiSessionMock = vi.fn();
 const wpRestMock = vi.fn();
+const requireVendorAccessTokenMock = vi.fn();
 
 vi.mock("next/headers", () => ({ cookies: () => cookiesMock() }));
 vi.mock("@/lib/server/admin-api-auth", () => ({
@@ -13,6 +14,9 @@ vi.mock("@/lib/server/company-api", () => ({
   getUserApiSession: () => getUserApiSessionMock(),
 }));
 vi.mock("@/lib/server/wp-rest", () => ({ wpRest: (...args: unknown[]) => wpRestMock(...args) }));
+vi.mock("../../vendor/_lib/require-vendor-session", () => ({
+  requireVendorAccessToken: () => requireVendorAccessTokenMock(),
+}));
 
 describe("/api/uploads/ticket", () => {
   beforeEach(() => {
@@ -20,6 +24,8 @@ describe("/api/uploads/ticket", () => {
     getAdminApiSessionMock.mockReset();
     getUserApiSessionMock.mockReset();
     wpRestMock.mockReset();
+    requireVendorAccessTokenMock.mockReset();
+    requireVendorAccessTokenMock.mockResolvedValue({ accessToken: "vendor-token" });
     cookiesMock.mockResolvedValue({ get: () => undefined });
     getAdminApiSessionMock.mockResolvedValue({ accessToken: "admin-token" });
     getUserApiSessionMock.mockResolvedValue({ accessToken: "user-token" });
@@ -66,5 +72,35 @@ describe("/api/uploads/ticket", () => {
       json: { purpose: "pre-account-document" },
       method: "POST",
     });
+  });
+
+  it("emite o tíquete do comprovante de estorno com o pedido e o token do vendor", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/uploads/ticket", {
+        body: JSON.stringify({ orderId: 7788, purpose: "order-refund-proof" }),
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(wpRestMock).toHaveBeenCalledWith("/papelito/v1/uploads/tickets", {
+      headers: { Authorization: "Bearer vendor-token" },
+      json: { orderId: 7788, purpose: "order-refund-proof" },
+      method: "POST",
+    });
+  });
+
+  it("recusa o comprovante de estorno sem pedido, sem chegar ao WordPress", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/uploads/ticket", {
+        body: JSON.stringify({ purpose: "order-refund-proof" }),
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(422);
+    expect(wpRestMock).not.toHaveBeenCalled();
   });
 });

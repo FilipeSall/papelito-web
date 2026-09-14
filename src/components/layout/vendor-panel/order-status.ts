@@ -7,6 +7,7 @@ import {
   Hourglass,
   PackageCheck,
   PackageSearch,
+  RotateCcw,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -32,6 +33,8 @@ const ORDER_STATUS: Record<VendorOrderStatus, StatusShape> = {
   enviado: { icon: Truck, label: "Enviado", tone: "neutral" },
   entregue: { icon: PackageCheck, label: "Entregue", tone: "positive" },
   cancelado: { icon: Ban, label: "Cancelado", tone: "critical" },
+  cancelamento_solicitado: { icon: RotateCcw, label: "Estorno em andamento", tone: "critical" },
+  estornado: { icon: RotateCcw, label: "Estornado", tone: "neutral" },
 };
 
 export function vendorOrderStatusShape(status: VendorOrderStatus): StatusShape {
@@ -45,7 +48,9 @@ export const VENDOR_ORDER_STATUS_ORDER: VendorOrderStatus[] = [
   "enviado",
   "entregue",
   "aguardando_estoque",
+  "cancelamento_solicitado",
   "cancelado",
+  "estornado",
 ];
 
 /**
@@ -63,6 +68,8 @@ const NEXT_ACTION: Record<VendorOrderStatus, string> = {
   enviado: "Acompanhando os Correios",
   entregue: "Entrega concluída",
   cancelado: "Pedido encerrado",
+  cancelamento_solicitado: "Acompanhar o estorno ao comprador",
+  estornado: "Pedido encerrado com estorno",
 };
 
 export function vendorOrderNextAction(status: VendorOrderStatus): string {

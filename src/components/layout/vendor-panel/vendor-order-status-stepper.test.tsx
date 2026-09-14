@@ -65,4 +65,19 @@ describe("VendorOrderStatusStepper", () => {
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
     expect(screen.queryByText("Atual")).not.toBeInTheDocument();
   });
+
+  it("mostra o estorno em andamento no lugar da esteira", () => {
+    render(<VendorOrderStatusStepper status="cancelamento_solicitado" cancelReason="sem estoque" />);
+
+    expect(screen.getByText(/estorno em andamento/i)).toBeInTheDocument();
+    expect(screen.getByText(/só se encerra quando o valor voltar/i)).toBeInTheDocument();
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+  });
+
+  it("mostra o pedido estornado como estado final", () => {
+    render(<VendorOrderStatusStepper status="estornado" />);
+
+    expect(screen.getByText(/pedido estornado/i)).toBeInTheDocument();
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+  });
 });

@@ -32,6 +32,11 @@ export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value:
     { label: "não lidas", value: "-" },
     { label: "sla", value: "-" },
   ],
+  estornos: [
+    { label: "vencidos", value: "-" },
+    { label: "em aberto", value: "-" },
+    { label: "prazo manual", value: "7 dias" },
+  ],
   comercial: [
     { label: "cupons ativos", value: "-" },
     { label: "frete grátis", value: "mínimo + região" },
@@ -104,6 +109,13 @@ export const SECTION_META: Record<
     description: "Chamados abertos pelos clientes nos pedidos do marketplace.",
     railLabel: "fila",
     railValue: "aberta",
+    signalTone: "warning",
+  },
+  estornos: {
+    eyebrow: "Estornos",
+    description: "Estornos de pedidos pagos que o vendor cancelou, com a fila de devoluções manuais vencidas.",
+    railLabel: "prazo",
+    railValue: "7 dias",
     signalTone: "warning",
   },
   comercial: {

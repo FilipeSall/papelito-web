@@ -4,6 +4,7 @@ import {
   Image,
   MessageSquare,
   Package,
+  RotateCcw,
   Settings,
   TrendingUp,
   Users,
@@ -18,6 +19,7 @@ export type AdminSectionKey =
   | "flash-sale"
   | "contas"
   | "chamados"
+  | "estornos"
   | "comercial"
   | "assets"
   | "config";
@@ -95,6 +97,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Chamados",
     shortLabel: "Chamados",
     description: "Atendimento por pedido",
+  },
+  {
+    key: "estornos",
+    href: "/admin/estornos",
+    icon: RotateCcw,
+    label: "Estornos",
+    shortLabel: "Estornos",
+    description: "Devolução de pedidos cancelados",
   },
   {
     key: "config",

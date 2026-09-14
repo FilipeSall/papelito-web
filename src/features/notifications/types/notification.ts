@@ -26,6 +26,8 @@ export type NotificationType =
   | "return_authorization_issued"
   | "return_tracking_updated"
   | "return_refunded"
+  | "order_refund_pending"
+  | "order_refunded"
   | "company_owner_review_pending"
   | "company_owner_approved"
   | "company_owner_rejected";

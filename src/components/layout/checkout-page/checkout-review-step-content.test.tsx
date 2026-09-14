@@ -70,6 +70,11 @@ function seedCheckoutState() {
         vendorId: 101,
         options: [
           {
+            provider: "correios",
+            optionKey: "correios:03298",
+            fingerprint: "review-pac-quote",
+            customerPriceCents: 890,
+            expiresAt: null,
             service: "PAC",
             code: "03298",
             name: "PAC Contrato",
@@ -79,6 +84,11 @@ function seedCheckoutState() {
         ],
       },
       selectedOption: {
+        provider: "correios",
+        optionKey: "correios:03298",
+        fingerprint: "review-pac-quote",
+        customerPriceCents: 890,
+        expiresAt: null,
         service: "PAC",
         code: "03298",
         name: "PAC Contrato",

@@ -89,6 +89,11 @@ describe("CheckoutAddressStepContent", () => {
         vendor_id: 101,
         options: [
           {
+            provider: "correios",
+            option_key: "correios:03298",
+            fingerprint: "pac-quote-1",
+            customer_price_cents: 1588,
+            expires_at: null,
             service: "PAC",
             code: "03298",
             name: "PAC Contrato",
@@ -161,6 +166,11 @@ describe("CheckoutAddressStepContent", () => {
           vendor_id: 101,
           options: [
             {
+              provider: "correios",
+              option_key: "correios:03298",
+              fingerprint: "pac-quote-2",
+              customer_price_cents: 1588,
+              expires_at: null,
               service: "PAC",
               code: "03298",
               name: "PAC Contrato",
@@ -168,6 +178,11 @@ describe("CheckoutAddressStepContent", () => {
               delivery_time: 5,
             },
             {
+              provider: "correios",
+              option_key: "correios:03220",
+              fingerprint: "sedex-quote-2",
+              customer_price_cents: 2230,
+              expires_at: null,
               service: "SEDEX",
               code: "03220",
               name: "SEDEX Contrato",
@@ -213,6 +228,11 @@ describe("CheckoutAddressStepContent", () => {
           vendor_id: 101,
           options: [
             {
+              provider: "correios",
+              option_key: "correios:03298",
+              fingerprint: "pac-quote-3",
+              customer_price_cents: 1588,
+              expires_at: null,
               service: "PAC",
               code: "03298",
               name: "PAC Contrato",
@@ -220,6 +240,11 @@ describe("CheckoutAddressStepContent", () => {
               delivery_time: 5,
             },
             {
+              provider: "correios",
+              option_key: "correios:03220",
+              fingerprint: "sedex-quote-3",
+              customer_price_cents: 2230,
+              expires_at: null,
               service: "SEDEX",
               code: "03220",
               name: "SEDEX Contrato",

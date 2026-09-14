@@ -36,6 +36,7 @@ type ShippingQuoteKey = readonly [
   number,
   string,
   string,
+  string,
 ];
 
 function shouldShowShippingName(service: string, name: string) {
@@ -55,6 +56,7 @@ export function CheckoutAddressStepContent({
 }: CheckoutAddressStepContentProps) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const couponCode = useCartStore((state) => state.coupon?.code ?? "");
   const cartSummary = useCartSummary(freeShippingMinimumCents, { freeShippingZipRanges });
   const hasAutomaticFreeShipping = cartSummary.isFreeShippingCouponEligible;
 
@@ -83,7 +85,7 @@ export function CheckoutAddressStepContent({
   const setShippingQuote = useCheckoutStore((state) => state.setShippingQuote);
   const setSelectedShippingQuote = useCheckoutStore((state) => state.setSelectedShippingQuote);
   const clearShippingQuote = useCheckoutStore((state) => state.clearShippingQuote);
-  const previousSelectedShippingCodeRef = useRef<string | null>(null);
+  const previousSelectedShippingOptionKeyRef = useRef<string | null>(null);
 
   const {
     form,
@@ -122,15 +124,16 @@ export function CheckoutAddressStepContent({
     quoteItems.length === items.length;
   const shippingQuoteKey: ShippingQuoteKey | null =
     shouldQuoteShipping && vendorId
-      ? ["shippingQuote", vendorId, destinationCep, quoteItemsKey]
+      ? ["shippingQuote", vendorId, destinationCep, quoteItemsKey, couponCode]
       : null;
   const shippingQuoteRequestKey = shippingQuoteKey ? shippingQuoteKey.join("|") : null;
 
   useEffect(() => {
     if (selectedShippingQuote?.code) {
-      previousSelectedShippingCodeRef.current = selectedShippingQuote.code;
+      previousSelectedShippingOptionKeyRef.current =
+        selectedShippingQuote.optionKey ?? `correios:${selectedShippingQuote.code}`;
     }
-  }, [selectedShippingQuote?.code]);
+  }, [selectedShippingQuote?.code, selectedShippingQuote?.optionKey]);
 
   useEffect(() => {
     clearShippingQuote();
@@ -138,35 +141,37 @@ export function CheckoutAddressStepContent({
 
   const shippingQuote = useSWR(
     shippingQuoteKey,
-    ([, currentVendorId, currentDestinationCep]) =>
+    ([, currentVendorId, currentDestinationCep, , currentCouponCode]) =>
       getShippingQuote({
         vendorId: currentVendorId,
         destinationCep: currentDestinationCep,
         items: quoteItems,
+        couponCode: currentCouponCode || null,
       }),
     {
       onError: () => clearShippingQuote(),
       onSuccess: (result) => {
         setShippingQuote(result);
 
-        const preferredCode = previousSelectedShippingCodeRef.current;
+        const preferredOptionKey = previousSelectedShippingOptionKeyRef.current;
 
-        if (!preferredCode) {
+        if (!preferredOptionKey) {
           setSelectedShippingQuote(null);
           return;
         }
 
         const matchedOption = result.options.find(
-          (option) => option.code === preferredCode,
+          (option) => (option.optionKey ?? `correios:${option.code}`) === preferredOptionKey,
         );
 
         if (!matchedOption) {
           setSelectedShippingQuote(null);
-          previousSelectedShippingCodeRef.current = null;
+          previousSelectedShippingOptionKeyRef.current = null;
           return;
         }
 
-        previousSelectedShippingCodeRef.current = matchedOption.code;
+        previousSelectedShippingOptionKeyRef.current =
+          matchedOption.optionKey ?? `correios:${matchedOption.code}`;
         setSelectedShippingQuote(matchedOption);
       },
       revalidateOnFocus: false,
@@ -341,12 +346,16 @@ export function CheckoutAddressStepContent({
                   role="radiogroup"
                 >
                   {shippingOptions.map((option) => {
-                    const isSelected = selectedShippingQuote?.code === option.code;
+                    const optionKey = option.optionKey ?? `correios:${option.code}`;
+                    const selectedOptionKey = selectedShippingQuote
+                      ? selectedShippingQuote.optionKey ?? `correios:${selectedShippingQuote.code}`
+                      : null;
+                    const isSelected = selectedOptionKey === optionKey;
 
                     return (
                       <button
                         aria-checked={isSelected}
-                        key={option.code}
+                        key={optionKey}
                         role="radio"
                         type="button"
                         className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-[12px] border px-4 py-3 text-left outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:border-brand-dark/60 focus-visible:ring-2 focus-visible:ring-brand-dark/8 ${
@@ -355,7 +364,7 @@ export function CheckoutAddressStepContent({
                             : "border-[#E8EAED] bg-white/70 hover:border-[#D6D9DE] hover:bg-white"
                         }`}
                         onClick={() => {
-                          previousSelectedShippingCodeRef.current = option.code;
+                          previousSelectedShippingOptionKeyRef.current = optionKey;
                           setSelectedShippingQuote(option);
                         }}
                       >

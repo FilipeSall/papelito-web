@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { BaseModal } from "@/components/ui";
 import { FOCUS_RING } from "@/components/layout/operational-panel";
+import type { VendorOrderRefundPreview } from "@/features/vendor-orders/types/vendor-orders";
+import { formatBRLIntl } from "@/lib/format-currency";
 
 type VendorCancelShipmentModalProps = {
   open: boolean;
@@ -11,6 +13,7 @@ type VendorCancelShipmentModalProps = {
   errorMessage?: string | null;
   onClose: () => void;
   onConfirm: (reason: string) => void;
+  refundPreview?: VendorOrderRefundPreview | null;
 };
 
 export function VendorCancelShipmentModal({
@@ -19,6 +22,7 @@ export function VendorCancelShipmentModal({
   errorMessage = null,
   onClose,
   onConfirm,
+  refundPreview = null,
 }: VendorCancelShipmentModalProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -77,6 +81,18 @@ export function VendorCancelShipmentModal({
           O cancelamento é definitivo e a justificativa abaixo fica registrada no histórico do
           pedido. O comprador vê esta atualização.
         </p>
+        {refundPreview ? (
+          <div className="mt-4 border-2 border-[#1a1a1a] bg-white px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]">
+              Devolução de {formatBRLIntl(refundPreview.amountCents / 100)}
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-[#231f20]/74">
+              {refundPreview.mode === "api"
+                ? "O pedido já foi pago. Ao confirmar, pedimos à Pagar.me o estorno na forma de pagamento original, debitado do seu saldo de recebedor."
+                : `O pedido já foi pago e o valor não volta pela Pagar.me. Ao confirmar, você tem ${refundPreview.manualDueDays} dias para devolver ao comprador por transferência e registrar o comprovante.`}
+            </p>
+          </div>
+        ) : null}
 
         <label
           className="mt-5 block text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]"

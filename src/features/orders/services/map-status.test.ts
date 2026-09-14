@@ -27,4 +27,9 @@ describe("mapStatus (customer order status)", () => {
     expect(mapStatus("entregue")).toBe("delivered");
     expect(mapStatus("cancelado")).toBe("cancelled");
   });
+
+  it("mostra o pedido pago cancelado como estorno, nunca como cancelado", () => {
+    expect(mapStatus("cancelamento_solicitado")).toBe("cancellation_requested");
+    expect(mapStatus("estornado")).toBe("refunded");
+  });
 });

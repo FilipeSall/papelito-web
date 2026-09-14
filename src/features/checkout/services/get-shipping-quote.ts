@@ -1,11 +1,16 @@
 import type { ShippingQuoteOption, ShippingQuoteResult } from "../types/checkout";
 
 type ShippingQuoteApiOption = {
+  provider?: unknown;
+  option_key?: unknown;
   service?: unknown;
   code?: unknown;
   name?: unknown;
   price?: unknown;
   delivery_time?: unknown;
+  fingerprint?: unknown;
+  customer_price_cents?: unknown;
+  expires_at?: unknown;
 };
 
 type ShippingQuoteApiResponse = {
@@ -27,6 +32,7 @@ export type GetShippingQuoteInput = {
   vendorId: number;
   destinationCep: string;
   items: Array<{ productId: number; qty: number }>;
+  couponCode?: string | null;
 };
 
 function toNumber(value: unknown) {
@@ -46,8 +52,20 @@ function mapOption(option: ShippingQuoteApiOption): ShippingQuoteOption | null {
   }
 
   const deliveryTime = toNumber(option.delivery_time);
+  const customerPriceCents = toNumber(option.customer_price_cents);
 
   return {
+    provider: typeof option.provider === "string" ? option.provider : "correios",
+    optionKey:
+      typeof option.option_key === "string" && option.option_key
+        ? option.option_key
+        : `correios:${option.code}`,
+    fingerprint: typeof option.fingerprint === "string" ? option.fingerprint : undefined,
+    customerPriceCents:
+      Number.isInteger(customerPriceCents) && customerPriceCents >= 0
+        ? customerPriceCents
+        : undefined,
+    expiresAt: typeof option.expires_at === "string" ? option.expires_at : null,
     service: option.service,
     code: option.code,
     name: option.name,
@@ -136,6 +154,7 @@ export async function getShippingQuote(
         product_id: item.productId,
         qty: item.qty,
       })),
+      coupon_code: input.couponCode || undefined,
     }),
   });
 

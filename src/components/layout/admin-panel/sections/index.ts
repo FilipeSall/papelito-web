@@ -7,3 +7,4 @@ export { FlashSaleContent } from "./flash-sale-content";
 export { ProductsContent } from "./products-content";
 export { SalesContent } from "./sales/sales-content";
 export { ChamadosContent } from "./chamados-content";
+export { OrderRefundsContent } from "./order-refunds-content";

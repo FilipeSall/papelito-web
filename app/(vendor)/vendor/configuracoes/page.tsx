@@ -1,5 +1,6 @@
 import {
   VendorAccountSection,
+  VendorBraspressSection,
   VendorLeadTimeSection,
   VendorPageHeader,
   VendorRecipientPanel,
@@ -7,7 +8,7 @@ import {
 import { AnchoredSectionNav } from "@/components/ui/anchored-sections";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorRecipient } from "@/features/vendor-recipient/services/get-vendor-recipient";
-import { getVendorSettings } from "@/features/vendor-settings/server";
+import { getVendorBraspress, getVendorSettings } from "@/features/vendor-settings/server";
 
 function vendorSignal(recipient: { loadFailed: boolean; status: string }) {
   if (recipient.loadFailed) return "estado não lido";
@@ -17,6 +18,7 @@ function vendorSignal(recipient: { loadFailed: boolean; status: string }) {
 
 const SECTIONS = [
   { id: "entrega", label: "Entrega" },
+  { id: "transportadoras", label: "Transportadoras" },
   { id: "pagamentos", label: "Pagamentos" },
   { id: "conta", label: "Conta" },
 ] as const;
@@ -24,9 +26,10 @@ const SECTIONS = [
 export default async function VendorSettingsPage() {
   await redirectIfVendorOnboardingPending("/vendor/configuracoes");
 
-  const [settings, recipient] = await Promise.all([
+  const [settings, recipient, braspress] = await Promise.all([
     getVendorSettings(),
     getVendorRecipient(),
+    getVendorBraspress(),
   ]);
 
   return (
@@ -48,6 +51,7 @@ export default async function VendorSettingsPage() {
         initialLeadTimeDays={settings.shippingLeadTimeDays}
         loadFailed={settings.loadFailed}
       />
+      <VendorBraspressSection initialIntegration={braspress} />
       <VendorRecipientPanel initialRecipient={recipient} />
       <VendorAccountSection />
     </div>

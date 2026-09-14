@@ -40,6 +40,11 @@ export type ShippingQuoteItem = {
 };
 
 export type ShippingQuoteOption = {
+  provider?: string;
+  optionKey?: string;
+  fingerprint?: string;
+  customerPriceCents?: number;
+  expiresAt?: string | null;
   service: string;
   code: string;
   name: string;
@@ -71,7 +76,12 @@ export type PlaceOrderInput = {
   }>;
   address: CheckoutAddressForm;
   shipping: {
-    selectedCode: string;
+    selectedOptionKey?: string;
+    selectedCode?: string;
+    expectedFingerprint?: string;
+    expectedCustomerPriceCents?: number;
+    expectedDeliveryTime?: number | null;
+    expectedExpiresAt?: string | null;
     destinationCep: string;
   };
   payment: {

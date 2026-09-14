@@ -6,6 +6,7 @@ import {
   Hourglass,
   PackageCheck,
   PackageSearch,
+  RotateCcw,
   TriangleAlert,
   Truck,
   Wallet,
@@ -79,6 +80,43 @@ function CancelledState({ reason }: { reason?: string }) {
   );
 }
 
+function RefundInProgressState({ reason }: { reason?: string }) {
+  return (
+    <div className="flex items-start gap-3 border-2 border-[#c0392b] bg-white px-5 py-4">
+      <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center border-2 border-[#c0392b] bg-white text-[#c0392b]">
+        <RotateCcw aria-hidden className="size-4" strokeWidth={2.6} />
+      </span>
+      <div>
+        <p className="text-sm font-black uppercase tracking-[0.14em] text-[#c0392b]">
+          Cancelado · estorno em andamento
+        </p>
+        <p className="mt-1 text-sm leading-6 text-[#231f20]/74">
+          {reason || "O pedido foi cancelado depois do pagamento."} O pedido só se encerra quando o
+          valor voltar ao comprador.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function RefundedState({ reason }: { reason?: string }) {
+  return (
+    <div className="flex items-start gap-3 border-2 border-[#1a1a1a] bg-white px-5 py-4">
+      <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow">
+        <RotateCcw aria-hidden className="size-4" strokeWidth={2.6} />
+      </span>
+      <div>
+        <p className="text-sm font-black uppercase tracking-[0.14em] text-[#1a1a1a]">
+          Pedido estornado
+        </p>
+        <p className="mt-1 text-sm leading-6 text-[#231f20]/74">
+          {reason || "O pedido foi cancelado e o valor voltou ao comprador."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function StockReviewState() {
   return (
     <div className="flex items-start gap-3 border-2 border-[#1a1a1a] bg-brand-yellow/25 px-5 py-4">
@@ -121,6 +159,8 @@ export function VendorOrderStatusStepper({
   const advanced = useAdvancedConnector(currentIndex);
 
   if (status === "cancelado") return <CancelledState reason={cancelReason} />;
+  if (status === "cancelamento_solicitado") return <RefundInProgressState reason={cancelReason} />;
+  if (status === "estornado") return <RefundedState reason={cancelReason} />;
   if (status === "aguardando_estoque") return <StockReviewState />;
 
   return (

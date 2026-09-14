@@ -188,7 +188,6 @@ function NotificationBellContent({ inverted = false }: Readonly<NotificationBell
               <LogoSpinnerLoader
                 className="min-h-[70vh] w-[min(32rem,calc(100vw-2rem))] p-6"
                 label=""
-                message="Abrindo notificação..."
               />
             </div>,
             document.body,

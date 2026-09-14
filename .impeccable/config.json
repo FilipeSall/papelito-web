@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/layout/checkout-page/checkout-address-step-content.tsx"
+        ],
+        "createdAt": "2026-09-14T04:37:18.252Z",
+        "reason": "Agent: pre-existing B2B purchase-context marker; repository diff confirms this Braspress checkout change did not alter it."
+      }
+    ]
+  }
+}
