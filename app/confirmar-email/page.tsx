@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useState } from "react";
 
 import { AuthWelcomePanel } from "@/components/auth";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
@@ -16,56 +16,91 @@ type ApiErrorResponse = {
 
 type FeedbackTone = "success" | "error";
 
+function getTitle(viewState: VerificationViewState) {
+  if (viewState === "verified") {
+    return "E-mail Confirmado";
+  }
+
+  if (viewState === "verifying") {
+    return "Confirmando E-mail";
+  }
+
+  return "Confirme Seu E-mail";
+}
+
+function getDescription(viewState: VerificationViewState, email: string, canVerify: boolean) {
+  if (viewState === "verified") {
+    return "Sua conta foi liberada. Agora você já pode entrar normalmente com seu e-mail e senha.";
+  }
+
+  if (viewState === "verifying") {
+    return "Estamos validando o link enviado para sua caixa de entrada.";
+  }
+
+  if (viewState === "idle" && canVerify) {
+    return `Confirme que ${email} é o seu e-mail para liberar o login com senha.`;
+  }
+
+  if (email) {
+    return `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`;
+  }
+
+  return "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
+}
+
 function ConfirmarEmailPageContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email")?.trim() ?? "";
   const token = searchParams.get("token")?.trim() ?? "";
+  const canVerify = Boolean(email && token);
   const callbackUrl = searchParams.get("callbackUrl") === "/convite" ? "/convite" : "/entrar";
   const verifiedHref =
     callbackUrl === "/convite"
       ? `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`
       : callbackUrl;
-  const hasAttemptedVerification = useRef(false);
-  const [viewState, setViewState] = useState<VerificationViewState>(token ? "verifying" : "idle");
+  const [viewState, setViewState] = useState<VerificationViewState>("idle");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("success");
   const [isResending, setIsResending] = useState(false);
 
-  useEffect(() => {
-    if (!email || !token || hasAttemptedVerification.current) {
+  /**
+   * Confirma o e-mail só com clique explícito: abrir o link não basta, porque scanners de e-mail
+   * corporativo abrem links e executam JavaScript sem nenhuma pessoa envolvida.
+   */
+  async function handleVerify() {
+    if (!canVerify) {
       return;
     }
 
-    hasAttemptedVerification.current = true;
+    setViewState("verifying");
+    setFeedbackMessage(null);
 
-    void (async () => {
-      try {
-        const response = await fetch("/api/auth/verify-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, token }),
-        });
+    try {
+      const response = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token }),
+      });
 
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
-          setViewState("error");
-          setFeedbackTone("error");
-          setFeedbackMessage(
-            body?.message ?? "Não foi possível confirmar seu e-mail. Solicite um novo link.",
-          );
-          return;
-        }
-
-        setViewState("verified");
-        setFeedbackTone("success");
-        setFeedbackMessage("E-mail confirmado com sucesso. Sua conta já pode entrar com senha.");
-      } catch {
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
         setViewState("error");
         setFeedbackTone("error");
-        setFeedbackMessage("Erro de rede ao confirmar seu e-mail. Tente novamente.");
+        setFeedbackMessage(
+          body?.message ?? "Não foi possível confirmar seu e-mail. Solicite um novo link.",
+        );
+        return;
       }
-    })();
-  }, [email, token]);
+
+      setViewState("verified");
+      setFeedbackTone("success");
+      setFeedbackMessage("E-mail confirmado com sucesso. Sua conta já pode entrar com senha.");
+    } catch {
+      setViewState("error");
+      setFeedbackTone("error");
+      setFeedbackMessage("Erro de rede ao confirmar seu e-mail. Tente novamente.");
+    }
+  }
 
   async function handleResend() {
     if (!email || isResending) {
@@ -101,21 +136,10 @@ function ConfirmarEmailPageContent() {
     }
   }
 
-  const title =
-    viewState === "verified"
-      ? "E-mail Confirmado"
-      : viewState === "verifying"
-        ? "Confirmando E-mail"
-        : "Confirme Seu E-mail";
-
-  const description =
-    viewState === "verified"
-      ? "Sua conta foi liberada. Agora você já pode entrar normalmente com seu e-mail e senha."
-      : viewState === "verifying"
-        ? "Estamos validando o link enviado para sua caixa de entrada."
-        : email
-          ? `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`
-          : "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
+  const title = getTitle(viewState);
+  const description = getDescription(viewState, email, canVerify);
+  const showConfirmAction = viewState === "idle" && canVerify;
+  const showResendActions = viewState === "error" || (viewState === "idle" && !canVerify);
 
   return (
     <div className="flex min-h-screen">
@@ -156,7 +180,19 @@ function ConfirmarEmailPageContent() {
             </div>
           ) : null}
 
-          {viewState !== "verified" && viewState !== "verifying" ? (
+          {showConfirmAction ? (
+            <div className="mt-10 space-y-4">
+              <button
+                type="button"
+                onClick={() => void handleVerify()}
+                className="flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90"
+              >
+                Confirmar E-mail
+              </button>
+            </div>
+          ) : null}
+
+          {showResendActions ? (
             <div className="mt-10 space-y-4">
               <button
                 type="button"
