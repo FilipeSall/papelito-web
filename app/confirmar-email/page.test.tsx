@@ -26,10 +26,34 @@ function stubFetch(response: FetchResponse) {
 describe("ConfirmarEmailPage", () => {
   beforeEach(() => {
     searchParams.value = "email=ana%40empresa.test&token=token-do-link";
+    window.history.replaceState(null, "", "/confirmar-email");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("lê o e-mail e o token do fragmento do link, fora da query string", async () => {
+    searchParams.value = "callbackUrl=%2Fconvite";
+    window.history.replaceState(
+      null,
+      "",
+      "/confirmar-email?callbackUrl=%2Fconvite#email=ana%2Bteste%40empresa.test&token=token-do-fragmento",
+    );
+    const fetchMock = stubFetch({ ok: true, body: { ok: true } });
+    render(<ConfirmarEmailPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /confirmar e-mail/i }));
+
+    expect(await screen.findByRole("link", { name: /entrar para concluir convite/i })).toHaveAttribute(
+      "href",
+      "/entrar?callbackUrl=%2Fconvite",
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: '{"email":"ana+teste@empresa.test","token":"token-do-fragmento"}',
+    });
   });
 
   it("não confirma o e-mail só por abrir o link", async () => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useSyncExternalStore } from "react";
 
 import { AuthWelcomePanel } from "@/components/auth";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
@@ -16,11 +16,39 @@ type ApiErrorResponse = {
 
 type FeedbackTone = "success" | "error";
 
-type VerificationOutcome = {
-  viewState: VerificationViewState;
+type Feedback = {
   tone: FeedbackTone;
   message: string;
 };
+
+type VerificationOutcome = Feedback & {
+  viewState: VerificationViewState;
+};
+
+function subscribeToHashChange(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+function readLocationHash() {
+  return window.location.hash;
+}
+
+function readServerLocationHash() {
+  return "";
+}
+
+/**
+ * Lê um parâmetro do link de confirmação. O e-mail atual manda e-mail e token no fragmento, que
+ * GTM e GA4 não registram; a query continua valendo para links já enviados e para o reenvio.
+ */
+function readLinkParam(
+  name: string,
+  hashParams: URLSearchParams,
+  searchParams: Pick<URLSearchParams, "get">,
+) {
+  return (hashParams.get(name) ?? searchParams.get(name) ?? "").trim();
+}
 
 function getTitle(viewState: VerificationViewState) {
   if (viewState === "verified") {
@@ -100,10 +128,48 @@ async function requestEmailVerification(email: string, token: string): Promise<V
   };
 }
 
+/**
+ * Pede um novo e-mail de confirmação. O sucesso é neutro de propósito: o WordPress não revela
+ * se a conta ainda está pendente.
+ */
+async function requestVerificationResend(email: string): Promise<Feedback> {
+  try {
+    const response = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+      return {
+        tone: "error",
+        message: body?.message ?? "Não foi possível reenviar o e-mail de confirmação agora.",
+      };
+    }
+
+    return {
+      tone: "success",
+      message: "Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmação.",
+    };
+  } catch {
+    return {
+      tone: "error",
+      message: "Erro de rede ao reenviar o e-mail. Tente novamente.",
+    };
+  }
+}
+
 function ConfirmarEmailPageContent() {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email")?.trim() ?? "";
-  const token = searchParams.get("token")?.trim() ?? "";
+  const locationHash = useSyncExternalStore(
+    subscribeToHashChange,
+    readLocationHash,
+    readServerLocationHash,
+  );
+  const hashParams = new URLSearchParams(locationHash.replace(/^#/, ""));
+  const email = readLinkParam("email", hashParams, searchParams);
+  const token = readLinkParam("token", hashParams, searchParams);
   const canVerify = Boolean(email && token);
   const callbackUrl = searchParams.get("callbackUrl") === "/convite" ? "/convite" : "/entrar";
   const verifiedHref =
@@ -142,30 +208,11 @@ function ConfirmarEmailPageContent() {
     setIsResending(true);
     setFeedbackMessage(null);
 
-    try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+    const feedback = await requestVerificationResend(email);
 
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
-        setFeedbackTone("error");
-        setFeedbackMessage(
-          body?.message ?? "Não foi possível reenviar o e-mail de confirmação agora.",
-        );
-        return;
-      }
-
-      setFeedbackTone("success");
-      setFeedbackMessage("Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmação.");
-    } catch {
-      setFeedbackTone("error");
-      setFeedbackMessage("Erro de rede ao reenviar o e-mail. Tente novamente.");
-    } finally {
-      setIsResending(false);
-    }
+    setFeedbackTone(feedback.tone);
+    setFeedbackMessage(feedback.message);
+    setIsResending(false);
   }
 
   const title = getTitle(viewState);
