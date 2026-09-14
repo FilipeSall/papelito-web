@@ -1,4 +1,5 @@
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
+import { isVendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 import type { AdminVendorStockFilter } from "@/lib/server/admin-vendor-operations";
 
 export function normalizeAdminRole(role: unknown): string | undefined {
@@ -10,13 +11,5 @@ export function parseStockFilter(value: string | null | undefined): AdminVendorS
 }
 
 export function parseVendorOrderStatus(value: string | null | undefined): VendorOrderStatus | "all" {
-  return value === "aguardando_pagamento" ||
-    value === "aguardando_estoque" ||
-    value === "aguardando_envio" ||
-    value === "em_separacao" ||
-    value === "enviado" ||
-    value === "entregue" ||
-    value === "cancelado"
-    ? value
-    : "all";
+  return isVendorOrderStatus(value) ? value : "all";
 }

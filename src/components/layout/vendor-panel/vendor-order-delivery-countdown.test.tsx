@@ -86,6 +86,13 @@ describe("computeDeliveryCountdown", () => {
     expect(compute({ status: "cancelado" }).kind).toBe("hidden");
   });
 
+  it("esconde o contador quando o pedido foi cancelado depois de pago (regressão)", () => {
+    // Nada mais sai da loja: manter "3h restantes" cobraria do vendor um prazo
+    // de entrega que deixou de existir junto com o pedido.
+    expect(compute({ status: "cancelamento_solicitado" }).kind).toBe("hidden");
+    expect(compute({ status: "estornado" }).kind).toBe("hidden");
+  });
+
   it("hides the counter while a paid order awaits stock review", () => {
     expect(compute({ status: "aguardando_estoque" }).kind).toBe("hidden");
   });

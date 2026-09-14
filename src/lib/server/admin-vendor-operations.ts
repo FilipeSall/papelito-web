@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
+import { isVendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 import { wpRest } from "@/lib/server/wp-rest";
 
 export type AdminVendorStockFilter = "all" | "with_stock" | "zeroed_only";
@@ -98,15 +99,7 @@ function normalizeStockReason(reason: unknown) {
 }
 
 function normalizeOrderStatus(value: unknown): VendorOrderStatus {
-  return value === "aguardando_pagamento" ||
-    value === "aguardando_estoque" ||
-    value === "aguardando_envio" ||
-    value === "em_separacao" ||
-    value === "enviado" ||
-    value === "entregue" ||
-    value === "cancelado"
-    ? value
-    : "aguardando_pagamento";
+  return isVendorOrderStatus(value) ? value : "aguardando_pagamento";
 }
 
 export async function getAdminVendorStock(

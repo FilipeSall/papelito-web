@@ -7,16 +7,23 @@
  */
 export const VENDOR_ORDERS_PER_PAGE = 10;
 
-export type VendorOrderStatus =
-  | "aguardando_pagamento"
-  | "aguardando_estoque"
-  | "aguardando_envio"
-  | "em_separacao"
-  | "enviado"
-  | "entregue"
-  | "cancelado"
-  | "cancelamento_solicitado"
-  | "estornado";
+export const VENDOR_ORDER_STATUSES = [
+  "aguardando_pagamento",
+  "aguardando_estoque",
+  "aguardando_envio",
+  "em_separacao",
+  "enviado",
+  "entregue",
+  "cancelado",
+  "cancelamento_solicitado",
+  "estornado",
+] as const;
+
+export type VendorOrderStatus = (typeof VENDOR_ORDER_STATUSES)[number];
+
+export function isVendorOrderStatus(value: unknown): value is VendorOrderStatus {
+  return VENDOR_ORDER_STATUSES.includes(value as VendorOrderStatus);
+}
 
 export type VendorOrderItem = {
   itemId: number;

@@ -3,19 +3,10 @@ import type {
   VendorOrdersFilters,
   VendorOrdersFiscalFilter,
 } from "../types/vendor-orders";
-
-const statuses = new Set<VendorOrderStatus>([
-  "aguardando_pagamento",
-  "aguardando_estoque",
-  "aguardando_envio",
-  "em_separacao",
-  "enviado",
-  "entregue",
-  "cancelado",
-]);
+import { isVendorOrderStatus } from "../types/vendor-orders";
 
 export function normalizeVendorOrdersStatus(value: string | null | undefined): VendorOrderStatus | "all" {
-  return typeof value === "string" && statuses.has(value as VendorOrderStatus) ? (value as VendorOrderStatus) : "all";
+  return isVendorOrderStatus(value) ? value : "all";
 }
 
 /**

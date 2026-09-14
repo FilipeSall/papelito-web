@@ -6,6 +6,18 @@ const HOUR_MS = 60 * 60 * 1000;
 
 type CountdownTone = "neutral" | "warning" | "critical";
 
+/**
+ * Situações em que não há prazo de entrega correndo. Além do cancelamento e da
+ * análise de estoque, os dois estados de estorno: o pedido foi cancelado depois
+ * de pago, e nada mais sai da loja.
+ */
+const NO_DEADLINE_STATUSES = new Set<VendorOrderStatus>([
+  "aguardando_estoque",
+  "cancelado",
+  "cancelamento_solicitado",
+  "estornado",
+]);
+
 export type DeliveryCountdown =
   | { kind: "hidden" }
   | { kind: "pending_payment" }
@@ -42,7 +54,7 @@ export function computeDeliveryCountdown({
   deliveryTimeDays: number;
   now: number;
 }): DeliveryCountdown {
-  if (status === "cancelado" || status === "aguardando_estoque") return { kind: "hidden" };
+  if (NO_DEADLINE_STATUSES.has(status)) return { kind: "hidden" };
   // A partir do envio a responsabilidade passa para a transportadora: o vendor
   // cumpriu o prazo dele, entao o contador para de correr e mostra "Concluido".
   if (status === "enviado" || status === "entregue") return { kind: "done" };

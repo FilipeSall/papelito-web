@@ -17,34 +17,42 @@ const ORDER_STATUSES: Array<[VendorOrderStatus | "all", string]> = [
   ["em_separacao", "Separação"],
   ["enviado", "Enviados"],
   ["entregue", "Entregues"],
+  ["cancelamento_solicitado", "Estorno em andamento"],
   ["cancelado", "Cancelados"],
+  ["estornado", "Estornados"],
 ];
 
+const ORDER_STATUS_LABEL: Record<VendorOrderStatus, string> = {
+  aguardando_pagamento: "Aguardando pagamento",
+  aguardando_estoque: "Aguardando análise de estoque",
+  aguardando_envio: "Aguardando envio",
+  em_separacao: "Em separação",
+  enviado: "Enviado",
+  entregue: "Entregue",
+  cancelado: "Cancelado",
+  cancelamento_solicitado: "Estorno em andamento",
+  estornado: "Estornado",
+};
+
+const PENDING_TONE = "bg-[#f4edd3] text-[#5d4d1b]";
+const NEUTRAL_TONE = "bg-[#e7e7ea] text-[#4a4a52]";
+const CRITICAL_TONE = "bg-[#f3e3df] text-[#7a3428]";
+
+const ORDER_STATUS_TONE: Record<VendorOrderStatus, string> = {
+  aguardando_pagamento: NEUTRAL_TONE,
+  aguardando_estoque: PENDING_TONE,
+  aguardando_envio: PENDING_TONE,
+  em_separacao: PENDING_TONE,
+  enviado: PENDING_TONE,
+  entregue: "bg-[#e4efe0] text-[#28422d]",
+  cancelado: CRITICAL_TONE,
+  cancelamento_solicitado: CRITICAL_TONE,
+  estornado: NEUTRAL_TONE,
+};
+
 function OrderStatusBadge({ status }: { status: VendorOrderStatus }) {
-  const label =
-    status === "aguardando_pagamento"
-      ? "Aguardando pagamento"
-      : status === "aguardando_estoque"
-        ? "Aguardando análise de estoque"
-      : status === "aguardando_envio"
-        ? "Aguardando envio"
-        : status === "em_separacao"
-          ? "Em separação"
-          : status === "enviado"
-            ? "Enviado"
-            : status === "entregue"
-              ? "Entregue"
-              : "Cancelado";
-  const tone =
-    status === "entregue"
-      ? "bg-[#e4efe0] text-[#28422d]"
-      : status === "cancelado"
-        ? "bg-[#f3e3df] text-[#7a3428]"
-        : status === "aguardando_pagamento"
-          ? "bg-[#e7e7ea] text-[#4a4a52]"
-          : status === "aguardando_estoque"
-            ? "bg-[#f4edd3] text-[#5d4d1b]"
-          : "bg-[#f4edd3] text-[#5d4d1b]";
+  const label = ORDER_STATUS_LABEL[status];
+  const tone = ORDER_STATUS_TONE[status];
 
   return (
     <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone}`}>
