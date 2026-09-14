@@ -7,7 +7,7 @@ import { Suspense, useState } from "react";
 import { AuthWelcomePanel } from "@/components/auth";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 
-type VerificationViewState = "idle" | "verifying" | "verified" | "error";
+type VerificationViewState = "idle" | "verifying" | "verified" | "retryable" | "error";
 
 type ApiErrorResponse = {
   code?: string;
@@ -15,6 +15,12 @@ type ApiErrorResponse = {
 };
 
 type FeedbackTone = "success" | "error";
+
+type VerificationOutcome = {
+  viewState: VerificationViewState;
+  tone: FeedbackTone;
+  message: string;
+};
 
 function getTitle(viewState: VerificationViewState) {
   if (viewState === "verified") {
@@ -37,7 +43,7 @@ function getDescription(viewState: VerificationViewState, email: string, canVeri
     return "Estamos validando o link enviado para sua caixa de entrada.";
   }
 
-  if (viewState === "idle" && canVerify) {
+  if ((viewState === "idle" || viewState === "retryable") && canVerify) {
     return `Confirme que ${email} é o seu e-mail para liberar o login com senha.`;
   }
 
@@ -46,6 +52,52 @@ function getDescription(viewState: VerificationViewState, email: string, canVeri
   }
 
   return "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
+}
+
+/**
+ * Envia o token ao WordPress e traduz a resposta. Falha de rede ou 5xx permite tentar de novo
+ * com o mesmo link; recusa 4xx pede um link novo, porque o token é inválido ou expirou.
+ */
+async function requestEmailVerification(email: string, token: string): Promise<VerificationOutcome> {
+  let response: Response;
+
+  try {
+    response = await fetch("/api/auth/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, token }),
+    });
+  } catch {
+    return {
+      viewState: "retryable",
+      tone: "error",
+      message: "Erro de rede ao confirmar seu e-mail. Tente novamente.",
+    };
+  }
+
+  if (response.ok) {
+    return {
+      viewState: "verified",
+      tone: "success",
+      message: "E-mail confirmado com sucesso. Sua conta já pode entrar com senha.",
+    };
+  }
+
+  if (response.status >= 500) {
+    return {
+      viewState: "retryable",
+      tone: "error",
+      message: "Não foi possível confirmar seu e-mail agora. Tente novamente.",
+    };
+  }
+
+  const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+
+  return {
+    viewState: "error",
+    tone: "error",
+    message: body?.message ?? "Não foi possível confirmar seu e-mail. Solicite um novo link.",
+  };
 }
 
 function ConfirmarEmailPageContent() {
@@ -75,31 +127,11 @@ function ConfirmarEmailPageContent() {
     setViewState("verifying");
     setFeedbackMessage(null);
 
-    try {
-      const response = await fetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token }),
-      });
+    const outcome = await requestEmailVerification(email, token);
 
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as ApiErrorResponse | null;
-        setViewState("error");
-        setFeedbackTone("error");
-        setFeedbackMessage(
-          body?.message ?? "Não foi possível confirmar seu e-mail. Solicite um novo link.",
-        );
-        return;
-      }
-
-      setViewState("verified");
-      setFeedbackTone("success");
-      setFeedbackMessage("E-mail confirmado com sucesso. Sua conta já pode entrar com senha.");
-    } catch {
-      setViewState("error");
-      setFeedbackTone("error");
-      setFeedbackMessage("Erro de rede ao confirmar seu e-mail. Tente novamente.");
-    }
+    setViewState(outcome.viewState);
+    setFeedbackTone(outcome.tone);
+    setFeedbackMessage(outcome.message);
   }
 
   async function handleResend() {
@@ -138,7 +170,7 @@ function ConfirmarEmailPageContent() {
 
   const title = getTitle(viewState);
   const description = getDescription(viewState, email, canVerify);
-  const showConfirmAction = viewState === "idle" && canVerify;
+  const showConfirmAction = canVerify && (viewState === "idle" || viewState === "retryable");
   const showResendActions = viewState === "error" || (viewState === "idle" && !canVerify);
 
   return (
