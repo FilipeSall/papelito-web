@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
@@ -16,12 +17,6 @@ const integration: VendorBraspressIntegration = {
   config: {
     senderCnpj: "12345678000195",
     originCep: "01310930",
-    modal: "R",
-    freightType: "1",
-    consigneeCnpj: "",
-    weightUnit: "kg",
-    quoteTimezone: "America/Sao_Paulo",
-    trackingTomadorCnpj: "12345678000195",
   },
 };
 
@@ -40,12 +35,6 @@ describe("VendorBraspressSection", () => {
         config: {
           senderCnpj: "",
           originCep: "",
-          modal: "",
-          freightType: "",
-          consigneeCnpj: "",
-          weightUnit: "",
-          quoteTimezone: "",
-          trackingTomadorCnpj: "",
         },
       }),
     });
@@ -75,5 +64,66 @@ describe("VendorBraspressSection", () => {
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
     expect(await screen.findByText(/não foi possível falar com o servidor/i)).toBeInTheDocument();
+  });
+
+  it("explains the remaining fields and keeps the enable control directly operable", async () => {
+    const user = userEvent.setup();
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    expect(screen.getAllByRole("button", { name: "Mais informações" })).toHaveLength(6);
+    expect(screen.getByRole("checkbox", { name: /habilitar braspress/i })).toHaveClass(
+      "cursor-pointer",
+    );
+
+    await user.hover(screen.getAllByRole("button", { name: "Mais informações" })[2]!);
+
+    expect(screen.getByRole("tooltip")).toHaveTextContent(/cep do local de onde a braspress coleta/i);
+  });
+
+  it("derives the contract from the store profile instead of asking the vendor to retype it", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(integration) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    const senderCnpj = screen.getByLabelText(/cnpj remetente/i);
+
+    expect(senderCnpj).toBeDisabled();
+    expect(senderCnpj).toHaveValue("12.345.678/0001-95");
+    expect(senderCnpj).toHaveClass(
+      "border-[#a8a29e]",
+      "bg-[#eeece5]",
+      "text-[#57534e]",
+      "disabled:border-[#a8a29e]",
+      "disabled:bg-[#eeece5]",
+      "disabled:text-[#57534e]",
+    );
+    expect(screen.queryByRole("combobox", { name: "Modal" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Tipo de frete" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/cnpj do tomador/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/unidade de peso/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/versão\s+\d+/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/sua senha atual/i), "senha-atual");
+    await user.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(fetchMock.mock.calls[0]![1].body as string) as Record<string, unknown>;
+    expect(payload).toMatchObject({ originCep: "01310930" });
+    expect(payload).not.toHaveProperty("senderCnpj");
+    expect(payload).not.toHaveProperty("modal");
+    expect(payload).not.toHaveProperty("freightType");
+    expect(payload).not.toHaveProperty("weightUnit");
+    expect(payload).not.toHaveProperty("quoteTimezone");
+  });
+
+  it("names the blocked account instead of blaming the credentials", () => {
+    render(
+      <VendorBraspressSection
+        initialIntegration={{ ...integration, status: "provider_blocked" }}
+      />,
+    );
+
+    expect(screen.getByText(/conta bloqueada na braspress/i)).toBeInTheDocument();
   });
 });

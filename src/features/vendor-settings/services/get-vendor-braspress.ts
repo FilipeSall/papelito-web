@@ -18,12 +18,6 @@ type WpBraspressIntegration = {
 const EMPTY_CONFIG = {
   senderCnpj: "",
   originCep: "",
-  modal: "",
-  freightType: "",
-  consigneeCnpj: "",
-  weightUnit: "",
-  quoteTimezone: "",
-  trackingTomadorCnpj: "",
 };
 
 function unreadable(): VendorBraspressIntegration {
@@ -63,7 +57,10 @@ export async function getVendorBraspress(): Promise<VendorBraspressIntegration> 
     provider: "braspress",
     enabled: result.data.enabled === true || result.data.enabled === 1,
     status:
-      status === "ready" || status === "active" || status === "invalid_credentials"
+      status === "ready" ||
+      status === "active" ||
+      status === "invalid_credentials" ||
+      status === "provider_blocked"
         ? status
         : "unconfigured",
     configurationVersion: Number(result.data.configuration_version) || 0,
@@ -72,12 +69,6 @@ export async function getVendorBraspress(): Promise<VendorBraspressIntegration> 
     config: {
       senderCnpj: stringValue(config.sender_cnpj),
       originCep: stringValue(config.origin_cep),
-      modal: stringValue(config.modal),
-      freightType: stringValue(config.freight_type),
-      consigneeCnpj: stringValue(config.consignee_cnpj),
-      weightUnit: stringValue(config.weight_unit),
-      quoteTimezone: stringValue(config.quote_timezone),
-      trackingTomadorCnpj: stringValue(config.tracking_tomador_cnpj),
     },
     loadFailed: false,
   };

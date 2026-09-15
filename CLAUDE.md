@@ -44,12 +44,31 @@ O WordPress é a única fonte de verdade. O frontend não tem banco.
 - **Sem barrel exports profundos.** Cada `index.ts` re-exporta só a própria pasta.
 - Server Components por padrão; `"use client"` só com estado, evento ou API de browser.
 - Server-only isolado em `src/lib/server/*` com `import "server-only"`.
-- **Sem comentários em código** salvo para justificar workaround ou invariante.
+- **Comentário solto no corpo da função não entra** — a documentação vai no bloco JSDoc acima da declaração (abaixo). `//` explicando uma linha só se justifica workaround ou invariante.
 - Tailwind apenas. Sem CSS Modules, sem styled-components.
 - TypeScript strict; `unknown` + narrowing em vez de `any`.
 - **Reutilize os componentes de `src/components/auth/*` e `src/components/ui/*`** em vez de estilizar `<input>`/`<select>`/`<button>` na página. Formulário é uncontrolled + `FormData` no submit (`auth-login-form.tsx` é a referência).
 - Componente específico de uma página vive em `src/components/layout/<rota>/`; **não importe de lá em outra página** — promova para `ui/` se virou reutilizável.
+- **Props de componente são `Readonly<Props>` na assinatura** (`typescript:S6759`). O tipo fica solto e o `Readonly<>` aplica-se no parâmetro: `function Campo({ label }: Readonly<CampoProps>)`.
+- **Sem ternário aninhado** (`typescript:S3358`). Decomponha em variáveis nomeadas — quase sempre o aninhamento é o sintoma de duas decisões independentes empilhadas.
 - Bun local, `npm ci` no CI → `bun.lock` e `package-lock.json` são commitados juntos.
+
+## Documentação no código (JSDoc/TSDoc)
+
+**Todo símbolo exportado nasce com um bloco `/** */` acima da declaração**: componente, hook, função utilitária, tipo público. O bloco é para humano — quem abre o arquivo pela primeira vez precisa entender o que a coisa é e quando usá-la sem ler o corpo.
+
+O que escrever:
+
+- **O que o símbolo faz e para que serve**, em uma ou duas frases. Nada de reescrever a assinatura em prosa (`@param label O label`).
+- **O comportamento não óbvio** que morde quem for usar: efeito colateral, estado interno, ordem de chamada, fail-closed, o que acontece quando um prop opcional vem vazio.
+- **`@example`** quando o uso não é evidente pela assinatura — vale mais que três linhas de descrição.
+- Três a cinco linhas. Getter, wrapper óbvio e re-export não precisam de bloco.
+
+Props documentam-se **na declaração do tipo**, com `/** */` por campo, não no bloco do componente. [`profile-form-field.tsx`](src/components/layout/profile-page/profile-form-field.tsx) é a referência.
+
+Hook documenta **o que ele devolve e quando re-renderiza**; função de `src/lib/server/*` documenta **quem é a autoridade do dado** e se a resposta é cacheável — o mesmo que já está escrito nas invariantes acima, no ponto onde alguém vai tropeçar.
+
+Código existente sem JSDoc não vira tarefa de retrofit. A regra vale para código novo e para arquivo que você já está editando.
 
 ## Variáveis de ambiente
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { type ComponentProps, useState, useTransition } from "react";
+import { Building2, KeyRound, LockKeyhole, MapPin, type LucideIcon } from "lucide-react";
 
+import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/components/form-fields";
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
 
-type FormState = VendorBraspressIntegration["config"] & {
+type FormState = {
   enabled: boolean;
+  originCep: string;
   username: string;
   password: string;
   currentPassword: string;
@@ -17,8 +20,8 @@ type FormState = VendorBraspressIntegration["config"] & {
 
 function initialForm(integration: VendorBraspressIntegration): FormState {
   return {
-    ...integration.config,
     enabled: integration.enabled,
+    originCep: integration.config.originCep,
     username: "",
     password: "",
     currentPassword: "",
@@ -29,7 +32,29 @@ function statusLabel(status: VendorBraspressIntegration["status"]) {
   if (status === "active") return "Ativa";
   if (status === "ready") return "Pronta para validar";
   if (status === "invalid_credentials") return "Credenciais inválidas";
+  if (status === "provider_blocked") return "Conta bloqueada na Braspress";
   return "Não configurada";
+}
+
+function formatCnpj(value: string) {
+  if (value.length !== 14) return value;
+
+  return `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`;
+}
+
+type BraspressFieldProps = ComponentProps<typeof ProfileFormField> & {
+  helpText: string;
+  icon: LucideIcon;
+};
+
+function BraspressField({ helpText, icon: Icon, ...props }: Readonly<BraspressFieldProps>) {
+  return (
+    <ProfileFormField
+      {...props}
+      labelAccessory={<InfoTooltip text={helpText} />}
+      startAdornment={<Icon className="h-4 w-4" strokeWidth={2.25} />}
+    />
+  );
 }
 
 export function VendorBraspressSection({
@@ -130,32 +155,34 @@ export function VendorBraspressSection({
             <p className="text-sm font-black text-[#1a1a1a]">Braspress</p>
             <p className="text-xs font-semibold text-[#1a1a1a]/65">{statusLabel(integration.status)}</p>
           </div>
-          <label className="flex items-center gap-2 text-sm font-bold text-[#1a1a1a]">
-            <input
-              checked={form.enabled}
-              disabled={disabled}
-              onChange={(event) => setField("enabled", event.target.checked)}
-              type="checkbox"
-            />
-            Habilitar Braspress
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label
+              className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[#1a1a1a]"
+              htmlFor="vendor-braspress-enabled"
+            >
+              <input
+                checked={form.enabled}
+                className="cursor-pointer accent-brand-yellow disabled:cursor-not-allowed"
+                disabled={disabled}
+                id="vendor-braspress-enabled"
+                onChange={(event) => setField("enabled", event.target.checked)}
+                type="checkbox"
+              />
+              Habilitar Braspress
+            </label>
+            <InfoTooltip text="Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout." />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <ProfileFormField disabled={disabled} inputMode="numeric" label="CNPJ remetente" onChange={(value) => setField("senderCnpj", value)} value={form.senderCnpj} />
-          <ProfileFormField disabled={disabled} inputMode="numeric" label="CEP de origem" onChange={(value) => setField("originCep", value)} value={form.originCep} />
-          <ProfileFormField disabled={disabled} label="Modal (R rodoviário ou A aéreo)" maxLength={1} onChange={(value) => setField("modal", value.toUpperCase())} value={form.modal} />
-          <ProfileFormField disabled={disabled} label="Tipo de frete (1 CIF, 2 FOB, 3 consignado)" maxLength={1} onChange={(value) => setField("freightType", value)} value={form.freightType} />
-          {form.freightType === "3" ? <ProfileFormField disabled={disabled} inputMode="numeric" label="CNPJ consignatário" onChange={(value) => setField("consigneeCnpj", value)} value={form.consigneeCnpj} /> : null}
-          <ProfileFormField disabled={disabled} label="Unidade de peso (kg ou g)" onChange={(value) => setField("weightUnit", value.toLowerCase())} value={form.weightUnit} />
-          <ProfileFormField disabled={disabled} label="Fuso da cotação" onChange={(value) => setField("quoteTimezone", value)} placeholder="America/Sao_Paulo" value={form.quoteTimezone} />
-          <ProfileFormField disabled={disabled} inputMode="numeric" label="CNPJ tomador do tracking" onChange={(value) => setField("trackingTomadorCnpj", value)} value={form.trackingTomadorCnpj} />
+          <BraspressField disabled disabledClassName="disabled:cursor-not-allowed disabled:border-[#a8a29e] disabled:bg-[#eeece5] disabled:text-[#57534e]" helpText="É o CNPJ da sua loja, o mesmo que emite a nota. Para alterar, mude o cadastro." icon={Building2} inputClassName="border-[#a8a29e] bg-[#eeece5] text-[#57534e]" inputMode="numeric" label="CNPJ remetente" placeholder="Complete o CNPJ no cadastro da sua loja" value={formatCnpj(integration.config.senderCnpj)} />
+          <BraspressField disabled={disabled} helpText="CEP do local de onde a Braspress coleta os pedidos desta loja, conforme o seu contrato. Em branco, usamos o CEP do cadastro." icon={MapPin} inputMode="numeric" label="CEP de origem" onChange={(value) => setField("originCep", value)} value={form.originCep} />
         </div>
 
         <div className="grid gap-4 border-2 border-dashed border-[#1a1a1a]/35 p-4 md:grid-cols-2">
-          <ProfileFormField autoComplete="username" disabled={disabled} label={integration.credentialsConfigured ? "Novo usuário Braspress" : "Usuário Braspress"} onChange={(value) => setField("username", value)} value={form.username} />
-          <ProfileFormField autoComplete="new-password" disabled={disabled} label={integration.credentialsConfigured ? "Nova senha Braspress" : "Senha Braspress"} onChange={(value) => setField("password", value)} type="password" value={form.password} />
-          <ProfileFormField autoComplete="current-password" disabled={disabled} label="Sua senha atual" onChange={(value) => setField("currentPassword", value)} type="password" value={form.currentPassword} />
+          <BraspressField autoComplete="username" disabled={disabled} helpText="Usuário da API fornecido para o contrato desta loja. Ele não será exibido depois de salvo." icon={KeyRound} label={integration.credentialsConfigured ? "Novo usuário Braspress" : "Usuário Braspress"} onChange={(value) => setField("username", value)} value={form.username} />
+          <BraspressField autoComplete="new-password" disabled={disabled} helpText="Senha da API. É criptografada e nunca volta para a tela depois de salva." icon={LockKeyhole} label={integration.credentialsConfigured ? "Nova senha Braspress" : "Senha Braspress"} onChange={(value) => setField("password", value)} type="password" value={form.password} />
+          <BraspressField autoComplete="current-password" disabled={disabled} helpText="Sua senha Papelito confirma alterações de credencial e remoção da integração." icon={LockKeyhole} label="Sua senha atual" onChange={(value) => setField("currentPassword", value)} type="password" value={form.currentPassword} />
         </div>
 
         <p className="text-xs leading-5 font-semibold text-[#1a1a1a]/65">
@@ -166,7 +193,6 @@ export function VendorBraspressSection({
           <button className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-widest text-brand-yellow shadow-[3px_3px_0px_#ffe500] disabled:cursor-not-allowed disabled:opacity-60" disabled={disabled} type="submit">
             {pending ? "Salvando..." : "Salvar Braspress"}
           </button>
-          <span className="text-xs font-semibold text-[#1a1a1a]/65">Versão {integration.configurationVersion}</span>
         </div>
         {integration.credentialsConfigured ? (
           <div className="border-2 border-[#c0392b] bg-[#fff5f3] p-4">

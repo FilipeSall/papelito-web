@@ -20,7 +20,10 @@ function publicIntegration(value: unknown) {
     provider: "braspress" as const,
     enabled: integration.enabled === true || integration.enabled === 1,
     status:
-      status === "ready" || status === "active" || status === "invalid_credentials"
+      status === "ready" ||
+      status === "active" ||
+      status === "invalid_credentials" ||
+      status === "provider_blocked"
         ? status
         : "unconfigured",
     configurationVersion: Number(integration.configuration_version) || 0,
@@ -29,12 +32,6 @@ function publicIntegration(value: unknown) {
     config: {
       senderCnpj: stringValue(config.sender_cnpj),
       originCep: stringValue(config.origin_cep),
-      modal: stringValue(config.modal),
-      freightType: stringValue(config.freight_type),
-      consigneeCnpj: stringValue(config.consignee_cnpj),
-      weightUnit: stringValue(config.weight_unit),
-      quoteTimezone: stringValue(config.quote_timezone),
-      trackingTomadorCnpj: stringValue(config.tracking_tomador_cnpj),
     },
   };
 }
