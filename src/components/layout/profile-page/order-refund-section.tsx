@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Download, Paperclip } from "lucide-react";
 
 import { ChamadoOpenDialog } from "@/features/chamados/components/chamado-open-dialog";
 import type { ProfileOrderRefund } from "@/features/orders/types/profile-order-detail";
@@ -7,9 +6,6 @@ import type { ProfileOrderRefund } from "@/features/orders/types/profile-order-d
 import { ProfilePanel, ProfileSectionHeading, profileSecondaryActionClass } from "./profile-panel";
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "America/Sao_Paulo" });
-
-const linkClass =
-  "inline-flex h-10 items-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[10px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] transition hover:bg-brand-yellow focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]";
 
 function formatUtcDate(value: string) {
   if (!value) return "";
@@ -22,6 +18,10 @@ function formatUtcDate(value: string) {
 /**
  * Estorno do pedido que a loja cancelou depois do pagamento. No caminho manual
  * é o comprador quem confere se o valor chegou — e o chamado é como contesta.
+ *
+ * Trata do dinheiro, não dos documentos: recibo de estorno e comprovante ficam
+ * em "Documentos do estorno", logo abaixo, para o pedido ter um lugar só onde
+ * se procura documento.
  */
 export function OrderRefundSection({ orderId, refund }: { orderId: string; refund: ProfileOrderRefund }) {
   const amount = (refund.amountCents / 100).toLocaleString("pt-BR", { currency: "BRL", style: "currency" });
@@ -73,29 +73,6 @@ export function OrderRefundSection({ orderId, refund }: { orderId: string; refun
           >
             Revisar chave PIX para reembolso
           </Link>
-        ) : null}
-
-        {done && refund.receiptNumber ? (
-          <div className="border-2 border-[#1a1a1a] bg-[#faf8f2] px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/60">
-              Recibo de estorno
-            </p>
-            <code className="mt-1.5 block font-mono text-sm font-bold tracking-widest text-[#1a1a1a]">
-              {refund.receiptNumber}
-            </code>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <a className={linkClass} href={`/api/profile/orders/${orderId}/refund-receipt`} rel="noreferrer" target="_blank">
-                <Download aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                Baixar recibo de estorno
-              </a>
-              {refund.proofId > 0 ? (
-                <a className={linkClass} href={`/api/order-refunds/proofs/${refund.proofId}`} rel="noreferrer" target="_blank">
-                  <Paperclip aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                  Ver comprovante
-                </a>
-              ) : null}
-            </div>
-          </div>
         ) : null}
 
         {manual ? (

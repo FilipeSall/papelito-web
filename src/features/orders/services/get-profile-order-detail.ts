@@ -9,6 +9,7 @@ import { wpRest } from "@/lib/server/wp-rest";
 
 import type {
   ProfileOrderDetail,
+  ProfileOrderDocumentsSurface,
   ProfileOrderFiscalDocument,
   ProfileOrderReceipt,
   ProfileOrderRefund,
@@ -105,6 +106,7 @@ type WpProfileOrder = {
     original_name?: string;
     size_bytes?: number;
   } | null;
+  documents?: { surface?: string };
 };
 
 type WpProfileOrdersList = {
@@ -511,12 +513,22 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     shipping: Number(order.shipping_total) || 0,
     total: Number(order.total) || 0,
     payment: paymentInfo(order),
+    documentsSurface: documentsSurface(order),
     fiscalDocument: fiscalDocumentInfo(order),
     receipt: receiptInfo(order),
     returns: returnsInfo(order),
     returnRequests: returnRequestsInfo(order),
     refund: refundInfo(order),
   };
+}
+
+/**
+ * Superfície de documentos. Sem o campo no payload a tela segue no fluxo
+ * normal: quem fecha a área de documentos do pedido é o WordPress, e a omissão
+ * — deploy do Next à frente do backend — não pode virar decisão do front.
+ */
+function documentsSurface(order: WpProfileOrder): ProfileOrderDocumentsSurface {
+  return order.documents?.surface === "estorno" ? "estorno" : "pedido";
 }
 
 const REFUND_STATUSES = new Set<ProfileOrderRefund["status"]>(["processando", "reembolsado", "falhou", "manual_pendente"]);

@@ -123,6 +123,15 @@ export interface ProfileOrderRefund {
   status: "processando" | "reembolsado" | "falhou" | "manual_pendente";
 }
 
+/**
+ * Qual conjunto de documentos a tela apresenta, decidido pelo WordPress.
+ *
+ * `estorno` fecha a área do fluxo normal — recibo do pedido e nota fiscal saem
+ * de cena — e deixa no lugar a documentação do estorno. A tela **não** deduz
+ * isso de `status`, e nada é apagado do banco nem do storage por causa dele.
+ */
+export type ProfileOrderDocumentsSurface = "pedido" | "estorno";
+
 export interface ProfileOrderReturnRequest {
   id: number;
   status: string;
@@ -146,6 +155,7 @@ export interface ProfileOrderDetail {
   shipping: number;
   total: number;
   payment: ProfileOrderPaymentInfo;
+  documentsSurface: ProfileOrderDocumentsSurface;
   receipt: ProfileOrderReceipt;
   fiscalDocument: ProfileOrderFiscalDocument | null;
   returns: ProfileOrderReturnEligibility;

@@ -235,6 +235,16 @@ export type VendorOrderRefund = {
   status: VendorOrderRefundStatus;
 };
 
+/**
+ * Qual conjunto de documentos a tela apresenta, decidido pelo WordPress.
+ *
+ * `estorno` fecha a área do fluxo normal — recibo do pedido e nota fiscal saem
+ * de cena — e deixa no lugar a documentação do estorno. A tela **não** deduz
+ * isso de `status`: comprador e vendor leem este mesmo campo, e nada é apagado
+ * do banco nem do storage por causa dele.
+ */
+export type VendorOrderDocumentsSurface = "pedido" | "estorno";
+
 /** O que acontece com o dinheiro se o pedido for cancelado agora. Decidido pelo WordPress. */
 export type VendorOrderRefundPreview = {
   amountCents: number;
@@ -247,6 +257,7 @@ export type VendorOrderDetail = VendorOrderSummary & {
   /** Justificativa registrada na transição para `cancelado`. Vazia nos demais estados. */
   cancelReason: string;
   deliveryTimeDays: number;
+  documentsSurface: VendorOrderDocumentsSurface;
   fiscal: VendorOrderFiscal;
   items: VendorOrderItem[];
   paidAt: string;

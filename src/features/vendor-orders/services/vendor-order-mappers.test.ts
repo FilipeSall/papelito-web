@@ -4,6 +4,7 @@ import {
   mapVendorOrderFiscal,
   isVendorOrderStatus,
   mapVendorOrderDetail,
+  mapVendorOrderDocumentsSurface,
   mapVendorOrderRefund,
   mapVendorOrderRefundPreview,
   mapVendorOrderStatus,
@@ -279,5 +280,30 @@ describe("mapVendorOrderRefundPreview", () => {
 
     expect(detail.refund).toBeNull();
     expect(detail.refundPreview).toBeNull();
+  });
+});
+
+describe("mapVendorOrderDocumentsSurface", () => {
+  it("segue a decisão do WordPress", () => {
+    expect(mapVendorOrderDocumentsSurface({ surface: "estorno" })).toBe("estorno");
+    expect(mapVendorOrderDocumentsSurface({ surface: "pedido" })).toBe("pedido");
+  });
+
+  it("sem o campo, a tela fica no fluxo normal — omissão não é decisão do front", () => {
+    expect(mapVendorOrderDocumentsSurface(undefined)).toBe("pedido");
+    expect(mapVendorOrderDocumentsSurface({})).toBe("pedido");
+    expect(mapVendorOrderDocumentsSurface({ surface: "valor_novo" })).toBe("pedido");
+  });
+
+  it("o status do pedido não decide a superfície: só o campo decide", () => {
+    const refundedWithoutBlock = mapVendorOrderDetail({ id: 1, vendor_status: "estornado" });
+    const runningWithBlock = mapVendorOrderDetail({
+      documents: { surface: "estorno" },
+      id: 2,
+      vendor_status: "aguardando_envio",
+    });
+
+    expect(refundedWithoutBlock.documentsSurface).toBe("pedido");
+    expect(runningWithBlock.documentsSurface).toBe("estorno");
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "@/features/orders/utils/payment-deadline";
 import {
   OrderDocumentsSection,
+  OrderRefundDocumentsSection,
   OrderRefundSection,
   OrderReturnRequest,
   OrderStatusBadge,
@@ -370,11 +371,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
           {order.refund ? <OrderRefundSection orderId={order.id} refund={order.refund} /> : null}
 
-          <OrderDocumentsSection
-            fiscalDocument={order.fiscalDocument}
-            orderId={order.id}
-            receipt={order.receipt}
-          />
+          {order.documentsSurface === "estorno" ? (
+            <OrderRefundDocumentsSection orderId={order.id} refund={order.refund} />
+          ) : (
+            <OrderDocumentsSection
+              fiscalDocument={order.fiscalDocument}
+              orderId={order.id}
+              receipt={order.receipt}
+            />
+          )}
 
           {order.returnRequests.length > 0 ? (
             <ProfilePanel tone="white">

@@ -2,6 +2,7 @@ export { VendorContactCustomerButton } from "./vendor-contact-customer-button";
 export { VendorOrderActions } from "./vendor-order-actions";
 export { VendorOrderDeliveryCountdown } from "./vendor-order-delivery-countdown";
 export { VendorOrderDocumentsSection } from "./vendor-order-documents-section";
+export { VendorOrderRefundDocumentsSection } from "./vendor-order-refund-documents-section";
 export { VendorOrderStatusBadge, vendorStatusLabel } from "./vendor-order-status-badge";
 export { VendorOrderStatusPanel } from "./vendor-order-status-panel";
 export { VendorOrderStatusStepper } from "./vendor-order-status-stepper";

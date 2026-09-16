@@ -12,6 +12,7 @@ import {
   VendorOrderActions,
   VendorOrderDeliveryCountdown,
   VendorOrderDocumentsSection,
+  VendorOrderRefundDocumentsSection,
   VendorOrderStatusPanel,
   VendorPageHeader,
 } from "@/components/layout/vendor-panel";
@@ -338,11 +339,15 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         status={order.status}
       />
 
-      <VendorOrderDocumentsSection
-        initialFiscal={order.fiscal}
-        orderId={order.id}
-        receipt={order.receipt}
-      />
+      {order.documentsSurface === "estorno" ? (
+        <VendorOrderRefundDocumentsSection orderId={order.id} refund={order.refund} />
+      ) : (
+        <VendorOrderDocumentsSection
+          initialFiscal={order.fiscal}
+          orderId={order.id}
+          receipt={order.receipt}
+        />
+      )}
 
       <div className="grid gap-4 md:gap-5 xl:grid-cols-[1.05fr_0.95fr]">
         <Panel title="Comprador e dados para a nota">

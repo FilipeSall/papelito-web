@@ -42,6 +42,7 @@ export { OrderCard, type Order } from "./order-card";
 export { OrdersList } from "./orders-list";
 export { OrderTrackingCopyButton } from "./order-tracking-copy-button";
 export { OrderDocumentsSection } from "./order-documents-section";
+export { OrderRefundDocumentsSection } from "./order-refund-documents-section";
 export { OrderRefundSection } from "./order-refund-section";
 export { ProfileRefundPixKeySection } from "./profile-refund-pix-key-section";
 export { OrderReturnRequest } from "./order-return-request";

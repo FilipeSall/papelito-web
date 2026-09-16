@@ -97,7 +97,7 @@ describe("VendorOrderRefundPanel", () => {
     expect(screen.queryByRole("button", { name: /mostrar chave pix/i })).not.toBeInTheDocument();
   });
 
-  it("oferece recibo e comprovante depois de concluído", () => {
+  it("confirma a devolução sem repetir os documentos, que vivem na seção do estorno", () => {
     render(
       <VendorOrderRefundPanel
         orderId={7788}
@@ -110,14 +110,9 @@ describe("VendorOrderRefundPanel", () => {
       />,
     );
 
-    expect(screen.getByText("PPE-2026-000001")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /baixar recibo de estorno/i })).toHaveAttribute(
-      "href",
-      "/api/vendor/orders/7788/refund-receipt",
-    );
-    expect(screen.getByRole("link", { name: /ver comprovante/i })).toHaveAttribute(
-      "href",
-      "/api/order-refunds/proofs/5",
-    );
+    expect(screen.getByText(/devolução registrada em/i)).toBeInTheDocument();
+    expect(screen.queryByText("PPE-2026-000001")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /recibo de estorno/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /ver comprovante/i })).not.toBeInTheDocument();
   });
 });

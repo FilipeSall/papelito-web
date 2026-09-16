@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Copy, Download, KeyRound, Paperclip, RotateCcw } from "lucide-react";
+import { Copy, KeyRound, Paperclip, RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { FOCUS_RING, StatusChip, type StatusShape } from "@/components/layout/operational-panel";
@@ -339,39 +339,12 @@ export function VendorOrderRefundPanel({ orderId, refund }: { orderId: number; r
                 : `A Pagar.me confirmou o estorno em ${formatUtcDate(refund.settledAt)}.`}
             </p>
 
-            {refund.receiptNumber ? (
-              <div className="border-2 border-[#1a1a1a] bg-white px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/60">
-                  Recibo de estorno
-                </p>
-                <code className="mt-1.5 block font-mono text-sm font-bold tracking-widest text-[#1a1a1a]">
-                  {refund.receiptNumber}
-                </code>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap gap-3">
-              <a
-                className={secondaryButton}
-                href={`/api/vendor/orders/${orderId}/refund-receipt`}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <Download aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                Baixar recibo de estorno
-              </a>
-              {refund.proofId > 0 ? (
-                <a
-                  className={secondaryButton}
-                  href={`/api/order-refunds/proofs/${refund.proofId}`}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <Paperclip aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
-                  Ver comprovante
-                </a>
-              ) : null}
-            </div>
+            {/*
+              Recibo de estorno e comprovante vivem em "Documentos do estorno",
+              logo abaixo: o pedido tem um lugar só para documentos, e o mesmo
+              arquivo oferecido em dois cartões faz o vendor procurar diferença
+              onde não há.
+            */}
           </>
         ) : null}
       </div>

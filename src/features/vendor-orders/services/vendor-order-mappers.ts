@@ -4,6 +4,7 @@ import type {
   VendorFiscalEvent,
   VendorOrderBilling,
   VendorOrderDetail,
+  VendorOrderDocumentsSurface,
   VendorOrderFiscal,
   VendorOrderRefund,
   VendorOrderRefundPreview,
@@ -44,6 +45,7 @@ export type WpVendorOrder = {
   vendor_status?: string;
   next_statuses?: string[];
   cancel_reason?: string;
+  documents?: { surface?: string };
   refund?: WpVendorOrderRefund | null;
   refund_preview?: { amountCents?: number; manualDueDays?: number; mode?: string } | null;
   has_fiscal_document?: boolean;
@@ -256,6 +258,18 @@ export function mapVendorOrderFiscal(fiscal: WpVendorFiscal | undefined): Vendor
   };
 }
 
+/**
+ * Superfície de documentos. Sem o campo no payload a tela segue no fluxo
+ * normal — o WordPress é quem fecha a área de documentos do pedido, e a
+ * omissão (deploy do Next à frente do backend) não pode virar decisão do
+ * front.
+ */
+export function mapVendorOrderDocumentsSurface(
+  documents: WpVendorOrder["documents"],
+): VendorOrderDocumentsSurface {
+  return documents?.surface === "estorno" ? "estorno" : "pedido";
+}
+
 const refundStatuses = new Set<VendorOrderRefundStatus>(["processando", "reembolsado", "falhou", "manual_pendente"]);
 
 export function mapVendorOrderRefund(refund: WpVendorOrderRefund | null | undefined): VendorOrderRefund | null {
@@ -362,6 +376,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
     billing: mapVendorOrderBilling(order.billing),
     cancelReason: order.cancel_reason?.trim() ?? "",
     deliveryTimeDays: Number(order.delivery_time_days) || 0,
+    documentsSurface: mapVendorOrderDocumentsSurface(order.documents),
     fiscal: mapVendorOrderFiscal(order.fiscal),
     paidAt: order.paid_at ?? "",
     payment: {

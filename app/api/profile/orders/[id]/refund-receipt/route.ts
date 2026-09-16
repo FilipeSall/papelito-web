@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const session = await getUserApiSession();
 
@@ -19,11 +19,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ message: "Pedido inválido." }, { status: 400 });
   }
 
+  // `download=1` separa ver de baixar: sem ele o WordPress devolve o PDF
+  // `inline`, que é o que a ação "ver" abre em aba.
+  const download = new URL(request.url).searchParams.get("download") === "1";
   const base = getWpRestBase().replace(/\/$/, "");
   let response: Response;
 
   try {
-    response = await fetch(`${base}/papelito/v1/profile/me/orders/${id}/refund-receipt`, {
+    response = await fetch(`${base}/papelito/v1/profile/me/orders/${id}/refund-receipt${download ? "?download=1" : ""}`, {
       cache: "no-store",
       headers: { Accept: "application/pdf", Authorization: `Bearer ${session.accessToken}` },
     });
@@ -44,8 +47,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
     headers: {
       "Cache-Control": "private, no-store, max-age=0",
       "Content-Disposition":
-        response.headers.get("content-disposition") ?? `attachment; filename="recibo-estorno-pedido-${id}.pdf"`,
-      "Content-Type": response.headers.get("content-type") ?? "application/pdf",
+        response.headers.get("content-disposition") ??
+        `${download ? "attachment" : "inline"}; filename="recibo-estorno-pedido-${id}.pdf"`,
+      "Content-Type": "application/pdf",
       "X-Content-Type-Options": "nosniff",
     },
     status: 200,
