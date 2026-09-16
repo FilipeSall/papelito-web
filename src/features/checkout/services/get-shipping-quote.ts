@@ -1,16 +1,24 @@
-import type { ShippingQuoteOption, ShippingQuoteResult } from "../types/checkout";
+import type {
+  ShippingProvider,
+  ShippingQuoteOption,
+  ShippingQuoteResult,
+} from "../types/checkout";
 
 type ShippingQuoteApiOption = {
   provider?: unknown;
   option_key?: unknown;
   service?: unknown;
+  service_code?: unknown;
   code?: unknown;
   name?: unknown;
   price?: unknown;
   delivery_time?: unknown;
   fingerprint?: unknown;
+  carrier_cost_cents?: unknown;
   customer_price_cents?: unknown;
+  quoted_at?: unknown;
   expires_at?: unknown;
+  external_quote_id?: unknown;
 };
 
 type ShippingQuoteApiResponse = {
@@ -28,6 +36,7 @@ type ShippingQuoteApiErrorData = {
   correios_message?: unknown;
 };
 
+/** Carrinho e destino informados ao WordPress, que recalcula preço e elegibilidade. */
 export type GetShippingQuoteInput = {
   vendorId: number;
   destinationCep: string;
@@ -35,42 +44,105 @@ export type GetShippingQuoteInput = {
   couponCode?: string | null;
 };
 
-function toNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : Number(value);
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function finiteNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function nonNegativeInteger(value: unknown): number | null {
+  const numberValue = finiteNumber(value);
+  return numberValue !== null && Number.isInteger(numberValue) && numberValue >= 0
+    ? numberValue
+    : null;
+}
+
+function nonNegativeNumber(value: unknown): number | null {
+  const numberValue = finiteNumber(value);
+  return numberValue !== null && numberValue >= 0 ? numberValue : null;
+}
+
+function canonicalServiceCode(option: ShippingQuoteApiOption): string | null {
+  const code = option.service_code ?? option.code;
+  if (typeof code !== "string" || !/^[a-z0-9_-]+$/.test(code)) {
+    return null;
+  }
+  if (
+    (option.service_code !== undefined && option.service_code !== code) ||
+    (option.code !== undefined && option.code !== code)
+  ) {
+    return null;
+  }
+  return code;
 }
 
 function mapOption(option: ShippingQuoteApiOption): ShippingQuoteOption | null {
-  const price = toNumber(option.price);
+  let provider: ShippingProvider | null = null;
+  if (option.provider === "correios" || option.provider === "braspress") {
+    provider = option.provider;
+  } else if (option.provider === undefined) {
+    provider = "correios";
+  }
+  const serviceCode = canonicalServiceCode(option);
+  const service = stringValue(option.service);
+  const name = stringValue(option.name);
+  const customerPriceCents = nonNegativeInteger(option.customer_price_cents);
+  const decimalPrice = nonNegativeNumber(option.price);
+  const price = customerPriceCents === null ? decimalPrice : customerPriceCents / 100;
+  const expectedOptionKey = provider && serviceCode ? `${provider}:${serviceCode}` : null;
+  const optionKey = stringValue(option.option_key);
+  const isLegacyCorreios = option.provider === undefined;
 
   if (
-    typeof option.service !== "string" ||
-    typeof option.code !== "string" ||
-    typeof option.name !== "string" ||
-    !Number.isFinite(price)
+    provider === null ||
+    serviceCode === null ||
+    expectedOptionKey === null ||
+    service === null ||
+    name === null ||
+    price === null ||
+    (option.customer_price_cents !== undefined && customerPriceCents === null) ||
+    (option.carrier_cost_cents !== undefined && nonNegativeInteger(option.carrier_cost_cents) === null) ||
+    (option.price !== undefined && decimalPrice === null) ||
+    (!isLegacyCorreios && optionKey === null) ||
+    (option.option_key !== undefined && option.option_key !== expectedOptionKey) ||
+    (customerPriceCents !== null &&
+      decimalPrice !== null &&
+      Math.round(decimalPrice * 100) !== customerPriceCents)
   ) {
     return null;
   }
 
-  const deliveryTime = toNumber(option.delivery_time);
-  const customerPriceCents = toNumber(option.customer_price_cents);
+  const deliveryTime = nonNegativeInteger(option.delivery_time);
+  if (option.delivery_time != null && deliveryTime === null) {
+    return null;
+  }
 
   return {
-    provider: typeof option.provider === "string" ? option.provider : "correios",
-    optionKey:
-      typeof option.option_key === "string" && option.option_key
-        ? option.option_key
-        : `correios:${option.code}`,
-    fingerprint: typeof option.fingerprint === "string" ? option.fingerprint : undefined,
-    customerPriceCents:
-      Number.isInteger(customerPriceCents) && customerPriceCents >= 0
-        ? customerPriceCents
-        : undefined,
-    expiresAt: typeof option.expires_at === "string" ? option.expires_at : null,
-    service: option.service,
-    code: option.code,
-    name: option.name,
+    provider,
+    optionKey: expectedOptionKey,
+    serviceCode,
+    carrierCostCents: nonNegativeInteger(option.carrier_cost_cents) ?? undefined,
+    fingerprint: stringValue(option.fingerprint) ?? undefined,
+    customerPriceCents: customerPriceCents ?? undefined,
+    quotedAt: stringValue(option.quoted_at),
+    expiresAt: stringValue(option.expires_at),
+    externalQuoteId: stringValue(option.external_quote_id),
+    service,
+    code: serviceCode,
+    name,
     price,
-    deliveryTime: Number.isFinite(deliveryTime) ? deliveryTime : null,
+    deliveryTime,
   };
 }
 
@@ -80,12 +152,12 @@ function mapResponse(payload: ShippingQuoteApiResponse): ShippingQuoteResult {
         .map((option) => mapOption(option as ShippingQuoteApiOption))
         .filter((option): option is ShippingQuoteOption => Boolean(option))
     : [];
-  const vendorId = toNumber(payload.vendor_id);
+  const vendorId = finiteNumber(payload.vendor_id);
 
   if (
     typeof payload.origin_cep !== "string" ||
     typeof payload.destination_cep !== "string" ||
-    !Number.isFinite(vendorId) ||
+    vendorId === null ||
     options.length === 0
   ) {
     throw new Error("Resposta de frete inválida.");
@@ -138,6 +210,7 @@ function getApiErrorMessage(payload: ShippingQuoteApiResponse | null) {
   return payload.message;
 }
 
+/** Obtém a cotação autoritativa e descarta opções que violam o contrato público de frete. */
 export async function getShippingQuote(
   input: GetShippingQuoteInput,
 ): Promise<ShippingQuoteResult> {

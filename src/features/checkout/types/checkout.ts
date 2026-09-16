@@ -39,12 +39,23 @@ export type ShippingQuoteItem = {
   qty: number;
 };
 
+/**
+ * Transportadoras que o contrato normalizado de frete reconhece.
+ * O campo pode faltar no estado persistido antes da migração; nesse caso, os
+ * consumidores devem inferir Correios somente para manter a seleção legada.
+ */
+export type ShippingProvider = "correios" | "braspress";
+
 export type ShippingQuoteOption = {
-  provider?: string;
+  provider?: ShippingProvider;
   optionKey?: string;
+  serviceCode?: string;
+  carrierCostCents?: number;
   fingerprint?: string;
   customerPriceCents?: number;
+  quotedAt?: string | null;
   expiresAt?: string | null;
+  externalQuoteId?: string | null;
   service: string;
   code: string;
   name: string;
