@@ -216,6 +216,30 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/vendor/configuracoes");
   });
 
+  it("sends a packaging pending notification to the cubagem page", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "vendor_packaging_profiles_pending",
+        payload: {},
+      }),
+    );
+
+    expect(formatted.title).toBe("Cadastre suas caixas de envio");
+    expect(formatted.body).toContain("não aparecem para os clientes");
+    expect(formatted.href).toBe("/vendor/cubagem");
+  });
+
+  it("does not tell the vendor the account was blocked over packaging", () => {
+    const formatted = formatNotification(
+      buildNotification({
+        type: "vendor_packaging_profiles_pending",
+        payload: {},
+      }),
+    );
+
+    expect(formatted.body.toLowerCase()).not.toContain("bloque");
+  });
+
   it("describes Pagar.me support without referring to an order", () => {
     const formatted = formatNotification(
       buildNotification({

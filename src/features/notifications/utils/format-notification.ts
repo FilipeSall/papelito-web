@@ -384,6 +384,13 @@ export function formatNotification(
         body: "Conclua a configuração da Pagar.me para que sua loja possa começar a vender.",
         href: "/vendor/configuracoes",
       };
+    case "vendor_packaging_profiles_pending":
+      return {
+        icon: "package",
+        title: "Cadastre suas caixas de envio",
+        body: "Sem o mínimo de caixas cadastradas, seus produtos não aparecem para os clientes.",
+        href: "/vendor/cubagem",
+      };
     case "shipment_posted":
       return {
         icon: "package",
