@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Pencil, Ruler, RotateCcw, ShieldCheck, Trash2, Weight } from "lucide-react";
+import { Archive, Pencil, Ruler, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 
 import { FOCUS_RING, StatusChip, type StatusShape } from "@/components/layout/admin-panel/primitives";
 import { PACKAGING_MAX_ACTIVE_PROFILES } from "@/features/vendor-packaging/utils/packaging-readiness";
@@ -29,17 +29,13 @@ function loadLabel(item: VendorPackagingProfile): string {
 /**
  * Situação da caixa como chip de ícone mais texto.
  *
- * Os dois tons pendentes nomeiam dívidas diferentes. "Tara pendente" vem primeiro porque é a que
- * custa dinheiro: sem o peso da embalagem vazia o frete sai sub-declarado. "Medida do catálogo"
- * diz que a caixa ainda carrega o número nominal do modelo, nunca comparado com a caixa real.
+ * Tara ausente não vira chip: a linha de carga já diz "Tara não informada", e repetir a mesma
+ * dívida num quadrado ao lado só duplica o aviso. "Medida do catálogo" continua como chip porque
+ * não aparece em nenhum outro lugar da linha.
  */
 export function packagingProfileShape(item: VendorPackagingProfile): StatusShape {
   if (!item.active) {
     return { icon: Archive, label: "Inativa", tone: "neutral" };
-  }
-
-  if (item.tareWeightG === 0) {
-    return { icon: Weight, label: "Tara pendente", tone: "pending" };
   }
 
   if (item.source === "rpc" && item.version === 1) {

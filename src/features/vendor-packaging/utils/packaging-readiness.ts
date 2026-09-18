@@ -40,22 +40,22 @@ export type PackagingReadiness = {
 };
 
 /**
- * Diz se a caixa ainda deve alguma conferência ao vendor.
+ * Diz se a caixa ainda deve conferência de medida ao vendor.
  *
- * São duas dívidas diferentes com a mesma consequência: a medida nominal do catálogo, que o vendor
- * nunca comparou com a caixa no galpão, e a tara ausente, que o Guia Técnico dos Correios não
- * publica e por isso nasce vazia.
+ * Só conta a medida nominal do catálogo, que o vendor nunca comparou com a caixa no galpão. A tara
+ * ausente é dívida real, mas já aparece na própria linha da caixa como "Tara não informada"; contá-la
+ * aqui repetiria o mesmo aviso na faixa de setup.
  */
 function needsReview(item: VendorPackagingProfile): boolean {
-  return (item.source === "rpc" && item.version === 1) || item.tareWeightG === 0;
+  return item.source === "rpc" && item.version === 1;
 }
 
 /**
  * Resume os perfis do vendor nos três números de que a página inteira depende.
  *
- * `unconfirmedCount` conta as duas dívidas de conferência: `version === 1` numa caixa RPC prova que
- * ninguém revisou a medida, porque o contrato incrementa a versão em toda edição; tara zero prova
- * que o peso da embalagem vazia nunca foi informado, e nenhuma caixa real pesa zero.
+ * `unconfirmedCount` conta só a medida por conferir: `version === 1` numa caixa RPC prova que
+ * ninguém revisou a medida, porque o contrato incrementa a versão em toda edição. `missingTareCount`
+ * segue separado, para quem precisar da tara ausente sem misturá-la à conferência de medida.
  *
  * @param items Perfis como o WordPress os devolveu.
  * @returns Contagens de ativos, inativos e medidas por conferir.
@@ -80,7 +80,7 @@ function stepDetail(id: PackagingStepId, readiness: PackagingReadiness): string 
 
   if (id === "medidas") {
     if (readiness.activeCount === 0) return "Sem caixa para conferir.";
-    if (readiness.unconfirmedCount === 0) return "Medidas e taras conferidas.";
+    if (readiness.unconfirmedCount === 0) return "Medidas conferidas.";
     if (readiness.unconfirmedCount === 1) return "1 caixa ainda pede conferência.";
     return `${readiness.unconfirmedCount} caixas ainda pedem conferência.`;
   }

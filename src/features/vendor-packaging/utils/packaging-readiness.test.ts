@@ -52,13 +52,13 @@ describe("readPackagingReadiness", () => {
     expect(readPackagingReadiness([profile({ source: "custom" })]).unconfirmedCount).toBe(0);
   });
 
-  it("cobra conferência de caixa ativa sem tara, qualquer que seja a origem", () => {
+  it("conta tara ausente sem cobrar conferência de medida", () => {
     const readiness = readPackagingReadiness([
       profile({ source: "custom", tareWeightG: 0, version: 2 }),
     ]);
 
     expect(readiness.missingTareCount).toBe(1);
-    expect(readiness.unconfirmedCount).toBe(1);
+    expect(readiness.unconfirmedCount).toBe(0);
   });
 
   it("não conta tara de caixa inativa", () => {
