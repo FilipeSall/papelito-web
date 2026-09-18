@@ -127,4 +127,55 @@ describe("resolveSelectedShipping", () => {
   it("rejects anything while the address has no complete zip code", () => {
     expect(resolveSelectedShipping(state(), "712")).toBeNull();
   });
+
+  it("rejects a selection whose quote already expired", () => {
+    const expiring = { ...PAC, expiresAt: "2026-09-18T02:59:59.999Z" };
+    const expired = state({
+      quote: {
+        originCep: "70000000",
+        destinationCep: "71200100",
+        vendorId: 10,
+        options: [expiring, SEDEX],
+      },
+      selectedOption: expiring,
+    });
+
+    expect(
+      resolveSelectedShipping(expired, "71200-100", new Date("2026-09-18T03:00:00.000Z")),
+    ).toBeNull();
+  });
+
+  it("keeps a selection that is still inside its quote validity", () => {
+    const expiring = { ...PAC, expiresAt: "2026-09-18T02:59:59.999Z" };
+    const stillValid = state({
+      quote: {
+        originCep: "70000000",
+        destinationCep: "71200100",
+        vendorId: 10,
+        options: [expiring, SEDEX],
+      },
+      selectedOption: expiring,
+    });
+
+    expect(
+      resolveSelectedShipping(stillValid, "71200-100", new Date("2026-09-18T02:59:59.998Z")),
+    ).toEqual(expiring);
+  });
+
+  it("rejects a selection whose expiry is not a readable instant", () => {
+    const unreadable = { ...PAC, expiresAt: "amanha" };
+    const broken = state({
+      quote: {
+        originCep: "70000000",
+        destinationCep: "71200100",
+        vendorId: 10,
+        options: [unreadable, SEDEX],
+      },
+      selectedOption: unreadable,
+    });
+
+    expect(
+      resolveSelectedShipping(broken, "71200-100", new Date("2026-09-18T00:00:00.000Z")),
+    ).toBeNull();
+  });
 });

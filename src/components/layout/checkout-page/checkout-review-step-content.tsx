@@ -11,8 +11,10 @@ import {
   useCartStore,
 } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
+import { CHECKOUT_STEP_ROUTES } from "@/features/checkout/utils/checkout-step-access";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
+import { shippingProviderLabel } from "@/features/checkout/utils/shipping-provider-label";
 import { readGaIdentifiers } from "@/lib/analytics/ga-cookies";
 import { formatBRL } from "@/lib/format-currency";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -20,6 +22,8 @@ import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
+
+const SHIPPING_STALE_CODE = "papelito_checkout_shipping_stale";
 
 function getPaymentLabel(method: "credit_card" | "pix" | "boleto") {
   if (method === "credit_card") return "Cartao de credito";
@@ -52,6 +56,10 @@ export function CheckoutReviewStepContent() {
   );
   const syncCheckoutAttempt = useCheckoutStore(
     (state) => state.syncCheckoutAttempt,
+  );
+  const clearShippingQuote = useCheckoutStore((state) => state.clearShippingQuote);
+  const setRequiresShippingReselection = useCheckoutStore(
+    (state) => state.setRequiresShippingReselection,
   );
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const stockValidation = useCartStockValidation();
@@ -228,6 +236,15 @@ export function CheckoutReviewStepContent() {
         });
 
         if (!result.ok) {
+          if (result.error.code === SHIPPING_STALE_CODE) {
+            clearShippingQuote();
+            setRequiresShippingReselection(true);
+            setIsSubmitting(false);
+            submissionRef.current = false;
+            router.push(CHECKOUT_STEP_ROUTES[1]);
+            return;
+          }
+
           setCheckoutError(result.error.message);
           setIsSubmitting(false);
           submissionRef.current = false;
@@ -383,6 +400,9 @@ export function CheckoutReviewStepContent() {
 
                   {selectedShippingQuote ? (
                     <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-text-tertiary">
+                        {shippingProviderLabel(selectedShippingQuote.provider)}
+                      </p>
                       <p className="font-medium text-brand-dark">
                         {selectedShippingQuote.service}
                       </p>

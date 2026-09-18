@@ -23,6 +23,8 @@ import { CheckoutEmptyCart } from "./checkout-empty-cart";
 import { CheckoutField } from "./checkout-field";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
+import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
+import { shippingProviderLabel } from "@/features/checkout/utils/shipping-provider-label";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 import type { ZipRange } from "@/features/shipping/utils/zip-ranges";
 
@@ -86,6 +88,12 @@ export function CheckoutAddressStepContent({
   const setSelectedShippingQuote = useCheckoutStore((state) => state.setSelectedShippingQuote);
   const clearShippingQuote = useCheckoutStore((state) => state.clearShippingQuote);
   const previousSelectedShippingOptionKeyRef = useRef<string | null>(null);
+  const requiresShippingReselection = useCheckoutStore(
+    (state) => state.requiresShippingReselection,
+  );
+  const setRequiresShippingReselection = useCheckoutStore(
+    (state) => state.setRequiresShippingReselection,
+  );
 
   const {
     form,
@@ -215,6 +223,14 @@ export function CheckoutAddressStepContent({
       : null;
 
   async function handleAdvance() {
+    if (!resolveSelectedShipping(shippingQuoteState, form.zipCode)) {
+      previousSelectedShippingOptionKeyRef.current = null;
+      clearShippingQuote();
+      setRequiresShippingReselection(true);
+      void shippingQuote.mutate();
+      return;
+    }
+
     router.push("/checkout/pagamento");
   }
 
@@ -318,7 +334,7 @@ export function CheckoutAddressStepContent({
               <div className="flex items-center gap-2">
                 <span aria-hidden className="inline-block h-2 w-2 rotate-45 bg-brand-yellow" />
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-dark">
-                  Frete Correios
+                  Frete
                 </p>
               </div>
 
@@ -328,11 +344,11 @@ export function CheckoutAddressStepContent({
                 </p>
               ) : destinationCep.length !== 8 ? (
                 <p className="mt-2 text-sm leading-5 text-text-tertiary">
-                  Informe um CEP válido para cotar PAC e SEDEX.
+                  Informe um CEP válido para ver as opções de entrega.
                 </p>
               ) : shippingStatus === "loading" ? (
                 <p className="mt-2 text-sm leading-5 text-text-tertiary">
-                  Cotando frete nos Correios...
+                  Cotando frete...
                 </p>
               ) : shippingStatus === "error" ? (
                 <p className="mt-2 flex items-start gap-1 text-sm leading-5 text-[#c0392b]" role="alert">
@@ -365,6 +381,7 @@ export function CheckoutAddressStepContent({
                         }`}
                         onClick={() => {
                           previousSelectedShippingOptionKeyRef.current = optionKey;
+                          setRequiresShippingReselection(false);
                           setSelectedShippingQuote(option);
                         }}
                       >
@@ -377,6 +394,9 @@ export function CheckoutAddressStepContent({
                           >
                           </span>
                           <span>
+                            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-text-tertiary">
+                              {shippingProviderLabel(option.provider)}
+                            </span>
                             <span className="block text-sm font-black text-brand-dark">
                               {option.service}
                             </span>
@@ -421,6 +441,16 @@ export function CheckoutAddressStepContent({
                 message="Carregando opções de entrega..."
                 size="sm"
               />
+            ) : null}
+
+            {requiresShippingReselection ? (
+              <p
+                className="mt-4 flex items-start gap-1 rounded-[12px] border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B42318]"
+                role="alert"
+              >
+                <span aria-hidden>⚠</span>
+                <span>A cotação de frete não vale mais. Escolha a entrega de novo.</span>
+              </p>
             ) : null}
 
             {blockedReason ? (

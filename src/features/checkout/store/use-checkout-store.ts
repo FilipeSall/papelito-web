@@ -35,6 +35,7 @@ interface CheckoutState {
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
   shippingQuote: CheckoutShippingQuoteState;
+  requiresShippingReselection: boolean;
   checkoutAttemptId: string;
   checkoutAttemptFingerprint?: string;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
@@ -50,6 +51,7 @@ interface CheckoutState {
   setShippingQuote: (quote: ShippingQuoteResult | null) => void;
   setSelectedShippingQuote: (quote: ShippingQuoteOption | null) => void;
   clearShippingQuote: () => void;
+  setRequiresShippingReselection: (value: boolean) => void;
   rotateCheckoutAttempt: () => void;
   syncCheckoutAttempt: (fingerprint: string) => string;
   resetCheckout: () => void;
@@ -59,6 +61,26 @@ const INITIAL_SHIPPING_QUOTE: CheckoutShippingQuoteState = {
   quote: null,
   selectedOption: null,
 };
+
+/**
+ * Mantém apenas a seleção que uma cotação nova consegue reconferir. O estado
+ * persistido atravessa deploys e pode ter sido gravado antes do contrato
+ * multicarrier; sem `optionKey`, `fingerprint` e centavos não há como provar que
+ * a opção continua sendo a mesma, e ela ainda assim liberaria a etapa de revisão.
+ */
+function revalidatableSelection(
+  selectedOption: ShippingQuoteOption | null | undefined,
+): ShippingQuoteOption | null {
+  if (!selectedOption) {
+    return null;
+  }
+
+  return typeof selectedOption.optionKey === "string" &&
+    typeof selectedOption.fingerprint === "string" &&
+    Number.isInteger(selectedOption.customerPriceCents)
+    ? selectedOption
+    : null;
+}
 
 let checkoutAttemptFallbackSequence = 0;
 
@@ -88,6 +110,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       paymentMethod: "credit_card",
       paymentForm: INITIAL_PAYMENT_FORM,
       shippingQuote: INITIAL_SHIPPING_QUOTE,
+      requiresShippingReselection: false,
       checkoutAttemptId: createCheckoutAttemptId(),
       checkoutAttemptFingerprint: undefined,
       setAddressField: (field, value) =>
@@ -143,6 +166,8 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
         })),
       clearShippingQuote: () => set({ shippingQuote: INITIAL_SHIPPING_QUOTE }),
+      setRequiresShippingReselection: (value) =>
+        set({ requiresShippingReselection: value }),
       rotateCheckoutAttempt: () =>
         set({ checkoutAttemptId: createCheckoutAttemptId() }),
       syncCheckoutAttempt: (fingerprint) => {
@@ -174,13 +199,14 @@ export const useCheckoutStore = create<CheckoutState>()(
           paymentMethod: "credit_card",
           paymentForm: INITIAL_PAYMENT_FORM,
           shippingQuote: INITIAL_SHIPPING_QUOTE,
+          requiresShippingReselection: false,
           checkoutAttemptId: createCheckoutAttemptId(),
           checkoutAttemptFingerprint: undefined,
         }),
     }),
     {
       name: "papelito-checkout-store",
-      version: 5,
+      version: 6,
       storage:
         typeof window !== "undefined"
           ? createJSONStorage(() => window.localStorage)
@@ -222,6 +248,10 @@ export const useCheckoutStore = create<CheckoutState>()(
         if (state.shippingQuote) {
           return {
             ...state,
+            shippingQuote: {
+              quote: state.shippingQuote.quote ?? null,
+              selectedOption: revalidatableSelection(state.shippingQuote.selectedOption),
+            },
             paymentForm: safePaymentForm,
             billingAddressForm:
               state.billingAddressForm ?? INITIAL_ADDRESS_FORM,
@@ -247,7 +277,7 @@ export const useCheckoutStore = create<CheckoutState>()(
             state.useDeliveryAddressForBilling !== false,
           shippingQuote: {
             quote: null,
-            selectedOption: state.selectedShippingQuote ?? null,
+            selectedOption: revalidatableSelection(state.selectedShippingQuote),
           },
           checkoutAttemptId:
             typeof state.checkoutAttemptId === "string" &&

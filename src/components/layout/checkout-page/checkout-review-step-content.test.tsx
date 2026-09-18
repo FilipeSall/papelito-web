@@ -160,6 +160,69 @@ describe("CheckoutReviewStepContent", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("names the carrier of the chosen option in the shipping summary", async () => {
+    const braspressOption = {
+      provider: "braspress" as const,
+      optionKey: "braspress:rodoviario",
+      serviceCode: "rodoviario",
+      fingerprint: "review-rodoviario-quote",
+      customerPriceCents: 890,
+      expiresAt: null,
+      service: "Rodoviário",
+      code: "rodoviario",
+      name: "Rodoviário",
+      price: 8.9,
+      deliveryTime: 3,
+    };
+
+    useCheckoutStore.setState({
+      shippingQuote: {
+        quote: {
+          originCep: "01001000",
+          destinationCep: "01310930",
+          vendorId: 101,
+          options: [braspressOption],
+        },
+        selectedOption: braspressOption,
+      },
+    });
+
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
+
+    expect(await screen.findByText("Braspress")).toBeInTheDocument();
+    expect(screen.getByText("Rodoviário")).toBeInTheDocument();
+  });
+
+  it("sends the customer back to the delivery step when the backend rejects a stale quote", async () => {
+    server.use(
+      http.post("/api/checkout/place-order", () =>
+        HttpResponse.json(
+          {
+            code: "papelito_checkout_shipping_stale",
+            message: "Selected shipping option is no longer valid.",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const user = userEvent.setup();
+
+    renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
+
+    await user.click(screen.getByRole("button", { name: /finalizar pedido/i }));
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/checkout");
+    });
+
+    expect(useCheckoutStore.getState().shippingQuote.selectedOption).toBeNull();
+    expect(useCheckoutStore.getState().requiresShippingReselection).toBe(true);
+    expect(
+      screen.queryByText("Selected shipping option is no longer valid."),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not place the order when fresh stock is unavailable", async () => {
     let placeOrderCalls = 0;
     server.use(

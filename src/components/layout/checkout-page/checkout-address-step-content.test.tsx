@@ -49,6 +49,7 @@ function seedCheckoutState() {
       quote: null,
       selectedOption: null,
     },
+    requiresShippingReselection: false,
   });
 }
 
@@ -217,6 +218,250 @@ describe("CheckoutAddressStepContent", () => {
 
     expect(screen.getAllByText("R$ 22,30").length).toBeGreaterThan(0);
     expect(await screen.findByText("R$ 71,80")).toBeInTheDocument();
+  });
+
+  it("names the carrier of every option instead of announcing Correios for the whole block", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "correios",
+              option_key: "correios:03298",
+              fingerprint: "pac-multicarrier",
+              customer_price_cents: 1588,
+              expires_at: null,
+              service: "PAC",
+              code: "03298",
+              name: "PAC Contrato",
+              price: 15.88,
+              delivery_time: 5,
+            },
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-multicarrier",
+              customer_price_cents: 3410,
+              expires_at: null,
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText("PAC Contrato")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Frete Correios")).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /correios/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /braspress/i })).toBeInTheDocument();
+  });
+
+  it("selects the Braspress option without touching the Correios one", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "correios",
+              option_key: "correios:03298",
+              fingerprint: "pac-selection",
+              customer_price_cents: 1588,
+              expires_at: null,
+              service: "PAC",
+              code: "03298",
+              name: "PAC Contrato",
+              price: 15.88,
+              delivery_time: 5,
+            },
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-selection",
+              customer_price_cents: 3410,
+              expires_at: null,
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    const braspressOption = await screen.findByRole("radio", { name: /braspress/i });
+    await userEvent.click(braspressOption);
+
+    expect(braspressOption).toBeChecked();
+    expect(screen.getByRole("radio", { name: /correios/i })).not.toBeChecked();
+    expect(useCheckoutStore.getState().shippingQuote.selectedOption?.optionKey).toBe(
+      "braspress:rodoviario",
+    );
+  });
+
+  it("keeps the quoting feedback free of any carrier name", async () => {
+    server.use(
+      http.post(
+        shippingQuoteUrl,
+        async () => new Promise<Response>(() => {}),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Cotando frete...", { selector: "p" })).toBeInTheDocument();
+    });
+  });
+
+  it("asks for a zip code without promising which services will show up", () => {
+    useCheckoutStore.setState({
+      addressForm: {
+        zipCode: "",
+        street: "",
+        number: "",
+        complement: "",
+        neighborhood: "",
+        city: "",
+        state: "",
+      },
+    });
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    expect(
+      screen.getByText("Informe um CEP válido para ver as opções de entrega."),
+    ).toBeInTheDocument();
+  });
+
+  it("lets the customer buy when only Braspress survived the quote", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-only",
+              customer_price_cents: 3410,
+              expires_at: null,
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    const braspressOption = await screen.findByRole("radio", { name: /braspress/i });
+    await userEvent.click(braspressOption);
+
+    expect(screen.getByRole("button", { name: /próximo: pagamento/i })).toBeEnabled();
+  });
+
+  it("refuses to advance with an option whose quote validity already ran out", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-expired",
+              customer_price_cents: 3410,
+              quoted_at: "2020-01-01T00:00:00Z",
+              expires_at: "2020-01-02T02:59:59.999Z",
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    await userEvent.click(await screen.findByRole("radio", { name: /braspress/i }));
+    await userEvent.click(screen.getByRole("button", { name: /próximo: pagamento/i }));
+
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("A cotação de frete não vale mais. Escolha a entrega de novo."),
+    ).toBeInTheDocument();
+    expect(useCheckoutStore.getState().shippingQuote.selectedOption).toBeNull();
+  });
+
+  it("explains why the customer came back when the backend refused a stale quote", async () => {
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-after-stale",
+              customer_price_cents: 3410,
+              expires_at: null,
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    useCheckoutStore.setState({ requiresShippingReselection: true });
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    expect(
+      await screen.findByText("A cotação de frete não vale mais. Escolha a entrega de novo."),
+    ).toBeInTheDocument();
+
+    await userEvent.click(await screen.findByRole("radio", { name: /braspress/i }));
+
+    expect(
+      screen.queryByText("A cotação de frete não vale mais. Escolha a entrega de novo."),
+    ).not.toBeInTheDocument();
+    expect(useCheckoutStore.getState().requiresShippingReselection).toBe(false);
   });
 
   it("crosses out every shipping price and labels it free when the automatic minimum is reached", async () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { useCheckoutStore } from "./use-checkout-store";
 
 describe("useCheckoutStore", () => {
-  it("migrates legacy selectedShippingQuote into the new shippingQuote shape", async () => {
+  it("migrates the legacy selectedShippingQuote key and drops a selection that predates the multicarrier contract", async () => {
     window.localStorage.setItem(
       "papelito-checkout-store",
       JSON.stringify({
@@ -40,13 +40,7 @@ describe("useCheckoutStore", () => {
 
     expect(useCheckoutStore.getState().shippingQuote).toEqual({
       quote: null,
-      selectedOption: {
-        code: "sedex",
-        name: "SEDEX",
-        service: "sedex",
-        price: 12.5,
-        deliveryTime: 2,
-      },
+      selectedOption: null,
     });
     expect(useCheckoutStore.getState().paymentForm).toEqual({
       holderName: "",
@@ -54,6 +48,63 @@ describe("useCheckoutStore", () => {
       cardTokenId: "tok_123",
       cardLast4: "1111",
     });
+  });
+
+  it("drops a persisted selection that cannot be revalidated against a fresh quote", async () => {
+    window.localStorage.setItem(
+      "papelito-checkout-store",
+      JSON.stringify({
+        state: {
+          shippingQuote: {
+            quote: null,
+            selectedOption: {
+              provider: "correios",
+              optionKey: "correios:03298",
+              serviceCode: "03298",
+              code: "03298",
+              service: "PAC",
+              name: "PAC Contrato",
+              price: 15.88,
+              deliveryTime: 5,
+            },
+          },
+        },
+        version: 5,
+      }),
+    );
+
+    await useCheckoutStore.persist.rehydrate();
+
+    expect(useCheckoutStore.getState().shippingQuote.selectedOption).toBeNull();
+  });
+
+  it("keeps a persisted selection that carries the whole multicarrier snapshot", async () => {
+    const selectedOption = {
+      provider: "braspress",
+      optionKey: "braspress:rodoviario",
+      serviceCode: "rodoviario",
+      code: "rodoviario",
+      service: "Rodoviário",
+      name: "Rodoviário",
+      price: 34.1,
+      deliveryTime: 3,
+      customerPriceCents: 3410,
+      fingerprint: "rodoviario-fingerprint",
+      quotedAt: "2026-09-18T12:00:00Z",
+      expiresAt: "2026-09-19T02:59:59.999Z",
+    };
+
+    window.localStorage.setItem(
+      "papelito-checkout-store",
+      JSON.stringify({
+        state: { shippingQuote: { quote: null, selectedOption } },
+        version: 5,
+      }),
+    );
+
+    await useCheckoutStore.persist.rehydrate();
+
+    expect(useCheckoutStore.getState().shippingQuote.selectedOption).toEqual(selectedOption);
   });
 
   it("resets checkout state to defaults", () => {
