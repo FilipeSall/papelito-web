@@ -89,7 +89,63 @@ function buildUser(overrides: Partial<AdminUserDetail> = {}): AdminUserDetail {
   };
 }
 
+function buildRelatedOrder(
+  overrides: Partial<AdminUserDetail["recentSales"][number]> = {},
+): AdminUserDetail["recentSales"][number] {
+  return {
+    canCancel: true,
+    cancelReason: "",
+    createdAt: "2026-08-05 06:31:00",
+    customerName: "Vitor Augusto Barbosa de Assis",
+    id: 11886,
+    isCancelled: false,
+    itemsCount: 1,
+    itemsLabel: "Seda Alfafa King Size",
+    orderNumber: "11886",
+    relationship: "sale",
+    relationshipLabel: "Venda",
+    status: "processing",
+    total: 12.76,
+    vendorStatus: "enviado",
+    ...overrides,
+  };
+}
+
 describe("detalhe administrativo da conta", () => {
+  it("não oferece cancelamento quando o backend não permite a transição", () => {
+    render(
+      <UserDetailPage
+        activeTab="sales"
+        origin={origin}
+        ownerApplications={ownerApplications}
+        user={buildUser({
+          isVendor: true,
+          role: "seller",
+          recentSales: [buildRelatedOrder({ canCancel: false, vendorStatus: "entregue" })],
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
+  });
+
+  it("oferece cancelamento de uma venda enviada, que o admin pode desfazer", () => {
+    render(
+      <UserDetailPage
+        activeTab="sales"
+        origin={origin}
+        ownerApplications={ownerApplications}
+        user={buildUser({
+          isVendor: true,
+          role: "seller",
+          recentSales: [buildRelatedOrder()],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /cancelar/i })).toBeInTheDocument();
+  });
+
   it("mostra telefone, CNPJ mascarado e endereço vindos do vínculo empresarial", () => {
     render(
       <UserDetailPage

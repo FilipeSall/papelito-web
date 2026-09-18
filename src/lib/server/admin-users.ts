@@ -82,6 +82,7 @@ export type AdminUsersSnapshot = {
 };
 
 export type AdminUserRelatedOrder = {
+  canCancel: boolean;
   cancelReason: string;
   createdAt: string;
   customerName: string;

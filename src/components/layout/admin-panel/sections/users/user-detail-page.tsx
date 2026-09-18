@@ -220,7 +220,7 @@ function ordersTableRows({
         <p className="font-semibold uppercase tracking-[0.12em]">Cancelado</p>
         {order.cancelReason ? <p>{order.cancelReason}</p> : null}
       </div>
-    ) : user.availableActions.canCancelOrders ? (
+    ) : user.availableActions.canCancelOrders && order.canCancel ? (
       <UserOrderActionButton
         key={`action-${order.id}`}
         orderId={order.id}
