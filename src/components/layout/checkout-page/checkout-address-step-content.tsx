@@ -24,7 +24,7 @@ import { CheckoutField } from "./checkout-field";
 import { CheckoutHeader } from "./checkout-header";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
 import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
-import { shippingProviderLabel } from "@/features/checkout/utils/shipping-provider-label";
+import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 import type { ZipRange } from "@/features/shipping/utils/zip-ranges";
 

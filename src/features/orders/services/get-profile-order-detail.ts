@@ -19,10 +19,13 @@ import type {
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
+import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
 
 type WpProfileShipment = {
   id?: number;
-  tracking_code?: string;
+  provider?: string;
+  external_reference?: string;
+  tracking_code?: string | null;
   status?: string;
   last_event_at?: string;
   last_event_description?: string;
@@ -54,6 +57,7 @@ type WpProfileOrder = {
     postcode?: string;
     state?: string;
   };
+  shipping_provider?: string;
   shipping_service?: string;
   shipping_total?: number;
   subtotal?: number;
@@ -385,8 +389,8 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
     { id: "payment", title: "Pagamento", description: "Pagamento confirmado." },
     { id: "awaiting", title: "Aguardando envio", description: "Pedido recebido pelo vendor." },
     { id: "picking", title: "Em separação", description: "Itens sendo preparados para envio." },
-    { id: "shipped", title: "Enviado", description: "Postagem confirmada pelos Correios." },
-    { id: "delivered", title: "Entregue", description: "Entrega confirmada pelos Correios." },
+    { id: "shipped", title: "Enviado", description: "Postagem confirmada pela transportadora." },
+    { id: "delivered", title: "Entregue", description: "Entrega confirmada pela transportadora." },
   ];
   const currentIndex = {
     awaiting_shipment: 1,
@@ -396,14 +400,14 @@ function buildTimeline(status: OrderStatus, order: WpProfileOrder): ProfileOrder
   }[status];
 
   const logisticsMessages: Record<string, { title: string; description: string }> = {
-    preposted: { title: "Etiqueta gerada", description: "Aguardando a postagem do objeto nos Correios." },
-    posted: { title: "Postado", description: "O objeto foi postado e recebido pelos Correios." },
-    in_transit: { title: "Em transito", description: "O objeto esta em deslocamento pela rede dos Correios." },
-    out_for_delivery: { title: "Saiu para entrega", description: "O objeto está em rota de entrega." },
-    pickup_available: { title: "Disponível para retirada", description: "Retire o objeto na unidade indicada pelos Correios." },
+    preposted: { title: "Etiqueta gerada", description: "Aguardando a postagem da encomenda." },
+    posted: { title: "Postado", description: "A encomenda foi postada e recebida pela transportadora." },
+    in_transit: { title: "Em transito", description: "A encomenda está em deslocamento até o endereço de entrega." },
+    out_for_delivery: { title: "Saiu para entrega", description: "A encomenda está em rota de entrega." },
+    pickup_available: { title: "Disponível para retirada", description: "Retire a encomenda na unidade indicada." },
     delivery_failed: { title: "Tentativa sem sucesso", description: "A entrega não foi concluida; acompanhe a próxima orientacao." },
-    returning: { title: "Em devolução", description: "O objeto esta retornando ao remetente." },
-    returned: { title: "Devolvido", description: "O objeto foi devolvido ao remetente." },
+    returning: { title: "Em devolução", description: "A encomenda está retornando ao remetente." },
+    returned: { title: "Devolvido", description: "A encomenda foi devolvida ao remetente." },
     lost: { title: "Ocorrência no envio", description: "O envio exige acompanhamento do vendor e da Papelito." },
   };
   const logistics = logisticsMessages[order.logistics?.status ?? ""];
@@ -469,9 +473,41 @@ function mapSummary(order: WpProfileOrder): Order {
   };
 }
 
+/**
+ * Identifica a transportadora da remessa, sem nunca chutar pelo que existe nela.
+ *
+ * Remessa gravada antes do contrato multicarrier não traz `provider`, e nesse
+ * caso só pode ser Correios — era a única transportadora que existia então.
+ */
+function shipmentProvider(shipment: WpProfileShipment | undefined, order: WpProfileOrder) {
+  const provider = shipment?.provider || order.shipping_provider;
+
+  return provider === "braspress" ? "braspress" : "correios";
+}
+
+/**
+ * Referência que o comprador usa para acompanhar a entrega.
+ *
+ * Correios rastreia por S10; Braspress não emite S10 nenhum e é acompanhada pelo
+ * número do pedido acordado com a transportadora. Exigir `tracking_code` deixava
+ * todo pedido Braspress sem bloco de rastreio na conta do comprador.
+ */
+function trackingReference(shipment: WpProfileShipment | undefined, order: WpProfileOrder) {
+  const candidates = [order.tracking_code, shipment?.tracking_code, shipment?.external_reference];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return null;
+}
+
 function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
   const status = resolveStatus(order);
-  const trackingCode = typeof order.tracking_code === "string" && order.tracking_code ? order.tracking_code : null;
+  const leadShipment = pickLeadShipment(order.logistics?.shipments);
+  const trackingCode = trackingReference(leadShipment, order);
 
   return {
     id: String(order.id ?? ""),
@@ -482,6 +518,8 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
     tracking: trackingCode
       ? {
           carrier: order.shipping_service || "Entrega",
+          carrierLabel: shippingProviderLabel(shipmentProvider(leadShipment, order)),
+          provider: shipmentProvider(leadShipment, order),
           code: trackingCode,
           estimatedDeliveryLabel:
             Number(order.delivery_time_days) > 0
@@ -491,7 +529,9 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
       : null,
     timeline: buildTimeline(status, order),
     shipments: (order.logistics?.shipments ?? []).map((shipment) => ({
-      code: shipment.tracking_code ?? "",
+      carrierLabel: shippingProviderLabel(shipmentProvider(shipment, order)),
+      provider: shipmentProvider(shipment, order),
+      code: trackingReference(shipment, order) ?? "",
       deliveredAt: shipment.delivered_at ?? "",
       id: Number(shipment.id) || 0,
       lastEventAt: shipment.last_event_at ?? "",

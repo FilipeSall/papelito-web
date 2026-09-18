@@ -1,3 +1,5 @@
+import type { ShippingProvider } from "@/features/checkout/types/checkout";
+
 import type { OrderStatus } from "@/components/layout/profile-page/order-status-badge";
 
 /**
@@ -28,11 +30,15 @@ export interface ProfileOrderTimelineEvent {
  */
 export interface ProfileOrderTrackingInfo {
   carrier: string;
+  carrierLabel: string;
+  provider: ShippingProvider;
   code: string;
   estimatedDeliveryLabel: string;
 }
 
 export interface ProfileOrderShipment {
+  carrierLabel: string;
+  provider: ShippingProvider;
   code: string;
   deliveredAt: string;
   id: number;

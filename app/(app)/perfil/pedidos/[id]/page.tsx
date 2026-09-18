@@ -110,7 +110,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               <div>
                 <ProfileSectionHeading>Código de rastreamento</ProfileSectionHeading>
                 <p className="mt-1.5 text-sm font-semibold text-[#1a1a1a]/70">
-                  {order.tracking?.carrier ?? "Aguardando informação do vendor"}
+                  {order.tracking
+                    ? `${order.tracking.carrierLabel} · ${order.tracking.carrier}`
+                    : "Aguardando informação do vendor"}
                 </p>
               </div>
 
@@ -136,14 +138,21 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                     </span>
                   </p>
 
-                  <a
-                    className={`${profilePrimaryActionClass} w-fit`}
-                    href={`${CORREIOS_TRACKING_URL}${encodeURIComponent(order.tracking.code)}`}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Acompanhar nos Correios
-                  </a>
+                  {order.tracking.provider === "correios" ? (
+                    <a
+                      className={`${profilePrimaryActionClass} w-fit`}
+                      href={`${CORREIOS_TRACKING_URL}${encodeURIComponent(order.tracking.code)}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Acompanhar nos Correios
+                    </a>
+                  ) : (
+                    <p className="text-xs font-semibold text-[#1a1a1a]/70">
+                      {order.tracking.carrierLabel} não publica consulta aberta por este número.
+                      Acompanhe pelo histórico de entrega abaixo.
+                    </p>
+                  )}
                 </>
               ) : null}
 
@@ -152,7 +161,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   {order.shipments.map((shipment, index) => (
                     <div className="border-2 border-[#1a1a1a]/20 px-4 py-3" key={shipment.id}>
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/60">
-                        Pacote {index + 1}
+                        Pacote {index + 1} · {shipment.carrierLabel}
                       </p>
                       <div className="mt-1.5 flex items-center justify-between gap-3">
                         <code className="font-mono text-xs font-bold tracking-[0.1em] text-[#1a1a1a]">
@@ -160,14 +169,16 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         </code>
                         <OrderTrackingCopyButton value={shipment.code} />
                       </div>
-                      <a
-                        className="mt-2 inline-flex text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
-                        href={`${CORREIOS_TRACKING_URL}${encodeURIComponent(shipment.code)}`}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        Acompanhar pacote nos Correios
-                      </a>
+                      {shipment.provider === "correios" ? (
+                        <a
+                          className="mt-2 inline-flex text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a]"
+                          href={`${CORREIOS_TRACKING_URL}${encodeURIComponent(shipment.code)}`}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Acompanhar pacote nos Correios
+                        </a>
+                      ) : null}
                       {shipment.lastEventDescription ? (
                         <p className="mt-2 text-xs font-semibold text-[#1a1a1a]/70">
                           {shipment.lastEventDescription}

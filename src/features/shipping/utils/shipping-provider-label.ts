@@ -1,4 +1,4 @@
-import type { ShippingProvider } from "../types/checkout";
+import type { ShippingProvider } from "@/features/checkout/types/checkout";
 
 const PROVIDER_LABEL: Record<ShippingProvider, string> = {
   correios: "Correios",

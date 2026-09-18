@@ -160,3 +160,133 @@ describe("getProfileOrderDetail", () => {
     });
   });
 });
+
+describe("rastreio multicarrier no detalhe do comprador", () => {
+  beforeEach(() => {
+    getServerSessionMock.mockReset();
+    wpRestMock.mockReset();
+    getServerSessionMock.mockResolvedValue({ accessToken: "token" });
+  });
+
+  function buildOrder(overrides: Record<string, unknown> = {}) {
+    return {
+      created_at: "2026-09-18 12:00:00",
+      delivery_time_days: 3,
+      id: 11886,
+      items_count: 1,
+      order_number: "11886",
+      total: 12.76,
+      vendor_name: "Cifal Distribuidora",
+      vendor_status: "enviado",
+      ...overrides,
+    };
+  }
+
+  it("mostra o rastreio de um pedido Braspress, que não tem código S10", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        shipping_provider: "braspress",
+        shipping_service: "Rodoviário",
+        logistics: {
+          status: "in_transit",
+          shipments: [
+            {
+              id: 7,
+              provider: "braspress",
+              external_reference: "PED-2026-0001",
+              tracking_code: null,
+              status: "in_transit",
+              last_event_at: "2026-09-20 11:15:00",
+              last_event_description: "Mercadoria coletada",
+              last_event_location: "SAO PAULO - SP",
+            },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking).not.toBeNull();
+    expect(detail?.tracking?.carrierLabel).toBe("Braspress");
+    expect(detail?.tracking?.code).toBe("PED-2026-0001");
+    expect(detail?.tracking?.provider).toBe("braspress");
+    expect(detail?.shipments[0]?.carrierLabel).toBe("Braspress");
+    expect(detail?.shipments[0]?.provider).toBe("braspress");
+  });
+
+  it("não inventa rastreio quando a remessa ainda não tem referência alguma", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        vendor_status: "em_separacao",
+        shipping_provider: "braspress",
+        logistics: {
+          status: "tracking_pending",
+          shipments: [
+            {
+              id: 8,
+              provider: "braspress",
+              external_reference: "",
+              tracking_code: null,
+              status: "tracking_pending",
+            },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking).toBeNull();
+  });
+
+  it("mantém o pedido Correios legado legível, com o código S10", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        tracking_code: "AA123456789BR",
+        shipping_service: "PAC",
+        logistics: {
+          status: "posted",
+          shipments: [
+            {
+              id: 9,
+              provider: "correios",
+              tracking_code: "AA123456789BR",
+              status: "posted",
+            },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking?.code).toBe("AA123456789BR");
+    expect(detail?.tracking?.carrierLabel).toBe("Correios");
+    expect(detail?.tracking?.provider).toBe("correios");
+    expect(detail?.shipments[0]?.carrierLabel).toBe("Correios");
+  });
+
+  it("não promete Correios na linha do tempo de um pedido de outra transportadora", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        shipping_provider: "braspress",
+        logistics: {
+          status: "in_transit",
+          shipments: [
+            { id: 7, provider: "braspress", external_reference: "PED-2026-0001", status: "in_transit" },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+    const texts = detail!.timeline.map((event) => `${event.title} ${event.description}`).join(" | ");
+
+    expect(texts).not.toMatch(/Correios/i);
+  });
+});

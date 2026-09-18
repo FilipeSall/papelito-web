@@ -14,7 +14,7 @@ import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import { CHECKOUT_STEP_ROUTES } from "@/features/checkout/utils/checkout-step-access";
 import { resolveCheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 import { resolveSelectedShipping } from "@/features/checkout/utils/resolve-selected-shipping";
-import { shippingProviderLabel } from "@/features/checkout/utils/shipping-provider-label";
+import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
 import { readGaIdentifiers } from "@/lib/analytics/ga-cookies";
 import { formatBRL } from "@/lib/format-currency";
 import { useAuthSession } from "@/hooks/use-auth-session";
