@@ -11,6 +11,7 @@ import { contactConfigHandlers } from "./handlers/contact-config";
 import { integrationSecretsHandlers } from "./handlers/integration-secrets";
 import { couponsHandlers } from "./handlers/coupons";
 import { notificationsHandlers } from "./handlers/notifications";
+import { packagingProfilesHandlers } from "./handlers/packaging-profiles";
 import { profileOrdersHandlers } from "./handlers/profile-orders";
 
 export const server = setupServer(
@@ -25,5 +26,6 @@ export const server = setupServer(
   ...integrationSecretsHandlers,
   ...couponsHandlers,
   ...notificationsHandlers,
+  ...packagingProfilesHandlers,
   ...profileOrdersHandlers,
 );

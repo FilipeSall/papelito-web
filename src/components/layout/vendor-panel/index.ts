@@ -15,6 +15,12 @@ export {
   vendorOrderStatusShape,
 } from "./order-status";
 export { VendorCoverageManager } from "./vendor-coverage-manager";
+export { VendorPackagingManager } from "./vendor-packaging-manager";
+export { PackagingSetupSteps } from "./packaging-setup-steps";
+export { PackagingShelf, packagingProfileShape } from "./packaging-shelf";
+export { PackagingModelGrid } from "./packaging-model-grid";
+export { PackagingEditor } from "./packaging-editor";
+export { PackagingReadinessBar } from "./packaging-readiness-bar";
 export { VendorOnboardingRequiredNotice } from "./vendor-onboarding-required-notice";
 export { VendorSuspendedNotice } from "./vendor-suspended-notice";
 export { VendorPageHeader } from "./vendor-page-header";

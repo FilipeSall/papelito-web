@@ -5,6 +5,7 @@ import {
   LifeBuoy,
   MapPinned,
   MessageSquare,
+  Package,
   Settings,
   ShoppingBag,
   type LucideIcon,
@@ -24,6 +25,7 @@ export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: "/vendor/estoque", icon: Boxes, label: "Estoque", description: "Produtos e saldo" },
   { href: "/vendor/pedidos", icon: ShoppingBag, label: "Pedidos", description: "Separacao e envio" },
   { href: "/vendor/chamados", icon: MessageSquare, label: "Chamados", description: "Atendimento" },
+  { href: "/vendor/cubagem", icon: Package, label: "Cubagem", description: "Caixas e medidas" },
   { href: "/vendor/solicitacoes", icon: LifeBuoy, label: "Solicitações", description: "Direto com a Papelito" },
   {
     href: "/vendor/configuracoes",

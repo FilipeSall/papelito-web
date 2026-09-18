@@ -29,4 +29,8 @@ describe("vendor-config — item ativo do menu", () => {
     expect(getVendorPageTitle("/vendor/estoque")).toBe("Estoque");
     expect(getVendorPageTitle("/vendor/desconhecida")).toBe("Dashboard");
   });
+
+  it("inclui a página de cubagem", () => {
+    expect(navItem("/vendor/cubagem").label).toBe("Cubagem");
+  });
 });
