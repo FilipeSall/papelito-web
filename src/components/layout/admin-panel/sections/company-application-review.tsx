@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ConfirmModal } from "@/components/ui";
 import { isDateOnly } from "@/features/vendor-orders/utils/order-dates";
 import type {
-  AdminOwnerApplicationDetail,
+  AdminCompanyApplicationDetail,
   AdminOwnerApplications,
 } from "@/lib/server/admin-users";
 import { formatCnpj } from "@/lib/validation/brazilian-documents";
@@ -155,7 +155,7 @@ function DocumentViewer({ mime, url }: Readonly<{ mime: string | null; url: stri
   );
 }
 
-function ApplicationHistory({ items }: Readonly<{ items: AdminOwnerApplicationDetail[] }>) {
+function ApplicationHistory({ items }: Readonly<{ items: AdminCompanyApplicationDetail[] }>) {
   return (
     <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
       <h2 className="text-xs font-black uppercase tracking-[0.2em]">Histórico de candidaturas</h2>
@@ -225,7 +225,7 @@ export function CompanyApplicationReview({
       },
     );
     const body = (await response.json().catch(() => null)) as
-      | AdminOwnerApplicationDetail
+      | AdminCompanyApplicationDetail
       | { message?: string }
       | null;
     if (!response.ok || !body || !("application" in body)) {

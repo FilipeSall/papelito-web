@@ -270,6 +270,60 @@ describe("rastreio multicarrier no detalhe do comprador", () => {
     expect(detail?.shipments[0]?.carrierLabel).toBe("Correios");
   });
 
+  it("preserva o código próprio de cada pacote em pedidos com múltiplas remessas", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        tracking_code: "AA111111111BR",
+        shipping_provider: "correios",
+        shipping_service: "PAC",
+        logistics: {
+          status: "posted",
+          shipments: [
+            {
+              id: 10,
+              provider: "correios",
+              tracking_code: "AA111111111BR",
+              status: "posted",
+            },
+            {
+              id: 11,
+              provider: "correios",
+              tracking_code: "BB222222222BR",
+              status: "posted",
+            },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.shipments.map(({ code }) => code)).toEqual([
+      "AA111111111BR",
+      "BB222222222BR",
+    ]);
+  });
+
+  it("usa o código agregado como fallback quando a remessa legada não traz referência", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        tracking_code: "CC333333333BR",
+        shipping_service: "PAC",
+        logistics: {
+          status: "posted",
+          shipments: [{ id: 12, status: "posted" }],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking?.code).toBe("CC333333333BR");
+    expect(detail?.shipments[0]?.code).toBe("CC333333333BR");
+  });
+
   it("não promete Correios na linha do tempo de um pedido de outra transportadora", async () => {
     wpRestMock.mockResolvedValue({
       ok: true,

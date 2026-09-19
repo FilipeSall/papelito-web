@@ -246,11 +246,9 @@ export type AdminCompanyApplicationDetail = {
   evidence: Record<string, unknown>;
 };
 
-export type AdminOwnerApplicationDetail = AdminCompanyApplicationDetail;
-
 export type AdminOwnerApplications = {
-  current: AdminOwnerApplicationDetail | null;
-  history: AdminOwnerApplicationDetail[];
+  current: AdminCompanyApplicationDetail | null;
+  history: AdminCompanyApplicationDetail[];
 };
 
 type RawUsersSnapshot = {
@@ -268,6 +266,14 @@ function toNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value.toString();
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "bigint") return value.toString();
+  return "";
+}
+
 function mapRow(raw: unknown): AdminUserRow | null {
   if (!raw || typeof raw !== "object") {
     return null;
@@ -277,36 +283,36 @@ function mapRow(raw: unknown): AdminUserRow | null {
   const recordType =
     row.recordType === "pre_account_application" ? "pre_account_application" : "user";
   const rawId = row.id;
-  const id =
-    recordType === "pre_account_application"
-      ? typeof rawId === "string" && /^pre:\d+$/.test(rawId)
-        ? rawId
-        : null
-      : toNumber(rawId);
+  let id: number | string | null;
+  if (recordType === "pre_account_application") {
+    id = typeof rawId === "string" && /^pre:\d+$/.test(rawId) ? rawId : null;
+  } else {
+    id = toNumber(rawId);
+  }
 
   if (id === null || (typeof id === "number" && id <= 0)) return null;
 
   return {
-    accountStatus: String(row.accountStatus ?? ""),
-    accountStatusLabel: String(row.accountStatusLabel ?? ""),
-    city: String(row.city ?? ""),
-    cnpj: String(row.cnpj ?? ""),
+    accountStatus: toText(row.accountStatus),
+    accountStatusLabel: toText(row.accountStatusLabel),
+    city: toText(row.city),
+    cnpj: toText(row.cnpj),
     company: mapCompanyRelation(row.company),
-    email: String(row.email ?? ""),
+    email: toText(row.email),
     favoritesCount: toNumber(row.favoritesCount),
     hasCoverage: Boolean(row.hasCoverage),
     id,
     isVendor: Boolean(row.isVendor),
-    name: String(row.name ?? ""),
+    name: toText(row.name),
     ordersCount: toNumber(row.ordersCount),
     purchasesCount: toNumber(row.purchasesCount),
     recordType,
-    registeredAt: String(row.registeredAt ?? ""),
-    role: String(row.role ?? ""),
-    roleLabel: String(row.roleLabel ?? ""),
+    registeredAt: toText(row.registeredAt),
+    role: toText(row.role),
+    roleLabel: toText(row.roleLabel),
     salesCount: toNumber(row.salesCount),
-    state: String(row.state ?? ""),
-    storeName: String(row.storeName ?? ""),
+    state: toText(row.state),
+    storeName: toText(row.storeName),
     supportTicketsCount: toNumber(row.supportTicketsCount),
   };
 }
@@ -324,12 +330,12 @@ function mapCompanyRelation(raw: unknown): AdminUserCompanyRelation | null {
   }
 
   return {
-    companyCnpj: String(relation.companyCnpj ?? ""),
+    companyCnpj: toText(relation.companyCnpj),
     companyId,
-    companyName: String(relation.companyName ?? ""),
-    companyStatus: String(relation.companyStatus ?? ""),
-    membershipRole: String(relation.membershipRole ?? ""),
-    membershipStatus: String(relation.membershipStatus ?? ""),
+    companyName: toText(relation.companyName),
+    companyStatus: toText(relation.companyStatus),
+    membershipRole: toText(relation.membershipRole),
+    membershipStatus: toText(relation.membershipStatus),
   };
 }
 
@@ -410,7 +416,7 @@ export async function getAdminUsersSnapshot(
   return {
     currentPage: toNumber(result.data.currentPage, filters.page),
     issues: Array.isArray(result.data.issues)
-      ? result.data.issues.map((issue) => String(issue)).filter(Boolean)
+      ? result.data.issues.map(toText).filter(Boolean)
       : [],
     perPage: toNumber(result.data.perPage, filters.perPage),
     rows: Array.isArray(result.data.rows) ? result.data.rows.map(mapRow).filter(Boolean) as AdminUserRow[] : [],
@@ -461,11 +467,11 @@ export async function getAdminOwnerApplications(
 export async function getAdminPreAccountApplication(
   accessToken: string | undefined,
   externalApplicationId: string | undefined,
-): Promise<AdminOwnerApplicationDetail | null> {
+): Promise<AdminCompanyApplicationDetail | null> {
   const applicationId = parsePreAccountApplicationId(externalApplicationId);
   if (!accessToken || applicationId <= 0) return null;
 
-  const result = await wpRest<AdminOwnerApplicationDetail>(
+  const result = await wpRest<AdminCompanyApplicationDetail>(
     `/papelito/v1/admin/pre-account-applications/${applicationId}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );

@@ -493,7 +493,7 @@ function shipmentProvider(shipment: WpProfileShipment | undefined, order: WpProf
  * todo pedido Braspress sem bloco de rastreio na conta do comprador.
  */
 function trackingReference(shipment: WpProfileShipment | undefined, order: WpProfileOrder) {
-  const candidates = [order.tracking_code, shipment?.tracking_code, shipment?.external_reference];
+  const candidates = [shipment?.tracking_code, shipment?.external_reference, order.tracking_code];
 
   for (const candidate of candidates) {
     if (typeof candidate === "string" && candidate.trim()) {

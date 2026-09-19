@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { CompanyApplicationReview } from "@/components/layout/admin-panel/sections/company-application-review";
-import type { AdminOwnerApplicationDetail } from "@/lib/server/admin-users";
+import type { AdminCompanyApplicationDetail } from "@/lib/server/admin-users";
 import { authOptions } from "@/lib/auth";
 import { wpRest } from "@/lib/server/wp-rest";
 
@@ -21,7 +21,7 @@ export default async function AdminPreAccountApplicationPage({
   }
 
   const session = await getServerSession(authOptions);
-  const result = await wpRest<AdminOwnerApplicationDetail>(
+  const result = await wpRest<AdminCompanyApplicationDetail>(
     `/papelito/v1/admin/pre-account-applications/${id}`,
     { headers: { Authorization: `Bearer ${session?.accessToken ?? ""}` } },
   );
