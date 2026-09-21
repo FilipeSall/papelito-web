@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import CadastroAnalisePage from "./page";
@@ -41,6 +42,11 @@ describe("CadastroAnalisePage", () => {
   });
 
   it.each([
+    [
+      "pending_email_verification",
+      "Confirme seu e-mail",
+      "Reenviar link de confirmação",
+    ],
     ["document_required", "Envie seu documento com foto", "Enviar para análise"],
     [
       "pending_manual_review",
@@ -62,5 +68,54 @@ describe("CadastroAnalisePage", () => {
     expect(await screen.findByRole("heading", { name: title })).toBeInTheDocument();
     expect(screen.getByLabelText("Etapa 3 de 3")).toBeInTheDocument();
     expect(screen.getByText(action)).toBeInTheDocument();
+  });
+
+  it("não oferece o envio de documento enquanto o e-mail não foi confirmado", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            status: "pending_email_verification",
+            canUpload: false,
+            emailVerified: false,
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    render(<CadastroAnalisePage />);
+
+    expect(await screen.findByRole("heading", { name: "Confirme seu e-mail" })).toBeInTheDocument();
+    expect(screen.queryByText("Enviar para análise")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Documento com foto")).not.toBeInTheDocument();
+  });
+
+  it("reenvia o link de confirmação sem dizer se a candidatura existe", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ status: "pending_email_verification", canUpload: false }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<CadastroAnalisePage />);
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Reenviar link de confirmação" }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/company-applications/resend-verification",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent(/se ainda faltar confirmar/i);
   });
 });

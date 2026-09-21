@@ -56,6 +56,58 @@ describe("ConfirmarEmailPage", () => {
     });
   });
 
+  it("confirma candidatura pré-conta pela rota própria e volta para a etapa 3", async () => {
+    searchParams.value = "";
+    window.history.replaceState(
+      null,
+      "",
+      "/confirmar-email#scope=candidatura&email=ana%40empresa.test&token=token-da-candidatura",
+    );
+    const fetchMock = stubFetch({ ok: true, body: { application: { status: "document_required" } } });
+    render(<ConfirmarEmailPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /confirmar e-mail/i }));
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/company-applications/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: '{"email":"ana@empresa.test","token":"token-da-candidatura"}',
+    });
+    expect(await screen.findByRole("link", { name: /continuar cadastro/i })).toHaveAttribute(
+      "href",
+      "/cadastro/analise",
+    );
+    expect(screen.queryByRole("link", { name: /ir para entrar/i })).not.toBeInTheDocument();
+  });
+
+  it("reenvia o link da candidatura pela rota da candidatura, não pela da conta", async () => {
+    searchParams.value = "";
+    window.history.replaceState(
+      null,
+      "",
+      "/confirmar-email#scope=candidatura&email=ana%40empresa.test&token=token-vencido",
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 410,
+        json: () => Promise.resolve({ message: "Link expirado." }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ConfirmarEmailPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /confirmar e-mail/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /reenviar e-mail/i }));
+
+    await screen.findByText(/enviamos um novo link para esse e-mail/i);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/company-applications/resend-verification",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
   it("não confirma o e-mail só por abrir o link", async () => {
     const fetchMock = stubFetch({ ok: true, body: { ok: true } });
 

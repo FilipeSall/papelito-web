@@ -1,10 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { setApplicationCookie } from "@/lib/server/company-application-cookie";
 import { GOOGLE_REGISTRATION_EMAIL_COOKIE } from "@/lib/server/google-registration-ticket";
 import { wpRest } from "@/lib/server/wp-rest";
-
-const APPLICATION_COOKIE = "__Host-papelito_application";
 
 type ApplicationResponse = {
   application: {
@@ -34,16 +33,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ application: result.data.application }, { status: result.status });
-  // O prefixo __Host- exige o atributo Secure sempre: sem ele o navegador descarta o cookie
-  // silenciosamente, inclusive em localhost, e a retomada da candidatura nunca encontra token.
-  // Chrome e Firefox aceitam cookies Secure em http://localhost, então isso não quebra o dev.
-  response.cookies.set(APPLICATION_COOKIE, result.data.resume_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  setApplicationCookie(response, result.data.resume_token);
   response.cookies.set(GOOGLE_REGISTRATION_EMAIL_COOKIE, "", { path: "/", maxAge: 0 });
   response.headers.set("Cache-Control", "no-store");
   return response;

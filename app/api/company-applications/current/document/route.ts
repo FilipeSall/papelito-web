@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { APPLICATION_COOKIE } from "@/lib/server/company-application-cookie";
 import { wpRest } from "@/lib/server/wp-rest";
 
-const APPLICATION_COOKIE = "__Host-papelito_application";
 
 export async function POST(request: Request) {
   const token = (await cookies()).get(APPLICATION_COOKIE)?.value;

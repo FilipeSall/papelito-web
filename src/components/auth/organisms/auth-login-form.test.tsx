@@ -53,6 +53,78 @@ describe("AuthLoginForm", () => {
     expect(routerRefreshMock).not.toHaveBeenCalled();
   });
 
+  it("leva para a etapa 3 quem ainda tem candidatura aberta e acertou a senha", async () => {
+    const user = userEvent.setup();
+    const assignMock = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...window.location, assign: assignMock },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);
+    signInMock.mockResolvedValue({ error: "CredentialsSignin" });
+
+    render(<AuthLoginForm />);
+
+    await user.type(screen.getByLabelText("E-mail"), "candidata@empresa.test");
+    await user.type(screen.getByLabelText("Senha"), "senha-da-candidatura");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    await waitFor(() => {
+      expect(assignMock).toHaveBeenCalledWith("/cadastro/analise");
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/company-applications/resume",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          email: "candidata@empresa.test",
+          password: "senha-da-candidatura",
+        }),
+      }),
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("mantém a mensagem genérica quando não há candidatura para retomar", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);
+    signInMock.mockResolvedValue({ error: "CredentialsSignin" });
+
+    render(<AuthLoginForm />);
+
+    await user.type(screen.getByLabelText("E-mail"), "ninguem@empresa.test");
+    await user.type(screen.getByLabelText("Senha"), "senha-qualquer");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    expect(await screen.findByText(/e-mail ou senha inválidos/i)).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("não tenta retomar candidatura quando o erro já tem tratamento próprio", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);
+    signInMock.mockResolvedValue({ error: "papelito_email_not_verified" });
+
+    render(<AuthLoginForm />);
+
+    await user.type(screen.getByLabelText("E-mail"), "pendente@empresa.test");
+    await user.type(screen.getByLabelText("Senha"), "senha-correta");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+    expect(await screen.findByText("Confirme seu e-mail antes de entrar.")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it("normalizes the email and explains how a Google-created account can recover access", async () => {
     const user = userEvent.setup();
     clearPreviousSessionBeforeSignInMock.mockResolvedValue(undefined);

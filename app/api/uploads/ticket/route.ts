@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { APPLICATION_COOKIE } from "@/lib/server/company-application-cookie";
 import { getAdminApiSession } from "@/lib/server/admin-api-auth";
 import { getUserApiSession } from "@/lib/server/company-api";
 import { wpRest } from "@/lib/server/wp-rest";
 
 import { requireVendorAccessToken } from "../../vendor/_lib/require-vendor-session";
 
-const APPLICATION_COOKIE = "__Host-papelito_application";
 
 const UPLOAD_PURPOSES = [
   "catalog",

@@ -20,6 +20,15 @@ export const DEFAULT_POST_ONBOARDING_PATH = "/";
  */
 export const POST_AUTH_PATH = "/pos-login";
 
+/**
+ * Etapa 3 do cadastro empresarial, onde a candidatura pré-conta acompanha o próprio estado.
+ *
+ * É o destino de quem confirma o e-mail e de quem tenta entrar pelo login antes de a conta
+ * existir — ela só nasce na aprovação administrativa. Fica fora do `matcher` do proxy de
+ * propósito: o fluxo pré-conta é anônimo e não tem sessão para o gate avaliar.
+ */
+export const COMPANY_APPLICATION_PATH = "/cadastro/analise";
+
 export function buildPostAuthUrl(callbackUrl?: string | null): string {
   const safe = resolveSafeCallbackUrl(callbackUrl, "");
 

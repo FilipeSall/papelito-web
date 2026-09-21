@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DocumentUploadForm } from "./document-upload-form";
+import { EmailVerificationPending } from "./email-verification-pending";
 import type { Application, ApplicationView } from "./application-view";
 
 const CALL_TO_ACTION_CLASS =
@@ -45,6 +46,9 @@ export function ApplicationStatusContent({
           </button>
         </>
       );
+
+    case "pending_email_verification":
+      return <EmailVerificationPending />;
 
     case "document_required":
       return <DocumentUploadForm onDocumentSent={onDocumentSent} />;

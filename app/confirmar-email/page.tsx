@@ -6,8 +6,27 @@ import { Suspense, useState, useSyncExternalStore } from "react";
 
 import { AuthWelcomePanel } from "@/components/auth";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
+import { COMPANY_APPLICATION_PATH } from "@/features/company/onboarding";
 
 type VerificationViewState = "idle" | "verifying" | "verified" | "retryable" | "error";
+
+/**
+ * De onde veio o link: uma conta já existente ou uma candidatura empresarial pré-conta.
+ *
+ * A candidatura ainda não tem `wp_user`, então confirma por outra rota e volta para a etapa 3
+ * do cadastro em vez da tela de login. O escopo vem no fragmento do link, junto do token.
+ */
+type VerificationScope = "conta" | "candidatura";
+
+const APPLICATION_SCOPE_PARAM = "candidatura";
+
+const VERIFICATION_ENDPOINTS: Record<VerificationScope, { verify: string; resend: string }> = {
+  conta: { verify: "/api/auth/verify-email", resend: "/api/auth/resend-verification" },
+  candidatura: {
+    verify: "/api/company-applications/verify-email",
+    resend: "/api/company-applications/resend-verification",
+  },
+};
 
 type ApiErrorResponse = {
   code?: string;
@@ -50,6 +69,35 @@ function readLinkParam(
   return (hashParams.get(name) ?? searchParams.get(name) ?? "").trim();
 }
 
+/**
+ * Para onde levar depois da confirmação.
+ *
+ * A candidatura volta para a etapa 3 do cadastro, e não para o login: a conta dela só passa a
+ * existir quando o administrador aprovar.
+ */
+function resolveVerifiedHref(scope: VerificationScope, callbackUrl: string) {
+  if (scope === "candidatura") {
+    return COMPANY_APPLICATION_PATH;
+  }
+
+  if (callbackUrl === "/convite") {
+    return `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  }
+
+  return callbackUrl;
+}
+
+/**
+ * Rótulo do botão que aparece depois da confirmação, no mesmo vocabulário do destino.
+ */
+function resolveVerifiedLabel(scope: VerificationScope, callbackUrl: string) {
+  if (scope === "candidatura") {
+    return "Continuar cadastro";
+  }
+
+  return callbackUrl === "/convite" ? "Entrar para concluir convite" : "Ir Para Entrar";
+}
+
 function getTitle(viewState: VerificationViewState) {
   if (viewState === "verified") {
     return "E-mail Confirmado";
@@ -62,9 +110,19 @@ function getTitle(viewState: VerificationViewState) {
   return "Confirme Seu E-mail";
 }
 
-function getDescription(viewState: VerificationViewState, email: string, canVerify: boolean) {
+function getDescription(
+  viewState: VerificationViewState,
+  email: string,
+  canVerify: boolean,
+  scope: VerificationScope,
+) {
+  const purpose =
+    scope === "candidatura" ? "que sua candidatura siga para análise" : "liberar o login com senha";
+
   if (viewState === "verified") {
-    return "Sua conta foi liberada. Agora você já pode entrar normalmente com seu e-mail e senha.";
+    return scope === "candidatura"
+      ? "Seu e-mail está confirmado. Continue o cadastro para acompanhar a candidatura."
+      : "Sua conta foi liberada. Agora você já pode entrar normalmente com seu e-mail e senha.";
   }
 
   if (viewState === "verifying") {
@@ -72,11 +130,11 @@ function getDescription(viewState: VerificationViewState, email: string, canVeri
   }
 
   if ((viewState === "idle" || viewState === "retryable") && canVerify) {
-    return `Confirme que ${email} é o seu e-mail para liberar o login com senha.`;
+    return `Confirme que ${email} é o seu e-mail para ${purpose}.`;
   }
 
   if (email) {
-    return `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para liberar o login com senha.`;
+    return `Enviamos um link de confirmação para ${email}. Abra a mensagem e clique no link para ${purpose}.`;
   }
 
   return "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
@@ -86,11 +144,15 @@ function getDescription(viewState: VerificationViewState, email: string, canVeri
  * Envia o token ao WordPress e traduz a resposta. Falha de rede ou 5xx permite tentar de novo
  * com o mesmo link; recusa 4xx pede um link novo, porque o token é inválido ou expirou.
  */
-async function requestEmailVerification(email: string, token: string): Promise<VerificationOutcome> {
+async function requestEmailVerification(
+  email: string,
+  token: string,
+  scope: VerificationScope,
+): Promise<VerificationOutcome> {
   let response: Response;
 
   try {
-    response = await fetch("/api/auth/verify-email", {
+    response = await fetch(VERIFICATION_ENDPOINTS[scope].verify, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, token }),
@@ -107,7 +169,10 @@ async function requestEmailVerification(email: string, token: string): Promise<V
     return {
       viewState: "verified",
       tone: "success",
-      message: "E-mail confirmado com sucesso. Sua conta já pode entrar com senha.",
+      message:
+        scope === "candidatura"
+          ? "E-mail confirmado com sucesso. Sua candidatura seguiu para a próxima etapa."
+          : "E-mail confirmado com sucesso. Sua conta já pode entrar com senha.",
     };
   }
 
@@ -132,9 +197,12 @@ async function requestEmailVerification(email: string, token: string): Promise<V
  * Pede um novo e-mail de confirmação. O sucesso é neutro de propósito: o WordPress não revela
  * se a conta ainda está pendente.
  */
-async function requestVerificationResend(email: string): Promise<Feedback> {
+async function requestVerificationResend(
+  email: string,
+  scope: VerificationScope,
+): Promise<Feedback> {
   try {
-    const response = await fetch("/api/auth/resend-verification", {
+    const response = await fetch(VERIFICATION_ENDPOINTS[scope].resend, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -150,7 +218,10 @@ async function requestVerificationResend(email: string): Promise<Feedback> {
 
     return {
       tone: "success",
-      message: "Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmação.",
+      message:
+        scope === "candidatura"
+          ? "Se ainda faltar confirmar, enviamos um novo link para esse e-mail."
+          : "Se a conta ainda estiver pendente, enviamos um novo e-mail de confirmação.",
     };
   } catch {
     return {
@@ -171,11 +242,12 @@ function ConfirmarEmailPageContent() {
   const email = readLinkParam("email", hashParams, searchParams);
   const token = readLinkParam("token", hashParams, searchParams);
   const canVerify = Boolean(email && token);
+  const scope: VerificationScope =
+    readLinkParam("scope", hashParams, searchParams) === APPLICATION_SCOPE_PARAM
+      ? "candidatura"
+      : "conta";
   const callbackUrl = searchParams.get("callbackUrl") === "/convite" ? "/convite" : "/entrar";
-  const verifiedHref =
-    callbackUrl === "/convite"
-      ? `/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      : callbackUrl;
+  const verifiedHref = resolveVerifiedHref(scope, callbackUrl);
   const [viewState, setViewState] = useState<VerificationViewState>("idle");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("success");
@@ -193,7 +265,7 @@ function ConfirmarEmailPageContent() {
     setViewState("verifying");
     setFeedbackMessage(null);
 
-    const outcome = await requestEmailVerification(email, token);
+    const outcome = await requestEmailVerification(email, token, scope);
 
     setViewState(outcome.viewState);
     setFeedbackTone(outcome.tone);
@@ -208,7 +280,7 @@ function ConfirmarEmailPageContent() {
     setIsResending(true);
     setFeedbackMessage(null);
 
-    const feedback = await requestVerificationResend(email);
+    const feedback = await requestVerificationResend(email, scope);
 
     setFeedbackTone(feedback.tone);
     setFeedbackMessage(feedback.message);
@@ -216,7 +288,7 @@ function ConfirmarEmailPageContent() {
   }
 
   const title = getTitle(viewState);
-  const description = getDescription(viewState, email, canVerify);
+  const description = getDescription(viewState, email, canVerify, scope);
   const showConfirmAction = canVerify && (viewState === "idle" || viewState === "retryable");
   const showResendActions = viewState === "error" || (viewState === "idle" && !canVerify);
 
@@ -254,7 +326,7 @@ function ConfirmarEmailPageContent() {
                 href={verifiedHref}
                 className="flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90"
               >
-                {callbackUrl === "/convite" ? "Entrar para concluir convite" : "Ir Para Entrar"}
+                {resolveVerifiedLabel(scope, callbackUrl)}
               </Link>
             </div>
           ) : null}

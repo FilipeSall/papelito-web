@@ -7,7 +7,7 @@ import { Suspense, startTransition, useState } from "react";
 
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { clearPreviousSessionBeforeSignIn } from "@/features/auth/client/logout";
-import { buildPostAuthUrl } from "@/features/company/onboarding";
+import { buildPostAuthUrl, COMPANY_APPLICATION_PATH } from "@/features/company/onboarding";
 
 import { ArrowRightIcon } from "../atoms/auth-icons";
 import { AuthSocialButton } from "../atoms/auth-social-button";
@@ -16,6 +16,38 @@ import { AuthLoginHeader } from "../molecules/auth-login-header";
 import { AuthPasswordField } from "../molecules/auth-password-field";
 import { AuthSocialDivider } from "../molecules/auth-social-divider";
 import { AuthTextField } from "../molecules/auth-text-field";
+
+/**
+ * Erros de login que já têm tratamento próprio e nunca são candidatura em andamento.
+ */
+const HANDLED_LOGIN_ERRORS = [
+  "papelito_email_not_verified",
+  "papelito_auth_rate_limited",
+  "papelito_auth_unavailable",
+  "papelito_auth_context_unavailable",
+];
+
+/**
+ * Tenta retomar uma candidatura empresarial com o mesmo e-mail e senha digitados no login.
+ *
+ * Quem se candidatou ainda não tem conta — ela só nasce na aprovação administrativa —, então o
+ * login legítimo dessa pessoa falha como credencial inválida. O WordPress só responde diferente
+ * para quem acerta a senha escolhida no cadastro, então tentar isto não revela a ninguém que
+ * existe candidatura para aquele e-mail.
+ */
+async function resumeCompanyApplication(email: string, password: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/company-applications/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 function AuthLoginFormContent() {
   const searchParams = useSearchParams();
@@ -73,6 +105,15 @@ function AuthLoginFormContent() {
       });
 
       if (!result || result.error) {
+        const loginError = result?.error ?? "";
+        if (
+          !HANDLED_LOGIN_ERRORS.includes(loginError) &&
+          (await resumeCompanyApplication(username, password))
+        ) {
+          window.location.assign(COMPANY_APPLICATION_PATH);
+          return;
+        }
+
         setIsSubmitting(false);
 
         if (result?.error === "papelito_email_not_verified") {

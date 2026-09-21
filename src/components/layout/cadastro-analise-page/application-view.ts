@@ -2,6 +2,7 @@ export type Application = { status: string; canUpload: boolean };
 export type ApplicationLoadState = "loading" | "loaded" | "missing" | "error";
 
 const KNOWN_STATUSES = [
+  "pending_email_verification",
   "document_required",
   "pending_manual_review",
   "approved",
@@ -49,6 +50,7 @@ export function applicationPageTitle(
 
   const titles: Record<string, string> = {
     approved: "Cadastro aprovado",
+    pending_email_verification: "Confirme seu e-mail",
     document_required: "Envie seu documento com foto",
     pending_manual_review: "Sua candidatura está em análise",
     rejected: "Candidatura encerrada",
