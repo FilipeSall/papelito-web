@@ -216,6 +216,52 @@ describe("rastreio multicarrier no detalhe do comprador", () => {
     expect(detail?.shipments[0]?.provider).toBe("braspress");
   });
 
+  it("prefere a previsão que a transportadora deu agora à promessa do checkout", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        shipping_provider: "braspress",
+        delivery_time_days: 5,
+        logistics: {
+          status: "in_transit",
+          shipments: [
+            {
+              id: 9,
+              provider: "braspress",
+              external_reference: "PED-2026/001",
+              status: "in_transit",
+              estimated_delivery_at: "2026-09-28 21:00:00",
+            },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking?.estimatedDeliveryLabel).toBe("Previsão da transportadora: 28/09/2026");
+  });
+
+  it("mantém o prazo do checkout enquanto a transportadora não disser nada", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: buildOrder({
+        shipping_provider: "braspress",
+        delivery_time_days: 5,
+        logistics: {
+          status: "in_transit",
+          shipments: [
+            { id: 9, provider: "braspress", external_reference: "PED-2026/001", status: "in_transit" },
+          ],
+        },
+      }),
+    });
+
+    const detail = await getProfileOrderDetail("11886");
+
+    expect(detail?.tracking?.estimatedDeliveryLabel).toBe("5 dias úteis");
+  });
+
   it("não inventa rastreio quando a remessa ainda não tem referência alguma", async () => {
     wpRestMock.mockResolvedValue({
       ok: true,

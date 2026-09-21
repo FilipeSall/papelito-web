@@ -32,6 +32,7 @@ type WpProfileShipment = {
   last_event_description?: string;
   last_event_location?: string;
   delivered_at?: string;
+  estimated_delivery_at?: string;
 };
 
 type WpProfileOrder = {
@@ -252,6 +253,13 @@ function formatDate(value: string | undefined) {
     ? value
     : new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(date);
 }
+
+const forecastFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+});
 
 function formatDateTime(value: string | undefined) {
   if (!value) return undefined;
@@ -505,6 +513,30 @@ function trackingReference(shipment: WpProfileShipment | undefined, order: WpPro
   return null;
 }
 
+/**
+ * Prazo que o comprador lê no bloco de rastreio.
+ *
+ * A previsão da transportadora ganha da promessa do checkout porque é a mais
+ * recente: o prazo cotado foi congelado na compra e não sabe de atraso. Sem
+ * previsão — que é o caso de toda remessa Correios e de toda Braspress antes do
+ * primeiro poll — a promessa do checkout segue valendo.
+ */
+function estimatedDeliveryLabel(
+  shipment: WpProfileShipment | undefined,
+  order: WpProfileOrder,
+): string {
+  const stored = shipment?.estimated_delivery_at ?? "";
+  const carrierForecast = stored ? new Date(`${stored.replace(" ", "T")}Z`) : null;
+
+  if (carrierForecast && !Number.isNaN(carrierForecast.getTime())) {
+    return `Previsão da transportadora: ${forecastFormatter.format(carrierForecast)}`;
+  }
+
+  return Number(order.delivery_time_days) > 0
+    ? formatBusinessDays(Number(order.delivery_time_days))
+    : "Prazo não informado";
+}
+
 function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
   const status = resolveStatus(order);
   const leadShipment = pickLeadShipment(order.logistics?.shipments);
@@ -522,10 +554,7 @@ function mapDetail(order: WpProfileOrder): ProfileOrderDetail {
           carrierLabel: shippingProviderLabel(shipmentProvider(leadShipment, order)),
           provider: shipmentProvider(leadShipment, order),
           code: trackingCode,
-          estimatedDeliveryLabel:
-            Number(order.delivery_time_days) > 0
-              ? formatBusinessDays(Number(order.delivery_time_days))
-              : "Prazo não informado",
+          estimatedDeliveryLabel: estimatedDeliveryLabel(leadShipment, order),
         }
       : null,
     timeline: buildTimeline(status, order),
