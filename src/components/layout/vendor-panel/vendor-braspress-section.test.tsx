@@ -63,7 +63,11 @@ function stubBraspress(
   write: () => Promise<unknown>,
   reauth: () => Promise<unknown> = TICKET_RESPONSE,
 ) {
-  const fetchMock = vi.fn((url: unknown) => (String(url) === REAUTH_URL ? reauth() : write()));
+  // O segundo parâmetro nunca é lido aqui, mas precisa existir para `mock.calls` tipar o `init`
+  // que as asserções de método e corpo inspecionam.
+  const fetchMock = vi.fn((url: unknown, _init?: RequestInit) =>
+    String(url) === REAUTH_URL ? reauth() : write(),
+  );
   vi.stubGlobal("fetch", fetchMock);
 
   return fetchMock;
