@@ -155,6 +155,120 @@ function DocumentViewer({ mime, url }: Readonly<{ mime: string | null; url: stri
   );
 }
 
+/**
+ * Estados possíveis do painel de documento privado de uma candidatura.
+ *
+ * `available` mostra o arquivo; os demais explicam por que não há arquivo na tela, e cada um
+ * tem causa diferente — nunca derive o estado só da ausência do arquivo.
+ */
+type DocumentPanelState = "available" | "auto_verified" | "awaiting_upload" | "not_submitted" | "purged";
+
+type ApplicationDetail = AdminCompanyApplicationDetail["application"];
+
+const APPROVED_APPLICATION_STATUSES = new Set(["auto_approved", "approved"]);
+
+const REJECTION_REASON_MIN_LENGTH = 10;
+
+const DOCUMENT_NOTICES: Record<Exclude<DocumentPanelState, "available">, { body: string; title: string }> = {
+  auto_verified: {
+    body: "Não foi necessário enviar um documento. Os dados informados foram validados automaticamente com os dados cadastrais e societários da empresa.",
+    title: "✓ Documento não necessário",
+  },
+  awaiting_upload: {
+    body: "O titular ainda não enviou o documento de comprovação desta candidatura.",
+    title: "Aguardando o documento",
+  },
+  not_submitted: {
+    body: "Nenhum documento foi enviado. Esta candidatura seguiu para análise pelos dados cadastrais e societários da empresa.",
+    title: "Sem documento na candidatura",
+  },
+  purged: {
+    body: "O documento não está disponível. Arquivos são eliminados após uma decisão terminal.",
+    title: "Documento indisponível",
+  },
+};
+
+/**
+ * Traduz a candidatura no estado real do painel de documento privado.
+ *
+ * `documentPurgeStatus` é a fonte de verdade sobre a existência do arquivo: o backend só sai de
+ * `not_applicable` quando um upload chega a acontecer. Sem ele, aprovação automática por QSA e
+ * arquivo eliminado após a decisão ficam indistinguíveis, porque nos dois casos não há arquivo.
+ */
+function resolveDocumentPanelState(application: ApplicationDetail): DocumentPanelState {
+  if (application.documentAvailable) return "available";
+  if (application.documentPurgeStatus !== "not_applicable") return "purged";
+  if (application.status === "document_required") return "awaiting_upload";
+
+  return APPROVED_APPLICATION_STATUSES.has(application.status) ? "auto_verified" : "not_submitted";
+}
+
+function DocumentFileMeta({
+  application,
+  state,
+}: Readonly<{ application: ApplicationDetail; state: DocumentPanelState }>) {
+  if (state !== "available" && state !== "purged") return null;
+
+  return (
+    <p className="mt-2 text-xs text-[#1a1a1a]/58">
+      {application.fileName ?? "Nome removido após a decisão"} · {application.documentMime ?? "—"} ·{" "}
+      {formatBytes(application.documentSize)}
+    </p>
+  );
+}
+
+function DocumentNotice({ state }: Readonly<{ state: Exclude<DocumentPanelState, "available"> }>) {
+  const notice = DOCUMENT_NOTICES[state];
+
+  return (
+    <div className="mt-5 border-2 border-[#1a1a1a] bg-[#faf8f2] p-4">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em]">{notice.title}</p>
+      <p className="mt-2 text-sm">{notice.body}</p>
+    </div>
+  );
+}
+
+function DocumentPanelBody({
+  application,
+  documentUrl,
+  state,
+}: Readonly<{ application: ApplicationDetail; documentUrl: string; state: DocumentPanelState }>) {
+  if (state !== "available") return <DocumentNotice state={state} />;
+
+  return (
+    <>
+      <DocumentViewer mime={application.documentMime} url={documentUrl} />
+      <a
+        href={documentUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 inline-flex border-2 border-[#1a1a1a] bg-white px-3 py-2 text-xs font-black uppercase hover:bg-brand-yellow"
+      >
+        Abrir em nova aba
+      </a>
+    </>
+  );
+}
+
+/**
+ * Painel do documento privado: mostra o arquivo quando ele existe e, quando não existe, diz
+ * por quê — aprovação automática, espera de envio ou eliminação após a decisão.
+ */
+function DocumentPanel({
+  application,
+  documentUrl,
+}: Readonly<{ application: ApplicationDetail; documentUrl: string }>) {
+  const state = resolveDocumentPanelState(application);
+
+  return (
+    <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
+      <h3 className="text-xs font-black uppercase tracking-[0.2em]">Documento privado</h3>
+      <DocumentFileMeta application={application} state={state} />
+      <DocumentPanelBody application={application} documentUrl={documentUrl} state={state} />
+    </section>
+  );
+}
+
 function ApplicationHistory({ items }: Readonly<{ items: AdminCompanyApplicationDetail[] }>) {
   return (
     <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
@@ -200,10 +314,13 @@ export function CompanyApplicationReview({
   const [pendingAction, setPendingAction] = useState<"approve" | "reject" | null>(null);
   const current = data.current;
 
+  const trimmedReason = reason.trim();
+  const canReject = !busy && trimmedReason.length >= REJECTION_REASON_MIN_LENGTH;
+
   function requestDecision(action: "approve" | "reject") {
     if (current?.application.status !== "pending_manual_review") return;
-    if (action === "reject" && !reason.trim()) {
-      setMessage("Informe o motivo interno da reprovação.");
+    if (action === "reject" && trimmedReason.length < REJECTION_REASON_MIN_LENGTH) {
+      setMessage(`Descreva o motivo interno da reprovação em pelo menos ${REJECTION_REASON_MIN_LENGTH} caracteres.`);
       return;
     }
 
@@ -322,30 +439,7 @@ export function CompanyApplicationReview({
           </dl>
         </section>
 
-        <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em]">Documento privado</h3>
-          <p className="mt-2 text-xs text-[#1a1a1a]/58">
-            {application.fileName ?? "Nome removido após a decisão"} · {application.documentMime ?? "—"} ·{" "}
-            {formatBytes(application.documentSize)}
-          </p>
-          {application.documentAvailable ? (
-            <>
-              <DocumentViewer mime={application.documentMime} url={documentUrl} />
-              <a
-                href={documentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex border-2 border-[#1a1a1a] bg-white px-3 py-2 text-xs font-black uppercase hover:bg-brand-yellow"
-              >
-                Abrir em nova aba
-              </a>
-            </>
-          ) : (
-            <p className="mt-5 border-2 border-[#1a1a1a] bg-[#faf8f2] p-4 text-sm">
-              O documento não está disponível. Arquivos são eliminados após uma decisão terminal.
-            </p>
-          )}
-        </section>
+        <DocumentPanel application={application} documentUrl={documentUrl} />
       </div>
 
       {canDecide ? (
@@ -363,8 +457,9 @@ export function CompanyApplicationReview({
               className="mt-2 min-h-28 w-full border-2 border-[#1a1a1a] p-3 text-sm outline-none focus:shadow-[4px_4px_0px_#ffe500]"
               placeholder="Obrigatório somente para reprovar. Este texto não será enviado ao usuário."
             />
-            <span className="mt-1 block text-right text-[10px] text-[#1a1a1a]/50">
-              {reason.length}/500
+            <span className="mt-1 flex flex-wrap justify-between gap-2 text-[10px] text-[#1a1a1a]/50">
+              <span>Mínimo de {REJECTION_REASON_MIN_LENGTH} caracteres para liberar a reprovação.</span>
+              <span>{reason.length}/500</span>
             </span>
           </label>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -378,9 +473,9 @@ export function CompanyApplicationReview({
             </button>
             <button
               type="button"
-              disabled={busy}
+              disabled={!canReject}
               onClick={() => requestDecision("reject")}
-              className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-xs font-black uppercase text-white disabled:opacity-50"
+              className="border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 py-3 text-xs font-black uppercase text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reprovar e encerrar
             </button>
