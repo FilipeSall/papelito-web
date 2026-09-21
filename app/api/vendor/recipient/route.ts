@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
@@ -12,6 +13,7 @@ type VendorRecipientResponse = {
   last_sync_at?: string;
   last_error?: string;
   last_error_code?: string;
+  last_error_fields?: unknown;
 };
 
 function mapVendorRecipientResponse(payload: unknown) {
@@ -28,6 +30,7 @@ function mapVendorRecipientResponse(payload: unknown) {
     last_sync_at: body.last_sync_at || "",
     last_error: body.last_error || "",
     last_error_code: body.last_error_code || "",
+    last_error_fields: Array.isArray(body.last_error_fields) ? body.last_error_fields : [],
   };
 }
 
@@ -54,6 +57,10 @@ export async function GET() {
       { status: result.status || 500 },
     );
   }
+
+  // Esta leitura consulta a Pagar.me e regrava o estado do recebedor no WordPress, então o
+  // veredito de elegibilidade que a casca do painel carregou pode ter acabado de mudar.
+  revalidateTag("vendor-eligibility", "max");
 
   return NextResponse.json(mapVendorRecipientResponse(result.data), {
     headers: { "Cache-Control": "no-store, private" },

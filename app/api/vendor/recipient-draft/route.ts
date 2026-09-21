@@ -18,10 +18,13 @@ export async function GET() {
   const result = session.data;
 
   if (!result.ok) {
+    const fields = result.error.data?.fields;
+
     return NextResponse.json(
       {
-        message: result.error.message,
         code: result.error.code,
+        ...(Array.isArray(fields) ? { fields } : {}),
+        message: result.error.message,
       },
       { status: result.status || 500 },
     );

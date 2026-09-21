@@ -4,12 +4,17 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
-import type { VendorRecipient } from "@/features/vendor-recipient/types/vendor-recipient";
+import type {
+  VendorRecipient,
+  VendorRecipientRejectedField,
+} from "@/features/vendor-recipient/types/vendor-recipient";
+import { mapRejectedFields } from "@/features/vendor-recipient/utils/rejected-fields";
 import { createPagarmeBankAccountSupportThread } from "@/features/chamados/services/chamado-client";
 
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
+import { RecipientRejectedFields } from "./recipient-rejected-fields";
 
 const STATUS_LABELS: Record<string, string> = {
   registration: "Cadastro em andamento",
@@ -224,6 +229,41 @@ export function buildRecipientErrorFeedback(body: {
         message: "A razao social informada e muito curta para a Pagar.me.",
         title: "Razao social inválida",
       };
+    case "papelito_pagarme_invalid_phone":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar telefone",
+        error: true,
+        hint: "Informe DDD e número, apenas dígitos — por exemplo, 61999998888.",
+        message: "A Pagar.me exige um telefone com DDD para criar o recebedor da sua loja.",
+        title: "Telefone inválido",
+      };
+    case "papelito_pagarme_missing_recipient":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Preencher dados financeiros",
+        error: true,
+        hint: "Preencha os dados financeiros para a Papelito criar o recebedor e tente de novo.",
+        message: "Sua loja ainda não tem recebedor criado na Pagar.me, então não há o que sincronizar.",
+        title: "Recebedor ainda não criado",
+      };
+    case "papelito_pagarme_network_error":
+      return {
+        error: true,
+        hint: "Nenhum dado seu foi perdido. Tente sincronizar de novo em alguns minutos.",
+        message: "A Papelito não conseguiu falar com a Pagar.me agora. O problema é de comunicação, não do seu cadastro.",
+        title: "Pagar.me fora de alcance",
+      };
+    case "papelito_pagarme_not_configured":
+    case "papelito_pagarme_environment_mismatch":
+      return {
+        actionHref: SUPPORT_HREF,
+        actionLabel: "Avisar a Papelito",
+        error: true,
+        hint: "Não há nada a corrigir no seu cadastro. Abra uma solicitação para a Papelito resolver.",
+        message: "A integração da Papelito com a Pagar.me está indisponível neste ambiente.",
+        title: "Integração indisponível",
+      };
     case "papelito_pagarme_bank_account_update_auth_required":
       return {
         actionType: "pagarme-bank-account-support",
@@ -310,6 +350,7 @@ export function VendorRecipientPanel({
   const router = useRouter();
   const [recipient, setRecipient] = useState(initialRecipient);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [syncRejectedFields, setSyncRejectedFields] = useState<VendorRecipientRejectedField[]>([]);
   const [pending, startTransition] = useTransition();
   const [supportPending, setSupportPending] = useState(false);
 
@@ -321,9 +362,11 @@ export function VendorRecipientPanel({
     !isActive && !recipient.loadFailed && (recipient.lastErrorCode || recipient.lastError)
       ? buildRecipientErrorFeedback({ code: recipient.lastErrorCode })
       : null;
+  const persistedRejectedFields = persistedError ? recipient.rejectedFields : [];
 
   function syncRecipient() {
     setFeedback(null);
+    setSyncRejectedFields([]);
 
     startTransition(async () => {
       const response = await fetch("/api/vendor/recipient", { cache: "no-store" });
@@ -338,11 +381,14 @@ export function VendorRecipientPanel({
             last_sync_at?: string;
             last_error?: string;
             last_error_code?: string;
+            last_error_fields?: unknown;
+            fields?: unknown;
             message?: string;
           }
         | null;
 
       if (!response.ok) {
+        setSyncRejectedFields(mapRejectedFields(body?.fields));
         setFeedback(
           buildRecipientErrorFeedback({
             code: body?.code,
@@ -361,11 +407,15 @@ export function VendorRecipientPanel({
         lastError: body?.last_error || "",
         lastErrorCode: body?.last_error_code || "",
         loadFailed: false,
+        rejectedFields: mapRejectedFields(body?.last_error_fields),
       });
       setFeedback({
         error: false,
         message: "Leitura atualizada.",
       });
+      // A casca do painel carrega o veredito de elegibilidade no servidor; sem isto o indicador
+      // da navegação continuaria mostrando a pendência que a sincronização acabou de resolver.
+      router.refresh();
     });
   }
 
@@ -403,6 +453,7 @@ export function VendorRecipientPanel({
         lastError: body.lastError || "",
         lastErrorCode: body.lastErrorCode || "",
         loadFailed: false,
+        rejectedFields: [],
       });
       window.location.assign(body.url);
     });
@@ -487,6 +538,7 @@ export function VendorRecipientPanel({
           }
         }}
       />
+      <RecipientRejectedFields fields={syncRejectedFields} />
 
       {persistedError ? (
         <div className="mt-5">
@@ -503,6 +555,7 @@ export function VendorRecipientPanel({
               }
             }}
           />
+          <RecipientRejectedFields fields={persistedRejectedFields} />
         </div>
       ) : null}
 

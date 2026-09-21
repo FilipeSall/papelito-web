@@ -4,6 +4,7 @@ import { getSellerAccessToken } from "@/lib/server/vendor-session";
 import { wpRest } from "@/lib/server/wp-rest";
 
 import type { VendorRecipient } from "../types/vendor-recipient";
+import { mapRejectedFields } from "../utils/rejected-fields";
 
 type WpVendorRecipient = {
   recipient_id?: string;
@@ -13,7 +14,9 @@ type WpVendorRecipient = {
   last_sync_at?: string;
   last_error?: string;
   last_error_code?: string;
+  last_error_fields?: unknown;
 };
+
 
 function unreadableRecipient(): VendorRecipient {
   return {
@@ -25,6 +28,7 @@ function unreadableRecipient(): VendorRecipient {
     lastError: "",
     lastErrorCode: "",
     loadFailed: true,
+    rejectedFields: [],
   };
 }
 
@@ -56,5 +60,6 @@ export async function getVendorRecipient(): Promise<VendorRecipient> {
     lastError: result.data.last_error || "",
     lastErrorCode: result.data.last_error_code || "",
     loadFailed: false,
+    rejectedFields: mapRejectedFields(result.data.last_error_fields),
   };
 }
