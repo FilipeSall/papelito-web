@@ -11,9 +11,14 @@ import {
 import { SalesHeadline } from "@/components/layout/admin-panel/sections/sales/sales-headline";
 import { SalesSectionNav } from "@/components/layout/admin-panel/sections/sales/sales-section-nav";
 import { SalesSegmentFilter } from "@/components/layout/admin-panel/sections/sales/sales-segment-filter";
-import { VendorPageHeader, VendorPeriodFilters } from "@/components/layout/vendor-panel";
+import {
+  VendorEligibilityNotice,
+  VendorPageHeader,
+  VendorPeriodFilters,
+} from "@/components/layout/vendor-panel";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorKpis } from "@/features/vendor-dashboard/server";
+import { getVendorEligibility, readVendorPendencies } from "@/features/vendor-eligibility/server";
 import { formatBRLIntl } from "@/lib/format-currency";
 import {
   buildPreviousPeriodLabel,
@@ -36,7 +41,10 @@ export default async function VendorDashboardPage({
   await redirectIfVendorOnboardingPending(BASE_PATH);
 
   const filters = parseAdminSalesFilters(searchParams ? await searchParams : {});
-  const snapshot = await getVendorKpis(filters);
+  const [snapshot, eligibility] = await Promise.all([
+    getVendorKpis(filters),
+    getVendorEligibility(),
+  ]);
   const deltaRate =
     snapshot.previousGrossRevenue !== null && snapshot.previousGrossRevenue > 0
       ? ((snapshot.grossRevenue - snapshot.previousGrossRevenue) /
@@ -96,9 +104,11 @@ export default async function VendorDashboardPage({
       <VendorPageHeader
         description="Acompanhe sua operação Papelito: faturamento, pedidos aguardando tratamento, produtos com maior saída e as exportações da sua carteira."
         eyebrow="Centro de operações"
-        signal="seller ativo"
+        signal={eligibility.loadFailed || eligibility.canSell ? "seller ativo" : "venda bloqueada"}
         title="Dashboard"
       />
+
+      <VendorEligibilityNotice pendencies={readVendorPendencies(eligibility)} />
 
       <VendorPeriodFilters basePath={BASE_PATH} filters={filters} />
 

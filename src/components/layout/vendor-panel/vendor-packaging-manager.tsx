@@ -11,6 +11,7 @@ import {
   PACKAGING_MAX_ACTIVE_PROFILES,
   packagingSetupSteps,
   readPackagingReadiness,
+  type PackagingBoxesPolicy,
 } from "@/features/vendor-packaging/utils/packaging-readiness";
 import type {
   VendorPackagingCatalogItem,
@@ -196,13 +197,18 @@ function errorMessage(error: unknown, fallback: string): string {
  * atrás de um convite e a página vira coluna única: duas colunas deixam de se pagar quando a da
  * esquerda é uma linha tracejada, e o vazio ao lado da prateleira seria maior que o conteúdo.
  *
- * @param props Snapshot do servidor e a lacuna de dado físico do catálogo.
+ * @param props Snapshot do servidor, a escada de caixas vigente e a lacuna de dado físico.
  * @returns Interface de cadastro e manutenção das caixas.
  */
 export function VendorPackagingManager({
   gap,
+  policy,
   snapshot,
-}: Readonly<{ gap: PackagingPhysicalDataGap; snapshot: VendorPackagingSnapshot }>) {
+}: Readonly<{
+  gap: PackagingPhysicalDataGap;
+  policy: PackagingBoxesPolicy;
+  snapshot: VendorPackagingSnapshot;
+}>) {
   const router = useRouter();
   const [items, setItems] = useState(snapshot.items);
   const [draft, setDraft] = useState(emptyDraft);
@@ -225,7 +231,7 @@ export function VendorPackagingManager({
     [modelCode, snapshot.catalog],
   );
   const readiness = useMemo(() => readPackagingReadiness(items), [items]);
-  const steps = useMemo(() => packagingSetupSteps(items), [items]);
+  const steps = useMemo(() => packagingSetupSteps(items, policy), [items, policy]);
   const registeredCodes = useMemo(() => items.map((item) => item.code), [items]);
 
   const atLimit = readiness.activeCount >= PACKAGING_MAX_ACTIVE_PROFILES;
@@ -454,7 +460,7 @@ export function VendorPackagingManager({
         </div>
       </div>
 
-      <PackagingReadinessBar gap={gap} readiness={readiness} />
+      <PackagingReadinessBar gap={gap} policy={policy} readiness={readiness} />
 
       <ConfirmModal
         confirmLabel="Desativar caixa"

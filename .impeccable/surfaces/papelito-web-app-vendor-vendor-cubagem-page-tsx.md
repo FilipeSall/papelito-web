@@ -25,7 +25,7 @@ Conteúdo real: catálogo RPC de 21 modelos em seis categorias (Pequena, Comprid
 - Editar incrementa a versão; desativar preserva a linha e o histórico.
 - **Não existe endpoint de reativação.** Decisão de 17/09: a página oferece reativar e a rota é pendência aberta no plugin.
 - **O front não calcula encaixe.** `missingFields` do estoque diz apenas *que* falta peso ou dimensão, nunca os valores; resolver qual caixa sai em qual pedido é do WordPress, e a rota não existe.
-- Sem caixa aplicável a Braspress não cota. O piso de três caixas ativas é informativo, não bloqueio.
+- Sem caixa aplicável a Braspress não cota. O piso de caixas ativas é configurável (padrão: mínimo 2, recomendado 3) e chega pelo veredito de elegibilidade; abaixo do mínimo o vendor sai da vitrine, entre mínimo e recomendado a página apenas sugere.
 - Conta suspensa congela o cadastro; a página já trata esse estado antes do manager.
 
 ## Decisões em aberto
@@ -41,7 +41,7 @@ Conteúdo real: catálogo RPC de 21 modelos em seis categorias (Pequena, Comprid
 
 **STORY.** O vendor entende que a plataforma precisa saber em que caixa ele despacha; acredita que escolher os modelos que já usa é questão de minutos; e sai com as caixas cadastradas e sabendo o que ainda falta para a Braspress cotar.
 
-**FIRST VIEWPORT.** Faixa de marcos no topo, três passos com estado: escolher modelos, conferir medidas, pronto para despachar. Abaixo e à esquerda, a grade dos 21 modelos RPC como cartelas selecionáveis, cada uma com silhueta proporcional, código, medidas e carga, agrupadas por categoria. À direita, coluna estreita acumulando as caixas escolhidas, com a ação primária no pé dela. O rodapé é a barra de prontidão: caixas ativas contra o piso de três e os produtos do estoque sem peso ou dimensão, que não entram em conta nenhuma. Caixa própria é uma cartela tracejada dentro da mesma grade, não um formulário à parte.
+**FIRST VIEWPORT.** Faixa de marcos no topo, três passos com estado: escolher modelos, conferir medidas, pronto para despachar. Abaixo e à esquerda, a grade dos 21 modelos RPC como cartelas selecionáveis, cada uma com silhueta proporcional, código, medidas e carga, agrupadas por categoria. À direita, coluna estreita acumulando as caixas escolhidas, com a ação primária no pé dela. O rodapé é a barra de prontidão: caixas ativas contra o mínimo configurado e os produtos do estoque sem peso ou dimensão, que não entram em conta nenhuma. Caixa própria é uma cartela tracejada dentro da mesma grade, não um formulário à parte.
 
 **FORM.** Linha de montagem, índice 4 da lista ordenada, sorteada como lead. Seed key `8e69f9f3`.
 

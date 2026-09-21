@@ -60,6 +60,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   if (!result.ok) return errorResponse(result);
 
   revalidateTag("vendor-packaging", "max");
+  revalidateTag("vendor-eligibility", "max");
   revalidatePath("/vendor/cubagem");
   return NextResponse.json(result.data);
 }
@@ -97,6 +98,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   }
 
   revalidateTag("vendor-packaging", "max");
+  revalidateTag("vendor-eligibility", "max");
   revalidatePath("/vendor/cubagem");
   return NextResponse.json(result.data);
 }

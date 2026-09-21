@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 import { FOCUS_RING } from "@/components/layout/admin-panel/primitives";
-import {
-  BRASPRESS_MIN_ACTIVE_PROFILES,
-  type PackagingReadiness,
+import type {
+  PackagingBoxesPolicy,
+  PackagingReadiness,
 } from "@/features/vendor-packaging/utils/packaging-readiness";
 
 import { PackagingDispatchGlyph, PackagingMissingDataGlyph } from "./packaging-glyphs";
@@ -15,12 +15,18 @@ export type PackagingPhysicalDataGap = {
   count: number;
 };
 
-function braspressLine(activeCount: number): string {
-  if (activeCount >= BRASPRESS_MIN_ACTIVE_PROFILES) {
-    return "A Braspress já encontra caixa para cotar os seus pedidos.";
+function boxesLine(activeCount: number, policy: PackagingBoxesPolicy): string {
+  if (activeCount < policy.minimum) {
+    return `Abaixo de ${policy.minimum} ${
+      policy.minimum === 1 ? "caixa ativa" : "caixas ativas"
+    } seus produtos não aparecem para os clientes. As transportadoras precisam saber em qual caixa o pedido vai.`;
   }
 
-  return `A Braspress usa as suas caixas para cotar, e trabalha melhor a partir de ${BRASPRESS_MIN_ACTIVE_PROFILES}. Sem nenhuma caixa que sirva, ela não devolve preço.`;
+  if (activeCount < policy.recommended) {
+    return `Mínimo atendido: sua loja vende. Recomendamos cadastrar pelo menos ${policy.recommended} caixas para ter mais segurança e flexibilidade no cálculo e no envio dos pedidos — é recomendação, não exigência.`;
+  }
+
+  return "As transportadoras já encontram caixa para cotar os seus pedidos.";
 }
 
 function gapLine(gap: PackagingPhysicalDataGap): string {
@@ -63,17 +69,22 @@ function Stat({
 /**
  * Barra de prontidão do rodapé: o que as caixas cadastradas permitem despachar hoje.
  *
- * Os dois números dizem coisas diferentes de propósito. O primeiro é sobre as caixas; o segundo é
- * sobre o cadastro do produto na Papelito, que nenhuma caixa conserta — por isso ele leva para o
- * estoque, onde o vendor pede o dado que falta.
+ * Os dois números dizem coisas diferentes de propósito. O primeiro é sobre as caixas, contadas
+ * contra o mínimo configurado pela Papelito; o segundo é sobre o cadastro do produto, que nenhuma
+ * caixa conserta — por isso ele leva para o estoque, onde o vendor pede o dado que falta.
  *
  * A barra relata prontidão, não a caixa que sairia em cada pedido: resolver isso é do WordPress, e
  * a rota não existe. O título promete exatamente o que os dois números entregam.
  */
 export function PackagingReadinessBar({
   gap,
+  policy,
   readiness,
-}: Readonly<{ gap: PackagingPhysicalDataGap; readiness: PackagingReadiness }>) {
+}: Readonly<{
+  gap: PackagingPhysicalDataGap;
+  policy: PackagingBoxesPolicy;
+  readiness: PackagingReadiness;
+}>) {
   return (
     <section className="border-2 border-[#1a1a1a] bg-[#fbf7ef] shadow-[8px_8px_0px_#1a1a1a]">
       <div aria-hidden className="h-2 w-full bg-[#1a1a1a]" />
@@ -83,8 +94,8 @@ export function PackagingReadinessBar({
         </p>
       </div>
       <div className="grid divide-y-2 divide-[#1a1a1a]/10 md:grid-cols-2 md:divide-x-2 md:divide-y-0">
-        <Stat glyph={PackagingDispatchGlyph} value={`${readiness.activeCount} de ${BRASPRESS_MIN_ACTIVE_PROFILES}`}>
-          {braspressLine(readiness.activeCount)}
+        <Stat glyph={PackagingDispatchGlyph} value={`${readiness.activeCount} de ${policy.minimum}`}>
+          {boxesLine(readiness.activeCount, policy)}
         </Stat>
         <Stat glyph={PackagingMissingDataGlyph} value={gap.capped ? `${gap.count}+` : String(gap.count)}>
           {gapLine(gap)}

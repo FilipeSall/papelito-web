@@ -16,9 +16,11 @@ import {
 } from "@/features/site-contact/social-profiles";
 
 import { IntegrationSecretsContent } from "./integration-secrets-content";
+import { VendorEligibilityContent } from "./vendor-eligibility-content";
 
 const SECTIONS = [
   { id: "atendimento", label: "Atendimento" },
+  { id: "vendors", label: "Vendors" },
   { id: "integracoes", label: "Integrações" },
   { id: "conta", label: "Conta" },
 ] as const;
@@ -359,6 +361,14 @@ export function ConfigContent() {
       />
 
       <ContactSection />
+
+      <AnchoredSection
+        description="Quantas caixas o vendor precisa ter ativas para vender. O mínimo é exigência: abaixo dele os produtos da loja saem da vitrine. O recomendado só aparece como sugestão no painel do vendor."
+        id="vendors"
+        title="Requisitos do vendor"
+      >
+        <VendorEligibilityContent />
+      </AnchoredSection>
 
       <AnchoredSection
         description="Credenciais dos serviços externos. Os valores nunca são exibidos de novo — para trocar uma credencial, informe sua senha atual."

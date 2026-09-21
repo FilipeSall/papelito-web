@@ -63,6 +63,7 @@ export async function POST(request: Request) {
   if (!result.ok) return errorResponse(result);
 
   revalidateTag("vendor-packaging", "max");
+  revalidateTag("vendor-eligibility", "max");
   revalidatePath("/vendor/cubagem");
   return NextResponse.json(result.data, { status: 201 });
 }

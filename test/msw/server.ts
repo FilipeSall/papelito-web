@@ -13,6 +13,7 @@ import { couponsHandlers } from "./handlers/coupons";
 import { notificationsHandlers } from "./handlers/notifications";
 import { packagingProfilesHandlers } from "./handlers/packaging-profiles";
 import { profileOrdersHandlers } from "./handlers/profile-orders";
+import { vendorEligibilityHandlers } from "./handlers/vendor-eligibility";
 
 export const server = setupServer(
   ...authHandlers,
@@ -28,4 +29,5 @@ export const server = setupServer(
   ...notificationsHandlers,
   ...packagingProfilesHandlers,
   ...profileOrdersHandlers,
+  ...vendorEligibilityHandlers,
 );

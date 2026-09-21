@@ -124,8 +124,9 @@ describe("ConfigContent", () => {
     setContactConfigSocial({ instagram: "https://www.instagram.com/outra/" });
     render(<ConfigContent />);
 
-    // Telefone e redes sociais leem a mesma rota: as duas seções entram em "Carregando" juntas.
-    expect(screen.getAllByRole("button", { name: /carregando/i })).toHaveLength(2);
+    // Telefone e redes sociais leem a mesma rota e entram em "Carregando" juntas; a terceira é a
+    // regra de caixas do vendor, que lê a própria rota e também abre carregando.
+    expect(screen.getAllByRole("button", { name: /carregando/i })).toHaveLength(3);
     for (const loadingButton of screen.getAllByRole("button", { name: /carregando/i })) {
       expect(loadingButton).toBeDisabled();
     }

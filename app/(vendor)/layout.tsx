@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { VendorShell } from "@/components/layout/vendor-panel";
 import { AccountSuspensionNotice } from "@/features/account-status";
 import { getSiteLogos } from "@/features/catalog/services/get-home-assets";
+import { getVendorEligibility, readVendorPendencies } from "@/features/vendor-eligibility/server";
 import { authOptions } from "@/lib/auth";
 import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 import { buildPrivatePageMetadata } from "@/lib/seo/metadata";
@@ -38,11 +39,11 @@ export default async function VendorLayout({ children }: Readonly<{ children: Re
     redirect("/");
   }
 
-  const logos = await getSiteLogos();
+  const [logos, eligibility] = await Promise.all([getSiteLogos(), getVendorEligibility()]);
 
   return (
     <section className={`${vendorDisplay.variable} ${vendorBody.variable} ${vendorMono.variable} h-screen overflow-hidden font-(--font-admin-body)`}>
-      <VendorShell logo={logos.privateHeader}>
+      <VendorShell logo={logos.privateHeader} pendencies={readVendorPendencies(eligibility)}>
         <AccountSuspensionNotice />
         {children}
       </VendorShell>

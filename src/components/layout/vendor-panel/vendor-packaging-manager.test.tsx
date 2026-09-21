@@ -97,16 +97,18 @@ function fillCustomBox() {
   fireEvent.click(screen.getByRole("button", { name: SAVE_ACTION }));
 }
 
+const TEST_POLICY = { minimum: 2, recommended: 3 };
+
 describe("VendorPackagingManager", () => {
   it("abre na grade de modelos, sem formulário permanente", () => {
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={snapshot} />);
 
     expect(screen.getByRole("button", { name: new RegExp(CUSTOM_BOX_ACTION, "i") })).toBeInTheDocument();
     expect(screen.queryByLabelText(NAME_FIELD)).not.toBeInTheDocument();
   });
 
   it.each(catalog)("abre a bancada já preenchida com o modelo $code, sem tara", (item) => {
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={snapshot} />);
     fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${item.code}`) }));
 
     expect(screen.getByLabelText(CODE_FIELD)).toHaveValue(item.code);
@@ -128,7 +130,7 @@ describe("VendorPackagingManager", () => {
 
   it("abre a caixa já cadastrada em vez de duplicar o código", () => {
     render(
-      <VendorPackagingManager gap={NO_GAP} snapshot={{ ...snapshot, items: [profile()] }} />,
+      <VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={{ ...snapshot, items: [profile()] }} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /^M12/ }));
 
@@ -137,7 +139,7 @@ describe("VendorPackagingManager", () => {
   });
 
   it("volta da bancada para a grade sem salvar", () => {
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={snapshot} />);
     fireEvent.click(screen.getByRole("button", { name: new RegExp(CUSTOM_BOX_ACTION, "i") }));
     fireEvent.click(screen.getByRole("button", { name: /voltar aos modelos/i }));
 
@@ -146,11 +148,13 @@ describe("VendorPackagingManager", () => {
 
   it("marca o marco de conferência enquanto a caixa RPC segue na versão 1", () => {
     render(
-      <VendorPackagingManager gap={NO_GAP} snapshot={{ ...snapshot, items: [profile()] }} />,
+      <VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={{ ...snapshot, items: [profile()] }} />,
     );
 
     expect(screen.getByText("1 caixa ainda pede conferência.")).toBeInTheDocument();
-    expect(screen.getByText("Faltam 2 caixas para a Braspress cotar.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Falta 1 caixa para seus produtos voltarem à vitrine."),
+    ).toBeInTheDocument();
   });
 
   it("oferece reativar a caixa desativada", async () => {
@@ -161,7 +165,7 @@ describe("VendorPackagingManager", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     render(
-      <VendorPackagingManager
+      <VendorPackagingManager policy={TEST_POLICY}
         gap={NO_GAP}
         snapshot={{ ...snapshot, items: [profile({ active: false })] }}
       />,
@@ -185,7 +189,7 @@ describe("VendorPackagingManager", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     render(
-      <VendorPackagingManager
+      <VendorPackagingManager policy={TEST_POLICY}
         gap={NO_GAP}
         snapshot={{ ...snapshot, items: [profile({ active: false }), profile({ code: "G12", id: 8 })] }}
       />,
@@ -208,7 +212,7 @@ describe("VendorPackagingManager", () => {
     const items = Array.from({ length: 24 }, (_, index) =>
       profile({ code: `CX${index}`, id: index + 1, version: 2 }),
     );
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
 
     expect(screen.getByText(/limite de 24 caixas ativas/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /cadastrar outra caixa/i })).not.toBeInTheDocument();
@@ -216,7 +220,7 @@ describe("VendorPackagingManager", () => {
 
   it("recolhe a grade quando o setup fecha e a reabre sob demanda", () => {
     const items = [1, 2, 3].map((id) => profile({ code: `CX${id}`, id, version: 2 }));
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
 
     expect(screen.getByText("Embalagem em dia")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: new RegExp(CUSTOM_BOX_ACTION, "i") })).not.toBeInTheDocument();
@@ -230,7 +234,7 @@ describe("VendorPackagingManager", () => {
     const items = Array.from({ length: 24 }, (_, index) =>
       profile({ code: index === 0 ? "M12" : `CX${index}`, id: index + 1, version: 2 }),
     );
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={{ ...snapshot, items }} />);
     fireEvent.click(screen.getByRole("button", { name: /ver os modelos/i }));
 
     expect(screen.getByRole("button", { name: /^M12,/ })).toBeEnabled();
@@ -239,7 +243,7 @@ describe("VendorPackagingManager", () => {
   });
 
   it("mostra a lacuna de peso e medida na barra de prontidão", () => {
-    render(<VendorPackagingManager gap={{ capped: true, count: 12 }} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={{ capped: true, count: 12 }} snapshot={snapshot} />);
 
     expect(screen.getByText("12+")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /ver no estoque/i })).toHaveAttribute(
@@ -261,7 +265,7 @@ describe("VendorPackagingManager", () => {
         status: 409,
       }),
     );
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={snapshot} />);
 
     fillCustomBox();
 
@@ -271,7 +275,7 @@ describe("VendorPackagingManager", () => {
 
   it("mostra erro de rede ao salvar", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Falha de rede.")));
-    render(<VendorPackagingManager gap={NO_GAP} snapshot={snapshot} />);
+    render(<VendorPackagingManager policy={TEST_POLICY} gap={NO_GAP} snapshot={snapshot} />);
 
     fillCustomBox();
 

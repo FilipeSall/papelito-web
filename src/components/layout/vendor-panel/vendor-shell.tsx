@@ -6,9 +6,18 @@ import { usePathname } from "next/navigation";
 
 import { PrivateHeaderLogoutButton } from "@/components/layout/private-header/logout-button";
 import { NotificationBell } from "@/components/layout/site-header";
+import {
+  groupBlockingByNavHref,
+  type VendorPendingItem,
+} from "@/features/vendor-eligibility/utils/vendor-eligibility";
 import { resolveLogo } from "@/lib/site-logos";
 import type { ManagedImageAsset } from "@/types/home-assets";
 
+import {
+  VendorNavPendingAlert,
+  VendorNavPendingChip,
+  VendorNavPendingMark,
+} from "./vendor-eligibility-signal";
 import { getVendorPageTitle, isVendorNavItemActive, VENDOR_NAV_ITEMS } from "./vendor-config";
 
 function navClassName(active: boolean) {
@@ -20,16 +29,27 @@ function navClassName(active: boolean) {
   ].join(" ");
 }
 
+/**
+ * Casca do painel do vendor, com a navegação que também sinaliza o que impede a loja de vender.
+ *
+ * `pendencies` chega resolvida do servidor e vira marcador por derivação direta no render — sem
+ * estado, sem efeito e sem consulta do lado do cliente, para o indicador não custar um re-render
+ * a cada navegação.
+ */
 export function VendorShell({
   children,
   logo,
+  pendencies = [],
 }: Readonly<{
   children: React.ReactNode;
   logo?: ManagedImageAsset;
+  pendencies?: VendorPendingItem[];
 }>) {
   const pathname = usePathname();
   const title = getVendorPageTitle(pathname);
   const resolvedLogo = resolveLogo("privateHeader", logo);
+  const blockingByNav = groupBlockingByNavHref(pendencies);
+  const blockingCount = pendencies.filter((item) => item.kind === "blocking").length;
 
   return (
     <div className="relative h-screen overflow-clip bg-[#ede9df] text-brand-dark">
@@ -58,9 +78,11 @@ export function VendorShell({
             </p>
           </Link>
           <nav aria-label="Navegacao do vendor" className="flex-1 space-y-1.5 overflow-y-auto px-4 py-5">
+            {blockingCount > 0 ? <VendorNavPendingAlert count={blockingCount} /> : null}
             {VENDOR_NAV_ITEMS.map((item) => {
               const active = isVendorNavItemActive(item, pathname);
               const Icon = item.icon;
+              const blocking = blockingByNav.get(item.href);
               return (
                 <Link className={navClassName(active)} href={item.href} key={item.href}>
                   <span
@@ -72,10 +94,11 @@ export function VendorShell({
                   </span>
                   <span>
                     <span
-                      className="block text-sm font-semibold uppercase tracking-[0.12em]"
+                      className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em]"
                       style={{ fontFamily: "var(--font-admin-display)" }}
                     >
                       {item.label}
+                      {blocking ? <VendorNavPendingMark items={blocking} /> : null}
                     </span>
                     <span className={`block text-xs ${active ? "text-brand-dark/65" : "text-white/44"}`}>
                       {item.description}
@@ -120,20 +143,25 @@ export function VendorShell({
                 <PrivateHeaderLogoutButton />
               </div>
             </div>
-            <nav className="flex gap-2 overflow-x-auto border-t border-brand-dark/8 px-4 py-3 lg:hidden" aria-label="Seções do painel">
-              {VENDOR_NAV_ITEMS.map((item) => (
-                <Link
-                  className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
-                    isVendorNavItemActive(item, pathname)
-                      ? "border-brand-dark bg-brand-dark text-brand-yellow"
-                      : "border-brand-dark/15 bg-white/65 text-brand-dark/70"
-                  }`}
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <nav className="flex items-center gap-2 overflow-x-auto border-t border-brand-dark/8 px-4 py-3 lg:hidden" aria-label="Seções do painel">
+              {blockingCount > 0 ? <VendorNavPendingChip count={blockingCount} /> : null}
+              {VENDOR_NAV_ITEMS.map((item) => {
+                const blocking = blockingByNav.get(item.href);
+                return (
+                  <Link
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
+                      isVendorNavItemActive(item, pathname)
+                        ? "border-brand-dark bg-brand-dark text-brand-yellow"
+                        : "border-brand-dark/15 bg-white/65 text-brand-dark/70"
+                    }`}
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                    {blocking ? <VendorNavPendingMark items={blocking} /> : null}
+                  </Link>
+                );
+              })}
             </nav>
           </header>
           <main className="flex-1 px-4 py-5 md:px-7 md:py-7 xl:has-data-fill-viewport:min-h-0">{children}</main>

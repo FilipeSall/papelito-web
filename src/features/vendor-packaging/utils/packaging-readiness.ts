@@ -1,13 +1,16 @@
 import type { VendorPackagingProfile } from "../types/vendor-packaging";
 
 /**
- * Piso de caixas ativas que a Braspress exige do vendor.
+ * Escada de caixas ativas que o marketplace aplica ao vendor.
  *
- * Vive como constante no front porque o contrato de embalagem não devolve o número, e hoje a
- * regra é informativa: nada é bloqueado abaixo dela. No dia em que o WordPress passar a barrar,
- * o número precisa viajar na resposta em vez de existir aqui em segunda cópia.
+ * Os dois números vêm do WordPress, em `/vendor/me/eligibility`, e são configuráveis pela
+ * administração — nenhum deles pode voltar a existir como constante aqui. Abaixo do `minimum` a
+ * loja sai da vitrine; entre `minimum` e `recommended` ela vende e recebe só a recomendação.
  */
-export const BRASPRESS_MIN_ACTIVE_PROFILES = 3;
+export type PackagingBoxesPolicy = {
+  minimum: number;
+  recommended: number;
+};
 
 /**
  * Teto de caixas ativas por vendor, espelhando `PAPELITO_PACKAGING_MAX_ACTIVE_PROFILES`.
@@ -71,7 +74,11 @@ export function readPackagingReadiness(items: VendorPackagingProfile[]): Packagi
   };
 }
 
-function stepDetail(id: PackagingStepId, readiness: PackagingReadiness): string {
+function stepDetail(
+  id: PackagingStepId,
+  readiness: PackagingReadiness,
+  policy: PackagingBoxesPolicy,
+): string {
   if (id === "modelos") {
     if (readiness.activeCount === 0) return "Nenhuma caixa ativa ainda.";
     if (readiness.activeCount === 1) return "1 caixa ativa.";
@@ -85,10 +92,13 @@ function stepDetail(id: PackagingStepId, readiness: PackagingReadiness): string 
     return `${readiness.unconfirmedCount} caixas ainda pedem conferência.`;
   }
 
-  const faltam = BRASPRESS_MIN_ACTIVE_PROFILES - readiness.activeCount;
-  if (faltam <= 0) return "A Braspress já tem caixa para cotar.";
-  if (faltam === 1) return "Falta 1 caixa para a Braspress cotar.";
-  return `Faltam ${faltam} caixas para a Braspress cotar.`;
+  const faltam = policy.minimum - readiness.activeCount;
+  if (faltam === 1) return "Falta 1 caixa para seus produtos voltarem à vitrine.";
+  if (faltam > 1) return `Faltam ${faltam} caixas para seus produtos voltarem à vitrine.`;
+  if (readiness.activeCount < policy.recommended) {
+    return `Mínimo atingido. Recomendamos ${policy.recommended} caixas para ter mais folga.`;
+  }
+  return "Caixas suficientes para as transportadoras cotarem.";
 }
 
 const STEP_TITLES: Record<PackagingStepId, string> = {
@@ -99,10 +109,14 @@ const STEP_TITLES: Record<PackagingStepId, string> = {
 
 const STEP_ORDER: PackagingStepId[] = ["modelos", "medidas", "despacho"];
 
-function stepIsDone(id: PackagingStepId, readiness: PackagingReadiness): boolean {
+function stepIsDone(
+  id: PackagingStepId,
+  readiness: PackagingReadiness,
+  policy: PackagingBoxesPolicy,
+): boolean {
   if (id === "modelos") return readiness.activeCount > 0;
   if (id === "medidas") return readiness.activeCount > 0 && readiness.unconfirmedCount === 0;
-  return readiness.activeCount >= BRASPRESS_MIN_ACTIVE_PROFILES;
+  return readiness.activeCount >= policy.minimum;
 }
 
 /**
@@ -110,19 +124,24 @@ function stepIsDone(id: PackagingStepId, readiness: PackagingReadiness): boolean
  *
  * Só um marco é `current` por vez — o primeiro que ainda não fechou —, e os seguintes ficam
  * `pending`. Um marco concluído depois de um pendente continua `done`: a faixa relata o estado
- * real, não um progresso linear que mentiria sobre o que já está pronto.
+ * real, não um progresso linear que mentiria sobre o que já está pronto. O marco de despacho
+ * fecha no mínimo configurado, e a recomendação aparece no detalhe sem reabrir o marco.
  *
  * @param items Perfis do vendor.
+ * @param policy Mínimo e recomendado vigentes.
  * @returns Os três marcos, na ordem em que a faixa os desenha.
  */
-export function packagingSetupSteps(items: VendorPackagingProfile[]): PackagingSetupStep[] {
+export function packagingSetupSteps(
+  items: VendorPackagingProfile[],
+  policy: PackagingBoxesPolicy,
+): PackagingSetupStep[] {
   const readiness = readPackagingReadiness(items);
-  const firstOpen = STEP_ORDER.find((id) => !stepIsDone(id, readiness));
+  const firstOpen = STEP_ORDER.find((id) => !stepIsDone(id, readiness, policy));
 
   return STEP_ORDER.map((id) => ({
-    detail: stepDetail(id, readiness),
+    detail: stepDetail(id, readiness, policy),
     id,
-    state: resolveStepState(id, firstOpen, readiness),
+    state: resolveStepState(id, firstOpen, readiness, policy),
     title: STEP_TITLES[id],
   }));
 }
@@ -131,7 +150,8 @@ function resolveStepState(
   id: PackagingStepId,
   firstOpen: PackagingStepId | undefined,
   readiness: PackagingReadiness,
+  policy: PackagingBoxesPolicy,
 ): PackagingStepState {
-  if (stepIsDone(id, readiness)) return "done";
+  if (stepIsDone(id, readiness, policy)) return "done";
   return id === firstOpen ? "current" : "pending";
 }

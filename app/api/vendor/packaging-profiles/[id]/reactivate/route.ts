@@ -55,6 +55,7 @@ export async function POST(_request: Request, { params }: RouteParams) {
   }
 
   revalidateTag("vendor-packaging", "max");
+  revalidateTag("vendor-eligibility", "max");
   revalidatePath("/vendor/cubagem");
   return NextResponse.json(result.data);
 }

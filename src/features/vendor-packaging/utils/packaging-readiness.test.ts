@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { VendorPackagingProfile } from "../types/vendor-packaging";
-import { packagingSetupSteps, readPackagingReadiness } from "./packaging-readiness";
+import {
+  packagingSetupSteps,
+  readPackagingReadiness,
+  type PackagingBoxesPolicy,
+} from "./packaging-readiness";
 
 const REVIEW_DETAIL = "1 caixa ainda pede conferência.";
+const DEFAULT_POLICY: PackagingBoxesPolicy = { minimum: 2, recommended: 3 };
 
 function profile(overrides: Partial<VendorPackagingProfile> = {}): VendorPackagingProfile {
   return {
@@ -24,8 +29,16 @@ function profile(overrides: Partial<VendorPackagingProfile> = {}): VendorPackagi
   };
 }
 
-function stateOf(items: VendorPackagingProfile[], id: string) {
-  return packagingSetupSteps(items).find((step) => step.id === id)?.state;
+function stateOf(
+  items: VendorPackagingProfile[],
+  id: string,
+  policy: PackagingBoxesPolicy = DEFAULT_POLICY,
+) {
+  return packagingSetupSteps(items, policy).find((step) => step.id === id)?.state;
+}
+
+function confirmed(count: number) {
+  return Array.from({ length: count }, (_, index) => profile({ id: index + 1, version: 2 }));
 }
 
 describe("readPackagingReadiness", () => {
@@ -70,27 +83,56 @@ describe("readPackagingReadiness", () => {
 
 describe("packagingSetupSteps", () => {
   it("abre com o primeiro marco em curso quando não há caixa", () => {
-    const steps = packagingSetupSteps([]);
+    const steps = packagingSetupSteps([], DEFAULT_POLICY);
 
     expect(steps.map((step) => step.state)).toEqual(["current", "pending", "pending"]);
     expect(steps[0].detail).toBe("Nenhuma caixa ativa ainda.");
   });
 
   it("passa a cobrar a conferência assim que há caixa RPC nova", () => {
-    const steps = packagingSetupSteps([profile()]);
+    const steps = packagingSetupSteps([profile()], DEFAULT_POLICY);
 
     expect(steps.map((step) => step.state)).toEqual(["done", "current", "pending"]);
     expect(steps[1].detail).toBe(REVIEW_DETAIL);
   });
 
-  it("fecha o despacho com três caixas ativas conferidas", () => {
-    const items = [1, 2, 3].map((id) => profile({ id, version: 2 }));
-
-    expect(packagingSetupSteps(items).map((step) => step.state)).toEqual([
+  it("fecha o despacho ao atingir o mínimo, que é duas caixas por padrão", () => {
+    expect(packagingSetupSteps(confirmed(2), DEFAULT_POLICY).map((step) => step.state)).toEqual([
       "done",
       "done",
       "done",
     ]);
+  });
+
+  it("no mínimo, recomenda o número maior sem reabrir o marco", () => {
+    const steps = packagingSetupSteps(confirmed(2), DEFAULT_POLICY);
+
+    expect(steps[2].state).toBe("done");
+    expect(steps[2].detail).toBe("Mínimo atingido. Recomendamos 3 caixas para ter mais folga.");
+  });
+
+  it("a partir do recomendado a faixa para de sugerir", () => {
+    expect(packagingSetupSteps(confirmed(3), DEFAULT_POLICY)[2].detail).toBe(
+      "Caixas suficientes para as transportadoras cotarem.",
+    );
+  });
+
+  it("abaixo do mínimo diz quantas faltam, concordando o plural", () => {
+    expect(packagingSetupSteps(confirmed(1), DEFAULT_POLICY)[2].detail).toBe(
+      "Falta 1 caixa para seus produtos voltarem à vitrine.",
+    );
+    expect(packagingSetupSteps(confirmed(1), { minimum: 4, recommended: 6 })[2].detail).toBe(
+      "Faltam 3 caixas para seus produtos voltarem à vitrine.",
+    );
+  });
+
+  it("subir o mínimo reabre o marco de despacho de quem já estava pronto", () => {
+    expect(stateOf(confirmed(2), "despacho")).toBe("done");
+    expect(stateOf(confirmed(2), "despacho", { minimum: 4, recommended: 5 })).toBe("current");
+  });
+
+  it("subir só o recomendado nunca reabre o marco", () => {
+    expect(stateOf(confirmed(2), "despacho", { minimum: 2, recommended: 9 })).toBe("done");
   });
 
   it("mantém um marco concluído mesmo com o anterior pendente", () => {
@@ -99,6 +141,7 @@ describe("packagingSetupSteps", () => {
       profile({ code: "G12", id: 2, version: 2 }),
       profile({ code: "S08", id: 3, version: 2 }),
     ];
+
 
     expect(stateOf(items, "medidas")).toBe("current");
     expect(stateOf(items, "despacho")).toBe("done");

@@ -220,6 +220,17 @@ Uma candidatura documental ainda não é um usuário: não existe `wp_user`, ses
 - Ação administrativa que muda estado exige confirmação, e a que rejeita algo exige motivo — o motivo é o que chega ao usuário afetado.
 - Estado fresco depois de uma ação vem do `router.refresh()`, não do corpo da resposta do POST — que é **deliberadamente descartado**. Para isso funcionar, o fetch de detalhe precisa continuar `no-store`.
 
+## Config: requisitos do vendor
+
+`/admin/config#vendors` (`vendor-eligibility-content.tsx`) configura quantas caixas ativas o vendor
+precisa ter para vender: **mínimo** (padrão 2, exigência) e **recomendado** (padrão 3, sugestão que
+nunca bloqueia). Grava em `PUT /api/admin/vendor-eligibility`, que invalida a tag
+`vendor-eligibility` e faz o painel do vendor recalcular na navegação seguinte.
+
+A seção **não repete a validação do WordPress**: faixa aceita (1–24) e a regra de recomendado ≥
+mínimo são verificadas lá, e o formulário só exibe a mensagem que voltar. Duplicá-las aqui criaria
+a segunda regra que envelhece sozinha quando o teto de caixas mudar.
+
 ## Vendas e exportações — vale para os dois painéis
 
 `/admin/sales` e `/vendor/dashboard` compartilham componentes e as mesmas regras de leitura. O que
