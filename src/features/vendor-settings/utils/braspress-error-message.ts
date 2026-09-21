@@ -1,5 +1,5 @@
-/** Qual comando falhou, porque a mesma falha se explica diferente ao salvar e ao remover. */
-export type BraspressAction = "remove" | "save";
+/** Qual comando falhou, porque a mesma falha se explica diferente em cada passo. */
+export type BraspressAction = "reauth" | "remove" | "save";
 
 /**
  * Envelope de erro que `/api/vendor/braspress` devolve.
@@ -33,6 +33,8 @@ const BY_CODE: Record<string, string> = {
     "Complete o CNPJ no cadastro da sua loja antes de habilitar a Braspress.",
   papelito_vendor_integration_rate_limited:
     "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.",
+  papelito_vendor_integration_reauth_ticket_invalid:
+    "A confirmação de senha expirou. Confirme sua senha de novo para concluir.",
   papelito_vendor_integration_save_failed:
     "Não foi possível salvar agora. A configuração anterior continua valendo.",
   papelito_vendor_integration_secret_invalid:
@@ -47,6 +49,7 @@ const BY_STATUS: Record<number, string> = {
 };
 
 const FALLBACK: Record<BraspressAction, string> = {
+  reauth: "Não foi possível confirmar sua senha. Tente novamente.",
   remove: "Não foi possível remover a integração. Tente novamente.",
   save: "Não foi possível salvar a integração. Tente novamente.",
 };

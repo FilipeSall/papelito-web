@@ -32,6 +32,7 @@ export { VendorRecipientPanel } from "./vendor-recipient-panel";
 export { VendorAccountSection } from "./vendor-account-section";
 export { VendorLeadTimeSection } from "./vendor-lead-time-section";
 export { VendorBraspressSection } from "./vendor-braspress-section";
+export { VendorReauthModal } from "./vendor-reauth-modal";
 export { VendorShell } from "./vendor-shell";
 export { VendorEligibilityNotice, VENDOR_PENDENCIES_ID } from "./vendor-eligibility-notice";
 export {
