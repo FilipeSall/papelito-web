@@ -58,6 +58,26 @@ function savedMessage(integration: VendorBraspressIntegration) {
   return "Integração Braspress salva. As credenciais não são exibidas novamente.";
 }
 
+const UNREAD_AFTER_WRITE: Record<BraspressAction, string> = {
+  remove:
+    "A remoção foi aceita, mas não foi possível ler como a Braspress ficou. Recarregue a página antes de mexer de novo.",
+  save: "A alteração foi aceita, mas não foi possível ler como a Braspress ficou. Recarregue a página antes de mexer de novo.",
+};
+
+/**
+ * Integração devolvida por uma escrita aceita, ou `null` quando o corpo não é um
+ * objeto utilizável. Um 200 ilegível não é verdade sobre a loja: adotá-lo apagaria
+ * `status`, `enabled` e `config` do estado da tela, que passaria a dizer
+ * "Desabilitada" — e a quebrar no render por falta de `config`.
+ */
+async function readIntegration(response: Response): Promise<VendorBraspressIntegration | null> {
+  const body: unknown = await response.json().catch(() => null);
+
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+
+  return body as VendorBraspressIntegration;
+}
+
 async function readError(response: Response, action: BraspressAction) {
   const body = (await response.json().catch(() => null)) as { code?: string } | null;
 
@@ -102,6 +122,11 @@ export function VendorBraspressSection({
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  function markStateUnread(action: BraspressAction) {
+    setIntegration((current) => ({ ...current, loadFailed: true }));
+    setFeedback({ error: true, message: `⚠ ${UNREAD_AFTER_WRITE[action]}` });
+  }
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFeedback(null);
@@ -124,10 +149,14 @@ export function VendorBraspressSection({
           return;
         }
 
-        const saved = {
-          ...((await response.json().catch(() => null)) as VendorBraspressIntegration),
-          loadFailed: false,
-        };
+        const body = await readIntegration(response);
+
+        if (!body) {
+          markStateUnread("save");
+          return;
+        }
+
+        const saved = { ...body, loadFailed: false };
 
         setIntegration(saved);
         setForm((current) => ({ ...current, username: "", password: "", currentPassword: "" }));
@@ -157,10 +186,15 @@ export function VendorBraspressSection({
           return;
         }
 
-        const next = {
-          ...((await response.json().catch(() => null)) as VendorBraspressIntegration),
-          loadFailed: false,
-        };
+        const body = await readIntegration(response);
+
+        if (!body) {
+          markStateUnread("remove");
+          return;
+        }
+
+        const next = { ...body, loadFailed: false };
+
         setIntegration(next);
         setForm(initialForm(next));
         setRemoving(false);

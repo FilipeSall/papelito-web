@@ -20,6 +20,16 @@ const integration: VendorBraspressIntegration = {
   },
 };
 
+const UNUSABLE_BODIES: ReadonlyArray<[string, () => Promise<unknown>]> = [
+  ["não é JSON", () => Promise.reject(new SyntaxError("Unexpected token < in JSON at position 0"))],
+  ["é um JSON que não é objeto", () => Promise.resolve("ok")],
+  ["é uma lista", () => Promise.resolve([])],
+];
+
+function stubAcceptedWrite(json: () => Promise<unknown>) {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json }));
+}
+
 describe("VendorBraspressSection", () => {
   beforeEach(() => vi.unstubAllGlobals());
 
@@ -286,4 +296,39 @@ describe("VendorBraspressSection", () => {
 
     expect(screen.getByText(/conta bloqueada na braspress/i)).toBeInTheDocument();
   });
+
+  it.each(UNUSABLE_BODIES)(
+    "não afirma nada sobre a Braspress quando a resposta do salvar %s",
+    async (_label, json) => {
+      stubAcceptedWrite(json);
+      render(<VendorBraspressSection initialIntegration={integration} />);
+
+      fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+      fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+      expect(await screen.findByText("Estado não lido")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent(/recarregue a página/i);
+      expect(screen.queryByText("Desabilitada")).not.toBeInTheDocument();
+      expect(screen.queryByText(/continua desabilitada/i)).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/cnpj remetente/i)).toHaveValue("12.345.678/0001-95");
+    },
+  );
+
+  it.each(UNUSABLE_BODIES)(
+    "não afirma nada sobre a Braspress quando a resposta da remoção %s",
+    async (_label, json) => {
+      stubAcceptedWrite(json);
+      render(<VendorBraspressSection initialIntegration={integration} />);
+
+      fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+      fireEvent.click(screen.getByRole("button", { name: /remover integração e credenciais/i }));
+      fireEvent.click(screen.getByRole("button", { name: /confirmar remoção/i }));
+
+      expect(await screen.findByText("Estado não lido")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent(/recarregue a página/i);
+      expect(screen.queryByText("Desabilitada")).not.toBeInTheDocument();
+      expect(screen.queryByText(/credenciais removidas/i)).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/cnpj remetente/i)).toHaveValue("12.345.678/0001-95");
+    },
+  );
 });

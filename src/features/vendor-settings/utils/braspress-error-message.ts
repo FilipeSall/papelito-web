@@ -52,6 +52,19 @@ const FALLBACK: Record<BraspressAction, string> = {
 };
 
 /**
+ * Mensagem do catálogo para o código, se — e somente se — ele existir lá.
+ *
+ * A consulta é por propriedade própria de propósito: `BY_CODE` é um objeto
+ * literal, e um `code` como `toString` ou `__proto__` resolveria pela cadeia de
+ * protótipos e devolveria uma função no lugar da frase para o vendor.
+ */
+function catalogMessage(code: string | undefined): string | undefined {
+  if (!code || !Object.hasOwn(BY_CODE, code)) return undefined;
+
+  return BY_CODE[code];
+}
+
+/**
  * Mensagem acionável para o vendor a partir do código de erro do backend.
  *
  * O texto do WordPress nunca chega à tela: código desconhecido cai numa frase
@@ -63,8 +76,5 @@ export function braspressErrorMessage(
   error: BraspressErrorEnvelope,
   action: BraspressAction,
 ): string {
-  const byCode = error.code ? BY_CODE[error.code] : undefined;
-  if (byCode) return byCode;
-
-  return BY_STATUS[error.status] ?? FALLBACK[action];
+  return catalogMessage(error.code) ?? BY_STATUS[error.status] ?? FALLBACK[action];
 }

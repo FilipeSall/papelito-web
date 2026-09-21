@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { braspressErrorMessage } from "./braspress-error-message";
 
 const TECHNICAL_LEAK = "SQLSTATE[HY000] wp_papelito_vendor_integrations";
+const SAVE_FALLBACK_MESSAGE = "Não foi possível salvar a integração. Tente novamente.";
+const OBJECT_PROTOTYPE_CODES = ["toString", "constructor", "__proto__", "valueOf"];
 
 describe("braspressErrorMessage", () => {
   it("diz que a senha pedida é a da Papelito, não a da Braspress", () => {
@@ -78,6 +80,15 @@ describe("braspressErrorMessage", () => {
     );
 
     expect(message).not.toContain(TECHNICAL_LEAK);
-    expect(message).toBe("Não foi possível salvar a integração. Tente novamente.");
+    expect(message).toBe(SAVE_FALLBACK_MESSAGE);
+  });
+
+  it("não confunde membro do protótipo de Object com mensagem do catálogo", () => {
+    for (const code of OBJECT_PROTOTYPE_CODES) {
+      const message = braspressErrorMessage({ code, status: 500 }, "save");
+
+      expect(typeof message).toBe("string");
+      expect(message).toBe(SAVE_FALLBACK_MESSAGE);
+    }
   });
 });
