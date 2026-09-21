@@ -100,7 +100,7 @@ export function VendorOrdersRow({ now, order }: { now: number; order: VendorOrde
             </p>
             <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#231f20]/62">
               <ArrowRight aria-hidden className="h-3 w-3 shrink-0" strokeWidth={2.6} />
-              {vendorOrderNextAction(order.status)}
+              {vendorOrderNextAction(order.status, order.shippingProvider)}
             </p>
           </div>
         </div>

@@ -61,6 +61,7 @@ function buildSnapshot(
         itemsLabel: `${label} item`,
         nextStatuses: status === "aguardando_envio" ? ["em_separacao", "cancelado"] : [],
         orderNumber: String(id),
+        shippingProvider: "",
         status: status === "all" ? "aguardando_pagamento" : status,
         total: 100.36,
       },

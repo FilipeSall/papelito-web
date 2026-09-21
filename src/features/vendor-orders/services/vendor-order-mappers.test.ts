@@ -307,3 +307,15 @@ describe("mapVendorOrderDocumentsSurface", () => {
     expect(runningWithBlock.documentsSurface).toBe("estorno");
   });
 });
+
+describe("mapVendorOrderSummary transportadora", () => {
+  it("leva a transportadora para a fila, que também fala do envio", () => {
+    expect(mapVendorOrderSummary({ shipping_provider: "braspress" }).shippingProvider).toBe(
+      "braspress",
+    );
+  });
+
+  it("devolve vazio quando o pedido não gravou transportadora, sem chutar uma", () => {
+    expect(mapVendorOrderSummary({}).shippingProvider).toBe("");
+  });
+});

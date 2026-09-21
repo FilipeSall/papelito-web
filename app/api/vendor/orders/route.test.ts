@@ -79,6 +79,7 @@ describe("GET /api/vendor/orders", () => {
           itemsLabel: "Seda Slim Longa",
           nextStatuses: [],
           orderNumber: "11883",
+          shippingProvider: "",
           status: "aguardando_envio",
           total: 100.36,
         },

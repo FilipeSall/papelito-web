@@ -95,4 +95,15 @@ describe("VendorOrderActions Braspress shipping", () => {
     expect(screen.getByText("PED-2026/001")).toBeInTheDocument();
     expect(screen.getByText("Em rota")).toBeInTheDocument();
   });
+
+  it("diz a situação do pacote na transportadora do pedido, e não nos Correios", () => {
+    render(<VendorOrderActions {...props} shippingProvider="braspress" shipments={[{
+      creationOutcome: "created", deliveredAt: "", externalReference: "PED-2026/002", externalStatus: "", generationStatus: "generating", hasError: false, id: 6,
+      isTest: false, labelAvailable: false, lastEventAt: "", lastEventCode: "", lastEventDescription: "", lastEventLocation: "", lastEventType: "",
+      nextReconciliationAt: "", postedAt: "2026-07-10", provider: "braspress", reconciliationAttempts: 0, reconciliationStatus: "none", serviceCode: "byNumPedido", status: "tracking_pending", supportReviewRequired: false, trackingCode: "",
+    }]} status="enviado" />);
+
+    expect(screen.getByText("Aguardando eventos da Braspress")).toBeInTheDocument();
+    expect(screen.queryByText(/eventos dos correios/i)).not.toBeInTheDocument();
+  });
 });

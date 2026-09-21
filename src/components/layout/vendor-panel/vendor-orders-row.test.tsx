@@ -16,6 +16,7 @@ function order(overrides: Partial<VendorOrderSummary> = {}): VendorOrderSummary 
     itemsLabel: "Green Herb Kit",
     nextStatuses: ["cancelado"],
     orderNumber: "14094",
+    shippingProvider: "",
     status: "em_separacao",
     total: 490,
     ...overrides,
@@ -57,5 +58,29 @@ describe("VendorOrdersRow", () => {
       "href",
       "/vendor/pedidos/14094",
     );
+  });
+
+  it("nomeia a transportadora do pedido na fila, e não a de ida presumida", () => {
+    render(
+      <ul>
+        <VendorOrdersRow
+          now={Date.parse("2026-09-05T10:00:00Z")}
+          order={order({ shippingProvider: "braspress", status: "enviado" })}
+        />
+      </ul>,
+    );
+
+    expect(screen.getByText("Acompanhando a Braspress")).toBeInTheDocument();
+    expect(screen.queryByText(/correios/i)).not.toBeInTheDocument();
+  });
+
+  it("lê pedido da fila sem provider como Correios, como o resto do painel", () => {
+    render(
+      <ul>
+        <VendorOrdersRow now={Date.parse("2026-09-05T10:00:00Z")} order={order({ status: "enviado" })} />
+      </ul>,
+    );
+
+    expect(screen.getByText("Acompanhando os Correios")).toBeInTheDocument();
   });
 });

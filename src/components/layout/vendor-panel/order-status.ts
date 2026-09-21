@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 
 import type { StatusShape } from "@/components/layout/operational-panel";
+import type { ShippingProvider } from "@/features/checkout/types/checkout";
+import { resolveShippingProvider } from "@/features/shipping/utils/resolve-shipping-provider";
+import { shippingProviderWithArticle } from "@/features/shipping/utils/shipping-provider-label";
 import type {
   ShipmentGenerationStatus,
   ShipmentLogisticsStatus,
@@ -60,19 +63,30 @@ export const VENDOR_ORDER_STATUS_ORDER: VendorOrderStatus[] = [
  * estoque — dizem de quem é a vez, em vez de sumirem: "nada aqui" e "não é com
  * você" são leituras diferentes numa fila de trabalho.
  */
-const NEXT_ACTION: Record<VendorOrderStatus, string> = {
+const NEXT_ACTION: Record<Exclude<VendorOrderStatus, "enviado">, string> = {
   aguardando_pagamento: "Aguardando o comprador pagar",
   aguardando_estoque: "A Papelito vai orientar a próxima etapa",
   aguardando_envio: "Separar o pedido",
   em_separacao: "Postar e informar o rastreio",
-  enviado: "Acompanhando os Correios",
   entregue: "Entrega concluída",
   cancelado: "Pedido encerrado",
   cancelamento_solicitado: "Acompanhar o estorno ao comprador",
   estornado: "Pedido encerrado com estorno",
 };
 
-export function vendorOrderNextAction(status: VendorOrderStatus): string {
+/**
+ * Frase da próxima ação, já sabendo quem entrega o pedido.
+ *
+ * `enviado` é a única situação em que a frase depende da transportadora: o
+ * vendor está esperando **uma** delas, e dizer "os Correios" num pedido
+ * Braspress manda acompanhar quem não vai encostar no pacote. Pedido sem
+ * provider é lido como Correios.
+ */
+export function vendorOrderNextAction(status: VendorOrderStatus, provider?: string): string {
+  if (status === "enviado") {
+    return `Acompanhando ${shippingProviderWithArticle(resolveShippingProvider(provider))}`;
+  }
+
   return NEXT_ACTION[status];
 }
 
@@ -80,7 +94,7 @@ export function vendorOrderNextAction(status: VendorOrderStatus): string {
  * Rótulo do botão que executa a transição, no imperativo curto.
  *
  * Só existe para os destinos que a API aceita — `enviado` e `entregue` são
- * projetados pelo rastreamento dos Correios e nunca viram botão.
+ * projetados pelo rastreamento da transportadora e nunca viram botão.
  */
 const TRANSITION_LABEL: Partial<Record<VendorOrderStatus, string>> = {
   em_separacao: "Marcar como separado",
@@ -171,31 +185,83 @@ export function paymentStateShape(state: string): StatusShape {
   return PAYMENT_STATE[state] ?? { icon: Hourglass, label: "Situação indisponível", tone: "neutral" };
 }
 
+/**
+ * Estado do envio em vocabulário que serve às duas transportadoras.
+ *
+ * "Objeto" é palavra dos Correios e some daqui; o que é fato só de uma delas —
+ * pré-postagem, etiqueta — vive no mapa por transportadora, abaixo.
+ */
 const LOGISTICS_LABEL: Record<ShipmentLogisticsStatus, string> = {
-  cancelled: "Pré-postagem cancelada",
-  delivered: "Entrega confirmada pelos Correios",
+  cancelled: "Envio cancelado",
+  delivered: "Entrega confirmada pela transportadora",
   delivery_failed: "Tentativa de entrega sem sucesso",
-  expired: "Pré-postagem expirada",
-  in_transit: "Objeto em trânsito",
+  expired: "Envio expirado",
+  in_transit: "Encomenda em trânsito",
   lost: "Ocorrência logística; acompanhamento necessário",
-  out_for_delivery: "Objeto saiu para entrega",
-  pickup_available: "Objeto disponível para retirada",
-  posted: "Objeto postado",
-  preposted: "Etiqueta gerada; aguardando postagem",
-  returned: "Objeto devolvido ao remetente",
-  returning: "Objeto em devolução",
-  tracking_pending: "Aguardando eventos dos Correios",
+  out_for_delivery: "Encomenda saiu para entrega",
+  pickup_available: "Encomenda disponível para retirada",
+  posted: "Encomenda postada",
+  preposted: "Envio registrado; aguardando postagem",
+  returned: "Encomenda devolvida ao remetente",
+  returning: "Encomenda em devolução",
+  tracking_pending: "Aguardando eventos da transportadora",
 };
 
-export function logisticsStatusLabel(status: ShipmentLogisticsStatus | "not_started"): string {
-  return status === "not_started" ? "Aguardando geração da etiqueta" : LOGISTICS_LABEL[status];
+/**
+ * O que cada transportadora sobrescreve do vocabulário comum.
+ *
+ * Correios mantém pré-postagem e etiqueta porque elas existem lá; a Braspress
+ * não emite nenhuma das duas e ficaria prometendo um passo inexistente. Onde a
+ * frase só muda de nome, a transportadora é nomeada — "pelos Correios" e "pela
+ * Braspress" exigem preposições diferentes e por isso são frases inteiras, não
+ * interpolação.
+ */
+const LOGISTICS_LABEL_BY_PROVIDER: Record<
+  ShippingProvider,
+  Partial<Record<ShipmentLogisticsStatus, string>>
+> = {
+  braspress: {
+    delivered: "Entrega confirmada pela Braspress",
+    tracking_pending: "Aguardando eventos da Braspress",
+  },
+  correios: {
+    cancelled: "Pré-postagem cancelada",
+    delivered: "Entrega confirmada pelos Correios",
+    expired: "Pré-postagem expirada",
+    preposted: "Etiqueta gerada; aguardando postagem",
+    tracking_pending: "Aguardando eventos dos Correios",
+  },
+};
+
+/** Só a Papelito gera etiqueta, e só nos Correios: sem isso não há o que aguardar. */
+const NO_SHIPMENT_HEADLINE = "Sem postagem registrada";
+
+const AWAITING_LABEL_HEADLINE = "Aguardando geração da etiqueta";
+
+/**
+ * Estado do envio dito na transportadora do pedido.
+ *
+ * Remessa sem `provider` — ou registrada à mão, pelo S10 — é lida como
+ * Correios: era a única transportadora quando aquele registro nasceu.
+ */
+export function logisticsStatusLabel(
+  status: ShipmentLogisticsStatus | "not_started",
+  provider?: string,
+): string {
+  const resolved = resolveShippingProvider(provider);
+
+  if (status === "not_started") {
+    return resolved === "braspress" ? NO_SHIPMENT_HEADLINE : AWAITING_LABEL_HEADLINE;
+  }
+
+  return LOGISTICS_LABEL_BY_PROVIDER[resolved][status] ?? LOGISTICS_LABEL[status];
 }
 
 const GENERATION_LABEL: Record<ShipmentGenerationStatus, string> = {
   failed: "Não foi possível gerar a etiqueta",
   generated: "Etiqueta gerada",
   generating: "Geração da etiqueta em andamento",
-  not_started: "Aguardando geração da etiqueta",
+  not_started: AWAITING_LABEL_HEADLINE,
   uncertain: "Geração com resultado incerto; revisão do suporte necessária",
 };
 
@@ -205,23 +271,30 @@ export function generationStatusLabel(status: ShipmentGenerationStatus): string 
 
 /**
  * Frase única da logística: enquanto a etiqueta não existe, o que importa é a
- * geração; depois dela, o que importa é o evento dos Correios.
+ * geração; depois dela, o que importa é o evento da transportadora.
  *
  * Sem geração automática de pré-postagem não há etiqueta a esperar — a frase
  * "aguardando geração da etiqueta" faria o vendor aguardar um passo que o
- * sistema não vai executar, quando quem posta é ele.
+ * sistema não vai executar, quando quem posta é ele. Pedido Braspress cai
+ * sempre nesse caso: a Papelito não emite nada pela Braspress, e a flag de
+ * geração automática é global dos Correios.
  */
 export function logisticsHeadline(
   generationStatus: ShipmentGenerationStatus,
   status: ShipmentLogisticsStatus | "not_started",
   automaticGenerationEnabled = true,
+  provider?: string,
 ): string {
+  const resolved = resolveShippingProvider(provider);
+
   if (generationStatus === "generated") {
-    return logisticsStatusLabel(status);
+    return logisticsStatusLabel(status, resolved);
   }
 
-  if (generationStatus === "not_started" && !automaticGenerationEnabled) {
-    return "Sem postagem registrada";
+  const generatesLabel = automaticGenerationEnabled && resolved === "correios";
+
+  if (generationStatus === "not_started" && !generatesLabel) {
+    return NO_SHIPMENT_HEADLINE;
   }
 
   return generationStatusLabel(generationStatus);

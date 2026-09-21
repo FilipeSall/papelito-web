@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotification } from "../../../../test/factories/notification";
+import type { NotificationType } from "../types/notification";
 import { formatNotification } from "./format-notification";
 
 describe("formatNotification", () => {
@@ -324,5 +325,33 @@ describe("formatNotification", () => {
 
     expect(formatted.title).toBe("Estorno concluído");
     expect(formatted.href).toBe("/perfil/pedidos/7788");
+  });
+});
+
+describe("formatNotification de envio", () => {
+  const SHIPMENT_TYPES: NotificationType[] = [
+    "shipment_posted",
+    "shipment_out_for_delivery",
+    "shipment_delivered",
+    "shipment_delivery_failed",
+    "shipment_pickup_available",
+    "shipment_returned",
+  ];
+
+  it("não atribui o evento aos Correios, porque a notificação não sabe a transportadora", () => {
+    for (const type of SHIPMENT_TYPES) {
+      const formatted = formatNotification(buildNotification({ type, payload: { order_id: 4120 } }));
+
+      expect(`${formatted.title} ${formatted.body}`).not.toMatch(/correios|objeto/i);
+    }
+  });
+
+  it("continua dizendo o que aconteceu com a encomenda", () => {
+    const posted = formatNotification(
+      buildNotification({ type: "shipment_posted", payload: { order_id: 4120 } }),
+    );
+
+    expect(posted.title).toBe("Encomenda postada");
+    expect(posted.body).toBe("A transportadora confirmou a postagem da encomenda.");
   });
 });

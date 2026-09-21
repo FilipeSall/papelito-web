@@ -210,3 +210,94 @@ describe("VendorOrderStatusPanel", () => {
     expect(screen.getByText(/precisa passar pelo suporte/i)).toBeInTheDocument();
   });
 });
+
+describe("VendorOrderStatusPanel por transportadora", () => {
+  beforeEach(() => {
+    refreshMock.mockReset();
+    vi.unstubAllGlobals();
+  });
+
+  it("não manda o vendor de pedido Braspress acompanhar os Correios", () => {
+    render(
+      <VendorOrderStatusPanel
+        hasShipments
+        nextStatuses={[]}
+        orderId={14090}
+        shippingProvider="braspress"
+        status="enviado"
+      />,
+    );
+
+    expect(screen.getByText("Acompanhando a Braspress")).toBeInTheDocument();
+    expect(screen.queryByText(/correios/i)).not.toBeInTheDocument();
+  });
+
+  it("segue nomeando os Correios no pedido que é deles", () => {
+    render(
+      <VendorOrderStatusPanel
+        hasShipments
+        nextStatuses={[]}
+        orderId={14090}
+        shippingProvider="correios"
+        status="enviado"
+      />,
+    );
+
+    expect(screen.getByText("Acompanhando os Correios")).toBeInTheDocument();
+  });
+
+  it("lê pedido sem provider como Correios, a única transportadora que ele pôde ter tido", () => {
+    render(<VendorOrderStatusPanel hasShipments nextStatuses={[]} orderId={14090} status="enviado" />);
+
+    expect(screen.getByText("Acompanhando os Correios")).toBeInTheDocument();
+  });
+
+  it("não atribui a confirmação de enviado e entregue a uma transportadora que não é a do pedido", () => {
+    render(
+      <VendorOrderStatusPanel
+        hasShipments={false}
+        nextStatuses={["em_separacao"]}
+        orderId={14090}
+        shippingProvider="braspress"
+        status="aguardando_envio"
+      />,
+    );
+
+    expect(screen.getByText(/não existe botão para declará-los/i)).toHaveTextContent(
+      /rastreamento da transportadora/i,
+    );
+    expect(screen.queryByText(/correios/i)).not.toBeInTheDocument();
+  });
+
+  it("não fala em pré-postagem ao barrar o cancelamento de um pedido Braspress", () => {
+    render(
+      <VendorOrderStatusPanel
+        hasShipments
+        nextStatuses={["cancelado"]}
+        orderId={14090}
+        shippingProvider="braspress"
+        status="em_separacao"
+      />,
+    );
+
+    const note = screen.getByText(/precisa passar pelo suporte/i);
+    expect(note).toHaveTextContent(/envio registrado na Braspress/i);
+    expect(note).not.toHaveTextContent(/pré-postagem|correios/i);
+  });
+
+  it("mantém a pré-postagem na recusa de cancelamento do pedido dos Correios", () => {
+    render(
+      <VendorOrderStatusPanel
+        hasShipments
+        nextStatuses={["cancelado"]}
+        orderId={14090}
+        shippingProvider="correios"
+        status="em_separacao"
+      />,
+    );
+
+    const note = screen.getByText(/precisa passar pelo suporte/i);
+    expect(note).toHaveTextContent(/pré-postagem/i);
+    expect(note).toHaveTextContent(/nos Correios/i);
+  });
+});

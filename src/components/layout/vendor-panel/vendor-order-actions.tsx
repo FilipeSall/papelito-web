@@ -49,9 +49,9 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 });
 
 /**
- * Data da postagem é gravada só com o dia (`YYYY-MM-DD`); os eventos dos
- * Correios trazem hora e são normalizados para UTC na gravação. Tratar as duas
- * com o mesmo formatador imprimia a data pura de volta em ISO, porque
+ * Data da postagem é gravada só com o dia (`YYYY-MM-DD`); os eventos de
+ * rastreamento trazem hora e são normalizados para UTC na gravação. Tratar as
+ * duas com o mesmo formatador imprimia a data pura de volta em ISO, porque
  * `2026-09-01Z` não é uma data válida.
  */
 function formatStamp(value: string) {
@@ -83,21 +83,66 @@ const fieldClassName = [
 
 const labelClassName = "block text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]";
 
+const INVALID_S10_MESSAGE = "⚠ Informe um código S10 válido, como AA123456789BR.";
+const MISSING_POSTED_AT_MESSAGE = "⚠ Informe a data da postagem.";
+const MISSING_BRASPRESS_REFERENCE_MESSAGE =
+  "⚠ Informe o número de pedido confirmado na Braspress.";
+const SERVER_UNREACHABLE_MESSAGE = "⚠ Não foi possível falar com o servidor.";
+const POSTED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const BRASPRESS_REFERENCE_PATTERN = /^[A-Za-z0-9._/-]{1,96}$/;
+
+/**
+ * Escrita de logística do vendor. Sempre JSON, sempre o mesmo envelope — e sem
+ * depender de nada do componente, por isso vive no escopo do módulo.
+ */
+function request(url: string, method: "PATCH" | "POST", body: unknown) {
+  return fetch(url, {
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+    method,
+  });
+}
+
+/**
+ * O que impede a revisão do envio manual, ou `null` quando ele está pronto.
+ * A validação é local porque a revisão não chama a API: ela só mostra ao vendor
+ * o que será enviado.
+ */
+function manualShipmentError(trackingCode: string, postedAt: string): string | null {
+  if (!isS10(normalizeTracking(trackingCode))) return INVALID_S10_MESSAGE;
+  if (!POSTED_AT_PATTERN.test(postedAt)) return MISSING_POSTED_AT_MESSAGE;
+
+  return null;
+}
+
+/**
+ * O que impede a revisão da postagem Braspress, ou `null` quando ela está
+ * pronta. A referência é o número de pedido acertado fora da plataforma, não um
+ * S10 — o formato aceito é o mesmo que o backend valida.
+ */
+function braspressShipmentError(externalOrderNumber: string, postedAt: string): string | null {
+  if (!BRASPRESS_REFERENCE_PATTERN.test(externalOrderNumber.trim())) {
+    return MISSING_BRASPRESS_REFERENCE_MESSAGE;
+  }
+  if (!POSTED_AT_PATTERN.test(postedAt)) return MISSING_POSTED_AT_MESSAGE;
+
+  return null;
+}
+
+type ShipmentFactProps = {
+  /** Ícone do lucide que acompanha o rótulo. */
+  icon: typeof Truck;
+  label: string;
+  /** Liga a fonte monoespaçada dos códigos — rastreio e referência externa. */
+  mono?: boolean;
+  value: string;
+};
+
 /**
  * Dado já conhecido da postagem. É **informação**: não pede ação e não é
  * situação — por isso vem em cinza de rótulo, sem moldura própria.
  */
-function ShipmentFact({
-  icon: Icon,
-  label,
-  mono = false,
-  value,
-}: {
-  icon: typeof Truck;
-  label: string;
-  mono?: boolean;
-  value: string;
-}) {
+function ShipmentFact({ icon: Icon, label, mono = false, value }: Readonly<ShipmentFactProps>) {
   return (
     <div className="min-w-0">
       <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#231f20]/55">
@@ -116,6 +161,211 @@ function ShipmentFact({
   );
 }
 
+type ShipmentStatusHeaderProps = {
+  /** Posição do pacote na lista, base zero. */
+  index: number;
+  shipment: VendorOrderShipment;
+  /** Quantos pacotes o pedido tem, para o "X de Y". */
+  total: number;
+};
+
+/**
+ * Faixa de situação do pacote: é o que o vendor procura ao abrir a seção, e por
+ * isso vem antes de qualquer dado. O rótulo é dito na transportadora do próprio
+ * pacote — remessa sem provider é lida como Correios.
+ */
+function ShipmentStatusHeader({ index, shipment, total }: Readonly<ShipmentStatusHeaderProps>) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#1a1a1a]/10 bg-[#faf8f2] px-4 py-3">
+      <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[#1a1a1a]">
+        {shipment.status === "delivered" ? (
+          <CircleCheckBig aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+        ) : (
+          <Truck aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+        )}
+        {logisticsStatusLabel(shipment.status, shipment.provider)}
+      </p>
+      <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#231f20]/55">
+        Pacote {index + 1} de {total}
+      </span>
+    </div>
+  );
+}
+
+type ShipmentFactsProps = {
+  shipment: VendorOrderShipment;
+  /** Serviço do pedido, usado quando a remessa não gravou o próprio. */
+  shippingService: string;
+};
+
+/**
+ * O que já se sabe da postagem. Cada ficha só aparece quando tem valor: campo
+ * vazio com rótulo promete um dado que a remessa não tem.
+ */
+function ShipmentFacts({ shipment, shippingService }: Readonly<ShipmentFactsProps>) {
+  const reference =
+    shipment.externalReference ||
+    shipment.trackingCode ||
+    generationStatusLabel(shipment.generationStatus);
+
+  return (
+    <dl className="grid gap-4 sm:grid-cols-2">
+      <ShipmentFact
+        icon={ScanBarcode}
+        label={shipment.provider === "braspress" ? "Pedido Braspress" : "Código de rastreamento"}
+        mono
+        value={reference}
+      />
+      <ShipmentFact
+        icon={Tag}
+        label="Serviço"
+        value={shipment.serviceCode || shippingService || "Não informado"}
+      />
+      {shipment.postedAt ? (
+        <ShipmentFact
+          icon={CalendarDays}
+          label="Postado em"
+          value={formatStamp(shipment.postedAt) || shipment.postedAt}
+        />
+      ) : null}
+      {shipment.deliveredAt ? (
+        <ShipmentFact
+          icon={CircleCheckBig}
+          label="Entregue em"
+          value={formatStamp(shipment.deliveredAt) || shipment.deliveredAt}
+        />
+      ) : null}
+      {shipment.externalStatus ? (
+        <ShipmentFact icon={Truck} label="Status Braspress" value={shipment.externalStatus} />
+      ) : null}
+    </dl>
+  );
+}
+
+/**
+ * Última ocorrência lida do rastreamento, com local e hora quando existem.
+ * Devolve `null` sem ocorrência — a plataforma não inventa evento.
+ */
+function ShipmentLastEvent({ shipment }: Readonly<{ shipment: VendorOrderShipment }>) {
+  if (!shipment.lastEventDescription) return null;
+
+  return (
+    <p className="mt-4 flex items-start gap-2 border-t-2 border-[#1a1a1a]/10 pt-3 text-xs leading-5 text-[#231f20]/62">
+      <MapPin aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.4} />
+      <span>
+        {shipment.lastEventDescription}
+        {shipment.lastEventLocation ? ` · ${shipment.lastEventLocation}` : ""}
+        {shipment.lastEventAt ? ` · ${formatStamp(shipment.lastEventAt)}` : ""}
+      </span>
+    </p>
+  );
+}
+
+type ShipmentCorrectionFieldsProps = {
+  /** Ação em voo, para o botão dizer "Salvando…" só na correção deste pacote. */
+  activeAction: string | null;
+  correctionPostedAt: string;
+  isBusy: boolean;
+  onCorrectionPostedAtChange: (value: string) => void;
+  onDiscard: () => void;
+  onSave: () => void;
+  onTrackingCodeChange: (value: string) => void;
+  shipmentId: number;
+  trackingCode: string;
+};
+
+/**
+ * Correção do código de rastreamento de um pacote já registrado.
+ *
+ * Só abre para remessa manual ainda não entregue; a data da postagem vem
+ * preenchida com a original, porque corrigir o código não remarca a postagem.
+ */
+function ShipmentCorrectionFields({
+  activeAction,
+  correctionPostedAt,
+  isBusy,
+  onCorrectionPostedAtChange,
+  onDiscard,
+  onSave,
+  onTrackingCodeChange,
+  shipmentId,
+  trackingCode,
+}: Readonly<ShipmentCorrectionFieldsProps>) {
+  return (
+    <div className="mt-4 grid gap-3 border-t-2 border-[#1a1a1a]/10 pt-4 sm:grid-cols-2">
+      <div>
+        <label className={labelClassName} htmlFor={`tracking-${shipmentId}`}>
+          Código de rastreamento
+        </label>
+        <input
+          className={`${fieldClassName} mt-2 font-mono uppercase`}
+          disabled={isBusy}
+          id={`tracking-${shipmentId}`}
+          maxLength={13}
+          onChange={(event) => onTrackingCodeChange(event.target.value)}
+          value={trackingCode}
+        />
+      </div>
+      <div>
+        <label className={labelClassName} htmlFor={`posted-${shipmentId}`}>
+          Data da postagem
+        </label>
+        <input
+          className={`${fieldClassName} mt-2`}
+          disabled={isBusy}
+          id={`posted-${shipmentId}`}
+          onChange={(event) => onCorrectionPostedAtChange(event.target.value)}
+          type="date"
+          value={correctionPostedAt}
+        />
+      </div>
+      <div className="flex flex-wrap gap-3 sm:col-span-2">
+        <button className={secondaryButton} disabled={isBusy} onClick={onSave} type="button">
+          {activeAction === `edit-${shipmentId}` ? "Salvando…" : "Salvar correção"}
+        </button>
+        <button
+          className="cursor-pointer text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] underline"
+          disabled={isBusy}
+          onClick={onDiscard}
+          type="button"
+        >
+          Descartar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Uma escrita de logística, do clique ao feedback.
+ *
+ * As três escritas do painel — postagem manual, postagem Braspress e correção
+ * de código — têm o mesmo corpo: trava de duplo clique, requisição, leitura
+ * tolerante do erro do backend e `router.refresh()` só no sucesso. O que muda
+ * entre elas é a rota, o corpo e a frase.
+ */
+type VendorOrderActionsProps = {
+  /** Registro manual de S10 ligado no backend. Não vale para pedido Braspress. */
+  manualRegistrationEnabled: boolean;
+  orderId: number;
+  shipments: VendorOrderShipment[];
+  /** Transportadora do pedido. Vazio é pedido anterior ao contrato multicarrier. */
+  shippingProvider?: string;
+  shippingService: string;
+  status: VendorOrderStatus;
+};
+
+type ShipmentSubmission = {
+  actionId: string;
+  body: unknown;
+  /** Frase usada quando o backend recusa sem mensagem própria. */
+  failureMessage: string;
+  method: "PATCH" | "POST";
+  onSuccess: () => void;
+  successMessage: string;
+  url: string;
+};
+
 /**
  * Postagem e rastreio do pedido.
  *
@@ -131,14 +381,7 @@ export function VendorOrderActions({
   shippingProvider = "",
   shippingService,
   status,
-}: {
-  manualRegistrationEnabled: boolean;
-  orderId: number;
-  shipments: VendorOrderShipment[];
-  shippingProvider?: string;
-  shippingService: string;
-  status: VendorOrderStatus;
-}) {
+}: Readonly<VendorOrderActionsProps>) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [trackingCode, setTrackingCode] = useState("");
@@ -155,141 +398,104 @@ export function VendorOrderActions({
   const canRegister = status === "em_separacao" && shipments.length === 0;
   const canRegisterManual = canRegister && manualRegistrationEnabled && !isBraspressOrder;
   const canRegisterBraspress = canRegister && isBraspressOrder;
-  const correctable = shipments.filter(
-    (shipment) => shipment.provider === "manual" && shipment.status !== "delivered",
-  );
 
-  function request(url: string, method: "PATCH" | "POST", body: unknown) {
-    return fetch(url, {
-      body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
-      method,
+  function isCorrectable(shipment: VendorOrderShipment) {
+    return shipment.provider === "manual" && shipment.status !== "delivered";
+  }
+
+  function startCorrection(shipment: VendorOrderShipment) {
+    setTrackingCode(shipment.trackingCode);
+    setCorrectionPostedAt(shipment.postedAt || today());
+    setEditing(shipment.id);
+  }
+
+  function submitShipment({
+    actionId,
+    body,
+    failureMessage,
+    method,
+    onSuccess,
+    successMessage,
+    url,
+  }: ShipmentSubmission) {
+    if (isBusy) return;
+    setActiveAction(actionId);
+
+    startTransition(async () => {
+      try {
+        const response = await request(url, method, body);
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+
+        if (response.ok) {
+          onSuccess();
+          setFeedback({ error: false, message: successMessage });
+          router.refresh();
+          return;
+        }
+
+        setFeedback({ error: true, message: `⚠ ${payload?.message ?? failureMessage}` });
+      } catch {
+        setFeedback({ error: true, message: SERVER_UNREACHABLE_MESSAGE });
+      } finally {
+        setActiveAction(null);
+      }
     });
   }
 
-  function reviewShipment() {
-    if (!isS10(normalizeTracking(trackingCode))) {
-      setFeedback({ error: true, message: "⚠ Informe um código S10 válido, como AA123456789BR." });
+  function review(error: string | null) {
+    if (error) {
+      setFeedback({ error: true, message: error });
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(postedAt)) {
-      setFeedback({ error: true, message: "⚠ Informe a data da postagem." });
-      return;
-    }
+
     setFeedback(null);
     setReviewing(true);
   }
 
   function confirmShipment() {
-    if (isBusy) return;
-    setActiveAction("manual");
-
-    startTransition(async () => {
-      try {
-        const response = await request(`/api/vendor/orders/${orderId}/shipments/manual`, "POST", {
-          postedAt,
-          serviceCode: shippingService,
-          trackingCode: normalizeTracking(trackingCode),
-        });
-        const body = (await response.json().catch(() => null)) as { message?: string } | null;
-
-        if (response.ok) {
-          setReviewing(false);
-          setFeedback({ error: false, message: "✓ Envio confirmado e comprador notificado." });
-          router.refresh();
-          return;
-        }
-
-        setFeedback({
-          error: true,
-          message: `⚠ ${body?.message ?? "Não foi possível confirmar o envio."}`,
-        });
-      } catch {
-        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor." });
-      } finally {
-        setActiveAction(null);
-      }
+    submitShipment({
+      actionId: "manual",
+      body: {
+        postedAt,
+        serviceCode: shippingService,
+        trackingCode: normalizeTracking(trackingCode),
+      },
+      failureMessage: "Não foi possível confirmar o envio.",
+      method: "POST",
+      onSuccess: () => setReviewing(false),
+      successMessage: "✓ Envio confirmado e comprador notificado.",
+      url: `/api/vendor/orders/${orderId}/shipments/manual`,
     });
   }
 
-  function reviewBraspressShipment() {
-    if (!/^[A-Za-z0-9._/-]{1,96}$/.test(externalOrderNumber.trim())) {
-      setFeedback({ error: true, message: "⚠ Informe o número de pedido confirmado na Braspress." });
-      return;
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(postedAt)) {
-      setFeedback({ error: true, message: "⚠ Informe a data da postagem." });
-      return;
-    }
-    setFeedback(null);
-    setReviewing(true);
-  }
-
   function confirmBraspressShipment() {
-    if (isBusy) return;
-    setActiveAction("braspress");
-
-    startTransition(async () => {
-      try {
-        const response = await request(`/api/vendor/orders/${orderId}/shipments/braspress`, "POST", {
-          externalOrderNumber: externalOrderNumber.trim(),
-          postedAt,
-        });
-        const body = (await response.json().catch(() => null)) as { message?: string } | null;
-
-        if (response.ok) {
-          setReviewing(false);
-          setFeedback({ error: false, message: "✓ Postagem Braspress confirmada. O rastreio será atualizado pela transportadora." });
-          router.refresh();
-          return;
-        }
-
-        setFeedback({
-          error: true,
-          message: `⚠ ${body?.message ?? "Não foi possível confirmar a postagem Braspress."}`,
-        });
-      } catch {
-        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor." });
-      } finally {
-        setActiveAction(null);
-      }
+    submitShipment({
+      actionId: "braspress",
+      body: { externalOrderNumber: externalOrderNumber.trim(), postedAt },
+      failureMessage: "Não foi possível confirmar a postagem Braspress.",
+      method: "POST",
+      onSuccess: () => setReviewing(false),
+      successMessage:
+        "✓ Postagem Braspress confirmada. O rastreio será atualizado pela transportadora.",
+      url: `/api/vendor/orders/${orderId}/shipments/braspress`,
     });
   }
 
   function correctShipment(shipment: VendorOrderShipment) {
     if (isBusy) return;
     if (!isS10(normalizeTracking(trackingCode))) {
-      setFeedback({ error: true, message: "⚠ Informe um código S10 válido, como AA123456789BR." });
+      setFeedback({ error: true, message: INVALID_S10_MESSAGE });
       return;
     }
 
-    setActiveAction(`edit-${shipment.id}`);
-
-    startTransition(async () => {
-      try {
-        const response = await request(
-          `/api/vendor/orders/${orderId}/shipments/${shipment.id}`,
-          "PATCH",
-          { postedAt: correctionPostedAt, trackingCode: normalizeTracking(trackingCode) },
-        );
-        const body = (await response.json().catch(() => null)) as { message?: string } | null;
-
-        if (response.ok) {
-          setEditing(null);
-          setFeedback({ error: false, message: "✓ Rastreamento corrigido e comprador notificado." });
-          router.refresh();
-          return;
-        }
-
-        setFeedback({
-          error: true,
-          message: `⚠ ${body?.message ?? "Não foi possível corrigir o rastreamento."}`,
-        });
-      } catch {
-        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor." });
-      } finally {
-        setActiveAction(null);
-      }
+    submitShipment({
+      actionId: `edit-${shipment.id}`,
+      body: { postedAt: correctionPostedAt, trackingCode: normalizeTracking(trackingCode) },
+      failureMessage: "Não foi possível corrigir o rastreamento.",
+      method: "PATCH",
+      onSuccess: () => setEditing(null),
+      successMessage: "✓ Rastreamento corrigido e comprador notificado.",
+      url: `/api/vendor/orders/${orderId}/shipments/${shipment.id}`,
     });
   }
 
@@ -315,143 +521,50 @@ export function VendorOrderActions({
           <ul aria-label="Pacotes do pedido" className="space-y-3">
             {shipments.map((shipment, index) => (
               <li className="border-2 border-[#1a1a1a]/15 bg-white" key={shipment.id}>
-                {/* STATUS: a situação da entrega vem primeiro e com peso, porque é
-                    o que o vendor procura ao abrir a seção. */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#1a1a1a]/10 bg-[#faf8f2] px-4 py-3">
-                  <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.1em] text-[#1a1a1a]">
-                    {shipment.status === "delivered" ? (
-                      <CircleCheckBig aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
-                    ) : (
-                      <Truck aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.4} />
-                    )}
-                    {logisticsStatusLabel(shipment.status)}
-                  </p>
-                  <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#231f20]/55">
-                    Pacote {index + 1} de {shipments.length}
-                  </span>
-                </div>
+                <ShipmentStatusHeader index={index} shipment={shipment} total={shipments.length} />
 
                 <div className="px-4 py-4">
-                  {/* INFORMAÇÃO: o que já se sabe da postagem. */}
-                  <dl className="grid gap-4 sm:grid-cols-2">
-                    <ShipmentFact
-                      icon={ScanBarcode}
-                      label={shipment.provider === "braspress" ? "Pedido Braspress" : "Código de rastreamento"}
-                      mono
-                      value={shipment.externalReference || shipment.trackingCode || generationStatusLabel(shipment.generationStatus)}
-                    />
-                    <ShipmentFact
-                      icon={Tag}
-                      label="Serviço"
-                      value={shipment.serviceCode || shippingService || "Não informado"}
-                    />
-                    {shipment.postedAt ? (
-                      <ShipmentFact
-                        icon={CalendarDays}
-                        label="Postado em"
-                        value={formatStamp(shipment.postedAt) || shipment.postedAt}
-                      />
-                    ) : null}
-                    {shipment.deliveredAt ? (
-                      <ShipmentFact
-                        icon={CircleCheckBig}
-                        label="Entregue em"
-                        value={formatStamp(shipment.deliveredAt) || shipment.deliveredAt}
-                      />
-                    ) : null}
-                    {shipment.externalStatus ? (
-                      <ShipmentFact icon={Truck} label="Status Braspress" value={shipment.externalStatus} />
-                    ) : null}
-                  </dl>
-
-                  {shipment.lastEventDescription ? (
-                    <p className="mt-4 flex items-start gap-2 border-t-2 border-[#1a1a1a]/10 pt-3 text-xs leading-5 text-[#231f20]/62">
-                      <MapPin aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.4} />
-                      <span>
-                        {shipment.lastEventDescription}
-                        {shipment.lastEventLocation ? ` · ${shipment.lastEventLocation}` : ""}
-                        {shipment.lastEventAt ? ` · ${formatStamp(shipment.lastEventAt)}` : ""}
-                      </span>
-                    </p>
-                  ) : null}
+                  <ShipmentFacts shipment={shipment} shippingService={shippingService} />
+                  <ShipmentLastEvent shipment={shipment} />
 
                   {/* AÇÃO: só o que ainda depende do vendor. */}
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                  {shipment.labelAvailable ? (
-                    <a
-                      className={secondaryButton}
-                      href={`/api/vendor/orders/${orderId}/shipments/${shipment.id}/label`}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-                      Etiqueta
-                    </a>
-                  ) : null}
-
-                  {correctable.some((entry) => entry.id === shipment.id) && editing !== shipment.id ? (
-                    <button
-                      className="cursor-pointer text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] underline"
-                      onClick={() => {
-                        setTrackingCode(shipment.trackingCode);
-                        setCorrectionPostedAt(shipment.postedAt || today());
-                        setEditing(shipment.id);
-                      }}
-                      type="button"
-                    >
-                      Corrigir código
-                    </button>
-                  ) : null}
-                </div>
-
-                {editing === shipment.id ? (
-                  <div className="mt-4 grid gap-3 border-t-2 border-[#1a1a1a]/10 pt-4 sm:grid-cols-2">
-                    <div>
-                      <label className={labelClassName} htmlFor={`tracking-${shipment.id}`}>
-                        Código de rastreamento
-                      </label>
-                      <input
-                        className={`${fieldClassName} mt-2 font-mono uppercase`}
-                        disabled={isBusy}
-                        id={`tracking-${shipment.id}`}
-                        maxLength={13}
-                        onChange={(event) => setTrackingCode(event.target.value)}
-                        value={trackingCode}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClassName} htmlFor={`posted-${shipment.id}`}>
-                        Data da postagem
-                      </label>
-                      <input
-                        className={`${fieldClassName} mt-2`}
-                        disabled={isBusy}
-                        id={`posted-${shipment.id}`}
-                        onChange={(event) => setCorrectionPostedAt(event.target.value)}
-                        type="date"
-                        value={correctionPostedAt}
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-3 sm:col-span-2">
-                      <button
+                    {shipment.labelAvailable ? (
+                      <a
                         className={secondaryButton}
-                        disabled={isBusy}
-                        onClick={() => correctShipment(shipment)}
-                        type="button"
+                        href={`/api/vendor/orders/${orderId}/shipments/${shipment.id}/label`}
+                        rel="noreferrer"
+                        target="_blank"
                       >
-                        {activeAction === `edit-${shipment.id}` ? "Salvando…" : "Salvar correção"}
-                      </button>
+                        <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+                        Etiqueta
+                      </a>
+                    ) : null}
+
+                    {isCorrectable(shipment) && editing !== shipment.id ? (
                       <button
                         className="cursor-pointer text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a] underline"
-                        disabled={isBusy}
-                        onClick={() => setEditing(null)}
+                        onClick={() => startCorrection(shipment)}
                         type="button"
                       >
-                        Descartar
+                        Corrigir código
                       </button>
-                    </div>
+                    ) : null}
                   </div>
-                ) : null}
+
+                  {editing === shipment.id ? (
+                    <ShipmentCorrectionFields
+                      activeAction={activeAction}
+                      correctionPostedAt={correctionPostedAt}
+                      isBusy={isBusy}
+                      onCorrectionPostedAtChange={setCorrectionPostedAt}
+                      onDiscard={() => setEditing(null)}
+                      onSave={() => correctShipment(shipment)}
+                      onTrackingCodeChange={setTrackingCode}
+                      shipmentId={shipment.id}
+                      trackingCode={trackingCode}
+                    />
+                  ) : null}
                 </div>
               </li>
             ))}
@@ -526,7 +639,7 @@ export function VendorOrderActions({
                 </div>
               </div>
             ) : (
-              <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={reviewShipment} type="button">
+              <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={() => review(manualShipmentError(trackingCode, postedAt))} type="button">
                 Revisar envio
               </button>
             )}
@@ -588,7 +701,7 @@ export function VendorOrderActions({
                 </div>
               </div>
             ) : (
-              <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={reviewBraspressShipment} type="button">
+              <button className={`${secondaryButton} mt-4`} disabled={isBusy} onClick={() => review(braspressShipmentError(externalOrderNumber, postedAt))} type="button">
                 Revisar postagem
               </button>
             )}

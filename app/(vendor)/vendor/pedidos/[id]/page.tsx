@@ -23,6 +23,8 @@ import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-or
 import { parseSiteDate, parseUtcDate, SAO_PAULO } from "@/features/vendor-orders/utils/order-dates";
 import { formatBRLIntl } from "@/lib/format-currency";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
+import { resolveShippingProvider } from "@/features/shipping/utils/resolve-shipping-provider";
+import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
@@ -39,7 +41,7 @@ function formatOrderStamp(value: string) {
   return date ? dateTimeFormatter.format(date) : value;
 }
 
-/** Evento dos Correios — gravado em UTC por `current_time( 'mysql', true )`. */
+/** Evento da transportadora — gravado em UTC por `current_time( 'mysql', true )`. */
 function formatEventStamp(value: string) {
   const date = parseUtcDate(value);
   return date ? dateTimeFormatter.format(date) : value;
@@ -47,6 +49,24 @@ function formatEventStamp(value: string) {
 
 function currentTimestamp() {
   return Date.now();
+}
+
+/**
+ * Transportadora e serviço numa linha, sem afirmar o que o pedido não gravou.
+ *
+ * Pedido sem provider é lido como Correios em todo o painel — é a inferência de
+ * legado, e ela vale porque existe algum sinal de frete contratado. Pedido sem
+ * provider **e** sem serviço não tem sinal nenhum, e nomear transportadora ali
+ * seria invenção.
+ */
+function carrierAndServiceLine(order: VendorOrderDetail): string {
+  const service = order.shippingService || "Serviço não informado";
+
+  if (!order.shippingProvider && !order.shippingService) {
+    return service;
+  }
+
+  return `${shippingProviderLabel(resolveShippingProvider(order.shippingProvider))} · ${service}`;
 }
 
 function formatCnpj(digits: string) {
@@ -230,6 +250,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
         nextStatuses={order.nextStatuses}
         orderId={order.id}
         refundPreview={order.refundPreview}
+        shippingProvider={order.shippingProvider}
         status={order.status}
       />
 
@@ -283,6 +304,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
                 order.logistics.generationStatus,
                 order.logistics.status,
                 order.logistics.automaticGenerationEnabled,
+                order.shippingProvider,
               )}
             </p>
           }
@@ -306,10 +328,10 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
               }
             />
             <DataRow
-              label="Serviço e prazo"
+              label="Transportadora e prazo"
               value={
                 <>
-                  {order.shippingService || "Serviço não informado"}
+                  {carrierAndServiceLine(order)}
                   {order.deliveryTimeDays > 0 ? (
                     <span className="block text-[#231f20]/62">
                       Prazo estimado: {formatBusinessDays(order.deliveryTimeDays)}

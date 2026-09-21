@@ -19,6 +19,7 @@ import type {
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
+import { resolveShippingProvider } from "@/features/shipping/utils/resolve-shipping-provider";
 import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
 
 type WpProfileShipment = {
@@ -476,13 +477,13 @@ function mapSummary(order: WpProfileOrder): Order {
 /**
  * Identifica a transportadora da remessa, sem nunca chutar pelo que existe nela.
  *
- * Remessa gravada antes do contrato multicarrier não traz `provider`, e nesse
- * caso só pode ser Correios — era a única transportadora que existia então.
+ * A remessa manda; o pedido é o segundo lugar a consultar, porque remessa
+ * gravada antes do contrato multicarrier não traz `provider`. A tradução em si
+ * é a mesma do painel do vendor, e por isso delega: divergir entre as duas
+ * contas faria o mesmo pedido mudar de transportadora conforme quem abre.
  */
 function shipmentProvider(shipment: WpProfileShipment | undefined, order: WpProfileOrder) {
-  const provider = shipment?.provider || order.shipping_provider;
-
-  return provider === "braspress" ? "braspress" : "correios";
+  return resolveShippingProvider(shipment?.provider || order.shipping_provider);
 }
 
 /**

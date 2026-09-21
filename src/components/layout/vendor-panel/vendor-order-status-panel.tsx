@@ -5,6 +5,8 @@ import { CircleCheck, Lock, TriangleAlert } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { FOCUS_RING, StatusChip } from "@/components/layout/operational-panel";
+import type { ShippingProvider } from "@/features/checkout/types/checkout";
+import { resolveShippingProvider } from "@/features/shipping/utils/resolve-shipping-provider";
 import type { VendorOrderRefundPreview, VendorOrderStatus } from "@/features/vendor-orders/types/vendor-orders";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
@@ -18,7 +20,21 @@ import { VendorCancelShipmentModal } from "./vendor-cancel-shipment-modal";
 import { VendorOrderStatusStepper } from "./vendor-order-status-stepper";
 
 const LOGISTICS_ONLY_NOTE =
-  "Enviado e entregue são confirmados pelo rastreamento dos Correios — não existe botão para declará-los.";
+  "Enviado e entregue são confirmados pelo rastreamento da transportadora — não existe botão para declará-los.";
+
+/**
+ * Por que o cancelamento para no suporte depois que o envio existe.
+ *
+ * O motivo muda com a transportadora: nos Correios há uma pré-postagem emitida
+ * pela Papelito, que precisa ser cancelada lá; na Braspress o que existe é a
+ * referência de um pedido que o vendor já acertou fora da plataforma.
+ */
+const SHIPMENT_CANCEL_NOTE: Record<ShippingProvider, string> = {
+  braspress:
+    "Este pedido já tem envio registrado na Braspress: o cancelamento precisa passar pelo suporte.",
+  correios:
+    "Este pedido já tem pré-postagem: o cancelamento precisa passar pelo suporte para cancelar também nos Correios.",
+};
 
 /**
  * Situação do pedido e as transições que o backend realmente aceita.
@@ -27,6 +43,10 @@ const LOGISTICS_ONLY_NOTE =
  * recalcula a máquina de estados, então uma regra que mudar lá não deixa um
  * botão órfão aqui. Estado terminal não mostra caixa de ação vazia — mostra
  * por que acabou.
+ *
+ * `shippingProvider` é o que permite ao painel falar a verdade sobre a entrega:
+ * sem ele a tela só sabe generalizar, e generalizar aqui virou prometer
+ * Correios em pedido Braspress. Pedido sem provider é lido como Correios.
  */
 export function VendorOrderStatusPanel({
   cancelReason,
@@ -34,15 +54,17 @@ export function VendorOrderStatusPanel({
   nextStatuses,
   orderId,
   refundPreview = null,
+  shippingProvider,
   status,
-}: {
+}: Readonly<{
   cancelReason?: string;
   hasShipments: boolean;
   nextStatuses: VendorOrderStatus[];
   orderId: number;
   refundPreview?: VendorOrderRefundPreview | null;
+  shippingProvider?: string;
   status: VendorOrderStatus;
-}) {
+}>) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [pendingStatus, setPendingStatus] = useState<VendorOrderStatus | null>(null);
@@ -52,6 +74,7 @@ export function VendorOrderStatusPanel({
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const shape = vendorOrderStatusShape(status);
+  const provider = resolveShippingProvider(shippingProvider);
   const isBusy = isPending || pendingStatus !== null;
   const offered = nextStatuses.filter(isVendorOrderTransitionOffered);
   const forward = offered.filter((target) => target !== "cancelado");
@@ -132,7 +155,9 @@ export function VendorOrderStatusPanel({
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/62">
             Próxima ação
           </p>
-          <p className="mt-2 text-sm leading-6 text-[#231f20]/74">{vendorOrderNextAction(status)}</p>
+          <p className="mt-2 text-sm leading-6 text-[#231f20]/74">
+            {vendorOrderNextAction(status, provider)}
+          </p>
 
           {offered.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -188,8 +213,7 @@ export function VendorOrderStatusPanel({
           {canCancel && hasShipments ? (
             <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-[#231f20]/62">
               <TriangleAlert aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.4} />
-              Este pedido já tem pré-postagem: o cancelamento precisa passar pelo suporte para
-              cancelar também nos Correios.
+              {SHIPMENT_CANCEL_NOTE[provider]}
             </p>
           ) : null}
 

@@ -394,43 +394,43 @@ export function formatNotification(
     case "shipment_posted":
       return {
         icon: "package",
-        title: "Objeto postado",
-        body: "Os Correios confirmaram a postagem do objeto.",
+        title: "Encomenda postada",
+        body: "A transportadora confirmou a postagem da encomenda.",
         href: logisticsHref(payload),
       };
     case "shipment_out_for_delivery":
       return {
         icon: "package",
         title: "Saiu para entrega",
-        body: "Os Correios informaram que o objeto está em rota de entrega.",
+        body: "A transportadora informou que a encomenda está em rota de entrega.",
         href: logisticsHref(payload),
       };
     case "shipment_delivered":
       return {
         icon: "check",
         title: "Entrega confirmada",
-        body: "A entrega foi confirmada pela API Rastro dos Correios.",
+        body: "A entrega foi confirmada pelo rastreamento da transportadora.",
         href: logisticsHref(payload),
       };
     case "shipment_delivery_failed":
       return {
         icon: "package",
         title: "Tentativa sem sucesso",
-        body: "A entrega não foi concluida. Consulte as orientacoes dos Correios.",
+        body: "A entrega não foi concluida. Consulte as orientacoes da transportadora.",
         href: logisticsHref(payload),
       };
     case "shipment_pickup_available":
       return {
         icon: "package",
         title: "Disponível para retirada",
-        body: "O objeto aguarda retirada na unidade indicada pelos Correios.",
+        body: "A encomenda aguarda retirada na unidade indicada pela transportadora.",
         href: logisticsHref(payload),
       };
     case "shipment_returned":
       return {
         icon: "package",
-        title: "Objeto devolvido",
-        body: "Os Correios confirmaram a devolução do objeto ao remetente.",
+        title: "Encomenda devolvida",
+        body: "A transportadora confirmou a devolução da encomenda ao remetente.",
         href: logisticsHref(payload),
       };
     case "shipment_exception":

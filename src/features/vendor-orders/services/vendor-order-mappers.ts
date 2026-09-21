@@ -1,4 +1,4 @@
-import { VENDOR_ORDERS_PER_PAGE } from "../types/vendor-orders";
+import { SHIPMENT_LOGISTICS_STATUSES, VENDOR_ORDERS_PER_PAGE } from "../types/vendor-orders";
 import type {
   VendorFiscalDocument,
   VendorFiscalEvent,
@@ -198,6 +198,7 @@ export function mapVendorOrderSummary(order: WpVendorOrder): VendorOrderSummary 
     itemsLabel: order.items_label?.trim() || "Sem itens",
     nextStatuses: (order.next_statuses ?? []).filter(isVendorOrderStatus),
     orderNumber: order.order_number ?? "",
+    shippingProvider: order.shipping_provider ?? "",
     status: mapVendorOrderStatus(order.vendor_status),
     total: Number(order.total) || 0,
   };
@@ -325,10 +326,7 @@ function mapVendorOrderBilling(billing: WpVendorBilling | undefined): VendorOrde
 }
 
 export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
-  const logisticsStatuses = new Set<ShipmentLogisticsStatus>([
-    "tracking_pending", "preposted", "posted", "in_transit", "out_for_delivery",
-    "pickup_available", "delivery_failed", "returning", "returned", "lost", "cancelled", "expired", "delivered",
-  ]);
+  const logisticsStatuses = new Set<ShipmentLogisticsStatus>(SHIPMENT_LOGISTICS_STATUSES);
   const mapLogisticsStatus = (value: string | undefined): ShipmentLogisticsStatus =>
     value && logisticsStatuses.has(value as ShipmentLogisticsStatus)
       ? (value as ShipmentLogisticsStatus)
@@ -406,7 +404,6 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       state: order.shipping_address?.state ?? "",
     },
     shippingService: order.shipping_service ?? "",
-    shippingProvider: order.shipping_provider ?? "",
     shippingTotal: Number(order.shipping_total) || 0,
     subtotal: Number(order.subtotal) || 0,
     trackingCode: typeof order.tracking_code === "string" ? order.tracking_code : null,

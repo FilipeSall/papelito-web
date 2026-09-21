@@ -33,20 +33,30 @@ export type VendorOrderItem = {
   total: number;
 };
 
-export type ShipmentLogisticsStatus =
-  | "tracking_pending"
-  | "preposted"
-  | "posted"
-  | "in_transit"
-  | "out_for_delivery"
-  | "pickup_available"
-  | "delivery_failed"
-  | "returning"
-  | "returned"
-  | "lost"
-  | "cancelled"
-  | "expired"
-  | "delivered";
+/**
+ * Estados de logística que o backend persiste, em lista antes de união.
+ *
+ * A lista é a fonte: quem varre todos os estados — o mapeador do payload e a
+ * varredura de vocabulário por transportadora — itera daqui em vez de repetir
+ * os nomes à mão, e estado novo entra nas duas sem ninguém lembrar.
+ */
+export const SHIPMENT_LOGISTICS_STATUSES = [
+  "tracking_pending",
+  "preposted",
+  "posted",
+  "in_transit",
+  "out_for_delivery",
+  "pickup_available",
+  "delivery_failed",
+  "returning",
+  "returned",
+  "lost",
+  "cancelled",
+  "expired",
+  "delivered",
+] as const;
+
+export type ShipmentLogisticsStatus = (typeof SHIPMENT_LOGISTICS_STATUSES)[number];
 
 export type ShipmentGenerationStatus =
   | "not_started"
@@ -110,6 +120,8 @@ export type VendorOrderSummary = {
   itemsLabel: string;
   nextStatuses: VendorOrderStatus[];
   orderNumber: string;
+  /** Transportadora do pedido. Vazio é pedido anterior ao contrato multicarrier. */
+  shippingProvider: string;
   status: VendorOrderStatus;
   total: number;
 };
@@ -274,7 +286,6 @@ export type VendorOrderDetail = VendorOrderSummary & {
     state: string;
   };
   shippingService: string;
-  shippingProvider?: string;
   shippingTotal: number;
   subtotal: number;
   trackingCode: string | null;
