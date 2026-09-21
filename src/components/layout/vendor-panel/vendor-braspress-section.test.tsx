@@ -117,6 +117,166 @@ describe("VendorBraspressSection", () => {
     expect(payload).not.toHaveProperty("quoteTimezone");
   });
 
+  it("stops calling the integration active after the vendor turns it off", () => {
+    render(
+      <VendorBraspressSection initialIntegration={{ ...integration, enabled: false }} />,
+    );
+
+    expect(screen.getByText("Desabilitada")).toBeInTheDocument();
+    expect(screen.queryByText("Ativa")).not.toBeInTheDocument();
+    expect(screen.getByText(/não é oferecida no checkout/i)).toBeInTheDocument();
+  });
+
+  it("keeps the refused credential visible even with the integration turned off", () => {
+    render(
+      <VendorBraspressSection
+        initialIntegration={{ ...integration, enabled: false, status: "invalid_credentials" }}
+      />,
+    );
+
+    expect(screen.getByText("Credenciais inválidas")).toBeInTheDocument();
+    expect(screen.queryByText("Desabilitada")).not.toBeInTheDocument();
+  });
+
+  it("separates saved from available in the checkout when the save succeeds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ...integration, status: "ready" }),
+      }),
+    );
+    render(<VendorBraspressSection initialIntegration={{ ...integration, status: "unconfigured" }} />);
+
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    const banner = await screen.findByRole("status");
+
+    expect(banner).toHaveTextContent(/salva/i);
+    expect(banner).toHaveTextContent(/ainda não/i);
+    expect(banner).toHaveTextContent(/primeira cotação/i);
+  });
+
+  it("translates the error code instead of printing the backend response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: () => Promise.resolve({
+          code: "papelito_vendor_integration_profile_incomplete",
+          message: "SQLSTATE[HY000] wp_papelito_vendor_integrations",
+        }),
+      }),
+    );
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    expect(await screen.findByText(/complete o cnpj no cadastro/i)).toBeInTheDocument();
+    expect(screen.queryByText(/SQLSTATE/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the previous configuration on screen when the save is refused", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({
+          code: "papelito_vendor_integration_current_password_invalid",
+        }),
+      }),
+    );
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "errada" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    expect(await screen.findByText(/senha da papelito/i)).toBeInTheDocument();
+    expect(screen.getByText("Ativa")).toBeInTheDocument();
+    expect(screen.getByLabelText(/cep de origem/i)).toHaveValue("01310930");
+  });
+
+  it("forgets the secret after saving and never sends it again", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...integration, status: "ready" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.change(screen.getByLabelText(/nova senha braspress/i), { target: { value: "s3nh4-braspress" } });
+    fireEvent.change(screen.getByLabelText(/novo usuário braspress/i), { target: { value: "usuario-braspress" } });
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0]![1].body).toContain("s3nh4-braspress");
+
+    await waitFor(() => expect(screen.getByLabelText(/nova senha braspress/i)).toHaveValue(""));
+    expect(screen.getByLabelText(/novo usuário braspress/i)).toHaveValue("");
+    expect(screen.getByLabelText(/sua senha atual/i)).toHaveValue("");
+
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const second = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as Record<string, unknown>;
+    expect(second).toMatchObject({ password: "", username: "" });
+    expect(fetchMock.mock.calls[1]![1].body).not.toContain("s3nh4-braspress");
+  });
+
+  it("offers an empty form and no removal block before anything is configured", () => {
+    render(
+      <VendorBraspressSection
+        initialIntegration={{
+          ...integration,
+          enabled: false,
+          status: "unconfigured",
+          configured: false,
+          credentialsConfigured: false,
+          config: { senderCnpj: "", originCep: "" },
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText(/^usuário braspress$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^senha braspress$/i)).toHaveValue("");
+    expect(screen.queryByRole("button", { name: /remover integração e credenciais/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Não configurada")).toBeInTheDocument();
+  });
+
+  it("says a credential exists without echoing any part of it", () => {
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    const password = screen.getByLabelText(/nova senha braspress/i);
+
+    expect(password).toHaveValue("");
+    expect(password).not.toHaveAttribute("placeholder");
+    expect(screen.getByText(/credencial salva/i)).toBeInTheDocument();
+  });
+
+  it("marks feedback with the same glyphs as the rest of the vendor panel", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ...integration, status: "ready" }),
+      }),
+    );
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/^⚠ /);
+
+    fireEvent.change(screen.getByLabelText(/sua senha atual/i), { target: { value: "senha-atual" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
+    expect((await screen.findByRole("status")).textContent).toMatch(/^✓ /);
+  });
+
   it("names the blocked account instead of blaming the credentials", () => {
     render(
       <VendorBraspressSection

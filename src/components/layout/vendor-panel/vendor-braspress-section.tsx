@@ -7,6 +7,14 @@ import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/c
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
+import {
+  braspressErrorMessage,
+  type BraspressAction,
+} from "@/features/vendor-settings/utils/braspress-error-message";
+import {
+  braspressIntegrationState,
+  type BraspressStateTone,
+} from "@/features/vendor-settings/utils/braspress-integration-status";
 
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
 
@@ -28,12 +36,32 @@ function initialForm(integration: VendorBraspressIntegration): FormState {
   };
 }
 
-function statusLabel(status: VendorBraspressIntegration["status"]) {
-  if (status === "active") return "Ativa";
-  if (status === "ready") return "Pronta para validar";
-  if (status === "invalid_credentials") return "Credenciais inválidas";
-  if (status === "provider_blocked") return "Conta bloqueada na Braspress";
-  return "Não configurada";
+const TONE_CLASS: Record<BraspressStateTone, string> = {
+  attention: "text-[#c0392b]",
+  neutral: "text-[#1a1a1a]/65",
+  positive: "text-[#1a1a1a]",
+};
+
+function savedMessage(integration: VendorBraspressIntegration) {
+  if (integration.status === "unconfigured") {
+    return "Configuração salva. Falta informar usuário, senha e o CEP de origem para a Braspress ficar pronta.";
+  }
+
+  if (!integration.enabled) {
+    return "Configuração salva. A Braspress continua desabilitada e não é oferecida no checkout desta loja.";
+  }
+
+  if (integration.status === "ready") {
+    return "Integração Braspress salva. Ela ainda não aparece no checkout: a conta é ativada sozinha na primeira cotação que der certo.";
+  }
+
+  return "Integração Braspress salva. As credenciais não são exibidas novamente.";
+}
+
+async function readError(response: Response, action: BraspressAction) {
+  const body = (await response.json().catch(() => null)) as { code?: string } | null;
+
+  return braspressErrorMessage({ code: body?.code, status: response.status }, action);
 }
 
 function formatCnpj(value: string) {
@@ -68,6 +96,7 @@ export function VendorBraspressSection({
   const [removing, setRemoving] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  const state = braspressIntegrationState(integration);
   const disabled = initialIntegration.loadFailed || pending;
   const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -78,7 +107,7 @@ export function VendorBraspressSection({
     setFeedback(null);
 
     if (!form.currentPassword) {
-      setFeedback({ error: true, message: "Confirme sua senha atual para salvar a integração." });
+      setFeedback({ error: true, message: "⚠ Confirme sua senha atual para salvar a integração." });
       return;
     }
 
@@ -89,30 +118,29 @@ export function VendorBraspressSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
-        const body = (await response.json().catch(() => null)) as VendorBraspressIntegration & {
-          message?: string;
-        };
 
         if (!response.ok) {
-          setFeedback({ error: true, message: body?.message ?? "Não foi possível salvar a integração." });
+          setFeedback({ error: true, message: `⚠ ${await readError(response, "save")}` });
           return;
         }
 
-        setIntegration({ ...body, loadFailed: false });
+        const saved = {
+          ...((await response.json().catch(() => null)) as VendorBraspressIntegration),
+          loadFailed: false,
+        };
+
+        setIntegration(saved);
         setForm((current) => ({ ...current, username: "", password: "", currentPassword: "" }));
-        setFeedback({
-          error: false,
-          message: "Integração Braspress salva. As credenciais não são exibidas novamente.",
-        });
+        setFeedback({ error: false, message: `✓ ${savedMessage(saved)}` });
       } catch {
-        setFeedback({ error: true, message: "Não foi possível falar com o servidor. Tente novamente." });
+        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor. Tente novamente." });
       }
     });
   }
 
   function removeIntegration() {
     if (!form.currentPassword) {
-      setFeedback({ error: true, message: "Confirme sua senha atual para remover a integração." });
+      setFeedback({ error: true, message: "⚠ Confirme sua senha atual para remover a integração." });
       return;
     }
 
@@ -123,22 +151,22 @@ export function VendorBraspressSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ currentPassword: form.currentPassword }),
         });
-        const body = (await response.json().catch(() => null)) as VendorBraspressIntegration & {
-          message?: string;
-        };
 
         if (!response.ok) {
-          setFeedback({ error: true, message: body?.message ?? "Não foi possível remover a integração." });
+          setFeedback({ error: true, message: `⚠ ${await readError(response, "remove")}` });
           return;
         }
 
-        const next = { ...body, loadFailed: false };
+        const next = {
+          ...((await response.json().catch(() => null)) as VendorBraspressIntegration),
+          loadFailed: false,
+        };
         setIntegration(next);
         setForm(initialForm(next));
         setRemoving(false);
-        setFeedback({ error: false, message: "Integração Braspress e credenciais removidas." });
+        setFeedback({ error: false, message: "✓ Integração Braspress e credenciais removidas." });
       } catch {
-        setFeedback({ error: true, message: "Não foi possível falar com o servidor. Tente novamente." });
+        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor. Tente novamente." });
       }
     });
   }
@@ -153,7 +181,7 @@ export function VendorBraspressSection({
         <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-white p-4 shadow-[4px_4px_0px_#1a1a1a]">
           <div>
             <p className="text-sm font-black text-[#1a1a1a]">Braspress</p>
-            <p className="text-xs font-semibold text-[#1a1a1a]/65">{statusLabel(integration.status)}</p>
+            <p className={`text-xs font-black ${TONE_CLASS[state.tone]}`}>{state.label}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <label
@@ -172,6 +200,7 @@ export function VendorBraspressSection({
             </label>
             <InfoTooltip text="Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout." />
           </div>
+          <p className="w-full text-xs leading-5 font-semibold text-[#1a1a1a]/65">{state.description}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -180,6 +209,11 @@ export function VendorBraspressSection({
         </div>
 
         <div className="grid gap-4 border-2 border-dashed border-[#1a1a1a]/35 p-4 md:grid-cols-2">
+          <p className="text-xs font-semibold text-[#1a1a1a]/65 md:col-span-2">
+            {integration.credentialsConfigured
+              ? "Credencial salva. Deixe usuário e senha em branco para mantê-la; preencha os dois para substituí-la."
+              : "Informe o usuário e a senha do contrato da sua loja com a Braspress."}
+          </p>
           <BraspressField autoComplete="username" disabled={disabled} helpText="Usuário da API fornecido para o contrato desta loja. Ele não será exibido depois de salvo." icon={KeyRound} label={integration.credentialsConfigured ? "Novo usuário Braspress" : "Usuário Braspress"} onChange={(value) => setField("username", value)} value={form.username} />
           <BraspressField autoComplete="new-password" disabled={disabled} helpText="Senha da API. É criptografada e nunca volta para a tela depois de salva." icon={LockKeyhole} label={integration.credentialsConfigured ? "Nova senha Braspress" : "Senha Braspress"} onChange={(value) => setField("password", value)} type="password" value={form.password} />
           <BraspressField autoComplete="current-password" disabled={disabled} helpText="Sua senha Papelito confirma alterações de credencial e remoção da integração." icon={LockKeyhole} label="Sua senha atual" onChange={(value) => setField("currentPassword", value)} type="password" value={form.currentPassword} />
