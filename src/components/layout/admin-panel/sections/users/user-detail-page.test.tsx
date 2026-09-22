@@ -116,6 +116,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="sales"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser({
@@ -133,6 +134,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="sales"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser({
@@ -150,6 +152,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="overview"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser()}
@@ -168,6 +171,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="overview"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser({ cnpj: "", companies: [], phoneNumber: "" })}
@@ -186,6 +190,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="overview"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser()}
@@ -202,6 +207,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="sales"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser()}
@@ -217,6 +223,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="overview"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser()}
@@ -230,6 +237,7 @@ describe("detalhe administrativo da conta", () => {
     render(
       <UserDetailPage
         activeTab="overview"
+        integrations={null}
         origin={origin}
         ownerApplications={ownerApplications}
         user={buildUser({

@@ -256,6 +256,52 @@ describe("VendorBraspressSection", () => {
     expect(writeBody(fetchMock)).toEqual({ enabled: true, originCep: "01001000" });
   });
 
+  it("liga e desliga a Braspress no próprio interruptor, sem senha e sem salvar o formulário", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubBraspress(() =>
+      Promise.resolve(jsonResponse({ ...integration, enabled: false })),
+    );
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(1));
+    expect(writeBody(fetchMock)).toEqual({ enabled: false, originCep: "01310930" });
+    expect(screen.queryByLabelText(/senha da sua conta papelito/i)).not.toBeInTheDocument();
+    expect(await screen.findByText(/braspress desabilitada/i)).toBeInTheDocument();
+  });
+
+  it("devolve o interruptor ao estado anterior quando a gravação é recusada", async () => {
+    const user = userEvent.setup();
+    stubBraspress(() =>
+      Promise.resolve(
+        jsonResponse(
+          { code: "papelito_vendor_integration_profile_incomplete" },
+          { ok: false, status: 422 },
+        ),
+      ),
+    );
+    render(<VendorBraspressSection initialIntegration={{ ...integration, enabled: false }} />);
+
+    const enableSwitch = screen.getByRole("switch", { name: /habilitar braspress/i });
+    await user.click(enableSwitch);
+
+    await waitFor(() => expect(enableSwitch).toHaveAttribute("aria-checked", "false"));
+  });
+
+  it("preserva a credencial em digitação quando o interruptor é acionado no meio", async () => {
+    const user = userEvent.setup();
+    stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
+    render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
+
+    await user.type(screen.getByLabelText(/usuário braspress/i), BRASPRESS_USERNAME);
+    await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/usuário braspress/i)).toHaveValue(BRASPRESS_USERNAME),
+    );
+  });
+
   it("shows a recoverable message when saving fails before a response", async () => {
     stubBraspress(() => Promise.reject(new Error("offline")));
     render(<VendorBraspressSection initialIntegration={integration} />);
@@ -270,9 +316,10 @@ describe("VendorBraspressSection", () => {
     render(<VendorBraspressSection initialIntegration={integration} />);
 
     expect(screen.getAllByRole("button", { name: "Mais informações" })).toHaveLength(3);
-    expect(screen.getByRole("checkbox", { name: /habilitar braspress/i })).toHaveClass(
-      "cursor-pointer",
-    );
+    const enableSwitch = screen.getByRole("switch", { name: /habilitar braspress/i });
+
+    expect(enableSwitch).toHaveClass("cursor-pointer");
+    expect(enableSwitch).toHaveAttribute("aria-checked", "true");
 
     await user.hover(screen.getAllByRole("button", { name: "Mais informações" })[2]!);
 

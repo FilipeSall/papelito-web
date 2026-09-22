@@ -42,7 +42,7 @@ export default async function VendorSettingsPage() {
       />
 
       <AnchoredSectionNav
-        className="-mx-4 top-[8.4375rem] px-4 md:-mx-7 md:px-7 lg:top-[4.625rem]"
+        className="-mx-4 top-33.75 px-4 md:-mx-7 md:px-7 lg:top-18.5"
         sections={SECTIONS}
       />
 

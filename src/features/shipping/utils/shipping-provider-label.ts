@@ -28,8 +28,6 @@ export function shippingProviderLabel(provider: ShippingProvider | undefined): s
  * contrai ("pelos"/"pela"), a frase inteira varia por transportadora — este
  * helper não resolve esse caso.
  */
-export function shippingProviderWithArticle(provider: ShippingProvider | undefined): string {
-  const resolved = provider ?? "correios";
-
-  return `${PROVIDER_ARTICLE[resolved]} ${PROVIDER_LABEL[resolved]}`;
+export function shippingProviderWithArticle(provider: ShippingProvider = "correios"): string {
+  return `${PROVIDER_ARTICLE[provider]} ${PROVIDER_LABEL[provider]}`;
 }

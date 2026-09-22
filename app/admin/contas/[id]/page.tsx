@@ -9,6 +9,10 @@ import {
 import { authOptions } from "@/lib/auth";
 import { getAdminOwnerApplications, getAdminUserDetail } from "@/lib/server/admin-users";
 import {
+  getAdminVendorIntegrations,
+  type AdminVendorIntegrations,
+} from "@/lib/server/admin-vendor-integrations";
+import {
   ADMIN_USER_RELATIONS,
   ADMIN_USER_ROLES,
   ADMIN_USER_STATUSES,
@@ -24,6 +28,7 @@ function parseTab(value: string | undefined): UserDetailTabKey {
     value === "sales" ||
     value === "role" ||
     value === "conta" ||
+    value === "integrations" ||
     value === "company-review"
     ? value
     : "overview";
@@ -81,6 +86,7 @@ export default async function AdminAccountDetailRoute({
   }
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
+  const activeTab = parseTab(firstParam(resolvedSearchParams.tab));
   const origin: UserDetailOrigin = {
     page: Math.max(1, Number.parseInt(firstParam(resolvedSearchParams.originPage) ?? "", 10) || 1),
     relation: parseOriginRelation(firstParam(resolvedSearchParams.originRelation)),
@@ -89,9 +95,15 @@ export default async function AdminAccountDetailRoute({
     status: parseOriginStatus(firstParam(resolvedSearchParams.originStatus)),
   };
 
+  const integrations: AdminVendorIntegrations | null =
+    activeTab === "integrations" && user.isVendor
+      ? await getAdminVendorIntegrations(session.accessToken, userId)
+      : null;
+
   return (
     <UserDetailPage
-      activeTab={parseTab(firstParam(resolvedSearchParams.tab))}
+      activeTab={activeTab}
+      integrations={integrations}
       ownerApplications={ownerApplications}
       origin={origin}
       user={user}

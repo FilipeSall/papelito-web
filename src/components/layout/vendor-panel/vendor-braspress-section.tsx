@@ -7,6 +7,7 @@ import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/c
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 import { hardDangerActionClass, hardSecondaryActionClass } from "@/components/ui/hard-actions";
+import { HardSwitch } from "@/components/ui/hard-switch";
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
 import {
   braspressErrorMessage,
@@ -289,6 +290,54 @@ export function VendorBraspressSection({
     });
   }
 
+  /**
+   * Liga ou desliga a Braspress na hora, sem passar pelo botão de salvar.
+   *
+   * O interruptor é a única coisa nesta tela que promete efeito imediato, e
+   * gravá-lo não toca na credencial — por isso não pede confirmação de senha e
+   * não espera o formulário. O que o vendor estiver digitando no par
+   * usuário/senha é preservado: a resposta traz o estado do servidor, mas o
+   * rascunho em tela continua sendo dele.
+   */
+  function toggleEnabled(next: boolean) {
+    setField("enabled", next);
+    setFeedback(null);
+
+    startTransition(async () => {
+      try {
+        const response = await mutateBraspress("PUT", { enabled: next, originCep: form.originCep });
+
+        if (!response.ok) {
+          const code = await readErrorCode(response);
+          setField("enabled", !next);
+          setFeedback({
+            error: true,
+            message: `⚠ ${braspressErrorMessage({ code, status: response.status }, "save")}`,
+          });
+          return;
+        }
+
+        const saved = await readIntegration(response);
+
+        if (!saved) {
+          markStateUnread("save");
+          return;
+        }
+
+        setIntegration({ ...saved, loadFailed: false });
+        setFeedback({
+          error: false,
+          message: next
+            ? "✓ Braspress habilitada. Ela aparece no checkout quando também houver cobertura de CEP e embalagem cadastrada."
+            : "✓ Braspress desabilitada. A credencial continua guardada e você pode habilitar de novo quando quiser.",
+        });
+      } catch {
+        setField("enabled", !next);
+        setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor. Tente novamente." });
+      }
+    });
+  }
+
   function applyWrite(action: BraspressAction, method: "DELETE" | "PUT", body: Record<string, unknown>) {
     startTransition(async () => {
       try {
@@ -334,7 +383,7 @@ export function VendorBraspressSection({
     };
   }
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setFeedback(null);
 
@@ -405,21 +454,17 @@ export function VendorBraspressSection({
             <p className="text-sm font-black text-[#1a1a1a]">Braspress</p>
             <p className={`text-xs font-black ${TONE_CLASS[state.tone]}`}>{state.label}</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <label
-              className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[#1a1a1a]"
-              htmlFor="vendor-braspress-enabled"
-            >
-              <input
-                checked={form.enabled}
-                className="cursor-pointer accent-brand-yellow disabled:cursor-not-allowed"
-                disabled={disabled}
-                id="vendor-braspress-enabled"
-                onChange={(event) => setField("enabled", event.target.checked)}
-                type="checkbox"
-              />
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-bold text-[#1a1a1a]" id="vendor-braspress-enabled-label">
               Habilitar Braspress
-            </label>
+            </span>
+            <HardSwitch
+              ariaLabel="Habilitar Braspress"
+              checked={form.enabled}
+              disabled={disabled}
+              id="vendor-braspress-enabled"
+              onChange={toggleEnabled}
+            />
             <InfoTooltip text="Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout." />
           </div>
           <p className="w-full text-xs leading-5 font-semibold text-[#1a1a1a]/65">{state.description}</p>

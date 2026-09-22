@@ -170,6 +170,32 @@ Na listagem de contas, o campo do meio é contextual: mostra a empresa e o papel
 vínculo, a loja e a cobertura quando a conta é vendor, e "sem vínculo empresarial" caso contrário.
 Um campo só, porque as duas informações nunca coexistem no domínio.
 
+### Aba Integrações do detalhe do vendor
+
+`/admin/contas/{id}?tab=integrations`, só quando a conta é vendor — a aba some para as demais e a
+URL degrada para `overview`, como já acontece com `?tab=sales`. Ela lista as integrações externas
+da loja; hoje só a Braspress tem configuração por vendor, e o backend devolve uma entrada por
+provedor conhecido mesmo quando nada foi configurado, para a tela poder dizer "Não integrado" em
+vez de vir vazia.
+
+- **A aba não é um segundo cadastro de Braspress.** Ela escreve na mesma linha, no mesmo cofre e no
+  mesmo interruptor `enabled` que o vendor controla em `/vendor/configuracoes`. Existe porque boa
+  parte dos vendors não quer fazer esse cadastro. Não há estado "bloqueado pela Papelito": desligar
+  aqui é desligar o que o vendor pode religar.
+- **Três estados, sempre com rótulo**: `Não integrado`, `Integrado · ativo` / `Integrado · pronto
+  para cotar` e `Desativado`. `Credenciais inválidas` e `Bloqueada na Braspress` têm precedência
+  sobre o interruptor, porque exigem ação de alguém. A ordem de decisão vive em
+  `adminBraspressIntegrationState()` e é a mesma da tela do vendor.
+- **O interruptor grava direto, sem modal.** É reversível com outro clique e fica na trilha de
+  auditoria; confirmar cada troca só atrasaria a operação. Já **remover a integração** — que apaga a
+  credencial cifrada — passa por `ConfirmModal` com `tone="danger"`, porque não tem volta.
+- **A credencial nunca chega ao cliente.** O card sabe apenas `credentialsConfigured` e mostra
+  "Configuradas"; o formulário de troca nasce vazio, inclusive quando já existe credencial salva. O
+  modal pede CNPJ remetente (derivado do cadastro, somente leitura), CEP de origem, usuário e senha
+  **da Braspress** — nunca a senha da conta Papelito de ninguém.
+- Esconder botão não é autorização: `PUT|DELETE /api/admin/vendors/{id}/integrations/braspress`
+  passam por `getAdminApiSession()`, e o WordPress reconfirma `manage_options` no endpoint.
+
 ### Suspensão de conta na interface
 
 - A ação vive na aba **Conta** do detalhe, e no detalhe da empresa para suspender a empresa inteira.
