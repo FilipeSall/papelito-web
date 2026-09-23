@@ -166,6 +166,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const PARTNER_COMPLETE_SAVE = {
+  birthdate: "1992-04-01",
+  document: "037.122.851-40",
+  monthlyIncome: "4500",
+  professionalOccupation: "T.I",
+};
+
 describe("VendorPendingRegistrationModalHost — erro visual dos campos pendentes", () => {
   it("abre com os campos obrigatórios pendentes em estado de erro", async () => {
     stubFetch();
@@ -278,6 +285,34 @@ describe("VendorPendingRegistrationModalHost — salvamento", () => {
 
     expect(await screen.findByText(/Cadastro complementar concluido/)).toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/vendor/dashboard");
+  });
+
+  it("trava os dois botões enquanto grava e recarrega a casca antes de navegar", async () => {
+    let liberarPost: () => void = () => undefined;
+    const postPendente = new Promise<void>((resolve) => {
+      liberarPost = resolve;
+    });
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "POST") await postPendente;
+
+      return {
+        json: async () => registration({ pendingFields: [] }, PARTNER_COMPLETE_SAVE),
+        ok: true,
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = await renderOnboarding();
+
+    await user.click(screen.getByRole("button", { name: "Salvar cadastro" }));
+
+    expect(await screen.findByRole("button", { name: "Salvando..." })).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "Voltar ao painel" })[0]).toBeDisabled();
+
+    liberarPost();
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/vendor/dashboard"));
+    expect(refreshMock.mock.invocationCallOrder[0]).toBeLessThan(pushMock.mock.invocationCallOrder[0]);
   });
 });
 
