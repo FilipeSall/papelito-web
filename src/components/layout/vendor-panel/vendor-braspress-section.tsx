@@ -15,6 +15,7 @@ import {
 } from "@/features/vendor-settings/utils/braspress-error-message";
 import {
   braspressIntegrationState,
+  type BraspressIntegrationState,
   type BraspressStateTone,
 } from "@/features/vendor-settings/utils/braspress-integration-status";
 
@@ -28,9 +29,6 @@ type FormState = {
   username: string;
 };
 
-/** Por que a senha da conta está sendo pedida agora. */
-type ReauthIntent = "remove" | "reveal" | "save";
-
 function initialForm(integration: VendorBraspressIntegration): FormState {
   return {
     enabled: integration.enabled,
@@ -38,6 +36,40 @@ function initialForm(integration: VendorBraspressIntegration): FormState {
     password: "",
     username: "",
   };
+}
+
+const BRASPRESS_ALERT_TITLE = "Ação necessária";
+
+/**
+ * Alerta do estado que exige ação do vendor, acima de tudo na seção.
+ *
+ * Credencial recusada e conta bloqueada tiram a loja do checkout, e a linha de
+ * status sozinha não carrega esse peso: o bloco repete o motivo com destaque
+ * para o vendor não sair da tela achando que a Braspress está no ar.
+ */
+function BraspressStateAlert({ state }: Readonly<{ state: BraspressIntegrationState }>) {
+  if (state.tone !== "attention") return null;
+
+  return (
+    <FeedbackBanner
+      feedback={{ error: true, message: state.description, title: BRASPRESS_ALERT_TITLE }}
+      live={false}
+    />
+  );
+}
+
+/**
+ * Explicação discreta do estado, dentro do cartão do interruptor.
+ *
+ * Sai de cena quando o alerta assume o mesmo texto, para o vendor não ler a
+ * mesma frase duas vezes na mesma dobra.
+ */
+function BraspressStateHint({ state }: Readonly<{ state: BraspressIntegrationState }>) {
+  if (state.tone === "attention") return null;
+
+  return (
+    <p className="w-full text-xs leading-5 font-semibold text-[#1a1a1a]/65">{state.description}</p>
+  );
 }
 
 const TONE_CLASS: Record<BraspressStateTone, string> = {
@@ -48,34 +80,33 @@ const TONE_CLASS: Record<BraspressStateTone, string> = {
 
 const EXPIRED_TICKET_CODE = "papelito_vendor_integration_reauth_ticket_invalid";
 
-const REAUTH_COPY: Record<
-  ReauthIntent,
-  { confirmLabel: string; description: string; title: string; tone: VendorReauthTone }
-> = {
-  remove: {
-    confirmLabel: "Confirmar remoção",
-    description:
-      "A credencial criptografada é apagada e a Braspress deixa de ser oferecida no checkout da sua loja. Para voltar a cotar, você cadastra o contrato de novo.",
-    title: "Remover integração",
-    tone: "danger",
-  },
-  reveal: {
-    confirmLabel: "Confirmar senha",
-    description:
-      "Trocar a credencial da Braspress é uma alteração sensível, e a credencial salva nunca volta para a tela. Confirme sua senha para liberar o formulário.",
-    title: "Confirme sua senha",
-    tone: "default",
-  },
-  save: {
-    confirmLabel: "Confirmar e salvar",
-    description:
-      "Confirme sua senha para gravar a credencial da Braspress. Ela é criptografada e não aparece mais nesta tela depois de salva.",
-    title: "Confirme sua senha",
-    tone: "default",
-  },
+const REMOVE_COPY: { confirmLabel: string; description: string; title: string; tone: VendorReauthTone } = {
+  confirmLabel: "Confirmar remoção",
+  description:
+    "A credencial criptografada é apagada e a Braspress deixa de ser oferecida no checkout da sua loja. Para voltar a cotar, você cadastra o contrato de novo.",
+  title: "Remover integração",
+  tone: "danger",
 };
 
+/**
+ * Estados em que a Braspress recusou a conta e a loja fica fora do checkout.
+ *
+ * A sondagem do salvamento já devolve esse veredito, então a mesma escrita que
+ * o vendor acabou de fazer pode voltar recusada.
+ */
+function isDegraded(integration: VendorBraspressIntegration) {
+  return integration.status === "invalid_credentials" || integration.status === "provider_blocked";
+}
+
 function savedMessage(integration: VendorBraspressIntegration) {
+  if (integration.status === "invalid_credentials") {
+    return "A Braspress recusou o usuário e a senha informados. Revise o contrato e salve o par de novo.";
+  }
+
+  if (integration.status === "provider_blocked") {
+    return "A credencial foi aceita, mas a Braspress recusou o contrato desta loja. Fale com a transportadora.";
+  }
+
   if (integration.status === "unconfigured") {
     return "Configuração salva. Falta informar usuário, senha e o CEP de origem para a Braspress ficar pronta.";
   }
@@ -174,7 +205,6 @@ function BraspressConnectedPanel({
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <button
-          aria-haspopup="dialog"
           className={hardSecondaryActionClass}
           disabled={disabled}
           onClick={onEdit}
@@ -244,10 +274,9 @@ function BraspressCredentialFields({
  * Configuração da Braspress da loja, em três estados: cadastro inicial, credencial
  * conectada com as ações de alterar e remover, e formulário de troca liberado.
  *
- * Toda mutação que toca a credencial passa antes pelo modal que confirma a senha
- * da conta no servidor; o que atravessa daqui para o backend é o tíquete que ele
- * devolve, nunca a senha. Trocar o CEP de origem ou o interruptor não exige
- * confirmação, porque são reversíveis e visíveis na própria tela.
+ * Cadastrar, trocar e salvar a credencial não pedem confirmação de senha: o par
+ * é write-only e uma troca é corrigível cadastrando o par certo de novo. Só a
+ * remoção passa pelo modal, porque apaga o envelope cifrado sem volta.
  */
 export function VendorBraspressSection({
   initialIntegration,
@@ -258,15 +287,13 @@ export function VendorBraspressSection({
   const [integration, setIntegration] = useState(initialIntegration);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [editing, setEditing] = useState(false);
-  const [ticket, setTicket] = useState<string | null>(null);
-  const [reauthIntent, setReauthIntent] = useState<ReauthIntent | null>(null);
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const state = braspressIntegrationState(integration);
   const disabled = initialIntegration.loadFailed || pending;
   const showCredentialFields = !integration.credentialsConfigured || editing;
   const idleSubmitLabel = editing ? "Salvar credenciais" : "Salvar Braspress";
-  const reauthCopy = REAUTH_COPY[reauthIntent ?? "reveal"];
   const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
@@ -278,16 +305,16 @@ export function VendorBraspressSection({
 
   function adoptSaved(action: BraspressAction, saved: VendorBraspressIntegration) {
     setIntegration(saved);
-    setTicket(null);
     setEditing(false);
     setForm(initialForm(saved));
-    setFeedback({
-      error: false,
-      message:
-        action === "remove"
-          ? "✓ Integração Braspress e credenciais removidas."
-          : `✓ ${savedMessage(saved)}`,
-    });
+    const degraded = isDegraded(saved);
+    const mark = degraded ? "⚠" : "✓";
+    const message =
+      action === "remove"
+        ? "✓ Integração Braspress e credenciais removidas."
+        : `${mark} ${savedMessage(saved)}`;
+
+    setFeedback({ error: degraded, message });
   }
 
   /**
@@ -346,9 +373,8 @@ export function VendorBraspressSection({
         if (!response.ok) {
           const code = await readErrorCode(response);
 
-          if (code === EXPIRED_TICKET_CODE) {
-            setTicket(null);
-            setReauthIntent(action === "remove" ? "remove" : "save");
+          if (code === EXPIRED_TICKET_CODE && action === "remove") {
+            setConfirmingRemoval(true);
             return;
           }
 
@@ -373,12 +399,11 @@ export function VendorBraspressSection({
     });
   }
 
-  function credentialPayload(proof: string) {
+  function credentialPayload() {
     return {
       enabled: form.enabled,
       originCep: form.originCep,
       password: form.password,
-      reauthTicket: proof,
       username: form.username,
     };
   }
@@ -408,36 +433,16 @@ export function VendorBraspressSection({
       return;
     }
 
-    if (ticket) {
-      applyWrite("save", "PUT", credentialPayload(ticket));
-      return;
-    }
-
-    setReauthIntent("save");
+    applyWrite("save", "PUT", credentialPayload());
   }
 
-  function handleTicket(issued: string) {
-    const intent = reauthIntent;
-    setReauthIntent(null);
-
-    if (intent === "reveal") {
-      setFeedback(null);
-      setTicket(issued);
-      setEditing(true);
-      return;
-    }
-
-    if (intent === "remove") {
-      applyWrite("remove", "DELETE", { reauthTicket: issued });
-      return;
-    }
-
-    applyWrite("save", "PUT", credentialPayload(issued));
+  function handleRemovalTicket(issued: string) {
+    setConfirmingRemoval(false);
+    applyWrite("remove", "DELETE", { reauthTicket: issued });
   }
 
   function cancelEditing() {
     setEditing(false);
-    setTicket(null);
     setFeedback(null);
     setForm((current) => ({ ...current, password: "", username: "" }));
   }
@@ -449,6 +454,8 @@ export function VendorBraspressSection({
       title="Transportadoras"
     >
       <form className="space-y-6" onSubmit={submit}>
+        <BraspressStateAlert state={state} />
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-white p-4 shadow-[4px_4px_0px_#1a1a1a]">
           <div>
             <p className="text-sm font-black text-[#1a1a1a]">Braspress</p>
@@ -467,7 +474,7 @@ export function VendorBraspressSection({
             />
             <InfoTooltip text="Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout." />
           </div>
-          <p className="w-full text-xs leading-5 font-semibold text-[#1a1a1a]/65">{state.description}</p>
+          <BraspressStateHint state={state} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -504,8 +511,8 @@ export function VendorBraspressSection({
         ) : (
           <BraspressConnectedPanel
             disabled={disabled}
-            onEdit={() => setReauthIntent("reveal")}
-            onRemove={() => setReauthIntent("remove")}
+            onEdit={() => setEditing(true)}
+            onRemove={() => setConfirmingRemoval(true)}
           />
         )}
 
@@ -544,14 +551,14 @@ export function VendorBraspressSection({
       </form>
 
       <VendorReauthModal
-        confirmLabel={reauthCopy.confirmLabel}
-        description={reauthCopy.description}
+        confirmLabel={REMOVE_COPY.confirmLabel}
+        description={REMOVE_COPY.description}
         isSubmitting={pending}
-        onClose={() => setReauthIntent(null)}
-        onTicket={handleTicket}
-        open={reauthIntent !== null}
-        title={reauthCopy.title}
-        tone={reauthCopy.tone}
+        onClose={() => setConfirmingRemoval(false)}
+        onTicket={handleRemovalTicket}
+        open={confirmingRemoval}
+        title={REMOVE_COPY.title}
+        tone={REMOVE_COPY.tone}
       />
     </AnchoredSection>
   );

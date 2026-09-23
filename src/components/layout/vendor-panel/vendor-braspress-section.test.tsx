@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
 
 import { VendorBraspressSection } from "./vendor-braspress-section";
+
+const BRASPRESS_ALERT_TITLE = "Ação necessária";
 
 const integration: VendorBraspressIntegration = {
   provider: "braspress",
@@ -93,10 +95,9 @@ function confirmAccountPassword(password = ACCOUNT_PASSWORD) {
   fireEvent.click(screen.getByRole("button", { name: /^confirmar/i }));
 }
 
-/** Abre o diálogo de alteração e libera o formulário de credencial. */
-async function unlockCredentialForm() {
+/** Libera o formulário de troca de credencial, que não passa por diálogo. */
+async function openCredentialForm() {
   fireEvent.click(screen.getByRole("button", { name: /alterar dados braspress/i }));
-  confirmAccountPassword();
 
   await screen.findByLabelText(/novo usuário braspress/i);
 }
@@ -120,58 +121,54 @@ describe("VendorBraspressSection", () => {
     expect(change).toBeInTheDocument();
     expect(remove).toBeInTheDocument();
     expect(change.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(change).toHaveAttribute("aria-haspopup", "dialog");
+    expect(change).not.toHaveAttribute("aria-haspopup");
     expect(remove).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it("não abre o formulário direto: pede a senha da conta antes", () => {
-    stubBraspress(() => Promise.resolve(jsonResponse(integration)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /alterar dados braspress/i }));
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByLabelText(/senha da sua conta papelito/i)).toHaveValue("");
-    expect(credentialFieldsPresent()).toBe(false);
-  });
-
-  it("senha errada permanece no diálogo e não revela o formulário", async () => {
-    const fetchMock = stubBraspress(
-      () => Promise.resolve(jsonResponse(integration)),
-      WRONG_PASSWORD_RESPONSE,
-    );
-    render(<VendorBraspressSection initialIntegration={integration} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /alterar dados braspress/i }));
-    confirmAccountPassword("errada");
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(/senha da papelito/i);
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(credentialFieldsPresent()).toBe(false);
-    expect(writeCalls(fetchMock)).toHaveLength(0);
-  });
-
-  it("o diálogo cobra a senha antes de chamar o servidor", () => {
+  it("abre o formulário de troca direto, sem pedir a senha da conta", () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
     render(<VendorBraspressSection initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /alterar dados braspress/i }));
-    fireEvent.click(screen.getByRole("button", { name: /confirmar senha/i }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/novo usuário braspress/i)).toHaveValue("");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("senha errada permanece no diálogo e não remove a integração", async () => {
+    const fetchMock = stubBraspress(
+      () => Promise.resolve(jsonResponse(UNCONFIGURED)),
+      WRONG_PASSWORD_RESPONSE,
+    );
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
+    confirmAccountPassword("errada");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/senha da papelito/i);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(writeCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it("o diálogo da remoção cobra a senha antes de chamar o servidor", () => {
+    const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^confirmar remoção$/i }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(/digite a senha da sua conta/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("senha certa libera a edição e a gravação viaja com o tíquete, não com a senha", async () => {
+  it("grava a credencial nova sem diálogo e sem tíquete", async () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, status: "ready" })),
     );
     render(<VendorBraspressSection initialIntegration={integration} />);
 
-    await unlockCredentialForm();
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls[0]![0]).toBe(REAUTH_URL);
+    await openCredentialForm();
 
     fireEvent.change(screen.getByLabelText(/novo usuário braspress/i), {
       target: { value: BRASPRESS_USERNAME },
@@ -184,12 +181,13 @@ describe("VendorBraspressSection", () => {
     await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(1));
     const payload = writeBody(fetchMock);
 
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === REAUTH_URL)).toBe(false);
     expect(writeCalls(fetchMock)[0]![1]).toMatchObject({ method: "PUT" });
     expect(payload).toMatchObject({
       password: BRASPRESS_SECRET,
-      reauthTicket: REAUTH_TICKET,
       username: BRASPRESS_USERNAME,
     });
+    expect(payload).not.toHaveProperty("reauthTicket");
     expect(payload).not.toHaveProperty("currentPassword");
   });
 
@@ -199,7 +197,7 @@ describe("VendorBraspressSection", () => {
     );
     render(<VendorBraspressSection initialIntegration={integration} />);
 
-    await unlockCredentialForm();
+    await openCredentialForm();
 
     fireEvent.change(screen.getByLabelText(/novo usuário braspress/i), {
       target: { value: BRASPRESS_USERNAME },
@@ -381,6 +379,36 @@ describe("VendorBraspressSection", () => {
     expect(screen.queryByText("Desabilitada")).not.toBeInTheDocument();
   });
 
+  it("destaca em alerta a credencial recusada e some com o alerta quando a conta está sadia", () => {
+    const { unmount } = render(
+      <VendorBraspressSection
+        initialIntegration={{ ...integration, status: "invalid_credentials" }}
+      />,
+    );
+
+    const alerta = screen.getByText(BRASPRESS_ALERT_TITLE).parentElement;
+    expect(alerta).not.toBeNull();
+    expect(within(alerta as HTMLElement).getByText(/recusou a credencial salva/i)).toBeInTheDocument();
+
+    unmount();
+    render(<VendorBraspressSection initialIntegration={integration} />);
+
+    expect(screen.queryByText(BRASPRESS_ALERT_TITLE)).not.toBeInTheDocument();
+  });
+
+  it("avisa em erro quando a sondagem do salvamento volta com a credencial recusada", async () => {
+    stubBraspress(() =>
+      Promise.resolve(jsonResponse({ ...integration, enabled: true, status: "invalid_credentials" })),
+    );
+    render(<VendorBraspressSection initialIntegration={{ ...integration, status: "ready" }} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
+
+    const aviso = await screen.findByText(/recusou o usuário e a senha/i);
+    expect(aviso.textContent?.startsWith("⚠")).toBe(true);
+    expect(screen.getByText(BRASPRESS_ALERT_TITLE)).toBeInTheDocument();
+  });
+
   it("separates saved from available in the checkout when the save succeeds", async () => {
     stubBraspress(() => Promise.resolve(jsonResponse({ ...integration, status: "ready" })));
     render(<VendorBraspressSection initialIntegration={{ ...integration, status: "unconfigured" }} />);
@@ -432,7 +460,7 @@ describe("VendorBraspressSection", () => {
     expect(screen.getByLabelText(/cep de origem/i)).toHaveValue("01310930");
   });
 
-  it("pede a senha de novo quando o tíquete vence antes do envio", async () => {
+  it("pede a senha de novo quando o tíquete da remoção vence antes do envio", async () => {
     let expired = true;
     const fetchMock = stubBraspress(() => {
       if (expired) {
@@ -446,26 +474,19 @@ describe("VendorBraspressSection", () => {
         );
       }
 
-      return Promise.resolve(jsonResponse({ ...integration, status: "ready" }));
+      return Promise.resolve(jsonResponse(UNCONFIGURED));
     });
     render(<VendorBraspressSection initialIntegration={integration} />);
 
-    await unlockCredentialForm();
+    fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
+    confirmAccountPassword();
 
-    fireEvent.change(screen.getByLabelText(/novo usuário braspress/i), {
-      target: { value: BRASPRESS_USERNAME },
-    });
-    fireEvent.change(screen.getByLabelText(/nova senha braspress/i), {
-      target: { value: BRASPRESS_SECRET },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /salvar credenciais/i }));
-
-    expect(await screen.findByRole("dialog")).toHaveTextContent(/confirme sua senha/i);
+    expect(await screen.findByRole("dialog")).toHaveTextContent(/deixa de ser oferecida no checkout/i);
 
     confirmAccountPassword();
 
     await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(2));
-    expect(writeBody(fetchMock, 1)).toMatchObject({ username: BRASPRESS_USERNAME });
+    expect(writeBody(fetchMock, 1)).toEqual({ reauthTicket: REAUTH_TICKET });
   });
 
   it("offers an empty form and no removal block before anything is configured", () => {
@@ -478,7 +499,7 @@ describe("VendorBraspressSection", () => {
     expect(screen.getByText("Não configurada")).toBeInTheDocument();
   });
 
-  it("o cadastro inicial também confirma a identidade antes de gravar a credencial", async () => {
+  it("o cadastro inicial grava a credencial sem confirmar a identidade", async () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, status: "ready" })),
     );
@@ -492,16 +513,13 @@ describe("VendorBraspressSection", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(writeCalls(fetchMock)).toHaveLength(0);
-
-    confirmAccountPassword();
-
     await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(1));
-    expect(writeBody(fetchMock)).toMatchObject({ reauthTicket: REAUTH_TICKET });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === REAUTH_URL)).toBe(false);
+    expect(writeBody(fetchMock)).not.toHaveProperty("reauthTicket");
   });
 
-  it("recusa credencial pela metade antes de cobrar a senha", () => {
+  it("recusa credencial pela metade antes de chamar o servidor", () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
     render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
 
