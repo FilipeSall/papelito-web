@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
@@ -38,6 +39,10 @@ export async function POST() {
       { status: result.status || 500 },
     );
   }
+
+  // A criacao do link de KYC regrava o estado do recebedor no WordPress.
+  revalidateTag("vendor-eligibility", "max");
+  revalidateTag("vendor-recipient", "max");
 
   return NextResponse.json(
     {

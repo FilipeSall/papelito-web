@@ -61,6 +61,7 @@ export async function GET() {
   // Esta leitura consulta a Pagar.me e regrava o estado do recebedor no WordPress, então o
   // veredito de elegibilidade que a casca do painel carregou pode ter acabado de mudar.
   revalidateTag("vendor-eligibility", "max");
+  revalidateTag("vendor-recipient", "max");
 
   return NextResponse.json(mapVendorRecipientResponse(result.data), {
     headers: { "Cache-Control": "no-store, private" },

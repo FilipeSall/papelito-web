@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { wpRest } from "@/lib/server/wp-rest";
@@ -63,6 +64,11 @@ export async function POST(request: Request) {
       { status: result.status || 500 },
     );
   }
+
+  // Salvar o rascunho dispara o upsert do recebedor no WordPress, entao o veredito de
+  // elegibilidade e o estado do recebedor em cache ficam desatualizados na mesma resposta.
+  revalidateTag("vendor-eligibility", "max");
+  revalidateTag("vendor-recipient", "max");
 
   return NextResponse.json(result.data);
 }
