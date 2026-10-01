@@ -7,6 +7,8 @@ import type { ProductPresentation } from "@/features/catalog/types/product-prese
 import { ProductDetailMainContent } from "./product-detail-main-content";
 
 interface ProductDetailMainSectionProps {
+  /** Descrição da loja do seller logado, já resolvida no servidor; evita a troca de texto na hidratação. */
+  initialOwnDescription?: string | null;
   /** Projeção inicial, aplicada somente após confirmar o contexto do carrinho. */
   initialPresentation?: ProductPresentation | null;
   /** Produto carregado para a seção principal da PDP. */
@@ -27,6 +29,7 @@ interface ProductDetailMainSectionProps {
  * Define fundo, largura máxima e espaçamento vertical da área.
  */
 export function ProductDetailMainSection({
+  initialOwnDescription = null,
   initialPresentation = null,
   product,
   initialIsFavorite = false,
@@ -66,6 +69,7 @@ export function ProductDetailMainSection({
 
         <div className="mt-6 md:mt-7">
           <ProductDetailMainContent
+            initialOwnDescription={initialOwnDescription}
             initialPresentation={initialPresentation}
             product={product}
             initialIsFavorite={initialIsFavorite}

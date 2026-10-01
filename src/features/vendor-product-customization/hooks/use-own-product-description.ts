@@ -10,13 +10,15 @@ interface OwnDescriptionState {
 
 /**
  * Prévia, para o seller logado, da descrição que a loja dele mostra no produto.
- * Lê a visão privada de gestão, que não depende de o vendor estar apto a vender;
- * devolve `null` enquanto carrega, quando desligado ou em falha (a página fica com o canônico).
+ * O valor resolvido no servidor vale direto, sem esperar a sessão do cliente; sem ele, lê a
+ * visão privada de gestão quando `enabled`.
+ * `loading` fica verdadeiro até haver resposta, para a página não exibir outro texto antes;
+ * em falha, `description` é `null` e a página fica com o canônico.
  */
-export function useOwnProductDescription(productId: string, enabled: boolean) {
+export function useOwnProductDescription(productId: string, enabled: boolean, initial: string | null = null) {
   const [state, setState] = useState<OwnDescriptionState | null>(null);
   const id = Number(productId);
-  const active = enabled && Number.isSafeInteger(id) && id > 0;
+  const active = enabled && Number.isSafeInteger(id) && id > 0 && initial === null;
 
   useEffect(() => {
     if (!active) return;
@@ -29,6 +31,7 @@ export function useOwnProductDescription(productId: string, enabled: boolean) {
     return () => controller.abort();
   }, [active, id, productId]);
 
+  if (initial !== null) return { description: initial, loading: false };
   const current = active && state?.productId === productId ? state : null;
   return { description: current?.description ?? null, loading: active && current === null };
 }

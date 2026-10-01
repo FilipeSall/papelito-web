@@ -7,6 +7,7 @@ import {
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { fetchProductFavoriteStatus } from "@/features/favorites";
 import { getProductDetailContext } from "@/features/catalog/services/get-product-detail-context";
+import { getOwnProductDescription } from "@/features/vendor-product-customization/services/get-own-product-description";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
 import { applyFlashSaleToProductDetail } from "@/features/catalog/services/apply-flash-sale-to-product";
@@ -114,9 +115,10 @@ export default async function ProdutoDetalhePage({
 
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
-  const { initialPresentation, selectedVendorStockQty, regionBlock } = await getProductDetailContext(
-    displayedProduct.id, activeVendorResult, session?.role === "customer",
-  );
+  const [{ initialPresentation, selectedVendorStockQty, regionBlock }, initialOwnDescription] = await Promise.all([
+    getProductDetailContext(displayedProduct.id, activeVendorResult, session?.role === "customer"),
+    session?.role === "seller" ? getOwnProductDescription(displayedProduct.id, session.accessToken) : Promise.resolve(null),
+  ]);
 
   return (
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
@@ -144,6 +146,7 @@ export default async function ProdutoDetalhePage({
         productName={product.name}
       />
       <ProductDetailMainSection
+        initialOwnDescription={initialOwnDescription}
         initialPresentation={initialPresentation}
         product={displayedProduct}
         initialIsFavorite={initialIsFavorite}

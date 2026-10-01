@@ -35,6 +35,8 @@ import { ProductDetailRelatedSection } from "./product-detail-related-section";
 import { useProductPurchase } from "./use-product-purchase";
 
 interface ProductDetailMainContentProps {
+  /** Descrição da loja do seller logado resolvida no servidor; `null` faz o cliente buscar. */
+  initialOwnDescription?: string | null;
   /** Apresentação do SSR; não substitui a confirmação do vendor no cliente. */
   initialPresentation?: ProductPresentation | null;
   /** Dados do produto atual para renderização da seção principal. */
@@ -57,6 +59,7 @@ const MAX_RELATED_PRODUCTS = 4;
  * Orquestra galeria, quantidade, ações de compra e seções auxiliares.
  */
 export function ProductDetailMainContent({
+  initialOwnDescription = null,
   initialPresentation = null,
   product,
   initialIsFavorite = false,
@@ -71,7 +74,10 @@ export function ProductDetailMainContent({
   const { status, role, isAuthenticated, isRoleLoading } = useAuthSession();
   const vendorContext = useProductVendorContext(activeVendor, isAuthenticated && !isRoleLoading && role === "customer");
   const presentation = useProductPresentation(product.id, vendorContext.vendorId, initialPresentation, vendorContext.hydrated);
-  const ownDescription = useOwnProductDescription(product.id, isAuthenticated && !isRoleLoading && role === "seller");
+  const ownDescription = useOwnProductDescription(product.id, isAuthenticated && !isRoleLoading && role === "seller", initialOwnDescription);
+  const sessionPending = status === "loading" || isRoleLoading;
+  const buyerContextPending = initialPresentation !== null && (sessionPending || !vendorContext.hydrated);
+  const descriptionLoading = ownDescription.loading || buyerContextPending || (presentation.loading && !presentation.presentation);
   const summary = presentation.presentation?.summary ?? product.description;
   const completeDescription = ownDescription.description ?? presentation.presentation?.description ?? product.longDescription ?? product.description;
   const cartHasOtherVendor = vendorContext.fromCart && vendorContext.vendorId !== activeVendor?.vendorId;
@@ -214,7 +220,7 @@ export function ProductDetailMainContent({
 
       <ProductDetailDescriptionSection
         paragraphs={longDescriptionParagraphs}
-        loading={ownDescription.loading || (presentation.loading && !presentation.presentation)}
+        loading={descriptionLoading}
         error={presentation.error}
         onRetry={presentation.retry}
       />

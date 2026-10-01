@@ -6,6 +6,7 @@ import { resolveProductBenefits } from "@/components/layout/product-benefits-bar
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { getActiveVendorFresh } from "@/features/active-vendor/server";
 import { getProductDetailContext } from "@/features/catalog/services/get-product-detail-context";
+import { getOwnProductDescription } from "@/features/vendor-product-customization/services/get-own-product-description";
 import { getKitDetail } from "@/features/catalog/services/get-kit-detail";
 import { getProductBenefits } from "@/features/catalog/services/get-product-benefits";
 import { fetchProductFavoriteStatus } from "@/features/favorites";
@@ -42,10 +43,11 @@ export default async function KitDetailPage({ params }: { params: Promise<{ slug
   ]);
   if (!kit) notFound();
 
-  const [initialIsFavorite, benefits, detailContext] = await Promise.all([
+  const [initialIsFavorite, benefits, detailContext, initialOwnDescription] = await Promise.all([
     fetchProductFavoriteStatus(kit.id, session?.accessToken),
     getProductBenefits(kit.id),
     getProductDetailContext(kit.id, activeVendorResult, session?.role === "customer"),
+    session?.role === "seller" ? getOwnProductDescription(kit.id, session.accessToken) : Promise.resolve(null),
   ]);
   const benefitItems = resolveProductBenefits(
     benefits.items,
@@ -60,6 +62,7 @@ export default async function KitDetailPage({ params }: { params: Promise<{ slug
       <JsonLd data={buildBreadcrumbJsonLd([{ name: "Início", path: "/" }, { name: "Kits", path: "/kits" }, { name: kit.name }])} />
       <ProductBreadcrumbs category={{ name: "Kits", slug: "kits", href: "/kits" }} productName={kit.name} />
       <ProductDetailMainSection
+        initialOwnDescription={initialOwnDescription}
         initialPresentation={initialPresentation}
         product={kit}
         initialIsFavorite={initialIsFavorite}

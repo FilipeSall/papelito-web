@@ -88,6 +88,37 @@ describe("prévia da descrição do próprio vendor", () => {
     expect(await screen.findByText("Texto da loja.")).toBeInTheDocument();
   });
 
+  it("texto resolvido no servidor aparece direto, sem consultar a gestão nem passar pelo canônico", () => {
+    const management = vi.fn();
+    server.use(http.get(CUSTOMIZATION_ENDPOINT, () => { management(); return HttpResponse.json({}); }));
+    renderWithProviders(
+      <ProductDetailMainContent initialOwnDescription="<p>Texto do servidor.</p>" product={product} selectedVendorStockQty={0} regionBlock={null} showRelatedProducts={false} />,
+      { session: buildSession({ role: "seller" }) },
+    );
+    expect(screen.getByText("Texto do servidor.")).toBeInTheDocument();
+    expect(screen.queryByText("Descrição completa")).not.toBeInTheDocument();
+    expect(management).not.toHaveBeenCalled();
+  });
+
+  it("enquanto consulta, mostra só o spinner e não o texto da Papelito", async () => {
+    server.use(http.get(CUSTOMIZATION_ENDPOINT, async () => {
+      await delay(40);
+      return HttpResponse.json({
+        product_id: 123, vendor_id: 45, canonical_description: "<p>Descrição completa</p>", vendor_description: "<p>Depois.</p>",
+        vendor_description_enabled: true, effective_description: "<p>Depois.</p>", description_source: "vendor",
+        can_edit: true, updated_at: null,
+      });
+    }));
+    renderWithProviders(
+      <ProductDetailMainContent product={product} selectedVendorStockQty={0} regionBlock={null} showRelatedProducts={false} />,
+      { session: buildSession({ role: "seller" }) },
+    );
+    expect(await screen.findByText("Carregando descrição")).toBeInTheDocument();
+    expect(screen.queryByText("Descrição completa")).not.toBeInTheDocument();
+    expect(await screen.findByText("Depois.")).toBeInTheDocument();
+    expect(screen.queryByText("Carregando descrição")).not.toBeInTheDocument();
+  });
+
   it("cliente não consulta a gestão de descrição", async () => {
     const management = vi.fn();
     server.use(
