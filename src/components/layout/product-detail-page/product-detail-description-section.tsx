@@ -1,11 +1,23 @@
 import type { DescriptionParagraph } from "./product-detail-helpers";
 
 interface ProductDetailDescriptionSectionProps {
+  /** Origem explícita do texto exibido. */
+  origin?: string;
+  /** Consulta contextual ainda em andamento, com referência canônica visível. */
+  loading?: boolean;
+  /** Falha técnica; não significa que o vendor deixou de personalizar. */
+  error?: string | null;
+  /** Refaz a consulta do contexto atual. */
+  onRetry?: () => void;
   paragraphs: DescriptionParagraph[];
 }
 
 export function ProductDetailDescriptionSection({
   paragraphs,
+  origin,
+  loading = false,
+  error = null,
+  onRetry,
 }: Readonly<ProductDetailDescriptionSectionProps>) {
   return (
     <section className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white">
@@ -15,6 +27,14 @@ export function ProductDetailDescriptionSection({
         </div>
       </div>
       <div className="flex flex-col gap-3 px-8 py-8">
+        {origin ? <p className="text-xs font-semibold text-brand-dark">{origin}</p> : null}
+        {loading ? <p role="status" className="text-xs">Consultando descrição do vendor…</p> : null}
+        {error ? (
+          <div role="alert" className="text-sm">
+            <p>A descrição do vendor está indisponível. Exibindo a referência da Papelito.</p>
+            <button type="button" onClick={onRetry} className="mt-2 font-semibold underline focus-visible:outline-2 focus-visible:outline-brand-yellow">Tentar novamente</button>
+          </div>
+        ) : null}
         {paragraphs.map((paragraph) => (
           <p
             key={paragraph.id}

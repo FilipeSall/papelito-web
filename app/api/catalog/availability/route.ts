@@ -216,15 +216,21 @@ async function getPublicAvailability(
   }
 }
 
-export async function GET(request: Request) {
-  const searchParams = new URL(request.url).searchParams;
-  const productIds = parseProductIds(searchParams.get("productIds"));
-  const publicCep = searchParams.get("cep");
+function isValidVendorId(value: string | null, vendorId: number) {
+  return /^\d+$/.test(value ?? "") && Number.isSafeInteger(vendorId) && vendorId > 0;
+}
 
-  if (publicCep !== null) {
-    return getPublicAvailability(request, publicCep, productIds);
-  }
+function toAvailabilityResponse(productIds: string[], coverage: Awaited<ReturnType<typeof getCoverage>>): ProductAvailabilityResponse {
+  return {
+    status: "ok",
+    products: Object.fromEntries(productIds.map((productId) => [productId, {
+      available: coverage[productId]?.hasCoverage === true,
+      stockQty: coverage[productId]?.bestVendor?.qty ?? 0,
+    }])),
+  };
+}
 
+async function getPrivateAvailability(productIds: string[], vendorValue: string | null) {
   const session = await getServerSession(authOptions);
   const role = normalizeRole(session?.role);
 
@@ -236,10 +242,15 @@ export async function GET(request: Request) {
     return NextResponse.json(notApplicable());
   }
 
+  const requestedVendorId = vendorValue === null ? null : Number(vendorValue);
+  if (requestedVendorId !== null && !isValidVendorId(vendorValue, requestedVendorId)) {
+    return NextResponse.json({ message: "Vendor inválido." }, { status: 400 });
+  }
+
   const accountId = resolveAccountId(session);
   const [coverageContext, activeVendorResult] = await Promise.all([
     getAccountCoverageCepContext(),
-    getActiveVendor(),
+    requestedVendorId === null ? getActiveVendor() : Promise.resolve({ ok: true as const, vendor: { vendorId: requestedVendorId } }),
   ]);
 
   if (!coverageContext.cep) {
@@ -255,25 +266,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const coverage = await getCachedAvailability({
-      accountId,
-      cep: coverageContext.cep,
-      activeVendorId: activeVendorResult.vendor.vendorId,
-      productIds,
-    });
+    const coverage = requestedVendorId !== null
+      ? await getCoverage(coverageContext.cep, productIds, requestedVendorId)
+      : await getCachedAvailability({
+          accountId,
+          cep: coverageContext.cep,
+          activeVendorId: activeVendorResult.vendor.vendorId,
+          productIds,
+        });
 
-    return NextResponse.json<ProductAvailabilityResponse>({
-      status: "ok",
-      products: Object.fromEntries(
-        productIds.map((productId) => [
-          productId,
-          {
-            available: coverage[productId]?.hasCoverage === true,
-            stockQty: coverage[productId]?.bestVendor?.qty ?? 0,
-          },
-        ]),
-      ),
-    });
+    return NextResponse.json(toAvailabilityResponse(productIds, coverage));
   } catch {
     return NextResponse.json<ProductAvailabilityResponse>(
       {
@@ -283,4 +285,15 @@ export async function GET(request: Request) {
       { status: 200 },
     );
   }
+}
+
+/** Disponibilidade pública por CEP, ou privada pelo CEP efetivo e vendor selecionado/carrinho. */
+export async function GET(request: Request) {
+  const searchParams = new URL(request.url).searchParams;
+  const productIds = parseProductIds(searchParams.get("productIds"));
+  const publicCep = searchParams.get("cep");
+  if (publicCep !== null) return getPublicAvailability(request, publicCep, productIds);
+  const response = await getPrivateAvailability(productIds, searchParams.get("vendorId"));
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }

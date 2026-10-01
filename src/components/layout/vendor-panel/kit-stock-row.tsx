@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import type { VendorStockItem, VendorStockKit } from "@/features/vendor-stock/types/vendor-stock";
 import { vendorStockLevel } from "@/features/vendor-stock/types/vendor-stock";
+import { StockDescriptionAction } from "./stock-description-action";
 
 import {
   formatStockUpdatedAt,
@@ -17,12 +18,12 @@ function KitItems({
   onQtyChange,
   quantities,
   savingIds,
-}: {
+}: Readonly<{
   kit: VendorStockKit;
   onQtyChange: (productId: number, qty: string) => void;
   quantities: Record<string, string>;
   savingIds: Set<number>;
-}) {
+}>) {
   if (kit.items.length === 0) {
     return (
       <p className="border-2 border-dashed border-[#1a1a1a]/30 bg-white px-4 py-3 text-sm font-medium text-[#1a1a1a]/64">
@@ -90,18 +91,20 @@ export function KitStockRow({
   kit,
   lowStockThreshold,
   onQtyChange,
+  onEditDescription,
   quantities,
   savingIds,
-}: {
+}: Readonly<{
   columnCount: number;
   focused: boolean;
   item: VendorStockItem;
   kit: VendorStockKit;
   lowStockThreshold: number;
   onQtyChange: (productId: number, qty: string) => void;
+  onEditDescription?: (item: VendorStockItem) => void;
   quantities: Record<string, string>;
   savingIds: Set<number>;
-}) {
+}>) {
   const ref = useRef<HTMLTableRowElement>(null);
   const kitHref = kit.slug ? `/kits/${kit.slug}` : null;
   // `kit` e não `item.kit`: quem manda é a composição que este componente recebeu. Na listagem os
@@ -141,6 +144,7 @@ export function KitStockRow({
               <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
                 {item.sku || "Sem SKU"}
               </p>
+              <StockDescriptionAction item={item} onEdit={onEditDescription} />
             </div>
           </div>
         </td>

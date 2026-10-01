@@ -6,16 +6,11 @@ import {
 } from "@/components/layout/product-detail-page";
 import { AddToCartToastHost } from "@/components/layout/products-page/add-to-cart-toast-host";
 import { fetchProductFavoriteStatus } from "@/features/favorites";
-import { getAccountCoverageCepContext } from "@/features/catalog/services/get-account-coverage-cep";
-import { getCoverage } from "@/features/catalog/services/get-coverage";
+import { getProductDetailContext } from "@/features/catalog/services/get-product-detail-context";
 import { getProductDetail } from "@/features/catalog/services/get-product-detail";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
 import { applyFlashSaleToProductDetail } from "@/features/catalog/services/apply-flash-sale-to-product";
-import {
-  createRegionBlock,
-  type RegionBlock,
-} from "@/features/catalog/types/region-block";
-import { getActiveVendor } from "@/features/active-vendor/server";
+import { getActiveVendorFresh } from "@/features/active-vendor/server";
 import { getFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import { getProductBenefits } from "@/features/catalog/services/get-product-benefits";
 import { getPaymentConfig } from "@/features/rich-text/services/get-payment-config";
@@ -96,7 +91,7 @@ export default async function ProdutoDetalhePage({
     getProductDetail(id),
     getHomeFlashSale(),
     fetchProductFavoriteStatus(id, session?.accessToken),
-    session?.user ? getActiveVendor() : Promise.resolve(null),
+    session?.user ? getActiveVendorFresh() : Promise.resolve(null),
     getFreeShippingThreshold(),
     getPaymentConfig(),
     getProductBenefits(id),
@@ -119,33 +114,9 @@ export default async function ProdutoDetalhePage({
 
   const activeVendor =
     activeVendorResult && activeVendorResult.ok ? activeVendorResult.vendor : null;
-  let selectedVendorStockQty: number | null = null;
-  let regionBlock: RegionBlock | null = null;
-
-  if (activeVendorResult && !activeVendorResult.ok) {
-    if (activeVendorResult.error.reason === "no_vendor_available") {
-      regionBlock = createRegionBlock("no_vendor");
-    } else if (activeVendorResult.error.reason === "missing_cep") {
-      regionBlock = createRegionBlock("missing_cep");
-    }
-  }
-
-  if (activeVendor) {
-    const { cep } = await getAccountCoverageCepContext();
-
-    if (cep) {
-      const coverage = await getCoverage(cep, [displayedProduct.id], activeVendor.vendorId).catch(
-        () => null,
-      );
-      selectedVendorStockQty = coverage?.[displayedProduct.id]?.bestVendor?.qty ?? null;
-
-      if (coverage && coverage[displayedProduct.id]?.hasCoverage === false) {
-        regionBlock = createRegionBlock("no_product_coverage");
-      }
-    } else {
-      regionBlock = createRegionBlock("missing_cep");
-    }
-  }
+  const { initialPresentation, selectedVendorStockQty, regionBlock } = await getProductDetailContext(
+    displayedProduct.id, activeVendorResult, session?.role === "customer",
+  );
 
   return (
     <main className="flex min-h-80 flex-col bg-[#F9FAFB]">
@@ -173,6 +144,7 @@ export default async function ProdutoDetalhePage({
         productName={product.name}
       />
       <ProductDetailMainSection
+        initialPresentation={initialPresentation}
         product={displayedProduct}
         initialIsFavorite={initialIsFavorite}
         activeVendor={activeVendor}

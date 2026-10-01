@@ -22,6 +22,8 @@ import { StockSelectCell } from "./stock-cells";
 import { StockSelectionBar } from "./stock-selection-bar";
 import { StockSummary } from "./stock-summary";
 import { StockToolbar } from "./stock-toolbar";
+import { VendorProductDescriptionModal } from "./vendor-product-description-modal";
+import type { VendorProductCustomization } from "@/features/vendor-product-customization/types/vendor-product-customization";
 
 const AUTOSAVE_DELAY = 800;
 const SAVED_BADGE_DELAY = 2400;
@@ -35,14 +37,14 @@ export function VendorStockManager({
   snapshot,
   summary,
   taxonomies,
-}: {
+}: Readonly<{
   contactPhone: string;
   filters: VendorStockFilters;
   focusProductId?: number;
   snapshot: VendorStockSnapshot;
   summary: VendorStockSummary;
   taxonomies: VendorStockTaxonomies;
-}) {
+}>) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [quantities, setQuantities] = useState(() =>
@@ -54,6 +56,16 @@ export function VendorStockManager({
   const [requestedIds, setRequestedIds] = useState<Set<number>>(() => new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
   const [requestItem, setRequestItem] = useState<VendorStockItem | null>(null);
+  const [descriptionItem, setDescriptionItem] = useState<VendorStockItem | null>(null);
+  const [descriptionOverrides, setDescriptionOverrides] = useState<Record<number, boolean>>({});
+  const displayedItems = useMemo(() => snapshot.items.map((item) => ({
+    ...item,
+    hasDescriptionOverride: descriptionOverrides[item.publicProductId] ?? item.hasDescriptionOverride,
+  })), [snapshot.items, descriptionOverrides]);
+
+  function handleDescriptionUpdated(view: VendorProductCustomization) {
+    setDescriptionOverrides((current) => ({ ...current, [view.productId]: view.vendorDescription !== null }));
+  }
 
   const focusedInPage = snapshot.items.some((item) => item.productId === focusProductId);
   const totalPages = Math.max(1, Math.ceil(snapshot.total / snapshot.perPage));
@@ -74,6 +86,7 @@ export function VendorStockManager({
   );
 
   useEffect(() => {
+    setDescriptionOverrides({});
     setQuantities(
       Object.fromEntries(snapshot.items.map((item) => [item.productId, String(item.qty)])),
     );
@@ -382,7 +395,7 @@ export function VendorStockManager({
                 </tr>
               </thead>
               <tbody>
-                {snapshot.items.map((item) =>
+                {displayedItems.map((item) =>
                   item.kit ? (
                     <KitStockRow
                       columnCount={tableHeaders.length + 1}
@@ -392,6 +405,7 @@ export function VendorStockManager({
                       kit={item.kit}
                       lowStockThreshold={snapshot.lowStockThreshold}
                       onQtyChange={handleQtyChange}
+                      onEditDescription={setDescriptionItem}
                       quantities={quantities}
                       savingIds={savingIds}
                     />
@@ -403,6 +417,7 @@ export function VendorStockManager({
                       key={item.productId}
                       lowStockThreshold={snapshot.lowStockThreshold}
                       onQtyChange={handleQtyChange}
+                      onEditDescription={setDescriptionItem}
                       onRequestData={setRequestItem}
                       onToggle={toggleItem}
                       qty={quantities[item.productId] ?? String(item.qty)}
@@ -446,6 +461,14 @@ export function VendorStockManager({
           });
         }}
       />
+      {descriptionItem ? (
+        <VendorProductDescriptionModal
+          productId={descriptionItem.publicProductId || descriptionItem.productId}
+          productName={descriptionItem.productName}
+          onClose={() => setDescriptionItem(null)}
+          onUpdated={handleDescriptionUpdated}
+        />
+      ) : null}
     </div>
   );
 }

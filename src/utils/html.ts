@@ -99,3 +99,25 @@ export function buildDescriptionHtml(paragraphs: string[]) {
     })
     .join("\n");
 }
+
+/**
+ * Converte descrição de produto sem perder blocos ou texto fora de p.
+ * Decodifica entidades depois de remover tags; saída é texto para nós React.
+ */
+export function parseProductDescriptionParagraphs(value: string) {
+  const boundaries = value
+    .replace(/<br\s*\/?>[ \t]*\r?\n?/gi, "\n")
+    .replace(/<\/?(?:p|div|h[1-6]|li|ul|ol|blockquote|section|table|tr)\b[^>]*>/gi, "\n\n");
+  const text = decodeHtmlEntities(stripHtmlTags(boundaries).replace(/&#(x[0-9a-f]+|\d+);/gi, (entity, raw: string) => {
+    const hexadecimal = raw[0]?.toLowerCase() === "x";
+    const point = Number.parseInt(hexadecimal ? raw.slice(1) : raw, hexadecimal ? 16 : 10);
+    return point > 0 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
+      ? String.fromCodePoint(point)
+      : entity;
+  }));
+  const paragraphs = removeTrailingSpacesBeforeNewlines(text)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  return paragraphs.length > 0 ? paragraphs : [""];
+}

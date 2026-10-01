@@ -59,6 +59,7 @@ type WpKit = {
 
 type WpStockResponse = {
   items?: Array<{
+    has_description_override?: boolean | null;
     categories?: WpTerm[];
     is_publicly_viewable?: boolean;
     is_unconfigured?: boolean;
@@ -159,6 +160,7 @@ export async function getVendorStock(
 
   return {
     items: (result.data.items ?? []).map((item) => ({
+      hasDescriptionOverride: typeof item.has_description_override === "boolean" ? item.has_description_override : null,
       categories: mapTerms(item.categories),
       imageUrl: item.image_url ?? "",
       isPubliclyViewable: item.is_publicly_viewable !== false,

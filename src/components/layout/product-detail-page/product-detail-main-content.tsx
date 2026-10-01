@@ -8,6 +8,11 @@ import {
 } from "@/components/layout/product-benefits-bar";
 import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
+import type { ProductPresentation } from "@/features/catalog/types/product-presentation";
+import { useProductPresentation } from "@/features/catalog/hooks/use-product-presentation";
+import { useCartVendorAvailability } from "@/features/catalog/hooks/use-cart-vendor-availability";
+import { ProductDetailAvailabilityNotice } from "./product-detail-availability-notice";
+import { useProductVendorContext } from "@/features/catalog/hooks/use-product-vendor-context";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { toGa4Item } from "@/lib/analytics/ga4-ecommerce";
@@ -29,6 +34,8 @@ import { ProductDetailRelatedSection } from "./product-detail-related-section";
 import { useProductPurchase } from "./use-product-purchase";
 
 interface ProductDetailMainContentProps {
+  /** Apresentação do SSR; não substitui a confirmação do vendor no cliente. */
+  initialPresentation?: ProductPresentation | null;
   /** Dados do produto atual para renderização da seção principal. */
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
@@ -49,6 +56,7 @@ const MAX_RELATED_PRODUCTS = 4;
  * Orquestra galeria, quantidade, ações de compra e seções auxiliares.
  */
 export function ProductDetailMainContent({
+  initialPresentation = null,
   product,
   initialIsFavorite = false,
   activeVendor = null,
@@ -59,9 +67,17 @@ export function ProductDetailMainContent({
   showRelatedProducts = true,
 }: Readonly<ProductDetailMainContentProps>) {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const { status, role } = useAuthSession();
+  const { status, role, isAuthenticated, isRoleLoading } = useAuthSession();
+  const vendorContext = useProductVendorContext(activeVendor, isAuthenticated && !isRoleLoading && role === "customer");
+  const presentation = useProductPresentation(product.id, vendorContext.vendorId, initialPresentation, vendorContext.hydrated);
+  const summary = presentation.presentation?.summary ?? product.description;
+  const completeDescription = presentation.presentation?.description ?? product.longDescription ?? product.description;
+  const cartHasOtherVendor = vendorContext.fromCart && vendorContext.vendorId !== activeVendor?.vendorId;
+  const cartAvailability = useCartVendorAvailability(product.id, vendorContext.vendorId, cartHasOtherVendor);
+  const contextualStockQty = cartHasOtherVendor ? cartAvailability.stockQty : selectedVendorStockQty;
+  const contextualRegionBlock = cartHasOtherVendor && regionBlock?.kind !== "missing_cep" ? cartAvailability.regionBlock : regionBlock;
 
-  const availableStock = resolveAvailableStock(selectedVendorStockQty);
+  const availableStock = resolveAvailableStock(contextualStockQty);
   const quantity = product.isKit ? 1 : clampQuantity(selectedQuantity, availableStock);
   const quantitySelectorStock = product.isKit ? 1 : availableStock;
   const hasDiscount = product.originalPrice > product.price;
@@ -72,12 +88,12 @@ export function ProductDetailMainContent({
       regionBlock?.kind === "missing_cep");
 
   const descriptionParagraphs = useMemo(
-    () => buildDescriptionParagraphs(product.description),
-    [product.description],
+    () => buildDescriptionParagraphs(summary),
+    [summary],
   );
   const longDescriptionParagraphs = useMemo(
-    () => buildDescriptionParagraphs(product.longDescription ?? product.description),
-    [product.description, product.longDescription],
+    () => buildDescriptionParagraphs(completeDescription),
+    [completeDescription],
   );
   const relatedProducts = useMemo(
     () => product.relatedThumbs.slice(0, MAX_RELATED_PRODUCTS),
@@ -102,12 +118,16 @@ export function ProductDetailMainContent({
     product,
     quantity,
     availableStock,
-    regionBlock,
+    regionBlock: contextualRegionBlock,
+    isAvailabilityBlocked: cartAvailability.blocked,
     onQuantityClamp: setSelectedQuantity,
     detailPath,
   });
 
-  const vendorSummary = purchase.isOutOfStock ? activeVendor : null;
+  const vendorSummary = purchase.isOutOfStock && !cartHasOtherVendor ? activeVendor : null;
+  const descriptionOrigin = presentation.presentation?.descriptionSource === "vendor"
+    ? "Descrição personalizada por " + (vendorContext.vendorName || "vendor selecionado")
+    : "Descrição da Papelito";
 
   return (
     <div className="flex flex-col gap-12 md:gap-16">
@@ -124,7 +144,7 @@ export function ProductDetailMainContent({
           <p className="mt-1 text-sm font-normal leading-5 tracking-[-0.150391px] text-[#99A1AF]">
             {showPublicCepAvailability
               ? "Consulte a disponibilidade por CEP abaixo"
-              : resolveStockLabel(selectedVendorStockQty)}
+              : resolveStockLabel(contextualStockQty)}
           </p>
 
           <div className="mt-5 flex items-end gap-2">
@@ -166,6 +186,8 @@ export function ProductDetailMainContent({
             <ProductDetailRegionNotice regionBlock={purchase.regionNotice} />
           ) : null}
 
+          <ProductDetailAvailabilityNotice pending={cartAvailability.pending} error={cartAvailability.error} onRetry={cartAvailability.retry} />
+
           <ProductDetailPurchaseActions
             productId={product.id}
             productName={product.name}
@@ -191,7 +213,13 @@ export function ProductDetailMainContent({
         </div>
       </div>
 
-      <ProductDetailDescriptionSection paragraphs={longDescriptionParagraphs} />
+      <ProductDetailDescriptionSection
+        paragraphs={longDescriptionParagraphs}
+        origin={descriptionOrigin}
+        loading={presentation.loading && !presentation.presentation}
+        error={presentation.error}
+        onRetry={presentation.retry}
+      />
 
       {showPublicCepAvailability ? (
         <ProductDetailCepAvailability productId={product.id} />

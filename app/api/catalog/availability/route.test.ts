@@ -48,6 +48,35 @@ describe("GET /api/catalog/availability", () => {
     });
   });
 
+
+  it("consulta o vendor do carrinho com o CEP fiscal, mesmo sem vendor ativo", async () => {
+    getActiveVendorMock.mockResolvedValue({ ok: false, error: { reason: "no_vendor_available" } });
+    getCoverageMock.mockResolvedValue({ "11760": { hasCoverage: true, bestVendor: { vendorId: 202, qty: 7 }, alternatives: [] } });
+    const { GET } = await import("./route");
+    const response = await GET(new Request("http://localhost:3000/api/catalog/availability?productIds=11760&vendorId=202"));
+    expect(await response.json()).toEqual({ status: "ok", products: { "11760": { available: true, stockQty: 7 } } });
+    expect(getCoverageMock).toHaveBeenCalledWith("70879060", ["11760"], 202);
+    expect(getActiveVendorMock).not.toHaveBeenCalled();
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("vendor explícito não contorna CEP ausente nem expõe saldo para visitante", async () => {
+    const { GET } = await import("./route");
+    getAccountCoverageCepContextMock.mockResolvedValue({ cep: null });
+    const url = "http://localhost:3000/api/catalog/availability?productIds=11760&vendorId=202";
+    expect(await (await GET(new Request(url))).json()).toEqual({ status: "missing_cep", products: {} });
+    getServerSessionMock.mockResolvedValue(null);
+    expect(await (await GET(new Request(url))).json()).toEqual({ status: "not_applicable", products: {} });
+    expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["0", "-1", "1.5", "abc", "9007199254740992"])("recusa ID explícito inválido %s", async (value) => {
+    const { GET } = await import("./route");
+    const response = await GET(new Request("http://localhost:3000/api/catalog/availability?productIds=11760&vendorId=" + value));
+    expect(response.status).toBe(400);
+    expect(getCoverageMock).not.toHaveBeenCalled();
+  });
+
   it("marks every product unavailable when no vendor serves the customer's region", async () => {
     getActiveVendorMock.mockResolvedValue({
       ok: false,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ProductDetailItem } from "@/features/catalog/types/product-detail";
 
-import { resolveThumbnails } from "./product-detail-helpers";
+import { buildDescriptionParagraphs, resolveThumbnails } from "./product-detail-helpers";
 
 function product(overrides: Partial<ProductDetailItem> = {}): ProductDetailItem {
   return {
@@ -29,6 +29,18 @@ function product(overrides: Partial<ProductDetailItem> = {}): ProductDetailItem 
 }
 
 describe("resolveThumbnails", () => {
+  it("apresentação pública conserva todos os blocos canônicos e texto de overrides", () => {
+    const canonical = buildDescriptionParagraphs("<p>Intro</p><ul><li>Specification</li></ul>");
+    expect(canonical.map((paragraph) => paragraph.text)).toEqual(["Intro", "Specification"]);
+    expect(buildDescriptionParagraphs("Before<p>Paragraph</p>After").map((paragraph) => paragraph.text))
+      .toEqual(["Before", "Paragraph", "After"]);
+  });
+
+  it("quebra simples da serialização continua simples na apresentação", () => {
+    expect(buildDescriptionParagraphs("<p>Line one<br />\nLine two</p>").map((paragraph) => paragraph.text))
+      .toEqual(["Line one\nLine two"]);
+  });
+
   it("preserva o limite de quatro miniaturas em produtos convencionais", () => {
     expect(resolveThumbnails(product())).toHaveLength(4);
   });

@@ -14,6 +14,7 @@ import { notificationsHandlers } from "./handlers/notifications";
 import { packagingProfilesHandlers } from "./handlers/packaging-profiles";
 import { profileOrdersHandlers } from "./handlers/profile-orders";
 import { vendorEligibilityHandlers } from "./handlers/vendor-eligibility";
+import { vendorProductCustomizationHandlers } from "./handlers/vendor-product-customization";
 
 export const server = setupServer(
   ...authHandlers,
@@ -30,4 +31,5 @@ export const server = setupServer(
   ...packagingProfilesHandlers,
   ...profileOrdersHandlers,
   ...vendorEligibilityHandlers,
+  ...vendorProductCustomizationHandlers,
 );

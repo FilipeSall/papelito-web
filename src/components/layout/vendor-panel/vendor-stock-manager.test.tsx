@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const refresh = vi.fn();
@@ -6,6 +6,7 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { VendorStockManager } from "./vendor-stock-manager";
+import { customizationResponse } from "../../../../test/msw/handlers/vendor-product-customization";
 import type {
   VendorStockFilters,
   VendorStockItem,
@@ -63,6 +64,40 @@ function snapshotOf(items: VendorStockItem[]): VendorStockSnapshot {
 }
 
 const snapshot = snapshotOf([item()]);
+
+describe("VendorStockManager descrição", () => {
+  beforeEach(() => refresh.mockClear());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("abre pelo pai e atualiza o selo de todas as suas variações", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/vendor/stock") return new Promise<Response>((_resolve, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new DOMException("Abortado", "AbortError")));
+      });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(customizationResponse(10, options.method === "PUT" ? "<p>Vendor.</p>" : null)) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderManager(snapshotOf([item({ productId: 11, publicProductId: 10 }), item({ productId: 12, publicProductId: 10 })]));
+    fireEvent.change(screen.getAllByLabelText(/quantidade de seda king size/i)[0]!, { target: { value: "12" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Editar descrição" })[0]!);
+    const editor = await screen.findByLabelText("Sua descrição");
+    fireEvent.change(editor, { target: { value: "Vendor." } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar descrição" }));
+    await waitFor(() => expect(screen.getAllByText("Descrição personalizada")).toHaveLength(3));
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/10/customization");
+    expect(refresh).not.toHaveBeenCalled();
+    expect(screen.getAllByLabelText(/quantidade de seda king size/i)[0]).toHaveValue(12);
+  });
+
+  it("abre kit pelo produto comercial, sem saldo de kit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(customizationResponse(30)) });
+    vi.stubGlobal("fetch", fetchMock);
+    renderManager(kitSnapshot);
+    fireEvent.click(screen.getByRole("button", { name: "Editar descrição" }));
+    await screen.findByLabelText("Sua descrição");
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/30/customization");
+  });
+});
 
 const kitSnapshot = snapshotOf([
   item({

@@ -64,6 +64,8 @@ export type VendorStockKit = {
 };
 
 export type VendorStockItem = {
+  /** Indicador do pai; null quando o schema de personalização estiver indisponível. */
+  hasDescriptionOverride?: boolean | null;
   categories: VendorStockTerm[];
   imageUrl: string;
   isPubliclyViewable: boolean;

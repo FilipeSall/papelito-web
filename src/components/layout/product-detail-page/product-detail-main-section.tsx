@@ -3,9 +3,12 @@ import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import type { RegionBlock } from "@/features/catalog/types/region-block";
 import type { ResolvedProductBenefit } from "@/components/layout/product-benefits-bar";
+import type { ProductPresentation } from "@/features/catalog/types/product-presentation";
 import { ProductDetailMainContent } from "./product-detail-main-content";
 
 interface ProductDetailMainSectionProps {
+  /** Projeção inicial, aplicada somente após confirmar o contexto do carrinho. */
+  initialPresentation?: ProductPresentation | null;
   /** Produto carregado para a seção principal da PDP. */
   product: ProductDetailItem;
   initialIsFavorite?: boolean;
@@ -24,6 +27,7 @@ interface ProductDetailMainSectionProps {
  * Define fundo, largura máxima e espaçamento vertical da área.
  */
 export function ProductDetailMainSection({
+  initialPresentation = null,
   product,
   initialIsFavorite = false,
   activeVendor = null,
@@ -32,7 +36,7 @@ export function ProductDetailMainSection({
   benefitItems = [],
   detailPath,
   showRelatedProducts = true,
-}: ProductDetailMainSectionProps) {
+}: Readonly<ProductDetailMainSectionProps>) {
   return (
     <section className="w-full bg-[#F9FAFB] pb-18">
       <div className="relative mx-auto w-full max-w-271 px-4 md:px-8">
@@ -62,6 +66,7 @@ export function ProductDetailMainSection({
 
         <div className="mt-6 md:mt-7">
           <ProductDetailMainContent
+            initialPresentation={initialPresentation}
             product={product}
             initialIsFavorite={initialIsFavorite}
             activeVendor={activeVendor}

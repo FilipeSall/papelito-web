@@ -708,6 +708,7 @@ export function mapWpProductToDetailItem(
     type,
     badge: resolveBadge(product),
     description,
+    longDescription: stripHtml(product.description) || description,
     ...(product.sku?.trim() ? { sku: product.sku.trim() } : {}),
     image: primaryImage,
     rating: 4.4,

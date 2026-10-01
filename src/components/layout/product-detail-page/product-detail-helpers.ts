@@ -2,7 +2,7 @@ import type {
   ProductDetailGalleryImage,
   ProductDetailItem,
 } from "@/features/catalog/types/product-detail";
-import { parseDescriptionParagraphs } from "@/utils/html";
+import { parseProductDescriptionParagraphs } from "@/utils/html";
 import { getStockLabel } from "@/features/active-vendor";
 
 export interface DescriptionParagraph {
@@ -28,7 +28,7 @@ export function resolveThumbnails(
 export function buildDescriptionParagraphs(description: string): DescriptionParagraph[] {
   const occurrences = new Map<string, number>();
 
-  return parseDescriptionParagraphs(description)
+  return parseProductDescriptionParagraphs(description)
     .filter(Boolean)
     .map((text) => {
       const occurrence = occurrences.get(text) ?? 0;

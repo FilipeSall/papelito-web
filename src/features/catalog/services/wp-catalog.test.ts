@@ -28,6 +28,14 @@ function describeOf(description: string) {
 }
 
 describe("mapWpProductToDetailItem — descrição", () => {
+  it("separa o resumo curto da descrição completa", () => {
+    const result = mapWpProductToDetailItem({
+      ...buildProduct("<p>Descrição completa.</p><p>Segundo parágrafo.</p>"),
+      shortDescription: "<p>Resumo curto.</p>",
+    }, []);
+    expect(result.description).toBe("Resumo curto.");
+    expect(result.longDescription).toBe("Descrição completa.\n\nSegundo parágrafo.");
+  });
   it("preserva a fronteira entre paragrafos vindos do WooCommerce", () => {
     const result = describeOf(
       "<p>A amarelinha mais queridinha do Brasil</p><p>Nosso Campeao de vendas.</p>",

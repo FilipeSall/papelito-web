@@ -14,6 +14,7 @@ import {
   stockThumbFrameClassName,
 } from "./stock-cells";
 import { buildWhatsappHref } from "./stock-status";
+import { StockDescriptionAction } from "./stock-description-action";
 
 export function StockRow({
   contactPhone,
@@ -21,6 +22,7 @@ export function StockRow({
   lowStockThreshold,
   onQtyChange,
   onRequestData,
+  onEditDescription,
   onToggle,
   qty,
   requested,
@@ -28,20 +30,21 @@ export function StockRow({
   saving,
   selected,
   item,
-}: {
+}: Readonly<{
   contactPhone: string;
   focused: boolean;
   item: VendorStockItem;
   lowStockThreshold: number;
   onQtyChange: (productId: number, qty: string) => void;
   onRequestData: (item: VendorStockItem) => void;
+  onEditDescription?: (item: VendorStockItem) => void;
   onToggle: (productId: number, selected: boolean) => void;
   qty: string;
   requested: boolean;
   saved: boolean;
   saving: boolean;
   selected: boolean;
-}) {
+}>) {
   const ref = useRef<HTMLTableRowElement>(null);
   const productHref = `/produtos/${item.publicProductId || item.productId}`;
   const isPublic = item.isPubliclyViewable;
@@ -119,6 +122,7 @@ export function StockRow({
               requested={requested}
               whatsappHref={whatsappHref}
             />
+            <StockDescriptionAction item={item} onEdit={onEditDescription} />
           </div>
         </div>
       </td>

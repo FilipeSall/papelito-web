@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-09-18T22:50:44.385Z",
         "reason": "Agent: borda vermelha marca semanticamente o motivo interno de uma candidatura rejeitada; não é decoração do cartão"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/layout/vendor-panel/kit-stock-row.tsx"
+        ],
+        "createdAt": "2026-10-01T04:48:47.923Z",
+        "reason": "Codex decidiu: ambas as bordas pretas já existem no HEAD e unem as duas linhas da tabela que representam kit e componentes, conforme o docblock de hierarquia do componente; preservar o agrupamento e o padrão de bordas pretas do painel documentado em docs/brand/identidade-visual.md."
       }
     ]
   }

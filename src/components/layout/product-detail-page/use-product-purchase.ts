@@ -45,6 +45,8 @@ interface CommitCartAdditionInput {
 }
 
 interface UseProductPurchaseOptions {
+  /** Impede iniciar a compra enquanto o contexto ainda não tem disponibilidade confirmada. */
+  isAvailabilityBlocked?: boolean;
   product: ProductDetailItem;
   quantity: number;
   availableStock: number | null;
@@ -208,6 +210,7 @@ export function useProductPurchase({
   quantity,
   availableStock,
   regionBlock,
+  isAvailabilityBlocked = false,
   onQuantityClamp,
   detailPath = `/produtos/${product.id}`,
 }: UseProductPurchaseOptions) {
@@ -225,7 +228,7 @@ export function useProductPurchase({
 
   async function addCurrentProductToCart() {
     const gate = resolvePurchaseGate({
-      isSessionSettling: status === "loading" || isRoleLoading,
+      isSessionSettling: status === "loading" || isRoleLoading || isAvailabilityBlocked,
       isAuthenticated: status === "authenticated",
       isPurchaseBlockedByRole,
       isAddingToCart,
@@ -277,7 +280,7 @@ export function useProductPurchase({
   return {
     isAddingToCart,
     isOutOfStock,
-    isPurchaseDisabled: isOutOfStock || isRegionBlocked,
+    isPurchaseDisabled: isOutOfStock || isRegionBlocked || isAvailabilityBlocked,
     isPurchaseBlockedByRole,
     roleBlockedMessage: resolveRoleBlockedMessage(isAdministrator, isSeller),
     regionNotice: shouldShowRegionNotice ? regionBlock : null,
