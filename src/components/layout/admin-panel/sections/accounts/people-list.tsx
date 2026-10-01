@@ -1,11 +1,8 @@
-import Link from "next/link";
 import { ArrowRight, Building2, Store } from "lucide-react";
 
 import type { AdminUserRow, AdminUsersSnapshot } from "@/lib/server/admin-users";
 import type { AdminUsersFilters } from "@/lib/server/admin-users-filters";
 import { buildAdminUsersQuery } from "@/lib/server/admin-users-filters";
-
-import { FOCUS_RING } from "../../primitives";
 
 import {
   ACCOUNTS_PATH,
@@ -16,6 +13,7 @@ import {
   personHref,
 } from "./accounts-config";
 import { EmptyResult, InlineAlert, ResultFrame, ResultRow } from "./accounts-shell";
+import { OverflowReveal } from "./overflow-reveal";
 import { Pagination } from "./pagination";
 import { AccountStatusChip, EntityMark } from "./status-chip";
 
@@ -40,7 +38,7 @@ function detailHref(row: AdminUserRow, filters: AdminUsersFilters) {
  * A relação da pessoa em uma linha só: empresa quando existe vínculo, loja quando é vendor.
  * As duas nunca coexistem no domínio, então competir por espaço seria ruído.
  */
-function Relationship({ row }: { row: AdminUserRow }) {
+function Relationship({ href, row }: Readonly<{ href: string; row: AdminUserRow }>) {
   if (row.company) {
     return (
       <div className="flex items-start gap-2">
@@ -50,18 +48,14 @@ function Relationship({ row }: { row: AdminUserRow }) {
           strokeWidth={2.4}
         />
         <div className="min-w-0">
-          <Link
-            className={[
-              "relative z-10 inline-flex items-center gap-1.5 font-bold text-[#231f20] underline-offset-2 hover:underline",
-              FOCUS_RING,
-            ].join(" ")}
+          <OverflowReveal
+            className="font-bold text-[#231f20]"
             href={companyHref(row.company.companyId)}
-          >
-            <Building2 aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-            <span className="truncate">
-              {row.company.companyName || `Empresa #${row.company.companyId}`}
-            </span>
-          </Link>
+            interactive="always"
+            leading={<Building2 aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />}
+            text={row.company.companyName || `Empresa #${row.company.companyId}`}
+            underline
+          />
           <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/55">
             {membershipRoleLabel(row.company.membershipRole)} ·{" "}
             {membershipStatusLabel(row.company.membershipStatus)}
@@ -82,10 +76,12 @@ function Relationship({ row }: { row: AdminUserRow }) {
           strokeWidth={2.4}
         />
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 font-bold text-[#231f20]">
-            <Store aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-            <span className="truncate">{row.storeName || "Loja sem nome"}</span>
-          </p>
+          <OverflowReveal
+            className="font-bold text-[#231f20]"
+            href={href}
+            leading={<Store aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />}
+            text={row.storeName || "Loja sem nome"}
+          />
           <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/55">
             {location || "Sem cidade"} · {row.hasCoverage ? "com cobertura" : "sem cobertura"}
           </p>
@@ -127,10 +123,10 @@ function Relationship({ row }: { row: AdminUserRow }) {
 export function PeopleList({
   filters,
   snapshot,
-}: {
+}: Readonly<{
   filters: AdminUsersFilters;
   snapshot: AdminUsersSnapshot;
-}) {
+}>) {
   // Erro de API não pode virar estado vazio: "nenhum registro" e "não consegui ler" levam o
   // administrador a conclusões opostas.
   if (snapshot.issues.length > 0) {
@@ -163,31 +159,40 @@ export function PeopleList({
       summary={`${snapshot.totalRows} conta${snapshot.totalRows === 1 ? "" : "s"} neste recorte`}
     >
       {snapshot.rows.map((row) => (
-        <ResultRow
-          href={detailHref(row, filters)}
-          key={`person-${row.id}`}
-          lead={
-            <div className="flex items-center gap-3">
-              <EntityMark kind={row.isVendor ? "vendor" : "person"} label={row.roleLabel || "Conta"} />
-              <div className="min-w-0">
-                <p className="truncate font-black uppercase tracking-tight text-[#1a1a1a]">
-                  {row.name || row.email || `Candidatura #${row.id}`}
-                </p>
-                <p className="truncate text-xs text-[#231f20]/60">{row.email || "—"}</p>
-              </div>
-            </div>
-          }
-          meta={<Relationship row={row} />}
-          trailing={
-            <>
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/45">
-                {row.roleLabel || "Outro"} · {formatRelativeTime(row.registeredAt)}
-              </span>
-              <AccountStatusChip fallbackLabel={row.accountStatusLabel} status={row.accountStatus} />
-            </>
-          }
-        />
+        <PersonRow filters={filters} key={`person-${row.id}`} row={row} />
       ))}
     </ResultFrame>
+  );
+}
+
+function PersonRow({ filters, row }: Readonly<{ filters: AdminUsersFilters; row: AdminUserRow }>) {
+  const href = detailHref(row, filters);
+
+  return (
+    <ResultRow
+      href={href}
+      lead={
+        <div className="flex items-center gap-3">
+          <EntityMark kind={row.isVendor ? "vendor" : "person"} label={row.roleLabel || "Conta"} />
+          <div className="min-w-0">
+            <OverflowReveal
+              className="font-black uppercase tracking-tight text-[#1a1a1a]"
+              href={href}
+              text={row.name || row.email || `Candidatura #${row.id}`}
+            />
+            <OverflowReveal className="text-xs text-[#231f20]/60" href={href} text={row.email || "—"} />
+          </div>
+        </div>
+      }
+      meta={<Relationship href={href} row={row} />}
+      trailing={
+        <>
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/45">
+            {row.roleLabel || "Outro"} · {formatRelativeTime(row.registeredAt)}
+          </span>
+          <AccountStatusChip fallbackLabel={row.accountStatusLabel} status={row.accountStatus} />
+        </>
+      }
+    />
   );
 }

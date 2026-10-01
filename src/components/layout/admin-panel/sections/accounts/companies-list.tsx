@@ -13,6 +13,7 @@ import {
   personHref,
 } from "./accounts-config";
 import { EmptyResult, InlineAlert, ResultFrame, ResultRow } from "./accounts-shell";
+import { OverflowReveal } from "./overflow-reveal";
 import { Pagination } from "./pagination";
 import { CompanyStatusChip, EntityMark, OwnershipStatusChip } from "./status-chip";
 
@@ -39,7 +40,7 @@ function companiesHref(filters: AdminCompaniesFilters, overrides: Partial<AdminC
   return `${ACCOUNTS_PATH}?${params.toString()}`;
 }
 
-export function CompaniesFilters({ filters }: { filters: AdminCompaniesFilters }) {
+export function CompaniesFilters({ filters }: Readonly<{ filters: AdminCompaniesFilters }>) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <form className="flex w-full max-w-xl items-end gap-2" method="get">
@@ -106,10 +107,10 @@ export function CompaniesFilters({ filters }: { filters: AdminCompaniesFilters }
 export function CompaniesList({
   filters,
   snapshot,
-}: {
+}: Readonly<{
   filters: AdminCompaniesFilters;
   snapshot: AdminCompaniesSnapshot;
-}) {
+}>) {
   // Erro de API não pode virar estado vazio: "nenhum registro" e "não consegui ler" levam o
   // administrador a conclusões opostas.
   if (snapshot.issues.length > 0) {
@@ -164,16 +165,14 @@ export function CompaniesList({
               />
               <div className="min-w-0">
                 {row.ownerUserId > 0 ? (
-                  <Link
-                    className={[
-                      "relative z-10 inline-flex items-center gap-1.5 font-bold text-[#231f20] underline-offset-2 hover:underline",
-                      FOCUS_RING,
-                    ].join(" ")}
+                  <OverflowReveal
+                    className="font-bold text-[#231f20]"
                     href={personHref(row.ownerUserId)}
-                  >
-                    <User aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-                    <span className="truncate">{row.ownerName || `Usuário #${row.ownerUserId}`}</span>
-                  </Link>
+                    interactive="always"
+                    leading={<User aria-hidden className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />}
+                    text={row.ownerName || `Usuário #${row.ownerUserId}`}
+                    underline
+                  />
                 ) : (
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/45">
                     sem titular
