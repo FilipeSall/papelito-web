@@ -14,7 +14,7 @@ import {
   stockThumbFrameClassName,
 } from "./stock-cells";
 import { buildWhatsappHref } from "./stock-status";
-import { StockDescriptionAction } from "./stock-description-action";
+import { StockDescriptionAction, StockDescriptionMarker } from "./stock-description-action";
 
 export function StockRow({
   contactPhone,
@@ -50,18 +50,17 @@ export function StockRow({
   const isPublic = item.isPubliclyViewable;
   const level = vendorStockLevel(item, lowStockThreshold);
   const whatsappHref = buildWhatsappHref(contactPhone, item.productName, item.missingFields);
+  let rowClassName = "bg-[#faf8f2]";
+
+  if (selected) rowClassName = "bg-brand-yellow/12";
+  if (focused) rowClassName = "bg-brand-yellow/22";
 
   useEffect(() => {
     if (focused) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [focused]);
 
   return (
-    <tr
-      className={
-        focused ? "bg-brand-yellow/22" : selected ? "bg-brand-yellow/12" : "bg-[#faf8f2]"
-      }
-      ref={ref}
-    >
+    <tr className={rowClassName} ref={ref}>
       <td className="border-b border-brand-dark/15 px-2 py-3 align-top">
         <StockSelectCell
           checked={selected}
@@ -86,25 +85,28 @@ export function StockRow({
               <StockThumb alt={item.productName} src={item.imageUrl} />
             </span>
           )}
-          <div className="min-w-0">
-            {isPublic ? (
-              <Link
-                className="block text-sm font-semibold text-[#1a1a1a] transition hover:text-[#1a1a1a]/72"
-                href={productHref}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {item.productName}
-              </Link>
-            ) : (
-              <span className="block text-sm font-semibold text-[#1a1a1a]">
-                {item.productName}
-              </span>
-            )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              {isPublic ? (
+                <Link
+                  className="block text-sm font-semibold text-[#1a1a1a] transition hover:text-[#1a1a1a]/72"
+                  href={productHref}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {item.productName}
+                </Link>
+              ) : (
+                <span className="block text-sm font-semibold text-[#1a1a1a]">
+                  {item.productName}
+                </span>
+              )}
+              <StockDescriptionAction item={item} onEdit={onEditDescription} />
+            </div>
             <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
               {item.sku || "Sem SKU"}
             </p>
-            {item.categories.length > 0 || item.tags.length > 0 ? (
+            {item.categories.length > 0 || item.tags.length > 0 || item.hasDescriptionOverride ? (
               <div className="mt-2 flex flex-wrap gap-1.5" data-testid="stock-row-terms">
                 {[...item.categories, ...item.tags].map((term) => (
                   <span
@@ -114,6 +116,7 @@ export function StockRow({
                     {term.name}
                   </span>
                 ))}
+                <StockDescriptionMarker item={item} />
               </div>
             ) : null}
             <StockMissingData
@@ -122,7 +125,6 @@ export function StockRow({
               requested={requested}
               whatsappHref={whatsappHref}
             />
-            <StockDescriptionAction item={item} onEdit={onEditDescription} />
           </div>
         </div>
       </td>

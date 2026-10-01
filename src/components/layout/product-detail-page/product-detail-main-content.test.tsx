@@ -71,3 +71,32 @@ describe("compra no contexto do carrinho", () => {
     expect(screen.getByRole("button", { name: "COMPRAR AGORA" })).toBeDisabled();
   });
 });
+
+describe("prévia da descrição do próprio vendor", () => {
+  const CUSTOMIZATION_ENDPOINT = "*/api/vendor/products/:productId/customization";
+
+  it("seller vê a descrição que a própria loja mostra", async () => {
+    server.use(http.get(CUSTOMIZATION_ENDPOINT, () => HttpResponse.json({
+      product_id: 123, vendor_id: 45, canonical_description: "<p>Descrição completa</p>", vendor_description: "<p>Texto da loja.</p>",
+      vendor_description_enabled: true, effective_description: "<p>Texto da loja.</p>", description_source: "vendor",
+      can_edit: true, updated_at: "2026-10-01 12:00:00",
+    })));
+    renderWithProviders(
+      <ProductDetailMainContent product={product} selectedVendorStockQty={0} regionBlock={null} showRelatedProducts={false} />,
+      { session: buildSession({ role: "seller" }) },
+    );
+    expect(await screen.findByText("Texto da loja.")).toBeInTheDocument();
+  });
+
+  it("cliente não consulta a gestão de descrição", async () => {
+    const management = vi.fn();
+    server.use(
+      http.get(CUSTOMIZATION_ENDPOINT, () => { management(); return HttpResponse.json({}); }),
+      http.get("*/api/catalog/products/:productId/presentation", () => HttpResponse.json({ product_id: 123, vendor_id: 1, description: "Descrição completa", summary: "Resumo", description_source: "papelito" })),
+    );
+    renderDetail();
+    expect(await screen.findByText("Descrição completa")).toBeInTheDocument();
+    await delay(50);
+    expect(management).not.toHaveBeenCalled();
+  });
+});

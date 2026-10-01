@@ -79,11 +79,13 @@ describe("VendorStockManager descrição", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderManager(snapshotOf([item({ productId: 11, publicProductId: 10 }), item({ productId: 12, publicProductId: 10 })]));
     fireEvent.change(screen.getAllByLabelText(/quantidade de seda king size/i)[0]!, { target: { value: "12" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Editar descrição" })[0]!);
-    const editor = await screen.findByLabelText("Sua descrição");
+    fireEvent.click(screen.getAllByRole("button", { name: "Editar descrição de Seda King Size" })[0]!);
+    const editor = await screen.findByLabelText("Descrição personalizada");
     fireEvent.change(editor, { target: { value: "Vendor." } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar descrição" }));
-    await waitFor(() => expect(screen.getAllByText("Descrição personalizada")).toHaveLength(3));
+    await waitFor(() => expect(screen.getAllByText("Descrição personalizada")).toHaveLength(2));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Descrição de Seda King Size salva.");
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/10/customization");
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.getAllByLabelText(/quantidade de seda king size/i)[0]).toHaveValue(12);
@@ -93,8 +95,8 @@ describe("VendorStockManager descrição", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(customizationResponse(30)) });
     vi.stubGlobal("fetch", fetchMock);
     renderManager(kitSnapshot);
-    fireEvent.click(screen.getByRole("button", { name: "Editar descrição" }));
-    await screen.findByLabelText("Sua descrição");
+    fireEvent.click(screen.getByRole("button", { name: "Editar descrição de Kit Escolar" }));
+    await screen.findByLabelText("Descrição personalizada");
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/30/customization");
   });
 });

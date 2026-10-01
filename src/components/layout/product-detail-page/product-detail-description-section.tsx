@@ -1,8 +1,6 @@
 import type { DescriptionParagraph } from "./product-detail-helpers";
 
 interface ProductDetailDescriptionSectionProps {
-  /** Origem explícita do texto exibido. */
-  origin?: string;
   /** Consulta contextual ainda em andamento, com referência canônica visível. */
   loading?: boolean;
   /** Falha técnica; não significa que o vendor deixou de personalizar. */
@@ -14,7 +12,6 @@ interface ProductDetailDescriptionSectionProps {
 
 export function ProductDetailDescriptionSection({
   paragraphs,
-  origin,
   loading = false,
   error = null,
   onRetry,
@@ -27,7 +24,6 @@ export function ProductDetailDescriptionSection({
         </div>
       </div>
       <div className="flex flex-col gap-3 px-8 py-8">
-        {origin ? <p className="text-xs font-semibold text-brand-dark">{origin}</p> : null}
         {loading ? <p role="status" className="text-xs">Consultando descrição do vendor…</p> : null}
         {error ? (
           <div role="alert" className="text-sm">

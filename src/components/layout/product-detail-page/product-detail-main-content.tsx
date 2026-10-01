@@ -10,6 +10,7 @@ import type { ActiveVendor } from "@/features/active-vendor";
 import type { ProductDetailItem } from "@/features/catalog";
 import type { ProductPresentation } from "@/features/catalog/types/product-presentation";
 import { useProductPresentation } from "@/features/catalog/hooks/use-product-presentation";
+import { useOwnProductDescription } from "@/features/vendor-product-customization/hooks/use-own-product-description";
 import { useCartVendorAvailability } from "@/features/catalog/hooks/use-cart-vendor-availability";
 import { ProductDetailAvailabilityNotice } from "./product-detail-availability-notice";
 import { useProductVendorContext } from "@/features/catalog/hooks/use-product-vendor-context";
@@ -70,8 +71,9 @@ export function ProductDetailMainContent({
   const { status, role, isAuthenticated, isRoleLoading } = useAuthSession();
   const vendorContext = useProductVendorContext(activeVendor, isAuthenticated && !isRoleLoading && role === "customer");
   const presentation = useProductPresentation(product.id, vendorContext.vendorId, initialPresentation, vendorContext.hydrated);
+  const ownDescription = useOwnProductDescription(product.id, isAuthenticated && !isRoleLoading && role === "seller");
   const summary = presentation.presentation?.summary ?? product.description;
-  const completeDescription = presentation.presentation?.description ?? product.longDescription ?? product.description;
+  const completeDescription = ownDescription.description ?? presentation.presentation?.description ?? product.longDescription ?? product.description;
   const cartHasOtherVendor = vendorContext.fromCart && vendorContext.vendorId !== activeVendor?.vendorId;
   const cartAvailability = useCartVendorAvailability(product.id, vendorContext.vendorId, cartHasOtherVendor);
   const contextualStockQty = cartHasOtherVendor ? cartAvailability.stockQty : selectedVendorStockQty;
@@ -125,9 +127,6 @@ export function ProductDetailMainContent({
   });
 
   const vendorSummary = purchase.isOutOfStock && !cartHasOtherVendor ? activeVendor : null;
-  const descriptionOrigin = presentation.presentation?.descriptionSource === "vendor"
-    ? "Descrição personalizada por " + (vendorContext.vendorName || "vendor selecionado")
-    : "Descrição da Papelito";
 
   return (
     <div className="flex flex-col gap-12 md:gap-16">
@@ -215,8 +214,7 @@ export function ProductDetailMainContent({
 
       <ProductDetailDescriptionSection
         paragraphs={longDescriptionParagraphs}
-        origin={descriptionOrigin}
-        loading={presentation.loading && !presentation.presentation}
+        loading={ownDescription.loading || (presentation.loading && !presentation.presentation)}
         error={presentation.error}
         onRetry={presentation.retry}
       />

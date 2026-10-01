@@ -8,6 +8,7 @@ function parseCustomization(value: unknown): VendorProductCustomization {
     !Number.isSafeInteger(row.vendor_id) || Number(row.vendor_id) <= 0 ||
     typeof row.canonical_description !== "string" ||
     (row.vendor_description !== null && typeof row.vendor_description !== "string") ||
+    typeof row.vendor_description_enabled !== "boolean" ||
     typeof row.effective_description !== "string" ||
     (row.description_source !== "papelito" && row.description_source !== "vendor") ||
     typeof row.can_edit !== "boolean" ||
@@ -16,17 +17,20 @@ function parseCustomization(value: unknown): VendorProductCustomization {
   return {
     productId: Number(row.product_id), vendorId: Number(row.vendor_id),
     canonicalDescription: row.canonical_description, vendorDescription: row.vendor_description,
+    vendorDescriptionEnabled: row.vendor_description_enabled,
     effectiveDescription: row.effective_description, descriptionSource: row.description_source,
     canEdit: row.can_edit, updatedAt: row.updated_at,
   };
 }
 
+type CustomizationInput = { description: string; use_vendor_description: boolean };
+
 async function customizationRequest(
-  productId: number, method: "GET" | "PUT" | "DELETE", description?: string, signal?: AbortSignal,
+  productId: number, method: "GET" | "PUT" | "DELETE", input?: CustomizationInput, signal?: AbortSignal,
 ): Promise<VendorProductCustomization> {
   const response = await fetch("/api/vendor/products/" + productId + "/customization", {
     method, cache: "no-store", headers: { "Content-Type": "application/json" },
-    ...(method === "PUT" ? { body: JSON.stringify({ description }) } : {}), signal,
+    ...(method === "PUT" ? { body: JSON.stringify(input) } : {}), signal,
   });
   const data: unknown = await response.json();
   if (!response.ok) {
@@ -43,12 +47,17 @@ export function getVendorProductCustomization(productId: number, signal?: AbortS
   return customizationRequest(productId, "GET", undefined, signal);
 }
 
-/** Salva somente parágrafos; o backend devolve o valor sanitizado confirmado. */
-export function saveVendorProductCustomization(productId: number, description: string, signal?: AbortSignal) {
-  return customizationRequest(productId, "PUT", description, signal);
+/**
+ * Salva o texto em parágrafos e a escolha de exibi-lo na loja.
+ * Com `useVendorDescription` falso o texto fica guardado e a loja mostra o da Papelito.
+ */
+export function saveVendorProductCustomization(
+  productId: number, description: string, useVendorDescription: boolean, signal?: AbortSignal,
+) {
+  return customizationRequest(productId, "PUT", { description, use_vendor_description: useVendorDescription }, signal);
 }
 
-/** Remove o override e recebe o canônico atual, sem gravar uma cópia. */
+/** Apaga o texto guardado do vendor e recebe o canônico atual, sem gravar uma cópia. */
 export function restoreVendorProductDescription(productId: number, signal?: AbortSignal) {
   return customizationRequest(productId, "DELETE", undefined, signal);
 }

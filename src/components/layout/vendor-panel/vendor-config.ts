@@ -22,7 +22,7 @@ export type VendorNavItem = {
 export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: "/vendor/dashboard", icon: LayoutDashboard, label: "Dashboard", description: "Visao geral" },
   { href: "/vendor/cobertura", icon: MapPinned, label: "Cobertura", description: "CEPs atendidos" },
-  { href: "/vendor/estoque", icon: Boxes, label: "Estoque", description: "Produtos e saldo" },
+  { href: "/vendor/estoque", icon: Boxes, label: "Produtos", description: "Estoque e descrições" },
   { href: "/vendor/pedidos", icon: ShoppingBag, label: "Pedidos", description: "Separacao e envio" },
   { href: "/vendor/chamados", icon: MessageSquare, label: "Chamados", description: "Atendimento" },
   { href: "/vendor/cubagem", icon: Package, label: "Cubagem", description: "Caixas e medidas" },

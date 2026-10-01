@@ -12,11 +12,15 @@ function editorText(view: VendorProductCustomization) {
   return parseProductDescriptionParagraphs(view.vendorDescription ?? view.canonicalDescription).join("\n\n");
 }
 
-/** Editor com rascunho independente, trava síncrona e descarte de respostas antigas. */
+/**
+ * Editor com rascunho de texto e da escolha de exibi-lo, trava síncrona e descarte de respostas antigas.
+ * Sem texto guardado e sem escolha explícita, editar o texto já seleciona a descrição personalizada;
+ * `dirty` considera o texto e a escolha.
+ */
 export function useVendorProductCustomization(productId: number) {
   const [snapshot, setSnapshot] = useState<VendorProductCustomization | null>(null);
   const [draft, setDraft] = useState("");
-  const [intent, setIntent] = useState(false);
+  const [choice, setChoice] = useState<boolean | null>(null);
   const [status, setStatus] = useState<EditorStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
@@ -27,7 +31,7 @@ export function useVendorProductCustomization(productId: number) {
   const apply = useCallback((view: VendorProductCustomization) => {
     setSnapshot(view);
     setDraft(editorText(view));
-    setIntent(false);
+    setChoice(null);
     setError(null);
     setStatus("ready");
   }, []);
@@ -54,11 +58,15 @@ export function useVendorProductCustomization(productId: number) {
     };
   }, [productId, reload, apply]);
 
-  const dirty = snapshot !== null && draft !== editorText(snapshot);
+  const textChanged = snapshot !== null && draft !== editorText(snapshot);
+  const savedChoice = snapshot?.vendorDescriptionEnabled ?? false;
+  const automaticChoice = snapshot?.vendorDescription === null ? textChanged : savedChoice;
+  const showVendorDescription = choice ?? automaticChoice;
+  const dirty = textChanged || (snapshot !== null && showVendorDescription !== savedChoice);
   const pending = status === "saving" || status === "restoring";
   const characterCount = getVendorDescriptionLength(draft);
   const exceedsLimit = characterCount > 20000;
-  const canSave = !exceedsLimit && snapshot?.canEdit === true && !pending && characterCount > 0 && (dirty || intent);
+  const canSave = !exceedsLimit && snapshot?.canEdit === true && !pending && characterCount > 0 && dirty;
 
   async function mutate(operation: "saving" | "restoring") {
     if (busy.current || !snapshot?.canEdit) return null;
@@ -71,7 +79,7 @@ export function useVendorProductCustomization(productId: number) {
     setError(null);
     try {
       const view = operation === "saving"
-        ? await saveVendorProductCustomization(productId, buildDescriptionHtml(draft.split(/\n{2,}/)), request.signal)
+        ? await saveVendorProductCustomization(productId, buildDescriptionHtml(draft.split(/\n{2,}/)), showVendorDescription, request.signal)
         : await restoreVendorProductDescription(productId, request.signal);
       if (version !== generation.current || request.signal.aborted) return null;
       apply(view);
@@ -87,7 +95,8 @@ export function useVendorProductCustomization(productId: number) {
   }
 
   return {
-    snapshot, draft, setDraft, characterCount, exceedsLimit, intent, setIntent, dirty, status, error, pending, canSave,
+    snapshot, draft, setDraft, showVendorDescription, setShowVendorDescription: setChoice,
+    characterCount, exceedsLimit, dirty, status, error, pending, canSave,
     isBusy: () => busy.current, retry: () => setReload((value) => value + 1),
     save: () => mutate("saving"), restore: () => mutate("restoring"),
   };

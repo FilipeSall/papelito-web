@@ -30,6 +30,12 @@ const SAVED_BADGE_DELAY = 2400;
 
 const tableHeaders = ["Produto", "Situação", "Última atualização", "Quantidade"];
 
+function describeDescriptionUpdate(view: VendorProductCustomization, productName: string) {
+  if (view.descriptionSource === "vendor") return `Descrição de ${productName} salva. A loja já mostra a sua versão.`;
+  if (view.vendorDescription === null) return `Texto personalizado de ${productName} apagado. A loja mostra a descrição da Papelito.`;
+  return `${productName} mostra a descrição da Papelito. Seu texto personalizado ficou guardado.`;
+}
+
 export function VendorStockManager({
   contactPhone,
   filters,
@@ -64,7 +70,10 @@ export function VendorStockManager({
   })), [snapshot.items, descriptionOverrides]);
 
   function handleDescriptionUpdated(view: VendorProductCustomization) {
-    setDescriptionOverrides((current) => ({ ...current, [view.productId]: view.vendorDescription !== null }));
+    const productName = descriptionItem?.productName ?? "O produto";
+    setDescriptionOverrides((current) => ({ ...current, [view.productId]: view.descriptionSource === "vendor" }));
+    setFeedback({ error: false, message: describeDescriptionUpdate(view, productName) });
+    setDescriptionItem(null);
   }
 
   const focusedInPage = snapshot.items.some((item) => item.productId === focusProductId);

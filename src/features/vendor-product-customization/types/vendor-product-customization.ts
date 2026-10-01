@@ -7,6 +7,8 @@ export interface VendorProductCustomization {
   vendorId: number;
   canonicalDescription: string;
   vendorDescription: string | null;
+  /** Se o texto guardado do vendor é o exibido; falso mantém o texto e mostra o da Papelito. */
+  vendorDescriptionEnabled: boolean;
   effectiveDescription: string;
   descriptionSource: DescriptionSource;
   canEdit: boolean;

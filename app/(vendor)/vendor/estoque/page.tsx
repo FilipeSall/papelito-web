@@ -42,10 +42,10 @@ export default async function VendorStockPage({
     return (
       <div className="space-y-4 md:space-y-5">
         <VendorPageHeader
-          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+          description="Gerencie estoque, saldo e descrições dos seus produtos."
           eyebrow="Catálogo regional"
           signal="conta suspensa"
-          title="Estoque"
+          title="Produtos"
         />
         <VendorSuspendedNotice
           body="Enquanto a conta estiver suspensa você não lança estoque nem recebe pedidos novos. Os pedidos que você já vendeu continuam em Pedidos, e podem ser despachados normalmente."
@@ -60,10 +60,10 @@ export default async function VendorStockPage({
     return (
       <div className="space-y-4 md:space-y-5">
         <VendorPageHeader
-          description="Atualize a disponibilidade por produto. Quando um saldo chega a zero, você recebe uma notificação operacional."
+          description="Gerencie estoque, saldo e descrições dos seus produtos."
           eyebrow="Catálogo regional"
           signal="cadastro pendente"
-          title="Estoque"
+          title="Produtos"
         />
         <VendorOnboardingRequiredNotice
           body="Para visualizar e gerenciar seus produtos, complete o cadastro do vendor. Assim que os dados pendentes forem preenchidos, seu estoque fica disponível aqui."
@@ -128,10 +128,10 @@ export default async function VendorStockPage({
   return (
     <div className="space-y-4 md:space-y-5">
       <VendorPageHeader
-        description="Lance saldo na própria linha, aplique a mesma quantidade a vários produtos de uma vez e encontre primeiro o que está acabando."
+        description="Gerencie estoque, saldo e descrições dos seus produtos."
         eyebrow="Catálogo regional"
         signal="controle direto"
-        title="Estoque"
+        title="Produtos"
       />
       <VendorStockManager
         contactPhone={contact.phone}

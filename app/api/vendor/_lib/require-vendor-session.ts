@@ -3,18 +3,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isCurrentUserSeller } from "@/lib/server/current-user-role";
 
-export async function requireVendorAccessToken() {
-  const session = await getServerSession(authOptions);
+/**
+ * Autoriza rota de vendor: sessão com token e papel de seller confirmado pelo WordPress.
+ * O token devolvido só existe no servidor e nunca deve ir para o navegador.
+ */
+export async function requireVendorAccessToken(): Promise<
+  { error: string; status: 401 | 403 } | { accessToken: string }
+> {
+  const accessToken = (await getServerSession(authOptions))?.accessToken;
 
-  if (!session?.accessToken) {
-    return { error: "Nao autenticado.", status: 401 as const };
+  if (!accessToken) {
+    return { error: "Nao autenticado.", status: 401 };
   }
 
-  if (!(await isCurrentUserSeller(session.accessToken))) {
-    return { error: "Acesso restrito a vendors.", status: 403 as const };
+  if (!(await isCurrentUserSeller(accessToken))) {
+    return { error: "Acesso restrito a vendors.", status: 403 };
   }
 
-  return { accessToken: session.accessToken };
+  return { accessToken };
 }
 
 /**

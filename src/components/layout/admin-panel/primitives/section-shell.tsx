@@ -11,11 +11,11 @@ export function SectionHeading({
   action,
   description,
   title,
-}: {
+}: Readonly<{
   action?: React.ReactNode;
   description: string;
   title: string;
-}) {
+}>) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -44,14 +44,14 @@ export function ResultFrame({
   id,
   notice,
   summary,
-}: {
+}: Readonly<{
   action?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   id?: string;
   notice?: React.ReactNode;
   summary: string;
-}) {
+}>) {
   return (
     <section
       className="border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]"
@@ -82,12 +82,12 @@ export function ResultRow({
   lead,
   meta,
   trailing,
-}: {
+}: Readonly<{
   href: string;
   lead: React.ReactNode;
   meta?: React.ReactNode;
   trailing: React.ReactNode;
-}) {
+}>) {
   return (
     <li className="group relative bg-[#faf8f2] transition hover:bg-white">
       <div className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:gap-6">
@@ -118,13 +118,13 @@ export function ResultButtonRow({
   meta,
   onOpen,
   trailing,
-}: {
+}: Readonly<{
   ariaLabel: string;
   lead: React.ReactNode;
   meta?: React.ReactNode;
   onOpen: () => void;
   trailing: React.ReactNode;
-}) {
+}>) {
   return (
     <li className="group relative bg-[#faf8f2] transition hover:bg-white">
       <div className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:gap-6">
@@ -146,7 +146,7 @@ export function ResultButtonRow({
   );
 }
 
-export function EmptyResult({ body, title }: { body: string; title: string }) {
+export function EmptyResult({ body, title }: Readonly<{ body: string; title: string }>) {
   return (
     <div className="border-2 border-dashed border-[#1a1a1a] bg-[#faf8f2] px-6 py-12 text-center">
       <p className="text-sm font-black uppercase tracking-[0.18em] text-[#1a1a1a]">{title}</p>
@@ -159,11 +159,11 @@ export function InlineAlert({
   children,
   icon: Icon,
   tone = "warning",
-}: {
+}: Readonly<{
   children: React.ReactNode;
   icon?: LucideIcon;
   tone?: "critical" | "warning";
-}) {
+}>) {
   return (
     <p
       className={[
@@ -180,7 +180,7 @@ export function InlineAlert({
 const PRIMARY_ACTION_CLASS =
   "inline-flex h-11 items-center gap-2 border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-[11px] font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none";
 
-export function PrimaryLink({ children, href }: { children: React.ReactNode; href: string }) {
+export function PrimaryLink({ children, href }: Readonly<{ children: React.ReactNode; href: string }>) {
   return (
     <Link className={[PRIMARY_ACTION_CLASS, FOCUS_RING].join(" ")} href={href}>
       {children}
@@ -193,18 +193,20 @@ export function PrimaryLink({ children, href }: { children: React.ReactNode; hre
  */
 export function PrimaryButton({
   children,
+  className,
   disabled,
   onClick,
   type = "button",
-}: {
+}: Readonly<{
   children: React.ReactNode;
+  className?: string;
   disabled?: boolean;
   onClick?: () => void;
   type?: "button" | "submit";
-}) {
+}>) {
   return (
     <button
-      className={[PRIMARY_ACTION_CLASS, FOCUS_RING].join(" ")}
+      className={[PRIMARY_ACTION_CLASS, FOCUS_RING, className].filter(Boolean).join(" ")}
       disabled={disabled}
       onClick={onClick}
       type={type}

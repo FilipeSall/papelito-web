@@ -26,7 +26,7 @@ describe("vendor-config — item ativo do menu", () => {
 
   it("mantém o item da própria rota e das subrotas", () => {
     expect(isVendorNavItemActive(navItem("/vendor/pedidos"), "/vendor/pedidos/42")).toBe(true);
-    expect(getVendorPageTitle("/vendor/estoque")).toBe("Estoque");
+    expect(getVendorPageTitle("/vendor/estoque")).toBe("Produtos");
     expect(getVendorPageTitle("/vendor/desconhecida")).toBe("Dashboard");
   });
 

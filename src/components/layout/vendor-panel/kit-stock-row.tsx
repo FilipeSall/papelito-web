@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import type { VendorStockItem, VendorStockKit } from "@/features/vendor-stock/types/vendor-stock";
 import { vendorStockLevel } from "@/features/vendor-stock/types/vendor-stock";
-import { StockDescriptionAction } from "./stock-description-action";
+import { StockDescriptionAction, StockDescriptionMarker } from "./stock-description-action";
 
 import {
   formatStockUpdatedAt,
@@ -124,27 +124,34 @@ export function KitStockRow({
             <span className={`${stockThumbFrameClassName} h-14 w-14`}>
               <StockThumb alt={item.productName} src={item.imageUrl} />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <span className="inline-flex items-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-brand-yellow">
                 Kit
               </span>
-              {kitHref ? (
-                <Link
-                  aria-label={`Abrir kit ${item.productName} em nova aba`}
-                  className="mt-1 block text-sm font-black text-[#1a1a1a] transition hover:text-[#1a1a1a]/72"
-                  href={kitHref}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {item.productName}
-                </Link>
-              ) : (
-                <span className="mt-1 block text-sm font-black text-[#1a1a1a]">{item.productName}</span>
-              )}
+              <div className="mt-1 flex items-start justify-between gap-2">
+                {kitHref ? (
+                  <Link
+                    aria-label={`Abrir kit ${item.productName} em nova aba`}
+                    className="block text-sm font-black text-[#1a1a1a] transition hover:text-[#1a1a1a]/72"
+                    href={kitHref}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {item.productName}
+                  </Link>
+                ) : (
+                  <span className="block text-sm font-black text-[#1a1a1a]">{item.productName}</span>
+                )}
+                <StockDescriptionAction item={item} onEdit={onEditDescription} />
+              </div>
               <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
                 {item.sku || "Sem SKU"}
               </p>
-              <StockDescriptionAction item={item} onEdit={onEditDescription} />
+              {item.hasDescriptionOverride ? (
+                <div className="mt-2 flex">
+                  <StockDescriptionMarker item={item} />
+                </div>
+              ) : null}
             </div>
           </div>
         </td>
@@ -171,7 +178,7 @@ export function KitStockRow({
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/58">
               Itens do kit ({kit.items.length})
             </p>
-            <p className="text-[10px] font-medium tracking-[0.02em] text-[#1a1a1a]/58">
+            <p className="text-[10px] font-medium -tracking-tight text-[#1a1a1a]/58">
               O kit não tem estoque próprio: ajuste os itens para mudar quantas vendas ele comporta.
             </p>
           </div>
