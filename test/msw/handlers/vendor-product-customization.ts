@@ -16,7 +16,7 @@ export function customizationResponse(productId = 123, description: string | nul
   };
 }
 
-/** Handlers sem estado compartilhado para edição e restauração de descrições. */
+/** Handlers sem estado compartilhado para leitura e edição de descrições. */
 export const vendorProductCustomizationHandlers = [
   http.get("*/api/vendor/products/:productId/customization", ({ params }) =>
     HttpResponse.json(customizationResponse(Number(params.productId))),
@@ -25,7 +25,4 @@ export const vendorProductCustomizationHandlers = [
     const body = await request.json() as { description: string; use_vendor_description?: boolean };
     return HttpResponse.json(customizationResponse(Number(params.productId), body.description, body.use_vendor_description ?? true));
   }),
-  http.delete("*/api/vendor/products/:productId/customization", ({ params }) =>
-    HttpResponse.json(customizationResponse(Number(params.productId))),
-  ),
 ];

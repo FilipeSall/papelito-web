@@ -4,7 +4,7 @@ import { readWithVendorAccessToken, requireVendorAccessToken } from "../../../_l
 import { wpRest, type WpRestResult } from "@/lib/server/wp-rest";
 
 type RouteContext = { params: Promise<{ productId: string }> };
-type Method = "GET" | "PUT" | "DELETE";
+type Method = "GET" | "PUT";
 const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 function errorResponse(message: string, status: number, code?: string) {
@@ -39,14 +39,14 @@ function respond(result: WpRestResult<unknown>) {
   return NextResponse.json(result.data, { headers: RESPONSE_HEADERS });
 }
 
-async function mutate(request: Request, context: RouteContext, method: "PUT" | "DELETE") {
+async function mutate(request: Request, context: RouteContext) {
   const auth = await requireVendorAccessToken();
   if ("error" in auth) return errorResponse(auth.error, auth.status);
   const productId = await readProductId(context);
   if (!productId) return errorResponse("Produto inválido.", 400);
-  const body: unknown = method === "PUT" ? await request.json().catch(() => null) : undefined;
-  if (method === "PUT" && !isDescriptionBody(body)) return errorResponse("Envie somente uma descrição em texto.", 422);
-  const result = await customizationRequest(productId, auth.accessToken, method, isDescriptionBody(body) ? body : undefined);
+  const body: unknown = await request.json().catch(() => null);
+  if (!isDescriptionBody(body)) return errorResponse("Envie somente uma descrição em texto.", 422);
+  const result = await customizationRequest(productId, auth.accessToken, "PUT", body);
   if (result.ok) {
     revalidateTag("vendor-stock", { expire: 0 });
     revalidatePath("/vendor/estoque");
@@ -68,7 +68,4 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 /** Atualiza exclusivamente a descrição e expira o indicador do estoque. */
-export function PUT(request: Request, context: RouteContext) { return mutate(request, context, "PUT"); }
-
-/** Restaura por remoção do override, preservando os contratos do catálogo. */
-export function DELETE(request: Request, context: RouteContext) { return mutate(request, context, "DELETE"); }
+export function PUT(request: Request, context: RouteContext) { return mutate(request, context); }

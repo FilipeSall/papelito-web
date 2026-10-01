@@ -26,7 +26,7 @@ function parseCustomization(value: unknown): VendorProductCustomization {
 type CustomizationInput = { description: string; use_vendor_description: boolean };
 
 async function customizationRequest(
-  productId: number, method: "GET" | "PUT" | "DELETE", input?: CustomizationInput, signal?: AbortSignal,
+  productId: number, method: "GET" | "PUT", input?: CustomizationInput, signal?: AbortSignal,
 ): Promise<VendorProductCustomization> {
   const response = await fetch("/api/vendor/products/" + productId + "/customization", {
     method, cache: "no-store", headers: { "Content-Type": "application/json" },
@@ -55,9 +55,4 @@ export function saveVendorProductCustomization(
   productId: number, description: string, useVendorDescription: boolean, signal?: AbortSignal,
 ) {
   return customizationRequest(productId, "PUT", { description, use_vendor_description: useVendorDescription }, signal);
-}
-
-/** Apaga o texto guardado do vendor e recebe o canônico atual, sem gravar uma cópia. */
-export function restoreVendorProductDescription(productId: number, signal?: AbortSignal) {
-  return customizationRequest(productId, "DELETE", undefined, signal);
 }

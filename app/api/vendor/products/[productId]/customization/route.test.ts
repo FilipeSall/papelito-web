@@ -7,7 +7,9 @@ vi.mock("../../../_lib/require-vendor-session", () => ({ requireVendorAccessToke
 vi.mock("@/lib/server/wp-rest", () => ({ wpRest: mocks.wpRest }));
 vi.mock("next/cache", () => ({ revalidateTag: mocks.revalidateTag, revalidatePath: mocks.revalidatePath }));
 
-import { DELETE, GET, PUT } from "./route";
+import * as route from "./route";
+
+const { GET, PUT } = route;
 
 const context = { params: Promise.resolve({ productId: "123" }) };
 function request(body?: unknown) {
@@ -67,15 +69,15 @@ describe("proxy de personalização", () => {
     expect(mocks.wpRest.mock.calls[0]?.[1].json).toEqual({ description: "<p>X</p>", use_vendor_description: false });
   });
 
-  it("PUT e DELETE expiram imediatamente estoque sem alterar cobertura", async () => {
+  it("PUT expira imediatamente estoque sem alterar cobertura", async () => {
     await PUT(request({ description: "<p>X</p>" }), context);
-    await DELETE(request(), context);
-    expect(mocks.revalidateTag.mock.calls).toEqual([
-      ["vendor-stock", { expire: 0 }], ["vendor-stock", { expire: 0 }],
-    ]);
+    expect(mocks.revalidateTag.mock.calls).toEqual([["vendor-stock", { expire: 0 }]]);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/vendor/estoque");
-    expect(mocks.wpRest.mock.calls[0]?.[1].json).toEqual({ description: "<p>X</p>" });
-    expect(mocks.wpRest.mock.calls[1]?.[1]).not.toHaveProperty("json");
+    expect(mocks.wpRest.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ method: "PUT", json: { description: "<p>X</p>" } }));
+  });
+
+  it("não expõe mais a restauração por DELETE", () => {
+    expect(route).not.toHaveProperty("DELETE");
   });
 
   it("preserva status de erro e não invalida a lista em falha", async () => {

@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { buildDescriptionHtml, parseProductDescriptionParagraphs } from "@/utils/html";
-import { getVendorProductCustomization, restoreVendorProductDescription, saveVendorProductCustomization } from "../services/vendor-product-customization-client";
+import { getVendorProductCustomization, saveVendorProductCustomization } from "../services/vendor-product-customization-client";
 import { getVendorDescriptionLength } from "../utils/description-length";
 import type { VendorProductCustomization } from "../types/vendor-product-customization";
 
-type EditorStatus = "loading" | "ready" | "saving" | "restoring" | "load_error" | "mutation_error";
+type EditorStatus = "loading" | "ready" | "saving" | "load_error" | "mutation_error";
 
 function editorText(view: VendorProductCustomization) {
   return parseProductDescriptionParagraphs(view.vendorDescription ?? view.canonicalDescription).join("\n\n");
@@ -63,24 +63,23 @@ export function useVendorProductCustomization(productId: number) {
   const automaticChoice = snapshot?.vendorDescription === null ? textChanged : savedChoice;
   const showVendorDescription = choice ?? automaticChoice;
   const dirty = textChanged || (snapshot !== null && showVendorDescription !== savedChoice);
-  const pending = status === "saving" || status === "restoring";
+  const pending = status === "saving";
   const characterCount = getVendorDescriptionLength(draft);
   const exceedsLimit = characterCount > 20000;
   const canSave = !exceedsLimit && snapshot?.canEdit === true && !pending && characterCount > 0 && dirty;
 
-  async function mutate(operation: "saving" | "restoring") {
-    if (busy.current || !snapshot?.canEdit) return null;
-    if (operation === "saving" && !canSave) return null;
+  async function save() {
+    if (busy.current || !canSave) return null;
     busy.current = true;
     const version = generation.current;
     const request = new AbortController();
     controller.current = request;
-    setStatus(operation);
+    setStatus("saving");
     setError(null);
     try {
-      const view = operation === "saving"
-        ? await saveVendorProductCustomization(productId, buildDescriptionHtml(draft.split(/\n{2,}/)), showVendorDescription, request.signal)
-        : await restoreVendorProductDescription(productId, request.signal);
+      const view = await saveVendorProductCustomization(
+        productId, buildDescriptionHtml(draft.split(/\n{2,}/)), showVendorDescription, request.signal,
+      );
       if (version !== generation.current || request.signal.aborted) return null;
       apply(view);
       return view;
@@ -98,6 +97,6 @@ export function useVendorProductCustomization(productId: number) {
     snapshot, draft, setDraft, showVendorDescription, setShowVendorDescription: setChoice,
     characterCount, exceedsLimit, dirty, status, error, pending, canSave,
     isBusy: () => busy.current, retry: () => setReload((value) => value + 1),
-    save: () => mutate("saving"), restore: () => mutate("restoring"),
+    save,
   };
 }

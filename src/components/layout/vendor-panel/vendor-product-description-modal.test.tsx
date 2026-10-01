@@ -174,34 +174,12 @@ describe("VendorProductDescriptionModal", () => {
     expect(onUpdated).toHaveBeenCalledOnce();
   });
 
-  it("restaura via DELETE e aplica canônico atual", async () => {
-    server.use(
-      http.get(ENDPOINT, () => HttpResponse.json(customizationResponse(123, "<p>Personalizada.</p>"))),
-      http.delete(ENDPOINT, () => HttpResponse.json({
-        ...customizationResponse(), canonical_description: "<p>Canônico V2.</p>", effective_description: "<p>Canônico V2.</p>",
-      })),
-    );
-    const { onUpdated } = modal();
-    expect(await screen.findByRole("switch", { name: SWITCH_LABEL })).toBeChecked();
-    fireEvent.click(screen.getByRole("button", { name: RESTORE_LABEL }));
-    expect(screen.getByRole("button", { name: "Cancelar restauração" })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar restauração" }));
-    await waitFor(() => expect(screen.getByLabelText(FIELD_LABEL)).toHaveValue("Canônico V2."));
-    expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ vendorDescription: null, descriptionSource: "papelito" }));
-    expect(screen.queryByRole("button", { name: RESTORE_LABEL })).not.toBeInTheDocument();
-  });
-
-  it("desistir da restauração mantém a personalização sem chamar DELETE", async () => {
-    const remove = vi.fn();
-    server.use(
-      http.get(ENDPOINT, () => HttpResponse.json(customizationResponse(123, "<p>Personalizada.</p>"))),
-      http.delete(ENDPOINT, () => { remove(); return HttpResponse.json(customizationResponse()); }),
-    );
+  it("com texto guardado não oferece mais restaurar o original", async () => {
+    server.use(http.get(ENDPOINT, () => HttpResponse.json(customizationResponse(123, "<p>Personalizada.</p>"))));
     modal();
-    fireEvent.click(await screen.findByRole("button", { name: RESTORE_LABEL }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancelar restauração" }));
-    expect(screen.getByRole("button", { name: RESTORE_LABEL })).toHaveFocus();
-    expect(remove).not.toHaveBeenCalled();
+    expect(await screen.findByLabelText(FIELD_LABEL)).toHaveValue("Personalizada.");
+    expect(screen.queryByRole("button", { name: RESTORE_LABEL })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Confirmar restauração/ })).not.toBeInTheDocument();
   });
 
   it("erro preserva rascunho e impede duplo envio e fechamento em voo", async () => {
@@ -236,7 +214,7 @@ describe("VendorProductDescriptionModal", () => {
     expect(screen.getByLabelText(FIELD_LABEL)).toHaveValue("Produto 456");
   });
 
-  it("seller suspenso lê referência, mas não pode salvar/restaurar", async () => {
+  it("seller suspenso lê referência, mas não pode salvar", async () => {
     server.use(http.get(ENDPOINT, () => HttpResponse.json({ ...customizationResponse(123, "Existente"), can_edit: false })));
     modal();
     expect(await screen.findByLabelText(FIELD_LABEL)).toBeDisabled();

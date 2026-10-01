@@ -32,7 +32,6 @@ const tableHeaders = ["Produto", "Situação", "Última atualização", "Quantid
 
 function describeDescriptionUpdate(view: VendorProductCustomization, productName: string) {
   if (view.descriptionSource === "vendor") return `Descrição de ${productName} salva. A loja já mostra a sua versão.`;
-  if (view.vendorDescription === null) return `Texto personalizado de ${productName} apagado. A loja mostra a descrição da Papelito.`;
   return `${productName} mostra a descrição da Papelito. Seu texto personalizado ficou guardado.`;
 }
 

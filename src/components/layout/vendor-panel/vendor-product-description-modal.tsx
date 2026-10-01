@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { Check, ChevronDown, Copy, Loader2, RotateCcw, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, X } from "lucide-react";
 
 import { BaseModal } from "@/components/ui/base-modal";
 import { HardSwitch } from "@/components/ui/hard-switch";
@@ -25,28 +25,7 @@ const SAFE_ACTION_CLASS = [
   FOCUS_RING,
 ].join(" ");
 
-const RESTORE_TRIGGER_CLASS = [
-  "inline-flex h-9 cursor-pointer items-center gap-1.5 border-2 border-[#1a1a1a]/15 bg-white px-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/70 transition hover:border-[#1a1a1a] hover:bg-brand-yellow hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-45",
-  FOCUS_RING,
-].join(" ");
-
-const CONFIRM_ICON_CLASS = [
-  "inline-flex size-7 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] transition disabled:cursor-not-allowed disabled:opacity-45",
-  FOCUS_RING,
-].join(" ");
-
 type Editor = ReturnType<typeof useVendorProductCustomization>;
-
-interface RestoreControl {
-  /** Há texto do vendor guardado e a conta pode alterá-lo. */
-  available: boolean;
-  /** A confirmação substitui o botão na mesma posição. */
-  confirming: boolean;
-  busy: boolean;
-  onRequest: () => void;
-  onConfirm: () => void;
-  onDismiss: () => void;
-}
 
 interface DescriptionModalProps {
   /** ID público do pai ou produto comercial do kit. */
@@ -55,7 +34,7 @@ interface DescriptionModalProps {
   productName: string;
   /** Fecha o editor quando nenhuma mutação estiver em andamento. */
   onClose: () => void;
-  /** Recebe a visão confirmada pelo servidor depois de salvar ou restaurar. */
+  /** Recebe a visão confirmada pelo servidor depois de salvar. */
   onUpdated: (view: VendorProductCustomization) => void;
 }
 
@@ -95,9 +74,8 @@ function CopyFeedback({ state }: Readonly<{ state: CopyState }>) {
   const failed = state === "failed";
 
   return (
-    <p
+    <output
       className={`pointer-events-none absolute top-full right-0 z-10 mt-2 inline-flex items-center gap-2 rounded-full border bg-[#231f20] py-1.5 pr-3.5 pl-1.5 text-xs font-black text-white shadow-[0_10px_24px_rgba(35,31,32,0.3)] transition duration-200 ease-out motion-reduce:transition-none ${failed ? "border-[#ef4444]/55" : "border-brand-yellow/40"} ${visible ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}
-      role="status"
     >
       <span
         aria-hidden
@@ -106,7 +84,7 @@ function CopyFeedback({ state }: Readonly<{ state: CopyState }>) {
         {failed ? <X className="size-3" strokeWidth={3} /> : <Check className="size-3" strokeWidth={3} />}
       </span>
       {visible ? COPY_FEEDBACK_TEXT[state] : ""}
-    </p>
+    </output>
   );
 }
 
@@ -177,84 +155,12 @@ function describeFieldState(showVendorDescription: boolean, hasSavedText: boolea
   return "Começa com o texto da Papelito. Edite para criar a versão da sua loja.";
 }
 
-function useConfirmationFocus(
-  confirming: boolean,
-  safeRef: RefObject<HTMLButtonElement | null>,
-  returnRef: RefObject<HTMLButtonElement | null>,
-) {
-  const wasConfirming = useRef(false);
-
-  useEffect(() => {
-    if (confirming) {
-      safeRef.current?.focus();
-    } else if (wasConfirming.current) {
-      returnRef.current?.focus();
-    }
-    wasConfirming.current = confirming;
-  }, [confirming, returnRef, safeRef]);
-}
-
-function RestoreOriginal({ control }: Readonly<{ control: RestoreControl }>) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dismissRef = useRef<HTMLButtonElement>(null);
-  useConfirmationFocus(control.confirming, dismissRef, triggerRef);
-
-  if (!control.confirming) {
-    return (
-      <button
-        className={RESTORE_TRIGGER_CLASS}
-        disabled={control.busy}
-        onClick={control.onRequest}
-        ref={triggerRef}
-        type="button"
-      >
-        <RotateCcw aria-hidden className="size-3.5" strokeWidth={2.6} />
-        Restaurar original
-      </button>
-    );
-  }
-
-  return (
-    <fieldset className="flex h-9 items-center gap-1.5 border-2 border-[#1a1a1a] bg-white pr-1 pl-2.5 shadow-[3px_3px_0px_#1a1a1a]">
-      <legend className="sr-only">Restaurar a descrição da Papelito e apagar o seu texto</legend>
-      <span aria-hidden className="text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]">
-        Confirmar?
-      </span>
-      <button
-        aria-label="Confirmar restauração"
-        className={`${CONFIRM_ICON_CLASS} bg-[#1a1a1a] text-brand-yellow hover:bg-[#1a1a1a]/85`}
-        disabled={control.busy}
-        onClick={control.onConfirm}
-        type="button"
-      >
-        {control.busy ? (
-          <Loader2 aria-hidden className="size-4 animate-spin" strokeWidth={2.6} />
-        ) : (
-          <Check aria-hidden className="size-4" strokeWidth={3} />
-        )}
-      </button>
-      <button
-        aria-label="Cancelar restauração"
-        className={`${CONFIRM_ICON_CLASS} bg-white text-[#1a1a1a] hover:bg-brand-yellow`}
-        disabled={control.busy}
-        onClick={control.onDismiss}
-        ref={dismissRef}
-        type="button"
-      >
-        <X aria-hidden className="size-4" strokeWidth={3} />
-      </button>
-    </fieldset>
-  );
-}
-
 function DescriptionField({
   editor,
-  restore,
   snapshot,
   textareaRef,
 }: Readonly<{
   editor: Editor;
-  restore: RestoreControl;
   snapshot: VendorProductCustomization;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }>) {
@@ -276,13 +182,12 @@ function DescriptionField({
       <p className="mt-1 text-xs leading-5 text-[#231f20]/64" id={hintId}>
         {hint}
       </p>
-      <div className="relative mt-2">
+      <div className="mt-2">
         <textarea
           aria-describedby={`${hintId} ${countId}`}
           aria-invalid={editor.exceedsLimit}
           className={[
-            "block min-h-48 w-full resize-y border-2 border-[#1a1a1a] bg-white px-3 pt-2.5 text-sm leading-6 text-[#1a1a1a] outline-none transition-colors aria-invalid:border-[#c0392b] disabled:cursor-not-allowed disabled:bg-[#1a1a1a]/4 disabled:text-[#1a1a1a]/64",
-            restore.available ? "pb-14" : "pb-2.5",
+            "block min-h-48 w-full resize-y border-2 border-[#1a1a1a] bg-white px-3 py-2.5 text-sm leading-6 text-[#1a1a1a] outline-none transition-colors aria-invalid:border-[#c0392b] disabled:cursor-not-allowed disabled:bg-[#1a1a1a]/4 disabled:text-[#1a1a1a]/64",
             FOCUS_RING,
           ].join(" ")}
           disabled={locked}
@@ -291,11 +196,6 @@ function DescriptionField({
           ref={textareaRef}
           value={editor.draft}
         />
-        {restore.available ? (
-          <div className="absolute right-5 bottom-2.5">
-            <RestoreOriginal control={restore} />
-          </div>
-        ) : null}
       </div>
       <div className="mt-1.5 flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-xs leading-5">
         <p className="text-[#231f20]/58">Deixe uma linha em branco entre parágrafos.</p>
@@ -328,9 +228,8 @@ function DescriptionField({
 
 function EditorBody({
   editor,
-  restore,
   textareaRef,
-}: Readonly<{ editor: Editor; restore: RestoreControl; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
+}: Readonly<{ editor: Editor; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
   const { snapshot } = editor;
 
   if (editor.status === "load_error") {
@@ -354,7 +253,7 @@ function EditorBody({
         <InlineAlert>Sua conta não pode alterar descrições no momento.</InlineAlert>
       )}
       <PapelitoReference description={snapshot.canonicalDescription} />
-      <DescriptionField editor={editor} restore={restore} snapshot={snapshot} textareaRef={textareaRef} />
+      <DescriptionField editor={editor} snapshot={snapshot} textareaRef={textareaRef} />
     </div>
   );
 }
@@ -395,34 +294,20 @@ function EditorActions({
 function DescriptionEditor({ productId, productName, onClose, onUpdated }: Readonly<DescriptionModalProps>) {
   const editor = useVendorProductCustomization(productId);
   const titleId = useId();
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const loaded = editor.snapshot !== null;
-  const restore: RestoreControl = {
-    available: editor.snapshot?.canEdit === true && editor.snapshot.vendorDescription !== null,
-    confirming: confirmingDelete,
-    busy: editor.pending,
-    onRequest: () => setConfirmingDelete(true),
-    onConfirm: () => void commit("restore"),
-    onDismiss: () => setConfirmingDelete(false),
-  };
 
   useEffect(() => {
     if (loaded && document.activeElement === closeRef.current) textareaRef.current?.focus();
   }, [loaded]);
 
   function requestClose() {
-    if (editor.isBusy()) return;
-    if (confirmingDelete) {
-      setConfirmingDelete(false);
-      return;
-    }
-    onClose();
+    if (!editor.isBusy()) onClose();
   }
 
-  async function commit(operation: "save" | "restore") {
-    const view = await editor[operation]();
+  async function save() {
+    const view = await editor.save();
     if (view) onUpdated(view);
   }
 
@@ -457,13 +342,13 @@ function DescriptionEditor({ productId, productName, onClose, onUpdated }: Reado
           aria-busy={!loaded || editor.pending}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 [scrollbar-color:#1a1a1a40_transparent] [scrollbar-width:thin] sm:px-6"
         >
-          <EditorBody editor={editor} restore={restore} textareaRef={textareaRef} />
+          <EditorBody editor={editor} textareaRef={textareaRef} />
         </div>
         <footer className="shrink-0 space-y-3 border-t-2 border-[#1a1a1a] px-5 py-4 sm:px-6">
           {editor.status === "mutation_error" && editor.error ? (
             <FeedbackBanner feedback={{ error: true, message: editor.error }} />
           ) : null}
-          <EditorActions editor={editor} onCancel={requestClose} onSave={() => void commit("save")} />
+          <EditorActions editor={editor} onCancel={requestClose} onSave={() => void save()} />
         </footer>
       </div>
     </BaseModal>
@@ -472,8 +357,8 @@ function DescriptionEditor({ productId, productName, onClose, onUpdated }: Reado
 
 /**
  * Editor da descrição que a loja do vendor mostra no lugar do texto da Papelito.
- * Trocar o produto descarta estado e solicitações anteriores; salvar ou restaurar
- * entrega a visão confirmada pelo servidor e cabe a quem abriu fechar o diálogo.
+ * Trocar o produto descarta estado e solicitações anteriores; salvar entrega a
+ * visão confirmada pelo servidor e cabe a quem abriu fechar o diálogo.
  */
 export function VendorProductDescriptionModal(props: Readonly<DescriptionModalProps>) {
   return <DescriptionEditor key={props.productId} {...props} />;
