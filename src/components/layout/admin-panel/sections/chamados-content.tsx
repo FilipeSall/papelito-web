@@ -84,6 +84,7 @@ export async function ChamadosContent({
           search={search}
           searchAction="/admin/chamados"
           selectedThreadId={selected?.threadId ?? null}
+          split
           total={chamados.total}
         />
 

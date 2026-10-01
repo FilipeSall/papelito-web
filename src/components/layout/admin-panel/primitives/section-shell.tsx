@@ -73,27 +73,39 @@ export function ResultFrame({
   );
 }
 
+const RESULT_ROW_STACK_XL = {
+  row: "xl:flex-col xl:items-stretch xl:gap-3",
+  meta: "xl:w-full",
+  trailing: "xl:justify-start",
+};
+
 /**
  * Linha de resultado. `lead` é a identidade da entidade, `meta` o relacionamento e `trailing` o
  * estado mais a ação — sempre nessa ordem, nos três segmentos.
+ * A linha fica horizontal a partir de `lg` pela largura da tela; quando a lista mora numa coluna
+ * estreita a partir de `xl` (lista + detalhe lado a lado), `stackAt="xl"` volta a empilhar.
  */
 export function ResultRow({
   href,
   lead,
   meta,
+  stackAt,
   trailing,
 }: Readonly<{
   href: string;
   lead: React.ReactNode;
   meta?: React.ReactNode;
+  stackAt?: "xl";
   trailing: React.ReactNode;
 }>) {
+  const stack = stackAt === "xl" ? RESULT_ROW_STACK_XL : null;
+
   return (
     <li className="group relative bg-[#faf8f2] transition hover:bg-white">
-      <div className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:gap-6">
+      <div className={`flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:gap-6 ${stack?.row ?? ""}`}>
         <div className="min-w-0 flex-1">{lead}</div>
-        {meta ? <div className="min-w-0 lg:w-[34%]">{meta}</div> : null}
-        <div className="flex flex-wrap items-center gap-3 lg:justify-end">{trailing}</div>
+        {meta ? <div className={`min-w-0 lg:w-[34%] ${stack?.meta ?? ""}`}>{meta}</div> : null}
+        <div className={`flex flex-wrap items-center gap-3 lg:justify-end ${stack?.trailing ?? ""}`}>{trailing}</div>
       </div>
       <Link
         aria-label="Abrir registro"

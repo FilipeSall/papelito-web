@@ -35,6 +35,7 @@ export function ChamadosList({
   search = "",
   searchAction,
   selectedThreadId = null,
+  split = false,
   total,
 }: Readonly<{
   audience: ChamadosListAudience;
@@ -44,17 +45,19 @@ export function ChamadosList({
   search?: string;
   searchAction?: string;
   selectedThreadId?: number | null;
+  /** A lista divide a tela com o detalhe a partir de `xl`, numa coluna estreita: linhas empilham e a busca ocupa a coluna. */
+  split?: boolean;
   total?: number;
 }>) {
   const count = total ?? items.length;
 
   const searchForm = searchAction ? (
-    <form action={searchAction} className="flex w-full gap-2 sm:w-auto">
+    <form action={searchAction} className={`flex w-full gap-2 sm:w-auto ${split ? "xl:w-full" : ""}`}>
       <label className="sr-only" htmlFor={`busca-${audience}`}>
         Buscar chamado
       </label>
       <input
-        className={`h-9 min-w-0 flex-1 rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 sm:w-72 ${FOCUS_RING}`}
+        className={`h-9 min-w-0 flex-1 rounded-none border-2 border-[#1a1a1a] bg-white px-3 text-sm text-[#1a1a1a] placeholder:text-[#1a1a1a]/40 sm:w-72 ${split ? "xl:w-auto" : ""} ${FOCUS_RING}`}
         defaultValue={search}
         id={`busca-${audience}`}
         name="search"
@@ -92,6 +95,7 @@ export function ChamadosList({
           <ResultRow
             href={BASE_HREF[audience](chamado.threadId)}
             key={chamado.threadId}
+            stackAt={split ? "xl" : undefined}
             lead={
               <div className={active ? "border-l-4 border-brand-yellow pl-3" : ""}>
                 <p className="flex flex-wrap items-center gap-2 text-sm font-black uppercase tracking-[0.1em] text-[#1a1a1a]">
