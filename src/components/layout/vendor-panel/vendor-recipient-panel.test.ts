@@ -27,6 +27,14 @@ describe("formatRecipientSyncAt", () => {
     expect(feedback.actionType).toBe("pagarme-bank-account-support");
   });
 
+  it("sends the vendor to shorten the bank holder name with the Pagar.me limit", () => {
+    const feedback = buildRecipientErrorFeedback({ code: "papelito_pagarme_invalid_holder_name" });
+
+    expect(feedback.title).toBe("Nome do titular longo demais");
+    expect(feedback.actionLabel).toBe("Revisar titular da conta");
+    expect(feedback.hint).toContain("até 29 caracteres");
+  });
+
   it("tells the vendor the bank account must belong to the company CNPJ", () => {
     const feedback = buildRecipientErrorFeedback({ code: "papelito_pagarme_bank_holder_mismatch" });
 

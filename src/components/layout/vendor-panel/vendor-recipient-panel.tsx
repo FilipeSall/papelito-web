@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { BANK_HOLDER_NAME_MAX_LENGTH } from "@/features/revendedor/utils/revendedor-registration";
 import { buildVendorOnboardingHref } from "@/features/revendedor/utils/vendor-onboarding";
 import type {
   VendorRecipient,
@@ -296,12 +297,21 @@ export function buildRecipientErrorFeedback(body: {
         message: "A conta bancária cadastrada não está no CNPJ da empresa.",
         title: "Conta bancária fora do CNPJ da empresa",
       };
+    case "papelito_pagarme_invalid_holder_name":
+      return {
+        actionHref: EDIT_FINANCIAL_DATA_HREF,
+        actionLabel: "Revisar titular da conta",
+        error: true,
+        hint: `Abrevie a razão social como ela aparece no banco, com até ${BANK_HOLDER_NAME_MAX_LENGTH} caracteres, e sincronize de novo.`,
+        message: "O nome do titular da conta é maior do que a Pagar.me aceita.",
+        title: "Nome do titular longo demais",
+      };
     case "papelito_pagarme_request_failed":
       return {
         actionHref: EDIT_FINANCIAL_DATA_HREF,
         actionLabel: "Revisar dados enviados",
         error: true,
-        hint: "A Pagar.me recusou os dados enviados. Revise razao social, responsável legal, endereço e conta bancária (agência e conta).",
+        hint: "A Pagar.me recusou os dados enviados. Revise razao social, responsável legal, endereço e conta bancária (titular, agência e conta).",
         message: "Não foi possível validar seus dados junto a Pagar.me.",
         title: "Validação recusada pela Pagar.me",
       };

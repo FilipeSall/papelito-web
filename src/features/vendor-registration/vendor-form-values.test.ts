@@ -296,6 +296,21 @@ describe("getInvalidVendorPendingFields", () => {
     expect(getInvalidVendorPendingFields(completeValues())).toEqual([]);
   });
 
+  it("flags a bank holder name longer than Pagar.me accepts, counting accented characters once", () => {
+    const withHolderName = (holderName: string): VendorFormValues => {
+      const values = completeValues();
+
+      return { ...values, bankAccount: { ...values.bankAccount, holderName } };
+    };
+
+    expect(
+      getInvalidVendorPendingFields(withHolderName("Cifal Comercial de Tabacos Ltda")),
+    ).toEqual(["bankAccount.holderName"]);
+    expect(getInvalidVendorPendingFields(withHolderName("Distribuidora São João Ltda M"))).toEqual(
+      [],
+    );
+  });
+
   it("keeps a partially typed CPF invalid and releases it once the check digits match", () => {
     expect(
       getInvalidVendorPendingFields(withPartner(completeValues(), { document: "037.122" })),

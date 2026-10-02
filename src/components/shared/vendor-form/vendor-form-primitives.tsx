@@ -34,6 +34,7 @@ export function Field({
   helperText,
   inputMode,
   label,
+  maxLength,
   onChange,
   placeholder,
   required = false,
@@ -47,6 +48,7 @@ export function Field({
   helperText?: string;
   inputMode?: "decimal" | "email" | "numeric" | "tel" | "text";
   label: string;
+  maxLength?: number;
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
@@ -71,6 +73,7 @@ export function Field({
           className={`${fieldClass(Boolean(error), disabled)} ${isPassword ? "pr-12" : ""}`}
           disabled={disabled}
           inputMode={inputMode}
+          maxLength={maxLength}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           type={isPassword && isPasswordVisible ? "text" : type}

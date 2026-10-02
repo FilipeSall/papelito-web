@@ -14,7 +14,12 @@ import {
   REVENDEDOR_STATE_OPTIONS,
 } from "@/features/revendedor/constants/revendedor-content";
 import { formatCnpj, formatPhone } from "@/features/revendedor/utils/revendedor-formatters";
-import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
+import {
+  BANK_HOLDER_NAME_MAX_LENGTH,
+  BANK_HOLDER_NAME_TOO_LONG_ERROR,
+  formatCpf,
+  isBankHolderNameTooLong,
+} from "@/features/revendedor/utils/revendedor-registration";
 import type { VendorFormController } from "@/features/vendor-registration/hooks/use-vendor-form";
 import type { VendorFormMode } from "@/features/vendor-registration/types";
 import {
@@ -40,6 +45,7 @@ const BANK_HOLDER_HELP =
   "A Pagar.me só aceita conta bancária no mesmo CNPJ do recebedor. Informe uma conta PJ aberta no CNPJ da empresa; MEI também pode abrir conta PJ.";
 const BANK_HOLDER_MISMATCH_ERROR =
   "A conta cadastrada não está no CNPJ da empresa. Se ela já é a conta PJ da empresa, confirme abaixo; se não, informe banco, agência e conta de uma conta PJ.";
+const BANK_HOLDER_NAME_HELP = `Nome do titular como aparece no banco, com até ${BANK_HOLDER_NAME_MAX_LENGTH} caracteres — limite da Pagar.me. Se a razão social for maior, use a abreviação que o banco usa.`;
 const TEMPORARY_PASSWORD_HELP =
   "Informe uma senha temporária para o primeiro acesso do vendor. Essa senha deve ser comunicada ao vendor e alterada por ele após o login.";
 
@@ -80,6 +86,9 @@ export function VendorFormSections({
     invalidPendingFields.includes(field) ? fieldError?.(field) : undefined;
   const showTemporaryPassword = mode === "admin-create" && !values.sourceUserId;
   const bankHolderError = errorFor("bankAccount.holderDocument");
+  const bankHolderNameError = isBankHolderNameTooLong(values.bankAccount.holderName)
+    ? BANK_HOLDER_NAME_TOO_LONG_ERROR
+    : errorFor("bankAccount.holderName");
   const bankHolderNeedsConfirmation = Boolean(bankHolderError) && !bankHolderMatchesRecipient(values);
   let storeCepHelperText: string | undefined;
 
@@ -438,8 +447,10 @@ export function VendorFormSections({
       <Section title="Dados bancários">
         <div className="grid gap-4 md:grid-cols-3">
           <Field
-            error={errorFor("bankAccount.holderName")}
+            error={bankHolderNameError}
+            helpText={BANK_HOLDER_NAME_HELP}
             label="Titular"
+            maxLength={BANK_HOLDER_NAME_MAX_LENGTH}
             onChange={(value) => updateBank("holderName", value)}
             value={values.bankAccount.holderName}
           />

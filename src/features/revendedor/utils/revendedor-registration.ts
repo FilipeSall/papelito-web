@@ -418,6 +418,23 @@ export function validateStep2(values: VendorRegistrationStep2Data): RevendedorSt
   return errors;
 }
 
+/**
+ * Máximo de caracteres que a Pagar.me aceita no nome do titular da conta (`holder_name`).
+ * Acima disso ela recusa o recebedor inteiro; o WordPress aplica o mesmo limite antes de chamá-la.
+ */
+export const BANK_HOLDER_NAME_MAX_LENGTH = 29;
+
+/** Erro exibido no campo "Titular" quando o nome passa de {@link BANK_HOLDER_NAME_MAX_LENGTH}. */
+export const BANK_HOLDER_NAME_TOO_LONG_ERROR = `O nome do titular da conta pode ter no máximo ${BANK_HOLDER_NAME_MAX_LENGTH} caracteres. Abrevie a razão social como ela aparece no banco.`;
+
+/**
+ * Indica se o nome do titular passa do limite da Pagar.me. Conta caracteres, não unidades
+ * UTF-16, para bater com o `mb_strlen` do WordPress em razão social acentuada.
+ */
+export function isBankHolderNameTooLong(holderName: string): boolean {
+  return Array.from(holderName.trim()).length > BANK_HOLDER_NAME_MAX_LENGTH;
+}
+
 export function validateStep3(values: VendorRegistrationStep3Data): RevendedorStep3Errors {
   const errors: RevendedorStep3Errors = {};
 
@@ -468,6 +485,8 @@ export function validateStep3(values: VendorRegistrationStep3Data): RevendedorSt
 
   if (!values.bankAccount.holderName.trim()) {
     bankAccountErrors.holderName = "Informe o titular da conta.";
+  } else if (isBankHolderNameTooLong(values.bankAccount.holderName)) {
+    bankAccountErrors.holderName = BANK_HOLDER_NAME_TOO_LONG_ERROR;
   }
   if (
     values.bankAccount.holderType === "company"
