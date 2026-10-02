@@ -23,6 +23,7 @@ const baseItem: VendorStockItem = {
     { id: 3, name: "Premium", slug: "premium" },
   ],
   updatedAt: "ontem",
+  vendorCode: null,
 };
 
 function renderRow(item: VendorStockItem, lowStockThreshold = 5) {

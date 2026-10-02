@@ -21,6 +21,8 @@ export type AdminVendorStockItem = {
   qty: number;
   sku: string;
   updatedAt: string;
+  /** Código do ERP do vendor para o item, só leitura no admin; `null` sem associação. */
+  vendorCode: string | null;
 };
 
 export type AdminVendorStockSnapshot = {
@@ -65,6 +67,7 @@ type RawStockItem = {
   qty?: number;
   sku?: string;
   updated_at?: string;
+  vendor_code?: string | null;
 };
 
 type RawStockSnapshot = {
@@ -159,6 +162,7 @@ export async function getAdminVendorStock(
     qty: Number(item.qty) || 0,
     sku: item.sku ?? "",
     updatedAt: item.updated_at ?? "",
+    vendorCode: typeof item.vendor_code === "string" && item.vendor_code !== "" ? item.vendor_code : null,
   }));
 
   const perPage = Number(result.data.per_page) || filters.perPage;

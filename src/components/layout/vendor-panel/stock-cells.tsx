@@ -38,11 +38,11 @@ export function StockThumb({
   alt,
   sizes = "56px",
   src,
-}: {
+}: Readonly<{
   alt: string;
   sizes?: string;
   src: string;
-}) {
+}>) {
   if (!src) {
     return <ProductImageFallback className="h-full w-full" />;
   }
@@ -58,7 +58,7 @@ export function StockThumb({
   );
 }
 
-export function StockStatusBadge({ level }: { level: VendorStockLevel }) {
+export function StockStatusBadge({ level }: Readonly<{ level: VendorStockLevel }>) {
   const shape = stockLevelShape(level);
 
   return <StatusChip icon={shape.icon} label={shape.label} tone={shape.tone} />;
@@ -74,11 +74,11 @@ export function StockSelectCell({
   checked,
   label,
   onChange,
-}: {
+}: Readonly<{
   checked: boolean;
   label: string;
   onChange: (checked: boolean) => void;
-}) {
+}>) {
   return (
     <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
       <input
@@ -92,7 +92,7 @@ export function StockSelectCell({
         aria-hidden
         className={[
           "inline-flex h-5 w-5 items-center justify-center border-2 border-[#1a1a1a] transition",
-          "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1a1a1a] peer-focus-visible:shadow-[0_0_0_6px_#ffe500]",
+          "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1a1a1a] peer-focus-visible:shadow-[0_0_0_6px_#ffe500]",
           checked ? "bg-[#1a1a1a] text-brand-yellow" : "bg-white text-transparent",
         ].join(" ")}
       >
@@ -118,12 +118,12 @@ export function StockMissingData({
   onRequest,
   requested,
   whatsappHref,
-}: {
+}: Readonly<{
   fields: VendorStockMissingField[];
   onRequest: () => void;
   requested: boolean;
   whatsappHref: string | null;
-}) {
+}>) {
   if (fields.length === 0) {
     return null;
   }
@@ -174,6 +174,14 @@ export function StockMissingData({
   );
 }
 
+function StockQtySaveIcon({ saved, saving }: Readonly<{ saved: boolean; saving: boolean }>) {
+  if (saving) {
+    return <Loader2 aria-label="Salvando" className="h-4 w-4 animate-spin text-[#1a1a1a]/60" strokeWidth={2} />;
+  }
+  if (!saved) return null;
+  return <Check aria-label="Salvo" className="h-4 w-4 text-[#1a1a1a]" strokeWidth={3} />;
+}
+
 export function StockQtyField({
   disabled = false,
   onQtyChange,
@@ -182,7 +190,7 @@ export function StockQtyField({
   qty,
   saved = false,
   saving,
-}: {
+}: Readonly<{
   disabled?: boolean;
   onQtyChange: (productId: number, qty: string) => void;
   productId: number;
@@ -190,19 +198,11 @@ export function StockQtyField({
   qty: string;
   saved?: boolean;
   saving: boolean;
-}) {
+}>) {
   return (
     <div className="flex items-center justify-end gap-2">
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-        {saving ? (
-          <Loader2
-            aria-label="Salvando"
-            className="h-4 w-4 animate-spin text-[#1a1a1a]/60"
-            strokeWidth={2}
-          />
-        ) : saved ? (
-          <Check aria-label="Salvo" className="h-4 w-4 text-[#1a1a1a]" strokeWidth={3} />
-        ) : null}
+        <StockQtySaveIcon saved={saved} saving={saving} />
       </span>
       <input
         aria-label={`Quantidade de ${productName}`}
@@ -218,5 +218,20 @@ export function StockQtyField({
         value={qty}
       />
     </div>
+  );
+}
+
+/**
+ * Linha de identificação do item: SKU da Papelito sempre, e o código do vendor quando houver.
+ * Rotular os dois evita confundir a identidade global do produto com o código do ERP do vendor.
+ */
+export function StockItemCodes({ sku, vendorCode }: Readonly<{ sku: string; vendorCode: string | null }>) {
+  return (
+    <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
+      {sku ? `SKU Papelito ${sku}` : "Sem SKU"}
+      {vendorCode ? (
+        <span className="normal-case tracking-normal text-[#1a1a1a]/72"> · Seu código {vendorCode}</span>
+      ) : null}
+    </p>
   );
 }

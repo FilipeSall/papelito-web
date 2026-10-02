@@ -74,11 +74,13 @@ type WpStockResponse = {
     sku?: string;
     tags?: WpTerm[];
     updated_at?: string;
+    vendor_code?: string | null;
   }>;
   low_stock_threshold?: number;
   page?: number;
   per_page?: number;
   total?: number;
+  vendor_code_available?: boolean;
 };
 
 /** Usado só quando a resposta do WordPress não traz o limite — nunca como regra do front. */
@@ -130,6 +132,7 @@ export async function getVendorStock(
     page: filters.page,
     perPage,
     total: 0,
+    vendorCodeAvailable: false,
   };
 
   if (!accessToken) {
@@ -147,6 +150,7 @@ export async function getVendorStock(
   if (filters.tags.length > 0) params.set("tags", filters.tags.join(","));
   if (filters.collection) params.set("collection", filters.collection);
   if (filters.type !== "products") params.set("type", filters.type);
+  if (filters.withoutVendorCode) params.set("vendor_code", "missing");
 
   const result = await wpRest<WpStockResponse>(`/papelito/v1/vendor/me/stock?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -178,6 +182,7 @@ export async function getVendorStock(
       sku: item.sku ?? "",
       tags: mapTerms(item.tags),
       updatedAt: item.updated_at ?? "",
+      vendorCode: typeof item.vendor_code === "string" && item.vendor_code !== "" ? item.vendor_code : null,
     })),
     lowStockThreshold:
       Number(result.data.low_stock_threshold) || FALLBACK_LOW_STOCK_THRESHOLD,
@@ -186,5 +191,6 @@ export async function getVendorStock(
     // contar com o que ele devolveu, não com o que o front pediu.
     perPage: Number(result.data.per_page) || perPage,
     total: Number(result.data.total) || 0,
+    vendorCodeAvailable: result.data.vendor_code_available === true,
   };
 }

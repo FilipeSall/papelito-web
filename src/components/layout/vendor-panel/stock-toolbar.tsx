@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { Download, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import { FOCUS_RING } from "@/components/layout/operational-panel";
@@ -25,6 +25,7 @@ function countActive(filters: VendorStockFilters) {
   if (filters.type !== "products") count += 1;
   count += filters.tags.length;
   if (filters.sort !== "name_asc") count += 1;
+  if (filters.withoutVendorCode) count += 1;
   return count;
 }
 
@@ -46,10 +47,13 @@ const sortOptions = VENDOR_STOCK_SORTS.map((value) => ({
 export function StockToolbar({
   filters,
   taxonomies,
-}: {
+  vendorCodeAvailable = false,
+}: Readonly<{
   filters: VendorStockFilters;
   taxonomies: VendorStockTaxonomies;
-}) {
+  /** Mostra a busca por código e o filtro "Sem o seu código" só quando o backend os suporta. */
+  vendorCodeAvailable?: boolean;
+}>) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [search, setSearch] = useState(filters.search);
@@ -74,6 +78,7 @@ export function StockToolbar({
         {filters.sort !== "name_asc" ? (
           <input name="sort" type="hidden" value={filters.sort} />
         ) : null}
+        {filters.withoutVendorCode ? <input name="vendor_code" type="hidden" value="missing" /> : null}
 
         <div className="flex w-full max-w-md flex-col gap-2">
           <label
@@ -96,7 +101,7 @@ export function StockToolbar({
               id="stock-search"
               name="search"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Nome do produto ou SKU"
+              placeholder={vendorCodeAvailable ? "Nome, SKU ou seu código" : "Nome do produto ou SKU"}
               type="search"
               value={search}
             />
@@ -141,8 +146,31 @@ export function StockToolbar({
         onOpen={() => setDrawerOpen(true)}
         open={drawerOpen}
         taxonomies={taxonomies}
+        vendorCodeAvailable={vendorCodeAvailable}
       />
+
+      <StockExportLink />
     </div>
+  );
+}
+
+/**
+ * Baixa o estoque inteiro em planilha (SKU Papelito, seu código, produto, quantidade).
+ * É um link comum: o navegador recebe o anexo do proxy sem estado de cliente.
+ */
+function StockExportLink() {
+  return (
+    <a
+      className={[
+        "inline-flex h-11 flex-none items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-white px-5 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow",
+        FOCUS_RING,
+      ].join(" ")}
+      download
+      href="/api/vendor/stock/export"
+    >
+      <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+      Exportar planilha
+    </a>
   );
 }
 
@@ -153,15 +181,18 @@ function StockFilterControl({
   onOpen,
   open,
   taxonomies,
-}: {
+  vendorCodeAvailable,
+}: Readonly<{
   active: number;
   filters: VendorStockFilters;
   onClose: () => void;
   onOpen: () => void;
   open: boolean;
   taxonomies: VendorStockTaxonomies;
-}) {
+  vendorCodeAvailable: boolean;
+}>) {
   const [applying, setApplying] = useState(false);
+  const activeSuffix = active > 0 ? ` · ${active}` : "";
 
   return (
     <>
@@ -180,7 +211,7 @@ function StockFilterControl({
         ) : (
           <SlidersHorizontal aria-hidden className="h-4 w-4" strokeWidth={2.4} />
         )}
-        {applying ? "Aplicando filtros…" : `Filtrar${active > 0 ? ` · ${active}` : ""}`}
+        {applying ? "Aplicando filtros…" : `Filtrar${activeSuffix}`}
       </button>
 
       {applying ? (
@@ -200,6 +231,7 @@ function StockFilterControl({
         onPending={() => setApplying(true)}
         open={open}
         taxonomies={taxonomies}
+        vendorCodeAvailable={vendorCodeAvailable}
       />
     </>
   );
@@ -208,10 +240,10 @@ function StockFilterControl({
 function StockSortControl({
   filters,
   onChange,
-}: {
+}: Readonly<{
   filters: VendorStockFilters;
   onChange: (sort: VendorStockSort) => void;
-}) {
+}>) {
   const [pendingSort, setPendingSort] = useState<VendorStockSort | null>(null);
   const [, startTransition] = useTransition();
   const sortUpdating = pendingSort !== null;

@@ -7,11 +7,14 @@ import { BaseModal } from "@/components/ui/base-modal";
 import { HardSwitch } from "@/components/ui/hard-switch";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { FOCUS_RING, InlineAlert, PrimaryButton } from "@/components/layout/operational-panel";
+import { useVendorCodeEditor } from "@/features/vendor-item-settings/hooks/use-vendor-code-editor";
+import type { VendorCodeTarget, VendorItemSettings } from "@/features/vendor-item-settings/types/vendor-item-settings";
 import { useVendorProductCustomization } from "@/features/vendor-product-customization/hooks/use-vendor-product-customization";
 import type { VendorProductCustomization } from "@/features/vendor-product-customization/types/vendor-product-customization";
 import { parseProductDescriptionParagraphs } from "@/utils/html";
 
 import { FeedbackBanner } from "./feedback-banner";
+import { VendorCodeField } from "./vendor-code-field";
 
 const DESCRIPTION_LIMIT = 20000;
 
@@ -26,16 +29,27 @@ const SAFE_ACTION_CLASS = [
 ].join(" ");
 
 type Editor = ReturnType<typeof useVendorProductCustomization>;
+type CodeEditor = ReturnType<typeof useVendorCodeEditor>;
+
+/** O que o servidor confirmou num clique de "Salvar"; parte não enviada ou recusada vem `null`. */
+export interface ProductEditorResult {
+  description: VendorProductCustomization | null;
+  vendorCode: VendorItemSettings | null;
+  /** Falso quando alguma parte enviada falhou: o editor continua aberto mostrando o erro. */
+  complete: boolean;
+}
 
 interface DescriptionModalProps {
-  /** ID público do pai ou produto comercial do kit. */
+  /** ID público do pai ou produto comercial do kit; é onde a descrição mora. */
   productId: number;
   /** Nome usado para identificar o recurso no diálogo. */
   productName: string;
+  /** Item da linha cujo código o vendor edita; ausente esconde o campo. */
+  vendorCode?: VendorCodeTarget | null;
   /** Fecha o editor quando nenhuma mutação estiver em andamento. */
   onClose: () => void;
-  /** Recebe a visão confirmada pelo servidor depois de salvar. */
-  onUpdated: (view: VendorProductCustomization) => void;
+  /** Recebe o que o servidor confirmou depois de salvar, mesmo quando só uma parte deu certo. */
+  onUpdated: (result: ProductEditorResult) => void;
 }
 
 type CopyState = "idle" | "copied" | "failed";
@@ -226,7 +240,7 @@ function DescriptionField({
   );
 }
 
-function EditorBody({
+function DescriptionSection({
   editor,
   textareaRef,
 }: Readonly<{ editor: Editor; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
@@ -259,56 +273,86 @@ function EditorBody({
 }
 
 function EditorActions({
-  editor,
+  canSave,
+  editable,
   onCancel,
   onSave,
+  pending,
 }: Readonly<{
-  editor: Editor;
+  canSave: boolean;
+  editable: boolean;
   onCancel: () => void;
   onSave: () => void;
+  pending: boolean;
 }>) {
-  const { snapshot } = editor;
-  const editable = snapshot?.canEdit === true;
-  const saving = editor.status === "saving";
-
   return (
     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:gap-3">
       <button
         className={`${QUIET_ACTION_CLASS} sm:ml-auto`}
-        disabled={editor.pending}
+        disabled={pending}
         onClick={onCancel}
         type="button"
       >
         {editable ? "Cancelar" : "Fechar"}
       </button>
       {editable ? (
-        <PrimaryButton className="justify-center" disabled={!editor.canSave} onClick={onSave}>
-          {saving ? <Loader2 aria-hidden className="size-4 animate-spin" strokeWidth={2.4} /> : null}
-          {saving ? "Salvando…" : "Salvar descrição"}
+        <PrimaryButton className="justify-center" disabled={!canSave} onClick={onSave}>
+          {pending ? <Loader2 aria-hidden className="size-4 animate-spin" strokeWidth={2.4} /> : null}
+          {pending ? "Salvando…" : "Salvar"}
         </PrimaryButton>
       ) : null}
     </div>
   );
 }
 
-function DescriptionEditor({ productId, productName, onClose, onUpdated }: Readonly<DescriptionModalProps>) {
+/** Habilita "Salvar" quando algo mudou e nenhuma parte alterada está inválida. */
+function productEditorCanSave(editor: Editor, code: CodeEditor, codeEnabled: boolean) {
+  if (editor.pending || code.pending) return false;
+  const codeChanged = codeEnabled && code.dirty;
+  if (codeChanged && code.tooLong) return false;
+  if (editor.dirty && !editor.canSave) return false;
+  return codeChanged || editor.dirty;
+}
+
+/** Envia só as partes alteradas, em paralelo, e diz se todas as enviadas foram confirmadas. */
+async function saveProductEditor(editor: Editor, code: CodeEditor, codeEnabled: boolean): Promise<ProductEditorResult | null> {
+  const sendCode = codeEnabled && code.dirty;
+  const sendDescription = editor.dirty;
+  const [description, vendorCode] = await Promise.all([
+    sendDescription ? editor.save() : Promise.resolve(null),
+    sendCode ? code.save() : Promise.resolve(null),
+  ]);
+  if (!description && !vendorCode) return null;
+  const complete = (!sendDescription || description !== null) && (!sendCode || vendorCode !== null);
+  return { description, vendorCode, complete };
+}
+
+function DescriptionEditor({ productId, productName, vendorCode = null, onClose, onUpdated }: Readonly<DescriptionModalProps>) {
   const editor = useVendorProductCustomization(productId);
+  const code = useVendorCodeEditor(vendorCode?.itemId ?? 0, vendorCode?.initialCode ?? null);
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
   const loaded = editor.snapshot !== null;
+  const codeEnabled = vendorCode?.available === true;
+  const pending = editor.pending || code.pending;
+  const editable = codeEnabled || editor.snapshot?.canEdit === true;
+  const descriptionClassName = vendorCode ? "border-t-2 border-dashed border-[#1a1a1a]/15 pt-5" : undefined;
 
   useEffect(() => {
-    if (loaded && document.activeElement === closeRef.current) textareaRef.current?.focus();
-  }, [loaded]);
+    if (document.activeElement !== closeRef.current) return;
+    if (codeEnabled) codeRef.current?.focus();
+    else if (loaded) textareaRef.current?.focus();
+  }, [loaded, codeEnabled]);
 
   function requestClose() {
-    if (!editor.isBusy()) onClose();
+    if (!editor.isBusy() && !code.isBusy()) onClose();
   }
 
   async function save() {
-    const view = await editor.save();
-    if (view) onUpdated(view);
+    const result = await saveProductEditor(editor, code, codeEnabled);
+    if (result) onUpdated(result);
   }
 
   return (
@@ -323,14 +367,14 @@ function DescriptionEditor({ productId, productName, onClose, onUpdated }: Reado
         <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#1a1a1a] py-4 pr-3 pl-5 sm:pl-6">
           <div className="min-w-0 pt-1">
             <h2 className="text-lg leading-6 font-black uppercase tracking-tight text-[#1a1a1a]" id={titleId}>
-              Editar descrição
+              Editar produto
             </h2>
             <p className="mt-1 text-sm leading-5 wrap-break-word text-[#231f20]/70">{productName}</p>
           </div>
           <button
             aria-label="Fechar"
             className={`inline-flex size-10 shrink-0 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-45 ${FOCUS_RING}`}
-            disabled={editor.pending}
+            disabled={pending}
             onClick={requestClose}
             ref={closeRef}
             type="button"
@@ -339,16 +383,25 @@ function DescriptionEditor({ productId, productName, onClose, onUpdated }: Reado
           </button>
         </header>
         <div
-          aria-busy={!loaded || editor.pending}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 [scrollbar-color:#1a1a1a40_transparent] [scrollbar-width:thin] sm:px-6"
+          aria-busy={!loaded || pending}
+          className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 [scrollbar-color:#1a1a1a40_transparent] [scrollbar-width:thin] sm:px-6"
         >
-          <EditorBody editor={editor} textareaRef={textareaRef} />
+          {vendorCode ? <VendorCodeField editor={code} inputRef={codeRef} target={vendorCode} /> : null}
+          <div className={descriptionClassName}>
+            <DescriptionSection editor={editor} textareaRef={textareaRef} />
+          </div>
         </div>
         <footer className="shrink-0 space-y-3 border-t-2 border-[#1a1a1a] px-5 py-4 sm:px-6">
           {editor.status === "mutation_error" && editor.error ? (
             <FeedbackBanner feedback={{ error: true, message: editor.error }} />
           ) : null}
-          <EditorActions editor={editor} onCancel={requestClose} onSave={() => void save()} />
+          <EditorActions
+            canSave={productEditorCanSave(editor, code, codeEnabled)}
+            editable={editable}
+            onCancel={requestClose}
+            onSave={() => void save()}
+            pending={pending}
+          />
         </footer>
       </div>
     </BaseModal>
@@ -356,10 +409,11 @@ function DescriptionEditor({ productId, productName, onClose, onUpdated }: Reado
 }
 
 /**
- * Editor da descrição que a loja do vendor mostra no lugar do texto da Papelito.
- * Trocar o produto descarta estado e solicitações anteriores; salvar entrega a
- * visão confirmada pelo servidor e cabe a quem abriu fechar o diálogo.
+ * Editor do produto para o vendor: o código do ERP dele para o item da linha e a descrição
+ * que a loja mostra no lugar do texto da Papelito. O código grava no item (variação inclusive);
+ * a descrição, no pai. Trocar de item descarta estado e solicitações anteriores; salvar entrega
+ * o que o servidor confirmou e cabe a quem abriu fechar o diálogo.
  */
 export function VendorProductDescriptionModal(props: Readonly<DescriptionModalProps>) {
-  return <DescriptionEditor key={props.productId} {...props} />;
+  return <DescriptionEditor key={`${props.productId}-${props.vendorCode?.itemId ?? 0}`} {...props} />;
 }

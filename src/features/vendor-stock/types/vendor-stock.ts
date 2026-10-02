@@ -79,9 +79,12 @@ export type VendorStockItem = {
   publicProductId: number;
   productName: string;
   qty: number;
+  /** SKU da Papelito: identidade global do produto, nunca editável pelo vendor. */
   sku: string;
   tags: VendorStockTerm[];
   updatedAt: string;
+  /** Código que o vendor usa no próprio ERP para este item; `null` sem associação. */
+  vendorCode: string | null;
 };
 
 export type VendorStockSnapshot = {
@@ -96,6 +99,8 @@ export type VendorStockSnapshot = {
   page: number;
   perPage: number;
   total: number;
+  /** Falso quando o WordPress ainda não tem o schema do código do vendor. */
+  vendorCodeAvailable: boolean;
 };
 
 /**
@@ -129,6 +134,8 @@ export type VendorStockFilters = {
   sort: VendorStockSort;
   tags: number[];
   type: VendorStockType;
+  /** Só itens que o vendor ainda não associou a um código próprio. */
+  withoutVendorCode?: boolean;
 };
 
 export type VendorStockTaxonomyTerm = VendorStockTerm & { count: number };

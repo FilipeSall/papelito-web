@@ -6,6 +6,7 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { VendorStockManager } from "./vendor-stock-manager";
+import { itemSettingsResponse } from "../../../../test/msw/handlers/vendor-item-settings";
 import { customizationResponse } from "../../../../test/msw/handlers/vendor-product-customization";
 import type {
   VendorStockFilters,
@@ -55,12 +56,13 @@ function item(overrides: Partial<VendorStockItem> = {}): VendorStockItem {
     sku: "SK-1",
     tags: [],
     updatedAt: "ontem",
+    vendorCode: null,
     ...overrides,
   };
 }
 
 function snapshotOf(items: VendorStockItem[]): VendorStockSnapshot {
-  return { items, lowStockThreshold: 5, page: 1, perPage: 20, total: items.length };
+  return { items, lowStockThreshold: 5, page: 1, perPage: 20, total: items.length, vendorCodeAvailable: true };
 }
 
 const snapshot = snapshotOf([item()]);
@@ -79,10 +81,10 @@ describe("VendorStockManager descrição", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderManager(snapshotOf([item({ productId: 11, publicProductId: 10 }), item({ productId: 12, publicProductId: 10 })]));
     fireEvent.change(screen.getAllByLabelText(/quantidade de seda king size/i)[0]!, { target: { value: "12" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Editar descrição de Seda King Size" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Editar Seda King Size" })[0]!);
     const editor = await screen.findByLabelText("Descrição personalizada");
     fireEvent.change(editor, { target: { value: "Vendor." } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar descrição" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(screen.getAllByText("Descrição personalizada")).toHaveLength(2));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Descrição de Seda King Size salva.");
@@ -95,9 +97,42 @@ describe("VendorStockManager descrição", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(customizationResponse(30)) });
     vi.stubGlobal("fetch", fetchMock);
     renderManager(kitSnapshot);
-    fireEvent.click(screen.getByRole("button", { name: "Editar descrição de Kit Escolar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar Kit Escolar" }));
     await screen.findByLabelText("Descrição personalizada");
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/30/customization");
+  });
+});
+
+describe("VendorStockManager seu código", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("salva o código do item e mostra na linha sem recarregar", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/vendor/products/10/settings") {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(itemSettingsResponse(10, "000419")) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(customizationResponse(10)) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderManager();
+    expect(screen.getByText("SKU Papelito SK-1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Editar Seda King Size" }));
+    fireEvent.change(screen.getByLabelText("Seu código"), { target: { value: "000419" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("status")).toHaveTextContent("Código de Seda King Size salvo.");
+    expect(screen.getByText(/Seu código 000419/)).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("mantém o lápis ativo quando só a descrição está indisponível", () => {
+    renderManager(snapshotOf([item({ hasDescriptionOverride: null })]));
+    expect(screen.getByRole("button", { name: "Editar Seda King Size" })).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("desativa o lápis quando nem descrição nem código podem ser editados", () => {
+    renderManager({ ...snapshotOf([item({ hasDescriptionOverride: null })]), vendorCodeAvailable: false });
+    expect(screen.getByRole("button", { name: "Edição indisponível no momento: Seda King Size" })).toHaveAttribute("aria-disabled", "true");
   });
 });
 

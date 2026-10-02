@@ -40,11 +40,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const snapshot = session.data;
 
   const lines = [
-    "\uFEFFproduct_name;sku;qty;updated_at",
+    "\uFEFFproduct_name;sku;vendor_code;qty;updated_at",
     ...snapshot.items.map((item) =>
       [
         escapeCsv(item.productName),
         escapeCsv(item.sku),
+        escapeCsv(item.vendorCode ?? ""),
         escapeCsv(item.qty),
         escapeCsv(item.updatedAt),
       ].join(";"),

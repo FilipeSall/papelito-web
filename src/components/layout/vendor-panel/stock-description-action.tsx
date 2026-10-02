@@ -4,27 +4,29 @@ import { FOCUS_RING } from "@/components/layout/operational-panel";
 import type { VendorStockItem } from "@/features/vendor-stock/types/vendor-stock";
 
 interface StockDescriptionActionProps {
-  /** Linha de estoque; a edição usa sempre o ID público normalizado. */
+  /** Linha de estoque; a descrição usa o ID público normalizado e o código, o item da linha. */
   item: VendorStockItem;
   /** Abre o editor do produto selecionado. */
   onEdit?: (item: VendorStockItem) => void;
+  /** Código do vendor editável; mantém o lápis ativo quando só a descrição está fora do ar. */
+  vendorCodeAvailable?: boolean;
 }
 
 /**
- * Lápis que abre o editor de descrição, ao lado do nome do produto.
- * Independe do saldo e da completude comercial; quando a personalização não
- * pode ser consultada, continua focável e explica o motivo na dica.
+ * Lápis que abre o editor do produto (código do vendor e descrição), ao lado do nome.
+ * Independe do saldo e da completude comercial; só fica inativo quando nem a descrição
+ * nem o código podem ser editados, e continua focável explicando o motivo na dica.
  */
-export function StockDescriptionAction({ item, onEdit }: Readonly<StockDescriptionActionProps>) {
+export function StockDescriptionAction({ item, onEdit, vendorCodeAvailable = false }: Readonly<StockDescriptionActionProps>) {
   if (!onEdit) return null;
-  const unavailable = item.hasDescriptionOverride === null;
-  const hint = unavailable ? "Personalização indisponível no momento" : "Editar descrição";
+  const unavailable = item.hasDescriptionOverride === null && !vendorCodeAvailable;
+  const hint = unavailable ? "Edição indisponível no momento" : "Editar produto";
 
   return (
     <span className="group/description relative -my-1.5 -mr-1 inline-flex shrink-0">
       <button
         aria-disabled={unavailable || undefined}
-        aria-label={unavailable ? `${hint}: ${item.productName}` : `Editar descrição de ${item.productName}`}
+        aria-label={unavailable ? `${hint}: ${item.productName}` : `Editar ${item.productName}`}
         className={[
           "inline-flex size-9 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a]/58 transition",
           unavailable

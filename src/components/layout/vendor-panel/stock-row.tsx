@@ -6,6 +6,7 @@ import { vendorStockLevel } from "@/features/vendor-stock/types/vendor-stock";
 
 import {
   formatStockUpdatedAt,
+  StockItemCodes,
   StockMissingData,
   StockQtyField,
   StockSelectCell,
@@ -30,6 +31,7 @@ export function StockRow({
   saving,
   selected,
   item,
+  vendorCodeAvailable = false,
 }: Readonly<{
   contactPhone: string;
   focused: boolean;
@@ -44,6 +46,8 @@ export function StockRow({
   saved: boolean;
   saving: boolean;
   selected: boolean;
+  /** Habilita o lápis mesmo sem personalização de descrição, porque o código ainda é editável. */
+  vendorCodeAvailable?: boolean;
 }>) {
   const ref = useRef<HTMLTableRowElement>(null);
   const productHref = `/produtos/${item.publicProductId || item.productId}`;
@@ -101,11 +105,13 @@ export function StockRow({
                   {item.productName}
                 </span>
               )}
-              <StockDescriptionAction item={item} onEdit={onEditDescription} />
+              <StockDescriptionAction
+                item={item}
+                onEdit={onEditDescription}
+                vendorCodeAvailable={vendorCodeAvailable}
+              />
             </div>
-            <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
-              {item.sku || "Sem SKU"}
-            </p>
+            <StockItemCodes sku={item.sku} vendorCode={item.vendorCode} />
             {item.categories.length > 0 || item.tags.length > 0 || item.hasDescriptionOverride ? (
               <div className="mt-2 flex flex-wrap gap-1.5" data-testid="stock-row-terms">
                 {[...item.categories, ...item.tags].map((term) => (

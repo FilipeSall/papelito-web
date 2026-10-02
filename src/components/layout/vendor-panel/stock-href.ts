@@ -12,6 +12,7 @@ export function buildStockHref(filters: VendorStockFilters, page = 1) {
   if (filters.collection) params.set("collection", filters.collection);
   if (filters.type !== "products") params.set("type", filters.type);
   if (filters.sort !== "name_asc") params.set("sort", filters.sort);
+  if (filters.withoutVendorCode) params.set("vendor_code", "missing");
   if (page > 1) params.set("page", String(page));
   return `/vendor/estoque?${params.toString()}`;
 }

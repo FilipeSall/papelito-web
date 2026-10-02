@@ -22,10 +22,10 @@ type Chip = { href: string; key: string; label: string };
 export function StockActiveFilters({
   filters,
   taxonomies,
-}: {
+}: Readonly<{
   filters: VendorStockFilters;
   taxonomies: VendorStockTaxonomies;
-}) {
+}>) {
   const chips: Chip[] = [];
 
   if (filters.search) {
@@ -84,6 +84,14 @@ export function StockActiveFilters({
     });
   }
 
+  if (filters.withoutVendorCode) {
+    chips.push({
+      href: buildStockHref({ ...filters, withoutVendorCode: false }),
+      key: "vendor-code",
+      label: "Sem o seu código",
+    });
+  }
+
   if (filters.sort !== "name_asc") {
     chips.push({
       href: buildStockHref({ ...filters, sort: "name_asc" }),
@@ -132,6 +140,7 @@ export function StockActiveFilters({
           sort: "name_asc",
           tags: [],
           type: "products",
+          withoutVendorCode: false,
         })}
       >
         <X aria-hidden className="h-3.5 w-3.5" strokeWidth={2.6} />

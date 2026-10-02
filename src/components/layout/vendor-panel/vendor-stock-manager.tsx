@@ -22,7 +22,8 @@ import { StockSelectCell } from "./stock-cells";
 import { StockSelectionBar } from "./stock-selection-bar";
 import { StockSummary } from "./stock-summary";
 import { StockToolbar } from "./stock-toolbar";
-import { VendorProductDescriptionModal } from "./vendor-product-description-modal";
+import { VendorProductDescriptionModal, type ProductEditorResult } from "./vendor-product-description-modal";
+import type { VendorCodeTarget } from "@/features/vendor-item-settings/types/vendor-item-settings";
 import type { VendorProductCustomization } from "@/features/vendor-product-customization/types/vendor-product-customization";
 
 const AUTOSAVE_DELAY = 800;
@@ -33,6 +34,25 @@ const tableHeaders = ["Produto", "Situação", "Última atualização", "Quantid
 function describeDescriptionUpdate(view: VendorProductCustomization, productName: string) {
   if (view.descriptionSource === "vendor") return `Descrição de ${productName} salva. A loja já mostra a sua versão.`;
   return `${productName} mostra a descrição da Papelito. Seu texto personalizado ficou guardado.`;
+}
+
+function describeProductUpdate(result: ProductEditorResult, productName: string) {
+  const parts: string[] = [];
+  if (result.vendorCode) {
+    parts.push(result.vendorCode.vendorCode ? `Código de ${productName} salvo.` : `Código de ${productName} removido.`);
+  }
+  if (result.description) parts.push(describeDescriptionUpdate(result.description, productName));
+  return parts.join(" ");
+}
+
+function vendorCodeTarget(item: VendorStockItem, available: boolean): VendorCodeTarget {
+  return {
+    available,
+    initialCode: item.vendorCode,
+    isVariation: item.publicProductId > 0 && item.publicProductId !== item.productId,
+    itemId: item.productId,
+    sku: item.sku,
+  };
 }
 
 export function VendorStockManager({
@@ -63,15 +83,23 @@ export function VendorStockManager({
   const [requestItem, setRequestItem] = useState<VendorStockItem | null>(null);
   const [descriptionItem, setDescriptionItem] = useState<VendorStockItem | null>(null);
   const [descriptionOverrides, setDescriptionOverrides] = useState<Record<number, boolean>>({});
+  const [vendorCodes, setVendorCodes] = useState<Record<number, string | null>>({});
   const displayedItems = useMemo(() => snapshot.items.map((item) => ({
     ...item,
     hasDescriptionOverride: descriptionOverrides[item.publicProductId] ?? item.hasDescriptionOverride,
-  })), [snapshot.items, descriptionOverrides]);
+    vendorCode: item.productId in vendorCodes ? vendorCodes[item.productId] ?? null : item.vendorCode,
+  })), [snapshot.items, descriptionOverrides, vendorCodes]);
 
-  function handleDescriptionUpdated(view: VendorProductCustomization) {
-    const productName = descriptionItem?.productName ?? "O produto";
-    setDescriptionOverrides((current) => ({ ...current, [view.productId]: view.descriptionSource === "vendor" }));
-    setFeedback({ error: false, message: describeDescriptionUpdate(view, productName) });
+  function handleProductUpdated(result: ProductEditorResult) {
+    const { description, vendorCode } = result;
+    if (description) {
+      setDescriptionOverrides((current) => ({ ...current, [description.productId]: description.descriptionSource === "vendor" }));
+    }
+    if (vendorCode) {
+      setVendorCodes((current) => ({ ...current, [vendorCode.productId]: vendorCode.vendorCode }));
+    }
+    if (!result.complete) return;
+    setFeedback({ error: false, message: describeProductUpdate(result, descriptionItem?.productName ?? "O produto") });
     setDescriptionItem(null);
   }
 
@@ -95,6 +123,7 @@ export function VendorStockManager({
 
   useEffect(() => {
     setDescriptionOverrides({});
+    setVendorCodes({});
     setQuantities(
       Object.fromEntries(snapshot.items.map((item) => [item.productId, String(item.qty)])),
     );
@@ -307,6 +336,7 @@ export function VendorStockManager({
       successfulIds.forEach((productId) => savedQty.current.set(productId, qty));
       markSaved(successfulIds);
       setSelectedIds(new Set());
+      const productLabel = updated === 1 ? "produto" : "produtos";
       setFeedback({
         details: failed.map(
           (entry) => `Produto ${entry.product_id}: ${entry.message ?? "falha ao gravar"}`,
@@ -315,7 +345,7 @@ export function VendorStockManager({
         message:
           failed.length > 0
             ? `${updated} de ${productIds.length} atualizados. ${failed.length} falharam.`
-            : `Estoque ${qty} aplicado a ${updated} ${updated === 1 ? "produto" : "produtos"}.`,
+            : `Estoque ${qty} aplicado a ${updated} ${productLabel}.`,
       });
       router.refresh();
     } catch (error) {
@@ -350,7 +380,11 @@ export function VendorStockManager({
       <StockSummary filters={filters} summary={summary} />
 
       <Panel className="overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-        <StockToolbar filters={filters} taxonomies={taxonomies} />
+        <StockToolbar
+          filters={filters}
+          taxonomies={taxonomies}
+          vendorCodeAvailable={snapshot.vendorCodeAvailable}
+        />
         <StockActiveFilters filters={filters} taxonomies={taxonomies} />
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
 
@@ -416,6 +450,7 @@ export function VendorStockManager({
                       onEditDescription={setDescriptionItem}
                       quantities={quantities}
                       savingIds={savingIds}
+                      vendorCodeAvailable={snapshot.vendorCodeAvailable}
                     />
                   ) : (
                     <StockRow
@@ -433,6 +468,7 @@ export function VendorStockManager({
                       saved={savedIds.has(item.productId)}
                       saving={savingIds.has(item.productId)}
                       selected={selectedIds.has(item.productId)}
+                      vendorCodeAvailable={snapshot.vendorCodeAvailable}
                     />
                   ),
                 )}
@@ -473,8 +509,9 @@ export function VendorStockManager({
         <VendorProductDescriptionModal
           productId={descriptionItem.publicProductId || descriptionItem.productId}
           productName={descriptionItem.productName}
+          vendorCode={vendorCodeTarget(descriptionItem, snapshot.vendorCodeAvailable)}
           onClose={() => setDescriptionItem(null)}
-          onUpdated={handleDescriptionUpdated}
+          onUpdated={handleProductUpdated}
         />
       ) : null}
     </div>

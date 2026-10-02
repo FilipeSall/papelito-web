@@ -45,6 +45,7 @@ const item: VendorStockItem = {
   sku: "KIT-001",
   tags: [],
   updatedAt: "ontem",
+  vendorCode: null,
 };
 
 function renderKit(override: Partial<VendorStockKit> = {}, onQtyChange = () => {}) {
