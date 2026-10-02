@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+
+import { resolveRevealAlign, useTextOverflow, type RevealAlign } from "@/components/ui/use-text-overflow";
 
 import { FOCUS_RING } from "../../primitives";
 
-const VIEWPORT_GUTTER = 16;
 const LAYER_OFFSET = 10;
-
-type RevealAlign = "start" | "end";
 
 type OverflowRevealProps = {
   /** Texto completo; na célula aparece em uma linha com reticências. */
@@ -25,35 +24,6 @@ type OverflowRevealProps = {
   underline?: boolean;
 };
 
-function useOverflow() {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [state, setState] = useState({ overflowing: false, width: 0 });
-
-  useLayoutEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const measure = () => {
-      const overflowing = node.scrollWidth > node.clientWidth + 1;
-      setState((current) =>
-        current.overflowing === overflowing && current.width === node.clientWidth
-          ? current
-          : { overflowing, width: node.clientWidth },
-      );
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, ...state };
-}
-
-function resolveAlign(trigger: HTMLElement, layer: HTMLElement): RevealAlign {
-  const rect = trigger.getBoundingClientRect();
-  return rect.left + layer.scrollWidth + VIEWPORT_GUTTER > window.innerWidth ? "end" : "start";
-}
-
 /**
  * Texto de célula que trunca em uma linha e, só quando corta de verdade, se expande por cima da
  * listagem no hover e no foco, sem mudar largura nem altura da linha.
@@ -68,7 +38,7 @@ export function OverflowReveal({
   text,
   underline = false,
 }: Readonly<OverflowRevealProps>) {
-  const { ref, overflowing, width } = useOverflow();
+  const { ref, overflowing, width } = useTextOverflow();
   const layerRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLAnchorElement>(null);
   const [align, setAlign] = useState<RevealAlign>("start");
@@ -86,7 +56,7 @@ export function OverflowReveal({
   }
 
   function prepare() {
-    if (triggerRef.current && layerRef.current) setAlign(resolveAlign(triggerRef.current, layerRef.current));
+    if (triggerRef.current && layerRef.current) setAlign(resolveRevealAlign(triggerRef.current, layerRef.current));
   }
 
   const startWidth = width + LAYER_OFFSET * 2 + (leading ? 20 : 0);
