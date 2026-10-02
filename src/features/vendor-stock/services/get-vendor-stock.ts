@@ -150,7 +150,6 @@ export async function getVendorStock(
   if (filters.tags.length > 0) params.set("tags", filters.tags.join(","));
   if (filters.collection) params.set("collection", filters.collection);
   if (filters.type !== "products") params.set("type", filters.type);
-  if (filters.withoutVendorCode) params.set("vendor_code", "missing");
 
   const result = await wpRest<WpStockResponse>(`/papelito/v1/vendor/me/stock?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },

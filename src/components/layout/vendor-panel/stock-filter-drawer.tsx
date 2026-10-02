@@ -37,7 +37,6 @@ const DEFAULTS: VendorStockFilters = {
   sort: "name_asc",
   tags: [],
   type: "products",
-  withoutVendorCode: false,
 };
 
 const selectTriggerClassName =
@@ -45,41 +44,18 @@ const selectTriggerClassName =
 const selectLabelClassName =
   "text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72";
 
-/**
- * Botão de alternância do drawer: "Sem o seu código" mostra só itens que o vendor ainda não mapeou.
- */
-function StockVendorCodeFilter({ active, onToggle }: Readonly<{ active: boolean; onToggle: () => void }>) {
-  return (
-    <div className="space-y-2">
-      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72">Seu código</p>
-      <button
-        aria-pressed={active}
-        className={`inline-flex min-h-9 cursor-pointer items-center border-2 border-[#1a1a1a] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] transition focus-visible:outline-2 focus-visible:outline-brand-yellow focus-visible:outline-offset-2 ${
-          active ? "bg-[#1a1a1a] text-brand-yellow" : "bg-white text-[#1a1a1a] hover:bg-brand-yellow"
-        }`}
-        onClick={onToggle}
-        type="button"
-      >
-        Sem o seu código
-      </button>
-    </div>
-  );
-}
-
 export function StockFilterDrawer({
   filters,
   onPending,
   onClose,
   open,
   taxonomies,
-  vendorCodeAvailable = false,
 }: Readonly<{
   filters: VendorStockFilters;
   onPending?: () => void;
   onClose: () => void;
   open: boolean;
   taxonomies: VendorStockTaxonomies;
-  vendorCodeAvailable?: boolean;
 }>) {
   const router = useRouter();
   const [draft, setDraft] = useState<VendorStockFilters>(filters);
@@ -204,13 +180,6 @@ export function StockFilterDrawer({
             onChange={(value) => setDraft((c) => ({ ...c, type: value as VendorStockType }))}
           />
 
-          {vendorCodeAvailable ? (
-            <StockVendorCodeFilter
-              active={draft.withoutVendorCode === true}
-              onToggle={() => setDraft((c) => ({ ...c, withoutVendorCode: !c.withoutVendorCode }))}
-            />
-          ) : null}
-
           {taxonomies.tags.length > 0 ? (
             <div className="space-y-2">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/72">Tags</p>
@@ -274,7 +243,6 @@ function stockFilterDraftChanged(draft: VendorStockFilters, filters: VendorStock
     draft.filter !== filters.filter ||
     draft.sort !== filters.sort ||
     draft.type !== filters.type ||
-    Boolean(draft.withoutVendorCode) !== Boolean(filters.withoutVendorCode) ||
     draft.tags.length !== filters.tags.length ||
     draft.tags.some((tag) => !filters.tags.includes(tag))
   );

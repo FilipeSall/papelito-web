@@ -21,7 +21,10 @@ export interface VendorCodeTarget {
   /** Produto ou variação da linha, diferente do pai que guarda a descrição. */
   itemId: number;
   initialCode: string | null;
-  /** SKU da Papelito, exibido só como referência. */
+  /**
+   * SKU da Papelito, usado como reserva: preenche o campo quando o vendor não tem código próprio.
+   * A tela nunca o rotula como da Papelito — para o vendor existe um SKU só.
+   */
   sku: string;
   /** Verdadeiro quando a linha é variação: o código não vale para as irmãs. */
   isVariation: boolean;

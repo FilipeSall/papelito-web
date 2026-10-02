@@ -8,18 +8,17 @@ interface StockDescriptionActionProps {
   item: VendorStockItem;
   /** Abre o editor do produto selecionado. */
   onEdit?: (item: VendorStockItem) => void;
-  /** Código do vendor editável; mantém o lápis ativo quando só a descrição está fora do ar. */
-  vendorCodeAvailable?: boolean;
 }
 
 /**
  * Lápis que abre o editor do produto (código do vendor e descrição), ao lado do nome.
- * Independe do saldo e da completude comercial; só fica inativo quando nem a descrição
- * nem o código podem ser editados, e continua focável explicando o motivo na dica.
+ * Independe do saldo e da completude comercial. O código só aparece junto com a descrição
+ * personalizada, então o lápis fica inativo quando ela não pode ser consultada, e continua
+ * focável explicando o motivo na dica.
  */
-export function StockDescriptionAction({ item, onEdit, vendorCodeAvailable = false }: Readonly<StockDescriptionActionProps>) {
+export function StockDescriptionAction({ item, onEdit }: Readonly<StockDescriptionActionProps>) {
   if (!onEdit) return null;
-  const unavailable = item.hasDescriptionOverride === null && !vendorCodeAvailable;
+  const unavailable = item.hasDescriptionOverride === null;
   const hint = unavailable ? "Edição indisponível no momento" : "Editar produto";
 
   return (

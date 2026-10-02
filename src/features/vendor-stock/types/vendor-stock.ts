@@ -134,8 +134,6 @@ export type VendorStockFilters = {
   sort: VendorStockSort;
   tags: number[];
   type: VendorStockType;
-  /** Só itens que o vendor ainda não associou a um código próprio. */
-  withoutVendorCode?: boolean;
 };
 
 export type VendorStockTaxonomyTerm = VendorStockTerm & { count: number };

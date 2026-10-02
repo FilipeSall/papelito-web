@@ -4,7 +4,7 @@ import { requireVendorAccessToken } from "../../_lib/require-vendor-session";
 import { proxyExportDownload } from "@/lib/server/export-proxy";
 
 /**
- * Baixa a planilha de estoque do vendor (SKU Papelito, seu código, produto e quantidade).
+ * Baixa a planilha de estoque do vendor (SKU Papelito, código SKU, produto e quantidade).
  * `?format=csv` troca o XLSX por CSV; o WordPress monta o arquivo e o Next só repassa o stream.
  */
 export async function GET(request: Request) {

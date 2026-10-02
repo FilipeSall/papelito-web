@@ -12,14 +12,20 @@ function normalizeCode(value: string) {
   return value.trim().replaceAll(/\s+/g, " ");
 }
 
+/** Vazio ou igual ao SKU de reserva quer dizer "sem código próprio": grava `null`. */
+function codeToSend(normalized: string, fallbackSku: string) {
+  return normalized === "" || normalized === fallbackSku ? null : normalized;
+}
+
 /**
- * Rascunho do código do vendor para um item, partindo do valor que a listagem já trouxe.
- * `dirty` compara o texto normalizado com o último valor confirmado; salvar com campo vazio
- * remove o código. Respostas que chegam depois de o editor ser desmontado são descartadas.
+ * Rascunho do SKU que o vendor vê para um item: o código dele quando existe, senão o SKU da
+ * Papelito como reserva. O vendor edita um campo só; apagar ou voltar ao SKU de reserva grava
+ * `null`, e o campo volta a mostrar a reserva. `dirty` compara o que seria gravado com o último
+ * valor confirmado. Respostas que chegam depois de o editor ser desmontado são descartadas.
  */
-export function useVendorCodeEditor(itemId: number, initialCode: string | null) {
-  const [saved, setSaved] = useState(initialCode ?? "");
-  const [draft, setDraft] = useState(initialCode ?? "");
+export function useVendorCodeEditor(itemId: number, initialCode: string | null, fallbackSku: string) {
+  const [saved, setSaved] = useState<string | null>(initialCode);
+  const [draft, setDraft] = useState(initialCode ?? fallbackSku);
   const [status, setStatus] = useState<CodeStatus>("ready");
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
@@ -28,9 +34,10 @@ export function useVendorCodeEditor(itemId: number, initialCode: string | null) 
   useEffect(() => () => controller.current?.abort(), []);
 
   const normalized = normalizeCode(draft);
+  const pendingValue = codeToSend(normalized, fallbackSku);
   const length = Array.from(normalized).length;
   const tooLong = length > VENDOR_CODE_MAX_LENGTH;
-  const dirty = normalized !== saved;
+  const dirty = pendingValue !== saved;
   const pending = status === "saving";
 
   async function save(): Promise<VendorItemSettings | null> {
@@ -41,15 +48,15 @@ export function useVendorCodeEditor(itemId: number, initialCode: string | null) 
     setStatus("saving");
     setError(null);
     try {
-      const view = await saveVendorCode(itemId, normalized === "" ? null : normalized, request.signal);
+      const view = await saveVendorCode(itemId, pendingValue, request.signal);
       if (request.signal.aborted) return null;
-      setSaved(view.vendorCode ?? "");
-      setDraft(view.vendorCode ?? "");
+      setSaved(view.vendorCode);
+      setDraft(view.vendorCode ?? fallbackSku);
       setStatus("ready");
       return view;
     } catch (cause) {
       if (request.signal.aborted) return null;
-      setError(cause instanceof Error ? cause.message : "Não foi possível salvar o código.");
+      setError(cause instanceof Error ? cause.message : "Não foi possível salvar o SKU.");
       setStatus("error");
       return null;
     } finally {

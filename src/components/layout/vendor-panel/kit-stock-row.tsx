@@ -95,7 +95,6 @@ export function KitStockRow({
   onEditDescription,
   quantities,
   savingIds,
-  vendorCodeAvailable = false,
 }: Readonly<{
   columnCount: number;
   focused: boolean;
@@ -106,8 +105,6 @@ export function KitStockRow({
   onEditDescription?: (item: VendorStockItem) => void;
   quantities: Record<string, string>;
   savingIds: Set<number>;
-  /** Habilita o lápis mesmo sem personalização de descrição, porque o código ainda é editável. */
-  vendorCodeAvailable?: boolean;
 }>) {
   const ref = useRef<HTMLTableRowElement>(null);
   const kitHref = kit.slug ? `/kits/${kit.slug}` : null;
@@ -146,11 +143,7 @@ export function KitStockRow({
                 ) : (
                   <span className="block text-sm font-black text-[#1a1a1a]">{item.productName}</span>
                 )}
-                <StockDescriptionAction
-                  item={item}
-                  onEdit={onEditDescription}
-                  vendorCodeAvailable={vendorCodeAvailable}
-                />
+                <StockDescriptionAction item={item} onEdit={onEditDescription} />
               </div>
               <StockItemCodes sku={item.sku} vendorCode={item.vendorCode} />
               {item.hasDescriptionOverride ? (

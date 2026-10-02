@@ -82,8 +82,8 @@ describe("VendorStockManager descrição", () => {
     renderManager(snapshotOf([item({ productId: 11, publicProductId: 10 }), item({ productId: 12, publicProductId: 10 })]));
     fireEvent.change(screen.getAllByLabelText(/quantidade de seda king size/i)[0]!, { target: { value: "12" } });
     fireEvent.click(screen.getAllByRole("button", { name: "Editar Seda King Size" })[0]!);
-    const editor = await screen.findByLabelText("Descrição personalizada");
-    fireEvent.change(editor, { target: { value: "Vendor." } });
+    fireEvent.click(await screen.findByRole("radio", { name: "Meu texto" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Seu texto para a loja" }), { target: { value: "Vendor." } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(screen.getAllByText("Descrição personalizada")).toHaveLength(2));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -98,15 +98,15 @@ describe("VendorStockManager descrição", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderManager(kitSnapshot);
     fireEvent.click(screen.getByRole("button", { name: "Editar Kit Escolar" }));
-    await screen.findByLabelText("Descrição personalizada");
+    await screen.findByRole("radio", { name: "Papelito" });
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/vendor/products/30/customization");
   });
 });
 
-describe("VendorStockManager seu código", () => {
+describe("VendorStockManager SKU", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("salva o código do item e mostra na linha sem recarregar", async () => {
+  it("salva o SKU do item e mostra na linha no lugar do anterior, sem recarregar", async () => {
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url === "/api/vendor/products/10/settings") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(itemSettingsResponse(10, "000419")) });
@@ -115,23 +115,21 @@ describe("VendorStockManager seu código", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     renderManager();
-    expect(screen.getByText("SKU Papelito SK-1")).toBeInTheDocument();
+    expect(screen.getByText("SK-1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Editar Seda King Size" }));
-    fireEvent.change(screen.getByLabelText("Seu código"), { target: { value: "000419" } });
+    const field = await screen.findByLabelText("SKU");
+    expect(field).toHaveValue("SK-1");
+    fireEvent.change(field, { target: { value: "000419" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.getByRole("status")).toHaveTextContent("Código de Seda King Size salvo.");
-    expect(screen.getByText(/Seu código 000419/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("SKU de Seda King Size atualizado.");
+    expect(screen.getByText("000419")).toBeInTheDocument();
+    expect(screen.queryByText("SK-1")).not.toBeInTheDocument();
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("mantém o lápis ativo quando só a descrição está indisponível", () => {
+  it("desativa o lápis quando a descrição personalizada não pode ser consultada", () => {
     renderManager(snapshotOf([item({ hasDescriptionOverride: null })]));
-    expect(screen.getByRole("button", { name: "Editar Seda King Size" })).not.toHaveAttribute("aria-disabled");
-  });
-
-  it("desativa o lápis quando nem descrição nem código podem ser editados", () => {
-    renderManager({ ...snapshotOf([item({ hasDescriptionOverride: null })]), vendorCodeAvailable: false });
     expect(screen.getByRole("button", { name: "Edição indisponível no momento: Seda King Size" })).toHaveAttribute("aria-disabled", "true");
   });
 });

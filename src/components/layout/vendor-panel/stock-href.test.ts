@@ -60,9 +60,4 @@ describe("buildStockHref", () => {
     expect(href).toContain("filter=low_stock");
     expect(href).toContain("page=4");
   });
-
-  it("carries the missing vendor code filter in the URL", () => {
-    expect(buildStockHref({ ...base, withoutVendorCode: true })).toBe("/vendor/estoque?filter=all&vendor_code=missing");
-    expect(buildStockHref({ ...base, withoutVendorCode: false })).toBe("/vendor/estoque?filter=all");
-  });
 });

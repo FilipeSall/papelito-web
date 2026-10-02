@@ -25,7 +25,6 @@ function countActive(filters: VendorStockFilters) {
   if (filters.type !== "products") count += 1;
   count += filters.tags.length;
   if (filters.sort !== "name_asc") count += 1;
-  if (filters.withoutVendorCode) count += 1;
   return count;
 }
 
@@ -47,12 +46,9 @@ const sortOptions = VENDOR_STOCK_SORTS.map((value) => ({
 export function StockToolbar({
   filters,
   taxonomies,
-  vendorCodeAvailable = false,
 }: Readonly<{
   filters: VendorStockFilters;
   taxonomies: VendorStockTaxonomies;
-  /** Mostra a busca por código e o filtro "Sem o seu código" só quando o backend os suporta. */
-  vendorCodeAvailable?: boolean;
 }>) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -78,7 +74,6 @@ export function StockToolbar({
         {filters.sort !== "name_asc" ? (
           <input name="sort" type="hidden" value={filters.sort} />
         ) : null}
-        {filters.withoutVendorCode ? <input name="vendor_code" type="hidden" value="missing" /> : null}
 
         <div className="flex w-full max-w-md flex-col gap-2">
           <label
@@ -101,7 +96,7 @@ export function StockToolbar({
               id="stock-search"
               name="search"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={vendorCodeAvailable ? "Nome, SKU ou seu código" : "Nome do produto ou SKU"}
+              placeholder="Nome ou SKU"
               type="search"
               value={search}
             />
@@ -146,7 +141,6 @@ export function StockToolbar({
         onOpen={() => setDrawerOpen(true)}
         open={drawerOpen}
         taxonomies={taxonomies}
-        vendorCodeAvailable={vendorCodeAvailable}
       />
 
       <StockExportLink />
@@ -155,22 +149,32 @@ export function StockToolbar({
 }
 
 /**
- * Baixa o estoque inteiro em planilha (SKU Papelito, seu código, produto, quantidade).
+ * Baixa o estoque inteiro em planilha (SKU Papelito, código SKU, produto, quantidade).
+ * Só o ícone fica na barra; o nome da ação aparece num tooltip no hover e no foco por teclado.
  * É um link comum: o navegador recebe o anexo do proxy sem estado de cliente.
  */
 function StockExportLink() {
   return (
-    <a
-      className={[
-        "inline-flex h-11 flex-none items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-white px-5 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow",
-        FOCUS_RING,
-      ].join(" ")}
-      download
-      href="/api/vendor/stock/export"
-    >
-      <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-      Exportar planilha
-    </a>
+    <span className="group/export relative inline-flex flex-none self-start lg:self-auto">
+      <a
+        aria-label="Exportar planilha de estoque"
+        className={[
+          "inline-flex size-11 items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow hover:shadow-[1px_1px_0px_#1a1a1a] active:shadow-none",
+          FOCUS_RING,
+        ].join(" ")}
+        download
+        href="/api/vendor/stock/export"
+      >
+        <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+      </a>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-full right-0 z-30 mt-2.5 w-max -translate-y-1 bg-[#1a1a1a] px-3 py-2 text-[10px] font-black uppercase leading-none tracking-[0.14em] text-[#f5f1e8] opacity-0 shadow-[3px_3px_0px_#ffe500] transition duration-150 group-has-focus-visible/export:translate-y-0 group-has-focus-visible/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:opacity-100 motion-reduce:transition-none"
+      >
+        <span className="absolute -top-1 right-4 size-2 rotate-45 bg-[#1a1a1a]" />
+        <span className="relative">Exportar planilha</span>
+      </span>
+    </span>
   );
 }
 
@@ -181,7 +185,6 @@ function StockFilterControl({
   onOpen,
   open,
   taxonomies,
-  vendorCodeAvailable,
 }: Readonly<{
   active: number;
   filters: VendorStockFilters;
@@ -189,7 +192,6 @@ function StockFilterControl({
   onOpen: () => void;
   open: boolean;
   taxonomies: VendorStockTaxonomies;
-  vendorCodeAvailable: boolean;
 }>) {
   const [applying, setApplying] = useState(false);
   const activeSuffix = active > 0 ? ` · ${active}` : "";
@@ -231,7 +233,6 @@ function StockFilterControl({
         onPending={() => setApplying(true)}
         open={open}
         taxonomies={taxonomies}
-        vendorCodeAvailable={vendorCodeAvailable}
       />
     </>
   );

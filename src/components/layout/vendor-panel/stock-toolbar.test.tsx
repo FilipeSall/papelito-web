@@ -27,7 +27,7 @@ function renderToolbar(filters: Partial<VendorStockFilters> = {}) {
 describe("StockToolbar", () => {
   it("renders the search input and a Filtrar button", () => {
     renderToolbar();
-    expect(screen.getByPlaceholderText(/nome do produto ou sku/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Nome ou SKU")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /filtrar/i })).toBeInTheDocument();
   });
 

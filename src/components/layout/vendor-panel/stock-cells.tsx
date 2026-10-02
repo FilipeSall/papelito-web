@@ -13,6 +13,7 @@ import {
   missingFieldLabel,
   stockLevelShape,
 } from "./stock-status";
+import { StockSku } from "./stock-sku";
 
 export const stockThumbFrameClassName =
   "relative shrink-0 overflow-hidden rounded-[10px] border border-brand-dark/12 bg-white p-1";
@@ -222,16 +223,18 @@ export function StockQtyField({
 }
 
 /**
- * Linha de identificação do item: SKU da Papelito sempre, e o código do vendor quando houver.
- * Rotular os dois evita confundir a identidade global do produto com o código do ERP do vendor.
+ * SKU que o vendor vê para o item: o código dele quando existe, senão o SKU da Papelito.
+ * Os dois saem idênticos de propósito — para o vendor existe um SKU só.
  */
 export function StockItemCodes({ sku, vendorCode }: Readonly<{ sku: string; vendorCode: string | null }>) {
+  const shown = vendorCode ?? sku;
+  if (!shown) {
+    return <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">Sem SKU</p>;
+  }
   return (
-    <p className="mt-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
-      {sku ? `SKU Papelito ${sku}` : "Sem SKU"}
-      {vendorCode ? (
-        <span className="normal-case tracking-normal text-[#1a1a1a]/72"> · Seu código {vendorCode}</span>
-      ) : null}
-    </p>
+    <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]/52">
+      <span className="shrink-0">SKU</span>
+      <StockSku value={shown} />
+    </div>
   );
 }

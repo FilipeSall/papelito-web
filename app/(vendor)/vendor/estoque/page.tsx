@@ -116,7 +116,6 @@ export default async function VendorStockPage({
     sort,
     tags,
     type,
-    withoutVendorCode: firstParam(params.vendor_code) === "missing",
   };
 
   const [snapshot, taxonomies, summary, contact] = await Promise.all([

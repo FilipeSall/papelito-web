@@ -38,9 +38,7 @@ function describeDescriptionUpdate(view: VendorProductCustomization, productName
 
 function describeProductUpdate(result: ProductEditorResult, productName: string) {
   const parts: string[] = [];
-  if (result.vendorCode) {
-    parts.push(result.vendorCode.vendorCode ? `Código de ${productName} salvo.` : `Código de ${productName} removido.`);
-  }
+  if (result.vendorCode) parts.push(`SKU de ${productName} atualizado.`);
   if (result.description) parts.push(describeDescriptionUpdate(result.description, productName));
   return parts.join(" ");
 }
@@ -380,11 +378,7 @@ export function VendorStockManager({
       <StockSummary filters={filters} summary={summary} />
 
       <Panel className="overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-        <StockToolbar
-          filters={filters}
-          taxonomies={taxonomies}
-          vendorCodeAvailable={snapshot.vendorCodeAvailable}
-        />
+        <StockToolbar filters={filters} taxonomies={taxonomies} />
         <StockActiveFilters filters={filters} taxonomies={taxonomies} />
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
 
@@ -450,7 +444,6 @@ export function VendorStockManager({
                       onEditDescription={setDescriptionItem}
                       quantities={quantities}
                       savingIds={savingIds}
-                      vendorCodeAvailable={snapshot.vendorCodeAvailable}
                     />
                   ) : (
                     <StockRow
@@ -468,7 +461,6 @@ export function VendorStockManager({
                       saved={savedIds.has(item.productId)}
                       saving={savingIds.has(item.productId)}
                       selected={selectedIds.has(item.productId)}
-                      vendorCodeAvailable={snapshot.vendorCodeAvailable}
                     />
                   ),
                 )}
@@ -508,6 +500,7 @@ export function VendorStockManager({
       {descriptionItem ? (
         <VendorProductDescriptionModal
           productId={descriptionItem.publicProductId || descriptionItem.productId}
+          imageUrl={descriptionItem.imageUrl}
           productName={descriptionItem.productName}
           vendorCode={vendorCodeTarget(descriptionItem, snapshot.vendorCodeAvailable)}
           onClose={() => setDescriptionItem(null)}

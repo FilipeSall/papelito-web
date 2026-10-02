@@ -31,7 +31,6 @@ export function StockRow({
   saving,
   selected,
   item,
-  vendorCodeAvailable = false,
 }: Readonly<{
   contactPhone: string;
   focused: boolean;
@@ -46,8 +45,6 @@ export function StockRow({
   saved: boolean;
   saving: boolean;
   selected: boolean;
-  /** Habilita o lápis mesmo sem personalização de descrição, porque o código ainda é editável. */
-  vendorCodeAvailable?: boolean;
 }>) {
   const ref = useRef<HTMLTableRowElement>(null);
   const productHref = `/produtos/${item.publicProductId || item.productId}`;
@@ -105,11 +102,7 @@ export function StockRow({
                   {item.productName}
                 </span>
               )}
-              <StockDescriptionAction
-                item={item}
-                onEdit={onEditDescription}
-                vendorCodeAvailable={vendorCodeAvailable}
-              />
+              <StockDescriptionAction item={item} onEdit={onEditDescription} />
             </div>
             <StockItemCodes sku={item.sku} vendorCode={item.vendorCode} />
             {item.categories.length > 0 || item.tags.length > 0 || item.hasDescriptionOverride ? (

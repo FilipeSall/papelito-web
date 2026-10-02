@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { Check, ChevronDown, Copy, Loader2, X } from "lucide-react";
+import { useEffect, useId, useRef, type RefObject } from "react";
+import { FileText, Loader2, PencilLine, Store, X } from "lucide-react";
 
 import { BaseModal } from "@/components/ui/base-modal";
-import { HardSwitch } from "@/components/ui/hard-switch";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { FOCUS_RING, InlineAlert, PrimaryButton } from "@/components/layout/operational-panel";
 import { useVendorCodeEditor } from "@/features/vendor-item-settings/hooks/use-vendor-code-editor";
@@ -13,7 +12,9 @@ import { useVendorProductCustomization } from "@/features/vendor-product-customi
 import type { VendorProductCustomization } from "@/features/vendor-product-customization/types/vendor-product-customization";
 import { parseProductDescriptionParagraphs } from "@/utils/html";
 
+import { EditorSectionTitle } from "./editor-section-title";
 import { FeedbackBanner } from "./feedback-banner";
+import { StockThumb, stockThumbFrameClassName } from "./stock-cells";
 import { VendorCodeField } from "./vendor-code-field";
 
 const DESCRIPTION_LIMIT = 20000;
@@ -24,9 +25,11 @@ const QUIET_ACTION_CLASS = [
 ].join(" ");
 
 const SAFE_ACTION_CLASS = [
-  "inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-white px-5 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-45",
+  "inline-flex h-10 cursor-pointer items-center justify-center gap-2 border-2 border-[#1a1a1a] bg-white px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-[#f5f1e8] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white disabled:hover:text-[#1a1a1a]",
   FOCUS_RING,
 ].join(" ");
+
+const SECTION_DIVIDER_CLASS = "border-t-2 border-[#1a1a1a]/10 pt-6";
 
 type Editor = ReturnType<typeof useVendorProductCustomization>;
 type CodeEditor = ReturnType<typeof useVendorCodeEditor>;
@@ -44,7 +47,9 @@ interface DescriptionModalProps {
   productId: number;
   /** Nome usado para identificar o recurso no diálogo. */
   productName: string;
-  /** Item da linha cujo código o vendor edita; ausente esconde o campo. */
+  /** Miniatura do item no cabeçalho; vazio cai no ícone padrão de produto. */
+  imageUrl?: string;
+  /** Item da linha cujo SKU o vendor edita; ausente esconde o campo. */
   vendorCode?: VendorCodeTarget | null;
   /** Fecha o editor quando nenhuma mutação estiver em andamento. */
   onClose: () => void;
@@ -52,166 +57,97 @@ interface DescriptionModalProps {
   onUpdated: (result: ProductEditorResult) => void;
 }
 
-type CopyState = "idle" | "copied" | "failed";
-
-const COPY_FEEDBACK_MS = 2000;
-
-const COPY_FEEDBACK_TEXT: Record<Exclude<CopyState, "idle">, string> = {
-  copied: "Texto copiado",
-  failed: "Não foi possível copiar",
-};
-
-function useCopyToClipboard() {
-  const [state, setState] = useState<CopyState>("idle");
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
-  async function copy(text: string) {
-    if (timer.current) clearTimeout(timer.current);
-    try {
-      await navigator.clipboard.writeText(text);
-      setState("copied");
-    } catch {
-      setState("failed");
-    }
-    timer.current = setTimeout(() => setState("idle"), COPY_FEEDBACK_MS);
-  }
-
-  return { copy, state };
+function canonicalText(description: string) {
+  return parseProductDescriptionParagraphs(description).join("\n\n");
 }
 
-function CopyFeedback({ state }: Readonly<{ state: CopyState }>) {
-  const visible = state !== "idle";
-  const failed = state === "failed";
+const SOURCE_OPTIONS = [
+  { icon: FileText, label: "Papelito", value: false },
+  { icon: PencilLine, label: "Meu texto", value: true },
+] as const;
+
+function DescriptionSourcePicker({ editor, locked }: Readonly<{ editor: Editor; locked: boolean }>) {
+  const name = useId();
 
   return (
-    <output
-      className={`pointer-events-none absolute top-full right-0 z-10 mt-2 inline-flex items-center gap-2 rounded-full border bg-[#231f20] py-1.5 pr-3.5 pl-1.5 text-xs font-black text-white shadow-[0_10px_24px_rgba(35,31,32,0.3)] transition duration-200 ease-out motion-reduce:transition-none ${failed ? "border-[#ef4444]/55" : "border-brand-yellow/40"} ${visible ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}
-    >
-      <span
-        aria-hidden
-        className={`inline-flex size-5 items-center justify-center rounded-full ${failed ? "bg-[#ef4444] text-white" : "bg-brand-yellow text-[#231f20]"}`}
-      >
-        {failed ? <X className="size-3" strokeWidth={3} /> : <Check className="size-3" strokeWidth={3} />}
-      </span>
-      {visible ? COPY_FEEDBACK_TEXT[state] : ""}
-    </output>
-  );
-}
-
-function PapelitoReference({ description }: Readonly<{ description: string }>) {
-  const text = parseProductDescriptionParagraphs(description).join("\n\n");
-  const [open, setOpen] = useState(false);
-  const regionId = useId();
-  const clipboard = useCopyToClipboard();
-
-  return (
-    <div className="relative">
-      <section
-        className={`border-2 bg-white transition-colors duration-300 ${open ? "border-[#1a1a1a]/35" : "border-[#1a1a1a]/15"}`}
-      >
-        <button
-          aria-controls={regionId}
-          aria-expanded={open}
-          className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left ${FOCUS_RING}`}
-          onClick={() => setOpen((current) => !current)}
-          type="button"
+    <div className="grid grid-cols-2 border-2 border-[#1a1a1a] bg-white">
+      {SOURCE_OPTIONS.map(({ icon: Icon, label, value }) => (
+        <label
+          className="relative flex h-11 cursor-pointer items-center justify-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] transition-colors first:border-r-2 first:border-[#1a1a1a] hover:bg-brand-yellow/40 has-checked:bg-[#1a1a1a] has-checked:text-brand-yellow has-disabled:cursor-not-allowed has-disabled:opacity-60 has-focus-visible:z-10 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-[#1a1a1a] has-focus-visible:shadow-[0_0_0_6px_#ffe500]"
+          key={label}
         >
-          <span className="min-w-0">
-            <span className="block text-sm font-bold text-[#1a1a1a]">Descrição da Papelito</span>
-            <span className="mt-0.5 block text-xs leading-5 text-[#231f20]/64">
-              Texto padrão, usado sempre que você não personaliza.
-            </span>
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#1a1a1a]">
-            {open ? "Ocultar" : "Ver original"}
-            <ChevronDown
-              aria-hidden
-              className={`size-4 transition-transform duration-300 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
-              strokeWidth={2.4}
-            />
-          </span>
-        </button>
-        <div
-          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-          id={regionId}
-          inert={!open}
-        >
-          <div className="relative min-h-0 overflow-hidden">
-            <div className="max-h-56 overflow-y-auto overscroll-contain border-t-2 border-dashed border-[#1a1a1a]/15 px-4 pt-3 pb-12 text-sm leading-6 text-[#231f20]/80 [scrollbar-width:thin]">
-              <p className="whitespace-pre-line">{text || "Sem descrição completa cadastrada."}</p>
-            </div>
-            {text ? (
-              <button
-                aria-label="Copiar descrição da Papelito"
-                className={`absolute right-3 bottom-2.5 inline-flex size-8 cursor-pointer items-center justify-center border-2 border-[#1a1a1a]/15 bg-white text-[#1a1a1a]/70 transition hover:border-[#1a1a1a] hover:bg-brand-yellow hover:text-[#1a1a1a] ${FOCUS_RING}`}
-                onClick={() => void clipboard.copy(text)}
-                title="Copiar texto"
-                type="button"
-              >
-                <Copy aria-hidden className="size-4" strokeWidth={2.2} />
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </section>
-      <CopyFeedback state={clipboard.state} />
+          <input
+            checked={editor.showVendorDescription === value}
+            className="sr-only"
+            disabled={locked}
+            name={name}
+            onChange={() => editor.setShowVendorDescription(value)}
+            type="radio"
+          />
+          <Icon aria-hidden className="size-4" strokeWidth={2.4} />
+          {label}
+        </label>
+      ))}
     </div>
   );
 }
 
-function describeFieldState(showVendorDescription: boolean, hasSavedText: boolean) {
-  if (showVendorDescription) return "É este texto que os compradores da sua loja veem.";
-  if (hasSavedText) return "A loja mostra a descrição da Papelito. Este texto fica guardado para quando você voltar a ligar a personalizada.";
-  return "Começa com o texto da Papelito. Edite para criar a versão da sua loja.";
+function PapelitoTextPanel({
+  editor,
+  locked,
+  snapshot,
+}: Readonly<{ editor: Editor; locked: boolean; snapshot: VendorProductCustomization }>) {
+  const text = canonicalText(snapshot.canonicalDescription);
+  const keepsOwnText = snapshot.vendorDescription !== null;
+
+  function adopt() {
+    editor.setDraft(text);
+    editor.setShowVendorDescription(true);
+  }
+
+  return (
+    <div className="border-2 border-[#1a1a1a] bg-[#f7f2e7]">
+      <div className="max-h-64 overflow-y-auto overscroll-contain px-4 py-3.5 text-sm leading-6 whitespace-pre-line text-[#231f20]/82 [scrollbar-width:thin]">
+        {text || "Sem descrição completa cadastrada."}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#1a1a1a]/10 px-4 py-3">
+        <p className="text-xs leading-5 text-[#231f20]/64">
+          {keepsOwnText ? "Seu texto continua guardado para quando você voltar a usá-lo." : "Texto padrão do produto."}
+        </p>
+        {text ? (
+          <button className={SAFE_ACTION_CLASS} disabled={locked} onClick={adopt} type="button">
+            <PencilLine aria-hidden className="size-3.5" strokeWidth={2.4} />
+            Usar como base
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
-function DescriptionField({
+function OwnTextPanel({
   editor,
-  snapshot,
+  locked,
   textareaRef,
-}: Readonly<{
-  editor: Editor;
-  snapshot: VendorProductCustomization;
-  textareaRef: RefObject<HTMLTextAreaElement | null>;
-}>) {
-  const fieldId = useId();
-  const hintId = useId();
+}: Readonly<{ editor: Editor; locked: boolean; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
   const countId = useId();
-  const switchId = useId();
-  const locked = editor.pending || !snapshot.canEdit;
-  const hint = describeFieldState(editor.showVendorDescription, snapshot.vendorDescription !== null);
 
   return (
     <div>
-      <label
-        className="block text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]"
-        htmlFor={fieldId}
-      >
-        Descrição personalizada
-      </label>
-      <p className="mt-1 text-xs leading-5 text-[#231f20]/64" id={hintId}>
-        {hint}
-      </p>
-      <div className="mt-2">
-        <textarea
-          aria-describedby={`${hintId} ${countId}`}
-          aria-invalid={editor.exceedsLimit}
-          className={[
-            "block min-h-48 w-full resize-y border-2 border-[#1a1a1a] bg-white px-3 py-2.5 text-sm leading-6 text-[#1a1a1a] outline-none transition-colors aria-invalid:border-[#c0392b] disabled:cursor-not-allowed disabled:bg-[#1a1a1a]/4 disabled:text-[#1a1a1a]/64",
-            FOCUS_RING,
-          ].join(" ")}
-          disabled={locked}
-          id={fieldId}
-          onChange={(event) => editor.setDraft(event.target.value)}
-          ref={textareaRef}
-          value={editor.draft}
-        />
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-xs leading-5">
+      <textarea
+        aria-describedby={countId}
+        aria-invalid={editor.exceedsLimit}
+        aria-label="Seu texto para a loja"
+        className={[
+          "block min-h-56 w-full resize-y border-2 border-[#1a1a1a] bg-white px-4 py-3 text-sm leading-6 text-[#1a1a1a] outline-none transition-colors aria-invalid:border-[#c0392b] disabled:cursor-not-allowed disabled:bg-[#1a1a1a]/4 disabled:text-[#1a1a1a]/64",
+          FOCUS_RING,
+        ].join(" ")}
+        disabled={locked}
+        onChange={(event) => editor.setDraft(event.target.value)}
+        ref={textareaRef}
+        value={editor.draft}
+      />
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-xs leading-5">
         <p className="text-[#231f20]/58">Deixe uma linha em branco entre parágrafos.</p>
         <p
           className={`ml-auto tabular-nums ${editor.exceedsLimit ? "font-bold text-[#c0392b]" : "text-[#231f20]/58"}`}
@@ -221,18 +157,6 @@ function DescriptionField({
           {editor.exceedsLimit ? " · limite excedido" : ""}
         </p>
       </div>
-      <div className="mt-4 flex items-center gap-3">
-        <HardSwitch
-          ariaLabel="Mostrar a descrição personalizada na loja"
-          checked={editor.showVendorDescription}
-          disabled={locked}
-          id={switchId}
-          onChange={editor.setShowVendorDescription}
-        />
-        <label className="cursor-pointer text-sm font-semibold text-[#1a1a1a]" htmlFor={switchId}>
-          Mostrar a descrição personalizada na loja
-        </label>
-      </div>
       <span aria-live="polite" className="sr-only">
         {editor.exceedsLimit ? "Limite de 20.000 caracteres excedido." : ""}
       </span>
@@ -240,16 +164,51 @@ function DescriptionField({
   );
 }
 
-function DescriptionSection({
+function StoreDescriptionSection({
+  editor,
+  snapshot,
+  textareaRef,
+}: Readonly<{ editor: Editor; snapshot: VendorProductCustomization; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
+  const titleId = useId();
+  const locked = editor.pending || !snapshot.canEdit;
+  const showingOwn = editor.showVendorDescription;
+
+  return (
+    <section aria-labelledby={titleId} className="space-y-3">
+      <EditorSectionTitle id={titleId}>Descrição na loja</EditorSectionTitle>
+      <DescriptionSourcePicker editor={editor} locked={locked} />
+      <p className="flex items-center gap-1.5 text-xs leading-5 text-[#231f20]/64">
+        <Store aria-hidden className="size-3.5 shrink-0" strokeWidth={2.2} />
+        {showingOwn ? "A loja mostra o seu texto." : "A loja mostra o texto da Papelito."}
+      </p>
+      {showingOwn ? (
+        <OwnTextPanel editor={editor} locked={locked} textareaRef={textareaRef} />
+      ) : (
+        <PapelitoTextPanel editor={editor} locked={locked} snapshot={snapshot} />
+      )}
+    </section>
+  );
+}
+
+function EditorBody({
+  code,
+  codeRef,
   editor,
   textareaRef,
-}: Readonly<{ editor: Editor; textareaRef: RefObject<HTMLTextAreaElement | null> }>) {
+  vendorCode,
+}: Readonly<{
+  code: CodeEditor;
+  codeRef: RefObject<HTMLInputElement | null>;
+  editor: Editor;
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  vendorCode: VendorCodeTarget | null;
+}>) {
   const { snapshot } = editor;
 
   if (editor.status === "load_error") {
     return (
       <div className="space-y-4">
-        <FeedbackBanner feedback={{ error: true, message: editor.error ?? "Não foi possível carregar a descrição." }} />
+        <FeedbackBanner feedback={{ error: true, message: editor.error ?? "Não foi possível carregar o produto." }} />
         <button className={SAFE_ACTION_CLASS} onClick={editor.retry} type="button">
           Tentar novamente
         </button>
@@ -258,16 +217,18 @@ function DescriptionSection({
   }
 
   if (!snapshot) {
-    return <LogoSpinnerLoader className="min-h-80" label="Carregando descrição" />;
+    return <LogoSpinnerLoader className="min-h-72" label="Carregando produto" />;
   }
 
   return (
-    <div className="space-y-5">
-      {snapshot.canEdit ? null : (
-        <InlineAlert>Sua conta não pode alterar descrições no momento.</InlineAlert>
-      )}
-      <PapelitoReference description={snapshot.canonicalDescription} />
-      <DescriptionField editor={editor} snapshot={snapshot} textareaRef={textareaRef} />
+    <div className="space-y-6">
+      {snapshot.canEdit ? null : <InlineAlert>Sua conta não pode alterar produtos no momento.</InlineAlert>}
+      {vendorCode ? (
+        <VendorCodeField editor={code} inputRef={codeRef} locked={!snapshot.canEdit} target={vendorCode} />
+      ) : null}
+      <div className={vendorCode ? SECTION_DIVIDER_CLASS : undefined}>
+        <StoreDescriptionSection editor={editor} snapshot={snapshot} textareaRef={textareaRef} />
+      </div>
     </div>
   );
 }
@@ -286,13 +247,8 @@ function EditorActions({
   pending: boolean;
 }>) {
   return (
-    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:gap-3">
-      <button
-        className={`${QUIET_ACTION_CLASS} sm:ml-auto`}
-        disabled={pending}
-        onClick={onCancel}
-        type="button"
-      >
+    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+      <button className={QUIET_ACTION_CLASS} disabled={pending} onClick={onCancel} type="button">
         {editable ? "Cancelar" : "Fechar"}
       </button>
       {editable ? (
@@ -327,23 +283,23 @@ async function saveProductEditor(editor: Editor, code: CodeEditor, codeEnabled: 
   return { description, vendorCode, complete };
 }
 
-function DescriptionEditor({ productId, productName, vendorCode = null, onClose, onUpdated }: Readonly<DescriptionModalProps>) {
+function ProductEditor({ productId, productName, imageUrl = "", vendorCode = null, onClose, onUpdated }: Readonly<DescriptionModalProps>) {
   const editor = useVendorProductCustomization(productId);
-  const code = useVendorCodeEditor(vendorCode?.itemId ?? 0, vendorCode?.initialCode ?? null);
+  const code = useVendorCodeEditor(vendorCode?.itemId ?? 0, vendorCode?.initialCode ?? null, vendorCode?.sku ?? "");
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const loaded = editor.snapshot !== null;
-  const codeEnabled = vendorCode?.available === true;
+  const canEdit = editor.snapshot?.canEdit === true;
+  const codeEnabled = vendorCode?.available === true && canEdit;
   const pending = editor.pending || code.pending;
-  const editable = codeEnabled || editor.snapshot?.canEdit === true;
-  const descriptionClassName = vendorCode ? "border-t-2 border-dashed border-[#1a1a1a]/15 pt-5" : undefined;
 
   useEffect(() => {
-    if (document.activeElement !== closeRef.current) return;
+    if (!loaded || document.activeElement !== closeRef.current) return;
     if (codeEnabled) codeRef.current?.focus();
-    else if (loaded) textareaRef.current?.focus();
+    else (textareaRef.current ?? bodyRef.current?.querySelector<HTMLInputElement>("input[type=radio]:checked"))?.focus();
   }, [loaded, codeEnabled]);
 
   function requestClose() {
@@ -356,21 +312,17 @@ function DescriptionEditor({ productId, productName, vendorCode = null, onClose,
   }
 
   return (
-    <BaseModal
-      ariaLabelledBy={titleId}
-      contentClassName="max-w-3xl"
-      onClose={requestClose}
-      open
-    >
+    <BaseModal ariaLabelledBy={titleId} contentClassName="max-w-2xl" onClose={requestClose} open>
       <div className="flex max-h-[calc(100dvh-3rem)] flex-col border-2 border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
         <div aria-hidden className="h-2 shrink-0 bg-brand-yellow" />
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#1a1a1a] py-4 pr-3 pl-5 sm:pl-6">
-          <div className="min-w-0 pt-1">
-            <h2 className="text-lg leading-6 font-black uppercase tracking-tight text-[#1a1a1a]" id={titleId}>
-              Editar produto
-            </h2>
-            <p className="mt-1 text-sm leading-5 wrap-break-word text-[#231f20]/70">{productName}</p>
-          </div>
+        <header className="flex shrink-0 items-center gap-4 border-b-2 border-[#1a1a1a] py-4 pr-3 pl-5 sm:pl-6">
+          <span className={`${stockThumbFrameClassName} size-12`}>
+            <StockThumb alt="" sizes="48px" src={imageUrl} />
+          </span>
+          <h2 className="min-w-0 flex-1 text-base leading-5 font-black uppercase tracking-tight wrap-break-word text-[#1a1a1a]" id={titleId}>
+            <span className="sr-only">Editar </span>
+            {productName}
+          </h2>
           <button
             aria-label="Fechar"
             className={`inline-flex size-10 shrink-0 cursor-pointer items-center justify-center border-2 border-transparent text-[#1a1a1a] transition hover:border-[#1a1a1a] hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-45 ${FOCUS_RING}`}
@@ -384,12 +336,10 @@ function DescriptionEditor({ productId, productName, vendorCode = null, onClose,
         </header>
         <div
           aria-busy={!loaded || pending}
-          className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 [scrollbar-color:#1a1a1a40_transparent] [scrollbar-width:thin] sm:px-6"
+          ref={bodyRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 [scrollbar-color:#1a1a1a40_transparent] [scrollbar-width:thin] sm:px-6"
         >
-          {vendorCode ? <VendorCodeField editor={code} inputRef={codeRef} target={vendorCode} /> : null}
-          <div className={descriptionClassName}>
-            <DescriptionSection editor={editor} textareaRef={textareaRef} />
-          </div>
+          <EditorBody code={code} codeRef={codeRef} editor={editor} textareaRef={textareaRef} vendorCode={vendorCode} />
         </div>
         <footer className="shrink-0 space-y-3 border-t-2 border-[#1a1a1a] px-5 py-4 sm:px-6">
           {editor.status === "mutation_error" && editor.error ? (
@@ -397,7 +347,7 @@ function DescriptionEditor({ productId, productName, vendorCode = null, onClose,
           ) : null}
           <EditorActions
             canSave={productEditorCanSave(editor, code, codeEnabled)}
-            editable={editable}
+            editable={canEdit}
             onCancel={requestClose}
             onSave={() => void save()}
             pending={pending}
@@ -409,11 +359,11 @@ function DescriptionEditor({ productId, productName, vendorCode = null, onClose,
 }
 
 /**
- * Editor do produto para o vendor: o código do ERP dele para o item da linha e a descrição
- * que a loja mostra no lugar do texto da Papelito. O código grava no item (variação inclusive);
- * a descrição, no pai. Trocar de item descarta estado e solicitações anteriores; salvar entrega
- * o que o servidor confirmou e cabe a quem abriu fechar o diálogo.
+ * Editor do produto para o vendor: o SKU que ele usa no próprio ERP, gravado no item da linha
+ * (variação inclusive), e a descrição que a loja mostra, escolhida entre o texto da Papelito e
+ * o texto dele. Trocar de item descarta estado e solicitações anteriores; salvar entrega o que o
+ * servidor confirmou e cabe a quem abriu fechar o diálogo.
  */
 export function VendorProductDescriptionModal(props: Readonly<DescriptionModalProps>) {
-  return <DescriptionEditor key={`${props.productId}-${props.vendorCode?.itemId ?? 0}`} {...props} />;
+  return <ProductEditor key={`${props.productId}-${props.vendorCode?.itemId ?? 0}`} {...props} />;
 }
