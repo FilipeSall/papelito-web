@@ -7,8 +7,8 @@ import { InfoTooltip } from "@/components/layout/admin-panel/sections/products/c
 import { ProfileFormField } from "@/components/layout/profile-page/profile-form-field";
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 import { hardDangerActionClass, hardSecondaryActionClass } from "@/components/ui/hard-actions";
-import { HardSwitch } from "@/components/ui/hard-switch";
 import type { VendorBraspressIntegration } from "@/features/vendor-settings/types/vendor-braspress";
+import type { VendorCorreiosPreference } from "@/features/vendor-settings/types/vendor-correios";
 import {
   braspressErrorMessage,
   type BraspressAction,
@@ -16,10 +16,11 @@ import {
 import {
   braspressIntegrationState,
   type BraspressIntegrationState,
-  type BraspressStateTone,
 } from "@/features/vendor-settings/utils/braspress-integration-status";
 
+import { CARRIER_ROUTE_COLUMNS, CarrierRouteRow } from "./carrier-route-row";
 import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
+import { type CorreiosLockReason, VendorCorreiosCarrier } from "./vendor-correios-carrier";
 import { VendorReauthModal, type VendorReauthTone } from "./vendor-reauth-modal";
 
 type FormState = {
@@ -64,19 +65,62 @@ function BraspressStateAlert({ state }: Readonly<{ state: BraspressIntegrationSt
  * Sai de cena quando o alerta assume o mesmo texto, para o vendor não ler a
  * mesma frase duas vezes na mesma dobra.
  */
-function BraspressStateHint({ state }: Readonly<{ state: BraspressIntegrationState }>) {
-  if (state.tone === "attention") return null;
-
-  return (
-    <p className="w-full text-xs leading-5 font-semibold text-[#1a1a1a]/65">{state.description}</p>
-  );
+function braspressStateHint(state: BraspressIntegrationState) {
+  return state.tone === "attention" ? null : state.description;
 }
 
-const TONE_CLASS: Record<BraspressStateTone, string> = {
-  attention: "text-[#c0392b]",
-  neutral: "text-[#1a1a1a]/65",
-  positive: "text-[#1a1a1a]",
-};
+const BRASPRESS_TOOLTIP =
+  "Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout.";
+
+/**
+ * Tooltip do interruptor da Braspress, avisando quando desligá-la religa os
+ * Correios — a loja nunca fica com as duas transportadoras desligadas.
+ */
+function braspressTooltip(correiosEnabled: boolean) {
+  return correiosEnabled
+    ? BRASPRESS_TOOLTIP
+    : `${BRASPRESS_TOOLTIP} Com os Correios desabilitados, desabilitar a Braspress habilita os Correios automaticamente.`;
+}
+
+/**
+ * Confirmação do interruptor, ou `null` quando ligar não deixou a Braspress ativa.
+ *
+ * Ligada sem contrato, aguardando a primeira cotação ou com a credencial recusada,
+ * ela não entra no checkout; o estado na linha já diz isso, e um "✓ habilitada"
+ * prometeria o que não aconteceu.
+ */
+function toggledMessage(next: boolean, correiosRestored: boolean, saved: VendorBraspressIntegration) {
+  if (next) {
+    return braspressIntegrationState(saved).tone === "positive"
+      ? "✓ Braspress habilitada. Ela aparece no checkout quando também houver cobertura de CEP e embalagem cadastrada."
+      : null;
+  }
+
+  return correiosRestored
+    ? "✓ Braspress desabilitada e Correios habilitados, para a loja não ficar sem transportadora. A credencial continua guardada."
+    : "✓ Braspress desabilitada. A credencial continua guardada e você pode habilitar de novo quando quiser.";
+}
+
+function correiosLockReason(integration: VendorBraspressIntegration): CorreiosLockReason {
+  return integration.status === "unconfigured" ? "unconfigured" : "unreleased";
+}
+
+/**
+ * Papel da Braspress no checkout, na última coluna do quadro de rotas.
+ *
+ * Ligada e ativa ela é a principal quando os Correios estão desligados; com os
+ * dois ligados, divide o checkout. Recusa, desligamento ou leitura falha a tiram.
+ */
+function braspressRole(integration: VendorBraspressIntegration, state: BraspressIntegrationState, enabled: boolean) {
+  if (integration.loadFailed) return "—";
+  if (state.tone === "attention" || !enabled) return "Fora do checkout";
+  if (integration.status === "unconfigured") return "Sem contrato";
+  if (integration.status === "ready") return "Aguardando 1ª cotação";
+
+  return "Principal";
+}
+
+const ROUTE_HEADINGS = ["Transportadora", "Checkout", "Estado", "Papel"];
 
 const EXPIRED_TICKET_CODE = "papelito_vendor_integration_reauth_ticket_invalid";
 
@@ -130,17 +174,30 @@ const UNREAD_AFTER_WRITE: Record<BraspressAction, string> = {
 };
 
 /**
+ * Resposta de uma escrita da Braspress: o estado da integração e o efeito que
+ * ele teve sobre os Correios, que destravam ou voltam a ON junto com ela.
+ */
+type BraspressWriteResult = {
+  correios: VendorCorreiosPreference | null;
+  integration: VendorBraspressIntegration;
+};
+
+/**
  * Integração devolvida por uma escrita aceita, ou `null` quando o corpo não é um
  * objeto utilizável. Um 200 ilegível não é verdade sobre a loja: adotá-lo apagaria
  * `status`, `enabled` e `config` do estado da tela, que passaria a dizer
  * "Desabilitada" — e a quebrar no render por falta de `config`.
  */
-async function readIntegration(response: Response): Promise<VendorBraspressIntegration | null> {
+async function readIntegration(response: Response): Promise<BraspressWriteResult | null> {
   const body: unknown = await response.json().catch(() => null);
 
   if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
 
-  return body as VendorBraspressIntegration;
+  const { correios, ...integration } = body as VendorBraspressIntegration & {
+    correios?: VendorCorreiosPreference | null;
+  };
+
+  return { correios: correios ?? null, integration: { ...integration, loadFailed: false } };
 }
 
 /** Código do erro devolvido pela rota, que é o que a tela traduz — nunca a `message`. */
@@ -192,13 +249,11 @@ function BraspressConnectedPanel({
   onRemove,
 }: Readonly<{ disabled: boolean; onEdit: () => void; onRemove: () => void }>) {
   return (
-    <div className="border-2 border-[#1a1a1a] bg-white p-4 shadow-[4px_4px_0px_#1a1a1a]">
-      <div className="flex items-center gap-2">
-        <span aria-hidden className="h-3 w-3 rotate-45 bg-brand-yellow" />
-        <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
-          Credencial Braspress
-        </h3>
-      </div>
+    <div className="border-2 border-dashed border-[#1a1a1a]/35 bg-white p-4">
+      <h3 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]">
+        <KeyRound aria-hidden="true" className="size-4 text-[#15803d]" strokeWidth={2.4} />
+        Credencial Braspress
+      </h3>
       <p className="mt-2 text-xs leading-5 font-semibold text-[#1a1a1a]/65">
         Usuário e senha estão salvos e criptografados. Eles nunca voltam para esta tela — para trocar
         de contrato, cadastre o par novo.
@@ -270,8 +325,17 @@ function BraspressCredentialFields({
   );
 }
 
+type VendorBraspressSectionProps = {
+  /** A leitura das configurações falhou: o interruptor dos Correios fica travado. */
+  correiosLoadFailed: boolean;
+  /** Estado efetivo dos Correios, já com a dependência da Braspress aplicada. */
+  initialCorreios: VendorCorreiosPreference;
+  initialIntegration: VendorBraspressIntegration;
+};
+
 /**
- * Configuração da Braspress da loja, em três estados: cadastro inicial, credencial
+ * Transportadoras da loja: os Correios, travados em ON até a Braspress estar
+ * configurada, e a Braspress, em três estados: cadastro inicial, credencial
  * conectada com as ações de alterar e remover, e formulário de troca liberado.
  *
  * Cadastrar, trocar e salvar a credencial não pedem confirmação de senha: o par
@@ -279,19 +343,21 @@ function BraspressCredentialFields({
  * remoção passa pelo modal, porque apaga o envelope cifrado sem volta.
  */
 export function VendorBraspressSection({
+  correiosLoadFailed,
+  initialCorreios,
   initialIntegration,
-}: Readonly<{
-  initialIntegration: VendorBraspressIntegration;
-}>) {
+}: Readonly<VendorBraspressSectionProps>) {
   const [form, setForm] = useState(() => initialForm(initialIntegration));
   const [integration, setIntegration] = useState(initialIntegration);
+  const [correios, setCorreios] = useState(initialCorreios);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [correiosBusy, setCorreiosBusy] = useState(false);
 
   const state = braspressIntegrationState(integration);
-  const disabled = initialIntegration.loadFailed || pending;
+  const disabled = initialIntegration.loadFailed || pending || correiosBusy;
   const showCredentialFields = !integration.credentialsConfigured || editing;
   const idleSubmitLabel = editing ? "Salvar credenciais" : "Salvar Braspress";
   const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -303,7 +369,37 @@ export function VendorBraspressSection({
     setFeedback({ error: true, message: `⚠ ${UNREAD_AFTER_WRITE[action]}` });
   }
 
-  function adoptSaved(action: BraspressAction, saved: VendorBraspressIntegration) {
+  function adoptCorreios(next: VendorCorreiosPreference | null) {
+    if (next) setCorreios(next);
+  }
+
+  /**
+   * Adota a escrita dos Correios, que pode ter ligado a Braspress no servidor.
+   *
+   * Com a integração completa na resposta, adota também o estado de saúde que a
+   * sondagem gravou; o rascunho de usuário, senha e CEP em tela continua do vendor.
+   */
+  function adoptCorreiosWrite(
+    next: VendorCorreiosPreference,
+    braspressEnabled: boolean | null,
+    braspress: VendorBraspressIntegration | null,
+  ) {
+    setCorreios(next);
+
+    if (braspress) {
+      setIntegration(braspress);
+      setField("enabled", braspress.enabled);
+      return;
+    }
+
+    if (braspressEnabled !== true || form.enabled) return;
+
+    setField("enabled", true);
+    setIntegration((current) => ({ ...current, enabled: true }));
+  }
+
+  function adoptSaved(action: BraspressAction, { correios: nextCorreios, integration: saved }: BraspressWriteResult) {
+    adoptCorreios(nextCorreios);
     setIntegration(saved);
     setEditing(false);
     setForm(initialForm(saved));
@@ -351,13 +447,11 @@ export function VendorBraspressSection({
           return;
         }
 
-        setIntegration({ ...saved, loadFailed: false });
-        setFeedback({
-          error: false,
-          message: next
-            ? "✓ Braspress habilitada. Ela aparece no checkout quando também houver cobertura de CEP e embalagem cadastrada."
-            : "✓ Braspress desabilitada. A credencial continua guardada e você pode habilitar de novo quando quiser.",
-        });
+        const correiosRestored = !correios.enabled && saved.correios?.enabled === true;
+        adoptCorreios(saved.correios);
+        setIntegration(saved.integration);
+        const message = toggledMessage(next, correiosRestored, saved.integration);
+        setFeedback(message ? { error: false, message } : null);
       } catch {
         setField("enabled", !next);
         setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor. Tente novamente." });
@@ -392,7 +486,7 @@ export function VendorBraspressSection({
           return;
         }
 
-        adoptSaved(action, { ...saved, loadFailed: false });
+        adoptSaved(action, saved);
       } catch {
         setFeedback({ error: true, message: "⚠ Não foi possível falar com o servidor. Tente novamente." });
       }
@@ -449,105 +543,130 @@ export function VendorBraspressSection({
 
   return (
     <AnchoredSection
-      description="Cadastre o contrato da sua loja. A Braspress só aparece no checkout quando a integração estiver completa, habilitada e a embalagem aprovada."
+      bodyClassName="bg-white"
+      description="Escolha as transportadoras do checkout da sua loja. A Braspress só aparece quando a integração estiver completa, habilitada e a embalagem aprovada."
       id="transportadoras"
       title="Transportadoras"
     >
-      <form className="space-y-6" onSubmit={submit}>
-        <BraspressStateAlert state={state} />
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[#1a1a1a] bg-white p-4 shadow-[4px_4px_0px_#1a1a1a]">
-          <div>
-            <p className="text-sm font-black text-[#1a1a1a]">Braspress</p>
-            <p className={`text-xs font-black ${TONE_CLASS[state.tone]}`}>{state.label}</p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-sm font-bold text-[#1a1a1a]" id="vendor-braspress-enabled-label">
-              Habilitar Braspress
-            </span>
-            <HardSwitch
-              ariaLabel="Habilitar Braspress"
-              checked={form.enabled}
-              disabled={disabled}
-              id="vendor-braspress-enabled"
-              onChange={toggleEnabled}
-            />
-            <InfoTooltip text="Ative somente depois de informar o contrato e a embalagem da sua loja. Sem todos os requisitos, a Braspress não aparece no checkout." />
-          </div>
-          <BraspressStateHint state={state} />
+      <form onSubmit={submit}>
+        <div
+          aria-hidden="true"
+          className={`hidden gap-x-4 border-b-2 border-[#1a1a1a] px-6 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#1a1a1a]/60 md:grid ${CARRIER_ROUTE_COLUMNS}`}
+        >
+          {ROUTE_HEADINGS.map((heading) => (
+            <span key={heading}>{heading}</span>
+          ))}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <BraspressField
-            disabled
-            disabledClassName="disabled:cursor-not-allowed disabled:border-[#a8a29e] disabled:bg-[#eeece5] disabled:text-[#57534e]"
-            helpText="É o CNPJ da sua loja, o mesmo que emite a nota. Para alterar, mude o cadastro."
-            icon={Building2}
-            inputClassName="border-[#a8a29e] bg-[#eeece5] text-[#57534e]"
-            inputMode="numeric"
-            label="CNPJ remetente"
-            placeholder="Complete o CNPJ no cadastro da sua loja"
-            value={formatCnpj(integration.config.senderCnpj)}
+        <div className="divide-y-2 divide-[#1a1a1a]/10">
+          <VendorCorreiosCarrier
+            braspressEnabled={form.enabled}
+            disabled={pending}
+            loadFailed={correiosLoadFailed}
+            lockReason={correiosLockReason(integration)}
+            onBusyChange={setCorreiosBusy}
+            onSaved={adoptCorreiosWrite}
+            preference={correios}
           />
-          <BraspressField
-            disabled={disabled}
-            helpText="CEP do local de onde a Braspress coleta os pedidos desta loja, conforme o seu contrato. Em branco, usamos o CEP do cadastro."
-            icon={MapPin}
-            inputMode="numeric"
-            label="CEP de origem"
-            onChange={(value) => setField("originCep", value)}
-            value={form.originCep}
-          />
-        </div>
 
-        {showCredentialFields ? (
-          <BraspressCredentialFields
+          <CarrierRouteRow
+            carrier="Braspress"
+            checked={form.enabled}
             disabled={disabled}
-            onChange={setField}
-            password={form.password}
-            replacing={editing}
-            username={form.username}
-          />
-        ) : (
-          <BraspressConnectedPanel
-            disabled={disabled}
-            onEdit={() => setEditing(true)}
-            onRemove={() => setConfirmingRemoval(true)}
-          />
-        )}
-
-        {showCredentialFields ? (
-          <p className="text-xs leading-5 font-semibold text-[#1a1a1a]/65">
-            Usuário e senha são criptografados e nunca voltam para este formulário. Não há cotação de
-            teste ao salvar.
-          </p>
-        ) : null}
-        {initialIntegration.loadFailed ? (
-          <p className="text-sm font-semibold text-[#c0392b]">
-            Não foi possível ler a configuração atual. Recarregue a página antes de alterar dados.
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-[0.18em] text-brand-yellow shadow-[3px_3px_0px_#ffe500] transition-shadow hover:shadow-[1px_1px_0px_#ffe500] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
-            disabled={disabled}
-            type="submit"
+            hint={braspressStateHint(state)}
+            id="vendor-braspress-enabled"
+            onChange={toggleEnabled}
+            role={braspressRole(integration, state, form.enabled)}
+            statusLabel={state.label}
+            statusTone={state.tone}
+            switchTone={state.tone === "positive" ? "positive" : "brand"}
+            tooltip={braspressTooltip(correios.enabled)}
           >
-            {pending ? "Salvando..." : idleSubmitLabel}
-          </button>
-          {editing ? (
-            <button
-              className="cursor-pointer text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-45"
-              disabled={disabled}
-              onClick={cancelEditing}
-              type="button"
-            >
-              Cancelar alteração
-            </button>
-          ) : null}
+            <div className="space-y-4 px-5 pb-5 empty:hidden md:px-6">
+              <BraspressStateAlert state={state} />
+              {form.enabled ? (
+                <div className="space-y-5 border-2 border-[#1a1a1a] bg-[#fbf7ef] p-4 md:p-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <BraspressField
+                      disabled
+                      disabledClassName="disabled:cursor-not-allowed disabled:border-[#a8a29e] disabled:bg-[#eeece5] disabled:text-[#57534e]"
+                      helpText="É o CNPJ da sua loja, o mesmo que emite a nota. Para alterar, mude o cadastro."
+                      icon={Building2}
+                      inputClassName="border-[#a8a29e] bg-[#eeece5] text-[#57534e]"
+                      inputMode="numeric"
+                      label="CNPJ remetente"
+                      placeholder="Complete o CNPJ no cadastro da sua loja"
+                      value={formatCnpj(integration.config.senderCnpj)}
+                    />
+                    <BraspressField
+                      disabled={disabled}
+                      helpText="CEP do local de onde a Braspress coleta os pedidos desta loja, conforme o seu contrato. Em branco, usamos o CEP do cadastro."
+                      icon={MapPin}
+                      inputMode="numeric"
+                      label="CEP de origem"
+                      onChange={(value) => setField("originCep", value)}
+                      value={form.originCep}
+                    />
+                  </div>
+
+                  {showCredentialFields ? (
+                    <BraspressCredentialFields
+                      disabled={disabled}
+                      onChange={setField}
+                      password={form.password}
+                      replacing={editing}
+                      username={form.username}
+                    />
+                  ) : (
+                    <BraspressConnectedPanel
+                      disabled={disabled}
+                      onEdit={() => setEditing(true)}
+                      onRemove={() => setConfirmingRemoval(true)}
+                    />
+                  )}
+
+                  {showCredentialFields ? (
+                    <p className="text-xs leading-5 font-semibold text-[#1a1a1a]/65">
+                      Usuário e senha são criptografados e nunca voltam para este formulário. Não há cotação de
+                      teste ao salvar.
+                    </p>
+                  ) : null}
+                  {initialIntegration.loadFailed ? (
+                    <p className="text-sm font-semibold text-[#c0392b]">
+                      Não foi possível ler a configuração atual. Recarregue a página antes de alterar dados.
+                    </p>
+                  ) : null}
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      className="inline-flex h-11 cursor-pointer items-center justify-center border-2 border-[#1a1a1a] bg-[#1a1a1a] px-5 text-xs font-black uppercase tracking-[0.18em] text-white transition-shadow hover:shadow-[3px_3px_0px_#1a1a1a] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none max-sm:w-full"
+                      disabled={disabled}
+                      type="submit"
+                    >
+                      {pending ? "Salvando..." : idleSubmitLabel}
+                    </button>
+                    {editing ? (
+                      <button
+                        className="cursor-pointer text-[11px] font-black uppercase tracking-[0.18em] text-[#1a1a1a] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-45"
+                        disabled={disabled}
+                        onClick={cancelEditing}
+                        type="button"
+                      >
+                        Cancelar alteração
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <FeedbackBanner feedback={feedback} />
+            </div>
+          </CarrierRouteRow>
         </div>
-        <FeedbackBanner feedback={feedback} />
+
+        <p className="border-t-2 border-[#1a1a1a] bg-[#fbf7ef] px-5 py-4 text-xs leading-5 font-semibold text-[#1a1a1a]/65 md:px-6">
+          A loja nunca fica sem transportadora: desligar uma liga a outra, e os Correios entram sozinhos se a
+          Braspress falhar.
+        </p>
       </form>
 
       <VendorReauthModal

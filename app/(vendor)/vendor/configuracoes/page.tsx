@@ -51,7 +51,11 @@ export default async function VendorSettingsPage() {
         initialLeadTimeDays={settings.shippingLeadTimeDays}
         loadFailed={settings.loadFailed}
       />
-      <VendorBraspressSection initialIntegration={braspress} />
+      <VendorBraspressSection
+        correiosLoadFailed={settings.loadFailed}
+        initialCorreios={settings.correios}
+        initialIntegration={braspress}
+      />
       <VendorRecipientPanel initialRecipient={recipient} />
       <VendorAccountSection />
     </div>

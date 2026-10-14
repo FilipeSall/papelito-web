@@ -31,6 +31,10 @@ const UNCONFIGURED: VendorBraspressIntegration = {
   config: { senderCnpj: "", originCep: "" },
 };
 
+const UNCONFIGURED_ON: VendorBraspressIntegration = { ...UNCONFIGURED, enabled: true };
+
+const CORREIOS_PROPS = { correiosLoadFailed: false, initialCorreios: { enabled: true, locked: false } };
+
 const REAUTH_TICKET = "tiquete-de-teste";
 const ACCOUNT_PASSWORD = "senha-da-conta-papelito";
 const BRASPRESS_SECRET = "s3nh4-braspress";
@@ -110,7 +114,7 @@ describe("VendorBraspressSection", () => {
   beforeEach(() => vi.unstubAllGlobals());
 
   it("troca o formulário permanente por duas ações quando já há credencial", () => {
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     expect(credentialFieldsPresent()).toBe(false);
     expect(screen.queryByLabelText(/senha braspress/i)).not.toBeInTheDocument();
@@ -127,7 +131,7 @@ describe("VendorBraspressSection", () => {
 
   it("abre o formulário de troca direto, sem pedir a senha da conta", () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /alterar dados braspress/i }));
 
@@ -141,7 +145,7 @@ describe("VendorBraspressSection", () => {
       () => Promise.resolve(jsonResponse(UNCONFIGURED)),
       WRONG_PASSWORD_RESPONSE,
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
     confirmAccountPassword("errada");
@@ -153,7 +157,7 @@ describe("VendorBraspressSection", () => {
 
   it("o diálogo da remoção cobra a senha antes de chamar o servidor", () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^confirmar remoção$/i }));
@@ -166,7 +170,7 @@ describe("VendorBraspressSection", () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, status: "ready" })),
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     await openCredentialForm();
 
@@ -195,7 +199,7 @@ describe("VendorBraspressSection", () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, status: "ready" })),
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     await openCredentialForm();
 
@@ -220,9 +224,9 @@ describe("VendorBraspressSection", () => {
     expect(JSON.stringify(second)).not.toContain(BRASPRESS_SECRET);
   });
 
-  it("remover exige confirmação com senha e devolve a tela ao cadastro inicial", async () => {
+  it("remover exige confirmação com senha e desliga a Braspress sem deixar formulário", async () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
 
@@ -236,14 +240,15 @@ describe("VendorBraspressSection", () => {
     expect(writeBody(fetchMock)).toEqual({ reauthTicket: REAUTH_TICKET });
 
     expect(await screen.findByText(/integração braspress e credenciais removidas/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^usuário braspress$/i)).toHaveValue("");
+    expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByLabelText(/usuário braspress/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /alterar dados braspress/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^remover integração$/i })).not.toBeInTheDocument();
   });
 
   it("salvar apenas parâmetros não pede senha nenhuma", async () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.change(screen.getByLabelText(/cep de origem/i), { target: { value: "01001000" } });
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
@@ -259,7 +264,7 @@ describe("VendorBraspressSection", () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, enabled: false })),
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
 
@@ -279,7 +284,7 @@ describe("VendorBraspressSection", () => {
         ),
       ),
     );
-    render(<VendorBraspressSection initialIntegration={{ ...integration, enabled: false }} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, enabled: false }} />);
 
     const enableSwitch = screen.getByRole("switch", { name: /habilitar braspress/i });
     await user.click(enableSwitch);
@@ -287,12 +292,20 @@ describe("VendorBraspressSection", () => {
     await waitFor(() => expect(enableSwitch).toHaveAttribute("aria-checked", "false"));
   });
 
-  it("preserva a credencial em digitação quando o interruptor é acionado no meio", async () => {
+  it("preserva a credencial em digitação quando o interruptor é desligado e religado", async () => {
     const user = userEvent.setup();
-    stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
-    render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
+    let enabled = false;
+    stubBraspress(() => {
+      const response = jsonResponse({ ...UNCONFIGURED, enabled });
+      enabled = !enabled;
+      return Promise.resolve(response);
+    });
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED_ON} />);
 
     await user.type(screen.getByLabelText(/usuário braspress/i), BRASPRESS_USERNAME);
+    await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+    await waitFor(() => expect(screen.queryByLabelText(/usuário braspress/i)).not.toBeInTheDocument());
+
     await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
 
     await waitFor(() =>
@@ -300,9 +313,19 @@ describe("VendorBraspressSection", () => {
     );
   });
 
+  it("esconde o formulário enquanto a Braspress está desligada", () => {
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED} />);
+
+    expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText("Não configurada")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/usuário braspress/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/cep de origem/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /salvar braspress/i })).not.toBeInTheDocument();
+  });
+
   it("shows a recoverable message when saving fails before a response", async () => {
     stubBraspress(() => Promise.reject(new Error("offline")));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
@@ -311,15 +334,15 @@ describe("VendorBraspressSection", () => {
 
   it("explains the remaining fields and keeps the enable control directly operable", async () => {
     const user = userEvent.setup();
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
-    expect(screen.getAllByRole("button", { name: "Mais informações" })).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: "Mais informações" })).toHaveLength(4);
     const enableSwitch = screen.getByRole("switch", { name: /habilitar braspress/i });
 
     expect(enableSwitch).toHaveClass("cursor-pointer");
     expect(enableSwitch).toHaveAttribute("aria-checked", "true");
 
-    await user.hover(screen.getAllByRole("button", { name: "Mais informações" })[2]!);
+    await user.hover(screen.getAllByRole("button", { name: "Mais informações" })[3]!);
 
     expect(screen.getByRole("tooltip")).toHaveTextContent(/cep do local de onde a braspress coleta/i);
   });
@@ -327,7 +350,7 @@ describe("VendorBraspressSection", () => {
   it("derives the contract from the store profile instead of asking the vendor to retype it", async () => {
     const user = userEvent.setup();
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     const senderCnpj = screen.getByLabelText(/cnpj remetente/i);
 
@@ -361,7 +384,7 @@ describe("VendorBraspressSection", () => {
   });
 
   it("stops calling the integration active after the vendor turns it off", () => {
-    render(<VendorBraspressSection initialIntegration={{ ...integration, enabled: false }} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, enabled: false }} />);
 
     expect(screen.getByText("Desabilitada")).toBeInTheDocument();
     expect(screen.queryByText("Ativa")).not.toBeInTheDocument();
@@ -370,7 +393,7 @@ describe("VendorBraspressSection", () => {
 
   it("keeps the refused credential visible even with the integration turned off", () => {
     render(
-      <VendorBraspressSection
+      <VendorBraspressSection {...CORREIOS_PROPS}
         initialIntegration={{ ...integration, enabled: false, status: "invalid_credentials" }}
       />,
     );
@@ -381,7 +404,7 @@ describe("VendorBraspressSection", () => {
 
   it("destaca em alerta a credencial recusada e some com o alerta quando a conta está sadia", () => {
     const { unmount } = render(
-      <VendorBraspressSection
+      <VendorBraspressSection {...CORREIOS_PROPS}
         initialIntegration={{ ...integration, status: "invalid_credentials" }}
       />,
     );
@@ -391,7 +414,7 @@ describe("VendorBraspressSection", () => {
     expect(within(alerta as HTMLElement).getByText(/recusou a credencial salva/i)).toBeInTheDocument();
 
     unmount();
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     expect(screen.queryByText(BRASPRESS_ALERT_TITLE)).not.toBeInTheDocument();
   });
@@ -400,7 +423,7 @@ describe("VendorBraspressSection", () => {
     stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, enabled: true, status: "invalid_credentials" })),
     );
-    render(<VendorBraspressSection initialIntegration={{ ...integration, status: "ready" }} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, status: "ready" }} />);
 
     await userEvent.click(screen.getByRole("button", { name: /salvar/i }));
 
@@ -411,7 +434,7 @@ describe("VendorBraspressSection", () => {
 
   it("separates saved from available in the checkout when the save succeeds", async () => {
     stubBraspress(() => Promise.resolve(jsonResponse({ ...integration, status: "ready" })));
-    render(<VendorBraspressSection initialIntegration={{ ...integration, status: "unconfigured" }} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, status: "unconfigured" }} />);
 
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
@@ -434,7 +457,7 @@ describe("VendorBraspressSection", () => {
         ),
       ),
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
@@ -451,7 +474,7 @@ describe("VendorBraspressSection", () => {
         ),
       ),
     );
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
@@ -476,7 +499,7 @@ describe("VendorBraspressSection", () => {
 
       return Promise.resolve(jsonResponse(UNCONFIGURED));
     });
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
     confirmAccountPassword();
@@ -490,7 +513,7 @@ describe("VendorBraspressSection", () => {
   });
 
   it("offers an empty form and no removal block before anything is configured", () => {
-    render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED_ON} />);
 
     expect(screen.getByLabelText(/^usuário braspress$/i)).toHaveValue("");
     expect(screen.getByLabelText(/^senha braspress$/i)).toHaveValue("");
@@ -503,7 +526,7 @@ describe("VendorBraspressSection", () => {
     const fetchMock = stubBraspress(() =>
       Promise.resolve(jsonResponse({ ...integration, status: "ready" })),
     );
-    render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED_ON} />);
 
     fireEvent.change(screen.getByLabelText(/^usuário braspress$/i), {
       target: { value: BRASPRESS_USERNAME },
@@ -521,7 +544,7 @@ describe("VendorBraspressSection", () => {
 
   it("recusa credencial pela metade antes de chamar o servidor", () => {
     const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(integration)));
-    render(<VendorBraspressSection initialIntegration={UNCONFIGURED} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED_ON} />);
 
     fireEvent.change(screen.getByLabelText(/^usuário braspress$/i), {
       target: { value: BRASPRESS_USERNAME },
@@ -534,7 +557,7 @@ describe("VendorBraspressSection", () => {
   });
 
   it("says a credential exists without echoing any part of it", () => {
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     expect(screen.getByText(/salvos e criptografados/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/senha braspress/i)).not.toBeInTheDocument();
@@ -554,7 +577,7 @@ describe("VendorBraspressSection", () => {
 
       return Promise.resolve(jsonResponse({ ...integration, status: "ready" }));
     });
-    render(<VendorBraspressSection initialIntegration={integration} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
     fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
     expect((await screen.findByRole("alert")).textContent).toMatch(/^⚠ /);
@@ -564,7 +587,7 @@ describe("VendorBraspressSection", () => {
   });
 
   it("names the blocked account instead of blaming the credentials", () => {
-    render(<VendorBraspressSection initialIntegration={{ ...integration, status: "provider_blocked" }} />);
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, status: "provider_blocked" }} />);
 
     expect(screen.getByText(/conta bloqueada na braspress/i)).toBeInTheDocument();
   });
@@ -573,7 +596,7 @@ describe("VendorBraspressSection", () => {
     "não afirma nada sobre a Braspress quando a resposta do salvar %s",
     async (_label, json) => {
       stubBraspress(() => Promise.resolve({ json, ok: true, status: 200 }));
-      render(<VendorBraspressSection initialIntegration={integration} />);
+      render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
       fireEvent.click(screen.getByRole("button", { name: /salvar braspress/i }));
 
@@ -589,7 +612,7 @@ describe("VendorBraspressSection", () => {
     "não afirma nada sobre a Braspress quando a resposta da remoção %s",
     async (_label, json) => {
       stubBraspress(() => Promise.resolve({ json, ok: true, status: 200 }));
-      render(<VendorBraspressSection initialIntegration={integration} />);
+      render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
 
       fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
       confirmAccountPassword();
@@ -601,4 +624,145 @@ describe("VendorBraspressSection", () => {
       expect(screen.getByLabelText(/cnpj remetente/i)).toHaveValue("12.345.678/0001-95");
     },
   );
+
+  it("Correios voltam a ON e travam quando a remoção da Braspress é confirmada", async () => {
+    stubBraspress(() =>
+      Promise.resolve(jsonResponse({ ...UNCONFIGURED, correios: { enabled: true, locked: true } })),
+    );
+    render(
+      <VendorBraspressSection
+        correiosLoadFailed={false}
+        initialCorreios={{ enabled: false, locked: false }}
+        initialIntegration={integration}
+      />,
+    );
+
+    const correiosSwitch = screen.getByRole("switch", { name: /habilitar correios/i });
+    expect(correiosSwitch).toBeEnabled();
+    expect(correiosSwitch).toHaveAttribute("aria-checked", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
+    confirmAccountPassword();
+
+    await waitFor(() => expect(correiosSwitch).toBeDisabled());
+    expect(correiosSwitch).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("Braspress é ligada na tela quando o desligamento dos Correios a liga no servidor", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(jsonResponse({ braspress_enabled: true, correios_enabled: false, correios_locked: false })),
+      ),
+    );
+    render(
+      <VendorBraspressSection
+        correiosLoadFailed={false}
+        initialCorreios={{ enabled: true, locked: false }}
+        initialIntegration={{ ...integration, enabled: false }}
+      />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: /habilitar correios/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "true"),
+    );
+    expect(screen.getByRole("switch", { name: /habilitar correios/i })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("desligar a Braspress com os Correios desligados mostra os Correios religados", async () => {
+    const user = userEvent.setup();
+    stubBraspress(() =>
+      Promise.resolve(jsonResponse({ ...integration, enabled: false, correios: { enabled: true, locked: false } })),
+    );
+    render(
+      <VendorBraspressSection
+        correiosLoadFailed={false}
+        initialCorreios={{ enabled: false, locked: false }}
+        initialIntegration={integration}
+      />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /habilitar correios/i })).toHaveAttribute("aria-checked", "true"),
+    );
+    expect(await screen.findByText(/braspress desabilitada e correios habilitados/i)).toBeInTheDocument();
+  });
+
+  it("mostra a recusa que a sondagem gravou quando desligar os Correios liga a Braspress", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({
+            braspress: { ...integration, enabled: true, status: "invalid_credentials" },
+            braspress_enabled: true,
+            correios_enabled: false,
+            correios_locked: false,
+          }),
+        ),
+      ),
+    );
+    render(
+      <VendorBraspressSection
+        {...CORREIOS_PROPS}
+        initialIntegration={{ ...integration, enabled: false, status: "ready" }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("switch", { name: /habilitar correios/i }));
+
+    expect(await screen.findByText("Credenciais inválidas")).toBeInTheDocument();
+    expect(screen.getByText(BRASPRESS_ALERT_TITLE)).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("confirma a habilitação só quando ligar deixa a Braspress ativa", async () => {
+    stubBraspress(() => Promise.resolve(jsonResponse({ ...integration, enabled: true, status: "active" })));
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={{ ...integration, enabled: false }} />);
+
+    fireEvent.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/braspress habilitada/i);
+  });
+
+  it("não diz que habilitou quando a Braspress ligada ainda não tem contrato", async () => {
+    stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED_ON)));
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED} />);
+
+    fireEvent.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "true"),
+    );
+    await screen.findByLabelText(/^usuário braspress$/i);
+    expect(screen.queryByText(/braspress habilitada/i)).not.toBeInTheDocument();
+  });
+
+  it("trava a Braspress enquanto a escrita dos Correios não volta", async () => {
+    let finishCorreios: (value: unknown) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            finishCorreios = resolve;
+          }),
+      ),
+    );
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={integration} />);
+
+    fireEvent.click(screen.getByRole("switch", { name: /habilitar correios/i }));
+
+    await waitFor(() => expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toBeDisabled());
+    expect(screen.getByRole("button", { name: /^remover integração$/i })).toBeDisabled();
+
+    finishCorreios(jsonResponse({ braspress_enabled: true, correios_enabled: false, correios_locked: false }));
+
+    await waitFor(() => expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toBeEnabled());
+  });
 });

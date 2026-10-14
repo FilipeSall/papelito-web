@@ -1,39 +1,14 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { normalizeBraspressIntegration } from "@/features/vendor-settings/utils/braspress-integration-payload";
+import { readCorreiosPreference } from "@/features/vendor-settings/utils/read-correios-preference";
 import { wpRest } from "@/lib/server/wp-rest";
 
 import { requireVendorAccessToken } from "../_lib/require-vendor-session";
 
-function stringValue(value: unknown) {
-  return typeof value === "string" ? value : "";
-}
-
 function publicIntegration(value: unknown) {
-  const integration = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const config = integration.config && typeof integration.config === "object"
-    ? (integration.config as Record<string, unknown>)
-    : {};
-  const status = integration.status;
-
-  return {
-    provider: "braspress" as const,
-    enabled: integration.enabled === true || integration.enabled === 1,
-    status:
-      status === "ready" ||
-      status === "active" ||
-      status === "invalid_credentials" ||
-      status === "provider_blocked"
-        ? status
-        : "unconfigured",
-    configurationVersion: Number(integration.configuration_version) || 0,
-    configured: integration.configured === true,
-    credentialsConfigured: integration.credentials_configured === true,
-    config: {
-      senderCnpj: stringValue(config.sender_cnpj),
-      originCep: stringValue(config.origin_cep),
-    },
-  };
+  return { ...normalizeBraspressIntegration(value), correios: readCorreiosPreference(value) };
 }
 
 async function mutate(request: Request, method: "PUT" | "DELETE") {
@@ -62,6 +37,7 @@ async function mutate(request: Request, method: "PUT" | "DELETE") {
   }
 
   revalidateTag("vendor-braspress", "max");
+  revalidateTag("vendor-settings", "max");
   revalidatePath("/vendor/configuracoes");
   return NextResponse.json(publicIntegration(result.data));
 }
