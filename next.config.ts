@@ -26,6 +26,9 @@ function browserConnectOrigins() {
   origins.add("https://api.pagar.me");
   origins.add("https://*.google-analytics.com");
   origins.add("https://*.analytics.google.com");
+  origins.add("https://analytics.google.com");
+  origins.add("https://www.google.com");
+  origins.add("https://*.g.doubleclick.net");
 
   return [...origins].join(" ");
 }
