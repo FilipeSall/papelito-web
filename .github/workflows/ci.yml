@@ -25,8 +25,8 @@ jobs:
         run: npm run test:ci
       - name: Build
         env:
-          NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT: https://wp.papelitobrasil.com.br/graphql
-          NEXT_PUBLIC_WP_REST_BASE: https://wp.papelitobrasil.com.br/wp-json
+          NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT: https://papelitobrasil.com.br/graphql
+          NEXT_PUBLIC_WP_REST_BASE: https://papelitobrasil.com.br/wp-json
           NEXTAUTH_SECRET: ci-build-secret-only
           NEXTAUTH_URL: http://localhost:3000
           USE_MOCK_DATA: "true"

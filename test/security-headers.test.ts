@@ -150,28 +150,45 @@ describe("cabeçalhos de segurança", () => {
 
   /**
    * O GA4 não fala com um host só: além de `www.google-analytics.com` ele usa
-   * `region1.google-analytics.com` e `analytics.google.com`. Host exato obriga a persegui-los um a
-   * um — e a CSP não tem curinga implícito, então cada host faltante é beacon perdido.
+   * `region1.google-analytics.com` e `analytics.google.com`. O curinga cobre os subdomínios,
+   * mas não substitui a origem sem subdomínio: cada host faltante é beacon perdido.
    */
-  it("autoriza os hosts de coleta do GA4 por curinga de subdomínio", async () => {
+  it("autoriza os hosts de coleta do GA4, inclusive a origem sem subdomínio", async () => {
     const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
+    const sources = connect?.split(" ");
 
-    expect(connect).toContain("https://*.google-analytics.com");
-    expect(connect).toContain("https://*.analytics.google.com");
+    expect(sources).toContain("https://*.google-analytics.com");
+    expect(sources).toContain("https://*.analytics.google.com");
+    expect(sources).toContain("https://analytics.google.com");
   });
 
   /**
-   * Decisão deliberada: o ping de Google Signals/Ads (`www.google.<TLD>/g/collect`,
-   * `*.g.doubleclick.net`) segue bloqueado. Liberá-lo custaria abrir `*.google.com` inteiro numa
-   * CSP que já não mitiga XSS por causa do `unsafe-inline`; o preço é público de remarketing, não
-   * evento de analytics.
+   * A coleta usa `www.google.com` e os subdomínios de `g.doubleclick.net`. A permissão fica
+   * nessas origens, sem abrir todos os hosts do Google ou do DoubleClick.
    */
-  it("não abre os hosts de Ads e Signals", async () => {
+  it("autoriza os hosts de coleta do Google Signals", async () => {
     const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
+    const sources = connect?.split(" ");
 
-    expect(connect).not.toContain("google.com.br");
-    expect(connect).not.toContain("doubleclick");
-    expect(connect?.split(" ")).not.toContain("https://*.google.com");
+    expect(sources).toContain("https://www.google.com");
+    expect(sources).toContain("https://*.g.doubleclick.net");
+  });
+
+  it("não amplia a coleta para origens genéricas ou outros hosts de publicidade", async () => {
+    const connect = directive((await loadSecurityHeaders())["Content-Security-Policy"], "connect-src");
+    const sources = connect?.split(" ");
+
+    for (const origin of [
+      "*",
+      "https:",
+      "https://*.google.com",
+      "https://google.com",
+      "https://www.google.com.br",
+      "https://*.doubleclick.net",
+      "https://doubleclick.net",
+    ]) {
+      expect(sources).not.toContain(origin);
+    }
   });
 
   it("autoriza o Google Tag Manager", async () => {
