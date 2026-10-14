@@ -7,7 +7,7 @@ import {
   ViewToggle,
 } from "@/components/layout/products-page";
 import { getKitsCatalog } from "@/features/catalog/services/get-kits-catalog";
-import { getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
+import { getPublicCollections, getSiteImageAssets } from "@/features/catalog/services/get-home-assets";
 import { ProductAvailabilityProvider } from "@/features/catalog/hooks/use-product-availability";
 import { filterKits } from "@/features/catalog/utils/kits-filter";
 import { normalizeProductSearch } from "@/features/catalog/utils/product-search";
@@ -56,9 +56,10 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
     "collection",
   );
 
-  const [allKits, siteImages] = await Promise.all([
+  const [allKits, siteImages, collectionCatalog] = await Promise.all([
     getKitsCatalog(),
     getSiteImageAssets(),
+    getPublicCollections(),
   ]);
   const kits = filterKits(allKits, search);
 
@@ -75,6 +76,7 @@ export default async function KitsPage({ searchParams }: Readonly<KitsPageProps>
         <div className="mb-4">
           <ProductCollectionFilters
             activeCollection="kits"
+            collectionCatalog={collectionCatalog}
             perPage={perPage}
             search={search}
             viewMode={viewMode}
