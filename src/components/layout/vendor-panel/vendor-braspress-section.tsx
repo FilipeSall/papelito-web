@@ -83,11 +83,13 @@ function braspressTooltip(correiosEnabled: boolean) {
 }
 
 /**
- * Confirmação do interruptor, ou `null` quando ligar não deixou a Braspress ativa.
+ * Confirmação do interruptor, ou `null` quando ligar não deixou a Braspress ativa
+ * ou quando desligar não tinha credencial conectada.
  *
  * Ligada sem contrato, aguardando a primeira cotação ou com a credencial recusada,
  * ela não entra no checkout; o estado na linha já diz isso, e um "✓ habilitada"
- * prometeria o que não aconteceu.
+ * prometeria o que não aconteceu. Sem credencial salva, "a credencial continua
+ * guardada" seria mentira.
  */
 function toggledMessage(next: boolean, correiosRestored: boolean, saved: VendorBraspressIntegration) {
   if (next) {
@@ -95,6 +97,8 @@ function toggledMessage(next: boolean, correiosRestored: boolean, saved: VendorB
       ? "✓ Braspress habilitada. Ela aparece no checkout quando também houver cobertura de CEP e embalagem cadastrada."
       : null;
   }
+
+  if (!saved.credentialsConfigured) return null;
 
   return correiosRestored
     ? "✓ Braspress desabilitada e Correios habilitados, para a loja não ficar sem transportadora. A credencial continua guardada."

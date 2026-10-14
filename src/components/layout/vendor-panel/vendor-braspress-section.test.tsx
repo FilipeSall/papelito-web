@@ -274,6 +274,20 @@ describe("VendorBraspressSection", () => {
     expect(await screen.findByText(/braspress desabilitada/i)).toBeInTheDocument();
   });
 
+  it("não confirma o desligamento quando não há credencial Braspress conectada", async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubBraspress(() => Promise.resolve(jsonResponse(UNCONFIGURED)));
+    render(<VendorBraspressSection {...CORREIOS_PROPS} initialIntegration={UNCONFIGURED_ON} />);
+
+    await user.click(screen.getByRole("switch", { name: /habilitar braspress/i }));
+
+    await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: /habilitar braspress/i })).toHaveAttribute("aria-checked", "false"),
+    );
+    expect(screen.queryByText(/braspress desabilitada/i)).not.toBeInTheDocument();
+  });
+
   it("devolve o interruptor ao estado anterior quando a gravação é recusada", async () => {
     const user = userEvent.setup();
     stubBraspress(() =>
