@@ -5,6 +5,8 @@ import type { VendorRecipient } from "@/features/vendor-recipient/types/vendor-r
 import {
   buildRecipientErrorFeedback,
   buildRecipientVerdict,
+  buildReleaseSteps,
+  findReleaseErrorStep,
   formatRecipientSyncAt,
 } from "./vendor-recipient-panel";
 
@@ -81,22 +83,22 @@ describe("formatRecipientSyncAt", () => {
   });
 });
 
-describe("buildRecipientVerdict", () => {
-  function recipient(overrides: Partial<VendorRecipient> = {}): VendorRecipient {
-    return {
-      recipientId: "",
-      status: "",
-      kycStatus: "",
-      kycStatusReason: "",
-      lastSyncAt: "",
-      lastError: "",
-      lastErrorCode: "",
-      loadFailed: false,
-      rejectedFields: [],
-      ...overrides,
-    };
-  }
+function recipient(overrides: Partial<VendorRecipient> = {}): VendorRecipient {
+  return {
+    recipientId: "",
+    status: "",
+    kycStatus: "",
+    kycStatusReason: "",
+    lastSyncAt: "",
+    lastError: "",
+    lastErrorCode: "",
+    loadFailed: false,
+    rejectedFields: [],
+    ...overrides,
+  };
+}
 
+describe("buildRecipientVerdict", () => {
   it("declares the store able to sell only when the recipient is active", () => {
     const verdict = buildRecipientVerdict(recipient({ recipientId: "re_1", status: "active" }));
 
@@ -161,5 +163,69 @@ describe("buildRecipientVerdict", () => {
     expect(verdict.tone).toBe("andamento");
     expect(verdict.detail).toContain("quarantined");
     expect(verdict.primaryAction).toMatchObject({ href: "/vendor/solicitacoes", type: "href" });
+  });
+});
+
+describe("buildReleaseSteps", () => {
+  const states = (steps: ReturnType<typeof buildReleaseSteps>) => steps.map((step) => step.state);
+
+  it("marca as seis etapas como concluídas só com o recebedor ativo", () => {
+    expect(states(buildReleaseSteps(recipient({ recipientId: "rp_1", status: "active" }), null))).toEqual([
+      "done",
+      "done",
+      "done",
+      "done",
+      "done",
+      "done",
+    ]);
+  });
+
+  it("não afirma etapa nenhuma sem leitura da Pagar.me", () => {
+    expect(new Set(states(buildReleaseSteps(recipient({ loadFailed: true }), null)))).toEqual(new Set(["unknown"]));
+  });
+
+  it("começa pelos dados da empresa quando ainda não há recebedor", () => {
+    expect(states(buildReleaseSteps(recipient(), null))).toEqual(["current", "todo", "todo", "todo", "todo", "todo"]);
+  });
+
+  it("pede ação na verificação quando a Pagar.me exige prova de vida", () => {
+    const steps = buildReleaseSteps(
+      recipient({
+        recipientId: "rp_1",
+        status: "affiliation",
+        kycStatus: "partially_denied",
+        kycStatusReason: "additional_documents_required",
+      }),
+      null,
+    );
+
+    expect(states(steps)).toEqual(["done", "done", "done", "done", "action", "todo"]);
+    expect(steps[4].detail).toContain("prova de vida");
+  });
+
+  it("trava a última etapa quando o recebedor é suspenso", () => {
+    const steps = buildReleaseSteps(recipient({ recipientId: "rp_1", status: "suspended" }), null);
+
+    expect(states(steps)).toEqual(["done", "done", "done", "done", "done", "fail"]);
+    expect(steps[5].detail).toContain("suspenso");
+  });
+
+  it("aponta a conta bancária quando a recusa é de titularidade", () => {
+    const errorStep = findReleaseErrorStep("papelito_pagarme_bank_holder_mismatch", []);
+
+    expect(errorStep).toBe("bank");
+    expect(states(buildReleaseSteps(recipient(), errorStep))).toEqual(["done", "done", "fail", "todo", "todo", "todo"]);
+  });
+});
+
+describe("findReleaseErrorStep", () => {
+  it("usa o grupo do campo recusado quando a Pagar.me rejeita o payload", () => {
+    const field = { detail: "", field: "managing_partners[0].document", group: "partner", hint: "", label: "CPF" };
+
+    expect(findReleaseErrorStep("papelito_pagarme_request_failed", [field])).toBe("partner");
+  });
+
+  it("não culpa o cadastro por falha de comunicação", () => {
+    expect(findReleaseErrorStep("papelito_pagarme_network_error", [])).toBeNull();
   });
 });

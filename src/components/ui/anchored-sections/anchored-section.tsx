@@ -1,10 +1,13 @@
 export function AnchoredSection({
+  bodyClassName = "px-5 py-6 md:px-6 md:py-7",
   children,
   description,
   display = "panel",
   id,
   title,
 }: Readonly<{
+  /** Classe do corpo abaixo do cabeçalho; troque quando o conteúdo ocupa a seção de borda a borda. */
+  bodyClassName?: string;
   children: React.ReactNode;
   description: string;
   display?: "panel" | "brand";
@@ -33,7 +36,7 @@ export function AnchoredSection({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#f5f1e8]/72">{description}</p>
         </header>
-        <div className="px-5 py-6 md:px-6 md:py-7">{children}</div>
+        <div className={bodyClassName}>{children}</div>
       </div>
     </section>
   );

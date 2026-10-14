@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Check, CircleHelp, Clock, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -14,7 +15,7 @@ import { createPagarmeBankAccountSupportThread } from "@/features/chamados/servi
 
 import { AnchoredSection } from "@/components/ui/anchored-sections";
 
-import { FeedbackBanner, type FeedbackState } from "./feedback-banner";
+import type { FeedbackState } from "./feedback-banner";
 import { RecipientRejectedFields } from "./recipient-rejected-fields";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -327,32 +328,537 @@ export function buildRecipientErrorFeedback(body: {
   }
 }
 
-const VERDICT_TONE_CLASSNAME: Record<VerdictTone, string> = {
-  andamento: "border-[#1a1a1a] bg-[#1a1a1a] text-[#f5f1e8] shadow-[6px_6px_0px_#ffe500]",
-  apto: "border-[#1a1a1a] bg-brand-yellow text-[#1a1a1a] shadow-[6px_6px_0px_#1a1a1a]",
-  ilegivel: "border-[#1a1a1a] bg-[#1a1a1a] text-[#f5f1e8] shadow-[6px_6px_0px_#ffe500]",
-  impedido: "border-[#c0392b] bg-[#f7e6e2] text-[#7a3428] shadow-[6px_6px_0px_#c0392b]",
+type ReleaseStepKey =
+  "accepted" | "bank" | "company" | "kyc" | "partner" | "release";
+
+type ReleaseStepState =
+  "action" | "current" | "done" | "fail" | "todo" | "unknown";
+
+/** Uma etapa do caminho até a Pagar.me liberar o recebedor para receber pagamentos. */
+export type ReleaseStep = {
+  detail: string;
+  key: ReleaseStepKey;
+  label: string;
+  state: ReleaseStepState;
 };
 
-const VERDICT_MUTED_CLASSNAME: Record<VerdictTone, string> = {
-  andamento: "text-[#f5f1e8]/70",
-  apto: "text-[#1a1a1a]/72",
-  ilegivel: "text-[#f5f1e8]/70",
-  impedido: "text-[#7a3428]/80",
+type StatusProgress = {
+  detail?: string;
+  reached: number;
+  state: ReleaseStepState;
 };
+
+const RELEASE_STEP_ORDER: ReleaseStepKey[] = [
+  "company",
+  "partner",
+  "bank",
+  "accepted",
+  "kyc",
+  "release",
+];
+
+const RELEASE_STEP_COPY: Record<
+  ReleaseStepKey,
+  { detail: string; label: string }
+> = {
+  accepted: {
+    detail: "A Pagar.me cria o recebedor e analisa o cadastro inicial.",
+    label: "Cadastro aceito pela Pagar.me",
+  },
+  bank: {
+    detail: `Conta PJ aberta no CNPJ da empresa, com titular de até ${BANK_HOLDER_NAME_MAX_LENGTH} caracteres.`,
+    label: "Conta bancária no CNPJ",
+  },
+  company: {
+    detail: "CNPJ, razão social, telefone com DDD e endereço comercial.",
+    label: "Dados da empresa",
+  },
+  kyc: {
+    detail: "Prova de vida do representante legal, quando a Pagar.me pedir.",
+    label: "Verificação de identidade",
+  },
+  partner: {
+    detail: "Sócio administrador com CPF, data de nascimento e endereço.",
+    label: "Representante legal",
+  },
+  release: {
+    detail: "Os pagamentos caem direto na conta da empresa.",
+    label: "Liberado para receber",
+  },
+};
+
+const ERROR_CODE_STEP: Record<string, ReleaseStepKey> = {
+  papelito_pagarme_bank_account_update_auth_required: "bank",
+  papelito_pagarme_bank_holder_mismatch: "bank",
+  papelito_pagarme_invalid_company_name: "company",
+  papelito_pagarme_invalid_holder_name: "bank",
+  papelito_pagarme_invalid_phone: "company",
+  papelito_pagarme_missing_address: "company",
+  papelito_pagarme_missing_document: "company",
+  papelito_pagarme_missing_draft: "company",
+  papelito_pagarme_missing_partner: "partner",
+  papelito_pagarme_missing_recipient: "company",
+};
+
+const REJECTED_GROUP_STEP: Record<string, ReleaseStepKey> = {
+  bank_account: "bank",
+  company: "company",
+  partner: "partner",
+};
+
+const BLOCKED_STATUSES = new Set(["blocked", "inactive", "suspended"]);
+
+/**
+ * Diz em qual etapa de dados a última recusa travou, ou `null` quando o erro não é do cadastro.
+ *
+ * Falha de comunicação ou de configuração da Papelito não aponta para etapa nenhuma: o vendor
+ * não tem o que corrigir. `request_failed` usa o grupo do primeiro campo recusado.
+ */
+export function findReleaseErrorStep(
+  errorCode: string,
+  rejectedFields: VendorRecipientRejectedField[],
+): ReleaseStepKey | null {
+  if (ERROR_CODE_STEP[errorCode]) return ERROR_CODE_STEP[errorCode];
+  if (errorCode !== "papelito_pagarme_request_failed") return null;
+
+  return (
+    rejectedFields
+      .map((field) => REJECTED_GROUP_STEP[field.group])
+      .find(Boolean) ?? "accepted"
+  );
+}
+
+function affiliationProgress(recipient: VendorRecipient): StatusProgress {
+  if (
+    recipient.kycStatus === "partially_denied" &&
+    recipient.kycStatusReason === "additional_documents_required"
+  ) {
+    return {
+      detail: "A Pagar.me pediu a prova de vida do representante legal.",
+      reached: 4,
+      state: "action",
+    };
+  }
+
+  if (recipient.kycStatus === "pending") {
+    return {
+      detail: "A documentação está em análise na Pagar.me.",
+      reached: 4,
+      state: "current",
+    };
+  }
+
+  return {
+    detail:
+      "A Pagar.me devolveu uma pendência que a Papelito ainda não reconhece.",
+    reached: 4,
+    state: "fail",
+  };
+}
+
+function statusProgress(recipient: VendorRecipient): StatusProgress {
+  const { recipientId, status } = recipient;
+
+  if (status === "active")
+    return { reached: RELEASE_STEP_ORDER.length, state: "done" };
+  if (!recipientId && !status) return { reached: 0, state: "current" };
+  if (status === "affiliation") return affiliationProgress(recipient);
+  if (status === "refused") {
+    return {
+      detail: "A Pagar.me recusou o cadastro do recebedor.",
+      reached: 3,
+      state: "fail",
+    };
+  }
+  if (BLOCKED_STATUSES.has(status)) {
+    return {
+      detail: `O recebedor está ${formatStatus(status).toLowerCase()} na Pagar.me.`,
+      reached: 5,
+      state: "fail",
+    };
+  }
+  if (!status || status === "registration") {
+    return {
+      detail: "A Pagar.me está analisando o cadastro inicial.",
+      reached: 3,
+      state: "current",
+    };
+  }
+
+  return {
+    detail: `A Pagar.me devolveu um estado desconhecido (${status}).`,
+    reached: 5,
+    state: "unknown",
+  };
+}
+
+function stepStateAt(
+  index: number,
+  progress: StatusProgress,
+): ReleaseStepState {
+  if (index < progress.reached) return "done";
+  if (index === progress.reached) return progress.state;
+  return "todo";
+}
+
+function applyErrorStep(
+  states: ReleaseStepState[],
+  errorIndex: number,
+  hasRecipient: boolean,
+) {
+  return states.map((state, index) => {
+    if (index < errorIndex)
+      return state === "current" || state === "todo" ? "done" : state;
+    if (index === errorIndex) return "fail";
+    return hasRecipient ? state : "todo";
+  });
+}
+
+/**
+ * Traduz o estado do recebedor em seis etapas de liberação, na ordem em que a Pagar.me as exige.
+ *
+ * Sem leitura da Pagar.me, nenhuma etapa é afirmada. A recusa de um dado do cadastro marca a
+ * etapa daquele dado, mesmo com o recebedor já criado, porque é ali que o vendor precisa corrigir.
+ */
+export function buildReleaseSteps(
+  recipient: VendorRecipient,
+  errorStep: ReleaseStepKey | null,
+): ReleaseStep[] {
+  if (recipient.loadFailed) {
+    return RELEASE_STEP_ORDER.map((key) => ({
+      ...RELEASE_STEP_COPY[key],
+      key,
+      state: "unknown",
+    }));
+  }
+
+  const progress = statusProgress(recipient);
+  const baseStates = RELEASE_STEP_ORDER.map((_, index) =>
+    stepStateAt(index, progress),
+  );
+  const isActive = recipient.status === "active";
+  const states =
+    errorStep && !isActive
+      ? applyErrorStep(
+          baseStates,
+          RELEASE_STEP_ORDER.indexOf(errorStep),
+          Boolean(recipient.recipientId),
+        )
+      : baseStates;
+
+  return RELEASE_STEP_ORDER.map((key, index) => {
+    const usesProgressDetail =
+      index === progress.reached && states[index] === progress.state;
+
+    return {
+      detail:
+        (usesProgressDetail && progress.detail) ||
+        RELEASE_STEP_COPY[key].detail,
+      key,
+      label: RELEASE_STEP_COPY[key].label,
+      state: states[index],
+    };
+  });
+}
+
+const STEP_ICON: Record<ReleaseStepState, LucideIcon | null> = {
+  action: ArrowRight,
+  current: Clock,
+  done: Check,
+  fail: X,
+  todo: null,
+  unknown: CircleHelp,
+};
+
+const STEP_ICON_CLASSNAME: Record<ReleaseStepState, string> = {
+  action: "border-[#1a1a1a] bg-[#1a1a1a] text-white",
+  current: "border-[#1a1a1a] bg-white text-[#1a1a1a]",
+  done: "border-[#15803d] bg-[#15803d] text-white",
+  fail: "border-[#c0392b] bg-[#c0392b] text-white",
+  todo: "border-dashed border-[#1a1a1a]/30 bg-white",
+  unknown: "border-dashed border-[#1a1a1a]/40 bg-white text-[#1a1a1a]/50",
+};
+
+const STEP_BAR_CLASSNAME: Record<ReleaseStepState, string> = {
+  action: "bg-[#1a1a1a]",
+  current: "bg-[#1a1a1a]",
+  done: "bg-[#15803d]",
+  fail: "bg-[#c0392b]",
+  todo: "bg-[#1a1a1a]/10",
+  unknown: "bg-[#1a1a1a]/10",
+};
+
+const STEP_LABEL_CLASSNAME: Record<ReleaseStepState, string> = {
+  action: "text-[#1a1a1a]",
+  current: "text-[#1a1a1a]",
+  done: "text-[#1a1a1a]",
+  fail: "text-[#7a3428]",
+  todo: "text-[#1a1a1a]/55",
+  unknown: "text-[#1a1a1a]/55",
+};
+
+const STEP_STATE_LABEL: Record<ReleaseStepState, string> = {
+  action: "Ação necessária",
+  current: "Em andamento",
+  done: "Concluída",
+  fail: "Travada",
+  todo: "Pendente",
+  unknown: "Sem leitura",
+};
+
+const COUNT_CLASSNAME: Record<VerdictTone, string> = {
+  andamento: "text-[#1a1a1a]",
+  apto: "text-[#15803d]",
+  ilegivel: "text-[#1a1a1a]/60",
+  impedido: "text-[#7a3428]",
+};
+
+const NEUTRAL_PRIMARY_CLASSNAME =
+  "border-[#1a1a1a] bg-[#1a1a1a] text-white hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-[#1a1a1a]";
 
 const VERDICT_PRIMARY_CLASSNAME: Record<VerdictTone, string> = {
-  andamento:
-    "border-brand-yellow bg-brand-yellow text-[#1a1a1a] hover:shadow-[3px_3px_0px_#f5f1e8] focus-visible:outline-brand-yellow",
-  apto: "border-[#1a1a1a] bg-[#1a1a1a] text-brand-yellow hover:shadow-[3px_3px_0px_#1a1a1a] focus-visible:outline-[#1a1a1a]",
-  ilegivel:
-    "border-brand-yellow bg-brand-yellow text-[#1a1a1a] hover:shadow-[3px_3px_0px_#f5f1e8] focus-visible:outline-brand-yellow",
+  andamento: NEUTRAL_PRIMARY_CLASSNAME,
+  apto: NEUTRAL_PRIMARY_CLASSNAME,
+  ilegivel: NEUTRAL_PRIMARY_CLASSNAME,
   impedido:
     "border-[#7a3428] bg-[#7a3428] text-[#f7e6e2] hover:shadow-[3px_3px_0px_#c0392b] focus-visible:outline-[#7a3428]",
 };
 
-const SECONDARY_BUTTON_CLASSNAME =
-  "inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 border-[#1a1a1a] bg-white px-5 text-xs font-black uppercase tracking-widest text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow disabled:cursor-not-allowed disabled:opacity-60";
+const ACTION_BUTTON_CLASSNAME =
+  "inline-flex h-11 shrink-0 max-sm:w-full cursor-pointer items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+
+const SECONDARY_BUTTON_CLASSNAME = `${ACTION_BUTTON_CLASSNAME} border-[#1a1a1a] bg-white text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white focus-visible:outline-[#1a1a1a]`;
+
+const CALLOUT_ACTION_CLASSNAME =
+  "mt-4 inline-flex h-10 cursor-pointer items-center border-2 border-[#7a3428] bg-[#7a3428] px-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#f7e6e2] transition hover:shadow-[3px_3px_0px_#c0392b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7a3428]";
+
+type FeedbackActionType = NonNullable<FeedbackState["actionType"]>;
+
+type CalloutActionProps = {
+  feedback: FeedbackState;
+  onAction: (actionType: FeedbackActionType) => void;
+};
+
+function CalloutAction({ feedback, onAction }: Readonly<CalloutActionProps>) {
+  const { actionHref, actionLabel, actionType } = feedback;
+  if (!actionLabel) return null;
+
+  if (actionType) {
+    return (
+      <button
+        className={CALLOUT_ACTION_CLASSNAME}
+        onClick={() => onAction(actionType)}
+        type="button"
+      >
+        {actionLabel}
+      </button>
+    );
+  }
+
+  if (!actionHref) return null;
+
+  return (
+    <a className={CALLOUT_ACTION_CLASSNAME} href={actionHref}>
+      {actionLabel}
+    </a>
+  );
+}
+
+type ReleaseErrorCalloutProps = CalloutActionProps & {
+  fields: VendorRecipientRejectedField[];
+  label?: string;
+  live: boolean;
+};
+
+function ReleaseErrorCallout({
+  feedback,
+  fields,
+  label,
+  live,
+  onAction,
+}: Readonly<ReleaseErrorCalloutProps>) {
+  const details = feedback.details?.filter(Boolean) ?? [];
+
+  return (
+    <div
+      className="mt-3 border-2 border-[#c0392b] bg-[#f7e6e2] px-4 py-4 text-[#7a3428]"
+      role={live ? "alert" : undefined}
+    >
+      {label ? (
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#7a3428]/80">
+          {label}
+        </p>
+      ) : null}
+      <p className="mt-1 flex items-start gap-2 text-sm font-black">
+        <TriangleAlert
+          aria-hidden="true"
+          className="mt-0.5 size-4 shrink-0"
+          strokeWidth={2.4}
+        />
+        {feedback.title ?? feedback.message}
+      </p>
+      {feedback.title ? (
+        <p className="mt-1.5 pl-6 text-sm leading-6 font-medium">
+          {feedback.message}
+        </p>
+      ) : null}
+      {details.length > 0 ? (
+        <ul className="mt-2 list-disc space-y-1 pl-10 text-[13px] font-medium">
+          {details.map((detail) => (
+            <li key={detail}>{detail}</li>
+          ))}
+        </ul>
+      ) : null}
+      {feedback.hint ? (
+        <p className="mt-1 pl-6 text-[13px] leading-5 font-medium text-[#7a3428]/85">
+          {feedback.hint}
+        </p>
+      ) : null}
+      <RecipientRejectedFields fields={fields} />
+      <CalloutAction feedback={feedback} onAction={onAction} />
+    </div>
+  );
+}
+
+type ReleaseStepItemProps = {
+  children?: React.ReactNode;
+  step: ReleaseStep;
+};
+
+function ReleaseStepItem({ children, step }: Readonly<ReleaseStepItemProps>) {
+  const Icon = STEP_ICON[step.state];
+
+  return (
+    <li className="grid grid-cols-[auto_1fr] items-start gap-x-3.5 py-3.5 not-first:border-t-2 not-first:border-[#1a1a1a]/6">
+      <span
+        aria-hidden="true"
+        className={`flex size-8 shrink-0 items-center justify-center border-2 ${STEP_ICON_CLASSNAME[step.state]}`}
+      >
+        {Icon ? <Icon className="size-4" strokeWidth={2.8} /> : null}
+      </span>
+      <div className="min-w-0 pt-1">
+        <p className={`text-sm font-bold ${STEP_LABEL_CLASSNAME[step.state]}`}>
+          <span className="sr-only">{STEP_STATE_LABEL[step.state]}: </span>
+          {step.label}
+        </p>
+        <p className="mt-0.5 text-[13px] leading-5 text-[#1a1a1a]/60">
+          {step.detail}
+        </p>
+      </div>
+      {children ? (
+        <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
+          {children}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+type ReleaseActionsProps = {
+  isActive: boolean;
+  onStartKyc: () => void;
+  onSync: () => void;
+  pending: boolean;
+  verdict: RecipientVerdict;
+};
+
+function ReleaseActions({
+  isActive,
+  onStartKyc,
+  onSync,
+  pending,
+  verdict,
+}: Readonly<ReleaseActionsProps>) {
+  const { primaryAction, primarySync, tone } = verdict;
+  const primaryClassName = `${ACTION_BUTTON_CLASSNAME} ${VERDICT_PRIMARY_CLASSNAME[tone]}`;
+  const showSecondarySync = !isActive && !primarySync;
+  const showEditLink =
+    primaryAction?.type !== "href" ||
+    primaryAction.href !== EDIT_FINANCIAL_DATA_HREF;
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {primaryAction?.type === "href" ? (
+        <a className={primaryClassName} href={primaryAction.href}>
+          {primaryAction.label}
+        </a>
+      ) : null}
+      {primaryAction?.type === "kyc" ? (
+        <button
+          className={primaryClassName}
+          disabled={pending}
+          onClick={onStartKyc}
+          type="button"
+        >
+          {pending ? "Preparando..." : primaryAction.label}
+        </button>
+      ) : null}
+      {primarySync ? (
+        <button
+          className={primaryClassName}
+          disabled={pending}
+          onClick={onSync}
+          type="button"
+        >
+          {pending ? "Consultando..." : primarySync.label}
+        </button>
+      ) : null}
+      {showEditLink ? (
+        <a
+          className={SECONDARY_BUTTON_CLASSNAME}
+          href={EDIT_FINANCIAL_DATA_HREF}
+        >
+          Editar dados financeiros
+        </a>
+      ) : null}
+      {showSecondarySync ? (
+        <button
+          className={SECONDARY_BUTTON_CLASSNAME}
+          disabled={pending}
+          onClick={onSync}
+          type="button"
+        >
+          {pending ? "Consultando..." : "Atualizar situação"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+type ReleaseFactsProps = {
+  lastSync: string;
+  recipient: VendorRecipient;
+};
+
+function ReleaseFacts({ lastSync, recipient }: Readonly<ReleaseFactsProps>) {
+  return (
+    <dl
+      className="flex flex-wrap gap-x-5 gap-y-1.5 font-(--font-admin-mono) text-xs"
+      data-numeric
+    >
+      <div className="flex gap-1.5">
+        <dt className="uppercase tracking-wider text-[#1a1a1a]/60">Estado</dt>
+        <dd className="font-semibold text-[#1a1a1a]">
+          {recipient.loadFailed ? "Não lido" : formatStatus(recipient.status)}
+        </dd>
+      </div>
+      <div className="flex min-w-0 gap-1.5">
+        <dt className="uppercase tracking-wider text-[#1a1a1a]/60">
+          Recebedor
+        </dt>
+        <dd className="font-semibold break-all text-[#1a1a1a]">
+          {recipient.recipientId || "—"}
+        </dd>
+      </div>
+      <div className="flex gap-1.5">
+        <dt className="uppercase tracking-wider text-[#1a1a1a]/60">Lido</dt>
+        <dd className="font-semibold text-[#1a1a1a]">
+          {lastSync || "nenhuma leitura"}
+        </dd>
+      </div>
+    </dl>
+  );
+}
 
 export function VendorRecipientPanel({
   initialRecipient,
@@ -361,11 +867,11 @@ export function VendorRecipientPanel({
   const [recipient, setRecipient] = useState(initialRecipient);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [syncRejectedFields, setSyncRejectedFields] = useState<VendorRecipientRejectedField[]>([]);
+  const [syncErrorCode, setSyncErrorCode] = useState("");
   const [pending, startTransition] = useTransition();
   const [supportPending, setSupportPending] = useState(false);
 
   const verdict = buildRecipientVerdict(recipient);
-  const { primaryAction, primarySync } = verdict;
   const isActive = recipient.status === "active";
   const lastSync = formatRecipientSyncAt(recipient.lastSyncAt);
   const persistedError =
@@ -377,6 +883,7 @@ export function VendorRecipientPanel({
   function syncRecipient() {
     setFeedback(null);
     setSyncRejectedFields([]);
+    setSyncErrorCode("");
 
     startTransition(async () => {
       const response = await fetch("/api/vendor/recipient", { cache: "no-store" });
@@ -399,6 +906,7 @@ export function VendorRecipientPanel({
 
       if (!response.ok) {
         setSyncRejectedFields(mapRejectedFields(body?.fields));
+        setSyncErrorCode(body?.code ?? "");
         setFeedback(
           buildRecipientErrorFeedback({
             code: body?.code,
@@ -431,6 +939,7 @@ export function VendorRecipientPanel({
 
   function startKyc() {
     setFeedback(null);
+    setSyncErrorCode("");
 
     startTransition(async () => {
       const response = await fetch("/api/vendor/recipient/kyc-link", { method: "POST" });
@@ -450,6 +959,7 @@ export function VendorRecipientPanel({
         | null;
 
       if (!response.ok || !body?.url) {
+        setSyncErrorCode(body?.code ?? "");
         setFeedback(buildRecipientErrorFeedback({ code: body?.code, message: body?.message }));
         return;
       }
@@ -487,127 +997,105 @@ export function VendorRecipientPanel({
     }
   }
 
+  const errorFeedback = feedback?.error ? feedback : persistedError;
+  const errorFields = feedback?.error
+    ? syncRejectedFields
+    : persistedRejectedFields;
+  const errorCode = feedback?.error ? syncErrorCode : recipient.lastErrorCode;
+  const errorStep = errorFeedback
+    ? findReleaseErrorStep(errorCode, errorFields)
+    : null;
+  const steps = buildReleaseSteps(recipient, errorStep);
+  const doneCount = steps.filter((step) => step.state === "done").length;
+  const syncConfirmation = feedback && !feedback.error ? feedback.message : "";
+
+  function handleFeedbackAction(actionType: FeedbackActionType) {
+    if (actionType === "pagarme-bank-account-support") {
+      void openPagarmeBankAccountSupport();
+    }
+  }
+
+  const errorCallout = errorFeedback ? (
+    <ReleaseErrorCallout
+      feedback={errorFeedback}
+      fields={errorFields}
+      label={feedback?.error ? undefined : "O que travou a última tentativa"}
+      live={Boolean(feedback?.error)}
+      onAction={handleFeedbackAction}
+    />
+  ) : null;
+
   return (
     <AnchoredSection
+      bodyClassName="bg-white"
       description="A Papelito não retém o seu dinheiro: o pagamento vai direto para o recebedor da sua loja na Pagar.me. Sem recebedor ativo, o checkout recusa a venda."
       id="pagamentos"
       title="Pagamentos"
     >
-      <div className={`border-2 px-5 py-6 md:px-7 md:py-7 ${VERDICT_TONE_CLASSNAME[verdict.tone]}`}>
-        <p
-          className="text-2xl leading-tight font-black uppercase tracking-tight md:text-[2rem]"
-          style={{ fontFamily: "var(--font-admin-display)" }}
-        >
-          {verdict.headline}
-        </p>
-        <p className={`mt-3 max-w-2xl text-sm leading-6 font-medium ${VERDICT_MUTED_CLASSNAME[verdict.tone]}`}>
-          {verdict.detail}
-        </p>
-        <p className={`mt-4 text-[11px] font-black uppercase tracking-[0.18em] ${VERDICT_MUTED_CLASSNAME[verdict.tone]}`}>
-          {lastSync ? `Leitura de ${lastSync}` : "Nenhuma leitura registrada"}
-        </p>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {primaryAction?.type === "href" ? (
-            <a
-              className={`inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
-              href={primaryAction.href}
-            >
-              {primaryAction.label}
-            </a>
-          ) : null}
-          {primaryAction?.type === "kyc" ? (
-            <button
-              className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
-              disabled={pending}
-              onClick={startKyc}
-              type="button"
-            >
-              {pending ? "Preparando..." : primaryAction.label}
-            </button>
-          ) : null}
-          {primarySync ? (
-            <button
-              className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-2 px-5 text-xs font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${VERDICT_PRIMARY_CLASSNAME[verdict.tone]}`}
-              disabled={pending}
-              onClick={syncRecipient}
-              type="button"
-            >
-              {pending ? "Consultando..." : primarySync.label}
-            </button>
-          ) : null}
+      <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-3 px-5 pt-6 md:px-6 md:pt-7">
+        <div className="min-w-0 flex-[1_1_16rem]">
+          <p
+            className="text-xl leading-tight font-black text-balance uppercase tracking-tight text-[#1a1a1a] md:text-2xl"
+            style={{ fontFamily: "var(--font-admin-display)" }}
+          >
+            {verdict.headline}
+          </p>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 font-medium text-[#1a1a1a]/70">
+            {verdict.detail}
+          </p>
         </div>
+        <p
+          className={`shrink-0 border-2 border-current px-2.5 py-1 font-(--font-admin-mono) text-[13px] font-semibold ${COUNT_CLASSNAME[verdict.tone]}`}
+          data-numeric
+        >
+          {recipient.loadFailed ? "?" : doneCount} de {steps.length} etapas
+        </p>
       </div>
 
-      <FeedbackBanner
-        className="mt-5"
-        feedback={feedback}
-        onAction={(actionType) => {
-          if (actionType === "pagarme-bank-account-support") {
-            void openPagarmeBankAccountSupport();
-          }
-        }}
-      />
-      <RecipientRejectedFields fields={syncRejectedFields} />
-
-      {persistedError ? (
-        <div className="mt-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1a1a1a]/70">
-            O que travou a última tentativa
-          </p>
-          <FeedbackBanner
-            className="mt-3"
-            feedback={persistedError}
-            live={false}
-            onAction={(actionType) => {
-              if (actionType === "pagarme-bank-account-support") {
-                void openPagarmeBankAccountSupport();
-              }
-            }}
+      <div
+        aria-hidden="true"
+        className="mt-5 grid grid-cols-6 gap-1 px-5 md:px-6"
+      >
+        {steps.map((step) => (
+          <span
+            className={`h-2 ${STEP_BAR_CLASSNAME[step.state]}`}
+            key={step.key}
           />
-          <RecipientRejectedFields fields={persistedRejectedFields} />
-        </div>
-      ) : null}
+        ))}
+      </div>
 
-      <div className="mt-7 border-t-2 border-[#1a1a1a]/12 pt-6">
-        <dl className="grid gap-5 sm:grid-cols-3">
-          <div>
-            <dt className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1a1a1a]/70">
-              Estado na Pagar.me
-            </dt>
-            <dd className="mt-1.5 text-sm font-semibold text-[#1a1a1a]">
-              {recipient.loadFailed ? "Não lido" : formatStatus(recipient.status)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1a1a1a]/70">
-              Identificador do recebedor
-            </dt>
-            <dd
-              className="mt-1.5 text-sm break-all text-[#1a1a1a]"
-              style={{ fontFamily: "var(--font-admin-mono)" }}
-            >
-              {recipient.recipientId || "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1a1a1a]/70">
-              Última leitura
-            </dt>
-            <dd className="mt-1.5 text-sm text-[#1a1a1a]">{lastSync || "—"}</dd>
-          </div>
-        </dl>
+      <ol
+        aria-label="Etapas de liberação na Pagar.me"
+        className="px-5 pt-2 pb-3 md:px-6"
+      >
+        {steps.map((step) => (
+          <ReleaseStepItem key={step.key} step={step}>
+            {step.key === errorStep ? errorCallout : null}
+          </ReleaseStepItem>
+        ))}
+      </ol>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <a className={SECONDARY_BUTTON_CLASSNAME} href={EDIT_FINANCIAL_DATA_HREF}>
-            Editar dados financeiros
-          </a>
-          {!isActive ? (
-            <button className={SECONDARY_BUTTON_CLASSNAME} disabled={pending} onClick={syncRecipient} type="button">
-              Atualizar situação
-            </button>
-          ) : null}
+      {errorStep ? null : (
+        <div className="px-5 pb-5 md:px-6">{errorCallout}</div>
+      )}
+
+      <div className="flex flex-col gap-4 border-t-2 border-[#1a1a1a] bg-[#fbf7ef] px-5 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <ReleaseFacts lastSync={lastSync} recipient={recipient} />
+          <p
+            className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#15803d]"
+            role="status"
+          >
+            {syncConfirmation}
+          </p>
         </div>
+        <ReleaseActions
+          isActive={isActive}
+          onStartKyc={startKyc}
+          onSync={syncRecipient}
+          pending={pending}
+          verdict={verdict}
+        />
       </div>
     </AnchoredSection>
   );
