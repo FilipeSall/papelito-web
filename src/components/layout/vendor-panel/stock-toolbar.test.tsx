@@ -102,4 +102,12 @@ describe("StockToolbar", () => {
     const { container } = renderToolbar({ collection: "premium" });
     expect(container.querySelector('input[name="collection"][value="premium"]')).toBeTruthy();
   });
+
+  it("abre a planilha com exportar e importar a partir do botão da barra", () => {
+    renderToolbar();
+    fireEvent.click(screen.getByRole("button", { name: "Planilha de estoque: exportar ou importar" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("link", { name: /Excel/ })).toHaveAttribute("href", "/api/vendor/stock/export");
+    expect(within(dialog).getByRole("tab", { name: "Importar" })).toBeInTheDocument();
+  });
 });

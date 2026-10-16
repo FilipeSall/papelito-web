@@ -7,7 +7,8 @@ export type DirectUploadPurpose =
   | "pre-account-document"
   | "vendor-fiscal-document"
   | "return-refund-proof"
-  | "order-refund-proof";
+  | "order-refund-proof"
+  | "vendor-sku-import";
 
 /**
  * Contexto que a rota Next repassa ao WordPress na emissão do tíquete.

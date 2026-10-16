@@ -378,7 +378,14 @@ export function VendorStockManager({
       <StockSummary filters={filters} summary={summary} />
 
       <Panel className="overflow-hidden rounded-none border-[#1a1a1a] bg-[#faf8f2] shadow-[8px_8px_0px_#1a1a1a]">
-        <StockToolbar filters={filters} taxonomies={taxonomies} />
+        <StockToolbar
+          filters={filters}
+          onSkuImportFinished={(result) => {
+            setFeedback(result);
+            router.refresh();
+          }}
+          taxonomies={taxonomies}
+        />
         <StockActiveFilters filters={filters} taxonomies={taxonomies} />
         <FeedbackBanner className="mx-5 mt-4" feedback={feedback} />
 

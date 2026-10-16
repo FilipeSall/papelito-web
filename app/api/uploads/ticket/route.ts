@@ -17,6 +17,7 @@ const UPLOAD_PURPOSES = [
   "vendor-fiscal-document",
   "return-refund-proof",
   "order-refund-proof",
+  "vendor-sku-import",
 ] as const;
 
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
@@ -31,6 +32,61 @@ function isUploadPurpose(value: unknown): value is UploadPurpose {
   return typeof value === "string" && UPLOAD_PURPOSES.includes(value as UploadPurpose);
 }
 
+type TicketRequest =
+  | { headers: Record<string, string>; json: Record<string, unknown> }
+  | { response: NextResponse };
+
+type SessionResult = { accessToken: string } | { error: string; status: number };
+
+const VENDOR_RECORD_PURPOSES = new Set<UploadPurpose>(["vendor-fiscal-document", "return-refund-proof", "order-refund-proof"]);
+
+function denied(message: string, status: number): TicketRequest {
+  return { response: NextResponse.json({ message }, { status }) };
+}
+
+async function bearerTicket(load: () => Promise<SessionResult>, json: Record<string, unknown>): Promise<TicketRequest> {
+  const auth = await load();
+  if ("error" in auth) return denied(auth.error, auth.status);
+  return { headers: { Authorization: `Bearer ${auth.accessToken}` }, json };
+}
+
+async function vendorRecordTicket(purpose: UploadPurpose, body: Record<string, unknown> | null): Promise<TicketRequest> {
+  const auth = await requireVendorAccessToken();
+  if ("error" in auth) return denied(auth.error, auth.status);
+
+  const id = Number(purpose === "return-refund-proof" ? body?.returnId : body?.orderId);
+
+  // O pedido entra no tíquete; a autorização real — pedido do vendor e
+  // situação que aceita nota — continua sendo do WordPress. O upload sempre
+  // substitui a nota que houver, então não há modo a escolher.
+  if (!Number.isInteger(id) || id <= 0) {
+    return denied(purpose === "vendor-fiscal-document" ? "Anexo de nota fiscal inválido." : "Comprovante de estorno inválido.", 422);
+  }
+
+  return {
+    headers: { Authorization: `Bearer ${auth.accessToken}` },
+    json: purpose === "return-refund-proof" ? { returnId: id, purpose } : { orderId: id, purpose },
+  };
+}
+
+async function applicationTicket(purpose: UploadPurpose): Promise<TicketRequest> {
+  const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
+  if (!applicationToken) return denied("Candidatura não encontrada.", 404);
+  return { headers: { "X-Papelito-Application-Token": applicationToken }, json: { purpose } };
+}
+
+function resolveTicketRequest(purpose: UploadPurpose, body: Record<string, unknown> | null): Promise<TicketRequest> {
+  if (purpose === "media" || purpose === "catalog") return bearerTicket(getAdminApiSession, { purpose });
+  if (purpose === "owner-document") return bearerTicket(getUserApiSession, { purpose });
+  if (purpose === "vendor-sku-import") return bearerTicket(requireVendorAccessToken, { purpose });
+  if (VENDOR_RECORD_PURPOSES.has(purpose)) return vendorRecordTicket(purpose, body);
+  return applicationTicket(purpose);
+}
+
+/**
+ * Emite o tíquete de upload direto ao WordPress para uma finalidade.
+ * Cada finalidade autentica pelo seu canal; a permissão real é decidida pelo WordPress na emissão.
+ */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const purpose = body?.purpose;
@@ -39,52 +95,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Finalidade de upload inválida." }, { status: 422 });
   }
 
-  let headers: Record<string, string> = {};
-  let json: Record<string, unknown> = { purpose };
-
-  if (purpose === "media" || purpose === "catalog") {
-    const auth = await getAdminApiSession();
-    if ("error" in auth) {
-      return NextResponse.json({ message: auth.error }, { status: auth.status });
-    }
-    headers = { Authorization: `Bearer ${auth.accessToken}` };
-  } else if (purpose === "owner-document") {
-    const auth = await getUserApiSession();
-    if ("error" in auth) {
-      return NextResponse.json({ message: auth.error }, { status: auth.status });
-    }
-    headers = { Authorization: `Bearer ${auth.accessToken}` };
-  } else if (purpose === "vendor-fiscal-document" || purpose === "return-refund-proof" || purpose === "order-refund-proof") {
-    const auth = await requireVendorAccessToken();
-    if ("error" in auth) {
-      return NextResponse.json({ message: auth.error }, { status: auth.status });
-    }
-
-    const id = Number(purpose === "return-refund-proof" ? body?.returnId : body?.orderId);
-
-    // O pedido entra no tíquete; a autorização real — pedido do vendor e
-    // situação que aceita nota — continua sendo do WordPress. O upload sempre
-    // substitui a nota que houver, então não há modo a escolher.
-    if (!Number.isInteger(id) || id <= 0) {
-      return NextResponse.json(
-        { message: purpose === "vendor-fiscal-document" ? "Anexo de nota fiscal inválido." : "Comprovante de estorno inválido." },
-        { status: 422 },
-      );
-    }
-
-    headers = { Authorization: `Bearer ${auth.accessToken}` };
-    json = purpose === "return-refund-proof" ? { returnId: id, purpose } : { orderId: id, purpose };
-  } else {
-    const applicationToken = (await cookies()).get(APPLICATION_COOKIE)?.value;
-    if (!applicationToken) {
-      return NextResponse.json({ message: "Candidatura não encontrada." }, { status: 404 });
-    }
-    headers = { "X-Papelito-Application-Token": applicationToken };
-  }
+  const ticketRequest = await resolveTicketRequest(purpose, body);
+  if ("response" in ticketRequest) return ticketRequest.response;
 
   const result = await wpRest<UploadTicket>("/papelito/v1/uploads/tickets", {
-    headers,
-    json,
+    headers: ticketRequest.headers,
+    json: ticketRequest.json,
     method: "POST",
   });
 

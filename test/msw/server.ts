@@ -16,6 +16,7 @@ import { profileOrdersHandlers } from "./handlers/profile-orders";
 import { vendorEligibilityHandlers } from "./handlers/vendor-eligibility";
 import { vendorItemSettingsHandlers } from "./handlers/vendor-item-settings";
 import { vendorProductCustomizationHandlers } from "./handlers/vendor-product-customization";
+import { vendorSkuImportHandlers } from "./handlers/vendor-sku-import";
 
 export const server = setupServer(
   ...authHandlers,
@@ -34,4 +35,5 @@ export const server = setupServer(
   ...vendorEligibilityHandlers,
   ...vendorItemSettingsHandlers,
   ...vendorProductCustomizationHandlers,
+  ...vendorSkuImportHandlers,
 );

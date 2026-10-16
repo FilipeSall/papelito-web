@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { CheckoutCustomSelect } from "@/components/layout/checkout-page/checkout-custom-select";
 import { FOCUS_RING } from "@/components/layout/operational-panel";
@@ -12,9 +12,11 @@ import type {
   VendorStockTaxonomies,
 } from "@/features/vendor-stock/types/vendor-stock";
 import { VENDOR_STOCK_SORTS } from "@/features/vendor-stock/types/vendor-stock";
+import type { SkuImportFeedback } from "@/features/vendor-sku-import/utils/sku-import-decisions";
 
 import { buildStockHref } from "./stock-href";
 import { STOCK_SORT_LABELS } from "./stock-labels";
+import { StockSpreadsheetButton } from "./stock-spreadsheet-modal";
 import { StockFilterDrawer } from "./stock-filter-drawer";
 
 function countActive(filters: VendorStockFilters) {
@@ -45,9 +47,12 @@ const sortOptions = VENDOR_STOCK_SORTS.map((value) => ({
  */
 export function StockToolbar({
   filters,
+  onSkuImportFinished,
   taxonomies,
 }: Readonly<{
   filters: VendorStockFilters;
+  /** Recebe a mensagem final da importação de SKUs; sem ele, a importação só mostra o resultado no modal. */
+  onSkuImportFinished?: (feedback: SkuImportFeedback) => void;
   taxonomies: VendorStockTaxonomies;
 }>) {
   const router = useRouter();
@@ -143,38 +148,8 @@ export function StockToolbar({
         taxonomies={taxonomies}
       />
 
-      <StockExportLink />
+      <StockSpreadsheetButton onImported={(feedback) => onSkuImportFinished?.(feedback)} />
     </div>
-  );
-}
-
-/**
- * Baixa o estoque inteiro em planilha (SKU Papelito, código SKU, produto, quantidade).
- * Só o ícone fica na barra; o nome da ação aparece num tooltip no hover e no foco por teclado.
- * É um link comum: o navegador recebe o anexo do proxy sem estado de cliente.
- */
-function StockExportLink() {
-  return (
-    <span className="group/export relative inline-flex flex-none self-start lg:self-auto">
-      <a
-        aria-label="Exportar planilha de estoque"
-        className={[
-          "inline-flex size-11 items-center justify-center border-2 border-[#1a1a1a] bg-white text-[#1a1a1a] shadow-[3px_3px_0px_#1a1a1a] transition hover:bg-brand-yellow hover:shadow-[1px_1px_0px_#1a1a1a] active:shadow-none",
-          FOCUS_RING,
-        ].join(" ")}
-        download
-        href="/api/vendor/stock/export"
-      >
-        <Download aria-hidden className="h-4 w-4" strokeWidth={2.4} />
-      </a>
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-full right-0 z-30 mt-2.5 w-max -translate-y-1 bg-[#1a1a1a] px-3 py-2 text-[10px] font-black uppercase leading-none tracking-[0.14em] text-[#f5f1e8] opacity-0 shadow-[3px_3px_0px_#ffe500] transition duration-150 group-has-focus-visible/export:translate-y-0 group-has-focus-visible/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:opacity-100 motion-reduce:transition-none"
-      >
-        <span className="absolute -top-1 right-4 size-2 rotate-45 bg-[#1a1a1a]" />
-        <span className="relative">Exportar planilha</span>
-      </span>
-    </span>
   );
 }
 
