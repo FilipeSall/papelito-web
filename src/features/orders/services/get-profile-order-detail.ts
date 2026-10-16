@@ -11,6 +11,7 @@ import type {
   ProfileOrderDetail,
   ProfileOrderDocumentsSurface,
   ProfileOrderFiscalDocument,
+  ProfileOrderPaymentInfo,
   ProfileOrderReceipt,
   ProfileOrderRefund,
   ProfileOrderReturnEligibility,
@@ -18,6 +19,7 @@ import type {
 } from "../types/profile-order-detail";
 import type { ProfileOrdersSnapshot } from "../types/profile-orders";
 import { getPaymentExpiresAt, isPaymentExpired } from "../utils/payment-deadline";
+import { isAllowedMercadoPagoUrl } from "@/features/checkout/utils/mercado-pago-redirect";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
 import { resolveShippingProvider } from "@/features/shipping/utils/resolve-shipping-provider";
 import { shippingProviderLabel } from "@/features/shipping/utils/shipping-provider-label";
@@ -79,6 +81,11 @@ type WpProfileOrder = {
   payment?: {
     method?: string;
     state?: string;
+    provider?: string;
+    flow?: string;
+    redirect_url?: string;
+    payment_attempt_id?: unknown;
+    configuration_version?: unknown;
     pix?: {
       qr_code?: string;
       qr_code_url?: string;
@@ -207,11 +214,50 @@ function fiscalDocumentInfo(order: WpProfileOrder): ProfileOrderFiscalDocument |
   };
 }
 
-function paymentInfo(order: WpProfileOrder) {
+const PAYMENT_PROVIDERS = new Set(["mercadopago", "pagarme"]);
+const PAYMENT_FLOWS = new Set(["direct", "redirect", "requires_payment_input"]);
+
+/**
+ * Gateway, fluxo, link de retorno e tentativa aguardando dados. Só entra o que o backend mandou
+ * e é válido; o link fora do allowlist do Mercado Pago é descartado em vez de virar botão.
+ */
+type GatewayInfo = Pick<ProfileOrderPaymentInfo, "provider" | "flow" | "redirectUrl" | "paymentAttemptId" | "configurationVersion">;
+
+function attemptInfo(payment: WpProfileOrder["payment"]): Pick<GatewayInfo, "paymentAttemptId" | "configurationVersion"> {
+  const attemptId = payment?.payment_attempt_id;
+  const version = payment?.configuration_version;
+
+  if (typeof attemptId !== "number" || !Number.isInteger(attemptId) || attemptId <= 0 || typeof version !== "string") {
+    return {};
+  }
+
+  return { paymentAttemptId: attemptId, configurationVersion: version };
+}
+
+function gatewayInfo(payment: WpProfileOrder["payment"]): GatewayInfo {
+  const info: GatewayInfo = attemptInfo(payment);
+
+  if (PAYMENT_PROVIDERS.has(payment?.provider ?? "")) {
+    info.provider = payment?.provider as ProfileOrderPaymentInfo["provider"];
+  }
+
+  if (PAYMENT_FLOWS.has(payment?.flow ?? "")) {
+    info.flow = payment?.flow as ProfileOrderPaymentInfo["flow"];
+  }
+
+  if (isAllowedMercadoPagoUrl(payment?.redirect_url)) {
+    info.redirectUrl = payment.redirect_url;
+  }
+
+  return info;
+}
+
+function paymentInfo(order: WpProfileOrder): ProfileOrderPaymentInfo {
   return {
     methodLabel: order.payment_method || "Pagamento não informado",
     maskedLabel: "",
     state: order.payment?.state,
+    ...gatewayInfo(order.payment),
     pix: order.payment?.pix
       ? {
           qrCode: order.payment.pix.qr_code,

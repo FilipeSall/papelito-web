@@ -9,6 +9,7 @@ export const VENDOR_REQUIREMENT_HREF: Record<VendorRequirementId, string> = {
   account: "/vendor/configuracoes#conta",
   boxes: "/vendor/cubagem",
   pagarme: "/vendor/configuracoes#pagamentos",
+  payment_gateway: "/vendor/configuracoes#pagamentos",
 };
 
 /** Item de navegação que carrega o marcador de cada requisito. */
@@ -16,6 +17,7 @@ export const VENDOR_REQUIREMENT_NAV_HREF: Record<VendorRequirementId, string> = 
   account: "/vendor/configuracoes",
   boxes: "/vendor/cubagem",
   pagarme: "/vendor/configuracoes",
+  payment_gateway: "/vendor/configuracoes",
 };
 
 /**
@@ -64,6 +66,23 @@ const PAGARME_COPY: Record<string, Copy> = {
   unknown: {
     detail: "A Pagar.me devolveu um estado que este painel ainda não reconhece.",
     title: "Recebedor em estado desconhecido",
+  },
+};
+
+const PAYMENT_GATEWAY_COPY: Record<string, Copy> = {
+  no_gateway_ready: {
+    detail:
+      "Nem o Mercado Pago nem a Pagar.me podem receber pela sua loja agora. Conecte o Mercado Pago ou complete os dados da Pagar.me e escolha em Pagamentos o gateway que recebe os pedidos.",
+    title: "Nenhum gateway pronto para receber",
+  },
+  selected_gateway_unavailable: {
+    detail:
+      "O gateway escolhido em Pagamentos não pode receber agora, e o outro não entra no lugar dele. Resolva a pendência do gateway escolhido ou escolha o outro.",
+    title: "Gateway escolhido não recebe",
+  },
+  payment_policy_suspended: {
+    detail: "A Papelito suspendeu os pagamentos desta loja. Fale com o suporte para entender o que falta.",
+    title: "Pagamentos suspensos",
   },
 };
 
@@ -116,6 +135,7 @@ function requirementCopy(
 ): Copy | null {
   if (requirement.id === "boxes") return boxesCopy(requirement, eligibility);
   if (requirement.id === "pagarme") return PAGARME_COPY[requirement.reason] ?? null;
+  if (requirement.id === "payment_gateway") return PAYMENT_GATEWAY_COPY[requirement.reason] ?? null;
   return ACCOUNT_COPY[requirement.reason] ?? null;
 }
 

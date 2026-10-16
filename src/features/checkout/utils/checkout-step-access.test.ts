@@ -101,4 +101,12 @@ describe("getCheckoutStepAccess", () => {
   it("keeps review locked when the address regressed", () => {
     expect(access({ addressForm: { ...COMPLETE_ADDRESS, state: "" } })[3]).toBe(false);
   });
+
+  it("no Mercado Pago a revisão não exige token, porque o método é escolhido no Checkout Pro", () => {
+    expect(access({ paymentForm: EMPTY_PAYMENT, paymentProvider: "mercadopago" })[3]).toBe(true);
+  });
+
+  it("na Pagar.me continua exigindo o token do cartão", () => {
+    expect(access({ paymentForm: EMPTY_PAYMENT, paymentProvider: "pagarme" })[3]).toBe(false);
+  });
 });

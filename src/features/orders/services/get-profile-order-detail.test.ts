@@ -390,3 +390,67 @@ describe("rastreio multicarrier no detalhe do comprador", () => {
     expect(texts).not.toMatch(/Correios/i);
   });
 });
+
+describe("pagamento Mercado Pago no detalhe do comprador", () => {
+  const MP_URL = "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=1-abc";
+
+  beforeEach(() => {
+    getServerSessionMock.mockResolvedValue({ accessToken: "token" });
+  });
+
+  function mockOrder(payment: Record<string, unknown>) {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: { id: 51, order_number: "51", vendor_status: "aguardando_pagamento", payment_method: "Mercado Pago", payment },
+    });
+  }
+
+  it("mapeia gateway, fluxo e link de retorno enquanto pendente", async () => {
+    mockOrder({ method: "", state: "pending", provider: "mercadopago", flow: "redirect", redirect_url: MP_URL });
+
+    const detail = await getProfileOrderDetail("51");
+
+    expect(detail?.payment).toMatchObject({ provider: "mercadopago", flow: "redirect", state: "pending", redirectUrl: MP_URL });
+    expect(detail?.status).toBe("awaiting_payment");
+  });
+
+  it("descarta link de retorno fora do Mercado Pago", async () => {
+    mockOrder({ method: "", state: "pending", provider: "mercadopago", flow: "redirect", redirect_url: "https://evil.example/pay" });
+
+    const detail = await getProfileOrderDetail("51");
+
+    expect(detail?.payment.redirectUrl).toBeUndefined();
+  });
+
+  it("pedido Pagar.me segue sem gateway explícito", async () => {
+    mockOrder({ method: "pix", state: "pending", pix: { qr_code: "000201" } });
+
+    const detail = await getProfileOrderDetail("51");
+
+    expect(detail?.payment.provider).toBeUndefined();
+    expect(detail?.payment.pix).toMatchObject({ qrCode: "000201" });
+  });
+
+  it("mapeia a tentativa Pagar.me aguardando dados", async () => {
+    mockOrder({ method: "", state: "awaiting_payment_input", provider: "pagarme", flow: "requires_payment_input", payment_attempt_id: 31, configuration_version: "cfg-2" });
+
+    const detail = await getProfileOrderDetail("51");
+
+    expect(detail?.payment).toMatchObject({
+      provider: "pagarme",
+      flow: "requires_payment_input",
+      state: "awaiting_payment_input",
+      paymentAttemptId: 31,
+      configurationVersion: "cfg-2",
+    });
+  });
+
+  it("ignora identificador de tentativa inválido", async () => {
+    mockOrder({ method: "", state: "awaiting_payment_input", provider: "pagarme", flow: "requires_payment_input", payment_attempt_id: "31", configuration_version: 7 });
+
+    const detail = await getProfileOrderDetail("51");
+
+    expect(detail?.payment.paymentAttemptId).toBeUndefined();
+    expect(detail?.payment.configurationVersion).toBeUndefined();
+  });
+});

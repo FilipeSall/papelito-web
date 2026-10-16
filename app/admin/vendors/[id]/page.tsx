@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import type { DetailTabKey } from "@/components/layout/admin-panel/sections/vendors/vendor-detail-context";
 import { VendorDetailPage } from "@/components/layout/admin-panel/sections/vendors/vendor-detail-page";
+import { getAdminVendorPaymentGateways } from "@/features/vendor-payment-gateways/services/get-admin-vendor-payment-gateways";
 import { authOptions } from "@/lib/auth";
 import {
   getAdminVendorOrders,
@@ -90,12 +91,16 @@ export default async function AdminVendorDetailRoute({
         })
       : null;
 
+  const paymentGateways =
+    activeTab === "banking" ? await getAdminVendorPaymentGateways(session.accessToken, vendorId) : null;
+
   return (
     <VendorDetailPage
       activeTab={activeTab}
       orderFilters={orderFilters}
       ordersSnapshot={ordersSnapshot}
       origin={origin}
+      paymentGateways={paymentGateways}
       stockFilters={stockFilters}
       stockSnapshot={stockSnapshot}
       vendor={vendor}

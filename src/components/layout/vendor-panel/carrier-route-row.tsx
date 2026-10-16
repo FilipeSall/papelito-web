@@ -30,6 +30,31 @@ function StatusIcon({ tone }: Readonly<{ tone: CarrierRouteTone }>) {
   return null;
 }
 
+/** Estado da rota: rótulo com ícone pelo tom e, quando houver, a explicação curta abaixo. */
+export function RouteStatusCell({ hint, label, tone }: Readonly<{ hint: string | null; label: string; tone: CarrierRouteTone }>) {
+  return (
+    <div className="col-span-2 min-w-0 md:col-span-1">
+      <p className={`inline-flex items-center gap-1.5 text-xs font-black ${STATUS_CLASSNAME[tone]}`}>
+        <StatusIcon tone={tone} />
+        {label}
+      </p>
+      {hint ? <p className="mt-1 text-xs leading-5 font-semibold text-[#1a1a1a]/65">{hint}</p> : null}
+    </div>
+  );
+}
+
+/** Papel da rota no checkout, última coluna do quadro; no celular ganha o rótulo "Papel". */
+export function RouteRoleCell({ role, tone }: Readonly<{ role: string; tone: CarrierRouteTone }>) {
+  return (
+    <p className={`col-span-2 font-(--font-admin-mono) text-xs font-semibold md:col-span-1 ${ROLE_CLASSNAME[tone]}`}>
+      <span className="mr-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/55 md:sr-only">
+        Papel
+      </span>
+      {role}
+    </p>
+  );
+}
+
 type CarrierRouteRowProps = {
   /** Nome da transportadora, primeira coluna da linha. */
   carrier: string;
@@ -101,25 +126,8 @@ export function CarrierRouteRow({
           />
           <InfoTooltip text={tooltip} />
         </div>
-        <div className="col-span-2 min-w-0 md:col-span-1">
-          <p
-            className={`inline-flex items-center gap-1.5 text-xs font-black ${STATUS_CLASSNAME[statusTone]}`}
-          >
-            <StatusIcon tone={statusTone} />
-            {statusLabel}
-          </p>
-          {hint ? (
-            <p className="mt-1 text-xs leading-5 font-semibold text-[#1a1a1a]/65">{hint}</p>
-          ) : null}
-        </div>
-        <p
-          className={`col-span-2 font-(--font-admin-mono) text-xs font-semibold md:col-span-1 ${ROLE_CLASSNAME[statusTone]}`}
-        >
-          <span className="mr-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#1a1a1a]/55 md:sr-only">
-            Papel
-          </span>
-          {role}
-        </p>
+        <RouteStatusCell hint={hint} label={statusLabel} tone={statusTone} />
+        <RouteRoleCell role={role} tone={statusTone} />
       </div>
       {children}
     </div>

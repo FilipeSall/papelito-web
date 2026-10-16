@@ -4,6 +4,9 @@ export { useCepLookup } from "./hooks/use-cep-lookup";
 export { getShippingQuote } from "./services/get-shipping-quote";
 export { lookupCep } from "./services/lookup-cep";
 export { placeOrder } from "./services/place-order";
+export { getPaymentContext } from "./services/payment-context";
+export { continuePaymentAttempt } from "./services/continue-payment-attempt";
+export { usePaymentContext } from "./hooks/use-payment-context";
 export { useCheckoutStepAccess } from "./hooks/use-checkout-step-access";
 export { useCheckoutStore } from "./store/use-checkout-store";
 export {
@@ -27,4 +30,9 @@ export type {
   PlaceOrderResult,
   PlaceOrderError,
   PlaceOrderResponse,
+  PlaceOrderPaymentInput,
+  PlaceOrderPaymentResult,
+  PendingPaymentAttempt,
+  ContinuePaymentResult,
+  ContinuePaymentResponse,
 } from "./types/checkout";

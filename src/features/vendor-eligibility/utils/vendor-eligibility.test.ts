@@ -128,6 +128,36 @@ describe("readVendorPendencies", () => {
     expect(pending.detail).toContain("continua ativo");
   });
 
+  it("traduz o requisito de gateway do modo novo, sem quebrar o legado", () => {
+    for (const reason of ["no_gateway_ready", "selected_gateway_unavailable", "payment_policy_suspended"]) {
+      const [pending] = readVendorPendencies(
+        eligibility({
+          requirements: [
+            requirement("account"),
+            requirement("payment_gateway", { blocking: true, reason, satisfied: false, providers: [] }),
+          ],
+        }),
+      );
+
+      expect(pending.kind).toBe("blocking");
+      expect(pending.id).toBe("payment_gateway");
+      expect(pending.href).toBe("/vendor/configuracoes#pagamentos");
+      expect(pending.navHref).toBe(SETTINGS_NAV_HREF);
+      expect(pending.title.length).toBeGreaterThan(0);
+      expect(pending.detail).not.toContain(reason);
+    }
+  });
+
+  it("gateway apto não produz pendência", () => {
+    const pendencies = readVendorPendencies(
+      eligibility({
+        requirements: [requirement("payment_gateway", { satisfied: true, providers: ["mercadopago"] })],
+      }),
+    );
+
+    expect(pendencies).toEqual([]);
+  });
+
   it("descarta motivo que o painel não conhece em vez de exibir linha vazia", () => {
     const pendencies = readVendorPendencies(
       eligibility({

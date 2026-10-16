@@ -1,9 +1,13 @@
+import { gatewayErrorMessage } from "@/features/vendor-payment-gateways/utils/payment-gateway-messages";
+
 import type {
   PlaceOrderInput,
-  PlaceOrderResult,
   PlaceOrderError,
+  PlaceOrderPaymentInput,
+  PlaceOrderResult,
   PlaceOrderResponse,
 } from "../types/checkout";
+import { parsePlaceOrderPayment } from "../utils/parse-place-order-payment";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -84,6 +88,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   papelito_coupon_minimum_not_met: "Subtotal mínimo não atingido para este cupom.",
 };
 
+const GATEWAY_ERROR_PREFIX = "papelito_payment_";
+
 function friendlyMessage(error: PlaceOrderError | null) {
   if (!error) {
     return "Não foi possível concluir o pedido.";
@@ -97,9 +103,76 @@ function friendlyMessage(error: PlaceOrderError | null) {
     return ERROR_MESSAGES[error.code];
   }
 
+  if (error.code.startsWith(GATEWAY_ERROR_PREFIX)) {
+    return gatewayErrorMessage(error.code);
+  }
+
   return "Não foi possível concluir o pedido.";
 }
 
+/**
+ * Converte o corpo de erro de uma rota de checkout em `PlaceOrderError` com mensagem
+ * amigável. `orderId` só vem quando o pedido já existe (reconciliação); `configurationVersion`,
+ * quando a tentativa passou a esperar outra versão.
+ */
+export function readCheckoutError(payload: unknown, status: number): PlaceOrderError {
+  const record = typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : {};
+  const error: PlaceOrderError = {
+    code: typeof record.code === "string" ? record.code : "papelito_checkout_failed",
+    message: typeof record.message === "string" ? record.message : "",
+    status,
+  };
+  const orderId = record.orderId;
+
+  if (typeof orderId === "number" && Number.isInteger(orderId) && orderId > 0) {
+    error.orderId = orderId;
+  }
+
+  if (typeof record.configurationVersion === "string") {
+    error.configurationVersion = record.configurationVersion;
+  }
+
+  return { ...error, message: friendlyMessage(error) };
+}
+
+/** Pagamento Pagar.me no formato snake_case que o WordPress espera (place-order e continuação). */
+export function serializePaymentInput(payment: PlaceOrderPaymentInput) {
+  return {
+    method: payment.method,
+    installments: payment.installments,
+    card_token_id: payment.cardTokenId,
+    holder_name: payment.holderName,
+    billing_address: payment.billingAddress
+      ? {
+          zip_code: payment.billingAddress.zipCode,
+          street: payment.billingAddress.street,
+          number: payment.billingAddress.number,
+          complement: payment.billingAddress.complement,
+          neighborhood: payment.billingAddress.neighborhood,
+          city: payment.billingAddress.city,
+          state: payment.billingAddress.state,
+        }
+      : undefined,
+  };
+}
+
+/** Erro devolvido quando o backend responde 2xx com corpo que não é um pedido coerente. */
+export function invalidCheckoutResponse(status: number): PlaceOrderResponse {
+  return {
+    ok: false,
+    error: {
+      code: "papelito_invalid_response",
+      message: "Resposta inválida ao concluir o pedido.",
+      status,
+    },
+  };
+}
+
+/**
+ * Cria o pedido pelo proxy `/api/checkout/place-order`. Sem `payment` (Mercado Pago) o backend
+ * decide o modo; a resposta só vira sucesso com pedido, totais e pagamento coerentes. Retry com o
+ * mesmo `checkoutAttemptId` devolve o pedido já criado, nunca um segundo.
+ */
 export async function placeOrder(
   input: PlaceOrderInput,
 ): Promise<PlaceOrderResponse> {
@@ -140,23 +213,7 @@ export async function placeOrder(
           expected_expires_at: input.shipping.expectedExpiresAt,
           destination_cep: input.shipping.destinationCep,
         },
-        payment: {
-          method: input.payment.method,
-          installments: input.payment.installments,
-          card_token_id: input.payment.cardTokenId,
-          holder_name: input.payment.holderName,
-          billing_address: input.payment.billingAddress
-            ? {
-                zip_code: input.payment.billingAddress.zipCode,
-                street: input.payment.billingAddress.street,
-                number: input.payment.billingAddress.number,
-                complement: input.payment.billingAddress.complement,
-                neighborhood: input.payment.billingAddress.neighborhood,
-                city: input.payment.billingAddress.city,
-                state: input.payment.billingAddress.state,
-              }
-            : undefined,
-        },
+        payment: input.payment ? serializePaymentInput(input.payment) : undefined,
         coupon_code: input.couponCode ?? undefined,
         analytics:
           input.analytics?.clientId || input.analytics?.sessionId
@@ -178,50 +235,38 @@ export async function placeOrder(
     };
   }
 
-  const payload = (await response.json().catch(() => null)) as
-    | (PlaceOrderResult & PlaceOrderError)
-    | null;
+  const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const error: PlaceOrderError = {
-      code:
-        payload && typeof payload.code === "string"
-          ? payload.code
-          : "papelito_checkout_failed",
-      message: payload && typeof payload.message === "string" ? payload.message : "",
-      status: response.status,
-    };
-
-    return {
-      ok: false,
-      error: {
-        ...error,
-        message: friendlyMessage(error),
-      },
-    };
+    return { ok: false, error: readCheckoutError(payload, response.status) };
   }
 
+  if (typeof payload !== "object" || payload === null) {
+    return invalidCheckoutResponse(response.status);
+  }
+
+  const record = payload as Record<string, unknown>;
+  const payment = parsePlaceOrderPayment(record.payment);
+
   if (
-    !payload ||
-    typeof payload.orderId !== "number" ||
-    typeof payload.orderNumber !== "string" ||
-    typeof payload.status !== "string" ||
-    !payload.payment ||
-    typeof payload.payment !== "object" ||
-    !hasValidTotals(payload.totals)
+    typeof record.orderId !== "number" ||
+    typeof record.orderNumber !== "string" ||
+    typeof record.status !== "string" ||
+    !payment ||
+    !hasValidTotals(record.totals)
   ) {
-    return {
-      ok: false,
-      error: {
-        code: "papelito_invalid_response",
-        message: "Resposta inválida ao concluir o pedido.",
-        status: response.status,
-      },
-    };
+    return invalidCheckoutResponse(response.status);
   }
 
   return {
     ok: true,
-    result: payload,
+    result: {
+      ...record,
+      orderId: record.orderId,
+      orderNumber: record.orderNumber,
+      status: record.status,
+      payment,
+      totals: record.totals as PlaceOrderResult["totals"],
+    },
   };
 }

@@ -1,5 +1,6 @@
 import type {
   CheckoutAddressForm,
+  CheckoutPaymentProvider,
   PaymentForm,
   PaymentMethod,
   ShippingQuoteOption,
@@ -46,6 +47,8 @@ type CheckoutStepAccessInput = {
   selectedShippingOption: ShippingQuoteOption | null;
   paymentMethod: PaymentMethod;
   paymentForm: PaymentForm;
+  /** No Mercado Pago o método é escolhido no Checkout Pro e a revisão não espera token. */
+  paymentProvider?: CheckoutPaymentProvider | null;
 };
 
 /**
@@ -59,13 +62,15 @@ export function getCheckoutStepAccess({
   selectedShippingOption,
   paymentMethod,
   paymentForm,
+  paymentProvider,
 }: CheckoutStepAccessInput): CheckoutStepAccess {
   const requiresShippingChoice = items.length > 0 && resolveCartVendorId(items) !== null;
   const addressReady =
     isAddressFormComplete(addressForm) &&
     (!requiresShippingChoice || Boolean(selectedShippingOption));
-  const paymentReady =
+  const pagarmeReady =
     paymentMethod === "credit_card" ? Boolean(paymentForm.cardTokenId) : true;
+  const paymentReady = paymentProvider === "mercadopago" || pagarmeReady;
 
   return {
     1: true,

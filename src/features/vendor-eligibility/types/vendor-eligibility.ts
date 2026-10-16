@@ -1,7 +1,8 @@
 /**
- * Requisito avaliado pelo WordPress para liberar a venda da loja.
+ * Requisito avaliado pelo WordPress para liberar a venda da loja. `pagarme` é o recebedor do modo
+ * legado; `payment_gateway` o substitui no modo de gateways (algum gateway apto a receber).
  */
-export type VendorRequirementId = "account" | "boxes" | "pagarme";
+export type VendorRequirementId = "account" | "boxes" | "pagarme" | "payment_gateway";
 
 /**
  * Um requisito como o WordPress o devolve.
@@ -15,6 +16,8 @@ export type VendorEligibilityRequirement = {
   advisory: boolean;
   blocking: boolean;
   id: VendorRequirementId;
+  /** Gateways aptos a receber; só vem no requisito `payment_gateway`. */
+  providers?: string[];
   reason: string;
   satisfied: boolean;
 };

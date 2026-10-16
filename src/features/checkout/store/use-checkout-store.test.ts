@@ -199,4 +199,28 @@ describe("useCheckoutStore", () => {
     expect(raw).not.toContain("4111111111111111");
     expect(raw).not.toContain('"cvv"');
   });
+
+  it("guarda a tentativa aguardando coleta sem token e a mantém após recarregar", async () => {
+    useCheckoutStore.getState().patchPaymentForm({ cardTokenId: "tok_mp_flow", cardLast4: "4242" });
+    useCheckoutStore.getState().setPendingPaymentAttempt({ orderId: 9, paymentAttemptId: 31, configurationVersion: "cfg-2" });
+
+    const raw = window.localStorage.getItem("papelito-checkout-store") || "";
+    useCheckoutStore.setState({ pendingPaymentAttempt: null });
+    window.localStorage.setItem("papelito-checkout-store", raw);
+    await useCheckoutStore.persist.rehydrate();
+
+    expect(useCheckoutStore.getState().pendingPaymentAttempt).toEqual({ orderId: 9, paymentAttemptId: 31, configurationVersion: "cfg-2" });
+    expect(useCheckoutStore.getState().paymentForm.cardTokenId).toBe("");
+    expect(raw).not.toContain("tok_mp_flow");
+  });
+
+  it("descarta a tentativa ao reiniciar o checkout", () => {
+    useCheckoutStore.getState().setPendingPaymentAttempt({ orderId: 9, paymentAttemptId: 31, configurationVersion: "cfg-2" });
+    useCheckoutStore.getState().setPaymentProvider("mercadopago");
+
+    useCheckoutStore.getState().resetCheckout();
+
+    expect(useCheckoutStore.getState().pendingPaymentAttempt).toBeNull();
+    expect(useCheckoutStore.getState().paymentProvider).toBeNull();
+  });
 });

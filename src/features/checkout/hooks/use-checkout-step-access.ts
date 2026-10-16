@@ -25,6 +25,7 @@ export function useCheckoutStepAccess(): CheckoutStepAccess {
   );
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentForm = useCheckoutStore((state) => state.paymentForm);
+  const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
 
   return useMemo(() => {
     if (!isMounted) return SERVER_STEP_ACCESS;
@@ -35,6 +36,7 @@ export function useCheckoutStepAccess(): CheckoutStepAccess {
       selectedShippingOption,
       paymentMethod,
       paymentForm,
+      paymentProvider,
     });
   }, [
     addressForm,
@@ -42,6 +44,7 @@ export function useCheckoutStepAccess(): CheckoutStepAccess {
     items,
     paymentForm,
     paymentMethod,
+    paymentProvider,
     selectedShippingOption,
   ]);
 }

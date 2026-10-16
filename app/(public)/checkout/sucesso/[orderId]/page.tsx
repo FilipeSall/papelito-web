@@ -26,7 +26,7 @@ export default async function CheckoutSuccessPage({
   const paymentState = order.payment.state ?? "";
 
   if (paymentState !== "paid" && paymentState !== "captured") {
-    if (order.payment.pix || order.payment.boleto) {
+    if (order.payment.pix || order.payment.boleto || order.payment.provider === "mercadopago") {
       redirect(`/checkout/pagamento/${order.id}`);
     }
 

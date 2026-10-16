@@ -14,6 +14,7 @@ type WpRequirement = {
   advisory?: unknown;
   blocking?: unknown;
   id?: unknown;
+  providers?: unknown;
   reason?: unknown;
   satisfied?: unknown;
 };
@@ -24,7 +25,7 @@ type WpEligibility = {
   requirements?: unknown;
 };
 
-const REQUIREMENT_IDS: VendorRequirementId[] = ["account", "boxes", "pagarme"];
+const REQUIREMENT_IDS: VendorRequirementId[] = ["account", "boxes", "pagarme", "payment_gateway"];
 
 /**
  * Valor que o painel usa quando o WordPress não respondeu.
@@ -56,9 +57,13 @@ function mapRequirement(value: unknown): VendorEligibilityRequirement | null {
   if (!id) return null;
 
   const activeCount = typeof item.active_count === "number" ? item.active_count : undefined;
+  const providers = Array.isArray(item.providers)
+    ? item.providers.filter((provider): provider is string => typeof provider === "string")
+    : undefined;
 
   return {
     ...(activeCount === undefined ? {} : { activeCount }),
+    ...(providers === undefined ? {} : { providers }),
     advisory: item.advisory === true,
     blocking: item.blocking === true,
     id,

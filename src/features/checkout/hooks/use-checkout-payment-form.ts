@@ -15,7 +15,8 @@ type CreditCardDraft = {
   cvv: string;
 };
 
-type UseCheckoutPaymentFormReturn = {
+/** Estado e ações do formulário Pagar.me; o rascunho do cartão vive só na memória do componente. */
+export type UseCheckoutPaymentFormReturn = {
   method: PaymentMethod;
   setMethod: (method: PaymentMethod) => void;
   form: PaymentForm;

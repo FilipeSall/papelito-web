@@ -29,6 +29,8 @@ export { VendorReturnActions } from "./vendor-return-actions";
 export { VendorPendingRegistrationModalHost } from "./vendor-pending-registration-modal-host";
 export { VendorPeriodFilters } from "./vendor-period-filters";
 export { VendorRecipientPanel } from "./vendor-recipient-panel";
+export { VendorPaymentGatewaysPanel } from "./vendor-payment-gateways-panel";
+export { VendorFinancialProfileForm } from "./vendor-financial-profile-form";
 export { VendorAccountSection } from "./vendor-account-section";
 export { VendorLeadTimeSection } from "./vendor-lead-time-section";
 export { VendorBraspressSection } from "./vendor-braspress-section";

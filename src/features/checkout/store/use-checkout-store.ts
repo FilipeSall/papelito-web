@@ -3,8 +3,10 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
+  CheckoutPaymentProvider,
   CheckoutShippingQuoteState,
   CheckoutAddressForm,
+  PendingPaymentAttempt,
   PaymentForm,
   PaymentMethod,
   ShippingQuoteResult,
@@ -38,6 +40,10 @@ interface CheckoutState {
   requiresShippingReselection: boolean;
   checkoutAttemptId: string;
   checkoutAttemptFingerprint?: string;
+  /** Gateway do último PaymentContext lido; só orienta a navegação, o backend decide de novo. */
+  paymentProvider: CheckoutPaymentProvider | null;
+  /** Tentativa cujo pedido existe e aguarda os dados Pagar.me; sobrevive ao recarregamento. */
+  pendingPaymentAttempt: PendingPaymentAttempt | null;
   setAddressField: (field: keyof CheckoutAddressForm, value: string) => void;
   patchAddressForm: (values: Partial<CheckoutAddressForm>) => void;
   setBillingAddressField: (
@@ -54,6 +60,10 @@ interface CheckoutState {
   setRequiresShippingReselection: (value: boolean) => void;
   rotateCheckoutAttempt: () => void;
   syncCheckoutAttempt: (fingerprint: string) => string;
+  setPaymentProvider: (provider: CheckoutPaymentProvider | null) => void;
+  /** Registra a tentativa aguardando coleta e descarta qualquer token de cartão anterior. */
+  setPendingPaymentAttempt: (attempt: PendingPaymentAttempt) => void;
+  clearPendingPaymentAttempt: () => void;
   resetCheckout: () => void;
 }
 
@@ -113,6 +123,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       requiresShippingReselection: false,
       checkoutAttemptId: createCheckoutAttemptId(),
       checkoutAttemptFingerprint: undefined,
+      paymentProvider: null,
+      pendingPaymentAttempt: null,
       setAddressField: (field, value) =>
         set((state) => ({
           addressForm: {
@@ -191,6 +203,13 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         return attemptId;
       },
+      setPaymentProvider: (provider) => set({ paymentProvider: provider }),
+      setPendingPaymentAttempt: (attempt) =>
+        set((state) => ({
+          pendingPaymentAttempt: attempt,
+          paymentForm: { ...state.paymentForm, cardTokenId: "", cardLast4: "" },
+        })),
+      clearPendingPaymentAttempt: () => set({ pendingPaymentAttempt: null }),
       resetCheckout: () =>
         set({
           addressForm: INITIAL_ADDRESS_FORM,
@@ -202,6 +221,8 @@ export const useCheckoutStore = create<CheckoutState>()(
           requiresShippingReselection: false,
           checkoutAttemptId: createCheckoutAttemptId(),
           checkoutAttemptFingerprint: undefined,
+          paymentProvider: null,
+          pendingPaymentAttempt: null,
         }),
     }),
     {
@@ -299,6 +320,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         shippingQuote: state.shippingQuote,
         checkoutAttemptId: state.checkoutAttemptId,
         checkoutAttemptFingerprint: state.checkoutAttemptFingerprint,
+        paymentProvider: state.paymentProvider,
+        pendingPaymentAttempt: state.pendingPaymentAttempt,
       }),
     },
   ),

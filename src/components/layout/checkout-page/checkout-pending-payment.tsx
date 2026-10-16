@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 
 import { useCartStore } from "@/features/cart/store/use-cart-store";
+import { useCheckoutStore } from "@/features/checkout";
+import type { PendingPaymentAttempt } from "@/features/checkout/types/checkout";
 import type { ProfileOrderDetail } from "@/features/orders/types/profile-order-detail";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 import {
   formatPaymentDeadline,
   getPaymentExpiresAt,
@@ -23,13 +26,15 @@ import {
   PaymentSectionTitle,
   PaymentSteps,
 } from "./payment-method-panel";
+import { CheckoutPaymentContinuation } from "./checkout-payment-continuation";
 import { CheckoutStatusAside, CheckoutStatusHeader } from "./checkout-status-header";
+import { MercadoPagoPaymentStatus } from "./mercado-pago-payment-status";
 import { OrderPaymentSummary } from "./order-payment-summary";
 
 const POLLING_INTERVAL_MS = 5000;
 const DEADLINE_TICK_MS = 1000;
 const CONFIRMED_PAYMENT_STATES = new Set(["paid", "captured"]);
-const PENDING_PAYMENT_STATES = new Set(["", "pending", "waiting_payment", "awaiting_payment", "processing"]);
+const PENDING_PAYMENT_STATES = new Set(["", "pending", "unknown", "waiting_payment", "awaiting_payment", "processing"]);
 
 const PIX_STEPS = [
   "Abra o aplicativo do seu banco e entre na área Pix.",
@@ -68,20 +73,94 @@ function isPendingPaymentState(value?: string) {
   return PENDING_PAYMENT_STATES.has(value || "");
 }
 
-export function CheckoutPendingPayment({ initialOrder }: { initialOrder: ProfileOrderDetail }) {
+async function fetchOrder(orderId: string): Promise<ProfileOrderDetail | null> {
+  try {
+    const response = await fetch(`/api/profile/orders/${orderId}`, { cache: "no-store" });
+
+    if (!response.ok) return null;
+
+    return (await response.json().catch(() => null)) as ProfileOrderDetail | null;
+  } catch {
+    return null;
+  }
+}
+
+function serverAttempt(order: ProfileOrderDetail): PendingPaymentAttempt | null {
+  const { flow, state, paymentAttemptId, configurationVersion } = order.payment;
+
+  if (flow !== "requires_payment_input" || state !== "awaiting_payment_input") return null;
+  if (!paymentAttemptId || configurationVersion === undefined) return null;
+
+  return { orderId: Number(order.id), paymentAttemptId, configurationVersion };
+}
+
+function storedAttempt(attempt: PendingPaymentAttempt | null, order: ProfileOrderDetail) {
+  if (!attempt || String(attempt.orderId) !== order.id) return null;
+  if (order.status !== "awaiting_payment" || order.payment.provider === "mercadopago") return null;
+  if (typeof attempt.paymentAttemptId !== "number" || typeof attempt.configurationVersion !== "string") return null;
+
+  return attempt;
+}
+
+/**
+ * Tentativa aguardando coleta. Com o fluxo informado pelo servidor ele é a única fonte; o store
+ * só acelera pedidos cujo detalhe ainda não traz o fluxo.
+ */
+function resolveAttempt(order: ProfileOrderDetail, stored: PendingPaymentAttempt | null) {
+  if (order.payment.flow) return serverAttempt(order);
+
+  return storedAttempt(stored, order);
+}
+
+type CheckoutPendingPaymentProps = {
+  /** Pedido lido no servidor; uma nova leitura (router.refresh) substitui o estado local. */
+  initialOrder: ProfileOrderDetail;
+};
+
+/**
+ * Página de pagamento de um pedido criado. Com tentativa aguardando coleta (vinda do servidor,
+ * em qualquer aparelho) mostra a coleta Pagar.me; no Mercado Pago mostra o estado do servidor; nos demais,
+ * PIX/boleto de sempre. Em todos os casos só `paid` do servidor leva ao sucesso.
+ */
+export function CheckoutPendingPayment({ initialOrder }: Readonly<CheckoutPendingPaymentProps>) {
+  const isMounted = useIsMounted();
+  const pendingAttempt = useCheckoutStore((state) => state.pendingPaymentAttempt);
+  const [order, setOrder] = useState(initialOrder);
+  const [sourceOrder, setSourceOrder] = useState(initialOrder);
+
+  if (sourceOrder !== initialOrder) {
+    setSourceOrder(initialOrder);
+    setOrder(initialOrder);
+  }
+
+  const attempt = resolveAttempt(order, isMounted ? pendingAttempt : null);
+
+  if (attempt) {
+    return <CheckoutPaymentContinuation key={attempt.paymentAttemptId} attempt={attempt} order={order} />;
+  }
+
+  return <PendingPaymentView order={order} onOrderChange={setOrder} />;
+}
+
+type PendingPaymentViewProps = {
+  order: ProfileOrderDetail;
+  onOrderChange: (order: ProfileOrderDetail) => void;
+};
+
+function PendingPaymentView({ order, onOrderChange }: Readonly<PendingPaymentViewProps>) {
   const router = useRouter();
   const clearCart = useCartStore((state) => state.clearCart);
-  const [order, setOrder] = useState(initialOrder);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [pixQrImage, setPixQrImage] = useState({ code: "", dataUrl: "" });
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const paymentState = order.payment.state || "";
-  const hasAsyncPayment = Boolean(order.payment.pix || order.payment.boleto);
   const expiresAt = getPaymentExpiresAt(order.payment);
   const expired = isPaymentExpired(expiresAt, nowMs);
   const deadline = formatPaymentDeadline(expiresAt, nowMs);
-  const shouldPollPayment = hasAsyncPayment && !expired && isPendingPaymentState(paymentState);
+  const isMercadoPago = order.payment.provider === "mercadopago";
+  const awaitingInput = order.payment.flow === "requires_payment_input";
+  const shouldPollPayment = !awaitingInput && !expired && isPendingPaymentState(paymentState);
   const pixCode = order.payment.pix?.copyPaste || (!isHttpUrl(order.payment.pix?.qrCode) ? order.payment.pix?.qrCode : "");
   const pixQrDataUrl = pixQrImage.code === pixCode ? pixQrImage.dataUrl : "";
   const pixQrImageSrc =
@@ -99,21 +178,13 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
     }
 
     const poll = window.setInterval(async () => {
-      const response = await fetch(`/api/profile/orders/${order.id}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        return;
-      }
-
-      const nextOrder = (await response.json().catch(() => null)) as ProfileOrderDetail | null;
+      const nextOrder = await fetchOrder(order.id);
 
       if (!nextOrder) {
         return;
       }
 
-      setOrder(nextOrder);
+      onOrderChange(nextOrder);
 
       const state = nextOrder.payment.state;
       if (state === "paid" || state === "captured") {
@@ -125,7 +196,7 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
     return () => {
       window.clearInterval(poll);
     };
-  }, [order.id, paymentState, router, clearCart, shouldPollPayment]);
+  }, [order.id, paymentState, router, clearCart, shouldPollPayment, onOrderChange]);
 
   useEffect(() => {
     if (!deadline.hasDeadline || expired) {
@@ -185,6 +256,10 @@ export function CheckoutPendingPayment({ initialOrder }: { initialOrder: Profile
   }
 
   const boletoLine = order.payment.boleto?.line || "";
+
+  if (isMercadoPago) {
+    return <MercadoPagoPaymentStatus order={order} />;
+  }
 
   if (expired) {
     return (

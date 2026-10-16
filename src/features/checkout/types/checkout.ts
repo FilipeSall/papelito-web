@@ -95,13 +95,8 @@ export type PlaceOrderInput = {
     expectedExpiresAt?: string | null;
     destinationCep: string;
   };
-  payment: {
-    method: PaymentMethod;
-    installments?: number;
-    cardTokenId?: string;
-    holderName?: string;
-    billingAddress?: PaymentBillingAddress;
-  };
+  /** Omitido quando o gateway é o Mercado Pago: o método é escolhido dentro do Checkout Pro. */
+  payment?: PlaceOrderPaymentInput | null;
   couponCode?: string | null;
   analytics?: {
     clientId?: string;
@@ -109,9 +104,38 @@ export type PlaceOrderInput = {
   };
 };
 
-export type PlaceOrderPaymentResult = {
+/** Gateway que emitiu o pagamento da tentativa. */
+export type CheckoutPaymentProvider = "mercadopago" | "pagarme";
+
+/**
+ * Modo do pagamento devolvido pelo place-order: cobrança direta Pagar.me, redirect ao
+ * Checkout Pro ou coleta Pagar.me pendente na mesma tentativa.
+ */
+export type CheckoutPaymentFlow = "direct" | "redirect" | "requires_payment_input";
+
+/** Dados de pagamento Pagar.me já tokenizados; o número do cartão nunca entra aqui. */
+export type PlaceOrderPaymentInput = {
   method: PaymentMethod;
+  installments?: number;
+  cardTokenId?: string;
+  holderName?: string;
+  billingAddress?: PaymentBillingAddress;
+};
+
+/**
+ * Pagamento devolvido pelo backend. Resposta legada traz só `method`/`state`; a nova traz
+ * gateway, fluxo e tentativa, e `method` pode faltar antes de pagar no Checkout Pro.
+ */
+export type PlaceOrderPaymentResult = {
+  method?: PaymentMethod | "";
   state: string;
+  provider?: CheckoutPaymentProvider;
+  flow?: CheckoutPaymentFlow;
+  paymentAttemptId?: number;
+  configurationVersion?: string;
+  fallbackReason?: string;
+  /** Só em `redirect` pendente, e sempre HTTPS de domínio do Mercado Pago. */
+  redirectUrl?: string;
   pix?: {
     qr_code?: string;
     copy_paste?: string;
@@ -143,8 +167,35 @@ export type PlaceOrderError = {
   code: string;
   message: string;
   status?: number;
+  /** Pedido já criado cujo pagamento está em reconciliação; o comprador acompanha por ele. */
+  orderId?: number;
+  /** Versão nova que a tentativa passou a esperar (configuração obsoleta), sem cobrança feita. */
+  configurationVersion?: string;
 };
 
 export type PlaceOrderResponse =
   | { ok: true; result: PlaceOrderResult }
+  | { ok: false; error: PlaceOrderError };
+
+/**
+ * Tentativa de pagamento que aguarda a coleta Pagar.me depois que o Mercado Pago falhou antes
+ * de criar a cobrança. Fica no store persistido para sobreviver ao recarregamento; nunca guarda
+ * token de cartão.
+ */
+export type PendingPaymentAttempt = {
+  orderId: number;
+  paymentAttemptId: number;
+  configurationVersion: string;
+};
+
+/** Resultado da continuação de uma tentativa: o mesmo pedido, sem totais garantidos. */
+export type ContinuePaymentResult = {
+  orderId: number;
+  orderNumber: string;
+  status: string;
+  payment: PlaceOrderPaymentResult;
+};
+
+export type ContinuePaymentResponse =
+  | { ok: true; result: ContinuePaymentResult }
   | { ok: false; error: PlaceOrderError };

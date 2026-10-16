@@ -67,3 +67,40 @@ export async function GET() {
     headers: { "Cache-Control": "no-store, private" },
   });
 }
+
+/**
+ * Cria ou atualiza o recebedor Pagar.me do vendor com os dados financeiros já salvos.
+ *
+ * Usado pelo painel de gateways, que não tem o fluxo de liberação do painel legado. O WordPress
+ * aplica a restrição CNAE e devolve o estado do recebedor; a elegibilidade pode mudar na hora.
+ */
+export async function POST() {
+  const auth = await requireVendorAccessToken();
+
+  if ("error" in auth) {
+    return NextResponse.json({ message: auth.error }, { status: auth.status });
+  }
+
+  const result = await wpRest("/papelito/v1/vendor/recipient", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${auth.accessToken}`,
+    },
+    json: {},
+    cache: "no-store",
+  });
+
+  if (!result.ok) {
+    return NextResponse.json(
+      { message: result.error.message, code: result.error.code },
+      { status: result.status || 500 },
+    );
+  }
+
+  revalidateTag("vendor-eligibility", "max");
+  revalidateTag("vendor-recipient", "max");
+
+  return NextResponse.json(mapVendorRecipientResponse(result.data), {
+    headers: { "Cache-Control": "no-store, private" },
+  });
+}

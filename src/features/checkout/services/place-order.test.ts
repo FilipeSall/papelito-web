@@ -250,4 +250,100 @@ describe("placeOrder", () => {
       error: { code: "papelito_invalid_response" },
     });
   });
+
+  describe("gateways de pagamento", () => {
+    const MP_URL = "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=1-abc";
+    const mercadoPagoInput = { ...baseInput, payment: undefined };
+
+    function respondWith(payment: Record<string, unknown>) {
+      server.use(
+        http.post("/api/checkout/place-order", () =>
+          HttpResponse.json({ orderId: 77, orderNumber: "77", status: "pending", payment, totals: validTotals }),
+        ),
+      );
+    }
+
+    it("omite o pagamento quando o gateway é o Mercado Pago", async () => {
+      let payload: Record<string, unknown> | null = null;
+      server.use(
+        http.post("/api/checkout/place-order", async ({ request }) => {
+          payload = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            orderId: 77,
+            orderNumber: "77",
+            status: "pending",
+            payment: { method: "", state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, configurationVersion: "v1", fallbackReason: "", redirectUrl: MP_URL },
+            totals: validTotals,
+          });
+        }),
+      );
+
+      await placeOrder(mercadoPagoInput);
+
+      expect(payload).not.toBeNull();
+      expect(payload).not.toHaveProperty("payment");
+    });
+
+    it("aceita redirect sem método com URL do Mercado Pago", async () => {
+      respondWith({ state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, configurationVersion: "v1", fallbackReason: "", redirectUrl: MP_URL });
+
+      await expect(placeOrder(mercadoPagoInput)).resolves.toMatchObject({
+        ok: true,
+        result: { orderId: 77, payment: { provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, redirectUrl: MP_URL } },
+      });
+    });
+
+    it("aceita coleta pendente sem método", async () => {
+      respondWith({ method: "", state: "awaiting_payment_input", provider: "pagarme", flow: "requires_payment_input", paymentAttemptId: 6, configurationVersion: "v2", fallbackReason: "preferred_failed_before_creation" });
+
+      await expect(placeOrder(mercadoPagoInput)).resolves.toMatchObject({
+        ok: true,
+        result: { payment: { flow: "requires_payment_input", paymentAttemptId: 6, configurationVersion: "v2" } },
+      });
+    });
+
+    it("aceita cobrança direta nova com método", async () => {
+      respondWith({ method: "pix", state: "pending", provider: "pagarme", flow: "direct", paymentAttemptId: 7, configurationVersion: "v3", fallbackReason: "", pix: { qr_code: "000201" } });
+
+      await expect(placeOrder(baseInput)).resolves.toMatchObject({
+        ok: true,
+        result: { payment: { method: "pix", flow: "direct", pix: { qr_code: "000201" } } },
+      });
+    });
+
+    it.each([
+      ["redirect sem URL", { state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5 }],
+      ["redirect com HTTP", { state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, redirectUrl: "http://www.mercadopago.com.br/x" }],
+      ["redirect fora do Mercado Pago", { state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, redirectUrl: "https://mercadopago.com.br.evil.com/x" }],
+      ["redirect pela Pagar.me", { state: "pending", provider: "pagarme", flow: "redirect", paymentAttemptId: 5, redirectUrl: MP_URL }],
+      ["fluxo desconhecido", { state: "paid", provider: "mercadopago", flow: "transparent", paymentAttemptId: 5 }],
+      ["gateway desconhecido", { method: "pix", state: "paid", provider: "stripe", flow: "direct", paymentAttemptId: 5 }],
+      ["tentativa sem identificador", { state: "awaiting_payment_input", provider: "pagarme", flow: "requires_payment_input", configurationVersion: "v" }],
+      ["coleta pelo Mercado Pago", { state: "awaiting_payment_input", provider: "mercadopago", flow: "requires_payment_input", paymentAttemptId: 5, configurationVersion: "v" }],
+      ["direto sem método", { state: "paid", provider: "pagarme", flow: "direct", paymentAttemptId: 5 }],
+    ])("resposta nova malformada (%s) não vira sucesso", async (_label, payment) => {
+      respondWith(payment);
+
+      await expect(placeOrder(mercadoPagoInput)).resolves.toMatchObject({
+        ok: false,
+        error: { code: "papelito_invalid_response" },
+      });
+    });
+
+    it("repassa o pedido do erro de reconciliação", async () => {
+      server.use(
+        http.post("/api/checkout/place-order", () =>
+          HttpResponse.json(
+            { code: "papelito_payment_attempt_reconciling", message: "Estamos confirmando.", orderId: 88 },
+            { status: 409 },
+          ),
+        ),
+      );
+
+      await expect(placeOrder(mercadoPagoInput)).resolves.toEqual({
+        ok: false,
+        error: { code: "papelito_payment_attempt_reconciling", message: "Estamos confirmando.", status: 409, orderId: 88 },
+      });
+    });
+  });
 });

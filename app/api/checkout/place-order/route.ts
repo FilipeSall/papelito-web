@@ -2,15 +2,22 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/auth";
-import { wpRest } from "@/lib/server/wp-rest";
+import { getAppBaseUrlOrUndefined } from "@/lib/server/app-url";
+import { wpRest, type WpRestError } from "@/lib/server/wp-rest";
 
 type PlaceOrderApiResponse = {
   order_id?: number;
   order_number?: string;
   status?: string;
   payment?: {
-    method?: "credit_card" | "pix" | "boleto";
+    method?: "credit_card" | "pix" | "boleto" | "";
     state?: string;
+    provider?: "mercadopago" | "pagarme";
+    flow?: "direct" | "redirect" | "requires_payment_input";
+    paymentAttemptId?: number;
+    configurationVersion?: string;
+    fallbackReason?: string;
+    redirectUrl?: string;
     pix?: {
       qr_code?: string;
       qr_code_url?: string;
@@ -32,6 +39,22 @@ type PlaceOrderApiResponse = {
     totalCents: number;
   };
 };
+
+const RECONCILING_CODE = "papelito_payment_attempt_reconciling";
+
+/**
+ * Pedido de um pagamento em reconciliação: o WordPress já criou o pedido e o comprador precisa
+ * acompanhá-lo em vez de refazer o checkout. Os demais `error.data` continuam descartados.
+ */
+function reconcilingOrder(error: WpRestError): { orderId?: number } {
+  const orderId = error.data?.orderId;
+
+  if (error.code !== RECONCILING_CODE || typeof orderId !== "number" || !Number.isInteger(orderId) || orderId <= 0) {
+    return {};
+  }
+
+  return { orderId };
+}
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -62,11 +85,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Payload inválido." }, { status: 400 });
   }
 
+  const headers: Record<string, string> = { Authorization: `Bearer ${session.accessToken}` };
+  const appBaseUrl = getAppBaseUrlOrUndefined();
+  if (appBaseUrl) headers["X-Papelito-Frontend-Base"] = appBaseUrl;
+
   const result = await wpRest<PlaceOrderApiResponse>(
     "/papelito/v1/checkout/place-order",
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers,
       json: payload,
     },
   );
@@ -76,6 +103,7 @@ export async function POST(request: Request) {
       {
         code: result.error.code,
         message: result.error.message,
+        ...reconcilingOrder(result.error),
       },
       { status: result.status || 500 },
     );

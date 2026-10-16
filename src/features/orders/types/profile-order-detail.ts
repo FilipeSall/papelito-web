@@ -55,6 +55,15 @@ export interface ProfileOrderPaymentInfo {
   methodLabel: string;
   maskedLabel: string;
   state?: string;
+  /** Só presente quando o backend identifica o gateway (Mercado Pago); Pagar.me legado omite. */
+  provider?: "mercadopago" | "pagarme";
+  flow?: "direct" | "redirect" | "requires_payment_input";
+  /** Link para voltar ao Checkout Pro, só enquanto pendente e sempre HTTPS do Mercado Pago. */
+  redirectUrl?: string;
+  /** Tentativa Pagar.me aguardando dados: identifica a continuação em qualquer aparelho. */
+  paymentAttemptId?: number;
+  /** Versão de configuração que a continuação dessa tentativa precisa enviar. */
+  configurationVersion?: string;
   pix?: {
     qrCode?: string;
     qrCodeUrl?: string;

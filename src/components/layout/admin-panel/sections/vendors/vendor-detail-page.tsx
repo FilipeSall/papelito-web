@@ -4,6 +4,7 @@ import type {
   AdminVendorOrdersSnapshot,
   AdminVendorStockSnapshot,
 } from "@/lib/server/admin-vendor-operations";
+import type { VendorPaymentSummary } from "@/features/vendor-payment-gateways/types/payment-gateways";
 import type { AdminVendorDetail } from "@/lib/server/admin-vendors";
 
 import { VendorBankingTab } from "./vendor-banking-tab";
@@ -28,6 +29,7 @@ export function VendorDetailPage({
   orderFilters,
   ordersSnapshot,
   origin,
+  paymentGateways,
   stockFilters,
   stockSnapshot,
   vendor,
@@ -36,6 +38,7 @@ export function VendorDetailPage({
   orderFilters: OrderFilters;
   ordersSnapshot: AdminVendorOrdersSnapshot | null;
   origin: OriginFilters;
+  paymentGateways: VendorPaymentSummary | null;
   stockFilters: StockFilters;
   stockSnapshot: AdminVendorStockSnapshot | null;
   vendor: AdminVendorDetail;
@@ -84,7 +87,7 @@ export function VendorDetailPage({
       <VendorDetailTabs activeTab={activeTab} tabs={tabs} />
       {activeTab === "data" ? <VendorDataTab vendor={vendor} /> : null}
       {activeTab === "coverage" ? <VendorCoverageTab vendor={vendor} /> : null}
-      {activeTab === "banking" ? <VendorBankingTab vendor={vendor} /> : null}
+      {activeTab === "banking" ? <VendorBankingTab paymentGateways={paymentGateways} vendor={vendor} /> : null}
       {activeTab === "stock" ? <VendorStockTab ctx={ctx} snapshot={stockSnapshot} /> : null}
       {activeTab === "orders" ? <VendorOrdersTab ctx={ctx} snapshot={ordersSnapshot} /> : null}
 
