@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getAppBaseUrlOrUndefined } from "@/lib/server/app-url";
 import { getWpRestBase } from "@/lib/server/env";
 
 export type WpRestError = {
@@ -23,6 +24,18 @@ export type WpRestFailure = {
 };
 
 export type WpRestResult<T> = WpRestSuccess<T> | WpRestFailure;
+
+const FRONTEND_BASE_HEADER = "X-Papelito-Frontend-Base";
+
+/**
+ * Domínio desta implantação para o WordPress separar teste e produção (vendor de teste, callback
+ * do OAuth, retorno do pagamento). O WordPress só aceita domínio da própria allowlist.
+ */
+function frontendBaseHeader(): Record<string, string> {
+  const base = getAppBaseUrlOrUndefined();
+
+  return base ? { [FRONTEND_BASE_HEADER]: base } : {};
+}
 
 function buildError(code: string, message: string, status: number): WpRestError {
   return { code, message, data: { status } };
@@ -53,6 +66,7 @@ export async function wpRest<T>(
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         Accept: "application/json",
+        ...frontendBaseHeader(),
         ...(headers as Record<string, string> | undefined),
       },
       body: json !== undefined ? JSON.stringify(json) : rest.body,
