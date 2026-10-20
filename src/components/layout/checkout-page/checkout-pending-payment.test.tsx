@@ -83,6 +83,7 @@ describe("CheckoutPendingPayment — Mercado Pago", () => {
 
     expect(screen.getByText(/estamos confirmando seu pagamento com o mercado pago/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /voltar ao mercado pago/i })).toHaveAttribute("href", MP_URL);
+    expect(screen.getByRole("link", { name: /voltar ao mercado pago/i })).toHaveAttribute("target", "_blank");
     expect(screen.queryByText(/pagamento confirmado/i)).not.toBeInTheDocument();
     expect(replaceMock).not.toHaveBeenCalled();
   });

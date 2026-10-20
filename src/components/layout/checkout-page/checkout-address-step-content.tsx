@@ -7,6 +7,7 @@ import { ArrowRightIcon } from "@/components/ui/icons";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { useCartStore, useCartSummary } from "@/features/cart";
 import {
+  CHECKOUT_STEP_ROUTES,
   getShippingQuote,
   resolveCartVendorId,
   useCheckoutAddressForm,
@@ -82,6 +83,7 @@ export function CheckoutAddressStepContent({
     items.length > 0 ? "checkout" : null,
   );
   const shippingQuoteState = useCheckoutStore((state) => state.shippingQuote);
+  const skipsPaymentStep = useCheckoutStore((state) => state.paymentProvider === "mercadopago");
   const selectedShippingQuote = shippingQuoteState.selectedOption;
   const currentShippingQuote = shippingQuoteState.quote;
   const setShippingQuote = useCheckoutStore((state) => state.setShippingQuote);
@@ -231,7 +233,7 @@ export function CheckoutAddressStepContent({
       return;
     }
 
-    router.push("/checkout/pagamento");
+    router.push(skipsPaymentStep ? CHECKOUT_STEP_ROUTES[3] : CHECKOUT_STEP_ROUTES[2]);
   }
 
   if (items.length === 0) return <CheckoutEmptyCart />;
@@ -465,7 +467,7 @@ export function CheckoutAddressStepContent({
 				disabled={!isFormValid || shouldBlockForShipping}
               onClick={handleAdvance}
             >
-					Próximo: Pagamento
+					{skipsPaymentStep ? "Próximo: Revisão" : "Próximo: Pagamento"}
               <ArrowRightIcon className="h-4.5 w-4.5" size={18} strokeWidth={1.8} />
             </button>
           </form>

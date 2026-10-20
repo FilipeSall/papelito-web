@@ -1,5 +1,4 @@
-import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,13 +10,14 @@ import { renderWithProviders } from "../../../../test/utils/render-with-provider
 import { CheckoutPaymentStepContent } from "./checkout-payment-step-content";
 
 const pushMock = vi.fn();
+const replaceMock = vi.fn();
 const session = {
   user: { id: "3" },
   expires: "2099-01-01T00:00:00.000Z",
   b2b: { canPurchase: true, companyId: 10, purchaseMode: "b2b" as const },
 };
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock, replace: replaceMock }) }));
 vi.mock("next/image", () => ({ default: () => null }));
 
 function respondWithContext(body: Record<string, unknown>, status = 200) {
@@ -27,25 +27,21 @@ function respondWithContext(body: Record<string, unknown>, status = 200) {
 describe("CheckoutPaymentStepContent", () => {
   beforeEach(() => {
     pushMock.mockReset();
+    replaceMock.mockReset();
     useCheckoutStore.getState().resetCheckout();
     useCartStore.setState({ items: [buildCartItem({ id: "11883", quantity: 1 })], coupon: null });
   });
 
-  it("no Mercado Pago esconde a seleção e a tokenização Pagar.me", async () => {
+  it("no Mercado Pago pula a etapa vazia e segue direto para a revisão", async () => {
     respondWithContext({ provider: "mercadopago", flow: "redirect", configurationVersion: "v1", fallbackReason: "" });
-    const user = userEvent.setup();
 
     renderWithProviders(<CheckoutPaymentStepContent />, { session });
 
-    expect(await screen.findByText("Pagamento pelo Mercado Pago")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /cartao/i })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/número do cartão/i)).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /próximo: revisão/i }));
-
-    expect(pushMock).toHaveBeenCalledWith("/checkout/revisao");
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/checkout/revisao"));
     expect(useCheckoutStore.getState().paymentProvider).toBe("mercadopago");
     expect(useCheckoutStore.getState().paymentForm.cardTokenId).toBe("");
+    expect(screen.queryByRole("button", { name: /próximo: revisão/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /cartao/i })).not.toBeInTheDocument();
   });
 
   it("na Pagar.me mostra os meios de sempre", async () => {

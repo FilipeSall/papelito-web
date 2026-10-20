@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -35,8 +35,12 @@ vi.mock("next/image", () => ({
   default: () => null,
 }));
 
+const reserveTabMock = vi.hoisted(() => vi.fn());
+const reservedTab = vi.hoisted(() => ({ navigate: vi.fn(), close: vi.fn() }));
+
 vi.mock("@/features/checkout/utils/redirect-to-checkout-pro", () => ({
   redirectToCheckoutPro: redirectMock,
+  reserveCheckoutProTab: reserveTabMock,
 }));
 
 function respondWithPaymentContext(provider: "mercadopago" | "pagarme") {
@@ -367,6 +371,11 @@ describe("CheckoutReviewStepContent", () => {
 
     beforeEach(() => {
       respondWithPaymentContext("mercadopago");
+      reserveTabMock.mockReset();
+      reserveTabMock.mockReturnValue(reservedTab);
+      reservedTab.close.mockReset();
+      redirectMock.mockReset();
+      redirectMock.mockReturnValue("tab");
     });
 
     it("mostra o Mercado Pago e envia o pedido sem pagamento antes de redirecionar", async () => {
@@ -385,11 +394,36 @@ describe("CheckoutReviewStepContent", () => {
 
       await user.dblClick(button);
 
-      await waitFor(() => expect(redirectMock).toHaveBeenCalledWith(MP_URL), { timeout: 3000 });
+      await waitFor(() => expect(redirectMock).toHaveBeenCalledWith(MP_URL, reservedTab), { timeout: 3000 });
+      expect(reserveTabMock).toHaveBeenCalledTimes(1);
       expect(bodies).toHaveLength(1);
       expect(bodies[0]).not.toHaveProperty("payment");
       expect(useCartStore.getState().items).toEqual([]);
+      expect(pushMock).toHaveBeenCalledWith("/checkout/pagamento/77");
+    });
+
+    it("pop-up bloqueado abre o Mercado Pago na própria aba, sem navegar a Papelito", async () => {
+      reserveTabMock.mockReturnValue(null);
+      redirectMock.mockReturnValue("same_tab");
+      respondPlaceOrder({ state: "pending", provider: "mercadopago", flow: "redirect", paymentAttemptId: 5, configurationVersion: "v1", fallbackReason: "", redirectUrl: MP_URL });
+      const user = userEvent.setup();
+
+      renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
+      await user.click(await screen.findByRole("button", { name: /continuar para o mercado pago/i }));
+
+      await waitFor(() => expect(redirectMock).toHaveBeenCalledWith(MP_URL, null), { timeout: 3000 });
       expect(pushMock).not.toHaveBeenCalled();
+    });
+
+    it("sem etapa de pagamento, volta para o endereço e não oferece editar a forma de pagamento", async () => {
+      renderWithProviders(<CheckoutReviewStepContent />, { session: eligibleB2bSession });
+
+      await screen.findByRole("button", { name: /continuar para o mercado pago/i });
+      expect(screen.getByRole("link", { name: /voltar para endereço/i })).toHaveAttribute("href", "/checkout");
+      expect(screen.queryByRole("link", { name: /voltar para pagamento/i })).not.toBeInTheDocument();
+      const paymentSection = screen.getByRole("heading", { name: /forma de pagamento/i }).closest("section");
+      expect(paymentSection).not.toBeNull();
+      expect(within(paymentSection as HTMLElement).queryByRole("link", { name: /editar/i })).not.toBeInTheDocument();
     });
 
     it("redirect fora do Mercado Pago não sai do site nem limpa o carrinho", async () => {
@@ -402,6 +436,7 @@ describe("CheckoutReviewStepContent", () => {
 
       expect(await screen.findByText("Resposta inválida ao concluir o pedido.", {}, { timeout: 3000 })).toBeInTheDocument();
       expect(redirectMock).not.toHaveBeenCalled();
+      expect(reservedTab.close).toHaveBeenCalled();
       expect(useCartStore.getState().items).toHaveLength(1);
     });
 

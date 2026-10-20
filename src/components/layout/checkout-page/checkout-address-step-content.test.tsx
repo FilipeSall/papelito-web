@@ -50,6 +50,7 @@ function seedCheckoutState() {
       selectedOption: null,
     },
     requiresShippingReselection: false,
+    paymentProvider: null,
   });
 }
 
@@ -383,6 +384,40 @@ describe("CheckoutAddressStepContent", () => {
     await userEvent.click(braspressOption);
 
     expect(screen.getByRole("button", { name: /próximo: pagamento/i })).toBeEnabled();
+  });
+
+  it("no Mercado Pago avança direto para a revisão, sem a etapa de pagamento vazia", async () => {
+    useCheckoutStore.setState({ paymentProvider: "mercadopago" });
+    server.use(
+      http.post(shippingQuoteUrl, () =>
+        HttpResponse.json({
+          origin_cep: "01001-000",
+          destination_cep: "01310930",
+          vendor_id: 101,
+          options: [
+            {
+              provider: "braspress",
+              option_key: "braspress:rodoviario",
+              fingerprint: "rodoviario-mp",
+              customer_price_cents: 3410,
+              expires_at: null,
+              service: "Rodoviário",
+              code: "rodoviario",
+              name: "Rodoviário",
+              price: 34.1,
+              delivery_time: 3,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderWithProviders(<CheckoutAddressStepContent />);
+
+    await userEvent.click(await screen.findByRole("radio", { name: /braspress/i }));
+    await userEvent.click(screen.getByRole("button", { name: /próximo: revisão/i }));
+
+    expect(pushMock).toHaveBeenCalledWith("/checkout/revisao");
   });
 
   it("refuses to advance with an option whose quote validity already ran out", async () => {

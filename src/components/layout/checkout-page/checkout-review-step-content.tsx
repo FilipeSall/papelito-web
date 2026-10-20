@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { getCartLineTotal, useCartStore } from "@/features/cart";
-import { isAddressFormComplete, useCheckoutStore } from "@/features/checkout";
+import { CHECKOUT_STEP_ROUTES, isAddressFormComplete, useCheckoutStore } from "@/features/checkout";
 import { usePaymentContext, type PaymentContextView } from "@/features/checkout/hooks/use-payment-context";
 import type {
   CheckoutAddressForm,
@@ -78,6 +78,20 @@ function ReviewPaymentDetails({ view, paymentMethod, paymentForm }: Readonly<Rev
   );
 }
 
+/** No Mercado Pago não há etapa de pagamento para editar: o meio é escolhido no Checkout Pro. */
+function PaymentEditLink({ view }: Readonly<{ view: PaymentContextView }>) {
+  if (isMercadoPagoView(view)) return null;
+
+  return (
+    <Link
+      className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
+      href={CHECKOUT_STEP_ROUTES[2]}
+    >
+      Editar
+    </Link>
+  );
+}
+
 function ReviewPaymentSection(props: Readonly<ReviewPaymentDetailsProps>) {
   return (
     <section className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
@@ -85,12 +99,7 @@ function ReviewPaymentSection(props: Readonly<ReviewPaymentDetailsProps>) {
         <h3 className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">
           Forma de pagamento
         </h3>
-        <Link
-          className="text-xs font-medium text-text-tertiary transition hover:text-brand-dark"
-          href="/checkout/pagamento"
-        >
-          Editar
-        </Link>
+        <PaymentEditLink view={props.view} />
       </div>
 
       <div className="mt-3 space-y-1 text-sm tracking-[-0.1504px] text-text-secondary">
@@ -206,7 +215,7 @@ type ReviewOrderInputParams = {
   items: PlaceOrderInput["items"];
   address: CheckoutAddressForm;
   option: ShippingQuoteOption | null;
-  payment?: PlaceOrderInput["payment"];
+  payment?: NonNullable<PlaceOrderInput["payment"]>;
   couponCode: string | null;
 };
 
@@ -289,6 +298,7 @@ export function CheckoutReviewStepContent() {
   const { checkoutError, isProcessing, submitOrder } = useReviewOrderSubmission({
     fingerprint: checkoutAttemptFingerprint,
     blocked: pricingBlocked || !selectedShippingQuote,
+    opensCheckoutProTab: usesMercadoPago,
     buildOrder: (checkoutAttemptId) =>
       buildReviewOrderInput({
         checkoutAttemptId,
@@ -317,8 +327,8 @@ export function CheckoutReviewStepContent() {
   return (
     <main className="bg-bg-light">
       <CheckoutHeader
-        backHref="/checkout/pagamento"
-        backLabel="Voltar para pagamento"
+        backHref={usesMercadoPago ? CHECKOUT_STEP_ROUTES[1] : CHECKOUT_STEP_ROUTES[2]}
+        backLabel={usesMercadoPago ? "Voltar para endereço" : "Voltar para pagamento"}
         currentStep={3}
       />
 

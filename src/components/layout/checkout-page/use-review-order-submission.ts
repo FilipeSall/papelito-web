@@ -7,7 +7,11 @@ import { useCartStockValidation, useCartStore } from "@/features/cart";
 import { placeOrder, useCheckoutStore } from "@/features/checkout";
 import type { PlaceOrderError, PlaceOrderInput } from "@/features/checkout/types/checkout";
 import { CHECKOUT_STEP_ROUTES } from "@/features/checkout/utils/checkout-step-access";
-import { redirectToCheckoutPro } from "@/features/checkout/utils/redirect-to-checkout-pro";
+import {
+  redirectToCheckoutPro,
+  reserveCheckoutProTab,
+  type CheckoutProTab,
+} from "@/features/checkout/utils/redirect-to-checkout-pro";
 import { resolveCheckoutOutcome, type CheckoutOutcome } from "@/features/checkout/utils/resolve-checkout-outcome";
 
 const SHIPPING_STALE_CODE = "papelito_checkout_shipping_stale";
@@ -26,14 +30,17 @@ type ReviewOrderSubmissionInput = {
   fingerprint: string;
   /** Preço com erro ou pendente de confirmação: nada é enviado. */
   blocked: boolean;
+  /** Mercado Pago: reserva uma aba no clique para abrir o Checkout Pro fora da Papelito. */
+  opensCheckoutProTab: boolean;
 };
 
 /**
  * Envio do pedido da revisão com trava de duplo clique, validação de estoque e o desfecho do
- * backend: redirect ao Checkout Pro, coleta Pagar.me guardada no store, reconciliação levando
- * ao pedido, PIX/boleto pendentes e cartão aprovado. Devolve erro, estado de envio e `submitOrder`.
+ * backend: Checkout Pro numa aba nova (reservada no clique; a Papelito segue para o pedido),
+ * coleta Pagar.me guardada no store, reconciliação levando ao pedido, PIX/boleto pendentes e
+ * cartão aprovado. Qualquer desfecho sem Checkout Pro fecha a aba reservada.
  */
-export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked }: ReviewOrderSubmissionInput) {
+export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked, opensCheckoutProTab }: ReviewOrderSubmissionInput) {
   const router = useRouter();
   const clearCart = useCartStore((state) => state.clearCart);
   const rotateCheckoutAttempt = useCheckoutStore((state) => state.rotateCheckoutAttempt);
@@ -47,9 +54,16 @@ export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked }: R
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pending, startTransition] = useTransition();
   const submissionRef = useRef(false);
+  const checkoutProTabRef = useRef<CheckoutProTab | null>(null);
   const isProcessing = isSubmitting || pending || stockValidation.isValidating;
 
+  function closeReservedTab() {
+    checkoutProTabRef.current?.close();
+    checkoutProTabRef.current = null;
+  }
+
   function releaseSubmission(message: string) {
+    closeReservedTab();
     setCheckoutError(message);
     setIsSubmitting(false);
     submissionRef.current = false;
@@ -71,6 +85,7 @@ export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked }: R
     }
 
     if (error.code === RECONCILING_CODE && error.orderId) {
+      closeReservedTab();
       leaveCheckout();
       router.push(`/checkout/pagamento/${error.orderId}`);
       return;
@@ -93,9 +108,13 @@ export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked }: R
 
     if (outcome.kind === "redirect") {
       submissionRef.current = true;
-      redirectToCheckoutPro(outcome.redirectUrl);
+      const opened = redirectToCheckoutPro(outcome.redirectUrl, checkoutProTabRef.current);
+      checkoutProTabRef.current = null;
+      if (opened !== "same_tab") router.push(`/checkout/pagamento/${outcome.orderId}`);
       return;
     }
+
+    closeReservedTab();
 
     if (outcome.kind === "requires_payment_input") {
       setPendingPaymentAttempt({
@@ -132,6 +151,7 @@ export function useReviewOrderSubmission({ buildOrder, fingerprint, blocked }: R
     }
 
     submissionRef.current = true;
+    checkoutProTabRef.current = opensCheckoutProTab ? reserveCheckoutProTab() : null;
     setCheckoutError("");
     setIsSubmitting(true);
 

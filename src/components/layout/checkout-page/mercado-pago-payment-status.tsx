@@ -76,7 +76,7 @@ function StatusActions({ kind, redirectUrl }: Readonly<StatusActionsProps>) {
 
     return (
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <a className={PRIMARY_LINK_CLASS} href={redirectUrl} rel="noopener noreferrer">
+        <a className={PRIMARY_LINK_CLASS} href={redirectUrl} rel="noopener noreferrer" target="_blank">
           <ExternalLinkIcon />
           Voltar ao Mercado Pago
         </a>

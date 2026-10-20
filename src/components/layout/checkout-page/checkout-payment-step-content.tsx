@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCartStore } from "@/features/cart";
 import { useCheckoutPaymentForm } from "@/features/checkout";
 import { usePaymentContext, type PaymentContextView } from "@/features/checkout/hooks/use-payment-context";
@@ -13,7 +13,7 @@ import { CheckoutOrderSummary } from "./checkout-order-summary";
 import { CheckoutPrimaryButton } from "./checkout-primary-button";
 import { PagarmePaymentFields } from "./pagarme-payment-fields";
 import { PagarmePaymentNotices } from "./pagarme-payment-notices";
-import { MercadoPagoPaymentInfo, PaymentContextError, PaymentContextLoading } from "./payment-context-states";
+import { PaymentContextError, PaymentContextLoading } from "./payment-context-states";
 
 const REVIEW_ROUTE = "/checkout/revisao";
 
@@ -64,18 +64,18 @@ function PagarmePaymentStep() {
   );
 }
 
+/**
+ * No Mercado Pago não há o que escolher nesta etapa: o meio é escolhido no Checkout Pro. A tela
+ * segue sozinha para a revisão, com `replace` para o voltar do navegador não cair de novo aqui.
+ */
 function MercadoPagoPaymentStep() {
   const router = useRouter();
-  const pricingBlocked = usePricingBlocked();
 
-  return (
-    <>
-      <MercadoPagoPaymentInfo />
-      <CheckoutPrimaryButton disabled={pricingBlocked} onClick={() => router.push(REVIEW_ROUTE)}>
-        Próximo: Revisão
-      </CheckoutPrimaryButton>
-    </>
-  );
+  useEffect(() => {
+    router.replace(REVIEW_ROUTE);
+  }, [router]);
+
+  return <PaymentContextLoading />;
 }
 
 type PaymentStepBodyProps = {

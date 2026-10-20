@@ -34,19 +34,3 @@ export function PaymentContextError({ message, onRetry }: Readonly<PaymentContex
     </div>
   );
 }
-
-/**
- * Explica o pagamento pelo Checkout Pro: o comprador escolhe Pix, cartão ou boleto no
- * Mercado Pago, e a Papelito não pede nem guarda dados de cartão.
- */
-export function MercadoPagoPaymentInfo() {
-  return (
-    <div className="mt-6 rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4">
-      <p className="text-sm font-black uppercase tracking-[0.6px] text-brand-dark">Pagamento pelo Mercado Pago</p>
-      <p className="mt-2 text-sm leading-6 text-text-secondary">
-        Ao finalizar, você segue para o ambiente seguro do Mercado Pago e escolhe lá como pagar: Pix,
-        cartão ou boleto. Nenhum dado de cartão é digitado na Papelito.
-      </p>
-    </div>
-  );
-}
