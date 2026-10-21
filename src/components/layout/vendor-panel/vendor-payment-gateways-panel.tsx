@@ -23,6 +23,7 @@ import {
   PROVIDER_LABELS,
   isMercadoPagoConnected,
   oauthReturnBanner,
+  outOfCheckoutMessage,
   paymentRoutes,
   type PaymentRoute,
 } from "@/features/vendor-payment-gateways/utils/gateway-display";
@@ -72,20 +73,13 @@ function selectedMessage(provider: PaymentProvider): string {
 
 /**
  * Alerta de loja fora do checkout: o gateway escolhido não recebe e, por ser escolha
- * exclusiva, o outro não entra no lugar.
+ * exclusiva, o outro não entra no lugar. O texto diz quem precisa agir.
  */
-function SelectedGatewayAlert({ route }: Readonly<{ route: PaymentRoute | undefined }>) {
-  if (route?.statusTone !== "attention") return null;
+function SelectedGatewayAlert({ routes }: Readonly<{ routes: PaymentRoute[] }>) {
+  const message = outOfCheckoutMessage(routes);
+  if (!message) return null;
 
-  return (
-    <PaymentNotice
-      notice={{
-        tone: "error",
-        title: "Sua loja está fora do checkout",
-        message: `${route.label} é o gateway escolhido, mas não pode receber agora: ${route.hint ?? ""} Resolva a pendência ou escolha o outro gateway.`,
-      }}
-    />
-  );
+  return <PaymentNotice notice={{ tone: "error", title: "Sua loja está fora do checkout", message }} />;
 }
 
 type MercadoPagoActionsProps = {
@@ -190,7 +184,6 @@ export function VendorPaymentGatewaysPanel({
   const [disconnectOpen, setDisconnectOpen] = useState(false);
 
   const routes = paymentRoutes(summary);
-  const selectedRoute = routes.find((route) => route.selected);
   const connected = isMercadoPagoConnected(summary);
 
   async function reloadSummary(successMessage: string) {
@@ -298,7 +291,7 @@ export function VendorPaymentGatewaysPanel({
     >
       <div className="space-y-3 px-5 pt-5 empty:hidden md:px-6">
         <PaymentNotice notice={summary.mode === "suspended" ? SUSPENDED_NOTICE : null} />
-        <SelectedGatewayAlert route={selectedRoute} />
+        <SelectedGatewayAlert routes={routes} />
         <PaymentNotice notice={oauthReturnBanner(oauthOutcome, oauthReason)} />
         <PaymentNotice notice={notice} />
       </div>

@@ -271,6 +271,41 @@ describe("VendorPaymentGatewaysPanel — escolha exclusiva", () => {
     expect(radio(MP_HEADING)).toBeChecked();
   });
 
+  it("conferência da Papelito não manda a loja resolver nada nem trocar para gateway bloqueado", () => {
+    render(
+      <VendorPaymentGatewaysPanel
+        initialSummary={summary({
+          gateways: [
+            gateway({ state: "verification_pending", canReceive: false, reasonCodes: ["identity_verification_pending"] }),
+            gateway({ provider: "pagarme", state: "blocked_cnae", canReceive: false, reasonCodes: ["cnae_restricted"] }),
+          ],
+        })}
+      />,
+    );
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(/assim que a Papelito concluir a conferência/i);
+    expect(alert).not.toHaveTextContent(/resolva a pendência/i);
+    expect(alert).not.toHaveTextContent(/escolha o outro gateway/i);
+  });
+
+  it("pendência da loja pede para resolver e só sugere o outro gateway quando ele está apto", () => {
+    render(
+      <VendorPaymentGatewaysPanel
+        initialSummary={summary({
+          gateways: [
+            gateway({ state: "connection_pending", canReceive: false, reasonCodes: ["reauthorization_required"] }),
+            gateway({ provider: "pagarme", state: "blocked_cnae", canReceive: false, reasonCodes: ["cnae_restricted"] }),
+          ],
+        })}
+      />,
+    );
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(/resolva a pendência/i);
+    expect(alert).not.toHaveTextContent(/escolha o outro gateway/i);
+  });
+
   it("explica que só um gateway recebe e que pedido emitido não troca", () => {
     render(<VendorPaymentGatewaysPanel initialSummary={summary()} />);
 

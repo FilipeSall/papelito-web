@@ -146,6 +146,31 @@ export function paymentRoutes(summary: VendorPaymentSummary): PaymentRoute[] {
   return PROVIDER_ORDER.map((provider) => buildRoute(summary, provider));
 }
 
+/** Pendências que dependem da Papelito, não da loja: só resta aguardar a conferência. */
+const PAPELITO_REVIEW_REASONS = new Set(["identity_verification_pending", "cnae_verification_pending"]);
+
+/**
+ * Texto do alerta de loja fora do checkout, ou `null` quando o gateway escolhido recebe. Diz quem
+ * precisa agir: conferência da Papelito não pede nada à loja, e "escolha o outro gateway" só
+ * aparece quando o outro está apto de fato.
+ */
+export function outOfCheckoutMessage(routes: PaymentRoute[]): string | null {
+  const selected = routes.find((route) => route.selected);
+  if (selected?.statusTone !== "attention") return null;
+
+  const reason = selected.hint ?? "";
+  const waitsForPapelito = selected.status?.reasonCodes.some((code) => PAPELITO_REVIEW_REASONS.has(code)) ?? false;
+
+  if (waitsForPapelito) {
+    return `${selected.label} ainda não pode receber. ${reason} Assim que a Papelito concluir a conferência, a loja volta a vender sozinha.`;
+  }
+
+  const otherAvailable = routes.some((route) => !route.selected && route.selectable);
+  const action = otherAvailable ? "Resolva a pendência ou escolha o outro gateway." : "Resolva a pendência para voltar a vender.";
+
+  return `${selected.label} é o gateway escolhido, mas não pode receber agora. ${reason} ${action}`;
+}
+
 /** Diz se o gateway escolhido recebe agora — base do sinal "apta a vender" no cabeçalho. */
 export function selectedGatewayReady(summary: VendorPaymentSummary | null): boolean {
   if (!summary) return false;
