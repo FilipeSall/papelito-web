@@ -218,8 +218,9 @@ export type OauthReturnBanner = {
 };
 
 /**
- * Traduz `?mercadopago=` e `?reason=` do retorno do OAuth. Conexão concluída não é aprovação:
- * a conta ainda passa pela conferência de titularidade antes de receber.
+ * Traduz `?mercadopago=` e `?reason=` do retorno do OAuth. Conexão concluída não é aprovação: a
+ * titularidade é conferida pelo CNPJ (sozinha, ou pelo admin quando o Mercado Pago não informa) e
+ * o quadro de gateways mostra se a conta já recebe.
  */
 export function oauthReturnBanner(outcome: string | undefined, reason?: string): OauthReturnBanner | null {
   switch (outcome) {
@@ -227,7 +228,7 @@ export function oauthReturnBanner(outcome: string | undefined, reason?: string):
       return {
         tone: "success",
         title: "Conta Mercado Pago conectada",
-        message: "A Papelito ainda confere se a conta pertence ao CNPJ da loja. Acompanhe o estado no card abaixo.",
+        message: "Conferimos se a conta é do CNPJ da loja. Veja no quadro abaixo se ela já recebe os pedidos.",
       };
     case "denied":
       return {

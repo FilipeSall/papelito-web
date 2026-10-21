@@ -413,6 +413,29 @@ describe("VendorPaymentGatewaysPanel — ações", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/vendor/payment-gateways/refresh", expect.objectContaining({ method: "POST" }));
   });
 
+  it("conta conectada e recebendo não oferece reconectar, só desconectar", () => {
+    render(<VendorPaymentGatewaysPanel initialSummary={summary()} />);
+
+    const mercadopago = card(MP_HEADING);
+    expect(within(mercadopago).queryByRole("button", { name: /reconectar mercado pago/i })).not.toBeInTheDocument();
+    expect(within(mercadopago).getByRole("button", { name: "Desconectar" })).toBeInTheDocument();
+  });
+
+  it("conta conectada que precisa de nova autorização oferece reconectar", () => {
+    render(
+      <VendorPaymentGatewaysPanel
+        initialSummary={summary({
+          gateways: [
+            gateway({ state: "connection_pending", canReceive: false, reasonCodes: ["reauthorization_required"] }),
+            gateway({ provider: "pagarme" }),
+          ],
+        })}
+      />,
+    );
+
+    expect(within(card(MP_HEADING)).getByRole("button", { name: /reconectar mercado pago/i })).toBeInTheDocument();
+  });
+
   it("conectar leva para a URL de autorização devolvida pelo servidor", async () => {
     const user = userEvent.setup();
     const assignMock = vi.fn();

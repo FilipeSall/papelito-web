@@ -156,6 +156,8 @@ describe("oauthReturnBanner", () => {
 
     expect(banner?.tone).toBe("success");
     expect(`${banner?.title} ${banner?.message}`).not.toMatch(/aprovad|pronto para receber/i);
+    expect(banner?.message).not.toMatch(/ainda confere/i);
+    expect(banner?.message).toMatch(/CNPJ/);
   });
 
   it("traduz o motivo do erro pelo catálogo e trata recusa e sessão", () => {

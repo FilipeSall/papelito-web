@@ -85,18 +85,27 @@ function SelectedGatewayAlert({ routes }: Readonly<{ routes: PaymentRoute[] }>) 
 type MercadoPagoActionsProps = {
   busy: BusyAction;
   connected: boolean;
+  /** A conta conectada recebe: reconectar só convidaria a refazer o que funciona. */
+  receiving: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
 };
 
-function MercadoPagoActions({ busy, connected, onConnect, onDisconnect }: Readonly<MercadoPagoActionsProps>) {
+/**
+ * Ações da conta Mercado Pago: conectar quando não há conta, reconectar só quando a conta
+ * conectada precisa de nova autorização, e desconectar sempre que houver conta.
+ */
+function MercadoPagoActions({ busy, connected, onConnect, onDisconnect, receiving }: Readonly<MercadoPagoActionsProps>) {
   const connectLabel = connected ? "Reconectar Mercado Pago" : "Conectar Mercado Pago";
+  const showsConnect = !connected || !receiving;
 
   return (
     <>
-      <button className={hardPrimaryActionClass} disabled={busy !== null} onClick={onConnect} type="button">
-        {busy === "connect" ? "Abrindo Mercado Pago..." : connectLabel}
-      </button>
+      {showsConnect ? (
+        <button className={hardPrimaryActionClass} disabled={busy !== null} onClick={onConnect} type="button">
+          {busy === "connect" ? "Abrindo Mercado Pago..." : connectLabel}
+        </button>
+      ) : null}
       {connected ? (
         <button className={hardDangerActionClass} disabled={busy !== null} onClick={onDisconnect} type="button">
           Desconectar
@@ -268,6 +277,7 @@ export function VendorPaymentGatewaysPanel({
           connected={connected}
           onConnect={() => void redirectTo("connect", startMercadoPagoConnection)}
           onDisconnect={() => setDisconnectOpen(true)}
+          receiving={status?.canReceive === true}
         />
       );
     }
