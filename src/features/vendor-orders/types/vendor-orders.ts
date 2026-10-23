@@ -30,6 +30,8 @@ export type VendorOrderItem = {
   name: string;
   productId: number;
   qty: number;
+  /** SKU que o vendor vê: o código dele quando existe, senão o da Papelito; vazio sem SKU. */
+  sku: string;
   total: number;
 };
 

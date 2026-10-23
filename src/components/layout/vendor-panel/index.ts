@@ -45,3 +45,4 @@ export {
 } from "./vendor-eligibility-signal";
 export { VendorStockManager } from "./vendor-stock-manager";
 export { buildWhatsappHref, buildWhatsappMessage, describeMissingFields } from "./stock-status";
+export { StockItemCodes } from "./stock-cells";

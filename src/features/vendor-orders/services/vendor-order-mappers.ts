@@ -23,7 +23,7 @@ export type WpVendorOrder = {
   customer_name?: string;
   delivery_time_days?: number;
   id?: number;
-  items?: Array<{ item_id?: number; name?: string; product_id?: number; qty?: number; total?: number }>;
+  items?: Array<{ item_id?: number; name?: string; product_id?: number; qty?: number; sku?: string; total?: number }>;
   items_count?: number;
   items_label?: string;
   order_number?: string;
@@ -393,6 +393,7 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       name: item.name ?? "Produto",
       productId: Number(item.product_id) || 0,
       qty: Number(item.qty) || 0,
+      sku: item.sku?.trim() ?? "",
       total: Number(item.total) || 0,
     })),
     phone: order.phone ?? "",

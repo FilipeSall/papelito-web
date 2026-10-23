@@ -8,6 +8,7 @@ import {
   logisticsHeadline,
   paymentMethodLabel,
   paymentStateShape,
+  StockItemCodes,
   VendorContactCustomerButton,
   VendorOrderActions,
   VendorOrderDeliveryCountdown,
@@ -19,7 +20,7 @@ import {
 import { VendorOrderRefundPanel } from "@/components/layout/vendor-panel/vendor-order-refund-panel";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
-import type { VendorOrderDetail } from "@/features/vendor-orders/types/vendor-orders";
+import type { VendorOrderDetail, VendorOrderItem } from "@/features/vendor-orders/types/vendor-orders";
 import { parseSiteDate, parseUtcDate, SAO_PAULO } from "@/features/vendor-orders/utils/order-dates";
 import { formatBRLIntl } from "@/lib/format-currency";
 import { formatBusinessDays } from "@/features/shipping/utils/format-business-days";
@@ -151,6 +152,23 @@ function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function OrderItemRow({ item }: Readonly<{ item: VendorOrderItem }>) {
+  return (
+    <li className="flex items-start justify-between gap-4 py-3 first:pt-0">
+      <div className="min-w-0 text-sm leading-6 text-[#231f20]/74">
+        {item.name}
+        <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/55">
+          {item.qty}×
+        </span>
+        <StockItemCodes sku={item.sku} vendorCode={null} />
+      </div>
+      <span className="shrink-0 text-sm font-bold tabular-nums text-[#1a1a1a]">
+        {formatBRLIntl(item.total)}
+      </span>
+    </li>
+  );
+}
+
 /**
  * WordPress fora do ar ou respondendo erro.
  *
@@ -264,19 +282,7 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
                 Nenhum item deste pedido é atendido pela sua loja.
               </li>
             ) : (
-              order.items.map((item) => (
-                <li className="flex items-start justify-between gap-4 py-3 first:pt-0" key={item.itemId}>
-                  <span className="min-w-0 text-sm leading-6 text-[#231f20]/74">
-                    {item.name}
-                    <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#231f20]/55">
-                      {item.qty}×
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-sm font-bold tabular-nums text-[#1a1a1a]">
-                    {formatBRLIntl(item.total)}
-                  </span>
-                </li>
-              ))
+              order.items.map((item) => <OrderItemRow item={item} key={item.itemId} />)
             )}
           </ul>
 

@@ -136,6 +136,19 @@ describe("mapVendorOrderDetail logistics", () => {
   });
 });
 
+describe("mapVendorOrderDetail items", () => {
+  it("carries the SKU the vendor sees and leaves it empty when the backend omits it", () => {
+    const order = mapVendorOrderDetail({
+      items: [
+        { item_id: 1, name: "Piteira Fun Large", product_id: 100, qty: 1, sku: " 000419 ", total: 31.39 },
+        { item_id: 2, name: "Piteira Fun Tradicional", product_id: 200, qty: 1, total: 30.18 },
+      ],
+    });
+
+    expect(order.items.map((item) => item.sku)).toEqual(["000419", ""]);
+  });
+});
+
 describe("mapVendorOrderFiscal", () => {
   it("nasce desligado quando o WordPress não manda o bloco", () => {
     const fiscal = mapVendorOrderFiscal(undefined);
