@@ -1,5 +1,3 @@
-import type { VendorRegistrationStep1Data } from "@/features/revendedor";
-import type { VendorInterest } from "@/features/revendedor/types/vendor-interest";
 import type { SiteImageAssets } from "@/types/home-assets";
 
 import { RevendedorBenefitsSection } from "./organisms/revendedor-benefits-section";
@@ -11,28 +9,13 @@ import { RevendedorTestimonialsSection } from "./organisms/revendedor-testimonia
  * Compoe a landing pública do programa de revendedores a partir dos blocos da página.
  */
 type RevendedorPageProps = {
-  interest: VendorInterest | null;
   images?: SiteImageAssets;
-  initialValues: VendorRegistrationStep1Data;
-  isAuthenticated: boolean;
-  role?: string;
 };
 
-export function RevendedorPage({
-  interest,
-  images,
-  initialValues,
-  isAuthenticated,
-  role,
-}: RevendedorPageProps) {
+export function RevendedorPage({ images }: Readonly<RevendedorPageProps>) {
   return (
     <main className="bg-white">
-      <RevendedorHeroSection
-        interest={interest}
-        initialValues={initialValues}
-        isAuthenticated={isAuthenticated}
-        role={role}
-      />
+      <RevendedorHeroSection />
       <RevendedorBenefitsSection />
       <RevendedorBusinessTypesSection
         mainImage={images?.revendedorBusinessMain}

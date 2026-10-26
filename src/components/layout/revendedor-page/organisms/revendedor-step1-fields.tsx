@@ -1,11 +1,11 @@
 import {
   REVENDEDOR_DISCOVERY_OPTIONS,
   REVENDEDOR_SOLD_OPTIONS,
+  type RevendedorSignupErrors,
+  type RevendedorSignupField,
+  type RevendedorSignupValues,
 } from "@/features/revendedor";
-import type {
-  RevendedorStep1Errors,
-  VendorRegistrationStep1Data,
-} from "@/features/revendedor/types/revendedor-application";
+import { getMaximumAdultBirthDate } from "@/lib/validation/birth-date";
 
 import { RevendedorFormLabel } from "../atoms/revendedor-form-label";
 import { RevendedorRadioPill } from "../atoms/revendedor-radio-pill";
@@ -14,21 +14,22 @@ import { RevendedorFormRow } from "../molecules/revendedor-form-row";
 import { RevendedorFormSelectField } from "../molecules/revendedor-form-select-field";
 
 type RevendedorStep1FieldsProps = {
-  errors: RevendedorStep1Errors;
-  onChange: <Key extends keyof VendorRegistrationStep1Data>(
-    key: Key,
-    value: VendorRegistrationStep1Data[Key],
-  ) => void;
+  errors: RevendedorSignupErrors;
+  onChange: (key: RevendedorSignupField, value: string) => void;
   tone?: "light" | "dark";
-  values: VendorRegistrationStep1Data;
+  values: RevendedorSignupValues;
 };
 
+/**
+ * Campos do formulário do `/revendedor`: loja, responsável com CPF e nascimento (conferidos no
+ * QSA), contato e as duas perguntas comerciais. Controlado; quem decide o que fazer é o pai.
+ */
 export function RevendedorStep1Fields({
   errors,
   onChange,
   tone = "light",
   values,
-}: RevendedorStep1FieldsProps) {
+}: Readonly<RevendedorStep1FieldsProps>) {
   return (
     <>
       <RevendedorFormField
@@ -48,7 +49,7 @@ export function RevendedorStep1Fields({
           autoComplete="given-name"
           error={errors.firstName}
           id="firstName"
-          label="Nome do Responsável *"
+          label="Nome *"
           name="firstName"
           onChange={(event) => onChange("firstName", event.target.value)}
           placeholder="Nome"
@@ -68,10 +69,39 @@ export function RevendedorStep1Fields({
         />
       </RevendedorFormRow>
 
+      <RevendedorFormRow>
+        <RevendedorFormField
+          autoComplete="off"
+          error={errors.cpf}
+          id="cpf"
+          inputMode="numeric"
+          label="CPF *"
+          maxLength={14}
+          name="cpf"
+          onChange={(event) => onChange("cpf", event.target.value)}
+          placeholder="123.456.789-00"
+          tone={tone}
+          value={values.cpf}
+        />
+        <RevendedorFormField
+          autoComplete="bday"
+          error={errors.birthDate}
+          id="birthDate"
+          label="Data de nascimento *"
+          max={getMaximumAdultBirthDate()}
+          name="birthDate"
+          onChange={(event) => onChange("birthDate", event.target.value)}
+          placeholder="DD/MM/AAAA"
+          tone={tone}
+          type="date"
+          value={values.birthDate}
+        />
+      </RevendedorFormRow>
+
       <RevendedorFormField
         error={errors.cnpj}
         id="cnpj"
-        label="CNPJ *"
+        label="CNPJ da loja *"
         name="cnpj"
         onChange={(event) => onChange("cnpj", event.target.value)}
         placeholder="00.000.000/0001-00"
@@ -138,7 +168,7 @@ export function RevendedorStep1Fields({
               key={option.value}
               label={option.label}
               name="hasSoldPapelito"
-              onChange={() => onChange("hasSoldPapelito", option.value as "sim" | "nao")}
+              onChange={() => onChange("hasSoldPapelito", option.value)}
               tone={tone}
               value={option.value}
             />

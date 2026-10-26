@@ -91,16 +91,18 @@ O que passa a valer:
 ### Contrato de URL da aba Pessoas
 
 `role`, `status` (`active`, `suspended`, `email_pending`), `relation` (`company`, `unlinked`),
-`search` e `page`. Os valores padrão são omitidos da URL. `?create=1&sourceUserId=` e
-`&sourceInterestId=` abrem a criação de vendor sobre a listagem, como fazia `/admin/vendors`.
+`search` e `page`. Os valores padrão são omitidos da URL. `?create=1&sourceUserId=` abre a
+criação de vendor sobre a listagem, como fazia `/admin/vendors`.
 
 ### Contrato de URL da aba Análises
 
-`analysisType` (`company`, `vendor`) e `analysisStatus`. A fila junta, numa lista só, candidaturas de
-empresa com conta existente, candidaturas pré-conta e manifestações de interesse em ser vendor —
-cada linha diz o tipo, quem pediu, a empresa, quando chegou e a situação. A decisão continua nas
-telas de origem: `?preAccountApplication=pre:{id}` na própria aba, `/admin/contas/{id}?tab=company-review`
-para candidatura com conta, e `/admin/vendors/interesses/{id}` para interesse de vendor.
+`analysisStatus`. A fila junta, numa lista só, candidaturas de empresa com conta existente e
+candidaturas pré-conta — cada linha diz o tipo, quem pediu, a empresa, quando chegou e a situação.
+A decisão continua nas telas de origem: `?preAccountApplication=pre:{id}` na própria aba e
+`/admin/contas/{id}?tab=company-review` para candidatura com conta. O detalhe da pré-conta mostra
+"Aprovada automaticamente (QSA)" quando ninguém decidiu, e os dados da loja quando a candidatura
+veio do `/revendedor`. `analysisType` e as manifestações de interesse em ser vendor saíram em
+26/10/2026; `/admin/vendors?tab=interesses` ainda redireciona para esta aba.
 
 ### Composição visual
 
@@ -219,6 +221,7 @@ Registro de migração — links antigos apontam para lugar nenhum:
 
 - `/admin/vendor-interests`
 - `/admin/vendor-interests/[id]`
+- `/admin/vendors/interesses/[id]` — apagada em 26/10/2026 com as manifestações de interesse em ser vendor; sem redirect
 - `/admin/reports` — redireciona para `/admin/relatorios` (até 25/10 apontava para a área de exportação dentro de `/admin/sales`)
 - `/vendor/financeiro` — absorvida por `/vendor/dashboard`; a rota redireciona
 - `/admin/users` e `/admin/users/[id]` — absorvidas por `/admin/contas`; redirecionam preservando a query

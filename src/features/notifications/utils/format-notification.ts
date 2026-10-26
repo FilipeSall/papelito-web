@@ -106,20 +106,6 @@ export function formatNotification(
         body: "A solicitação foi encerrada. Inicie um novo cadastro para tentar novamente.",
         href: "/cadastro/completar",
       };
-    case "new_vendor_application": {
-      const storeName = stringValue(payload, "store_name") || "novo revendedor";
-      const interestId = numberValue(payload, "interest_id");
-
-      return {
-        icon: "badge",
-        title: "Novo interesse em ser vendor",
-        body: `${storeName} enviou os dados da loja para contato.`,
-        href:
-          Number.isInteger(interestId) && interestId > 0
-            ? `/admin/vendors/interesses/${interestId}`
-            : "/admin/contas?tab=analises&analysisType=vendor",
-      };
-    }
     case "favorite_on_promo": {
       const productName =
         stringValue(payload, "product_name") || "Produto favorito";

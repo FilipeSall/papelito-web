@@ -8,6 +8,7 @@ type RevendedorFormFieldProps = {
   id: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   label: string;
+  max?: string;
   maxLength?: number;
   name: string;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
@@ -28,6 +29,7 @@ export function RevendedorFormField({
   id,
   inputMode,
   label,
+  max,
   maxLength,
   name,
   onChange,
@@ -36,7 +38,7 @@ export function RevendedorFormField({
   tone = "light",
   type = "text",
   value,
-}: RevendedorFormFieldProps) {
+}: Readonly<RevendedorFormFieldProps>) {
   return (
     <div className="flex flex-col gap-1.5">
       <RevendedorFormLabel htmlFor={id} tone={tone}>
@@ -50,6 +52,7 @@ export function RevendedorFormField({
         error={error}
         id={id}
         inputMode={inputMode}
+        max={max}
         maxLength={maxLength}
         name={name}
         onChange={onChange}

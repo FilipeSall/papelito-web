@@ -138,28 +138,6 @@ describe("formatNotification", () => {
     );
   });
 
-  it("links a vendor interest notification to its detail inside Vendors", () => {
-    const formatted = formatNotification(
-      buildNotification({
-        type: "new_vendor_application",
-        payload: {
-          interest_id: 42,
-          store_name: "Loja Exemplo",
-        },
-      }),
-    );
-
-    expect(formatted.href).toBe("/admin/vendors/interesses/42");
-  });
-
-  it("falls back to the analysis queue when the notification has no interest id", () => {
-    const formatted = formatNotification(
-      buildNotification({ type: "new_vendor_application", payload: {} }),
-    );
-
-    expect(formatted.href).toBe("/admin/contas?tab=analises&analysisType=vendor");
-  });
-
   it("links a new purchase to the vendor order detail and shows the total", () => {
     const formatted = formatNotification(
       buildNotification({

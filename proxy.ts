@@ -22,15 +22,15 @@ function hasAuthenticatedAccessToken(token: {
   );
 }
 
-function isCadastroPath(pathname: string) {
-  return pathname === "/cadastro";
+function isSignupEntryPath(pathname: string) {
+  return pathname === "/cadastro" || pathname === "/revendedor";
 }
 
 export default withAuth(
   function proxy(request) {
     const { pathname } = request.nextUrl;
 
-    if (isCadastroPath(pathname) && hasAuthenticatedAccessToken(request.nextauth.token)) {
+    if (isSignupEntryPath(pathname) && hasAuthenticatedAccessToken(request.nextauth.token)) {
       const onboardingUrl = request.nextUrl.clone();
       const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/";
       onboardingUrl.pathname = ONBOARDING_PATH;
@@ -76,7 +76,7 @@ export default withAuth(
     },
     callbacks: {
       authorized: ({ token, req }) =>
-        isCadastroPath(req.nextUrl.pathname) || hasAuthenticatedAccessToken(token),
+        isSignupEntryPath(req.nextUrl.pathname) || hasAuthenticatedAccessToken(token),
     },
   },
 );
@@ -92,6 +92,7 @@ export const config = {
     "/admin/:path*",
     "/vendor/:path*",
     "/cadastro",
+    "/revendedor",
     // Presente para que o `authorized` do withAuth mande anônimo para /entrar; o gate acima isenta.
     "/cadastro/completar",
   ],

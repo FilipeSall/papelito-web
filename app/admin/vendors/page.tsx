@@ -13,12 +13,11 @@ export default async function AdminVendorsRedirect({
 
   if (firstOf(resolved.tab) === "interesses") {
     query.set("tab", "analises");
-    query.set("analysisType", "vendor");
   } else {
     query.set("role", "seller");
   }
 
-  for (const key of ["create", "sourceUserId", "sourceInterestId", "search"]) {
+  for (const key of ["create", "sourceUserId", "search"]) {
     const value = firstOf(resolved[key]);
     if (typeof value === "string" && value) {
       query.set(key, value);

@@ -1,43 +1,21 @@
-export const CADASTRO_STORAGE_KEY = "papelito:cadastro:step1";
-export const CADASTRO_STEP2_DRAFT_KEY = "papelito:cadastro:step2:draft";
-export const CADASTRO_STEP1_ERROR_KEY = "papelito:cadastro:step1:errors";
+import type { CadastroIntent } from "@/features/company-application";
 
-/**
- * Rascunho parcial da etapa 1, salvo quando o usuário sai da página sem enviar (ex.: clicando no
- * logo). Key separada de CADASTRO_STORAGE_KEY de propósito: aquela é o contrato de "etapa 1
- * concluída e validada" que libera a etapa 2, e um rascunho incompleto não pode satisfazer esse
- * guard.
- */
-export const CADASTRO_STEP1_DRAFT_KEY = "papelito:cadastro:step1:draft";
-
-export type CadastroStep1Draft = Partial<Omit<CadastroStep1Data, "intent">> & {
-  intent?: CadastroIntent;
-};
+export {
+  CADASTRO_STEP1_DRAFT_KEY,
+  CADASTRO_STEP1_ERROR_KEY,
+  CADASTRO_STEP2_DRAFT_KEY,
+  CADASTRO_STORAGE_KEY,
+  type CadastroIntent,
+  type CadastroStep1Data,
+  type CadastroStep1Draft,
+  type CadastroStep1Errors,
+  type CadastroStep1Field,
+} from "@/features/company-application";
 
 export {
   DEFAULT_POST_ONBOARDING_PATH,
   ONBOARDING_PATH,
 } from "@/features/company/onboarding";
-
-/**
- * Intenção de onboarding B2B:
- * - "create_company": o usuário é o titular e cadastra a própria empresa (fluxo com CNPJ).
- * - "join_company": o usuário cria a conta e depois solicita acesso a uma empresa existente.
- */
-export type CadastroIntent = "create_company" | "join_company";
-
-export type CadastroStep1Data = {
-  birthDate: string;
-  cnpj: string;
-  cpf: string;
-  name: string;
-  email: string;
-  phone: string;
-  intent: CadastroIntent;
-};
-
-export type CadastroStep1Field = Exclude<keyof CadastroStep1Data, "intent">;
-export type CadastroStep1Errors = Partial<Record<CadastroStep1Field, string>>;
 
 export type CadastroStep2Draft = {
   cep: string;

@@ -6,7 +6,6 @@ import { authOptions } from "@/lib/auth";
 import {
   getAdminAnalysisSnapshot,
   parseAnalysisStatus,
-  parseAnalysisType,
 } from "@/lib/server/admin-analysis";
 import { getAdminAccountsOverview } from "@/lib/server/admin-accounts-overview";
 import { getAdminCompaniesSnapshot } from "@/lib/server/admin-companies";
@@ -19,7 +18,6 @@ import {
   parseAdminUsersFilters,
   type AdminUsersPageSearchParams,
 } from "@/lib/server/admin-users-filters";
-import { getAdminVendorInterest } from "@/lib/server/admin-vendor-interests";
 import { firstParam } from "@/lib/search-params";
 
 import { FOCUS_RING } from "../../primitives";
@@ -58,13 +56,13 @@ const HEADINGS: Record<AccountsTab, { description: string; title: string }> = {
   },
 };
 
-const COMPANY_STATUSES = ["all", "active", "suspended", "onboarding", "archived"];
+const COMPANY_STATUSES = new Set(["all", "active", "suspended", "onboarding", "archived"]);
 
 function parseCompanyStatus(value: string | undefined) {
-  return COMPANY_STATUSES.includes(value ?? "") ? (value as string) : "all";
+  return value && COMPANY_STATUSES.has(value) ? value : "all";
 }
 
-function SuspendedAlert({ count }: { count: number }) {
+function SuspendedAlert({ count }: Readonly<{ count: number }>) {
   if (count <= 0) {
     return null;
   }
@@ -86,16 +84,15 @@ function SuspendedAlert({ count }: { count: number }) {
 
 export async function AccountsContent({
   searchParams,
-}: {
+}: Readonly<{
   searchParams?: AdminUsersPageSearchParams;
-}) {
+}>) {
   const session = await getServerSession(authOptions);
   const activeTab = parseAccountsTab(firstParam(searchParams?.tab));
   const heading = HEADINGS[activeTab];
 
   const shouldOpenCreate = firstParam(searchParams?.create) === "1";
   const sourceUserId = Number.parseInt(firstParam(searchParams?.sourceUserId) ?? "", 10);
-  const sourceInterestId = Number.parseInt(firstParam(searchParams?.sourceInterestId) ?? "", 10);
   const preAccountApplication = firstParam(searchParams?.preAccountApplication);
 
   const peopleFilters = parseAdminUsersFilters(searchParams);
@@ -108,10 +105,9 @@ export async function AccountsContent({
   };
   const analysisFilters = {
     status: parseAnalysisStatus(firstParam(searchParams?.analysisStatus)),
-    type: parseAnalysisType(firstParam(searchParams?.analysisType)),
   };
 
-  const [overview, people, vendors, companies, analysis, application, sourceUser, sourceInterest] =
+  const [overview, people, vendors, companies, analysis, application, sourceUser] =
     await Promise.all([
       getAdminAccountsOverview(session?.accessToken),
       activeTab === "pessoas"
@@ -130,13 +126,7 @@ export async function AccountsContent({
       shouldOpenCreate && Number.isFinite(sourceUserId) && sourceUserId > 0
         ? getAdminUserDetail(session?.accessToken, sourceUserId)
         : null,
-      shouldOpenCreate && Number.isFinite(sourceInterestId) && sourceInterestId > 0
-        ? getAdminVendorInterest(session?.accessToken, sourceInterestId)
-        : null,
     ]);
-
-  const linkedInterest =
-    sourceUser && sourceInterest?.customerUserId === sourceUser.id ? sourceInterest : null;
 
   return (
     <div className="space-y-5">
@@ -146,28 +136,7 @@ export async function AccountsContent({
         <VendorCreateLauncher
           hideHeading
           initialOpen={shouldOpenCreate}
-          sourceUser={
-            sourceUser
-              ? {
-                  cep: sourceUser.cep,
-                  city: sourceUser.city,
-                  cnpj: linkedInterest?.cnpj || sourceUser.cnpj,
-                  complement: sourceUser.complement,
-                  email: linkedInterest?.email || sourceUser.email,
-                  firstName: linkedInterest?.firstName || sourceUser.firstName,
-                  id: sourceUser.id,
-                  instagram: linkedInterest?.instagram || sourceUser.instagram,
-                  lastName: linkedInterest?.lastName || sourceUser.lastName,
-                  name: sourceUser.name,
-                  neighborhood: sourceUser.neighborhood,
-                  number: sourceUser.number,
-                  phoneNumber: linkedInterest?.phone || sourceUser.phoneNumber,
-                  state: sourceUser.state,
-                  storeName: linkedInterest?.storeName || sourceUser.storeName,
-                  street: sourceUser.street,
-                }
-              : null
-          }
+          sourceUser={sourceUser}
         />
       </div>
 

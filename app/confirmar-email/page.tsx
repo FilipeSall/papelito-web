@@ -8,7 +8,7 @@ import { AuthWelcomePanel } from "@/components/auth";
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { COMPANY_APPLICATION_PATH } from "@/features/company/onboarding";
 
-type VerificationViewState = "idle" | "verifying" | "verified" | "retryable" | "error";
+type VerificationViewState = "idle" | "verifying" | "verified" | "approved" | "retryable" | "error";
 
 /**
  * De onde veio o link: uma conta já existente ou uma candidatura empresarial pré-conta.
@@ -32,6 +32,12 @@ type ApiErrorResponse = {
   code?: string;
   message?: string;
 };
+
+type VerifyApplicationResponse = {
+  application?: { status?: string };
+};
+
+const APPROVED_APPLICATION_HREF = "/entrar";
 
 type FeedbackTone = "success" | "error";
 
@@ -99,6 +105,10 @@ function resolveVerifiedLabel(scope: VerificationScope, callbackUrl: string) {
 }
 
 function getTitle(viewState: VerificationViewState) {
+  if (viewState === "approved") {
+    return "Cadastro aprovado";
+  }
+
   if (viewState === "verified") {
     return "E-mail Confirmado";
   }
@@ -119,6 +129,10 @@ function getDescription(
   const purpose =
     scope === "candidatura" ? "que sua candidatura siga para análise" : "liberar o login com senha";
 
+  if (viewState === "approved") {
+    return "Conferimos os dados da empresa e sua conta já está criada. Entre com o e-mail e a senha que você cadastrou para começar a comprar.";
+  }
+
   if (viewState === "verified") {
     return scope === "candidatura"
       ? "Seu e-mail está confirmado. Continue o cadastro para acompanhar a candidatura."
@@ -138,6 +152,15 @@ function getDescription(
   }
 
   return "Abra o link enviado para seu e-mail para concluir a ativação da conta.";
+}
+
+/**
+ * Situação da candidatura devolvida pela confirmação. Com o QSA confirmando o titular, o
+ * WordPress já aprova nesta chamada e a resposta traz `approved`.
+ */
+async function readApplicationStatus(response: Response) {
+  const body = (await response.json().catch(() => null)) as VerifyApplicationResponse | null;
+  return body?.application?.status;
 }
 
 /**
@@ -162,6 +185,14 @@ async function requestEmailVerification(
       viewState: "retryable",
       tone: "error",
       message: "Erro de rede ao confirmar seu e-mail. Tente novamente.",
+    };
+  }
+
+  if (response.ok && scope === "candidatura" && (await readApplicationStatus(response)) === "approved") {
+    return {
+      viewState: "approved",
+      tone: "success",
+      message: "E-mail confirmado e cadastro aprovado.",
     };
   }
 
@@ -317,6 +348,17 @@ function ConfirmarEmailPageContent() {
           {viewState === "verifying" ? (
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
               Validando seu link de confirmação...
+            </div>
+          ) : null}
+
+          {viewState === "approved" ? (
+            <div className="mt-10 space-y-4">
+              <Link
+                href={APPROVED_APPLICATION_HREF}
+                className="flex h-14 w-full items-center justify-center rounded-full bg-brand-yellow font-black uppercase tracking-wide text-brand-dark transition hover:bg-brand-yellow/90"
+              >
+                Entrar na conta
+              </Link>
             </div>
           ) : null}
 

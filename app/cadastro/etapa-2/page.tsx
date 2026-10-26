@@ -13,6 +13,11 @@ import { AuthPasswordField, AuthSelectField, AuthTextField } from "@/components/
 import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import {
+  REVENDEDOR_STEP1_DRAFT_KEY,
+  companyApplicationStep1Path,
+  step1ErrorsFromApiErrors,
+} from "@/features/company-application";
+import {
   formatCep,
   isValidCep,
   isValidCnpj,
@@ -25,7 +30,6 @@ import {
   CADASTRO_STEP2_DRAFT_KEY,
   CADASTRO_STORAGE_KEY,
   type CadastroStep1Data,
-  type CadastroStep1Errors,
   type CadastroStep2Draft,
 } from "../shared";
 
@@ -49,23 +53,6 @@ const EMPTY_STEP2_DRAFT: CadastroStep2Draft = {
 function getFormDataString(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
-}
-
-function step1ErrorsFromApiErrors(errors: Record<string, string[]>): CadastroStep1Errors {
-  const mappedFields = {
-    full_name: "name",
-    email: "email",
-    phone: "phone",
-    cpf: "cpf",
-    birth_date: "birthDate",
-    cnpj: "cnpj",
-  } as const;
-
-  return Object.entries(mappedFields).reduce<CadastroStep1Errors>((result, [apiField, field]) => {
-    const message = errors[apiField]?.find(Boolean);
-    if (message) result[field] = message;
-    return result;
-  }, {});
 }
 
 function readStep2Draft(): CadastroStep2Draft {
@@ -263,6 +250,7 @@ function CadastroEtapa2PageContent() {
             neighborhood,
             city,
             state,
+            lead: step1.lead,
           }),
         });
 
@@ -278,9 +266,7 @@ function CadastroEtapa2PageContent() {
             const step1Errors = step1ErrorsFromApiErrors(errors);
             if (Object.keys(step1Errors).length > 0) {
               window.sessionStorage.setItem(CADASTRO_STEP1_ERROR_KEY, JSON.stringify(step1Errors));
-              router.push(
-                callbackUrl ? `/cadastro?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/cadastro",
-              );
+              router.push(companyApplicationStep1Path(step1, callbackUrl));
               return;
             }
             const message = Object.values(errors)
@@ -297,6 +283,7 @@ function CadastroEtapa2PageContent() {
         window.sessionStorage.removeItem(CADASTRO_STORAGE_KEY);
         window.sessionStorage.removeItem(CADASTRO_STEP1_DRAFT_KEY);
         window.sessionStorage.removeItem(CADASTRO_STEP2_DRAFT_KEY);
+        window.sessionStorage.removeItem(REVENDEDOR_STEP1_DRAFT_KEY);
         router.push("/cadastro/analise");
         router.refresh();
       } catch {
@@ -530,7 +517,7 @@ function CadastroEtapa2PageContent() {
 
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
                 <Link
-                  href="/cadastro"
+                  href={companyApplicationStep1Path(step1, callbackUrl)}
                   className="flex h-14 items-center justify-center rounded-full border border-white/20 px-8 font-black uppercase leading-none tracking-wide text-white transition hover:bg-white/5"
                 >
                   Voltar
@@ -556,7 +543,7 @@ function CadastroEtapa2PageContent() {
 
 function CheckIcon({ className }: Readonly<{ className?: string }>) {
   return (
-    <svg className={className} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" className={className} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M2 6L5 9L10 3"
         stroke="currentColor"

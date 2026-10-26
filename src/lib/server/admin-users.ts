@@ -196,6 +196,14 @@ export type AdminUserDetail = {
   } | null;
 };
 
+export type AdminCompanyApplicationLead = {
+  source: "revendedor" | "cadastro";
+  storeName: string | null;
+  instagram: string | null;
+  discoveryChannel: string | null;
+  hasSoldPapelito: "sim" | "nao" | null;
+};
+
 export type AdminCompanyApplicationDetail = {
   application: {
     applicationId: string | number;
@@ -213,7 +221,11 @@ export type AdminCompanyApplicationDetail = {
     documentPurgeStatus: string;
     rejectionReason: string | null;
     decidedByUserId: number | null;
+    /** Aprovada pelo QSA logo depois do e-mail confirmado, sem administrador. Só na pré-conta. */
+    autoApproved?: boolean;
   };
+  /** Dados da loja enviados pelo formulário do `/revendedor`; null quando veio do `/cadastro`. */
+  lead?: AdminCompanyApplicationLead | null;
   person: {
     userId: number | null;
     fullName: string | null;

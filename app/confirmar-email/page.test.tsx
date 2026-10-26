@@ -80,6 +80,23 @@ describe("ConfirmarEmailPage", () => {
     expect(screen.queryByRole("link", { name: /ir para entrar/i })).not.toBeInTheDocument();
   });
 
+  it("anuncia o cadastro aprovado quando o QSA aprova a candidatura na confirmação", async () => {
+    searchParams.value = "";
+    window.history.replaceState(
+      null,
+      "",
+      "/confirmar-email#scope=candidatura&email=ana%40empresa.test&token=token-da-candidatura",
+    );
+    stubFetch({ ok: true, body: { application: { status: "approved" } } });
+    render(<ConfirmarEmailPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /confirmar e-mail/i }));
+
+    expect(await screen.findByRole("heading", { name: "Cadastro aprovado" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /entrar na conta/i })).toHaveAttribute("href", "/entrar");
+    expect(screen.queryByRole("link", { name: /continuar cadastro/i })).not.toBeInTheDocument();
+  });
+
   it("reenvia o link da candidatura pela rota da candidatura, não pela da conta", async () => {
     searchParams.value = "";
     window.history.replaceState(

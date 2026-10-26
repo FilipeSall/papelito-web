@@ -15,9 +15,13 @@ import { LogoSpinnerLoader } from "@/components/ui/logo-spinner-loader";
 import { ToastCloseButton } from "@/components/ui/toast-close-button";
 import { formatPhone } from "@/features/revendedor/utils/revendedor-formatters";
 import { formatCpf } from "@/features/revendedor/utils/revendedor-registration";
-import { formatCnpj, isValidCnpj, isValidCpf } from "@/lib/validation/brazilian-documents";
-import { getMaximumAdultBirthDate, validateAdultBirthDate } from "@/lib/validation/birth-date";
-import { validateFullName, validatePhone } from "@/lib/validation/person";
+import {
+  CADASTRO_STEP1_FIELDS,
+  readCompanyApplicationStep1Errors,
+  validateCadastroStep1,
+} from "@/features/company-application";
+import { formatCnpj } from "@/lib/validation/brazilian-documents";
+import { getMaximumAdultBirthDate } from "@/lib/validation/birth-date";
 
 import {
   CADASTRO_STEP1_DRAFT_KEY,
@@ -50,61 +54,6 @@ function formDataString(formData: FormData, field: string): string {
   return typeof value === "string" ? value : "";
 }
 
-const cadastroStep1Fields: CadastroStep1Field[] = [
-  "name",
-  "email",
-  "phone",
-  "cpf",
-  "cnpj",
-  "birthDate",
-];
-
-function readStep1Errors(): CadastroStep1Errors {
-  if (typeof window === "undefined") return {};
-
-  const saved = window.sessionStorage.getItem(CADASTRO_STEP1_ERROR_KEY);
-  if (!saved) return {};
-
-  try {
-    const parsed = JSON.parse(saved) as Record<string, unknown>;
-    return cadastroStep1Fields.reduce<CadastroStep1Errors>((errors, field) => {
-      if (typeof parsed[field] === "string" && parsed[field]) {
-        errors[field] = parsed[field];
-      }
-      return errors;
-    }, {});
-  } catch {
-    return {};
-  }
-}
-
-function validateStep1(
-  payload: CadastroStep1Data,
-  emailIsInvalid: boolean,
-): CadastroStep1Errors {
-  const errors: CadastroStep1Errors = {};
-
-  const nameError = validateFullName(payload.name);
-  if (nameError) errors.name = nameError;
-  if (!payload.email) {
-    errors.email = "Informe seu e-mail.";
-  } else if (emailIsInvalid) {
-    errors.email = "Informe um e-mail válido.";
-  }
-  const phoneError = validatePhone(payload.phone);
-  if (phoneError) errors.phone = phoneError;
-  if (!isValidCpf(payload.cpf)) errors.cpf = "Informe um CPF válido.";
-  if (!isValidCnpj(payload.cnpj)) errors.cnpj = "Informe um CNPJ válido.";
-  if (!payload.birthDate) {
-    errors.birthDate = "Informe sua data de nascimento.";
-  } else {
-    const birthDateError = validateAdultBirthDate(payload.birthDate);
-    if (birthDateError) errors.birthDate = birthDateError;
-  }
-
-  return errors;
-}
-
 function CadastroPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -125,7 +74,9 @@ function CadastroPageContent() {
 
   // Colaboradores entram apenas pelo fluxo de convite por e-mail.
   const intent: CadastroIntent = "create_company";
-  const [fieldErrors, setFieldErrors] = useState<CadastroStep1Errors>(readStep1Errors);
+  const [fieldErrors, setFieldErrors] = useState<CadastroStep1Errors>(
+    () => readCompanyApplicationStep1Errors(CADASTRO_STEP1_FIELDS),
+  );
   const [googleAccountFeedbackVisible, setGoogleAccountFeedbackVisible] = useState(
     () => searchParams.get("feedback") === "google_account_required",
   );
@@ -146,7 +97,7 @@ function CadastroPageContent() {
   useEffect(() => {
     if (!shouldFocusErrorRef.current) return;
 
-    const firstField = cadastroStep1Fields.find((field) => fieldErrors[field]);
+    const firstField = CADASTRO_STEP1_FIELDS.find((field) => fieldErrors[field]);
     if (!firstField) return;
 
     document.getElementById(firstField)?.focus();
@@ -166,7 +117,7 @@ function CadastroPageContent() {
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !target.name) return;
     valuesRef.current = { ...valuesRef.current, [target.name]: target.value };
-    if (!cadastroStep1Fields.includes(target.name as CadastroStep1Field)) return;
+    if (!CADASTRO_STEP1_FIELDS.includes(target.name as CadastroStep1Field)) return;
     setFieldErrors((current) => {
       if (!current[target.name as CadastroStep1Field]) return current;
       const next = { ...current };
@@ -241,7 +192,7 @@ function CadastroPageContent() {
     const emailIsInvalid = !googleEmail
       && emailInput instanceof HTMLInputElement
       && emailInput.validity.typeMismatch;
-    const errors = validateStep1(payload, emailIsInvalid);
+    const errors = validateCadastroStep1(payload, emailIsInvalid);
     if (Object.keys(errors).length > 0) {
       shouldFocusErrorRef.current = true;
       setFieldErrors(errors);
@@ -437,7 +388,7 @@ function CadastroPageContent() {
               <div className="rounded-lg bg-red-500/10 p-3 text-xs font-medium text-red-300" role="alert">
                 <p>Revise os campos destacados para continuar.</p>
                 <ul className="mt-2 list-inside list-disc space-y-1">
-                  {cadastroStep1Fields.map((field) =>
+                  {CADASTRO_STEP1_FIELDS.map((field) =>
                     fieldErrors[field] ? (
                       <li key={field}>
                         <a className="underline" href={`#${field}`}>
@@ -479,6 +430,7 @@ function CadastroPageContent() {
 function CheckIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg
+      aria-hidden="true"
       className={className}
       viewBox="0 0 12 12"
       fill="none"

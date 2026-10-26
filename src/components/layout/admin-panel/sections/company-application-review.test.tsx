@@ -183,6 +183,38 @@ describe("CompanyApplicationReview", () => {
     expect(screen.queryByText(PURGED_BODY)).not.toBeInTheDocument();
   });
 
+  it("identifica a pré-conta aprovada pelo QSA sem administrador e mostra os dados da loja", () => {
+    const current: AdminCompanyApplicationDetail = {
+      ...detail,
+      application: { ...detail.application, status: "approved", autoApproved: true, documentAvailable: false },
+      lead: {
+        source: "revendedor",
+        storeName: "Tabacaria do Centro",
+        instagram: "tabacaria.centro",
+        discoveryChannel: "indicacao",
+        hasSoldPapelito: "nao",
+      },
+    };
+    render(<CompanyApplicationReview initialData={{ current, history: [current] }} />);
+
+    expect(screen.getByRole("heading", { name: "Aprovada automaticamente (QSA)" })).toBeInTheDocument();
+    const store = within(screen.getByRole("heading", { name: /Dados da loja/ }).closest("section")!);
+    expect(store.getByText("Tabacaria do Centro")).toBeInTheDocument();
+    expect(store.getByText("@tabacaria.centro")).toBeInTheDocument();
+    expect(store.getByText("Indicação de parceiro")).toBeInTheDocument();
+    expect(store.getByText("Não")).toBeInTheDocument();
+  });
+
+  it("não mostra dados da loja na candidatura vinda do /cadastro", () => {
+    const current: AdminCompanyApplicationDetail = {
+      ...detail,
+      lead: { source: "cadastro", storeName: null, instagram: null, discoveryChannel: null, hasSoldPapelito: null },
+    };
+    render(<CompanyApplicationReview initialData={{ current, history: [current] }} />);
+
+    expect(screen.queryByText(/Dados da loja/)).not.toBeInTheDocument();
+  });
+
   it("mantém o aviso de arquivo eliminado quando o documento existiu e foi removido", () => {
     renderApplication({
       status: "approved",

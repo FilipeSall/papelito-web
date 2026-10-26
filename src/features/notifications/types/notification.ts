@@ -1,5 +1,4 @@
 export type NotificationType =
-  | "new_vendor_application"
   | "favorite_on_promo"
   | "vendor_approved"
   | "vendor_rejected"

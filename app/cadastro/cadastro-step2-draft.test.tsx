@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { REVENDEDOR_FORM_PATH, REVENDEDOR_STEP1_DRAFT_KEY } from "@/features/company-application";
+
 import CadastroEtapa2Page from "./etapa-2/page";
 import {
   CADASTRO_STEP1_DRAFT_KEY,
@@ -126,6 +128,19 @@ const step2Draft: CadastroStep2Draft = {
   state: "DF",
 };
 
+function fillAndSubmitStep2() {
+  fireEvent.change(screen.getByLabelText("CEP"), { target: { value: step2Draft.cep } });
+  fireEvent.change(screen.getByLabelText("Logradouro"), { target: { value: step2Draft.street } });
+  fireEvent.change(screen.getByLabelText("Número"), { target: { value: step2Draft.number } });
+  fireEvent.change(screen.getByLabelText("Bairro"), { target: { value: step2Draft.neighborhood } });
+  fireEvent.change(screen.getByLabelText("Cidade"), { target: { value: step2Draft.city } });
+  fireEvent.change(screen.getByLabelText("Estado"), { target: { value: step2Draft.state } });
+  fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "senha-secreta" } });
+  fireEvent.change(screen.getByLabelText("Confirmar Senha"), { target: { value: "senha-secreta" } });
+  fireEvent.click(screen.getByRole("button", { name: "Aceitar termos" }));
+  fireEvent.submit(screen.getByRole("button", { name: /enviar candidatura/i }).closest("form")!);
+}
+
 describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
   beforeEach(() => {
     routerMock.push.mockReset();
@@ -203,6 +218,75 @@ describe("Cadastro etapa 2 — rascunho ao sair da página", () => {
       cpf: step1.cpf,
       cnpj: step1.cnpj,
       birthDate: step1.birthDate,
+    });
+  });
+});
+
+describe("Cadastro etapa 2 — candidatura vinda do /revendedor", () => {
+  const revendedorStep1: CadastroStep1Data = {
+    ...step1,
+    lead: {
+      source: "revendedor",
+      storeName: "Tabacaria do Centro",
+      instagram: "tabacaria.centro",
+      discoveryChannel: "instagram",
+      hasSoldPapelito: "sim",
+    },
+  };
+
+  beforeEach(() => {
+    routerMock.push.mockReset();
+    window.sessionStorage.clear();
+    window.sessionStorage.setItem(CADASTRO_STORAGE_KEY, JSON.stringify(revendedorStep1));
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("volta para o formulário do /revendedor", async () => {
+    render(<CadastroEtapa2Page />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "Voltar" })).toHaveAttribute("href", REVENDEDOR_FORM_PATH);
+    });
+  });
+
+  it("envia os dados da loja junto com a candidatura", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ application: { applicationId: "pa_1" } }), { status: 201 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    window.sessionStorage.setItem(REVENDEDOR_STEP1_DRAFT_KEY, "{}");
+
+    render(<CadastroEtapa2Page />);
+    fillAndSubmitStep2();
+
+    await waitFor(() => expect(routerMock.push).toHaveBeenCalledWith("/cadastro/analise"));
+    const body = JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body)) as Record<string, unknown>;
+    expect(body.lead).toEqual(revendedorStep1.lead);
+    expect(body.full_name).toBe(revendedorStep1.name);
+    expect(window.sessionStorage.getItem(REVENDEDOR_STEP1_DRAFT_KEY)).toBeNull();
+  });
+
+  it("devolve o erro do Instagram para o formulário do /revendedor", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ data: { errors: { instagram: ["Informe o Instagram da loja."] } } }),
+          { status: 422 },
+        ),
+      ),
+    );
+
+    render(<CadastroEtapa2Page />);
+    fillAndSubmitStep2();
+
+    await waitFor(() => expect(routerMock.push).toHaveBeenCalledWith(REVENDEDOR_FORM_PATH));
+    expect(JSON.parse(window.sessionStorage.getItem(CADASTRO_STEP1_ERROR_KEY) ?? "{}")).toEqual({
+      instagram: "Informe o Instagram da loja.",
     });
   });
 });

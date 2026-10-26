@@ -1,11 +1,6 @@
 import "server-only";
 
-import { getAdminVendorInterests } from "@/lib/server/admin-vendor-interests";
 import { wpRest } from "@/lib/server/wp-rest";
-
-export const ANALYSIS_TYPES = ["all", "company", "vendor"] as const;
-
-export type AnalysisType = (typeof ANALYSIS_TYPES)[number];
 
 export const ANALYSIS_APPLICATION_STATUSES = [
   "pending_manual_review",
@@ -19,7 +14,6 @@ export type AnalysisApplicationStatus = (typeof ANALYSIS_APPLICATION_STATUSES)[n
 
 export type AnalysisFilters = {
   status: AnalysisApplicationStatus;
-  type: AnalysisType;
 };
 
 export type AnalysisRequest = {
@@ -27,7 +21,7 @@ export type AnalysisRequest = {
   createdAt: string;
   href: string;
   id: string;
-  kind: "company_existing_account" | "company_pre_account" | "vendor_interest";
+  kind: "company_existing_account" | "company_pre_account";
   kindLabel: string;
   requesterEmail: string;
   requesterName: string;
@@ -39,7 +33,6 @@ export type AnalysisSnapshot = {
   companyPending: number;
   issues: string[];
   requests: AnalysisRequest[];
-  vendorPending: number;
 };
 
 const APPLICATION_STATUS_LABELS: Record<string, string> = {
@@ -52,12 +45,6 @@ const APPLICATION_STATUS_LABELS: Record<string, string> = {
 
 export function analysisStatusLabel(status: string) {
   return APPLICATION_STATUS_LABELS[status] ?? status ?? "—";
-}
-
-export function parseAnalysisType(value: string | undefined): AnalysisType {
-  return (ANALYSIS_TYPES as readonly string[]).includes(value ?? "")
-    ? (value as AnalysisType)
-    : "all";
 }
 
 export function parseAnalysisStatus(value: string | undefined): AnalysisApplicationStatus {
@@ -104,38 +91,29 @@ export async function getAdminAnalysisSnapshot(
       companyPending: 0,
       issues: ["Sessão sem access token para consultar as análises."],
       requests: [],
-      vendorPending: 0,
     };
   }
 
   const headers = { Authorization: `Bearer ${accessToken}` };
-  const wantsCompany = filters.type === "all" || filters.type === "company";
-  const wantsVendor = filters.type === "all" || filters.type === "vendor";
-
-  const [ownerResult, preAccountResult, interestsResult] = await Promise.all([
-    wantsCompany
-      ? wpRest<OwnerApplicationsResponse>(
-          `/papelito/v1/admin/owner-applications?page=1&perPage=50&status=${filters.status}`,
-          { headers },
-        )
-      : null,
-    wantsCompany
-      ? wpRest<PreAccountApplicationsResponse>(
-          `/papelito/v1/admin/pre-account-applications?status=${filters.status}`,
-          { headers },
-        )
-      : null,
-    wantsVendor ? getAdminVendorInterests(accessToken, { page: 1, perPage: 50, search: "" }) : null,
+  const [ownerResult, preAccountResult] = await Promise.all([
+    wpRest<OwnerApplicationsResponse>(
+      `/papelito/v1/admin/owner-applications?page=1&perPage=50&status=${filters.status}`,
+      { headers },
+    ),
+    wpRest<PreAccountApplicationsResponse>(
+      `/papelito/v1/admin/pre-account-applications?status=${filters.status}`,
+      { headers },
+    ),
   ]);
 
   const issues: string[] = [];
   const requests: AnalysisRequest[] = [];
 
-  if (ownerResult && !ownerResult.ok) {
+  if (!ownerResult.ok) {
     issues.push(`[wp] owner-applications -> ${ownerResult.error.message}`);
   }
 
-  if (ownerResult?.ok) {
+  if (ownerResult.ok) {
     for (const item of ownerResult.data.items ?? []) {
       requests.push({
         companyLabel: item.tradeName || item.companyName || `Empresa #${item.companyId}`,
@@ -152,11 +130,11 @@ export async function getAdminAnalysisSnapshot(
     }
   }
 
-  if (preAccountResult && !preAccountResult.ok) {
+  if (!preAccountResult.ok) {
     issues.push(`[wp] pre-account-applications -> ${preAccountResult.error.message}`);
   }
 
-  if (preAccountResult?.ok) {
+  if (preAccountResult.ok) {
     for (const item of preAccountResult.data.items ?? []) {
       requests.push({
         companyLabel: item.companyName || item.cnpj,
@@ -173,33 +151,11 @@ export async function getAdminAnalysisSnapshot(
     }
   }
 
-  if (interestsResult?.issue) {
-    issues.push(`[wp] vendor-interests -> ${interestsResult.issue}`);
-  }
-
-  if (interestsResult) {
-    for (const item of interestsResult.items) {
-      requests.push({
-        companyLabel: item.storeName || `Manifestação #${item.id}`,
-        createdAt: item.createdAt,
-        href: `/admin/vendors/interesses/${item.id}`,
-        id: `interest-${item.id}`,
-        kind: "vendor_interest",
-        kindLabel: item.customerUserId ? "Vendor · com conta" : "Vendor · sem conta",
-        requesterEmail: item.email || "—",
-        requesterName: [item.firstName, item.lastName].filter(Boolean).join(" ") || "—",
-        status: "pending_manual_review",
-        statusLabel: "Aguardando contato",
-      });
-    }
-  }
-
   requests.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
   return {
-    companyPending: requests.filter((request) => request.kind !== "vendor_interest").length,
+    companyPending: requests.length,
     issues,
     requests,
-    vendorPending: requests.filter((request) => request.kind === "vendor_interest").length,
   };
 }

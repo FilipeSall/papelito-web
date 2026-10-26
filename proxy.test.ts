@@ -73,17 +73,25 @@ describe("proxy", () => {
   });
 
   it.each(["customer", "seller", "administrator"])(
-    "does not redirect %s away from the public revendedor route",
+    "sends a logged-in %s from the revendedor signup to the completion page",
     async (role) => {
       const response = (await proxy(
         buildRequest("/revendedor", { accessToken: "access-token", role, b2b: { onboardingStatus: "complete" } }) as never,
         {} as never,
       )) as Response;
 
-      expect(response.headers.get("location")).toBeNull();
-      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost/cadastro/completar?callbackUrl=%2F",
+      );
     },
   );
+
+  it("lets visitors open the revendedor signup", async () => {
+    const response = (await proxy(buildRequest("/revendedor") as never, {} as never)) as Response;
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.status).toBe(200);
+  });
 
   it("redirects non-admin users away from admin routes", async () => {
     const response = (await proxy(
@@ -189,6 +197,7 @@ describe("proxy", () => {
       "/admin/:path*",
       "/vendor/:path*",
       "/cadastro",
+      "/revendedor",
       "/cadastro/completar",
     ]);
 
@@ -213,6 +222,9 @@ describe("proxy", () => {
     ).toBe(false);
     expect(
       wrappedOptions.callbacks.authorized({ token: null, req: { nextUrl: { pathname: "/cadastro" } } }),
+    ).toBe(true);
+    expect(
+      wrappedOptions.callbacks.authorized({ token: null, req: { nextUrl: { pathname: "/revendedor" } } }),
     ).toBe(true);
     expect(
       wrappedOptions.callbacks.authorized({

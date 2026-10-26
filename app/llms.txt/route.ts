@@ -63,7 +63,7 @@ ${PAPELITO_AUDIENCE_SEGMENTS.map((segment) => `- ${segment}`).join("\n")}
 
 - [Home](${SITE_URL}): entrada do marketplace B2B.
 - [Catálogo](${absoluteUrl("/produtos")}): todos os produtos, com filtro por categoria e subcategoria.
-- [Seja revendedor](${absoluteUrl("/revendedor")}): cadastro de empresas interessadas em revender.
+- [Seja revendedor](${absoluteUrl("/revendedor")}): cadastro de empresas que compram para revender.
 - [PDV Perfeito](${absoluteUrl("/pdv")}): materiais de merchandising para o ponto de venda.
 - [Quem somos](${absoluteUrl("/sobre")}): história, valores e posicionamento da indústria.
 - [Política de privacidade](${absoluteUrl("/privacidade")}).

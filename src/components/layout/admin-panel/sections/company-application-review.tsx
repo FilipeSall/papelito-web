@@ -4,9 +4,11 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { ConfirmModal } from "@/components/ui";
+import { REVENDEDOR_DISCOVERY_OPTIONS } from "@/features/revendedor";
 import { isDateOnly } from "@/features/vendor-orders/utils/order-dates";
 import type {
   AdminCompanyApplicationDetail,
+  AdminCompanyApplicationLead,
   AdminOwnerApplications,
 } from "@/lib/server/admin-users";
 import { formatCnpj } from "@/lib/validation/brazilian-documents";
@@ -29,6 +31,31 @@ const EVIDENCE_LABELS: Record<string, string> = {
   provider: "Fonte da consulta",
   checked_at: "Consulta realizada em",
 };
+
+const DISCOVERY_LABELS = new Map(REVENDEDOR_DISCOVERY_OPTIONS.map((option) => [option.value, option.label]));
+
+const SOLD_LABELS: Record<string, string> = { sim: "Sim", nao: "Não" };
+
+function applicationHeading(application: AdminCompanyApplicationDetail["application"]) {
+  if (application.autoApproved) return "Aprovada automaticamente (QSA)";
+  return STATUS_LABELS[application.status] ?? application.status;
+}
+
+function LeadCard({ lead }: Readonly<{ lead: AdminCompanyApplicationLead | null | undefined }>) {
+  if (lead?.source !== "revendedor") return null;
+
+  return (
+    <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
+      <h3 className="text-xs font-black uppercase tracking-[0.2em]">Dados da loja · /revendedor</h3>
+      <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DataCard label="Nome da loja" value={lead.storeName} />
+        <DataCard label="Instagram" value={lead.instagram ? `@${lead.instagram}` : null} />
+        <DataCard label="Como conheceu" value={DISCOVERY_LABELS.get(lead.discoveryChannel ?? "") ?? lead.discoveryChannel} />
+        <DataCard label="Já vende Papelito" value={SOLD_LABELS[lead.hasSoldPapelito ?? ""] ?? null} />
+      </dl>
+    </section>
+  );
+}
 
 function formatEvidenceLabel(key: string) {
   return EVIDENCE_LABELS[key] ?? key.replaceAll("_", " ");
@@ -392,7 +419,7 @@ export function CompanyApplicationReview({
               Tentativa {application.attemptNumber}
             </p>
             <h2 className="mt-1 text-2xl font-black uppercase">
-              {STATUS_LABELS[application.status] ?? application.status}
+              {applicationHeading(application)}
             </h2>
           </div>
           <span className="border-2 border-[#1a1a1a] bg-white px-3 py-2 text-xs font-black uppercase">
@@ -400,6 +427,8 @@ export function CompanyApplicationReview({
           </span>
         </div>
       </section>
+
+      <LeadCard lead={current.lead} />
 
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="border-2 border-[#1a1a1a] bg-white p-5 shadow-[8px_8px_0px_#1a1a1a]">
