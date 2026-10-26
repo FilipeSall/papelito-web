@@ -1,6 +1,7 @@
 import {
   BadgePercent,
   FolderTree,
+  FileSpreadsheet,
   Image,
   MessageSquare,
   Package,
@@ -14,6 +15,7 @@ import {
 
 export type AdminSectionKey =
   | "sales"
+  | "relatorios"
   | "products"
   | "categories"
   | "flash-sale"
@@ -41,6 +43,14 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Vendas",
     shortLabel: "Vendas",
     description: "Receita, pedidos e mix",
+  },
+  {
+    key: "relatorios",
+    href: "/admin/relatorios",
+    icon: FileSpreadsheet,
+    label: "Relatórios",
+    shortLabel: "Relatórios",
+    description: "Exportações e importação de produtos",
   },
   {
     key: "products",

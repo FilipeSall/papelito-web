@@ -1,9 +1,13 @@
 function filenameFromDisposition(disposition: string, fallback: string) {
-  const match = disposition.match(/filename="?([^";]+)"?/i);
+  const match = /filename="?([^";]+)"?/i.exec(disposition);
   return match?.[1] ?? fallback;
 }
 
-export async function downloadExport(url: string, fallbackFilename: string) {
+/**
+ * Baixa a planilha da rota de exportação e devolve o nome com que o arquivo foi salvo — o do
+ * `Content-Disposition` do servidor quando existe, senão o nome de reserva.
+ */
+export async function downloadExport(url: string, fallbackFilename: string): Promise<string> {
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -16,12 +20,11 @@ export async function downloadExport(url: string, fallbackFilename: string) {
   const anchor = document.createElement("a");
 
   anchor.href = objectUrl;
-  anchor.download = filenameFromDisposition(
-    response.headers.get("content-disposition") ?? "",
-    fallbackFilename,
-  );
+  const filename = filenameFromDisposition(response.headers.get("content-disposition") ?? "", fallbackFilename);
+  anchor.download = filename;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   window.URL.revokeObjectURL(objectUrl);
+  return filename;
 }

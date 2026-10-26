@@ -12,8 +12,9 @@ export default async function AdminSectionRoute({
   const { section } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
 
+  // Relatórios saiu de Vendas para a própria seção em 25/10. O link salvo continua respondendo.
   if (section === "reports") {
-    redirect("/admin/sales#exportar-vendas");
+    redirect("/admin/relatorios");
   }
 
   // A seção deixou de ser só cupons em 04/09. O link salvo continua respondendo, com os filtros.

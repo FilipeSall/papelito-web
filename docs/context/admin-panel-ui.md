@@ -219,7 +219,7 @@ Registro de migração — links antigos apontam para lugar nenhum:
 
 - `/admin/vendor-interests`
 - `/admin/vendor-interests/[id]`
-- `/admin/reports` — absorvida por `/admin/sales`; a rota redireciona para `/admin/sales#exportar-vendas`
+- `/admin/reports` — redireciona para `/admin/relatorios` (até 25/10 apontava para a área de exportação dentro de `/admin/sales`)
 - `/vendor/financeiro` — absorvida por `/vendor/dashboard`; a rota redireciona
 - `/admin/users` e `/admin/users/[id]` — absorvidas por `/admin/contas`; redirecionam preservando a query
 - `/admin/vendors` (listagem) — absorvida por `/admin/contas?role=seller`; `?tab=interesses` cai na aba Análises. O **detalhe** `/admin/vendors/[id]` continua existindo
@@ -257,6 +257,50 @@ A seção **não repete a validação do WordPress**: faixa aceita (1–24) e a 
 mínimo são verificadas lá, e o formulário só exibe a mensagem que voltar. Duplicá-las aqui criaria
 a segunda regra que envelhece sozinha quando o teto de caixas mudar.
 
+## Relatórios: exportações e importação de produtos
+
+`/admin/relatorios` (`sections/reports/`) reúne o que o admin tira e o que põe no catálogo por
+planilha. As exportações de Vendas e Usuários **saíram do dashboard de Vendas** em 25/10 — lá
+ficam só leitura e gráficos. As exportações do vendor continuam no `/vendor/dashboard`.
+
+```
+CABEÇALHO   título + uma linha de contexto
+EXPORTAR    (folha com faixa amarela)        IMPORTAR PRODUTOS (chapa escura)
+            Vendas  · período · formato      área de soltar · modelo CSV
+            Usuários · período · papel       último lote
+ATIVIDADE RECENTE  (moldura única, linhas)
+```
+
+- **Cada relatório mostra quantas linhas sairiam antes do clique** (`/api/admin/reports/{sales,users}/count`).
+  Zero desabilita o botão e diz o motivo, em vez de baixar um arquivo só com cabeçalho. Contagem que
+  falha não bloqueia: é aviso, não autorização.
+- **O período não vem mais da página.** Sem o filtro de Vendas acima, cada relatório nasce em
+  "30 dias" e tem atalhos (7 dias, 30 dias, mês atual, mês anterior, personalizado). O "hoje" é o de
+  São Paulo (`report-range.ts`), não o do relógio do navegador. `useSyncedDateRange` continua só no
+  painel do vendor.
+- **A importação é um assistente em `BaseModal`** — arquivo → conferência → cadastro. A conferência
+  agrupa as linhas em entram / já existem / repetidas / com erro; produto que já existe (mesmo nome
+  normalizado na mesma categoria) só entra se o admin marcar "cadastrar mesmo assim", e o existente
+  nunca é alterado. Arquivo que já gerou lote exige aceite explícito. Confirmar é em dois tempos, e
+  o assistente não fecha enquanto grava. Contrato em
+  [`../../../docs/integration-contracts.md`](../../../docs/integration-contracts.md#importação-de-produtos-pelo-admin).
+- **Exportar tem três relatórios**: Vendas e Usuários, por período, e Produtos, sem período,
+  filtrado por situação e categoria. Produtos sai no formato da importação, então o arquivo
+  exportado é o ponto de partida para montar uma planilha de cadastro. Os filtros de cada relatório
+  são declarados em `export-report-config.ts` (`period`, `choices`); a categoria vem da taxonomia
+  ativa do WordPress (`withCategoryChoice`).
+- **"Ver exemplo e colunas"** abre a planilha de exemplo como ela é, o que cada coluna espera e as
+  palavras que a importação lê como a mesma coisa (`PRODUCT_IMPORT_SYNONYMS`, espelho do
+  dicionário do vendor). O exemplo e o modelo baixado saem de `PRODUCT_IMPORT_EXAMPLE_ROWS`.
+- **Relatório de erros e modelo CSV são gerados no navegador** (`product-import-decisions.ts`), com
+  `;` e BOM para o Excel em português. O relatório leva as colunas originais do arquivo mais linha,
+  situação e motivo, pronto para corrigir e reenviar.
+- **Atividade recente** lê `/reports/operations` sem cache e é atualizada por `router.refresh()`
+  depois de cada exportação e de cada lote. Registra recorte e contagens, nunca o conteúdo
+  exportado.
+- A área de soltar planilha virou `src/components/ui/spreadsheet-dropzone.tsx`, com tom claro e
+  escuro; a importação de códigos do vendor usa a mesma.
+
 ## Vendas e exportações — vale para os dois painéis
 
 `/admin/sales` e `/vendor/dashboard` compartilham componentes e as mesmas regras de leitura. O que
@@ -277,7 +321,7 @@ tudo para paginar no cliente.
 duração e mesmo segmento, calculada no WordPress. Quando não há base de comparação a interface diz
 isso por extenso — não exibe `n/a` nem inventa um número.
 
-**Sincronia dos filtros de exportação — mão única.** Cada área de exportação tem intervalo próprio,
+**Sincronia dos filtros de exportação — mão única (painel do vendor).** Cada área de exportação tem intervalo próprio,
 governado por `useSyncedDateRange`:
 
 - a página inicializa o intervalo local;

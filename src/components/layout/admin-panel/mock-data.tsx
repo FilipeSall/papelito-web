@@ -2,6 +2,7 @@ import type { AdminSectionKey } from "./admin-config";
 import { badge } from "./primitives";
 
 export const HERO_METRICS: Record<AdminSectionKey, Array<{ label: string; value: string }>> = {
+  relatorios: [],
   sales: [
     { label: "ticket médio", value: "R$ 121" },
     { label: "repique", value: "+18.4%" },
@@ -64,6 +65,13 @@ export const SECTION_META: Record<
     signalTone: "default" | "warning";
   }
 > = {
+  relatorios: {
+    eyebrow: "Exportações e importação",
+    description: "Exportações de vendas e contas e cadastro de produtos novos por planilha.",
+    railLabel: "seção",
+    railValue: "própria",
+    signalTone: "default",
+  },
   sales: {
     eyebrow: "Receita e pedidos",
     description:

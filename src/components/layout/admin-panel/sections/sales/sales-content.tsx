@@ -17,7 +17,6 @@ import {
   formatPercent,
 } from "../../formatters";
 import { CardNotification, HardPanel } from "../../primitives";
-import { SalesExportPanel, UsersExportPanel } from "../exports";
 import { FigureLine, FigureList } from "./sales-figures";
 import { SalesHeadline } from "./sales-headline";
 import { SalesOrdersPanel } from "./sales-orders-panel";
@@ -29,7 +28,6 @@ const PAGE_SECTIONS = [
   { id: "resumo", label: "Resumo" },
   { id: "graficos", label: "Gráficos" },
   { id: "pedidos", label: "Pedidos" },
-  { id: "exportar-vendas", label: "Exportações" },
 ] as const;
 
 function classifyIssues(issues: string[]) {
@@ -230,14 +228,6 @@ export async function SalesContent({
 
       <div className="animate-admin-panel-enter scroll-mt-24 [animation-delay:360ms]" id="pedidos">
         <SalesOrdersPanel filters={filters} snapshot={ordersSnapshot} />
-      </div>
-
-      <div className="animate-admin-panel-enter [animation-delay:440ms]">
-        <SalesExportPanel pageFrom={filters.from} pageTo={filters.to} />
-      </div>
-
-      <div className="animate-admin-panel-enter [animation-delay:500ms]">
-        <UsersExportPanel pageFrom={filters.from} pageTo={filters.to} />
       </div>
     </>
   );

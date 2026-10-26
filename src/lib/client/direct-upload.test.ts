@@ -128,4 +128,26 @@ describe("uploadDirectFile", () => {
     expect((error as DirectUploadError).message).toBe("O arquivo excede o limite de 10 MB.");
     expect((error as DirectUploadError).status).toBe(413);
   });
+
+  it("keeps the WordPress message and data on 413 when the refusal carries a code", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ticket: "t", uploadUrl: "https://wp.test/upload" }), { status: 201 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: "papelito_vendor_code_import_too_many_rows",
+            data: { stage: "read", status: 413 },
+            message: "A planilha tem mais de 2.000 linhas.",
+          }),
+          { status: 413 },
+        ),
+      );
+
+    const error = await uploadDirectFile("admin-product-import", new File(["x"], "produtos.csv")).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect((error as DirectUploadError).message).toBe("A planilha tem mais de 2.000 linhas.");
+    expect((error as DirectUploadError).data).toEqual({ stage: "read", status: 413 });
+  });
 });

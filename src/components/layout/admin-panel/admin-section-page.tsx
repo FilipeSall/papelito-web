@@ -10,6 +10,7 @@ import {
   CommercialContent,
   FlashSaleContent,
   ProductsContent,
+  ReportsContent,
   SalesContent,
   ChamadosContent,
   OrderRefundsContent,
@@ -24,6 +25,8 @@ function renderSection(
       return <SalesContent searchParams={searchParams} />;
     case "products":
       return <ProductsContent searchParams={searchParams} />;
+    case "relatorios":
+      return <ReportsContent />;
     case "categories":
       return <CategoriesContent />;
     case "flash-sale":
@@ -55,6 +58,7 @@ export function AdminSectionPage({
   return (
     <div className="space-y-4 md:space-y-5">
       {section === "sales" ||
+      section === "relatorios" ||
       section === "products" ||
       section === "categories" ||
       section === "config" ||

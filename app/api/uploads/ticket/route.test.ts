@@ -57,6 +57,27 @@ describe("/api/uploads/ticket", () => {
     });
   });
 
+  it("emite o tíquete da importação de produtos só com a sessão de admin", async () => {
+    const { POST } = await import("./route");
+    const ticketRequest = () =>
+      new Request("http://localhost/api/uploads/ticket", {
+        body: JSON.stringify({ purpose: "admin-product-import" }),
+        method: "POST",
+      });
+
+    expect((await POST(ticketRequest())).status).toBe(201);
+    expect(wpRestMock).toHaveBeenCalledWith("/papelito/v1/uploads/tickets", {
+      headers: { Authorization: "Bearer admin-token" },
+      json: { purpose: "admin-product-import" },
+      method: "POST",
+    });
+
+    wpRestMock.mockClear();
+    getAdminApiSessionMock.mockResolvedValue({ error: "Acesso negado.", status: 403 });
+    expect((await POST(ticketRequest())).status).toBe(403);
+    expect(wpRestMock).not.toHaveBeenCalled();
+  });
+
   it("uses the private application cookie only for a pre-account document ticket", async () => {
     cookiesMock.mockResolvedValue({ get: () => ({ value: "private-application-token" }) });
     const { POST } = await import("./route");

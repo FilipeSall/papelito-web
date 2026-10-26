@@ -8,7 +8,8 @@ export type DirectUploadPurpose =
   | "vendor-fiscal-document"
   | "return-refund-proof"
   | "order-refund-proof"
-  | "vendor-sku-import";
+  | "vendor-sku-import"
+  | "admin-product-import";
 
 /**
  * Contexto que a rota Next repassa ao WordPress na emissão do tíquete.
@@ -27,7 +28,7 @@ type UploadTicket = {
   uploadUrl?: string;
 };
 
-type UploadResponse<T> = T & { code?: string; message?: string };
+type UploadResponse<T> = T & { code?: string; data?: unknown; message?: string };
 
 /**
  * Erro de upload que preserva o status HTTP.
@@ -38,24 +39,27 @@ type UploadResponse<T> = T & { code?: string; message?: string };
 export class DirectUploadError extends Error {
   readonly status: number;
   readonly code: string | null;
+  /** `data` do `WP_Error` recusado, para quem precisa mostrar o detalhe (ex.: colunas lidas). */
+  readonly data: unknown;
 
-  constructor(message: string, status: number, code: string | null = null) {
+  constructor(message: string, status: number, code: string | null = null, data: unknown = null) {
     super(message);
     this.name = "DirectUploadError";
     this.status = status;
     this.code = code;
+    this.data = data;
   }
 }
 
 function uploadError(
   response: Response,
-  body: { code?: string; message?: string } | null,
+  body: { code?: string; data?: unknown; message?: string } | null,
   fallback: string,
 ) {
   const message =
-    response.status === 413 ? "O arquivo excede o limite de 10 MB." : body?.message ?? fallback;
+    response.status === 413 && !body?.code ? "O arquivo excede o limite de 10 MB." : body?.message ?? fallback;
 
-  return new DirectUploadError(message, response.status, body?.code ?? null);
+  return new DirectUploadError(message, response.status, body?.code ?? null, body?.data ?? null);
 }
 
 async function readJson<T>(response: Response): Promise<T | null> {

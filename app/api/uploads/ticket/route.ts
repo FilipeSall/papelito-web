@@ -18,6 +18,7 @@ const UPLOAD_PURPOSES = [
   "return-refund-proof",
   "order-refund-proof",
   "vendor-sku-import",
+  "admin-product-import",
 ] as const;
 
 type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
@@ -76,7 +77,9 @@ async function applicationTicket(purpose: UploadPurpose): Promise<TicketRequest>
 }
 
 function resolveTicketRequest(purpose: UploadPurpose, body: Record<string, unknown> | null): Promise<TicketRequest> {
-  if (purpose === "media" || purpose === "catalog") return bearerTicket(getAdminApiSession, { purpose });
+  if (purpose === "media" || purpose === "catalog" || purpose === "admin-product-import") {
+    return bearerTicket(getAdminApiSession, { purpose });
+  }
   if (purpose === "owner-document") return bearerTicket(getUserApiSession, { purpose });
   if (purpose === "vendor-sku-import") return bearerTicket(requireVendorAccessToken, { purpose });
   if (VENDOR_RECORD_PURPOSES.has(purpose)) return vendorRecordTicket(purpose, body);

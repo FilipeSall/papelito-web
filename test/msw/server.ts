@@ -1,5 +1,6 @@
 import { setupServer } from "msw/node";
 
+import { adminProductImportHandlers } from "./handlers/admin-product-import";
 import { authHandlers } from "./handlers/auth";
 import { availabilityHandlers } from "./handlers/availability";
 import { cartHandlers } from "./handlers/cart";
@@ -19,6 +20,7 @@ import { vendorProductCustomizationHandlers } from "./handlers/vendor-product-cu
 import { vendorSkuImportHandlers } from "./handlers/vendor-sku-import";
 
 export const server = setupServer(
+  ...adminProductImportHandlers,
   ...authHandlers,
   ...availabilityHandlers,
   ...cartHandlers,
