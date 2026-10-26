@@ -221,7 +221,7 @@ Registro de migração — links antigos apontam para lugar nenhum:
 
 - `/admin/vendor-interests`
 - `/admin/vendor-interests/[id]`
-- `/admin/vendors/interesses/[id]` — apagada em 26/10/2026 com as manifestações de interesse em ser vendor; sem redirect
+- `/admin/vendors/interesses/[id]` — removida em 26/10/2026 com o fim das manifestações de interesse em ser vendor; sem redirect. Os dados antigos continuam no banco (`wp_papelito_vendor_interests`)
 - `/admin/reports` — redireciona para `/admin/relatorios` (até 25/10 apontava para a área de exportação dentro de `/admin/sales`)
 - `/vendor/financeiro` — absorvida por `/vendor/dashboard`; a rota redireciona
 - `/admin/users` e `/admin/users/[id]` — absorvidas por `/admin/contas`; redirecionam preservando a query
