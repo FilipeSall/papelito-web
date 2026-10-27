@@ -1,5 +1,6 @@
 import "server-only";
 
+import { preAccountApplicationHref } from "@/lib/admin-pre-account-routes";
 import { wpRest } from "@/lib/server/wp-rest";
 
 export const ANALYSIS_APPLICATION_STATUSES = [
@@ -82,6 +83,12 @@ type PreAccountApplicationsResponse = {
   }>;
 };
 
+function analysisListQuery(filters: AnalysisFilters): string {
+  const params = new URLSearchParams({ tab: "analises" });
+  if (filters.status !== "pending_manual_review") params.set("analysisStatus", filters.status);
+  return params.toString();
+}
+
 export async function getAdminAnalysisSnapshot(
   accessToken: string | undefined,
   filters: AnalysisFilters,
@@ -139,7 +146,7 @@ export async function getAdminAnalysisSnapshot(
       requests.push({
         companyLabel: item.companyName || item.cnpj,
         createdAt: item.submittedAt ?? item.createdAt,
-        href: `/admin/contas?preAccountApplication=${encodeURIComponent(item.applicationId)}`,
+        href: preAccountApplicationHref(item.applicationId, analysisListQuery(filters)),
         id: `pre-${item.applicationId}`,
         kind: "company_pre_account",
         kindLabel: "Empresa · pré-conta",

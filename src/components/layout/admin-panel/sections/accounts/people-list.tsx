@@ -1,5 +1,6 @@
 import { ArrowRight, Building2, Store } from "lucide-react";
 
+import { preAccountApplicationHref } from "@/lib/admin-pre-account-routes";
 import type { AdminUserRow, AdminUsersSnapshot } from "@/lib/server/admin-users";
 import type { AdminUsersFilters } from "@/lib/server/admin-users-filters";
 import { buildAdminUsersQuery } from "@/lib/server/admin-users-filters";
@@ -19,9 +20,7 @@ import { AccountStatusChip, EntityMark } from "./status-chip";
 
 function detailHref(row: AdminUserRow, filters: AdminUsersFilters) {
   if (row.recordType === "pre_account_application") {
-    const params = new URLSearchParams(buildAdminUsersQuery(filters));
-    params.set("preAccountApplication", String(row.id));
-    return `${ACCOUNTS_PATH}?${params.toString()}`;
+    return preAccountApplicationHref(row.id, buildAdminUsersQuery(filters));
   }
 
   const params = new URLSearchParams();

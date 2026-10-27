@@ -2,6 +2,7 @@ export { AccountsContent } from "./accounts-content";
 export { AccountStatusActions } from "./account-status-actions";
 export { AccountStatusChip, EntityMark, StatusChip } from "./status-chip";
 export { CompanyDetailPage } from "./company-detail-page";
+export { PreAccountApplicationPage } from "./pre-account-application-page";
 export {
   ACCOUNTS_PATH,
   accountsHref,

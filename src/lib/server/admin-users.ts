@@ -1,5 +1,6 @@
 import "server-only";
 
+import { parsePreAccountApplicationId } from "@/lib/admin-pre-account-routes";
 import { wpRest } from "@/lib/server/wp-rest";
 import type { AdminUsersFilters } from "@/lib/server/admin-users-filters";
 
@@ -349,11 +350,6 @@ function mapCompanyRelation(raw: unknown): AdminUserCompanyRelation | null {
     membershipRole: toText(relation.membershipRole),
     membershipStatus: toText(relation.membershipStatus),
   };
-}
-
-function parsePreAccountApplicationId(value: string | undefined) {
-  const match = /^pre:(\d+)$/.exec(value ?? "");
-  return match ? Number.parseInt(match[1], 10) : 0;
 }
 
 function emptySnapshot(filters: AdminUsersFilters): AdminUsersSnapshot {

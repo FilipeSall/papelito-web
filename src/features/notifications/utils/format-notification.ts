@@ -1,3 +1,4 @@
+import { preAccountApplicationHref } from "@/lib/admin-pre-account-routes";
 import { formatBRLIntl } from "@/lib/format-currency";
 import {
   VENDOR_PENDING_FIELD_LABELS,
@@ -84,7 +85,7 @@ export function formatNotification(
         title: "Análise empresarial pendente",
         body: `${companyName} enviou um documento para revisão.`,
         href: /^pre:\d+$/.test(applicationId)
-          ? `/admin/contas?preAccountApplication=${encodeURIComponent(applicationId)}`
+          ? preAccountApplicationHref(applicationId, "tab=analises")
           : href.startsWith("/admin/contas")
             ? href
             : Number.isInteger(userId) && userId > 0

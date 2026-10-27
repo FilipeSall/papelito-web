@@ -21,7 +21,7 @@ describe("formatNotification", () => {
     expect(formatted.href).toBe("/admin/contas/84?tab=company-review");
   });
 
-  it("links a pre-account document review into the administrative accounts table", () => {
+  it("links a pre-account document review to its decision page", () => {
     const formatted = formatNotification(
       buildNotification({
         type: "company_owner_review_pending",
@@ -33,7 +33,7 @@ describe("formatNotification", () => {
       }),
     );
 
-    expect(formatted.href).toBe("/admin/contas?preAccountApplication=pre%3A84");
+    expect(formatted.href).toBe("/admin/contas/candidatura/84?from=tab%3Danalises");
   });
 
   it("shows discount details for favorite-on-promo notifications when available", () => {

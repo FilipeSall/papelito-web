@@ -98,7 +98,7 @@ criação de vendor sobre a listagem, como fazia `/admin/vendors`.
 
 `analysisStatus`. A fila junta, numa lista só, candidaturas de empresa com conta existente e
 candidaturas pré-conta — cada linha diz o tipo, quem pediu, a empresa, quando chegou e a situação.
-A decisão continua nas telas de origem: `?preAccountApplication=pre:{id}` na própria aba e
+A decisão acontece em página própria: `/admin/contas/candidatura/{id}` para candidatura pré-conta e
 `/admin/contas/{id}?tab=company-review` para candidatura com conta. O detalhe da pré-conta mostra
 "Aprovada automaticamente (QSA)" quando ninguém decidiu, e os dados da loja quando a candidatura
 veio do `/revendedor`. `analysisType` e as manifestações de interesse em ser vendor saíram em
@@ -239,7 +239,7 @@ Todos os pontos de entrada foram repontados para as rotas sob `/admin/vendors`: 
 
 ## Candidaturas empresariais pré-conta
 
-Uma candidatura documental ainda não é um usuário: não existe `wp_user`, sessão, empresa nem membership antes da decisão. Mesmo assim, ela aparece em `/admin/contas` como registro **Candidatura pré-conta** com status **Sob análise**. A ação **Analisar** e a notificação usam `?preAccountApplication=pre:{id}` para abrir, na própria tela, o documento privado e as ações Aprovar/Reprovar. A tabela preserva busca e paginação junto das contas existentes, sem transformar a candidatura em conta.
+Uma candidatura documental ainda não é um usuário: não existe `wp_user`, sessão, empresa nem membership antes da decisão. Mesmo assim, ela aparece em `/admin/contas` como registro **Candidatura pré-conta** com status **Sob análise**. Clicar na linha, na fila de Análises ou na notificação leva a `/admin/contas/candidatura/{id}`, página com os dados informados, o documento privado e as ações Aprovar/Reprovar. O parâmetro `from` guarda a query da listagem de origem para o "Voltar". O formato antigo `/admin/contas?preAccountApplication=pre:{id}` redireciona para a página nova; o painel não é mais renderizado no fim da listagem, onde ficava fora da tela. A tabela preserva busca e paginação junto das contas existentes, sem transformar a candidatura em conta.
 
 ## Convenções do painel
 

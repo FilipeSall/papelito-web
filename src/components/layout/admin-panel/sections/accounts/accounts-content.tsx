@@ -1,7 +1,9 @@
 import { Ban } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
+import { preAccountApplicationHref } from "@/lib/admin-pre-account-routes";
 import { authOptions } from "@/lib/auth";
 import {
   getAdminAnalysisSnapshot,
@@ -9,11 +11,7 @@ import {
 } from "@/lib/server/admin-analysis";
 import { getAdminAccountsOverview } from "@/lib/server/admin-accounts-overview";
 import { getAdminCompaniesSnapshot } from "@/lib/server/admin-companies";
-import {
-  getAdminPreAccountApplication,
-  getAdminUserDetail,
-  getAdminUsersSnapshot,
-} from "@/lib/server/admin-users";
+import { getAdminUserDetail, getAdminUsersSnapshot } from "@/lib/server/admin-users";
 import {
   parseAdminUsersFilters,
   type AdminUsersPageSearchParams,
@@ -21,7 +19,6 @@ import {
 import { firstParam } from "@/lib/search-params";
 
 import { FOCUS_RING } from "../../primitives";
-import { CompanyApplicationReview } from "../company-application-review";
 import { VendorCreateLauncher } from "../vendors/vendor-create-launcher";
 
 import { ACCOUNTS_PATH, parseAccountsTab, type AccountsTab } from "./accounts-config";
@@ -87,13 +84,17 @@ export async function AccountsContent({
 }: Readonly<{
   searchParams?: AdminUsersPageSearchParams;
 }>) {
+  const legacyPreAccountApplication = firstParam(searchParams?.preAccountApplication);
+  if (legacyPreAccountApplication) {
+    redirect(preAccountApplicationHref(legacyPreAccountApplication, "tab=analises"));
+  }
+
   const session = await getServerSession(authOptions);
   const activeTab = parseAccountsTab(firstParam(searchParams?.tab));
   const heading = HEADINGS[activeTab];
 
   const shouldOpenCreate = firstParam(searchParams?.create) === "1";
   const sourceUserId = Number.parseInt(firstParam(searchParams?.sourceUserId) ?? "", 10);
-  const preAccountApplication = firstParam(searchParams?.preAccountApplication);
 
   const peopleFilters = parseAdminUsersFilters(searchParams);
   const vendorFilters = { ...peopleFilters, role: "seller" as const };
@@ -107,7 +108,7 @@ export async function AccountsContent({
     status: parseAnalysisStatus(firstParam(searchParams?.analysisStatus)),
   };
 
-  const [overview, people, vendors, companies, analysis, application, sourceUser] =
+  const [overview, people, vendors, companies, analysis, sourceUser] =
     await Promise.all([
       getAdminAccountsOverview(session?.accessToken),
       activeTab === "pessoas"
@@ -122,7 +123,6 @@ export async function AccountsContent({
       activeTab === "analises"
         ? getAdminAnalysisSnapshot(session?.accessToken, analysisFilters)
         : null,
-      getAdminPreAccountApplication(session?.accessToken, preAccountApplication),
       shouldOpenCreate && Number.isFinite(sourceUserId) && sourceUserId > 0
         ? getAdminUserDetail(session?.accessToken, sourceUserId)
         : null,
@@ -178,13 +178,6 @@ export async function AccountsContent({
           <AnalysisFiltersBar filters={analysisFilters} />
           <AnalysisQueue snapshot={analysis} />
         </>
-      ) : null}
-
-      {application ? (
-        <CompanyApplicationReview
-          apiBasePath="/api/admin/pre-account-applications"
-          initialData={{ current: application, history: [application] }}
-        />
       ) : null}
     </div>
   );
