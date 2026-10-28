@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { withAuthMock } = vi.hoisted(() => ({
   lastOptions: undefined as unknown,
@@ -16,6 +16,7 @@ vi.mock("next-auth/middleware", () => ({
 }));
 
 import { ONBOARDING_PATH } from "./src/features/company/onboarding";
+import { TEST_DEPLOYMENT_READ_ONLY_MESSAGE } from "./src/lib/read-only-deployment";
 import proxy, { config } from "./proxy";
 
 type TokenOverrides = {
@@ -37,6 +38,8 @@ function buildRequest(pathname: string, tokenOverrides: TokenOverrides | string 
   };
 
   return {
+    method: "GET",
+    headers: new Headers({ host: nextUrl.host }),
     nextUrl,
     nextauth: {
       token: {
@@ -188,6 +191,58 @@ describe("proxy", () => {
     );
   });
 
+  describe("on a Vercel deployment", () => {
+    beforeEach(() => {
+      vi.stubEnv("VERCEL_ENV", "production");
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    function apiRequest(method: string, host: string, pathname: string) {
+      return {
+        method,
+        headers: new Headers({ host }),
+        nextUrl: new URL(`https://${host}${pathname}`),
+        nextauth: { token: null },
+      };
+    }
+
+    it("refuses writes from the vercel.app alias, which shares the production WordPress", async () => {
+      const response = (await proxy(
+        apiRequest("POST", "papelito-web.vercel.app", "/api/company-applications") as never,
+        {} as never,
+      )) as Response;
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        code: "test_environment_read_only",
+        message: TEST_DEPLOYMENT_READ_ONLY_MESSAGE,
+      });
+    });
+
+    it("lets the vercel.app alias read the API without a session", async () => {
+      const response = (await proxy(
+        apiRequest("GET", "papelito-web.vercel.app", "/api/company-applications") as never,
+        {} as never,
+      )) as Response;
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    });
+
+    it("lets the production domain write, leaving authorization to the route", async () => {
+      const response = (await proxy(
+        apiRequest("POST", "marketplace.papelito.com", "/api/checkout/place-order") as never,
+        {} as never,
+      )) as Response;
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    });
+  });
+
   it("registers the expected matcher and authorization callback", () => {
     expect(config.matcher).toEqual([
       "/perfil/:path*",
@@ -199,6 +254,7 @@ describe("proxy", () => {
       "/cadastro",
       "/revendedor",
       "/cadastro/completar",
+      "/api/:path*",
     ]);
 
     // O matcher precisa ser literal para o build do Next; isto impede que ele saia do lugar.
