@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildSalesSeriesPoints } from "@/lib/sales-series";
 import type { AdminSalesFilters } from "@/lib/server/admin-sales-filters";
+import { wcInstant } from "@/lib/server/wc-dates";
 import { wpRest } from "@/lib/server/wp-rest";
 
 type WcOrder = {
@@ -11,6 +12,7 @@ type WcOrder = {
     last_name?: string | null;
   } | null;
   date_created?: string | null;
+  date_created_gmt?: string | null;
   discount_total?: string | number | null;
   id?: number;
   line_items?: Array<{
@@ -254,7 +256,7 @@ export async function getAdminSalesOrdersSnapshot(
       .map((order) => ({
         id: order.id,
         orderNumber: order.number?.trim() || String(order.id),
-        createdAt: order.date_created ?? "",
+        createdAt: wcInstant(order.date_created_gmt, order.date_created),
         customerLabel: buildCustomerLabel(order),
         itemsLabel: buildItemsLabel(order),
         paymentMethodLabel: order.payment_method_title?.trim() || "Não informado",

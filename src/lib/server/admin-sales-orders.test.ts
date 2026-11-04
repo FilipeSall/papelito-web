@@ -138,6 +138,27 @@ describe("getAdminSalesOrdersSnapshot", () => {
     ]);
   });
 
+  it("devolve o instante do pedido em UTC, a partir do date_created_gmt", async () => {
+    wpRestMock.mockResolvedValue({
+      ok: true,
+      data: [
+        {
+          date_created: "2026-10-29T08:58:13",
+          date_created_gmt: "2026-10-29T11:58:13",
+          id: 11915,
+          line_items: [],
+          status: "cancelled",
+          total: "279.21",
+        },
+      ],
+      headers: new Headers({ "X-WP-Total": "1", "X-WP-TotalPages": "1" }),
+    });
+
+    const snapshot = await getAdminSalesOrdersSnapshot("token", filters);
+
+    expect(snapshot.orders[0]?.createdAt).toBe("2026-10-29T11:58:13Z");
+  });
+
   it("pede ao WooCommerce no maximo 10 pedidos por pagina", async () => {
     wpRestMock.mockResolvedValue({
       ok: true,

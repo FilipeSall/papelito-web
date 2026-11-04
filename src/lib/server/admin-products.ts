@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getWpRestBase } from "@/lib/server/env";
+import { wcInstant } from "@/lib/server/wc-dates";
 import { wpRest } from "@/lib/server/wp-rest";
 import { getProductsTaxonomyMap } from "@/lib/server/admin-taxonomy";
 
@@ -133,6 +134,7 @@ type WcProductImage = {
 type WcProduct = {
   categories?: WcProductTerm[] | null;
   date_modified?: string | null;
+  date_modified_gmt?: string | null;
   date_on_sale_from?: string | null;
   date_on_sale_to?: string | null;
   description?: string | null;
@@ -210,7 +212,7 @@ function mapProduct(product: WcProduct): AdminProduct {
     categories: (product.categories ?? [])
       .map(mapTerm)
       .filter(Boolean) as AdminProductTaxonomyTerm[],
-    dateModified: product.date_modified ?? "",
+    dateModified: wcInstant(product.date_modified_gmt, product.date_modified),
     dateOnSaleFrom: product.date_on_sale_from ?? "",
     dateOnSaleTo: product.date_on_sale_to ?? "",
     description: product.description ?? "",

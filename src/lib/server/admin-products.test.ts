@@ -217,6 +217,28 @@ describe("admin product media", () => {
     });
   });
 
+  it("returns the product modification instant in UTC from date_modified_gmt", async () => {
+    wpRestMock
+      .mockResolvedValueOnce({
+        data: {
+          date_modified: "2026-10-29T08:58:13",
+          date_modified_gmt: "2026-10-29T11:58:13",
+          id: 11856,
+          name: "Produto",
+          type: "simple",
+        },
+        headers: new Headers(),
+        ok: true,
+        status: 200,
+      })
+      .mockResolvedValueOnce({ data: [], headers: new Headers(), ok: true, status: 200 });
+    const { getAdminProduct } = await import("./admin-products");
+
+    await expect(getAdminProduct("token", 11856)).resolves.toMatchObject({
+      dateModified: "2026-10-29T11:58:13Z",
+    });
+  });
+
   it("hydrates tags from product responses with three collection requests for forty products", async () => {
     const tag = { id: 215, name: "teste", parent: 0, slug: "teste" };
     const products = Array.from({ length: 40 }, (_, index) => ({
