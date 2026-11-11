@@ -36,6 +36,7 @@ export type AttendanceState = {
 /** Ações do atendimento. */
 export type AttendanceAction =
   | { type: "start"; buyer: BuyerLookup }
+  | { type: "switch-buyer"; buyer: BuyerLookup }
   | { type: "change-store" }
   | { type: "go"; screen: AttendanceScreen }
   | { type: "set-qty"; productId: number; qty: number }
@@ -110,6 +111,8 @@ export function attendanceReducer(state: AttendanceState, action: AttendanceActi
   switch (action.type) {
     case "start":
       return startAttendance(action.buyer);
+    case "switch-buyer":
+      return { ...startAttendance(action.buyer), qty: state.qty, kits: state.kits, maxLevelIndex: state.maxLevelIndex };
     case "change-store":
       return { ...state, screen: 1, quote: null, registered: null };
     case "go":

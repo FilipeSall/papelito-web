@@ -66,6 +66,20 @@ describe("useAttendance", () => {
     expect(result.current.state.qty).toEqual({ 200: 5 });
   });
 
+  it("confirmar outra loja depois de trocar mantém o carrinho e limpa o contato", () => {
+    const { result } = renderHook(() => useAttendance(ctx));
+    act(() => result.current.dispatch({ type: "start", buyer: LOOKUP }));
+    act(() => result.current.dispatch({ type: "set-qty", productId: 200, qty: 5 }));
+    act(() => result.current.dispatch({ type: "set-contact", contact: { name: "Maria" } }));
+    act(() => result.current.dispatch({ type: "change-store" }));
+    act(() => result.current.dispatch({ type: "switch-buyer", buyer: { ...LOOKUP, cnpj: "99999999000191" } }));
+
+    expect(result.current.state.screen).toBe(2);
+    expect(result.current.state.qty).toEqual({ 200: 5 });
+    expect(result.current.state.buyer?.cnpj).toBe("99999999000191");
+    expect(result.current.state.contact.name).toBe("");
+  });
+
   it("reseta após 3 min, exceto com cobrança em andamento", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useAttendance(ctx));
