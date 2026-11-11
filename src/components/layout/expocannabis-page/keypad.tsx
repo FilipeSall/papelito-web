@@ -1,3 +1,5 @@
+import { Delete } from "lucide-react";
+
 type KeypadProps = {
   onDigit: (digit: string) => void;
   onClear: () => void;
@@ -25,8 +27,8 @@ export function Keypad({ onDigit, onClear, onBackspace, disabled = false }: Read
       <button type="button" className={KEY_CLASS} disabled={disabled} onClick={() => onDigit("0")}>
         0
       </button>
-      <button type="button" aria-label="Apagar último número" className={`${KEY_CLASS} text-base`} disabled={disabled} onClick={onBackspace}>
-        ⌫
+      <button type="button" aria-label="Apagar último número" className={`${KEY_CLASS} grid place-items-center`} disabled={disabled} onClick={onBackspace}>
+        <Delete aria-hidden size={28} />
       </button>
     </div>
   );

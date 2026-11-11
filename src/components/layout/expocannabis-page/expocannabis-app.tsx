@@ -5,6 +5,7 @@ import type { EventContext } from "@/features/expocannabis/types/context";
 import type { BuyerLookup } from "@/features/expocannabis/types/order";
 
 import { CnpjScreen } from "./cnpj-screen";
+import { StoreScreen } from "./store-screen";
 
 import { ExpoHeader } from "./expo-header";
 import { IdleDialog } from "./idle-dialog";
@@ -27,6 +28,9 @@ export function ExpocannabisApp({ context }: Readonly<ExpocannabisAppProps>) {
       <ExpoHeader buyer={state.screen === 1 ? null : state.buyer} onChangeStore={changeStore} />
       <main className="relative min-h-0 flex-1 overflow-y-auto">
         {state.screen === 1 ? <CnpjScreen onConfirm={confirmBuyer} /> : null}
+        {state.screen === 2 ? (
+          <StoreScreen context={context} state={state} dispatch={dispatch} onCheckout={() => dispatch({ type: "go", screen: 3 })} />
+        ) : null}
       </main>
       <IdleDialog open={attendance.idleWarning} onContinue={attendance.keepAlive} />
     </div>
