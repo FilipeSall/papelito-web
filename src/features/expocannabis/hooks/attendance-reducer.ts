@@ -52,6 +52,7 @@ export type AttendanceAction =
   | { type: "set-order"; order: EventOrderStatus | null }
   | { type: "level-reached"; index: number }
   | { type: "set-lead" }
+  | { type: "clear-charge" }
   | { type: "stock-issue"; products: { productId: number; available: number }[] }
   | { type: "reset" };
 
@@ -144,6 +145,8 @@ export function attendanceReducer(state: AttendanceState, action: AttendanceActi
       return { ...state, maxLevelIndex: Math.max(state.maxLevelIndex, action.index) };
     case "set-lead":
       return { ...state, lead: true };
+    case "clear-charge":
+      return { ...state, order: null, checkoutAttemptId: null };
     case "stock-issue":
       return { ...state, screen: 2, quote: null, stockIssues: action.products };
     case "reset":

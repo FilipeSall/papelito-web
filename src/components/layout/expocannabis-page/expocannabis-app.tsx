@@ -5,12 +5,14 @@ import type { EventContext } from "@/features/expocannabis/types/context";
 import type { BuyerLookup } from "@/features/expocannabis/types/order";
 
 import { CnpjScreen } from "./cnpj-screen";
+import { ConfirmedScreen } from "./confirmed-screen";
 import { DetailsScreen } from "./details-screen";
 import { StoreScreen } from "./store-screen";
 
 import { ExpoHeader } from "./expo-header";
 import { IdleDialog } from "./idle-dialog";
 import { OfflineBanner } from "./offline-banner";
+import { PaymentScreen } from "./payment-screen";
 
 type ExpocannabisAppProps = {
   context: EventContext;
@@ -33,6 +35,8 @@ export function ExpocannabisApp({ context }: Readonly<ExpocannabisAppProps>) {
           <StoreScreen context={context} state={state} dispatch={dispatch} onCheckout={() => dispatch({ type: "go", screen: 3 })} />
         ) : null}
         {state.screen === 3 ? <DetailsScreen context={context} state={state} dispatch={dispatch} /> : null}
+        {state.screen === 4 ? <PaymentScreen context={context} state={state} dispatch={dispatch} /> : null}
+        {state.screen === 5 ? <ConfirmedScreen state={state} onNewOrder={attendance.reset} /> : null}
       </main>
       <IdleDialog open={attendance.idleWarning} onContinue={attendance.keepAlive} />
     </div>
