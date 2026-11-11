@@ -68,18 +68,19 @@ function FoundStore({ store, onConfirm, onReject }: Readonly<{ store: BuyerLooku
  */
 export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
   const [digits, setDigits] = useState("");
-  const [message, setMessage] = useState<CnpjMessage>(typingMessage(""));
+  const [status, setStatus] = useState<CnpjMessage | null>(null);
   const [shake, setShake] = useState(0);
   const [searching, setSearching] = useState(false);
   const [store, setStore] = useState<BuyerLookup | null>(null);
+  const message = status ?? typingMessage(digits);
 
-  const changeDigits = (next: string) => {
-    setDigits(next);
-    setMessage(typingMessage(next));
+  const changeDigits = (update: (previous: string) => string) => {
+    setDigits((previous) => update(previous).replace(/\D/g, "").slice(0, 14));
+    setStatus(null);
   };
 
   const fail = (next: CnpjMessage) => {
-    setMessage(next);
+    setStatus(next);
     setShake((value) => value + 1);
   };
 
@@ -91,13 +92,13 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
     }
 
     setSearching(true);
-    setMessage({ text: "Buscando a loja na Receita…", error: false, retry: false });
+    setStatus({ text: "Buscando a loja na Receita…", error: false, retry: false });
     const result = await lookupWithTimeout(digits);
     setSearching(false);
 
     if (result.ok) {
       setStore(result.data);
-      setMessage({ text: "Pronto, CNPJ conferido.", error: false, retry: false });
+      setStatus({ text: "Pronto, CNPJ conferido.", error: false, retry: false });
       return;
     }
 
@@ -106,7 +107,7 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
 
   const reject = () => {
     setStore(null);
-    changeDigits("");
+    changeDigits(() => "");
   };
 
   if (store) {
@@ -126,7 +127,7 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
         <p className="mt-4 text-lg font-medium text-[#52525B]">É com ele que a gente puxa a nota fiscal e o endereço de entrega. Rapidinho.</p>
       </div>
       <div className="grid gap-5">
-        <CnpjPass digits={digits} message={message} shake={shake} searching={searching} onDigits={changeDigits} onSubmit={search} />
+        <CnpjPass digits={digits} message={message} shake={shake} searching={searching} onDigits={(next) => changeDigits(() => next)} onSubmit={search} />
         {searching ? <div aria-hidden className="expo-skeleton h-16 rounded-md" /> : null}
         {message.retry ? (
           <button type="button" onClick={search} className="h-14 rounded-md border-2 border-[#231F20] bg-white text-base font-extrabold">
@@ -135,9 +136,9 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
         ) : null}
         <Keypad
           disabled={searching}
-          onDigit={(digit) => changeDigits(`${digits}${digit}`.slice(0, 14))}
-          onClear={() => changeDigits("")}
-          onBackspace={() => changeDigits(digits.slice(0, -1))}
+          onDigit={(digit) => changeDigits((previous) => `${previous}${digit}`)}
+          onClear={() => changeDigits(() => "")}
+          onBackspace={() => changeDigits((previous) => previous.slice(0, -1))}
         />
         <button
           type="button"

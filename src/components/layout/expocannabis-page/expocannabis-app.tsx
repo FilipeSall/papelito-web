@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 import { useAttendance } from "@/features/expocannabis/hooks/use-attendance";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import type { BuyerLookup } from "@/features/expocannabis/types/order";
@@ -14,16 +16,38 @@ import { IdleDialog } from "./idle-dialog";
 import { OfflineBanner } from "./offline-banner";
 import { PaymentScreen } from "./payment-screen";
 
+function subscribeNothing(): () => void {
+  return () => undefined;
+}
+
+function onClient(): boolean {
+  return true;
+}
+
+function onServer(): boolean {
+  return false;
+}
+
 type ExpocannabisAppProps = {
   context: EventContext;
 };
 
-/** App do tablet: cabeçalho, faixa offline, aviso de inatividade e a tela do atendimento. */
+/**
+ * App do tablet: cabeçalho, faixa offline, aviso de inatividade e a tela do atendimento.
+ *
+ * O atendimento mora no aparelho, então nada dele é renderizado no servidor; a tela aparece
+ * depois da hidratação, sem divergir do HTML inicial.
+ */
 export function ExpocannabisApp({ context }: Readonly<ExpocannabisAppProps>) {
   const attendance = useAttendance(context);
   const { state, dispatch } = attendance;
   const changeStore = state.screen === 2 || state.screen === 3 ? () => dispatch({ type: "change-store" }) : undefined;
   const confirmBuyer = (buyer: BuyerLookup) => dispatch({ type: state.buyer ? "switch-buyer" : "start", buyer });
+  const hydrated = useSyncExternalStore(subscribeNothing, onClient, onServer);
+
+  if (!hydrated) {
+    return <div aria-busy="true" className="h-dvh bg-white" />;
+  }
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-white text-[#231F20]">

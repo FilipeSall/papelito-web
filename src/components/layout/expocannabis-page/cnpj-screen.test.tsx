@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
@@ -23,6 +23,18 @@ async function typeDigits(user: ReturnType<typeof userEvent.setup>, digits: stri
 }
 
 describe("CnpjScreen", () => {
+  it("não perde dígito em toques rápidos", () => {
+    render(<CnpjScreen onConfirm={vi.fn()} />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "1" }));
+      fireEvent.click(screen.getByRole("button", { name: "2" }));
+      fireEvent.click(screen.getByRole("button", { name: "3" }));
+    });
+
+    expect(screen.getByLabelText("CNPJ da loja")).toHaveValue("12.3");
+  });
+
   it("avisa quantos números faltam", async () => {
     const user = userEvent.setup();
     render(<CnpjScreen onConfirm={vi.fn()} />);
