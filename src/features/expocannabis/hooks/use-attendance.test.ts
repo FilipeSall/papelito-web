@@ -104,6 +104,25 @@ describe("useAttendance", () => {
     expect(result.current.state.screen).toBe(2);
   });
 
+  it("cobrança sem desfecho confirmado sobrevive à inatividade com pedido e chave", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useAttendance(ctx));
+    act(() => result.current.dispatch({ type: "start", buyer: LOOKUP }));
+    act(() => result.current.dispatch({ type: "set-checkout-id", id: "chk-0001" }));
+    act(() =>
+      result.current.dispatch({
+        type: "set-order",
+        order: { orderId: 501, orderNumber: "501", state: "check_terminal", detail: "unknown", totalCents: 1, method: "card" },
+      }),
+    );
+
+    act(() => vi.advanceTimersByTime(IDLE_WARNING_MS + IDLE_RESET_MS));
+
+    expect(result.current.idleWarning).toBe(false);
+    expect(result.current.state.order?.orderId).toBe(501);
+    expect(result.current.state.checkoutAttemptId).toBe("chk-0001");
+  });
+
   it("toque adia a inatividade e Continuar fecha o aviso", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useAttendance(ctx));

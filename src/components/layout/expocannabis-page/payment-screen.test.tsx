@@ -51,6 +51,8 @@ function Harness({ canSupervise = false }: Readonly<{ canSupervise?: boolean }>)
     <>
       <PaymentScreen context={context} state={state} dispatch={dispatch} />
       <output aria-label="tela">{state.screen}</output>
+      <output aria-label="pedido">{state.order?.orderId ?? ""}</output>
+      <output aria-label="chave">{state.checkoutAttemptId ?? ""}</output>
     </>
   );
 }
@@ -151,6 +153,61 @@ describe("PaymentScreen", () => {
 
     expect(await screen.findByLabelText("tela")).toHaveTextContent("5");
     expect(body).toEqual({ nsu: "000123", method: "card", reason: "A máquina aprovou e o sistema não viu" });
+  });
+
+  it("acompanhamento atrasado não restaura a cobrança abandonada", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let releasePoll: () => void = () => undefined;
+    let polls = 0;
+    server.use(
+      http.post("*/api/expocannabis/orders", () => HttpResponse.json(status("at_terminal"))),
+      http.get("*/api/expocannabis/orders/501/status", async () => {
+        polls += 1;
+        await new Promise<void>((resolve) => {
+          releasePoll = resolve;
+        });
+        return HttpResponse.json(status("at_terminal"));
+      }),
+      http.post("*/api/expocannabis/orders/501/cancel", () => HttpResponse.json(status("canceled"))),
+      http.post("*/api/expocannabis/orders/501/abandon", () => HttpResponse.json({ orderId: 501 })),
+    );
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<Harness />);
+
+    await user.click(screen.getByRole("button", { name: CHARGE }));
+    expect(await screen.findByText("Passe o cartão ou leia o Pix na maquininha")).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6500);
+    });
+    expect(polls).toBe(1);
+
+    await user.click(screen.getByRole("button", { name: "Cancelar cobrança" }));
+    await user.click(await screen.findByRole("button", { name: "Voltar ao pedido" }));
+    expect(await screen.findByLabelText("tela")).toHaveTextContent("2");
+
+    await act(async () => {
+      releasePoll();
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(screen.getByLabelText("pedido")).toHaveTextContent("");
+  });
+
+  it("falta de estoque na cobrança volta para a loja com uma chave nova", async () => {
+    server.use(
+      http.post("*/api/expocannabis/orders", () =>
+        HttpResponse.json(
+          { code: "papelito_event_out_of_stock", message: "Acabou o estoque.", data: { status: 409, products: [{ productId: 200, available: 3 }] } },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(screen.getByRole("button", { name: CHARGE }));
+
+    expect(await screen.findByLabelText("tela")).toHaveTextContent("2");
+    expect(screen.getByLabelText("chave")).toHaveTextContent("");
   });
 
   it("cotação mudou mostra o total novo antes de cobrar", async () => {

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type Dispatch } from "react";
+import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { lookupCepDetailed } from "@/features/checkout/services/lookup-cep";
 import { expocannabisClient } from "@/features/expocannabis/client/expocannabis-client";
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
+import { parseStockIssues } from "@/features/expocannabis/utils/stock-issues";
 import {
   formatPhone,
   missingSummary,
@@ -32,14 +33,6 @@ const SHIPPING_FAILURE: Failure = { text: "Não conseguimos calcular o frete pra
 
 function quoteItems(qty: Record<number, number>) {
   return Object.entries(qty).map(([productId, value]) => ({ productId: Number(productId), qty: value }));
-}
-
-function stockProducts(data: Record<string, unknown> | undefined): { productId: number; available: number }[] {
-  const products = Array.isArray(data?.products) ? data.products : [];
-  return products.filter(
-    (item): item is { productId: number; available: number } =>
-      typeof item === "object" && item !== null && typeof item.productId === "number" && typeof item.available === "number",
-  );
 }
 
 function CnpjAddress({ state, dispatch, errors }: Readonly<{ state: AttendanceState; dispatch: Dispatch<AttendanceAction>; errors: DetailsErrors }>) {
@@ -102,16 +95,25 @@ function OtherAddress({ state, dispatch, errors }: Readonly<{ state: AttendanceS
  * Tela 03: nota fiscal, contato do lojista e endereço de entrega.
  *
  * "Continuar" cadastra o comprador, cota com frete no servidor e só então segue para o pagamento.
+ * Resposta que chega depois de a tela sair (troca de loja no meio da cotação) é descartada.
  */
 export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScreenProps>) {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+  const mounted = useRef(true);
   const buyer = state.buyer;
   const errors = submitted ? validateDetails(state) : {};
   const summary = missingSummary(errors);
   const setContact = (field: "name" | "phone" | "email") => (value: string) =>
     dispatch({ type: "set-contact", contact: { [field]: field === "phone" ? onlyDigits(value).slice(0, 11) : value } });
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   if (!buyer) return null;
 
@@ -127,6 +129,7 @@ export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScre
 
     setBusy(true);
     const registered = await expocannabisClient.upsertBuyer({ cnpj: buyer.cnpj, name: state.contact.name.trim(), phone: state.contact.phone, email: state.contact.email.trim() });
+    if (!mounted.current) return;
     if (!registered.ok) {
       setBusy(false);
       setFailure({ text: registered.message, retry: true });
@@ -135,6 +138,7 @@ export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScre
     dispatch({ type: "set-registered", registered: registered.data });
 
     const quote = await expocannabisClient.quote({ items: quoteItems(state.qty), kits: state.kits, cep: state.delivery.cep, recipientCnpj: buyer.cnpj });
+    if (!mounted.current) return;
     setBusy(false);
     if (quote.ok) {
       dispatch({ type: "set-quote", quote: quote.data });
@@ -142,7 +146,7 @@ export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScre
       return;
     }
     if (quote.code === "papelito_event_out_of_stock") {
-      dispatch({ type: "stock-issue", products: stockProducts(quote.data) });
+      dispatch({ type: "stock-issue", products: parseStockIssues(quote.data) });
       return;
     }
     setFailure(quote.code === "papelito_event_shipping_unavailable" ? SHIPPING_FAILURE : { text: quote.message, retry: true });

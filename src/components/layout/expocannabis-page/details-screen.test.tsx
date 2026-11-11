@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useReducer } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { attendanceReducer, initialAttendance } from "@/features/expocannabis/hooks/attendance-reducer";
 import { buildEventContext } from "@/features/expocannabis/test/fixtures";
@@ -42,7 +42,7 @@ function Harness() {
   });
   return (
     <>
-      <DetailsScreen context={buildEventContext()} state={state} dispatch={dispatch} />
+      {state.screen === 3 ? <DetailsScreen context={buildEventContext()} state={state} dispatch={dispatch} /> : null}
       <output aria-label="tela">{state.screen}</output>
       <output aria-label="total cotado">{state.quote?.totalCents ?? ""}</output>
     </>
@@ -150,6 +150,35 @@ describe("DetailsScreen", () => {
     await user.click(screen.getByRole("button", { name: "Continuar" }));
 
     expect(await screen.findByLabelText("tela")).toHaveTextContent("2");
+  });
+
+  it("resposta atrasada da loja antiga é ignorada depois de trocar de loja", async () => {
+    let releaseQuote: () => void = () => undefined;
+    let quoteStarted = false;
+    server.use(
+      http.post("*/api/expocannabis/buyers", () => HttpResponse.json({ companyId: 30, buyerUserId: 40, created: { company: false, user: false } })),
+      http.post("*/api/expocannabis/quote", async () => {
+        quoteStarted = true;
+        await new Promise<void>((resolve) => {
+          releaseQuote = resolve;
+        });
+        return HttpResponse.json(QUOTE);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await fillValid(user);
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await vi.waitFor(() => expect(quoteStarted).toBe(true));
+    await user.click(screen.getByRole("button", { name: "Trocar loja" }));
+    expect(screen.getByLabelText("tela")).toHaveTextContent("1");
+
+    releaseQuote();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(screen.getByLabelText("tela")).toHaveTextContent("1");
+    expect(screen.getByLabelText("total cotado")).toHaveTextContent("");
   });
 
   it("outro endereço exige CEP com 8 números", async () => {

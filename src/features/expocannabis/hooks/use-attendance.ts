@@ -21,7 +21,7 @@ export const IDLE_RESET_MS = 20 * 1000;
 
 const ACTIVITY_EVENTS = ["pointerdown", "keydown", "touchstart"] as const;
 
-const CHARGING_STATES = new Set(["sending", "at_terminal"]);
+const UNSETTLED_STATES = new Set(["sending", "at_terminal", "check_terminal"]);
 
 function readStored(): AttendanceState {
   try {
@@ -51,8 +51,8 @@ function clearStored(): void {
 }
 
 function isPaused(state: AttendanceState): boolean {
-  const charging = state.order !== null && CHARGING_STATES.has(state.order.state);
-  return charging || (state.screen === 1 && state.buyer === null);
+  const unsettled = state.order !== null && UNSETTLED_STATES.has(state.order.state);
+  return unsettled || (state.screen === 1 && state.buyer === null);
 }
 
 /** Atendimento do tablet com persistência local e o relógio de inatividade. */
@@ -68,7 +68,8 @@ export type Attendance = {
  * Estado do atendimento no tablet compartilhado.
  *
  * Persiste a cada mudança e apaga tudo em "Novo pedido", CNPJ novo ou 3 min sem toque (mais 20 s
- * de aviso). Com cobrança em andamento na maquininha o relógio fica parado.
+ * de aviso). Com cobrança sem desfecho confirmado (mandando, na máquina ou a conferir) o relógio
+ * fica parado, para o tablet não perder o pedido nem a chave de idempotência.
  */
 export function useAttendance(_context: EventContext): Attendance {
   const [state, dispatch] = useReducer(attendanceReducer, undefined, readStored);

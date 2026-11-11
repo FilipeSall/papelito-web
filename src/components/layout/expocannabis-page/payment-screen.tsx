@@ -8,6 +8,7 @@ import type { EventContext } from "@/features/expocannabis/types/context";
 import type { EventOrderStatus, ManualConfirmInput } from "@/features/expocannabis/types/order";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { parseQuote } from "@/features/expocannabis/utils/parse-quote";
+import { parseStockIssues } from "@/features/expocannabis/utils/stock-issues";
 
 import { CheckoutStepper } from "./checkout-stepper";
 import { ManualConfirmDialog } from "./manual-confirm-dialog";
@@ -28,8 +29,13 @@ function quoteItems(qty: Record<number, number>) {
   return Object.entries(qty).map(([productId, value]) => ({ productId: Number(productId), qty: value }));
 }
 
-function quoteChangedNotice(result: ClientResult<EventOrderStatus>, dispatch: Dispatch<AttendanceAction>): string {
+function failureNotice(result: ClientResult<EventOrderStatus>, dispatch: Dispatch<AttendanceAction>): string {
   if (result.ok) return "";
+  if (result.code === "papelito_event_out_of_stock") {
+    dispatch({ type: "clear-charge" });
+    dispatch({ type: "stock-issue", products: parseStockIssues(result.data) });
+    return "";
+  }
   const quote = result.code === "papelito_event_quote_changed" ? parseQuote(result.data?.quote) : null;
   if (!quote) return result.message;
   dispatch({ type: "set-quote", quote });
@@ -40,7 +46,9 @@ function quoteChangedNotice(result: ClientResult<EventOrderStatus>, dispatch: Di
  * Tela 04: forma de pagamento e cobrança na maquininha, acompanhada a cada 2 s.
  *
  * O mesmo atendimento usa sempre a mesma chave, então dois toques em "Cobrar" não geram duas
- * cobranças. Valor mudado no servidor é mostrado antes de cobrar de novo.
+ * cobranças. Valor mudado no servidor é mostrado antes de cobrar de novo; estoque que acabou volta
+ * para a loja com a chave descartada. O acompanhamento faz uma consulta por vez e ignora a resposta
+ * que chega depois de o estado da cobrança mudar (cancelamento, abandono).
  */
 export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScreenProps>) {
   const [busy, setBusy] = useState(false);
@@ -54,11 +62,19 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
 
   useEffect(() => {
     if (!orderId || !POLL_STATES.has(orderState)) return undefined;
-    const timer = window.setInterval(async () => {
+    let active = true;
+    let timer = 0;
+    const poll = async () => {
       const result = await expocannabisClient.orderStatus(orderId);
+      if (!active) return;
       if (result.ok) dispatch({ type: "set-order", order: result.data });
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
+      timer = window.setTimeout(poll, POLL_MS);
+    };
+    timer = window.setTimeout(poll, POLL_MS);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [orderId, orderState, dispatch]);
 
   useEffect(() => {
@@ -76,7 +92,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
     charging.current = false;
     setBusy(false);
     if (result.ok) dispatch({ type: "set-order", order: result.data });
-    else setNotice(quoteChangedNotice(result, dispatch));
+    else setNotice(failureNotice(result, dispatch));
   };
 
   const charge = () =>
