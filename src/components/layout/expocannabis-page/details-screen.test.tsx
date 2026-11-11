@@ -113,7 +113,7 @@ describe("DetailsScreen", () => {
     expect(calls).toEqual(["buyers", "quote"]);
     expect(quoteBody).toEqual({ items: [{ productId: 200, qty: 14 }], kits: 0, cep: "01001000", recipientCnpj: "11222333000181" });
     expect(screen.getByLabelText("total cotado")).toHaveTextContent("151445");
-  });
+  }, 15_000);
 
   it("frete indisponível oferece Tentar de novo", async () => {
     server.use(

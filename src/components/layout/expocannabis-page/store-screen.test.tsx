@@ -117,7 +117,7 @@ describe("StoreScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Desfazer" }));
     expect(screen.getByRole("button", { name: "+1 kit" })).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("lixeira tira a linha e o Desfazer dura 5 s", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });

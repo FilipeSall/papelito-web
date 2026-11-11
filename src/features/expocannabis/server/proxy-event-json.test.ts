@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getUserApiSessionMock = vi.fn();
 const wpRestMock = vi.fn();
@@ -17,6 +17,10 @@ vi.mock("@/lib/server/env", () => ({
 }));
 
 const EVENT_PATH = "/papelito/v1/event/expocannabis-2026";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("proxyEventJson", () => {
   beforeEach(() => {
