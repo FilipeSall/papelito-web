@@ -31,6 +31,7 @@ export type AttendanceState = {
   order: EventOrderStatus | null;
   maxLevelIndex: number;
   lead: boolean;
+  stockIssues: { productId: number; available: number }[];
 };
 
 /** Ações do atendimento. */
@@ -51,6 +52,7 @@ export type AttendanceAction =
   | { type: "set-order"; order: EventOrderStatus | null }
   | { type: "level-reached"; index: number }
   | { type: "set-lead" }
+  | { type: "stock-issue"; products: { productId: number; available: number }[] }
   | { type: "reset" };
 
 const MAX_QTY = 999;
@@ -72,6 +74,7 @@ export function initialAttendance(): AttendanceState {
     order: null,
     maxLevelIndex: 0,
     lead: false,
+    stockIssues: [],
   };
 }
 
@@ -118,11 +121,11 @@ export function attendanceReducer(state: AttendanceState, action: AttendanceActi
     case "go":
       return { ...state, screen: action.screen };
     case "set-qty":
-      return { ...state, qty: withQty(state.qty, action.productId, action.qty), quote: null };
+      return { ...state, qty: withQty(state.qty, action.productId, action.qty), quote: null, stockIssues: [] };
     case "set-kits":
       return { ...state, kits: clamp(action.kits, MAX_KITS), quote: null };
     case "set-cart":
-      return { ...state, qty: { ...action.qty }, kits: clamp(action.kits, MAX_KITS), quote: null };
+      return { ...state, qty: { ...action.qty }, kits: clamp(action.kits, MAX_KITS), quote: null, stockIssues: [] };
     case "set-contact":
       return { ...state, contact: { ...state.contact, ...action.contact } };
     case "set-delivery":
@@ -141,6 +144,8 @@ export function attendanceReducer(state: AttendanceState, action: AttendanceActi
       return { ...state, maxLevelIndex: Math.max(state.maxLevelIndex, action.index) };
     case "set-lead":
       return { ...state, lead: true };
+    case "stock-issue":
+      return { ...state, screen: 2, quote: null, stockIssues: action.products };
     case "reset":
       return initialAttendance();
   }

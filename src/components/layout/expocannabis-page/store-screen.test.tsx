@@ -19,8 +19,8 @@ const BUYER = {
 
 const KIT_REMOVED = "O Kit Premium saiu: ele precisa de 10 unidades no pedido.";
 
-function Harness({ context, onCheckout }: Readonly<{ context: EventContext; onCheckout: () => void }>) {
-  const [state, dispatch] = useReducer(attendanceReducer, { ...initialAttendance(), screen: 2, buyer: BUYER });
+function Harness({ context, onCheckout, stockIssues = [] }: Readonly<{ context: EventContext; onCheckout: () => void; stockIssues?: { productId: number; available: number }[] }>) {
+  const [state, dispatch] = useReducer(attendanceReducer, { ...initialAttendance(), screen: 2, buyer: BUYER, qty: stockIssues.length ? { 200: 5 } : {}, stockIssues });
   return <StoreScreen context={context} state={state} dispatch={dispatch} onCheckout={onCheckout} />;
 }
 
@@ -153,6 +153,12 @@ describe("StoreScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Fechar pedido" }));
     expect(onCheckout).toHaveBeenCalled();
+  });
+
+  it("destaca o produto que ficou sem estoque na cotação", () => {
+    render(<Harness context={buildEventContext()} onCheckout={vi.fn()} stockIssues={[{ productId: 200, available: 3 }]} />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Faltou estoque: Avulso (tem 3). Ajuste o pedido e feche de novo.");
   });
 
   it("busca ignora acento e caixa", async () => {

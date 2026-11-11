@@ -159,6 +159,13 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
             onChange={(event) => setSearch(event.target.value)}
             className="h-14 w-full rounded-md border-2 border-[#D4D4D8] px-4 text-lg font-semibold"
           />
+          {state.stockIssues.length > 0 ? (
+            <p role="alert" className="mt-4 rounded-md border-2 border-[#B42318] bg-[#FFF1F0] p-3 text-base font-bold text-[#B42318]">
+              {`Faltou estoque: ${state.stockIssues
+                .map((issue) => `${byId.get(issue.productId)?.name ?? "Produto"} (tem ${issue.available})`)
+                .join(", ")}. Ajuste o pedido e feche de novo.`}
+            </p>
+          ) : null}
           <div className="mt-4 flex items-center gap-4 rounded-lg bg-brand-yellow p-4">
             <p className="font-[family-name:var(--font-expo-display)] text-[34px] uppercase leading-none">Desconto Progressivo</p>
             <p className="text-base font-bold">Garanta até 12% de desconto</p>
