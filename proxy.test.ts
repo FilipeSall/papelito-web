@@ -243,6 +243,16 @@ describe("proxy", () => {
     });
   });
 
+  it("lets the event operator into the booth page without the onboarding gate", async () => {
+    const response = (await proxy(
+      buildRequest("/expocannabis", { ...INCOMPLETE, accessToken: "operador" }) as never,
+      {} as never,
+    )) as Response;
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.status).toBe(200);
+  });
+
   it("registers the expected matcher and authorization callback", () => {
     expect(config.matcher).toEqual([
       "/perfil/:path*",
@@ -254,6 +264,7 @@ describe("proxy", () => {
       "/cadastro",
       "/revendedor",
       "/cadastro/completar",
+      "/expocannabis",
       "/api/:path*",
     ]);
 

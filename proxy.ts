@@ -2,6 +2,7 @@ import { withAuth, type NextRequestWithAuth } from "next-auth/middleware";
 import { NextResponse, type NextFetchEvent } from "next/server";
 
 import { ONBOARDING_PATH, requiresB2bOnboarding } from "./src/features/company/onboarding";
+import { EXPOCANNABIS_PATH } from "./src/features/expocannabis/constants";
 import {
   blocksTestDeploymentWrite,
   TEST_DEPLOYMENT_READ_ONLY_MESSAGE,
@@ -27,6 +28,10 @@ function hasAuthenticatedAccessToken(token: {
   );
 }
 
+function isEventBoothPath(pathname: string) {
+  return pathname === EXPOCANNABIS_PATH;
+}
+
 function isSignupEntryPath(pathname: string) {
   return pathname === "/cadastro" || pathname === "/revendedor";
 }
@@ -44,7 +49,7 @@ const authProxy = withAuth(
     }
 
     // Quebra-loop: a própria tela de onboarding nunca pode ser gateada por si mesma.
-    if (pathname === ONBOARDING_PATH) {
+    if (pathname === ONBOARDING_PATH || isEventBoothPath(pathname)) {
       return NextResponse.next();
     }
 
@@ -138,6 +143,7 @@ export const config = {
     "/revendedor",
     // Presente para que o `authorized` do withAuth mande anônimo para /entrar; o gate acima isenta.
     "/cadastro/completar",
+    "/expocannabis",
     "/api/:path*",
   ],
 };

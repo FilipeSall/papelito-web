@@ -36,6 +36,17 @@ describe("blocksTestDeploymentWrite", () => {
     expect(attempt({ host: "localhost:3000", vercelEnv: undefined })).toBe(false);
   });
 
+  it.each(["/api/expocannabis/quote", "/api/expocannabis/buyers/lookup"])(
+    "lets the booth read %s on the test alias",
+    (pathname) => {
+      expect(attempt({ pathname })).toBe(false);
+    },
+  );
+
+  it("blocks booth orders on the test alias", () => {
+    expect(attempt({ pathname: "/api/expocannabis/orders" })).toBe(true);
+  });
+
   it.each(["GET", "HEAD", "OPTIONS"])("lets %s through on the test alias", (method) => {
     expect(attempt({ method })).toBe(false);
   });

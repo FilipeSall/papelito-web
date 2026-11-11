@@ -11,6 +11,8 @@ const READ_ONLY_API_PATHS = new Set([
   "/api/checkout/shipping-quote",
   "/api/checkout/payment-context",
   "/api/coupons/apply",
+  "/api/expocannabis/quote",
+  "/api/expocannabis/buyers/lookup",
 ]);
 
 const NEXTAUTH_SESSION_PATH = /^\/api\/auth\/(?:callback|signin|signout|session|_log)(?:\/|$)/;
