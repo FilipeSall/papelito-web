@@ -40,7 +40,7 @@ describe("ExpocannabisPage", () => {
     await expect(ExpocannabisPage()).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
-  it("responde 404 com a flag desligada", async () => {
+  it("responde 404 quando o WordPress não tem as rotas do evento", async () => {
     wpRestMock.mockResolvedValue({ ok: false, status: 404, error: { code: "rest_no_route", message: "x" } });
 
     await expect(ExpocannabisPage()).rejects.toThrow("NEXT_NOT_FOUND");

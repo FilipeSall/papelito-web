@@ -43,7 +43,7 @@ function authHeaders(accessToken: string, idempotencyKey?: string | null): Recor
  * Repassa uma rota do tablet ao WordPress com o Bearer do operador, sem cache e sem decidir nada.
  *
  * Erro do WordPress mantém status, código e dados (como a cotação nova de `quote_changed`); a rota
- * inexistente vira `papelito_event_disabled`, porque é assim que a flag desligada aparece.
+ * inexistente vira `papelito_event_disabled`, que é como um WordPress sem as rotas do evento aparece.
  */
 export async function proxyEventJson(options: ProxyEventJsonOptions): Promise<NextResponse> {
   const auth = await getUserApiSession();
