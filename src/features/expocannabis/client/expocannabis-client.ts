@@ -96,8 +96,8 @@ export const expocannabisClient = {
     call<EventOrderStatus>({ url: orderUrl(orderId, "status"), method: "GET", parse: parseOrderStatus }),
   cancel: (orderId: number) =>
     call<EventOrderStatus>({ url: orderUrl(orderId, "cancel"), method: "POST", body: {}, parse: parseOrderStatus }),
-  retry: (orderId: number, method: EventPaymentMethod) =>
-    call<EventOrderStatus>({ url: orderUrl(orderId, "retry"), method: "POST", body: { method }, parse: parseOrderStatus }),
+  retry: (orderId: number, method: EventPaymentMethod, terminalId: string) =>
+    call<EventOrderStatus>({ url: orderUrl(orderId, "retry"), method: "POST", body: { method, terminalId }, parse: parseOrderStatus }),
   abandon: (orderId: number) =>
     call<Record<string, unknown>>({ url: orderUrl(orderId, "abandon"), method: "POST", body: {}, parse: anyRecord }),
   manualConfirm: (orderId: number, input: ManualConfirmInput) =>

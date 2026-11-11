@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { expocannabisClient, type ClientResult } from "@/features/expocannabis/client/expocannabis-client";
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
-import type { EventContext } from "@/features/expocannabis/types/context";
+import { useTerminalChoice } from "@/features/expocannabis/hooks/use-terminal-choice";
+import type { EventContext, EventTerminal } from "@/features/expocannabis/types/context";
 import type { EventOrderStatus, ManualConfirmInput } from "@/features/expocannabis/types/order";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { parseQuote } from "@/features/expocannabis/utils/parse-quote";
@@ -42,13 +43,34 @@ function failureNotice(result: ClientResult<EventOrderStatus>, dispatch: Dispatc
   return `O valor mudou: agora é ${formatCents(quote.totalCents)}. Confere com o lojista e cobra de novo.`;
 }
 
+function TerminalPicker({ terminals, value, onChange }: Readonly<{ terminals: EventTerminal[]; value: string; onChange: (terminalId: string) => void }>) {
+  return (
+    <div role="radiogroup" aria-label="Maquininha" className="grid gap-3 min-[768px]:grid-cols-2">
+      {terminals.map((terminal, index) => (
+        <RadioCard
+          key={terminal.id}
+          title={terminal.label}
+          sub={index === 0 ? "Maquininha cadastrada do evento." : "Cobra nesta maquininha."}
+          checked={value === terminal.id}
+          onSelect={() => onChange(terminal.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function terminalLabel(terminals: readonly EventTerminal[], terminalId: string): string {
+  return terminals.find((terminal) => terminal.id === terminalId)?.label ?? "";
+}
+
 /**
  * Tela 04: forma de pagamento e cobrança na maquininha, acompanhada a cada 2 s.
  *
  * O mesmo atendimento usa sempre a mesma chave, então dois toques em "Cobrar" não geram duas
  * cobranças. Valor mudado no servidor é mostrado antes de cobrar de novo; estoque que acabou volta
  * para a loja com a chave descartada. O acompanhamento faz uma consulta por vez e ignora a resposta
- * que chega depois de o estado da cobrança mudar (cancelamento, abandono).
+ * que chega depois de o estado da cobrança mudar (cancelamento, abandono). Com mais de uma
+ * maquininha no evento, o operador escolhe em qual cobrar; a cadastrada é a padrão.
  */
 export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScreenProps>) {
   const [busy, setBusy] = useState(false);
@@ -56,6 +78,8 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
   const [manualOpen, setManualOpen] = useState(false);
   const [manualError, setManualError] = useState("");
   const charging = useRef(false);
+  const [terminalId, chooseTerminal] = useTerminalChoice(context.terminals);
+  const manyTerminals = context.terminals.length > 1;
   const { order, quote, buyer, registered } = state;
   const orderId = order?.orderId ?? 0;
   const orderState = order?.state ?? "";
@@ -116,6 +140,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
         },
         quoteFingerprint: quote.quoteFingerprint,
         method: state.method,
+        terminalId,
       });
     });
 
@@ -166,13 +191,15 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
                 />
               </div>
             ) : null}
+            {choosing && manyTerminals ? <TerminalPicker terminals={context.terminals} value={terminalId} onChange={chooseTerminal} /> : null}
+            {order && manyTerminals ? <p className="text-base font-bold">{`Cobrando na ${terminalLabel(context.terminals, terminalId)}`}</p> : null}
             {order ? (
               <TerminalStatus
                 status={order}
                 canSupervise={context.operator.canSupervise}
                 busy={busy}
                 onCancel={() => run(() => expocannabisClient.cancel(orderId))}
-                onRetry={() => run(() => expocannabisClient.retry(orderId, state.method))}
+                onRetry={() => run(() => expocannabisClient.retry(orderId, state.method, terminalId))}
                 onAbandon={abandon}
                 onManual={() => setManualOpen(true)}
               />

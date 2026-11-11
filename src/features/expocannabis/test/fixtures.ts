@@ -28,6 +28,7 @@ export function buildEventContext(overrides: Partial<EventContext> = {}): EventC
       endsAt: "2026-11-23T02:59:59+00:00",
     },
     operator: { name: "Operadora", canSupervise: false },
+    terminals: [{ id: "NEWLAND_N950__N950NCD600451364", label: "Maquininha final 1364" }],
     levels: [
       { key: "lojista", name: "Lojista", minUnits: 0, pctBp: 0 },
       { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },

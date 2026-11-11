@@ -32,10 +32,14 @@ export type EventKit = {
   available: boolean;
 };
 
+/** Maquininha do evento; a primeira da lista é a padrão. */
+export type EventTerminal = { id: string; label: string };
+
 /** Tudo que o tablet precisa para montar a loja, lido de `GET event/{id}/context`. */
 export type EventContext = {
   event: { id: string; name: string; startsAt: string; endsAt: string };
   operator: { name: string; canSupervise: boolean };
+  terminals: EventTerminal[];
   levels: EventLevel[];
   kit: EventKit;
   categories: { slug: string; name: string }[];

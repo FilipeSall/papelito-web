@@ -64,6 +64,7 @@ describe("expocannabisClient", () => {
       delivery: { cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "" },
       quoteFingerprint: "x",
       method: "card",
+      terminalId: "NEWLAND_N950__N950NCD600451364",
     });
 
     expect(key).toBe("chk-1");

@@ -1,4 +1,4 @@
-import type { EventContext, EventKit, EventLevel, EventLevelKey, EventProduct } from "../types/context";
+import type { EventContext, EventKit, EventLevel, EventLevelKey, EventProduct, EventTerminal } from "../types/context";
 import { every, hasNull, int, ints, isRecord, str } from "./parse-helpers";
 
 const LEVEL_KEYS: readonly EventLevelKey[] = ["lojista", "parceiro", "pdv_perfeito", "lenda"];
@@ -75,12 +75,29 @@ function parseOperator(value: unknown): EventContext["operator"] | null {
   return name === null ? null : { name, canSupervise: value.canSupervise };
 }
 
-/** Contexto do evento vindo do WordPress, ou `null` se qualquer campo obrigatório faltar. */
+function parseTerminal(value: unknown): EventTerminal | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  const label = str(value.label);
+  return id === null || label === null ? null : { id, label };
+}
+
+function parseTerminals(value: unknown): EventTerminal[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(parseTerminal).filter((item): item is EventTerminal => item !== null);
+}
+
+/**
+ * Contexto do evento vindo do WordPress, ou `null` se qualquer campo obrigatório faltar.
+ *
+ * As maquininhas são opcionais: WordPress sem a lista devolve `[]`, e a cobrança vai para a padrão.
+ */
 export function parseEventContext(data: unknown): EventContext | null {
   if (!isRecord(data)) return null;
   const ctx = {
     event: parseEvent(data.event),
     operator: parseOperator(data.operator),
+    terminals: parseTerminals(data.terminals),
     levels: every(data.levels, parseLevel),
     kit: parseKit(data.kit),
     categories: every(data.categories, parseNamed),

@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useReducer } from "react";
@@ -36,7 +36,12 @@ function status(state: string, detail = "") {
   return { orderId: 501, orderNumber: "501", state, detail, totalCents: 151445, method: "card" };
 }
 
-function Harness({ canSupervise = false }: Readonly<{ canSupervise?: boolean }>) {
+const TWO_TERMINALS = [
+  { id: "NEWLAND_N950__N950NCD600451364", label: "Maquininha final 1364" },
+  { id: "NEWLAND_N950__N950NCD700342623", label: "Maquininha final 2623" },
+];
+
+function Harness({ canSupervise = false, terminals }: Readonly<{ canSupervise?: boolean; terminals?: typeof TWO_TERMINALS }>) {
   const [state, dispatch] = useReducer(attendanceReducer, {
     ...initialAttendance(),
     screen: 4,
@@ -46,7 +51,8 @@ function Harness({ canSupervise = false }: Readonly<{ canSupervise?: boolean }>)
     registered: { companyId: 30, buyerUserId: 40, created: { company: false, user: false } },
     delivery: { ...initialAttendance().delivery, cep: "01001000", street: "Praça da Sé", number: "100", neighborhood: "Sé", city: "São Paulo", state: "SP" },
   });
-  const context = buildEventContext({ operator: { name: "Operadora", canSupervise } });
+  const base = buildEventContext({ operator: { name: "Operadora", canSupervise } });
+  const context = terminals ? { ...base, terminals } : base;
   return (
     <>
       <PaymentScreen context={context} state={state} dispatch={dispatch} />
@@ -62,6 +68,48 @@ const CHARGE = /Cobrar R\$\s?1\.514,45 na maquininha/;
 describe("PaymentScreen", () => {
   afterEach(() => {
     vi.useRealTimers();
+    window.localStorage.clear();
+  });
+
+  it("com uma maquininha só não pergunta e cobra nela", async () => {
+    let body: Record<string, unknown> = {};
+    server.use(
+      http.post("*/api/expocannabis/orders", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(status("at_terminal"));
+      }),
+    );
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    expect(screen.queryByRole("radiogroup", { name: "Maquininha" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: CHARGE }));
+
+    expect(await screen.findByText("Passe o cartão ou leia o Pix na maquininha")).toBeInTheDocument();
+    expect(body.terminalId).toBe("NEWLAND_N950__N950NCD600451364");
+  });
+
+  it("com duas maquininhas começa na cadastrada e lembra a escolhida", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post("*/api/expocannabis/orders", async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json(status("at_terminal"));
+      }),
+    );
+    const user = userEvent.setup();
+    const first = render(<Harness terminals={TWO_TERMINALS} />);
+
+    const picker = screen.getByRole("radiogroup", { name: "Maquininha" });
+    expect(within(picker).getByRole("radio", { name: /Maquininha final 1364/ })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(picker).getByRole("radio", { name: /Maquininha final 2623/ }));
+    await user.click(screen.getByRole("button", { name: CHARGE }));
+    expect(await screen.findByText("Cobrando na Maquininha final 2623")).toBeInTheDocument();
+    expect(bodies[0].terminalId).toBe("NEWLAND_N950__N950NCD700342623");
+    first.unmount();
+
+    render(<Harness terminals={TWO_TERMINALS} />);
+    expect(within(screen.getByRole("radiogroup", { name: "Maquininha" })).getByRole("radio", { name: /Maquininha final 2623/ })).toHaveAttribute("aria-checked", "true");
   });
 
   it("dois cliques em Cobrar criam uma cobrança só", async () => {

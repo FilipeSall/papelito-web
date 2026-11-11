@@ -36,6 +36,14 @@ describe("parseEventContext", () => {
     expect(ctx?.kit.unitCents).toBe(65595);
   });
 
+  it("lê as maquininhas e aceita contexto sem elas", () => {
+    expect(parseEventContext(wpContext())?.terminals).toEqual([{ id: "NEWLAND_N950__N950NCD600451364", label: "Maquininha final 1364" }]);
+
+    const { terminals: _terminals, ...semMaquininhas } = wpContext();
+    expect(parseEventContext(semMaquininhas)?.terminals).toEqual([]);
+    expect(parseEventContext({ ...wpContext(), terminals: [{ id: "X" }, { id: "Y", label: "Maquininha final Y" }] })?.terminals).toEqual([{ id: "Y", label: "Maquininha final Y" }]);
+  });
+
   it("recusa contexto sem campo obrigatório", () => {
     const { levels: _levels, ...semNiveis } = wpContext();
 

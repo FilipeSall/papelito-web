@@ -63,6 +63,8 @@ export type CreateOrderInput = {
   delivery: DeliveryInput;
   quoteFingerprint: string;
   method: EventPaymentMethod;
+  /** Maquininha que recebe a cobrança; vazio usa a padrão do evento. */
+  terminalId: string;
 };
 
 /** Dados da liberação manual pelo supervisor. */
