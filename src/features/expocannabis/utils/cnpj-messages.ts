@@ -8,10 +8,9 @@ const CNPJ_LENGTH = 14;
 /** Texto inicial da credencial. */
 export const CNPJ_IDLE_MESSAGE: CnpjMessage = { text: "Digite no teclado abaixo. A máscara entra sozinha.", error: false, retry: false };
 
-/** Mensagem enquanto digita: quantos faltam ou que já dá para buscar. */
+/** Mensagem enquanto digita: a orientação inicial até os 14 dígitos, depois que já dá para buscar. */
 export function typingMessage(digits: string): CnpjMessage {
-  if (digits.length === 0) return CNPJ_IDLE_MESSAGE;
-  if (digits.length < CNPJ_LENGTH) return { text: `${digits.length} de 14`, error: false, retry: false };
+  if (digits.length < CNPJ_LENGTH) return CNPJ_IDLE_MESSAGE;
   return { text: "Tudo certo. Agora é só buscar.", error: false, retry: false };
 }
 

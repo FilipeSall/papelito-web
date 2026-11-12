@@ -7,8 +7,12 @@ type BaseModalProps = {
   ariaDescribedBy?: string;
   ariaLabelledBy: string;
   children: ReactNode;
+  /** Alinhamento e respiro da camada fixa; o padrão centraliza com `px-4 py-6`. Folhas de rodapé trocam por `items-end`. */
+  containerClassName?: string;
   contentClassName?: string;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  /** Fundo do botão que escurece a tela; o padrão é `bg-brand-dark/70`. */
+  overlayClassName?: string;
   onClose: () => void;
   open: boolean;
 };
@@ -20,8 +24,10 @@ export function BaseModal({
   ariaDescribedBy,
   ariaLabelledBy,
   children,
+  containerClassName = "items-center justify-center px-4 py-6",
   contentClassName = "",
   initialFocusRef,
+  overlayClassName = "bg-brand-dark/70",
   onClose,
   open,
 }: BaseModalProps) {
@@ -88,10 +94,10 @@ export function BaseModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-80 flex items-center justify-center px-4 py-6">
+    <div className={`fixed inset-0 z-80 flex ${containerClassName}`.trim()}>
       <button
         aria-label="Fechar modal"
-        className="absolute inset-0 bg-brand-dark/70"
+        className={`absolute inset-0 ${overlayClassName}`.trim()}
         data-testid="base-modal-overlay"
         onClick={onClose}
         type="button"

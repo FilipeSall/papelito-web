@@ -10,6 +10,7 @@ import { buildEventContext } from "@/features/expocannabis/test/fixtures";
 import { server } from "../../../../test/msw/server";
 import { ExpocannabisApp } from "./expocannabis-app";
 
+
 const PAID = {
   ...initialAttendance(),
   screen: 5,
@@ -47,8 +48,10 @@ describe("ConfirmedScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Pedido confirmado!" })).toBeInTheDocument();
     expect(screen.getByText(/14 unidades · R\$\s?1\.514,45 · pago no Pix/)).toBeInTheDocument();
-    expect(screen.getByText(/Você economizou R\$\s?78,13/)).toBeInTheDocument();
-    expect(screen.getByText(/Bandeja chaveiro \+ merch/)).toBeInTheDocument();
+    expect(screen.getByText("Você economizou")).toBeInTheDocument();
+    expect(screen.getByText(/R\$\s?78,13/)).toBeInTheDocument();
+    expect(screen.getByText("5% do nível")).toBeInTheDocument();
+    expect(screen.getByText("Retire agora no balcão")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Enviar resumo no WhatsApp" })).toHaveAttribute(
       "href",
       expect.stringContaining("https://wa.me/5511987654321?text="),

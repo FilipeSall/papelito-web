@@ -1,26 +1,37 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react";
 
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext, EventProduct } from "@/features/expocannabis/types/context";
-import {
-  applyCartRules,
-  formatCents,
-  levelIndex,
-  maxQty,
-  normalizeSearch,
-  type Cart,
-} from "@/features/expocannabis/utils/cart";
+import { applyCartRules, levelIndex, maxQty, normalizeSearch, type Cart } from "@/features/expocannabis/utils/cart";
 import { previewPricing, unitsOf } from "@/features/expocannabis/utils/pricing-preview";
+import {
+  ALL,
+  HOME,
+  LAUNCHES,
+  PREMIUM,
+  buildProductTags,
+  buildStoreCategories,
+  gridProducts,
+  gridTitle,
+  pickProducts,
+  productCountText,
+  type ProductTag,
+} from "@/features/expocannabis/utils/store-catalog";
 
-import { CategoryChips, type StoreCategory } from "./category-chips";
-import { LevelBar } from "./level-bar";
+import { CategoryChips } from "./category-chips";
 import { LevelToast } from "./level-toast";
+import { OrderBar } from "./order-bar";
 import { OrderSheet } from "./order-sheet";
 import { ProductCard } from "./product-card";
+import { ProductGrid } from "./product-grid";
 import { ProductSheet } from "./product-sheet";
+import { PromoBanner } from "./promo-banner";
+import { ShelfRow } from "./shelf-row";
 import { UndoBar } from "./undo-bar";
+import { useLandscape } from "./use-landscape";
 
 type StoreScreenProps = {
   context: EventContext;
@@ -33,29 +44,6 @@ type Undo = { text: string; cart: Cart };
 
 const UNDO_MS = 5000;
 const KIT_REMOVED_TEXT = "O Kit Premium saiu: ele precisa de 10 unidades no pedido.";
-const HOME = "inicio";
-
-function storeCategories(context: EventContext): StoreCategory[] {
-  return [
-    { key: HOME, label: "Início" },
-    { key: "premium", label: "Premium" },
-    { key: "lancamentos", label: "Lançamentos" },
-    ...context.categories.map((category) => ({ key: `cat:${category.slug}`, label: category.name })),
-  ];
-}
-
-function pick(products: Map<number, EventProduct>, ids: number[]): EventProduct[] {
-  return ids.map((id) => products.get(id)).filter((product): product is EventProduct => product !== undefined);
-}
-
-function gridProducts(context: EventContext, byId: Map<number, EventProduct>, category: string, search: string): EventProduct[] {
-  const term = normalizeSearch(search);
-  if (term) return context.products.filter((product) => normalizeSearch(product.name).includes(term));
-  if (category === "premium") return pick(byId, context.kit.productIds);
-  if (category === "lancamentos") return pick(byId, context.shelves.lancamentos);
-  return context.products.filter((product) => `cat:${product.category.slug}` === category);
-}
-
 function removalText(name: string, kitRemoved: boolean): string {
   return kitRemoved ? `${name} saiu do pedido (e o Kit Premium, que precisa de 10 un.).` : `${name} saiu do pedido.`;
 }
@@ -70,8 +58,95 @@ function withQty(qty: Record<number, number>, productId: number, value: number):
   return next;
 }
 
+type CatalogProps = {
+  context: EventContext;
+  byId: Map<number, EventProduct>;
+  state: AttendanceState;
+  tags: Map<number, ProductTag>;
+  category: string;
+  search: string;
+  pctBp: number;
+  onCategory: (key: string) => void;
+  onQty: (product: EventProduct, qty: number) => void;
+  onOpen: (product: EventProduct) => void;
+};
+
+function StockAlert({ state, byId }: Readonly<{ state: AttendanceState; byId: Map<number, EventProduct> }>) {
+  if (state.stockIssues.length === 0) return null;
+  const names = state.stockIssues.map((issue) => `${byId.get(issue.productId)?.name ?? "Produto"} (tem ${issue.available})`).join(", ");
+
+  return (
+    <p role="alert" className="rounded-md border-2 border-[#B42318] bg-[#FFF1F0] p-3 text-base font-bold text-[#B42318]">
+      {`Faltou estoque: ${names}. Ajuste o pedido e feche de novo.`}
+    </p>
+  );
+}
+
+function Catalog({ context, byId, state, tags, category, search, pctBp, onCategory, onQty, onOpen }: Readonly<CatalogProps>) {
+  const categories = useMemo(() => buildStoreCategories(context), [context]);
+  const showHome = category === HOME && normalizeSearch(search) === "";
+  const card = (product: EventProduct, shelf: boolean) => (
+    <ProductCard
+      key={product.id}
+      product={product}
+      qty={state.qty[product.id] ?? 0}
+      pctBp={pctBp}
+      tag={tags.get(product.id)}
+      shelf={shelf}
+      onChange={(qty) => onQty(product, qty)}
+      onOpen={() => onOpen(product)}
+    />
+  );
+  const shelves = [
+    { title: "Mais vendidos", ids: context.shelves.maisVendidos, target: ALL },
+    { title: "Linha Premium", ids: context.kit.productIds, target: PREMIUM },
+    { title: "Lançamentos", ids: context.shelves.lancamentos, target: LAUNCHES },
+  ];
+  const grid = showHome ? [] : gridProducts(context, byId, category, search);
+  const active = normalizeSearch(search) === "" ? category : "";
+
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col gap-6.5 overflow-y-auto px-6 pb-7 pt-1">
+      <StockAlert state={state} byId={byId} />
+      {showHome ? <PromoBanner /> : null}
+      <CategoryChips categories={categories} active={active} onSelect={onCategory} />
+      {showHome
+        ? shelves.map((shelf) => (
+            <ShelfRow key={shelf.title} title={shelf.title} onSeeAll={() => onCategory(shelf.target)}>
+              {pickProducts(byId, shelf.ids).map((product) => card(product, true))}
+            </ShelfRow>
+          ))
+        : null}
+      {showHome ? null : (
+        <ProductGrid key={category} title={gridTitle(categories, category, search)} count={productCountText(grid.length)} empty={grid.length === 0}>
+          {grid.map((product) => card(product, false))}
+        </ProductGrid>
+      )}
+    </div>
+  );
+}
+
+function SearchField({ value, onChange }: Readonly<{ value: string; onChange: (value: string) => void }>) {
+  return (
+    <div className="relative flex-none px-6 pb-3 pt-4">
+      <Search aria-hidden size={20} strokeWidth={2.2} className="absolute left-10.5 top-7.5 text-[#52525b]" />
+      <label htmlFor="expo-search" className="sr-only">
+        Buscar produtos
+      </label>
+      <input
+        id="expo-search"
+        type="search"
+        placeholder="Buscar sedas, piteiras, filtros…"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-12.5 w-full rounded-lg border-0 bg-[#F4F4F5] pl-11.5 pr-4 text-base font-medium"
+      />
+    </div>
+  );
+}
+
 /**
- * Tela 02: loja com categorias, busca, vitrines, níveis, Kit Premium e o pedido.
+ * Tela 02: loja com busca fixa, categorias, vitrines, níveis, Kit Premium e o pedido.
  *
  * O preço mostrado é a prévia; o valor cobrado sai da cotação na tela 03.
  */
@@ -82,9 +157,10 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
   const [orderOpen, setOrderOpen] = useState(false);
   const [undo, setUndo] = useState<Undo | null>(null);
   const [toast, setToast] = useState(0);
+  const landscape = useLandscape();
   const byId = useMemo(() => new Map(context.products.map((product) => [product.id, product])), [context.products]);
+  const tags = useMemo(() => buildProductTags(context), [context]);
   const preview = previewPricing(context, state.qty, state.kits);
-  const pct = preview.level.pctBp;
 
   useEffect(() => {
     if (!undo) return undefined;
@@ -125,87 +201,40 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
     setUndo(null);
   };
 
-  const card = (product: EventProduct) => (
-    <ProductCard
-      key={product.id}
-      product={product}
-      qty={state.qty[product.id] ?? 0}
-      pctBp={pct}
-      onChange={(qty) => setQty(product, qty)}
-      onOpen={() => setDetail(product)}
-    />
-  );
-
-  const shelves = [
-    { title: "Mais vendidos", ids: context.shelves.maisVendidos },
-    { title: "Linha Premium", ids: context.kit.productIds },
-    { title: "Lançamentos", ids: context.shelves.lancamentos },
-  ];
-  const showHome = category === HOME && normalizeSearch(search) === "";
-  const grid = showHome ? [] : gridProducts(context, byId, category, search);
+  const undoBar = undo ? <UndoBar text={undo.text} onUndo={restore} /> : null;
+  const showMainUndo = !landscape && !orderOpen && undoBar !== null;
+  const showToast = toast > 0 && !orderOpen && !detail;
 
   return (
     <div className="flex h-full">
-      <div aria-hidden={orderOpen || undefined} className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <label htmlFor="expo-search" className="sr-only">
-            Buscar produtos
-          </label>
-          <input
-            id="expo-search"
-            type="search"
-            placeholder="Buscar produtos"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="h-14 w-full rounded-md border-2 border-[#D4D4D8] px-4 text-lg font-semibold"
-          />
-          {state.stockIssues.length > 0 ? (
-            <p role="alert" className="mt-4 rounded-md border-2 border-[#B42318] bg-[#FFF1F0] p-3 text-base font-bold text-[#B42318]">
-              {`Faltou estoque: ${state.stockIssues
-                .map((issue) => `${byId.get(issue.productId)?.name ?? "Produto"} (tem ${issue.available})`)
-                .join(", ")}. Ajuste o pedido e feche de novo.`}
-            </p>
-          ) : null}
-          <div className="mt-4 flex items-center gap-4 rounded-lg bg-brand-yellow p-4">
-            <p className="font-[family-name:var(--font-expo-display)] text-[34px] uppercase leading-none">Desconto Progressivo</p>
-            <p className="text-base font-bold">Garanta até 12% de desconto</p>
-          </div>
-          <div className="mt-4">
-            <CategoryChips categories={storeCategories(context)} active={category} onSelect={setCategory} />
-          </div>
-          {showHome
-            ? shelves.map((shelf) => (
-                <section key={shelf.title} className="mt-6">
-                  <h2 className="text-[21px] font-extrabold">{shelf.title}</h2>
-                  <div className="mt-3 grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">{pick(byId, shelf.ids).map(card)}</div>
-                </section>
-              ))
-            : null}
-          {showHome ? null : (
-            <section key={`${category}:${search}`} className="expo-rise mt-6">
-              {grid.length === 0 ? <p className="text-base text-[#52525B]">Nada encontrado. Tenta outro nome?</p> : null}
-              <div className="grid grid-cols-2 gap-3 min-[768px]:grid-cols-4">{grid.map(card)}</div>
-            </section>
-          )}
-        </div>
-        <div className="border-t-2 border-[#E4E4E7] px-6 py-3 min-[1024px]:hidden">
-          <LevelBar levels={context.levels} units={preview.units} />
-          <button
-            type="button"
-            disabled={preview.units === 0}
-            onClick={() => setOrderOpen(true)}
-            className="mt-2 flex h-[60px] w-full items-center justify-between rounded-md bg-[#231F20] px-5 text-lg font-extrabold text-brand-yellow disabled:bg-[#E4E4E7] disabled:text-[#52525B]"
-          >
-            <span>{`Ver pedido · ${preview.units} ${preview.units === 1 ? "unidade" : "unidades"}`}</span>
-            <span>{formatCents(preview.itemsCents)}</span>
-          </button>
-        </div>
+      <div aria-hidden={orderOpen || undefined} className="relative flex min-w-0 flex-1 flex-col">
+        <SearchField value={search} onChange={setSearch} />
+        <Catalog
+          context={context}
+          byId={byId}
+          state={state}
+          tags={tags}
+          category={category}
+          search={search}
+          pctBp={preview.level.pctBp}
+          onCategory={(key) => {
+            setCategory(key);
+            setSearch("");
+          }}
+          onQty={setQty}
+          onOpen={setDetail}
+        />
+        {showMainUndo ? <div className="flex-none px-6 pb-2.5">{undoBar}</div> : null}
+        <OrderBar levels={context.levels} units={preview.units} totalCents={preview.itemsCents} onOpen={() => setOrderOpen(true)} />
+        {showToast ? <LevelToast levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
       </div>
       <OrderSheet
         open={orderOpen}
+        landscape={landscape}
         context={context}
         preview={preview}
         cart={{ qty: state.qty, kits: state.kits }}
+        undo={undoBar}
         onClose={() => setOrderOpen(false)}
         onLineChange={(productId, qty) => {
           const product = byId.get(productId);
@@ -213,20 +242,13 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
         }}
         onRemove={removeLine}
         onKitsChange={(kits) => changeCart({ qty: state.qty, kits: Math.max(0, Math.min(3, kits)) })}
+        onRemoveKit={() => changeCart({ qty: state.qty, kits: 0 }, "Kit de Sedas Premium")}
         onCheckout={onCheckout}
       />
-      {undo ? (
-        <div className="fixed inset-x-6 bottom-28 z-40 mx-auto max-w-[640px]">
-          <UndoBar text={undo.text} onUndo={restore} />
-        </div>
-      ) : null}
-      {toast > 0 && !orderOpen && !detail ? (
-        <LevelToast levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} />
-      ) : null}
       <ProductSheet
         product={detail}
         qty={detail ? (state.qty[detail.id] ?? 0) : 0}
-        pctBp={pct}
+        pctBp={preview.level.pctBp}
         onChange={(qty) => detail && setQty(detail, qty)}
         onClose={() => setDetail(null)}
       />

@@ -8,6 +8,16 @@ import { server } from "./test/msw/server";
 import { resetAllStores } from "./test/utils/reset-stores";
 
 delete process.env.DEBUG;
+
+function stubGoogleFont(name: string) {
+  return () => ({ className: `font-${name}`, variable: `font-${name}`, style: { fontFamily: name } });
+}
+
+vi.mock("next/font/google", () => ({
+  Hanken_Grotesk: stubGoogleFont("hanken-grotesk"),
+  Permanent_Marker: stubGoogleFont("permanent-marker"),
+  Ultra: stubGoogleFont("ultra"),
+}));
 process.env.NEXTAUTH_SECRET ??= "test-secret";
 process.env.NEXTAUTH_URL ??= "http://localhost:3000";
 process.env.NEXT_PUBLIC_WP_GRAPHQL_ENDPOINT ??= "http://localhost:8080/graphql";

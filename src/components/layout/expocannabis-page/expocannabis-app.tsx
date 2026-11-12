@@ -41,7 +41,7 @@ type ExpocannabisAppProps = {
 export function ExpocannabisApp({ context }: Readonly<ExpocannabisAppProps>) {
   const attendance = useAttendance(context);
   const { state, dispatch } = attendance;
-  const changeStore = state.screen === 2 || state.screen === 3 ? () => dispatch({ type: "change-store" }) : undefined;
+  const changeStore = state.screen === 2 ? () => dispatch({ type: "change-store" }) : undefined;
   const confirmBuyer = (buyer: BuyerLookup) => dispatch({ type: state.buyer ? "switch-buyer" : "start", buyer });
   const hydrated = useSyncExternalStore(subscribeNothing, onClient, onServer);
 

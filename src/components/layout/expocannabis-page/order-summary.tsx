@@ -3,18 +3,28 @@ import type { EventContext } from "@/features/expocannabis/types/context";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 
+import { SectionLabel } from "./section-label";
+
 type OrderSummaryProps = {
   context: EventContext;
   state: AttendanceState;
 };
 
-function Row({ label, value, strong = false }: Readonly<{ label: string; value: string; strong?: boolean }>) {
+function Row({ label, value, muted = false }: Readonly<{ label: string; value: string; muted?: boolean }>) {
   return (
-    <div className={`flex justify-between gap-4 ${strong ? "text-xl font-extrabold" : "text-base"}`}>
-      <dt>{label}</dt>
-      <dd className="font-bold">{value}</dd>
+    <div className="flex justify-between gap-3 text-[15px] font-semibold">
+      <dt className={muted ? "text-[#52525B]" : ""}>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
+}
+
+function unitsLabel(units: number): string {
+  return `${units} ${units === 1 ? "unidade" : "unidades"}`;
+}
+
+function kitLabel(kits: number): string {
+  return `Kit de Sedas Premium${kits > 1 ? ` ×${kits}` : ""} (−15%)`;
 }
 
 /** Resumo do pedido do checkout: da cotação do servidor quando há, da prévia antes dela. */
@@ -25,21 +35,24 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const level = quote?.level ?? preview.level;
   const items = quote?.itemsCents ?? preview.itemsCents;
   const discount = quote?.discountCents ?? preview.discountCents;
-  const kitTotal = quote?.kit.totalCents ?? preview.kit.totalCents;
+  const kit = quote?.kit ?? preview.kit;
+  const pct = level.pctBp / 100;
+  const frete = quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar";
 
   return (
-    <section aria-labelledby="expo-summary-title" className="rounded-lg border-2 border-[#231F20] bg-white p-5">
-      <h2 id="expo-summary-title" className="text-xs font-extrabold uppercase tracking-[0.08em]">
-        Resumo do pedido
-      </h2>
-      <dl className="mt-3 grid gap-2">
-        <Row label="Unidades" value={`${units} · ${level.name}`} />
-        <Row label={`Desconto do nível (${level.pctBp / 100}%)`} value={`− ${formatCents(discount)}`} />
-        {kitTotal > 0 ? <Row label="Kit Premium" value={formatCents(kitTotal)} /> : null}
-        <Row label="Brinde" value={level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "—"} />
-        <Row label="Produtos" value={formatCents(items)} />
-        <Row label="Frete" value={quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar"} />
-        <Row label="Total" value={formatCents(quote?.totalCents ?? items)} strong />
+    <section aria-labelledby="expo-summary-title" className="rounded-[10px] border-[1.5px] border-[#E4E4E7] bg-white px-5 py-4.5">
+      <SectionLabel id="expo-summary-title">Resumo</SectionLabel>
+      <dl className="mt-2 grid gap-2">
+        <Row label={`${unitsLabel(units)} · nível ${level.name}`} value={pct > 0 ? `${pct}% off em tudo` : "sem desconto de nível"} />
+        <Row label="Produtos" value={formatCents(items)} muted />
+        {discount > 0 ? <Row label="Desconto do nível" value={`− ${formatCents(discount)}`} /> : null}
+        {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty)} value={formatCents(kit.totalCents)} muted /> : null}
+        <Row label="Brinde" value={level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un."} muted />
+        <Row label="Frete" value={frete} muted />
+        <div className="mt-1 flex items-baseline justify-between border-t border-[#E4E4E7] pt-2.5">
+          <dt className="text-[17px] font-extrabold">Total</dt>
+          <dd className="text-[26px] font-extrabold">{formatCents(quote?.totalCents ?? items)}</dd>
+        </div>
       </dl>
     </section>
   );

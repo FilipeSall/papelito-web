@@ -8,12 +8,16 @@ type QuickQtyProps = {
 
 const OPTIONS = [5, 10, 20];
 
-/** Botões 5/10/20 que definem a quantidade (não somam). O valor atual fica marcado. */
+/** Botões 5/10/20 un. que definem a quantidade (não somam). O valor atual fica preto com texto amarelo. */
 export function QuickQty({ productName, qty, max, onSet, tall = false }: Readonly<QuickQtyProps>) {
+  const layout = tall ? "flex gap-2" : "grid grid-cols-3 gap-1.5";
+  const size = tall ? "h-14 px-4 text-base" : "h-11 text-[15px]";
+
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className={layout}>
       {OPTIONS.map((option) => {
         const pressed = qty === option;
+        const tone = pressed ? "border-[#231F20] bg-[#231F20] text-brand-yellow" : "border-[#D4D4D8] bg-white";
         return (
           <button
             key={option}
@@ -22,9 +26,9 @@ export function QuickQty({ productName, qty, max, onSet, tall = false }: Readonl
             aria-label={`Colocar ${option} de ${productName} no pedido`}
             disabled={option > max}
             onClick={() => onSet(option)}
-            className={`${tall ? "h-14" : "h-11"} rounded-md border-2 text-base font-extrabold disabled:opacity-30 ${pressed ? "border-[#231F20] bg-[#231F20] text-brand-yellow" : "border-[#D4D4D8] bg-white"}`}
+            className={`${size} ${tone} rounded-md border-[1.5px] font-extrabold transition-transform duration-120 active:scale-94 disabled:opacity-30 motion-reduce:transition-none`}
           >
-            {option}
+            {`${option} un.`}
           </button>
         );
       })}

@@ -11,11 +11,12 @@ import { formatCents } from "@/features/expocannabis/utils/cart";
 import { parseQuote } from "@/features/expocannabis/utils/parse-quote";
 import { parseStockIssues } from "@/features/expocannabis/utils/stock-issues";
 
-import { CheckoutStepper } from "./checkout-stepper";
+import { CheckoutCta, CheckoutLayout, StickyAside } from "./checkout-layout";
 import { ManualConfirmDialog } from "./manual-confirm-dialog";
 import { OrderSummary } from "./order-summary";
 import { RadioCard } from "./radio-card";
-import { TerminalStatus } from "./terminal-status";
+import { TerminalActions, TerminalStatus } from "./terminal-status";
+import { WarnBox } from "./warn-box";
 
 type PaymentScreenProps = {
   context: EventContext;
@@ -45,16 +46,47 @@ function failureNotice(result: ClientResult<EventOrderStatus>, dispatch: Dispatc
 
 function TerminalPicker({ terminals, value, onChange }: Readonly<{ terminals: EventTerminal[]; value: string; onChange: (terminalId: string) => void }>) {
   return (
-    <div role="radiogroup" aria-label="Maquininha" className="grid gap-3 min-[768px]:grid-cols-2">
+    <div role="radiogroup" aria-label="Maquininha" className="grid gap-2.5 min-[768px]:grid-cols-2">
       {terminals.map((terminal, index) => (
         <RadioCard
           key={terminal.id}
           title={terminal.label}
           sub={index === 0 ? "Maquininha cadastrada do evento." : "Cobra nesta maquininha."}
           checked={value === terminal.id}
+          variant="large"
           onSelect={() => onChange(terminal.id)}
         />
       ))}
+    </div>
+  );
+}
+
+function TotalLine({ total }: Readonly<{ total: string }>) {
+  return (
+    <div className="mt-2 flex items-baseline gap-2.5">
+      <p className="text-base font-semibold text-[#52525B]">Total do pedido</p>
+      <p className="text-[26px] font-extrabold">{total}</p>
+    </div>
+  );
+}
+
+function PaymentMethods({ method, total, dispatch }: Readonly<{ method: AttendanceState["method"]; total: string; dispatch: Dispatch<AttendanceAction> }>) {
+  return (
+    <div role="radiogroup" aria-label="Forma de pagamento" className="flex flex-col gap-3">
+      <RadioCard
+        variant="large"
+        title="Cartão na maquininha"
+        sub={`Passe ${total} no crédito ou no débito. As parcelas são escolhidas na máquina.`}
+        checked={method === "card"}
+        onSelect={() => dispatch({ type: "set-method", method: "card" })}
+      />
+      <RadioCard
+        variant="large"
+        title="Pix na maquininha"
+        sub="O QR aparece na tela da maquininha."
+        checked={method === "pix"}
+        onSelect={() => dispatch({ type: "set-method", method: "pix" })}
+      />
     </div>
   );
 }
@@ -167,62 +199,53 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
 
   const total = formatCents(quote.totalCents);
   const choosing = order === null || ["failed", "expired", "canceled"].includes(order.state);
+  const back = order === null ? { label: "Voltar aos dados", onBack: () => dispatch({ type: "go", screen: 3 }) } : undefined;
+
+  const footer = order ? (
+    <>
+      {notice ? <WarnBox>{notice}</WarnBox> : null}
+      <TerminalActions
+        status={order}
+        canSupervise={context.operator.canSupervise}
+        busy={busy}
+        onCancel={() => run(() => expocannabisClient.cancel(orderId))}
+        onRetry={() => run(() => expocannabisClient.retry(orderId, state.method, terminalId))}
+        onAbandon={abandon}
+        onManual={() => setManualOpen(true)}
+      />
+    </>
+  ) : (
+    <>
+      {notice ? <WarnBox>{notice}</WarnBox> : null}
+      <CheckoutCta onClick={charge} disabled={busy}>
+        {`Cobrar ${total} na maquininha`}
+      </CheckoutCta>
+    </>
+  );
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-        <CheckoutStepper current={2} />
-        <h1 className="mt-4 text-[30px] font-extrabold">Pagamento</h1>
-        <div className="mt-4 grid gap-6 min-[1024px]:grid-cols-[1fr_360px]">
-          <div className="grid content-start gap-6">
-            {choosing ? (
-              <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-3">
-                <RadioCard
-                  title="Cartão na maquininha"
-                  sub={`Passe ${total} no crédito ou no débito. As parcelas são escolhidas na máquina.`}
-                  checked={state.method === "card"}
-                  onSelect={() => dispatch({ type: "set-method", method: "card" })}
-                />
-                <RadioCard
-                  title="Pix na maquininha"
-                  sub="O QR aparece na tela da maquininha."
-                  checked={state.method === "pix"}
-                  onSelect={() => dispatch({ type: "set-method", method: "pix" })}
-                />
-              </div>
-            ) : null}
-            {choosing && manyTerminals ? <TerminalPicker terminals={context.terminals} value={terminalId} onChange={chooseTerminal} /> : null}
-            {order && manyTerminals ? <p className="text-base font-bold">{`Cobrando na ${terminalLabel(context.terminals, terminalId)}`}</p> : null}
-            {order ? (
-              <TerminalStatus
-                status={order}
-                canSupervise={context.operator.canSupervise}
-                busy={busy}
-                onCancel={() => run(() => expocannabisClient.cancel(orderId))}
-                onRetry={() => run(() => expocannabisClient.retry(orderId, state.method, terminalId))}
-                onAbandon={abandon}
-                onManual={() => setManualOpen(true)}
-              />
-            ) : null}
-            {notice ? (
-              <p role="alert" className="text-base font-bold text-[#B42318]">
-                {notice}
-              </p>
-            ) : null}
-          </div>
-          <OrderSummary context={context} state={state} />
-        </div>
-      </div>
-      {order === null ? (
-        <div className="border-t-2 border-[#E4E4E7] px-8 py-4">
-          <button type="button" onClick={charge} disabled={busy} className="h-[68px] w-full rounded-md bg-brand-yellow text-xl font-extrabold shadow-[0_5px_0_#231F20] disabled:opacity-60">
-            {`Cobrar ${total} na maquininha`}
-          </button>
-        </div>
-      ) : null}
+    <>
+      <CheckoutLayout
+        current={2}
+        spacing="payment"
+        back={back}
+        title="Como o lojista vai pagar?"
+        intro={<TotalLine total={total} />}
+        aside={
+          <StickyAside landscapeOnly>
+            <OrderSummary context={context} state={state} />
+          </StickyAside>
+        }
+        footer={footer}
+      >
+        {choosing ? <PaymentMethods method={state.method} total={total} dispatch={dispatch} /> : null}
+        {choosing && manyTerminals ? <TerminalPicker terminals={context.terminals} value={terminalId} onChange={chooseTerminal} /> : null}
+        {order && manyTerminals ? <p className="text-base font-bold">{`Cobrando na ${terminalLabel(context.terminals, terminalId)}`}</p> : null}
+        {order ? <TerminalStatus status={order} /> : null}
+      </CheckoutLayout>
       {manualOpen ? (
         <ManualConfirmDialog open defaultMethod={state.method} error={manualError} busy={false} onSubmit={manualConfirm} onClose={() => setManualOpen(false)} />
       ) : null}
-    </div>
+    </>
   );
 }

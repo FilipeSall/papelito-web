@@ -35,6 +35,16 @@ describe("CnpjScreen", () => {
     expect(screen.getByLabelText("CNPJ da loja")).toHaveValue("12.3");
   });
 
+  it("mostra o contador e mantém a orientação enquanto digita", async () => {
+    const user = userEvent.setup();
+    render(<CnpjScreen onConfirm={vi.fn()} />);
+
+    await typeDigits(user, "1122");
+
+    expect(screen.getByText("4 de 14")).toBeInTheDocument();
+    expect(screen.getByText("Digite no teclado abaixo. A máscara entra sozinha.")).toBeInTheDocument();
+  });
+
   it("avisa quantos números faltam", async () => {
     const user = userEvent.setup();
     render(<CnpjScreen onConfirm={vi.fn()} />);
@@ -66,6 +76,7 @@ describe("CnpjScreen", () => {
 
     expect(await screen.findByText("Tabacaria Exemplo LTDA")).toBeInTheDocument();
     expect(screen.getByText("CNPJ ativo")).toBeInTheDocument();
+    expect(screen.getByLabelText("CNPJ da loja")).toHaveValue("11.222.333/0001-81");
 
     await user.click(screen.getByRole("button", { name: "É essa, bora pro pedido" }));
     expect(onConfirm).toHaveBeenCalledWith(STORE);

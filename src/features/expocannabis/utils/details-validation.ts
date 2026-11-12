@@ -8,14 +8,14 @@ export type DetailsErrors = Partial<Record<DetailsField, string>>;
 
 /** Rótulo curto de cada campo, usado no "Falta arrumar". */
 export const DETAILS_LABELS: Record<DetailsField, string> = {
-  name: "Nome",
+  name: "nome",
   phone: "WhatsApp",
-  email: "E-mail",
+  email: "e-mail",
   cep: "CEP",
-  street: "Rua",
-  number: "Número",
-  neighborhood: "Bairro",
-  city: "Cidade",
+  street: "rua",
+  number: "número",
+  neighborhood: "bairro",
+  city: "cidade",
   state: "UF",
 };
 
@@ -60,8 +60,8 @@ export function validateDetails(state: AttendanceState): DetailsErrors {
   return { ...contactErrors(state.contact), ...addressErrors(state.delivery) };
 }
 
-/** Texto do aviso acima do botão: "Falta arrumar: Nome, WhatsApp…". */
+/** Texto do aviso acima do botão: "Falta arrumar: nome, WhatsApp…". */
 export function missingSummary(errors: DetailsErrors): string {
   const fields = (Object.keys(DETAILS_LABELS) as DetailsField[]).filter((field) => errors[field]);
-  return fields.length ? `Falta arrumar: ${fields.map((field) => DETAILS_LABELS[field]).join(", ")}` : "";
+  return fields.length ? `Falta arrumar: ${fields.map((field) => DETAILS_LABELS[field]).join(", ")}.` : "";
 }

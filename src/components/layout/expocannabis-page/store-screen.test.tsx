@@ -172,4 +172,41 @@ describe("StoreScreen", () => {
     await user.type(screen.getByRole("searchbox", { name: "Buscar produtos" }), "xyz");
     expect(screen.getByText("Nada encontrado. Tenta outro nome?")).toBeInTheDocument();
   });
+  it("kit entra como linha do pedido com contador e lixeira", async () => {
+    const user = userEvent.setup();
+    renderStore();
+    await openCategory(user, "Sedas");
+    await user.click(screen.getByRole("button", { name: "Colocar 10 de Avulso no pedido" }));
+    await user.click(screen.getByRole("button", { name: "Fechar aviso" }));
+    await user.click(screen.getByRole("button", { name: /Ver pedido/ }));
+    await user.click(screen.getByRole("button", { name: "Adicionar kit" }));
+
+    expect(screen.getByText("Kit de Sedas Premium (4 displays)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Colocar 1 kit" }));
+    expect(screen.getByRole("button", { name: "Tirar 1 kit" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remover Kit de Sedas Premium do pedido" }));
+    expect(screen.queryByText("Kit de Sedas Premium (4 displays)")).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Desfazer remoção" })).toHaveTextContent("Kit de Sedas Premium saiu do pedido.");
+  }, 15_000);
+
+  it("banner só no Início e a busca desativa a categoria", async () => {
+    const user = userEvent.setup();
+    renderStore();
+    expect(screen.getByRole("region", { name: "Campanha ExpoDay" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Início" })).toHaveAttribute("aria-current", "true");
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar produtos" }), "pink");
+    expect(screen.queryByRole("region", { name: "Campanha ExpoDay" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Início" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByText("1 produto")).toBeInTheDocument();
+  });
+
+  it("Ver tudo abre a categoria da vitrine", async () => {
+    const user = userEvent.setup();
+    renderStore();
+
+    await user.click(screen.getAllByRole("button", { name: "Ver tudo" })[1]);
+    expect(screen.getByRole("heading", { name: "Linha Premium" })).toBeInTheDocument();
+  });
 });

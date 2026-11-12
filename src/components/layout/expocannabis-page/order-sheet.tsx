@@ -1,46 +1,53 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 
+import { BaseModal } from "@/components/ui/base-modal";
+import { EXPO_SCOPE_CLASS } from "@/features/expocannabis/fonts";
+import type { EventContext } from "@/features/expocannabis/types/context";
 import type { Cart } from "@/features/expocannabis/utils/cart";
 import { formatCents, maxQty } from "@/features/expocannabis/utils/cart";
-import type { EventContext } from "@/features/expocannabis/types/context";
 import type { PricingPreview } from "@/features/expocannabis/utils/pricing-preview";
 
 import { KitCard } from "./kit-card";
-import { LevelBar } from "./level-bar";
+import { LevelCard } from "./level-card";
 import { OrderLine } from "./order-line";
 
 type OrderSheetProps = {
   open: boolean;
+  landscape: boolean;
   context: EventContext;
   preview: PricingPreview;
   cart: Cart;
+  undo: ReactNode;
   onClose: () => void;
   onLineChange: (productId: number, qty: number) => void;
   onRemove: (productId: number) => void;
   onKitsChange: (kits: number) => void;
+  onRemoveKit: () => void;
   onCheckout: () => void;
 };
 
-const SHEET_OPEN =
-  "expo-sheet fixed inset-x-0 bottom-0 z-30 flex h-[88dvh] flex-col rounded-t-xl border-t-[3px] border-[#231F20] bg-white min-[1024px]:static min-[1024px]:h-auto min-[1024px]:w-[360px] min-[1024px]:rounded-none min-[1024px]:border-l-2 min-[1024px]:border-t-0";
-const SHEET_PANEL = "hidden min-[1024px]:flex min-[1024px]:w-[360px] min-[1024px]:flex-col min-[1024px]:border-l-2 min-[1024px]:border-[#E4E4E7] bg-white";
+type OrderContentProps = Omit<OrderSheetProps, "open" | "landscape"> & { sheet: boolean; titleRef?: RefObject<HTMLHeadingElement | null> };
 
-function SummaryRow({ label, value, strong = false }: Readonly<{ label: string; value: string; strong?: boolean }>) {
+const KIT_MAX = 3;
+
+function SummaryRow({ label, value, muted = false }: Readonly<{ label: string; value: string; muted?: boolean }>) {
+  const weight = muted ? "font-semibold" : "font-bold";
   return (
-    <div className={`flex justify-between ${strong ? "text-xl font-extrabold" : "text-base font-semibold"}`}>
-      <span>{label}</span>
+    <div className={`flex justify-between text-sm ${weight}`}>
+      <span className={muted ? "text-[#52525b]" : ""}>{label}</span>
       <span>{value}</span>
     </div>
   );
 }
 
-function OrderLines({ context, preview, onLineChange, onRemove }: Readonly<Pick<OrderSheetProps, "context" | "preview" | "onLineChange" | "onRemove">>) {
+function OrderLines({ context, preview, cart, onLineChange, onRemove, onKitsChange, onRemoveKit }: Readonly<OrderContentProps>) {
   const products = new Map(context.products.map((product) => [product.id, product]));
+  const kitThumb = products.get(context.kit.productIds[context.kit.productIds.length - 1])?.imageUrl ?? "/images/expocannabis/kit-sedas-premium.png";
 
-  if (preview.lines.length === 0) {
-    return <p className="py-6 text-base text-[#52525B]">Seu pedido está vazio. Toque no + de um produto.</p>;
+  if (preview.lines.length === 0 && cart.kits === 0) {
+    return <p className="py-6 text-[15px] font-semibold text-[#52525B]">Seu pedido está vazio. Toque no + de um produto.</p>;
   }
 
   return (
@@ -61,81 +68,102 @@ function OrderLines({ context, preview, onLineChange, onRemove }: Readonly<Pick<
           />
         );
       })}
+      {cart.kits > 0 ? (
+        <OrderLine
+          name="Kit de Sedas Premium (4 displays)"
+          imageUrl={kitThumb}
+          qty={cart.kits}
+          unitCents={context.kit.unitCents}
+          max={KIT_MAX}
+          minusLabel="Tirar 1 kit"
+          plusLabel="Colocar 1 kit"
+          removeLabel="Remover Kit de Sedas Premium do pedido"
+          onChange={onKitsChange}
+          onRemove={onRemoveKit}
+        />
+      ) : null}
     </ul>
   );
 }
 
-const LANDSCAPE = "(min-width: 1024px)";
-
-function subscribeLandscape(onChange: () => void): () => void {
-  const query = window.matchMedia(LANDSCAPE);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function isLandscape(): boolean {
-  return window.matchMedia(LANDSCAPE).matches;
-}
-
-function serverLandscape(): boolean {
-  return false;
-}
-
-/** Pedido: folha que sobe no retrato e painel fixo de 360 px na paisagem. */
-export function OrderSheet(props: Readonly<OrderSheetProps>) {
-  const { open, context, preview, cart, onClose, onKitsChange, onCheckout } = props;
-  const landscape = useSyncExternalStore(subscribeLandscape, isLandscape, serverLandscape);
-
-  if (!open && !landscape) return null;
-
+function OrderSummary({ preview, onCheckout }: Readonly<Pick<OrderContentProps, "preview" | "onCheckout">>) {
   const gift = preview.level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un.";
 
   return (
-    <aside
-      aria-labelledby="expo-order-title"
-      role={open ? "dialog" : undefined}
-      aria-modal={open ? true : undefined}
-      className={open ? SHEET_OPEN : SHEET_PANEL}
-    >
-      <div className="flex items-center justify-between border-b-2 border-[#E4E4E7] px-6 py-4">
-        <h2 id="expo-order-title" className="text-[21px] font-extrabold">
+    <div className="flex flex-none flex-col gap-1.5 border-t border-[#E4E4E7] px-6 pb-5 pt-3">
+      <SummaryRow label="Subtotal" value={formatCents(preview.itemsCents + preview.discountCents)} muted />
+      <SummaryRow label={`Desconto do nível (${preview.level.pctBp / 100}%)`} value={`− ${formatCents(preview.discountCents)}`} />
+      <SummaryRow label="Brinde" value={gift} muted />
+      <div className="mt-1 flex items-baseline justify-between">
+        <span className="text-base font-extrabold">Total</span>
+        <span className="text-2xl font-extrabold">{formatCents(preview.itemsCents)}</span>
+      </div>
+      <button
+        type="button"
+        disabled={preview.units === 0}
+        onClick={onCheckout}
+        className="mt-2 min-h-15 w-full rounded-lg bg-brand-yellow text-lg font-extrabold transition-transform duration-120 active:scale-95 disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#71717a] motion-reduce:transition-none"
+      >
+        Fechar pedido
+      </button>
+    </div>
+  );
+}
+
+function OrderContent(props: Readonly<OrderContentProps>) {
+  const { context, preview, cart, undo, sheet, titleRef, onClose, onKitsChange } = props;
+
+  return (
+    <>
+      <div className="flex flex-none items-center justify-between px-6 pb-3 pt-5">
+        <h2 id="expo-order-title" ref={titleRef} tabIndex={-1} className="text-[22px] font-extrabold outline-none">
           Seu pedido
         </h2>
-        {open ? (
-          <button type="button" onClick={onClose} className="h-11 px-3 text-base font-bold min-[1024px]:hidden">
+        {sheet ? (
+          <button type="button" onClick={onClose} className="min-h-11 px-1 text-[15px] font-bold underline underline-offset-3">
             Fechar
           </button>
         ) : null}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-        <p className="text-base font-extrabold">{`Nível ${preview.level.name} · ${preview.level.pctBp / 100}% off em tudo`}</p>
-        <div className="mt-2">
-          <LevelBar levels={context.levels} units={preview.units} />
-        </div>
+      <LevelCard levels={context.levels} units={preview.units} />
+      <div className="relative min-h-0 flex-1 overflow-y-auto px-6 pt-1">
         <OrderLines {...props} />
-        <div className="mt-4">
-          <KitCard kit={context.kit} units={preview.units} kits={cart.kits} onAdd={() => onKitsChange(cart.kits + 1)} />
-          {cart.kits > 0 ? (
-            <button type="button" onClick={() => onKitsChange(cart.kits - 1)} className="mt-2 h-11 w-full rounded-md border-2 border-[#231F20] text-sm font-bold">
-              Tirar 1 kit
-            </button>
-          ) : null}
+        <div className="mb-2.5 mt-4.5">
+          <KitCard kit={context.kit} units={preview.units} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
         </div>
       </div>
-      <div className="grid gap-2 border-t-2 border-[#E4E4E7] px-6 py-4">
-        <SummaryRow label="Subtotal" value={formatCents(preview.itemsCents + preview.discountCents)} />
-        <SummaryRow label={`Desconto do nível (${preview.level.pctBp / 100}%)`} value={`− ${formatCents(preview.discountCents)}`} />
-        <SummaryRow label="Brinde" value={gift} />
-        <SummaryRow label="Total" value={formatCents(preview.itemsCents)} strong />
-        <button
-          type="button"
-          disabled={preview.units === 0}
-          onClick={onCheckout}
-          className="mt-2 h-[60px] rounded-md bg-brand-yellow text-lg font-extrabold shadow-[0_5px_0_#231F20] disabled:bg-[#E4E4E7] disabled:shadow-none"
-        >
-          Fechar pedido
-        </button>
+      {undo ? <div className="flex-none px-6 pt-2">{undo}</div> : null}
+      <OrderSummary preview={preview} onCheckout={props.onCheckout} />
+    </>
+  );
+}
+
+/** Pedido: folha de 88% que sobe no retrato (com fundo escurecido) e painel fixo de 360 px na paisagem. */
+export function OrderSheet(props: Readonly<OrderSheetProps>) {
+  const { open, landscape, ...content } = props;
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  if (landscape) {
+    return (
+      <aside aria-labelledby="expo-order-title" className="flex w-90 flex-none flex-col border-l border-[#E4E4E7] bg-white">
+        <OrderContent {...content} sheet={false} />
+      </aside>
+    );
+  }
+
+  return (
+    <BaseModal
+      open={open}
+      onClose={content.onClose}
+      initialFocusRef={titleRef}
+      ariaLabelledBy="expo-order-title"
+      containerClassName={`${EXPO_SCOPE_CLASS} items-end`}
+      contentClassName="h-[88dvh]"
+      overlayClassName="bg-black/45 expo-dim"
+    >
+      <div className="expo-sheet flex h-full flex-col rounded-t-xl bg-white shadow-[0_-1px_0_#E4E4E7]">
+        <OrderContent {...content} sheet titleRef={titleRef} />
       </div>
-    </aside>
+    </BaseModal>
   );
 }

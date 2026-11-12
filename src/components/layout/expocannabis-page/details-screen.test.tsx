@@ -50,9 +50,9 @@ function Harness() {
 }
 
 async function fillValid(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText("Nome de quem compra"), "Maria da Silva");
+  await user.type(screen.getByLabelText("Nome do responsável"), "Maria da Silva");
   await user.type(screen.getByLabelText("WhatsApp"), "11987654321");
-  await user.type(screen.getByLabelText("E-mail"), "maria@loja.com.br");
+  await user.type(screen.getByLabelText("E-mail para a nota"), "maria@loja.com.br");
   await user.type(screen.getByLabelText("Número"), "100");
   await user.type(screen.getByLabelText("Bairro"), "Sé");
 }
@@ -63,7 +63,7 @@ describe("DetailsScreen", () => {
     render(<Harness />);
 
     await user.type(screen.getByLabelText("WhatsApp"), "987654321");
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
     expect(screen.getByText("WhatsApp com DDD: 10 ou 11 números.")).toBeInTheDocument();
   });
@@ -72,8 +72,8 @@ describe("DetailsScreen", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    await user.type(screen.getByLabelText("E-mail"), "maria@");
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("E-mail para a nota"), "maria@");
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
     expect(screen.getByText("E-mail no formato nome@dominio.com.")).toBeInTheDocument();
   });
@@ -82,10 +82,10 @@ describe("DetailsScreen", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Falta arrumar: Nome, WhatsApp, E-mail, Número, Bairro");
-    expect(screen.getByRole("button", { name: "Continuar" })).toBeEnabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Falta arrumar: nome, WhatsApp, e-mail, número, bairro.");
+    expect(screen.getByRole("button", { name: "Continuar para pagamento" })).toBeEnabled();
   });
 
   it("caminho feliz cadastra, cota e segue com o total do servidor", async () => {
@@ -107,7 +107,7 @@ describe("DetailsScreen", () => {
     render(<Harness />);
 
     await fillValid(user);
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
     expect(await screen.findByLabelText("tela")).toHaveTextContent("4");
     expect(calls).toEqual(["buyers", "quote"]);
@@ -126,7 +126,7 @@ describe("DetailsScreen", () => {
     render(<Harness />);
 
     await fillValid(user);
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
     expect(await screen.findByText("Não conseguimos calcular o frete pra esse CEP.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe("DetailsScreen", () => {
     render(<Harness />);
 
     await fillValid(user);
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
 
     expect(await screen.findByLabelText("tela")).toHaveTextContent("2");
   });
@@ -169,7 +169,7 @@ describe("DetailsScreen", () => {
     render(<Harness />);
 
     await fillValid(user);
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Continuar para pagamento" }));
     await vi.waitFor(() => expect(quoteStarted).toBe(true));
     await user.click(screen.getByRole("button", { name: "Trocar loja" }));
     expect(screen.getByLabelText("tela")).toHaveTextContent("1");
@@ -187,7 +187,7 @@ describe("DetailsScreen", () => {
 
     await user.click(screen.getByRole("radio", { name: /Entregar em outro endereço/ }));
     await user.type(screen.getByLabelText("CEP"), "0100");
-    await user.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    await user.click(screen.getByRole("button", { name: "Buscar pelo CEP" }));
 
     expect(screen.getByText("O CEP tem 8 números. Confere aí?")).toBeInTheDocument();
   });
