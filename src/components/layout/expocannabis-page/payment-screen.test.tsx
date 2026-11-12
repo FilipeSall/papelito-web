@@ -112,6 +112,29 @@ describe("PaymentScreen", () => {
     expect(within(screen.getByRole("radiogroup", { name: "Maquininha" })).getByRole("radio", { name: /Maquininha final 2623/ })).toHaveAttribute("aria-checked", "true");
   });
 
+  it("não deixa voltar aos dados com a cobrança em andamento ou sem desfecho", async () => {
+    let answer: () => void = () => undefined;
+    server.use(
+      http.post("*/api/expocannabis/orders", async () => {
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return HttpResponse.json({ code: "papelito_event_terminal_unavailable", message: "A maquininha não respondeu." }, { status: 503 });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    expect(screen.getByRole("button", { name: /Voltar aos dados/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: CHARGE }));
+
+    expect(screen.queryByRole("button", { name: /Voltar aos dados/ })).not.toBeInTheDocument();
+    act(() => answer());
+    expect(await screen.findByText("A maquininha não respondeu.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Voltar aos dados/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "chave" }).textContent).not.toBe("");
+  });
+
   it("dois cliques em Cobrar criam uma cobrança só", async () => {
     let creates = 0;
     server.use(

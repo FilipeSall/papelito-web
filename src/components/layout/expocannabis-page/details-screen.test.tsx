@@ -181,6 +181,41 @@ describe("DetailsScreen", () => {
     expect(screen.getByLabelText("total cotado")).toHaveTextContent("");
   });
 
+  it("resposta atrasada de um CEP antigo não sobrescreve o endereço do CEP atual", async () => {
+    const answers = new Map<string, () => void>();
+    const VIACEP: Record<string, Record<string, string>> = {
+      "01001000": { logradouro: "Praça da Sé", bairro: "Sé", localidade: "São Paulo", uf: "SP" },
+      "20040020": { logradouro: "Avenida Rio Branco", bairro: "Centro", localidade: "Rio de Janeiro", uf: "RJ" },
+    };
+    server.use(
+      http.get("https://viacep.com.br/ws/:cep/json/", async ({ params }) => {
+        const cep = String(params.cep);
+        await new Promise<void>((resolve) => answers.set(cep, resolve));
+        return HttpResponse.json(VIACEP[cep]);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(screen.getByRole("radio", { name: /Entregar em outro endereço/ }));
+    const cep = screen.getByLabelText("CEP");
+    await user.clear(cep);
+    await user.type(cep, "01001000");
+    await user.click(screen.getByRole("button", { name: "Buscar pelo CEP" }));
+    await user.clear(cep);
+    await user.type(cep, "20040020");
+    await user.click(screen.getByRole("button", { name: "Buscar pelo CEP" }));
+
+    await vi.waitFor(() => expect(answers.size).toBe(2));
+    answers.get("20040020")?.();
+    await vi.waitFor(() => expect(screen.getByLabelText("Rua")).toHaveValue("Avenida Rio Branco"));
+    answers.get("01001000")?.();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(screen.getByLabelText("Rua")).toHaveValue("Avenida Rio Branco");
+    expect(screen.getByLabelText("Cidade")).toHaveValue("Rio de Janeiro");
+  });
+
   it("outro endereço exige CEP com 8 números", async () => {
     const user = userEvent.setup();
     render(<Harness />);

@@ -199,7 +199,8 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
 
   const total = formatCents(quote.totalCents);
   const choosing = order === null || ["failed", "expired", "canceled"].includes(order.state);
-  const back = order === null ? { label: "Voltar aos dados", onBack: () => dispatch({ type: "go", screen: 3 }) } : undefined;
+  const noChargeAttempted = order === null && !busy && state.checkoutAttemptId === null;
+  const back = noChargeAttempted ? { label: "Voltar aos dados", onBack: () => dispatch({ type: "go", screen: 3 }) } : undefined;
 
   const footer = order ? (
     <>

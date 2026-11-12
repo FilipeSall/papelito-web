@@ -5,10 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { expocannabisClient } from "@/features/expocannabis/client/expocannabis-client";
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
-import type { BuyerLookup } from "@/features/expocannabis/types/order";
 import type { EventQuote } from "@/features/expocannabis/types/quote";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { formatPhone } from "@/features/expocannabis/utils/details-validation";
+import { formatCep } from "@/lib/validation/brazilian-documents";
 
 import { CheckoutStepper } from "./checkout-stepper";
 
@@ -54,11 +54,11 @@ function savingsLabel(quote: EventQuote): string {
   return parts.join(" + ");
 }
 
-function deliveryAddress(state: AttendanceState, buyer: BuyerLookup | null): string {
-  const delivery = state.delivery;
-  const source = delivery.mode === "other" ? delivery : buyer?.address;
-  if (!source) return "No endereço escolhido.";
-  const address = [source.street, source.number, source.neighborhood, source.city, source.state].filter(Boolean).join(", ");
+function deliveryAddress(delivery: AttendanceState["delivery"]): string {
+  const street = [delivery.street, delivery.number].filter(Boolean).join(", ");
+  const cityState = [delivery.city, delivery.state].filter(Boolean).join("/");
+  const cep = delivery.cep ? `CEP ${formatCep(delivery.cep)}` : "";
+  const address = [street, delivery.complement, delivery.neighborhood, cityState, cep].filter(Boolean).join(" · ");
   return address ? `${address}.` : "No endereço escolhido.";
 }
 
@@ -72,7 +72,7 @@ function buildSteps(state: AttendanceState, gift: boolean): TimelineStep[] {
     title: "Nota fiscal e resumo do pedido",
     description: `No WhatsApp ${formatPhone(state.contact.phone)} e no e-mail ${state.contact.email}.`,
   });
-  steps.push({ when: "Até 7 dias úteis", title: "Entrega na loja", description: deliveryAddress(state, state.buyer) });
+  steps.push({ when: "Até 7 dias úteis", title: "Entrega na loja", description: deliveryAddress(state.delivery) });
   return steps;
 }
 

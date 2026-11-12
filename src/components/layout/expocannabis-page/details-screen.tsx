@@ -95,6 +95,7 @@ function OtherAddress({ state, dispatch, errors }: Readonly<AddressProps>) {
   const [status, setStatus] = useState<CepStatus>("idle");
   const [flash, setFlash] = useState(0);
   const [shakeKey, setShakeKey] = useState(0);
+  const latestLookup = useRef(0);
   const { delivery } = state;
   const setField = (field: keyof AttendanceState["delivery"]) => (value: string) => dispatch({ type: "set-delivery", delivery: { [field]: value } });
   const failCep = (message: string) => {
@@ -103,6 +104,7 @@ function OtherAddress({ state, dispatch, errors }: Readonly<AddressProps>) {
   };
 
   const changeCep = (value: string) => {
+    latestLookup.current += 1;
     setCepError("");
     setStatus("idle");
     setField("cep")(onlyDigits(value).slice(0, 8));
@@ -116,7 +118,10 @@ function OtherAddress({ state, dispatch, errors }: Readonly<AddressProps>) {
     }
     setCepError("");
     setStatus("searching");
+    latestLookup.current += 1;
+    const lookup = latestLookup.current;
     const result = await lookupCepDetailed(digits);
+    if (lookup !== latestLookup.current) return;
     if (result.status !== "ok") {
       setStatus("idle");
       failCep("Não achamos esse CEP. Preenche o endereço à mão?");

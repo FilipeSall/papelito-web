@@ -38,6 +38,8 @@ const PAID = {
   order: { orderId: 501, orderNumber: "501", state: "paid", detail: "", totalCents: 151445, method: "pix" },
 };
 
+const PAID_DELIVERY = initialAttendance().delivery;
+
 describe("ConfirmedScreen", () => {
   beforeEach(() => {
     window.localStorage.setItem(ATTENDANCE_STORAGE_KEY, JSON.stringify(PAID));
@@ -56,6 +58,24 @@ describe("ConfirmedScreen", () => {
       "href",
       expect.stringContaining("https://wa.me/5511987654321?text="),
     );
+  });
+
+  it.each(["cnpj", "other"] as const)("mostra o endereço de entrega completo no modo %s", (mode) => {
+    const delivery = {
+      ...PAID_DELIVERY,
+      mode,
+      cep: "01001000",
+      street: "Praça da Sé",
+      number: "100",
+      complement: "Sala 2",
+      neighborhood: "Sé",
+      city: "São Paulo",
+      state: "SP",
+    };
+    window.localStorage.setItem(ATTENDANCE_STORAGE_KEY, JSON.stringify({ ...PAID, delivery }));
+    render(<ExpocannabisApp context={buildEventContext()} />);
+
+    expect(screen.getByText("Praça da Sé, 100 · Sala 2 · Sé · São Paulo/SP · CEP 01001-000.")).toBeInTheDocument();
   });
 
   it("Quero participar grava o lead", async () => {
