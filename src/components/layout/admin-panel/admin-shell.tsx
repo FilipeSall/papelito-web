@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADMIN_NAV_ITEMS } from "./admin-config";
+import { ExpoEventStrip } from "./expo-event-strip";
 
 function getCurrentNavItem(pathname: string) {
   const exactMatch = ADMIN_NAV_ITEMS.find((item) => item.href === pathname);
@@ -52,6 +53,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           backgroundSize: "28px 28px, 28px 28px",
         }}
       />
+
+      <ExpoEventStrip />
 
       <div className="relative flex min-h-0 flex-1">
         <aside className="hidden h-full w-73 shrink-0 flex-col border-r border-white/10 bg-brand-dark text-[#f5f1e8] lg:flex">
