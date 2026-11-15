@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, Gift, Images, Package, type LucideIcon } from "lucide-react";
+import { Boxes, Gift, Images, Package, Ticket, type LucideIcon } from "lucide-react";
 
 import { FOCUS_RING } from "../../../primitives";
 
@@ -11,6 +11,8 @@ const SEGMENTS: Array<{ icon: LucideIcon; key: ProductsTab; label: string }> = [
   { icon: Gift, key: "brindes", label: "Brindes" },
   { icon: Images, key: "assets", label: "Assets" },
 ];
+
+const EXPODAY_SEGMENT = { icon: Ticket, key: "expoday", label: "ExpoDay" } as const;
 
 function Segment({
   href,
@@ -44,12 +46,17 @@ function Segment({
 /**
  * As responsabilidades do catálogo no mesmo peso: o que se vende, o que se agrupa, o que se dá
  * junto e o que se mostra. A gramática é a mesma dos segmentos de contas, para as duas áreas se
- * lerem como um painel só.
+ * lerem como um painel só. `showExpoday` acrescenta a aba temporária de preços do estande.
  */
-export function ProductsSegments({ activeTab }: { activeTab: ProductsTab }) {
+export function ProductsSegments({
+  activeTab,
+  showExpoday = false,
+}: Readonly<{ activeTab: ProductsTab; showExpoday?: boolean }>) {
+  const segments = showExpoday ? [...SEGMENTS, EXPODAY_SEGMENT] : SEGMENTS;
+
   return (
     <nav aria-label="Áreas do catálogo" className="flex flex-wrap items-center gap-2">
-      {SEGMENTS.map((segment) => (
+      {segments.map((segment) => (
         <Segment
           href={productsHref(segment.key)}
           icon={segment.icon}

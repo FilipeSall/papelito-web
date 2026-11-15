@@ -7,6 +7,8 @@ import { getAdminMerchandiseSnapshot } from "@/lib/server/admin-merchandise";
 import { getAdminFlashSaleProducts } from "@/lib/server/admin-flash-sale";
 import { getAdminBenefitGroupsSnapshot } from "@/lib/server/admin-product-benefits";
 import { getAdminTaxonomySnapshot } from "@/lib/server/admin-taxonomy";
+import { getAdminExpodayPrices } from "@/lib/server/admin-expoday-prices";
+import { expoEventPhase } from "@/features/expocannabis/utils/event-phase";
 import { getAdminFreeShippingThreshold } from "@/features/shipping/services/get-free-shipping-threshold";
 import { getHomeFlashSale } from "@/features/catalog/services/get-home-flash-sale";
 import { buildRichTextContext } from "@/features/rich-text";
@@ -22,6 +24,7 @@ import { MerchandiseManager } from "./products/merchandise/merchandise-manager";
 import { UpcomingCardLayout } from "./products/assets/upcoming-card-layout";
 import { ProductBenefitsSection } from "./assets/product-benefits/product-benefits-section";
 import { ProductsSegments } from "./products/components/products-segments";
+import { ExpodayPricesManager } from "./products/expoday/expoday-prices-manager";
 import { parseProductsTab, type ProductsTab } from "./products/products-config";
 
 const HEADINGS: Record<ProductsTab, { description: string; title: string }> = {
@@ -29,6 +32,11 @@ const HEADINGS: Record<ProductsTab, { description: string; title: string }> = {
     description:
       "Os elementos visuais que acompanham o produto na vitrine: o bloco de benefícios exibido abaixo dele e, em breve, o layout do próprio card. Banners, logos e imagens do site continuam em Assets, no menu principal.",
     title: "Assets do produto",
+  },
+  expoday: {
+    description:
+      "Preço do estande da ExpoCannabis por produto e desconto do Kit Premium. Campo vazio usa o preço do site; nada aqui muda o site. Tudo o que o estande vende vai para a Cifal.",
+    title: "ExpoDay",
   },
   brindes: {
     description:
@@ -53,8 +61,22 @@ export async function ProductsContent({
   searchParams?: AdminSalesPageSearchParams;
 }) {
   const session = await getServerSession(authOptions);
-  const activeTab = parseProductsTab(firstParam(searchParams?.tab));
+  const showExpoday = expoEventPhase(new Date()) !== "hidden";
+  const requestedTab = parseProductsTab(firstParam(searchParams?.tab));
+  const activeTab = requestedTab === "expoday" && !showExpoday ? "products" : requestedTab;
   const heading = HEADINGS[activeTab];
+
+  if (activeTab === "expoday") {
+    const prices = await getAdminExpodayPrices(session?.accessToken);
+
+    return (
+      <div className="space-y-5">
+        <SectionHeading description={heading.description} title={heading.title} />
+        <ProductsSegments activeTab={activeTab} showExpoday />
+        <ExpodayPricesManager initialSnapshot={prices} />
+      </div>
+    );
+  }
 
   const kits =
     activeTab === "assets" || activeTab === "brindes"
@@ -117,7 +139,7 @@ export async function ProductsContent({
     <div className="space-y-5">
       <SectionHeading description={heading.description} title={heading.title} />
 
-      <ProductsSegments activeTab={activeTab} />
+      <ProductsSegments activeTab={activeTab} showExpoday={showExpoday} />
 
       {activeTab === "kits" ? (
         <KitsManager
