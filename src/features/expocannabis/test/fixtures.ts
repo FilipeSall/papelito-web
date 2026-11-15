@@ -35,7 +35,7 @@ export function buildEventContext(overrides: Partial<EventContext> = {}): EventC
       { key: "pdv_perfeito", name: "PDV Perfeito", minUnits: 20, pctBp: 800 },
       { key: "lenda", name: "Lenda", minUnits: 40, pctBp: 1200 },
     ],
-    kit: { productIds: KIT_PRODUCT_IDS, unitCents: 65595, fullUnitCents: 77170, available: true },
+    kit: { productIds: KIT_PRODUCT_IDS, unitCents: 65595, fullUnitCents: 77170, available: true, pctOff: 15 },
     categories: [{ slug: "sedas", name: "Sedas" }],
     products: [
       product(101, "Insane", 18020),

@@ -1,7 +1,7 @@
 import type { EventContext, EventLevel } from "../types/context";
+import { DEFAULT_KIT_PCT_OFF } from "./kit-discount";
 
 const KIT_UNITS = 4;
-const KIT_PCT_KEPT = 85;
 const BASIS_POINTS = 10_000;
 
 /** Linha avulsa da prévia, com o desconto do nível. */
@@ -27,9 +27,10 @@ export type PricingPreview = {
   kitSavingsCents: number;
 };
 
-/** Preço do kit: os 4 produtos com −15%, cada um arredondado no centavo. */
-export function kitUnitCents(componentPriceCents: readonly number[]): number {
-  return componentPriceCents.reduce((sum, price) => sum + Math.floor((price * KIT_PCT_KEPT + 50) / 100), 0);
+/** Preço do kit: os 4 produtos com o desconto do kit (−15% por padrão), cada um arredondado no centavo. */
+export function kitUnitCents(componentPriceCents: readonly number[], pctOff: number = DEFAULT_KIT_PCT_OFF): number {
+  const kept = 100 - pctOff;
+  return componentPriceCents.reduce((sum, price) => sum + Math.floor((price * kept + 50) / 100), 0);
 }
 
 /** Unidades do pedido: displays mais 4 por kit. */

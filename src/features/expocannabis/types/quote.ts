@@ -19,6 +19,8 @@ export type EventQuote = {
   itemsCents: number;
   discountCents: number;
   kitSavingsCents: number;
+  /** Desconto do kit com que esta cotação foi calculada. */
+  kitPctOff: number;
   shipping: { optionKey: string; name: string; priceCents: number; deliveryTime: number | null };
   totalCents: number;
   quoteFingerprint: string;

@@ -1,4 +1,5 @@
 import type { EventQuote, QuoteLine } from "../types/quote";
+import { readKitPctOff } from "./kit-discount";
 import { parseLevel } from "./parse-context";
 import { every, hasNull, int, isRecord, str } from "./parse-helpers";
 
@@ -47,6 +48,7 @@ export function parseQuote(data: unknown): EventQuote | null {
     itemsCents: int(data.itemsCents),
     discountCents: int(data.discountCents),
     kitSavingsCents: int(data.kitSavingsCents),
+    kitPctOff: readKitPctOff(data.kitPctOff),
     shipping: parseShipping(data.shipping),
     totalCents: int(data.totalCents),
     quoteFingerprint: fingerprint ? fingerprint : null,

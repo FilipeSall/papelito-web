@@ -1,4 +1,5 @@
 import type { EventContext, EventKit, EventLevel, EventLevelKey, EventProduct, EventTerminal } from "../types/context";
+import { readKitPctOff } from "./kit-discount";
 import { every, hasNull, int, ints, isRecord, str } from "./parse-helpers";
 
 const LEVEL_KEYS: readonly EventLevelKey[] = ["lojista", "parceiro", "pdv_perfeito", "lenda"];
@@ -53,6 +54,7 @@ function parseKit(value: unknown): EventKit | null {
     unitCents: int(value.unitCents),
     fullUnitCents: int(value.fullUnitCents),
     available: value.available,
+    pctOff: readKitPctOff(value.pctOff),
   };
   return hasNull(Object.values(kit)) ? null : (kit as EventKit);
 }

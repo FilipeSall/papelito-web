@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import type { EventKit } from "@/features/expocannabis/types/context";
 import { formatCents } from "@/features/expocannabis/utils/cart";
+import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 
 type KitCardProps = {
   kit: EventKit;
@@ -20,20 +21,25 @@ function kitButtonLabel(locked: boolean, kits: number): string {
   return kits > 0 ? "+1 kit" : "Adicionar kit";
 }
 
-function KitOverlay({ missing, units }: Readonly<{ missing: number; units: number }>) {
+function KitOverlay({ discount, missing, units }: Readonly<{ discount: string; missing: number; units: number }>) {
   const progress = Math.min(1, units / KIT_MIN_UNITS) * 100;
-  const text = `${missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`} no pedido pra liberar o −15%`;
+  const text = `${missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-[#231F20]/78 p-3 text-center text-white">
       <Lock aria-hidden size={28} strokeWidth={2.2} className="text-brand-yellow" />
-      <p className="text-base font-extrabold">Desconto do kit ainda bloqueado</p>
+      <p className="text-base font-extrabold">{discount ? "Desconto do kit ainda bloqueado" : "Kit ainda bloqueado"}</p>
       <p className="text-sm font-semibold text-[#e4e4e7]">{text}</p>
       <div className="h-2 w-7/10 overflow-hidden rounded-sm bg-[#4a4446]">
         <div className="h-full bg-brand-yellow transition-[width] duration-350 ease-[ease] motion-reduce:transition-none" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
+}
+
+function priceText(kit: EventKit): string {
+  if (kit.unitCents >= kit.fullUnitCents) return formatCents(kit.unitCents);
+  return `De ${formatCents(kit.fullUnitCents)} por ${formatCents(kit.unitCents)}`;
 }
 
 function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "kit" | "kits" | "onAdd"> & { locked: boolean }>) {
@@ -47,7 +53,7 @@ function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "ki
           Kit de Sedas Premium
         </h3>
         <p className="mt-0.75 text-sm font-semibold text-[#52525B]">
-          {`De ${formatCents(kit.fullUnitCents)} por ${formatCents(kit.unitCents)}${locked ? " a partir de 10 unidades" : ""}`}
+          {`${priceText(kit)}${locked ? " a partir de 10 unidades" : ""}`}
         </p>
       </div>
       <button
@@ -62,9 +68,13 @@ function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "ki
   );
 }
 
-/** Kit de Sedas Premium: bloqueado abaixo de 10 unidades (tracejado), liberado com −15% (borda amarela), no máximo 3. */
+/**
+ * Kit de Sedas Premium: bloqueado abaixo de 10 unidades (tracejado), liberado com o desconto
+ * publicado pelo admin (borda amarela), no máximo 3. Com desconto 0% os textos não prometem desconto.
+ */
 export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
   const locked = units < KIT_MIN_UNITS;
+  const discount = kitDiscountLabel(kit.pctOff);
 
   if (!kit.available) {
     return (
@@ -86,10 +96,10 @@ export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
           <Image src="/images/expocannabis/kit-sedas-premium.png" alt="Kit de Sedas Premium: Insane, Insane Brown, Alfafa e Pink" fill sizes="320px" className="object-contain" />
         </div>
         {locked ? (
-          <KitOverlay missing={KIT_MIN_UNITS - units} units={units} />
+          <KitOverlay discount={discount} missing={KIT_MIN_UNITS - units} units={units} />
         ) : (
           <span className="expo-popin absolute left-2.5 top-2.5 rounded-sm bg-brand-yellow px-2 py-1 text-xs font-extrabold uppercase tracking-[0.06em]">
-            −15% liberado
+            {discount ? `${discount} liberado` : "Kit liberado"}
           </span>
         )}
       </div>

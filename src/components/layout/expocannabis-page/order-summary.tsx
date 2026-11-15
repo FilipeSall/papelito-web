@@ -1,6 +1,7 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import { formatCents } from "@/features/expocannabis/utils/cart";
+import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 import { previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 
 import { SectionLabel } from "./section-label";
@@ -23,8 +24,9 @@ function unitsLabel(units: number): string {
   return `${units} ${units === 1 ? "unidade" : "unidades"}`;
 }
 
-function kitLabel(kits: number): string {
-  return `Kit de Sedas Premium${kits > 1 ? ` ×${kits}` : ""} (−15%)`;
+function kitLabel(kits: number, pctOff: number): string {
+  const discount = kitDiscountLabel(pctOff);
+  return `Kit de Sedas Premium${kits > 1 ? ` ×${kits}` : ""}${discount ? ` (${discount})` : ""}`;
 }
 
 /** Resumo do pedido do checkout: da cotação do servidor quando há, da prévia antes dela. */
@@ -36,6 +38,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const items = quote?.itemsCents ?? preview.itemsCents;
   const discount = quote?.discountCents ?? preview.discountCents;
   const kit = quote?.kit ?? preview.kit;
+  const kitPctOff = quote?.kitPctOff ?? context.kit.pctOff;
   const pct = level.pctBp / 100;
   const frete = quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar";
 
@@ -46,7 +49,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
         <Row label={`${unitsLabel(units)} · nível ${level.name}`} value={pct > 0 ? `${pct}% off em tudo` : "sem desconto de nível"} />
         <Row label="Produtos" value={formatCents(items)} muted />
         {discount > 0 ? <Row label="Desconto do nível" value={`− ${formatCents(discount)}`} /> : null}
-        {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty)} value={formatCents(kit.totalCents)} muted /> : null}
+        {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty, kitPctOff)} value={formatCents(kit.totalCents)} muted /> : null}
         <Row label="Brinde" value={level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un."} muted />
         <Row label="Frete" value={frete} muted />
         <div className="mt-1 flex items-baseline justify-between border-t border-[#E4E4E7] pt-2.5">

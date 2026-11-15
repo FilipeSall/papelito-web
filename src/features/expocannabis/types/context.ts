@@ -24,12 +24,14 @@ export type EventProduct = {
   createdAt: string;
 };
 
-/** Kit Premium: os 4 produtos com −15%, calculado no servidor. */
+/** Kit Premium: os 4 produtos com o desconto do kit, calculado no servidor. */
 export type EventKit = {
   productIds: number[];
   unitCents: number;
   fullUnitCents: number;
   available: boolean;
+  /** Desconto publicado pelo admin, em porcentagem inteira; é ele que os textos do kit mostram. */
+  pctOff: number;
 };
 
 /** Maquininha do evento; a primeira da lista é a padrão. */
