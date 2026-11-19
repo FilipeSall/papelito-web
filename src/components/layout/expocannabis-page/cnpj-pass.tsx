@@ -3,6 +3,8 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { CNPJ_IDLE_MESSAGE, type CnpjMessage } from "@/features/expocannabis/utils/cnpj-messages";
 import { formatCnpj } from "@/lib/validation/brazilian-documents";
 
+import { Paper } from "./paper";
+
 type CnpjPassProps = {
   digits: string;
   message: CnpjMessage;
@@ -15,17 +17,13 @@ type CnpjPassProps = {
 };
 
 function messageColor(message: CnpjMessage): string {
-  if (message.error) return "text-[#B42318]";
-  return message === CNPJ_IDLE_MESSAGE ? "text-[#52525B]" : "text-[#231F20]";
-}
-
-function inputTone(error: boolean, found: boolean): string {
-  if (error) return "expo-shake border-[#B42318] bg-[#FFF1F0]";
-  return found ? "border-[#231F20] bg-white" : "border-[#231F20] bg-[#FFFBD6]";
+  if (message.error) return "text-expo-erro";
+  return message === CNPJ_IDLE_MESSAGE ? "text-expo-zinc" : "text-expo-noite";
 }
 
 /**
- * Credencial de lojista: tarja escura, campo do CNPJ com máscara, contador e mensagem de estado.
+ * Credencial de lojista em papel recortado: cabeçalho, campo do CNPJ com máscara, contador e
+ * mensagem de estado. O papel muda quando a loja aparece, porque o recorte do handoff é outro.
  * O teclado, o esqueleto da busca e a loja encontrada entram como filhos, dentro da credencial.
  */
 export function CnpjPass({ digits, message, shake, searching, found, onDigits, onSubmit, children }: Readonly<CnpjPassProps>) {
@@ -37,18 +35,18 @@ export function CnpjPass({ digits, message, shake, searching, found, onDigits, o
   };
 
   return (
-    <section aria-label="Credencial de lojista" className="expo-in-3 overflow-hidden rounded-md border-[3px] border-[#231F20] bg-white shadow-[10px_10px_0_#231F20]">
-      <div className="flex h-[50px] items-center justify-between bg-[#231F20] px-[22px]">
-        <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-brand-yellow">Credencial de lojista</p>
-        <span aria-hidden className="h-3 w-16 rounded-[3px] bg-brand-yellow" />
-        <p className="font-[family-name:var(--font-expo-marker)] text-xl text-brand-yellow">ExpoDay</p>
+    <section aria-label="Credencial de lojista" className="em-claro relative text-expo-ink">
+      <Paper src={found ? "/images/expocannabis/figma/papel-loja-identificada.svg" : "/images/expocannabis/figma/papel-credencial.svg"} />
+      <div className="relative flex h-12 items-center justify-between px-5.5">
+        <p className="text-[13px] font-extrabold uppercase tracking-[1.82px] text-expo-zinc">Credencial de lojista</p>
+        <p className="marker text-[20px] text-expo-zinc">ExpoDay</p>
       </div>
-      <div className="flex flex-col gap-3.5 px-[26px] pb-7 pt-6">
-        <div className="flex items-baseline justify-between">
-          <label htmlFor="expo-cnpj" className="text-[15px] font-extrabold uppercase tracking-[0.06em]">
+      <div className="relative flex flex-col gap-4 px-4 pb-6 pt-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <label htmlFor="expo-cnpj" className="text-[15px] font-extrabold uppercase tracking-[0.9px]">
             CNPJ da loja
           </label>
-          <p aria-hidden className="text-[15px] font-bold text-[#52525B]">{`${digits.length} de 14`}</p>
+          <span aria-hidden className="num text-sm font-bold text-expo-zinc">{`${digits.length} de 14`}</span>
         </div>
         <input
           id="expo-cnpj"
@@ -63,9 +61,11 @@ export function CnpjPass({ digits, message, shake, searching, found, onDigits, o
           readOnly={found}
           aria-invalid={message.error}
           aria-describedby="expo-cnpj-message"
-          className={`h-[84px] w-full rounded-md border-[3px] px-[22px] text-[40px] font-extrabold tracking-[0.04em] transition-colors duration-150 placeholder:text-[#6B6B70] motion-reduce:transition-none ${inputTone(message.error, found)}`}
+          className={`num h-21 w-full border-2 bg-white px-4 text-[24px] font-extrabold tracking-[1px] text-expo-ink outline-none placeholder:text-[#6b655f] sm:px-5.5 sm:text-[40px] sm:tracking-[1.6px] ${
+            message.error ? "expo-shake border-expo-erro" : "border-expo-ink"
+          }`}
         />
-        <div className="-mt-1 flex min-h-11 items-center">
+        <div className="flex min-h-11 items-center">
           <p id="expo-cnpj-message" aria-live="polite" className={`text-base font-bold ${messageColor(message)}`}>
             {message.error ? <span aria-hidden>⚠ </span> : null}
             {message.text}

@@ -1,9 +1,11 @@
-import { Trash2 } from "lucide-react";
+"use client";
+
 import Image from "next/image";
 
 import { formatCents } from "@/features/expocannabis/utils/cart";
 
 import { MiniCounter } from "./mini-counter";
+import { useJump } from "./motion";
 
 type OrderLineProps = {
   name: string;
@@ -18,32 +20,32 @@ type OrderLineProps = {
   onRemove: () => void;
 };
 
-/** Linha do pedido: miniatura, nome, "qty × preço", contador claro e lixeira de 44 px. Serve a produtos e ao kit. */
+/** Linha do pedido: miniatura que pula na mudança, nome, "qty × preço", contador e lixeira de 44 px. */
 export function OrderLine({ name, imageUrl, qty, unitCents, max, minusLabel, plusLabel, removeLabel, onChange, onRemove }: Readonly<OrderLineProps>) {
+  const thumb = useJump<HTMLSpanElement>(qty);
+
   return (
-    <li className="flex items-center gap-3 border-b border-[#F0F0F1] py-3">
-      <div className="relative h-11.5 w-13 flex-none rounded-md bg-[#F4F4F5]">
-        {imageUrl ? <Image src={imageUrl} alt="" fill sizes="52px" className="object-contain p-0.75" unoptimized /> : null}
+    <li className="flex flex-wrap items-center gap-3 border-b border-expo-linha py-3">
+      <span className="flex size-16 flex-none items-center justify-center bg-white p-0.75">
+        <span ref={thumb} className="relative block size-14.5">
+          {imageUrl ? <Image src={imageUrl} alt="" fill sizes="64px" className="object-contain" unoptimized /> : null}
+        </span>
+      </span>
+      <div className="min-w-45 flex-1">
+        <p className="text-[18px] font-bold leading-[1.3]">{name}</p>
+        <p className="num mt-1 text-[15px] font-semibold text-expo-mute">{`${qty} × ${formatCents(unitCents)}`}</p>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-bold leading-tight">{name}</p>
-        <p className="mt-0.5 text-[13px] font-semibold text-[#52525b]">{`${qty} × ${formatCents(unitCents)}`}</p>
+      <div className="flex items-center gap-3 max-sm:ml-19">
+        <MiniCounter qty={qty} max={max} minusLabel={minusLabel ?? `Tirar 1 de ${name}`} plusLabel={plusLabel ?? `Colocar 1 de ${name}`} onChange={onChange} />
+        <button
+          type="button"
+          aria-label={removeLabel ?? `Remover ${name} do pedido`}
+          onClick={onRemove}
+          className="flex size-11 flex-none items-center justify-center text-expo-erro"
+        >
+          <Image src="/images/expocannabis/figma/icon-lixeira.svg" alt="" width={20} height={20} aria-hidden />
+        </button>
       </div>
-      <MiniCounter
-        qty={qty}
-        max={max}
-        minusLabel={minusLabel ?? `Tirar 1 de ${name}`}
-        plusLabel={plusLabel ?? `Colocar 1 de ${name}`}
-        onChange={onChange}
-      />
-      <button
-        type="button"
-        aria-label={removeLabel ?? `Remover ${name} do pedido`}
-        onClick={onRemove}
-        className="flex size-11 flex-none items-center justify-center rounded-md bg-[#F4F4F5] text-[#B42318] transition-[transform,background-color] duration-120 hover:bg-[#FDE7E5] active:scale-92 motion-reduce:transition-none"
-      >
-        <Trash2 aria-hidden size={20} strokeWidth={2.2} />
-      </button>
     </li>
   );
 }

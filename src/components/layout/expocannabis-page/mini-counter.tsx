@@ -8,30 +8,25 @@ type MiniCounterProps = {
   qtyId?: number;
 };
 
-/** Contador claro −/+ com borda: 40 px na linha do pedido, 56 px no detalhe do produto. */
+/** Contador de borda preta: 46 px na linha do pedido, 56 px na ficha do produto. */
 export function MiniCounter({ qty, max, minusLabel, plusLabel, onChange, large = false, qtyId }: Readonly<MiniCounterProps>) {
-  const box = large ? "size-14" : "size-10";
-  const number = large ? "min-w-10 text-xl" : "min-w-6.5";
+  const box = large ? "h-14 w-13" : "h-11.5 w-10";
+  const number = large ? "min-w-10 text-[20px] font-extrabold" : "min-w-7 text-base font-extrabold";
 
   return (
-    <div className="flex flex-none items-center rounded-md border-[1.5px] border-[#E4E4E7]">
-      <button
-        type="button"
-        aria-label={minusLabel}
-        className={`${box} text-xl font-bold transition-transform duration-120 active:scale-95 motion-reduce:transition-none`}
-        onClick={() => onChange(qty - 1)}
-      >
+    <div className={`flex flex-none items-center border border-expo-ink bg-white text-expo-ink ${large ? "h-14" : "h-11.5"}`}>
+      <button type="button" aria-label={minusLabel} className={`${box} text-[20px] font-bold`} onClick={() => onChange(qty - 1)}>
         −
       </button>
       <span data-qty={qtyId} className="sr-only">{`${qty} no pedido`}</span>
-      <span aria-hidden key={qty} className={`expo-bump text-center font-extrabold ${number}`}>
+      <span aria-hidden className={`num text-center ${number}`}>
         {qty}
       </span>
       <button
         type="button"
         aria-label={plusLabel}
         disabled={qty >= max}
-        className={`${box} text-xl font-bold transition-transform duration-120 active:scale-95 disabled:opacity-30 motion-reduce:transition-none`}
+        className={`${box} text-[20px] font-bold disabled:opacity-40`}
         onClick={() => onChange(qty + 1)}
       >
         +
