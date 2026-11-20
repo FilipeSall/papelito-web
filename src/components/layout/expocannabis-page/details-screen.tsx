@@ -51,7 +51,7 @@ function CnpjAddress({ state, dispatch, errors }: Readonly<AddressProps>) {
   const { delivery } = state;
   const setField = (field: "number" | "complement" | "neighborhood") => (value: string) => dispatch({ type: "set-delivery", delivery: { [field]: value } });
   return (
-    <div className="expo-reveal grid gap-3.5 min-[768px]:grid-cols-3">
+    <div className="expo-tela grid gap-3.5 min-[768px]:grid-cols-3">
       <TextField id="expo-number" label="Número" value={delivery.number} onChange={setField("number")} error={errors.number} />
       <TextField id="expo-complement" label="Complemento (opcional)" value={delivery.complement} onChange={setField("complement")} />
       <TextField id="expo-neighborhood" label="Bairro" value={delivery.neighborhood} onChange={setField("neighborhood")} error={errors.neighborhood} />
@@ -78,12 +78,12 @@ function CepRow({ cep, status, error, invalid, shakeKey, onChange, onSearch }: R
           type="button"
           onClick={onSearch}
           disabled={status === "searching"}
-          className="min-h-13 flex-none rounded-lg bg-[#F4F4F5] px-4 text-[15px] font-extrabold transition-transform duration-120 enabled:active:scale-97 disabled:opacity-70 motion-reduce:transition-none"
+          className="min-h-13 flex-none border border-expo-ink bg-white px-4 text-[15px] font-extrabold disabled:opacity-60"
         >
           {CEP_BUTTON_LABEL[status]}
         </button>
       </div>
-      <p id="expo-cep-msg" aria-live="polite" className={`-mt-1.5 text-sm font-bold ${error ? "text-[#B42318]" : ""}`}>
+      <p id="expo-cep-msg" aria-live="polite" className={`-mt-1.5 text-sm font-bold ${error ? "text-expo-erro" : ""}`}>
         {hint}
       </p>
     </>
@@ -133,7 +133,7 @@ function OtherAddress({ state, dispatch, errors }: Readonly<AddressProps>) {
   };
 
   return (
-    <div className="expo-reveal flex flex-col gap-3.5 rounded-[10px] border-[1.5px] border-[#E4E4E7] p-4">
+    <div className="expo-tela flex flex-col gap-3.5 border border-expo-linha bg-white p-4">
       <CepRow cep={delivery.cep} status={status} error={cepError || errors.cep || ""} invalid={Boolean(cepError || errors.cep)} shakeKey={shakeKey} onChange={changeCep} onSearch={searchCep} />
       <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] gap-3">
         <TextField id="expo-street" label="Rua" value={delivery.street} onChange={setField("street")} error={errors.street} flash={flash} />
@@ -157,12 +157,12 @@ function InvoiceSection({ buyer, state, errors, dispatch }: Readonly<{ buyer: Bu
   return (
     <section aria-label="Dados da nota fiscal" className="flex flex-col gap-3.5">
       <SectionLabel>Nota fiscal</SectionLabel>
-      <div className="flex items-center justify-between gap-3 rounded-[10px] bg-[#F4F4F5] px-4 py-3.5">
+      <div className="flex items-center justify-between gap-3 bg-expo-kraft px-4 py-3.5">
         <div className="min-w-0">
           <p className="line-clamp-2 text-[17px] font-extrabold">{buyer.legalName}</p>
           <p className="mt-0.5 text-sm font-semibold">CNPJ {formatCnpj(buyer.cnpj)}</p>
         </div>
-        <button type="button" onClick={() => dispatch({ type: "change-store" })} className="inline-flex min-h-11 flex-none items-center text-[15px] font-bold underline underline-offset-3">
+        <button type="button" onClick={() => dispatch({ type: "change-store" })} className="inline-flex min-h-11 flex-none items-center text-[15px] font-extrabold underline underline-offset-4">
           Trocar loja
         </button>
       </div>
@@ -253,7 +253,7 @@ export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScre
         <WarnBox
           action={
             failure.retry ? (
-              <button type="button" onClick={submit} className="min-h-11 flex-none rounded-lg bg-white px-4 text-[15px] font-extrabold text-[#231F20]">
+              <button type="button" onClick={submit} className="min-h-11 flex-none border border-expo-ink bg-white px-4 text-[15px] font-extrabold text-expo-ink">
                 Tentar de novo
               </button>
             ) : null
@@ -273,7 +273,8 @@ export function DetailsScreen({ context, state, dispatch }: Readonly<DetailsScre
       current={1}
       back={{ label: "Voltar ao pedido", onBack: () => dispatch({ type: "go", screen: 2 }) }}
       title="Dados e entrega"
-      intro={<p className="mt-1.5 text-base font-medium text-[#52525B]">Confira com o lojista antes de seguir pro pagamento.</p>}
+      paper="/images/expocannabis/figma/papel-dados-entrega.svg"
+      intro={<p className="mt-1.5 text-base font-medium text-expo-mute">Confira com o lojista antes de seguir pro pagamento.</p>}
       aside={
         <StickyAside>
           <OrderSummary context={context} state={state} />

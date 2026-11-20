@@ -46,11 +46,13 @@ export function ExpocannabisApp({ context }: Readonly<ExpocannabisAppProps>) {
   const hydrated = useSyncExternalStore(subscribeNothing, onClient, onServer);
 
   if (!hydrated) {
-    return <div aria-busy="true" className="h-dvh bg-white" />;
+    return <div aria-busy="true" className="h-dvh bg-expo-noite" />;
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-white text-[#231F20]">
+    /* O estande é escuro e, em pé, mora numa coluna de 820 px; deitado (pz) ele
+       ocupa a tela toda, porque é lá que o pedido ganha a coluna da direita. */
+    <div className="mx-auto flex h-dvh w-full max-w-[820px] flex-col overflow-hidden bg-expo-noite text-white pz:max-w-none">
       <OfflineBanner />
       <ExpoHeader buyer={state.screen === 1 ? null : state.buyer} onChangeStore={changeStore} />
       <main className="relative min-h-0 flex-1 overflow-y-auto">

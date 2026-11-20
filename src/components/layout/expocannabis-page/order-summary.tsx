@@ -14,8 +14,8 @@ type OrderSummaryProps = {
 function Row({ label, value, muted = false }: Readonly<{ label: string; value: string; muted?: boolean }>) {
   return (
     <div className="flex justify-between gap-3 text-[15px] font-semibold">
-      <dt className={muted ? "text-[#52525B]" : ""}>{label}</dt>
-      <dd>{value}</dd>
+      <dt className={muted ? "text-expo-mute" : ""}>{label}</dt>
+      <dd className="num text-right">{value}</dd>
     </div>
   );
 }
@@ -43,7 +43,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const frete = quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar";
 
   return (
-    <section aria-labelledby="expo-summary-title" className="rounded-[10px] border-[1.5px] border-[#E4E4E7] bg-white px-5 py-4.5">
+    <section aria-labelledby="expo-summary-title" className="border border-expo-ink bg-white px-5 py-4.5">
       <SectionLabel id="expo-summary-title">Resumo</SectionLabel>
       <dl className="mt-2 grid gap-2">
         <Row label={`${unitsLabel(units)} · nível ${level.name}`} value={pct > 0 ? `${pct}% off em tudo` : "sem desconto de nível"} />
@@ -52,9 +52,9 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
         {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty, kitPctOff)} value={formatCents(kit.totalCents)} muted /> : null}
         <Row label="Brinde" value={level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un."} muted />
         <Row label="Frete" value={frete} muted />
-        <div className="mt-1 flex items-baseline justify-between border-t border-[#E4E4E7] pt-2.5">
+        <div className="mt-1 flex items-baseline justify-between border-t border-expo-ink pt-2.5">
           <dt className="text-[17px] font-extrabold">Total</dt>
-          <dd className="text-[26px] font-extrabold">{formatCents(quote?.totalCents ?? items)}</dd>
+          <dd className="num text-[28px] font-bold">{formatCents(quote?.totalCents ?? items)}</dd>
         </div>
       </dl>
     </section>

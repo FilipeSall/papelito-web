@@ -7,16 +7,16 @@ type ProductGridProps = {
   children: ReactNode;
 };
 
-/** Grade de categoria ou busca: título, contagem, 4 colunas (20 px entre linhas, 16 entre colunas) e aviso de vazio. */
+/** Grade de categoria ou busca: título em Ultra amarelo, contagem e cards de largura mínima de 220 px. */
 export function ProductGrid({ title, count, empty, children }: Readonly<ProductGridProps>) {
   return (
-    <section className="expo-grid-in flex flex-col gap-3.5">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-[21px] font-extrabold">{title}</h2>
-        <p className="text-sm font-semibold text-[#52525b]">{count}</p>
+    <section className="expo-tela flex flex-col gap-4">
+      <div className="flex items-baseline justify-between gap-3 pt-1">
+        <h2 className="ultra text-[28px] leading-10 text-brand-yellow sm:text-[36px] sm:leading-12">{title}</h2>
+        <p className="flex-none text-sm font-bold text-white">{count}</p>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 min-[768px]:grid-cols-4">{children}</div>
-      {empty ? <p className="py-5 text-base font-semibold">Nada encontrado. Tenta outro nome?</p> : null}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-4">{children}</div>
+      {empty ? <p className="py-10 text-[18px] font-semibold text-expo-cinza">Nada encontrado. Tenta outro nome?</p> : null}
     </section>
   );
 }

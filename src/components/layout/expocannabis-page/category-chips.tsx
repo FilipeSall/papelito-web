@@ -1,6 +1,4 @@
-import Image from "next/image";
-
-import { HOME, type StoreCategory } from "@/features/expocannabis/utils/store-catalog";
+import { type StoreCategory } from "@/features/expocannabis/utils/store-catalog";
 
 type CategoryChipsProps = {
   categories: StoreCategory[];
@@ -8,45 +6,32 @@ type CategoryChipsProps = {
   onSelect: (key: string) => void;
 };
 
-function HomeIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#231F20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 9v12h14V9" />
-    </svg>
-  );
-}
-
-function ChipPicture({ category }: Readonly<{ category: StoreCategory }>) {
-  if (category.key === HOME) return <HomeIcon />;
-  if (!category.imageUrl) return null;
-  return <Image src={category.imageUrl} alt="" width={70} height={62} className="h-15.5 w-17.5 object-contain" unoptimized />;
-}
-
-/** Faixa de categorias: quadrado 84 × 84 com foto e rótulo abaixo; a ativa fica amarela com borda preta. */
+/**
+ * Faixa de categorias: abas em amarelo com rolagem lateral, a ativa em negrito com
+ * um traço de 5 px embaixo. A foto da categoria saiu do handoff novo: o que orienta
+ * aqui é a palavra, e o quadrado roubava a altura da primeira prateleira.
+ */
 export function CategoryChips({ categories, active, onSelect }: Readonly<CategoryChipsProps>) {
   return (
-    <nav aria-label="Categorias" className="flex flex-none gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {categories.map((category) => {
-        const on = category.key === active;
-        const square = on ? "border-[#231F20] bg-[#FFF7A6]" : "border-transparent bg-[#F4F4F5]";
-        return (
-          <button
-            key={category.key}
-            type="button"
-            aria-current={on ? "true" : undefined}
-            onClick={() => onSelect(category.key)}
-            className="group flex w-24 flex-none flex-col items-center gap-1.5 text-sm font-bold"
-          >
-            <span
-              className={`flex size-21 items-center justify-center rounded-lg border-2 transition-transform duration-120 group-active:scale-94 motion-reduce:transition-none ${square}`}
-            >
-              <ChipPicture category={category} />
-            </span>
-            {category.label}
-          </button>
-        );
-      })}
+    <nav aria-label="Categorias" className="sem-barra -mx-6 flex-none overflow-x-auto px-6">
+      <ul className="flex h-[51px] gap-6">
+        {categories.map((category) => {
+          const on = category.key === active;
+          return (
+            <li key={category.key} className="relative flex-none">
+              <button
+                type="button"
+                aria-current={on ? "true" : undefined}
+                onClick={() => onSelect(category.key)}
+                className={`h-11 min-w-11 whitespace-nowrap text-left text-base text-brand-yellow ${on ? "font-extrabold" : "font-bold opacity-80"}`}
+              >
+                {category.label}
+              </button>
+              {on ? <span aria-hidden className="absolute left-0 top-11 h-1.25 w-full bg-brand-yellow" /> : null}
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

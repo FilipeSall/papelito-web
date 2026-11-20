@@ -30,23 +30,23 @@ function useBreathe(ref: RefObject<HTMLElement | null>, trigger: number) {
   }, [ref, trigger]);
 }
 
-/** Barra preta fixa do retrato: nível, trechos e "Ver pedido". Dá um respiro a cada mudança de quantidade. */
+/** Trilho do retrato: nível, régua e "Ver pedido". Dá um respiro a cada mudança de quantidade. */
 export function OrderBar({ levels, units, totalCents, onOpen }: Readonly<OrderBarProps>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   useBreathe(buttonRef, units);
 
   return (
-    <div className="flex flex-none flex-col gap-3 bg-[#231F20] px-6 pb-4.5 pt-3.5 min-[1024px]:hidden">
+    <div className="flex flex-none flex-col gap-2.5 bg-expo-noite px-6 pb-4 pt-4 pz:hidden">
       <LevelBar levels={levels} units={units} dark />
       <button
         ref={buttonRef}
         type="button"
         disabled={units === 0}
         onClick={onOpen}
-        className="flex min-h-15 w-full items-center justify-between rounded-lg bg-brand-yellow px-5 text-lg font-extrabold text-[#231F20] transition-transform duration-120 focus-visible:outline-brand-yellow active:scale-95 disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#71717a] motion-reduce:transition-none"
+        className="flex min-h-15.5 w-full items-center justify-between gap-3 bg-brand-yellow px-5 text-expo-ink disabled:bg-expo-cinza disabled:text-expo-zinc"
       >
-        <span>{`Ver pedido · ${units} ${units === 1 ? "unidade" : "unidades"}`}</span>
-        <span>{formatCents(totalCents)}</span>
+        <span className="num text-[18px] font-extrabold">{`Ver pedido · ${units} ${units === 1 ? "unidade" : "unidades"}`}</span>
+        <span className="num text-[20px] font-bold">{formatCents(totalCents)}</span>
       </button>
     </div>
   );

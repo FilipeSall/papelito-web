@@ -6,18 +6,17 @@ type StepperProps = {
   qtyId?: number;
 };
 
-const STEP_BUTTON =
-  "size-11 text-2xl font-bold text-brand-yellow transition-transform duration-120 active:scale-95 disabled:opacity-30 motion-reduce:transition-none";
+const STEP_BUTTON = "flex h-12 w-11 items-center justify-center text-2xl font-bold disabled:opacity-40";
 
-/** Contador escuro do card: − e + amarelos, número branco que dá um pulinho. Em 0 o card volta a mostrar "Adicionar". */
+/** Contador do card: faixa amarela de 48 px com − e + em preto. Em 0 o card volta a mostrar "Adicionar". */
 export function Stepper({ productName, qty, max, onChange, qtyId }: Readonly<StepperProps>) {
   return (
-    <div className="expo-swap mt-1 flex h-11.5 items-center justify-between rounded-md bg-[#231F20]">
+    <div className="flex h-12 w-full flex-none items-center justify-between bg-brand-yellow text-expo-noite">
       <button type="button" aria-label={`Tirar 1 de ${productName}`} className={STEP_BUTTON} onClick={() => onChange(qty - 1)}>
         −
       </button>
       <span data-qty={qtyId} className="sr-only">{`${qty} no pedido`}</span>
-      <span aria-hidden key={qty} className="expo-bump text-[17px] font-extrabold text-white">
+      <span aria-hidden className="num text-[18px] font-bold">
         {qty}
       </span>
       <button
