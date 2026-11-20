@@ -1,29 +1,36 @@
-import type { EventLevel, EventProduct } from "../types/context";
-import { unitsOf } from "./pricing-preview";
+import type { EventContext, EventLevel, EventProduct } from "../types/context";
+import { baseCentsOf, firstDiscountCents } from "./pricing-preview";
 
 /** Carrinho do atendimento: quantidade por produto e kits. */
 export type Cart = { qty: Record<number, number>; kits: number };
 
-const KIT_MIN_UNITS = 10;
-
-/** Formata centavos como `R$ 1.234,56`. */
+/**
+ * Formata centavos como `R$ 1.234,56`.
+ *
+ * O Intl separa o símbolo com espaço fino inquebrável, que é invisível no código e faz
+ * comparação de texto falhar com as duas strings parecendo iguais na tela. Aqui ele vira
+ * espaço comum.
+ */
 export function formatCents(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100).replace(/[  ]/g, " ");
 }
 
-/** Aplica a regra do kit: abaixo de 10 unidades o kit sai e o chamador avisa com Desfazer. */
-export function applyCartRules(next: Cart): { cart: Cart; kitRemoved: boolean } {
-  if (next.kits > 0 && unitsOf(next.qty, next.kits) < KIT_MIN_UNITS) {
+/**
+ * Aplica a regra do kit: abaixo do valor que o libera o kit sai e o chamador avisa com Desfazer.
+ * O próprio kit conta nessa base, como no plugin.
+ */
+export function applyCartRules(ctx: EventContext, next: Cart): { cart: Cart; kitRemoved: boolean } {
+  if (next.kits > 0 && baseCentsOf(ctx, next.qty, next.kits) < firstDiscountCents(ctx.levels)) {
     return { cart: { qty: next.qty, kits: 0 }, kitRemoved: true };
   }
   return { cart: next, kitRemoved: false };
 }
 
-/** Índice do nível nas unidades do carrinho. */
-export function levelIndex(levels: readonly EventLevel[], units: number): number {
+/** Índice do nível no valor do carrinho. */
+export function levelIndex(levels: readonly EventLevel[], baseCents: number): number {
   let index = 0;
   levels.forEach((level, position) => {
-    if (units >= level.minUnits) index = position;
+    if (baseCents >= level.minCents) index = position;
   });
   return index;
 }

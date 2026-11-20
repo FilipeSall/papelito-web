@@ -36,12 +36,12 @@ describe("store-catalog", () => {
     expect(productCountText(8)).toBe("8 produtos");
   });
 
-  it("levelProgress diz quanto falta e menciona o brinde só saindo de Lojista", () => {
+  it("levelProgress diz quanto falta em dinheiro e menciona o brinde só saindo de Lojista", () => {
     const levels = buildEventContext().levels;
 
-    expect(levelProgress(levels, 7).short).toBe("Faltam 3 pra 5%");
-    expect(levelProgress(levels, 7).long).toBe("Faltam 3 unidades pra Parceiro (5% off + brinde).");
-    expect(levelProgress(levels, 12).long).toBe("Faltam 8 unidades pra PDV Perfeito (8% off).");
-    expect(levelProgress(levels, 40).long).toBe("Você chegou no topo: 12% off em tudo.");
+    expect(levelProgress(levels, 80060).short).toBe("Faltam R$ 200 pra 5%");
+    expect(levelProgress(levels, 80060).long).toBe("Faltam R$ 199,40 pra Parceiro (5% off + brinde).");
+    expect(levelProgress(levels, 120000).long).toBe("Faltam R$ 300,00 pra Lenda (10% off).");
+    expect(levelProgress(levels, 150000).long).toBe("Você chegou no topo: 10% off em tudo.");
   });
 });

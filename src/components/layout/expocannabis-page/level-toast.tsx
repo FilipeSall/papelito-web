@@ -23,9 +23,6 @@ const TITLE_BY_KEY: Partial<Record<EventLevelKey, string>> = {
   lenda: "Você é Lenda!",
 };
 
-/** A partir daqui o pedido leva brinde; é o mesmo corte do resumo e da confirmação. */
-const GIFT_MIN_UNITS = 10;
-
 const AUTO_CLOSE_MS = 4500;
 
 /**
@@ -46,7 +43,7 @@ function toastText(level: EventLevel, isLead: boolean, isTop: boolean): string {
   const pct = `${level.pctBp / 100}% off em tudo`;
   if (isLead) return `${pct}. Quer conhecer o programa PDV Perfeito?`;
   if (isTop) return `${pct}, o maior desconto do ExpoDay.`;
-  if (level.minUnits >= GIFT_MIN_UNITS) return `${pct} + bandeja chaveiro e merch liberados.`;
+  if (level.pctBp > 0) return `${pct} + bandeja chaveiro e merch liberados.`;
   return `${pct}.`;
 }
 

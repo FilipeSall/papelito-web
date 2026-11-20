@@ -18,8 +18,6 @@ type ConfirmedScreenProps = {
   onNewOrder: () => void;
 };
 
-const GIFT_MIN_UNITS = 10;
-
 type TimelineStep = { when: string; title: string; description: string };
 
 function whatsappLink(phone: string, text: string): string {
@@ -203,7 +201,7 @@ export function ConfirmedScreen({ state, onNewOrder }: Readonly<ConfirmedScreenP
   if (!quote || !order) return null;
 
   const paidWith = order.method === "pix" ? "pago no Pix" : "pago no cartão";
-  const gift = quote.units >= GIFT_MIN_UNITS;
+  const gift = quote.level.pctBp > 0;
   const line = `${quote.units} unidades · ${formatCents(quote.totalCents)} · ${paidWith}`;
   const summary = `Pedido Papelito #${order.orderNumber} · ${line}. A nota fiscal e o rastreio chegam no WhatsApp e no e-mail.`;
 

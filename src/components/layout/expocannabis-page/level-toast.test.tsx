@@ -5,19 +5,19 @@ import type { EventLevel } from "@/features/expocannabis/types/context";
 
 import { LevelToast } from "./level-toast";
 
-/** Escada publicada hoje no WordPress. */
-const HOJE: EventLevel[] = [
-  { key: "lojista", name: "Lojista", minUnits: 0, pctBp: 0 },
-  { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
-  { key: "pdv_perfeito", name: "PDV Perfeito", minUnits: 20, pctBp: 800 },
-  { key: "lenda", name: "Lenda", minUnits: 40, pctBp: 1200 },
+/** Escada com o degrau do PDV Perfeito, que o convite do programa procura. */
+const COM_PDV: EventLevel[] = [
+  { key: "lojista", name: "Lojista", minCents: 0, pctBp: 0 },
+  { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
+  { key: "pdv_perfeito", name: "PDV Perfeito", minCents: 200000, pctBp: 800 },
+  { key: "lenda", name: "Lenda", minCents: 350000, pctBp: 1200 },
 ];
 
-/** Escada pedida pelo CEO em 19/11: a faixa do meio sai e o topo vira 10% em 15 un. */
+/** Escada pedida pelo CEO em 19/11: a faixa do meio sai e o topo vira 10% em R$ 1.500. */
 const SEM_MEIO: EventLevel[] = [
-  { key: "lojista", name: "Lojista", minUnits: 0, pctBp: 0 },
-  { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
-  { key: "lenda", name: "Lenda", minUnits: 15, pctBp: 1000 },
+  { key: "lojista", name: "Lojista", minCents: 0, pctBp: 0 },
+  { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
+  { key: "lenda", name: "Lenda", minCents: 150000, pctBp: 1000 },
 ];
 
 function mostrar(levels: EventLevel[], levelIndex: number) {
@@ -26,7 +26,7 @@ function mostrar(levels: EventLevel[], levelIndex: number) {
 
 describe("LevelToast", () => {
   it("fala o desconto publicado, e não um número fixo na posição", () => {
-    mostrar(HOJE, 2);
+    mostrar(COM_PDV, 2);
 
     expect(screen.getByText("Você é PDV Perfeito!")).toBeInTheDocument();
     expect(screen.getByText("8%")).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("LevelToast", () => {
   });
 
   it("não oferece o convite num degrau que não é o dele", () => {
-    mostrar(HOJE, 1);
+    mostrar(COM_PDV, 1);
 
     expect(screen.queryByRole("button", { name: "Quero saber" })).not.toBeInTheDocument();
     expect(screen.getByText("5% off em tudo + bandeja chaveiro e merch liberados.")).toBeInTheDocument();

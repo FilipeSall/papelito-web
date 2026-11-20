@@ -7,6 +7,7 @@ import { EXPO_SCOPE_CLASS } from "@/features/expocannabis/fonts";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import type { Cart } from "@/features/expocannabis/utils/cart";
 import { formatCents, maxQty } from "@/features/expocannabis/utils/cart";
+import { firstDiscountCents } from "@/features/expocannabis/utils/pricing-preview";
 import type { PricingPreview } from "@/features/expocannabis/utils/pricing-preview";
 
 import { KitCard } from "./kit-card";
@@ -80,8 +81,9 @@ function OrderLines({ context, preview, cart, sheet, onLineChange, onRemove, onK
 }
 
 /** Totais no bloco escuro do rodapé: o que a prévia soma e o botão que leva aos dados. */
-function OrderTotals({ preview, onCheckout, sheet }: Readonly<Pick<OrderContentProps, "preview" | "onCheckout" | "sheet">>) {
-  const gift = preview.level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un.";
+function OrderTotals({ context, preview, onCheckout, sheet }: Readonly<Pick<OrderContentProps, "context" | "preview" | "onCheckout" | "sheet">>) {
+  /* O brinde entra junto com o primeiro desconto, então basta a faixa ter desconto. */
+  const gift = preview.level.pctBp > 0 ? "Bandeja chaveiro + merch" : `a partir de ${formatCents(firstDiscountCents(context.levels))}`;
   const rows: { label: string; value: string; strong?: boolean }[] = [
     { label: "Subtotal", value: formatCents(preview.itemsCents + preview.discountCents) },
     ...(preview.discountCents > 0
@@ -134,17 +136,17 @@ function OrderContent(props: Readonly<OrderContentProps>) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="px-4">
-          <LevelCard levels={context.levels} units={preview.units} />
+          <LevelCard levels={context.levels} baseCents={preview.baseCents} />
         </div>
         <div className={sheet ? "px-6 pt-3" : "px-5 pt-2"}>
           <OrderLines {...props} />
         </div>
         <div className={sheet ? "px-4 pb-3 pt-4.5" : "px-4 pb-2 pt-3"}>
-          <KitCard kit={context.kit} units={preview.units} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
+          <KitCard kit={context.kit} levels={context.levels} baseCents={preview.baseCents} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
         </div>
       </div>
       {undo ? <div className="flex-none px-6 pb-2">{undo}</div> : null}
-      <OrderTotals preview={preview} onCheckout={props.onCheckout} sheet={sheet} />
+      <OrderTotals context={context} preview={preview} onCheckout={props.onCheckout} sheet={sheet} />
     </>
   );
 }

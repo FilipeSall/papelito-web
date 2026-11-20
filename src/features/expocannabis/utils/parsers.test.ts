@@ -15,7 +15,7 @@ function wpContext() {
 
 const wpQuote = {
   units: 22,
-  level: { key: "pdv_perfeito", name: "PDV Perfeito", minUnits: 20, pctBp: 800 },
+  level: { key: "lenda", name: "Lenda", minCents: 150000, pctBp: 1000 },
   lines: [{ product_id: 200, qty: 14, unit_cents: 11162, subtotal_cents: 156268, discount_cents: 12501, total_cents: 143767, source: "event_level" }],
   kit: { qty: 1, unit_cents: 65595, full_unit_cents: 77170, total_cents: 65595 },
   kitComponents: [],

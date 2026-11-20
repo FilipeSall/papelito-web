@@ -17,9 +17,11 @@ export type PreviewLine = {
 /** Prévia do pedido no tablet. Só exibe; o valor cobrado é o da cotação do servidor. */
 export type PricingPreview = {
   units: number;
+  /** Valor do pedido antes do desconto e antes do frete; é ele que escolhe a faixa. */
+  baseCents: number;
   level: EventLevel;
   nextLevel: EventLevel | null;
-  unitsToNext: number;
+  centsToNext: number;
   lines: PreviewLine[];
   kit: { qty: number; unitCents: number; fullUnitCents: number; totalCents: number };
   itemsCents: number;
@@ -38,9 +40,28 @@ export function unitsOf(qty: Readonly<Record<number, number>>, kits: number): nu
   return Object.values(qty).reduce((sum, value) => sum + value, 0) + kits * KIT_UNITS;
 }
 
-/** Maior nível cujo mínimo de unidades o pedido atinge. */
-export function levelFor(levels: readonly EventLevel[], units: number): EventLevel {
-  return levels.reduce((current, level) => (units >= level.minUnits ? level : current), levels[0]);
+/**
+ * Base da faixa: avulsos pelo preço do estande mais os kits pelo preço cheio, antes de qualquer
+ * desconto e antes do frete. Espelha `papelito_event_sales_base_cents()` do plugin; se as duas
+ * contas divergirem, a tela promete uma faixa que a cobrança não dá.
+ */
+export function baseCentsOf(ctx: EventContext, qty: Readonly<Record<number, number>>, kits: number): number {
+  const prices = new Map(ctx.products.map((product) => [product.id, product.priceCents]));
+  const loose = Object.entries(qty).reduce((sum, [id, value]) => sum + (value > 0 ? value * (prices.get(Number(id)) ?? 0) : 0), 0);
+  return loose + kits * ctx.kit.fullUnitCents;
+}
+
+/** Maior nível cujo mínimo em centavos a base do pedido atinge. */
+export function levelFor(levels: readonly EventLevel[], baseCents: number): EventLevel {
+  return levels.reduce((current, level) => (baseCents >= level.minCents ? level : current), levels[0]);
+}
+
+/**
+ * Valor a partir do qual o Kit Premium e o brinde entram: o primeiro degrau com desconto.
+ * Derivado da escada publicada, como no plugin, para os dois não descolarem.
+ */
+export function firstDiscountCents(levels: readonly EventLevel[]): number {
+  return levels.find((level) => level.pctBp > 0)?.minCents ?? Number.MAX_SAFE_INTEGER;
 }
 
 function previewLine(productId: number, qty: number, unitCents: number, pctBp: number): PreviewLine {
@@ -60,8 +81,9 @@ export function previewPricing(ctx: EventContext, qty: Readonly<Record<number, n
     .map(([id, value]) => [Number(id), value] as const)
     .filter(([id, value]) => value > 0 && prices.has(id));
   const units = known.reduce((sum, [, value]) => sum + value, 0) + kits * KIT_UNITS;
-  const level = levelFor(ctx.levels, units);
-  const nextLevel = ctx.levels.find((item) => item.minUnits > units) ?? null;
+  const baseCents = baseCentsOf(ctx, qty, kits);
+  const level = levelFor(ctx.levels, baseCents);
+  const nextLevel = ctx.levels.find((item) => item.minCents > baseCents) ?? null;
   const lines = known.map(([id, value]) => previewLine(id, value, prices.get(id) ?? 0, level.pctBp));
   const kit = {
     qty: kits,
@@ -72,9 +94,10 @@ export function previewPricing(ctx: EventContext, qty: Readonly<Record<number, n
 
   return {
     units,
+    baseCents,
     level,
     nextLevel,
-    unitsToNext: nextLevel ? nextLevel.minUnits - units : 0,
+    centsToNext: nextLevel ? nextLevel.minCents - baseCents : 0,
     lines,
     kit,
     itemsCents: lines.reduce((sum, line) => sum + line.totalCents, 0) + kit.totalCents,

@@ -25,7 +25,7 @@ const PAID = {
   contact: { name: "Maria", phone: "11987654321", email: "maria@loja.com.br" },
   quote: {
     units: 14,
-    level: { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
+    level: { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
     lines: [],
     kit: { qty: 0, unitCents: 0, fullUnitCents: 0, totalCents: 0 },
     itemsCents: 148455,
