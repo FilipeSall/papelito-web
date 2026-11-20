@@ -27,6 +27,29 @@ const wpQuote = {
   quoteFingerprint: "abc",
 };
 
+describe("frete do evento", () => {
+  it("cotação sem abatimento publicado mantém o frete com o lojista", () => {
+    expect(parseQuote(wpQuote)?.shipping).toMatchObject({ priceCents: 2990, discountCents: 0 });
+  });
+
+  it("lê o abatimento quando o WordPress manda", () => {
+    const comFrete = { ...wpQuote, shipping: { ...wpQuote.shipping, discountCents: 2990 } };
+
+    expect(parseQuote(comFrete)?.shipping.discountCents).toBe(2990);
+  });
+
+  it("contexto sem a regra de frete ainda monta a loja", () => {
+    const semFrete = { ...wpContext(), shipping: undefined };
+
+    expect(parseEventContext(semFrete)?.shipping).toBeNull();
+    expect(parseEventContext(semFrete)?.products.length).toBeGreaterThan(0);
+  });
+
+  it("lê o corte do frete grátis publicado", () => {
+    expect(parseEventContext({ ...wpContext(), shipping: { freeFromCents: 50000 } })?.shipping).toEqual({ freeFromCents: 50000 });
+  });
+});
+
 describe("parseEventContext", () => {
   it("lê o contexto do WordPress em camelCase", () => {
     const ctx = parseEventContext(wpContext());

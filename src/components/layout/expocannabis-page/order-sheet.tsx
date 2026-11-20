@@ -136,7 +136,7 @@ function OrderContent(props: Readonly<OrderContentProps>) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="px-4">
-          <LevelCard levels={context.levels} baseCents={preview.baseCents} />
+          <LevelCard levels={context.levels} baseCents={preview.baseCents} freeFromCents={context.shipping?.freeFromCents ?? null} />
         </div>
         <div className={sheet ? "px-6 pt-3" : "px-5 pt-2"}>
           <OrderLines {...props} />

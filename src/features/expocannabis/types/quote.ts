@@ -21,7 +21,8 @@ export type EventQuote = {
   kitSavingsCents: number;
   /** Desconto do kit com que esta cotação foi calculada. */
   kitPctOff: number;
-  shipping: { optionKey: string; name: string; priceCents: number; deliveryTime: number | null };
+  /** `priceCents` é o preço cheio da modalidade; `discountCents` é o que a casa abate. O cobrado é `totalCents`. */
+  shipping: { optionKey: string; name: string; priceCents: number; discountCents: number; deliveryTime: number | null };
   totalCents: number;
   quoteFingerprint: string;
 };
