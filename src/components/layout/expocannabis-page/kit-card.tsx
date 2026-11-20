@@ -1,17 +1,20 @@
 import Image from "next/image";
 
-import type { EventKit } from "@/features/expocannabis/types/context";
+import type { EventKit, EventLevel } from "@/features/expocannabis/types/context";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
+import { missingCents } from "@/features/expocannabis/utils/level-progress";
+import { firstDiscountCents } from "@/features/expocannabis/utils/pricing-preview";
 
 type KitCardProps = {
   kit: EventKit;
-  units: number;
+  levels: EventLevel[];
+  /** Base da faixa: é ela que libera o kit, e o próprio kit conta nela. */
+  baseCents: number;
   kits: number;
   onAdd: () => void;
 };
 
-const KIT_MIN_UNITS = 10;
 const KIT_MAX = 3;
 
 function kitButtonLabel(locked: boolean, kits: number): string {
@@ -27,8 +30,7 @@ function priceText(kit: EventKit): string {
 }
 
 function lockText(discount: string, missing: number): string {
-  const falta = missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`;
-  return `${falta} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
+  return `Faltam ${missingCents(missing)} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
 }
 
 /**
@@ -40,11 +42,12 @@ function lockText(discount: string, missing: number): string {
  * que aperta, não a tela. Com desconto 0% nenhum texto promete desconto, nem o selo: quem
  * decide esse número é o admin, não a arte.
  */
-export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
-  const locked = units < KIT_MIN_UNITS;
+export function KitCard({ kit, levels, baseCents, kits, onAdd }: Readonly<KitCardProps>) {
+  const minCents = firstDiscountCents(levels);
+  const locked = baseCents < minCents;
   const discount = kitDiscountLabel(kit.pctOff);
   const disabled = locked || kits >= KIT_MAX;
-  const progress = Math.min(1, units / KIT_MIN_UNITS) * 100;
+  const progress = Math.min(1, baseCents / minCents) * 100;
 
   if (!kit.available) {
     return (
@@ -82,7 +85,7 @@ export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
           {locked ? (
             <>
               <p className="mt-1 text-[13px] font-extrabold">{discount ? "Desconto do kit ainda bloqueado" : "Kit ainda bloqueado"}</p>
-              <p className="num text-[13px] font-semibold">{lockText(discount, KIT_MIN_UNITS - units)}</p>
+              <p className="num text-[13px] font-semibold">{lockText(discount, minCents - baseCents)}</p>
               <div className="mt-1.5 h-1.5 w-full bg-expo-ink/25">
                 <div className="h-full bg-expo-ink transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${progress}%` }} />
               </div>
