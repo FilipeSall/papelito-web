@@ -11,6 +11,7 @@ import { formatPhone } from "@/features/expocannabis/utils/details-validation";
 import { formatCep } from "@/lib/validation/brazilian-documents";
 
 import { CheckoutStepper } from "./checkout-stepper";
+import { Paper } from "./paper";
 
 type ConfirmedScreenProps = {
   state: AttendanceState;
@@ -18,8 +19,6 @@ type ConfirmedScreenProps = {
 };
 
 const GIFT_MIN_UNITS = 10;
-
-const PRESS = "transition-transform duration-120 active:scale-97 motion-reduce:transition-none";
 
 type TimelineStep = { when: string; title: string; description: string };
 
@@ -81,9 +80,9 @@ function SavingsBox({ quote }: Readonly<{ quote: EventQuote }>) {
   if (savings <= 0) return null;
 
   return (
-    <div className="expo-eco flex-none rounded-[10px] bg-[#231F20] px-4 py-3.5 text-right text-white">
+    <div className="expo-eco flex-none bg-expo-noite px-4 py-3.5 text-right text-white">
       <p className="text-xs font-bold uppercase tracking-[0.08em] text-brand-yellow">Você economizou</p>
-      <p className="mt-1 text-[26px] font-extrabold">{formatCents(savings)}</p>
+      <p className="num mt-1 text-[26px] font-extrabold">{formatCents(savings)}</p>
       <p className="mt-0.5 text-[13px] font-semibold">{savingsLabel(quote)}</p>
     </div>
   );
@@ -91,26 +90,38 @@ function SavingsBox({ quote }: Readonly<{ quote: EventQuote }>) {
 
 function ConfirmedHero({ orderNumber, line, quote }: Readonly<{ orderNumber: string; line: string; quote: EventQuote }>) {
   return (
-    <section role="status" aria-label="Pedido confirmado" className="expo-hero flex items-center gap-5 rounded-xl bg-brand-yellow px-[26px] py-6">
-      <div aria-hidden className="flex size-[72px] flex-none items-center justify-center rounded-[10px] bg-[#231F20]">
+    <section role="status" aria-label="Pedido confirmado" className="expo-carimbo em-claro relative text-expo-ink">
+      <Paper src="/images/expocannabis/figma/papel-confirmacao.svg" />
+      <Image
+        src="/images/expocannabis/figma/pzinho-entrega.png"
+        alt=""
+        aria-hidden
+        width={144}
+        height={144}
+        className="expo-pula absolute right-2.5 top-2 w-14.5 sm:right-[10%] sm:top-5.5 sm:w-36"
+      />
+      <div className="relative flex flex-wrap items-center gap-5 px-6 py-6">
+      <div aria-hidden className="flex size-18 flex-none items-center justify-center bg-expo-noite">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFEA00" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <path className="expo-draw" d="m5 12 5 5 9-10" />
         </svg>
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-extrabold uppercase tracking-[0.08em]">{`Pedido #${orderNumber}`}</p>
-        <h1 className="mt-1.5 font-[family-name:var(--font-expo-display)] text-[34px] uppercase leading-none">Pedido confirmado!</h1>
-        <p className="mt-2 text-base font-bold">{line}</p>
+        <h1 className="ultra mt-1.5 text-[34px] leading-none">Pedido confirmado!</h1>
+        <p className="num mt-2 text-base font-bold">{line}</p>
       </div>
       <SavingsBox quote={quote} />
+      </div>
     </section>
   );
 }
 
 function GiftCard() {
   return (
-    <section aria-label="Brinde" className="expo-gift flex items-center gap-[18px] rounded-xl border-2 border-[#231F20] px-5 py-[18px]">
-      <div className="flex h-[120px] w-[190px] flex-none items-center justify-center rounded-lg bg-[#F4F4F5]">
+    <section aria-label="Brinde" className="expo-gift em-claro relative flex flex-wrap items-center gap-4.5 px-5 py-4.5 text-expo-ink">
+      <Paper src="/images/expocannabis/figma/papel-brinde.svg" />
+      <div className="relative flex h-30 w-47.5 flex-none items-center justify-center">
         <Image
           src="/images/expocannabis/brinde-bandeja.webp"
           alt="Bandejas Papelito (foto ilustrativa)"
@@ -119,10 +130,10 @@ function GiftCard() {
           className="expo-wobble h-[100px] w-[170px] object-contain"
         />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1">
         <p className="text-[13px] font-extrabold uppercase tracking-[0.08em]">Retire agora no balcão</p>
-        <p className="mt-1 text-[21px] font-extrabold">Bandeja chaveiro + merchandising</p>
-        <p className="mt-1 text-[15px] font-medium text-[#52525B]">Mostre esta tela pro vendedor. Foto ilustrativa.</p>
+        <p className="ultra mt-1 text-[22px] leading-7">Bandeja chaveiro + merchandising</p>
+        <p className="mt-1 text-[15px] font-medium text-expo-mute">Mostre esta tela pro vendedor. Foto ilustrativa.</p>
       </div>
     </section>
   );
@@ -131,18 +142,18 @@ function GiftCard() {
 const STEP_ANIMATION = ["expo-step-0", "expo-step-1", "expo-step-2", "expo-step-3"];
 
 function TimelineRow({ step, index, last }: Readonly<{ step: TimelineStep; index: number; last: boolean }>) {
-  const marker = index === 0 ? "bg-brand-yellow shadow-[inset_0_0_0_3px_#231F20]" : "bg-[#231F20]";
+  const marker = index === 0 ? "bg-brand-yellow" : "bg-white/70";
 
   return (
     <li className={`${STEP_ANIMATION[index]} grid grid-cols-[132px_28px_minmax(0,1fr)] gap-x-3`}>
       <p className="pt-[3px] text-right text-sm font-extrabold">{step.when}</p>
       <div className="flex flex-col items-center">
-        <i aria-hidden className={`mt-1 size-4 flex-none rounded-sm ${marker}`} />
-        {last ? null : <b aria-hidden className="my-1 w-0.5 flex-1 bg-[#E4E4E7]" />}
+        <i aria-hidden className={`mt-1 size-4 flex-none ${marker}`} />
+        {last ? null : <b aria-hidden className="my-1 w-0.5 flex-1 bg-white/25" />}
       </div>
       <div className={last ? "" : "pb-[18px]"}>
         <p className="text-[17px] font-extrabold">{step.title}</p>
-        <p className="mt-0.5 text-[15px] font-medium text-[#52525B]">{step.description}</p>
+        <p className="mt-0.5 text-[15px] font-medium text-expo-cinza">{step.description}</p>
       </div>
     </li>
   );
@@ -151,7 +162,7 @@ function TimelineRow({ step, index, last }: Readonly<{ step: TimelineStep; index
 function Timeline({ steps }: Readonly<{ steps: TimelineStep[] }>) {
   return (
     <section aria-labelledby="expo-next-title">
-      <h2 id="expo-next-title" className="mb-4 text-[22px] font-extrabold">
+      <h2 id="expo-next-title" className="ultra mb-4 text-[26px] leading-8 text-brand-yellow">
         O que acontece agora
       </h2>
       <ol>
@@ -165,18 +176,21 @@ function Timeline({ steps }: Readonly<{ steps: TimelineStep[] }>) {
 
 function PdvCard({ leadSent, onJoin }: Readonly<{ leadSent: boolean; onJoin: () => void }>) {
   return (
-    <section aria-label="PDV Perfeito" className="expo-step-4 flex items-center gap-4 rounded-xl bg-[#231F20] px-5 py-[18px] text-white">
+    <section aria-label="PDV Perfeito" className="expo-step-4 relative text-expo-ink">
+      <Paper src="/images/expocannabis/figma/papel-pdv.svg" />
+      <div className="relative flex flex-wrap items-center gap-4 px-5 py-4.5">
       <div className="min-w-0 flex-1">
-        <p className="text-lg font-extrabold">Quer esse desconto o ano todo?</p>
-        <p className="mt-[3px] text-[15px] font-medium text-[#E4E4E7]">No PDV Perfeito a loja ganha brindes, prêmios e benefícios exclusivos.</p>
+        <p className="text-[18px] font-extrabold">Quer esse desconto o ano todo?</p>
+        <p className="mt-0.75 text-[15px] font-medium text-expo-mute">No PDV Perfeito a loja ganha brindes, prêmios e benefícios exclusivos.</p>
       </div>
       <button
         type="button"
         onClick={onJoin}
-        className="min-h-12 flex-none rounded-md bg-brand-yellow px-4 text-[15px] font-extrabold text-[#231F20] focus-visible:outline-brand-yellow"
+        className="min-h-12 flex-none bg-expo-noite px-4 text-[15px] font-extrabold text-brand-yellow"
       >
         {leadSent ? "Anotado ✓" : "Quero participar"}
       </button>
+      </div>
     </section>
   );
 }
@@ -194,24 +208,26 @@ export function ConfirmedScreen({ state, onNewOrder }: Readonly<ConfirmedScreenP
   const summary = `Pedido Papelito #${order.orderNumber} · ${line}. A nota fiscal e o rastreio chegam no WhatsApp e no e-mail.`;
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-white">
-      <div className="relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-8 pb-6 pt-5">
-        <CheckoutStepper current={3} />
+    <div className="absolute inset-0 flex flex-col bg-expo-noite">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-5 px-6 pb-6 pt-5 sm:px-8">
+        <CheckoutStepper current={3} dark />
         <ConfirmedHero orderNumber={order.orderNumber} line={line} quote={quote} />
         {gift ? <GiftCard /> : null}
         <Timeline steps={buildSteps(state, gift)} />
         <PdvCard leadSent={leadSent} onJoin={sendLead} />
+        </div>
       </div>
-      <footer className="grid flex-none grid-cols-2 gap-3 border-t border-[#E4E4E7] px-8 pb-[22px] pt-3.5">
+      <footer className="grid flex-none grid-cols-2 gap-3 bg-expo-noite px-6 pb-5.5 pt-3.5 sm:px-8">
         <a
           href={whatsappLink(contact.phone, summary)}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex min-h-[60px] items-center justify-center rounded-lg bg-[#F4F4F5] text-[17px] font-extrabold ${PRESS}`}
+          className="flex min-h-15 items-center justify-center border border-brand-yellow bg-expo-noite text-[17px] font-extrabold text-brand-yellow"
         >
           Enviar resumo no WhatsApp
         </a>
-        <button type="button" onClick={onNewOrder} className={`min-h-[60px] rounded-lg bg-brand-yellow text-lg font-extrabold ${PRESS}`}>
+        <button type="button" onClick={onNewOrder} className="min-h-15 bg-brand-yellow text-[18px] font-extrabold text-expo-ink">
           Novo pedido
         </button>
       </footer>

@@ -42,34 +42,6 @@ export function useJump<T extends HTMLElement>(value: number) {
   return ref;
 }
 
-/** Vira true na primeira vez que o elemento aparece na tela, para animar uma vez só. */
-export function useAppeared<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [seen, setSeen] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || seen) return undefined;
-    if (typeof IntersectionObserver === "undefined") {
-      setSeen(true);
-      return undefined;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setSeen(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.35 },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [seen]);
-
-  return [ref, seen] as const;
-}
-
 /** Escala de um "palco" com o tamanho do Figma para caber na largura disponível. */
 export function useStageScale<T extends HTMLElement>(originalWidth: number) {
   const ref = useRef<T>(null);

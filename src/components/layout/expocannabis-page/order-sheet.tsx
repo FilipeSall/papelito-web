@@ -33,7 +33,7 @@ type OrderContentProps = Omit<OrderSheetProps, "open" | "landscape"> & { sheet: 
 
 const KIT_MAX = 3;
 
-function OrderLines({ context, preview, cart, onLineChange, onRemove, onKitsChange, onRemoveKit }: Readonly<OrderContentProps>) {
+function OrderLines({ context, preview, cart, sheet, onLineChange, onRemove, onKitsChange, onRemoveKit }: Readonly<OrderContentProps>) {
   const products = new Map(context.products.map((product) => [product.id, product]));
   const kitThumb = products.get(context.kit.productIds[context.kit.productIds.length - 1])?.imageUrl ?? "/images/expocannabis/kit-sedas-premium.png";
 
@@ -54,6 +54,7 @@ function OrderLines({ context, preview, cart, onLineChange, onRemove, onKitsChan
             qty={line.qty}
             unitCents={line.totalCents / line.qty}
             max={maxQty(product)}
+            compact={!sheet}
             onChange={(qty) => onLineChange(product.id, qty)}
             onRemove={() => onRemove(product.id)}
           />
@@ -66,6 +67,7 @@ function OrderLines({ context, preview, cart, onLineChange, onRemove, onKitsChan
           qty={cart.kits}
           unitCents={context.kit.unitCents}
           max={KIT_MAX}
+          compact={!sheet}
           minusLabel="Tirar 1 kit"
           plusLabel="Colocar 1 kit"
           removeLabel="Remover Kit de Sedas Premium do pedido"
@@ -134,10 +136,10 @@ function OrderContent(props: Readonly<OrderContentProps>) {
         <div className="px-4">
           <LevelCard levels={context.levels} units={preview.units} />
         </div>
-        <div className="px-6 pt-3">
+        <div className={sheet ? "px-6 pt-3" : "px-5 pt-2"}>
           <OrderLines {...props} />
         </div>
-        <div className="px-4 pb-3 pt-4.5">
+        <div className={sheet ? "px-4 pb-3 pt-4.5" : "px-4 pb-2 pt-3"}>
           <KitCard kit={context.kit} units={preview.units} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
         </div>
       </div>

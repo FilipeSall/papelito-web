@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import type { EventKit, EventLevel } from "@/features/expocannabis/types/context";
 import { formatCents } from "@/features/expocannabis/utils/cart";
@@ -227,19 +227,20 @@ export function PromoBanner({ levels, kit }: Readonly<PromoBannerProps>) {
   const [holding, setHolding] = useState(false);
   const touch = useRef<number | null>(null);
 
-  /* Cada entrada no slide recomeça a animação dele: a troca muda o índice e o efeito
-     abaixo incrementa a rodada, que serve de `key` e remonta as camadas. */
-  useEffect(() => {
-    setRounds((current) => current.map((value, position) => (position === index ? value + 1 : value)));
-  }, [index]);
+  /* Toda troca passa por aqui, inclusive a automática: além de mudar o slide, ela conta
+     mais uma entrada naquele slide. Essa contagem é o `key` das camadas, e é o que faz a
+     animação recomeçar quando a pessoa volta pro banner que já viu. */
+  const go = useCallback((next: number) => {
+    const target = ((next % 2) + 2) % 2;
+    setIndex(target);
+    setRounds((current) => current.map((value, position) => (position === target ? value + 1 : value)));
+  }, []);
 
   useEffect(() => {
     if (paused || holding) return undefined;
-    const timer = window.setTimeout(() => setIndex((current) => (current + 1) % 2), SWITCH_MS);
+    const timer = window.setTimeout(() => go(index + 1), SWITCH_MS);
     return () => window.clearTimeout(timer);
-  }, [index, paused, holding]);
-
-  const go = (next: number) => setIndex((next + slides.length) % slides.length);
+  }, [index, paused, holding, go]);
 
   return (
     <section

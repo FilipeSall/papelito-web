@@ -26,30 +26,25 @@ function priceText(kit: EventKit): string {
   return `De ${formatCents(kit.fullUnitCents)} por ${formatCents(kit.unitCents)}`;
 }
 
-function KitOverlay({ discount, missing, units }: Readonly<{ discount: string; missing: number; units: number }>) {
-  const progress = Math.min(1, units / KIT_MIN_UNITS) * 100;
-  const text = `${missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
-
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-expo-noite/82 p-3 text-center text-white">
-      <p className="text-base font-extrabold">{discount ? "Desconto do kit ainda bloqueado" : "Kit ainda bloqueado"}</p>
-      <p className="num text-sm font-semibold text-expo-cinza">{text}</p>
-      <div className="h-2 w-7/10 overflow-hidden bg-expo-carvao">
-        <div className="h-full bg-brand-yellow transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${progress}%` }} />
-      </div>
-    </div>
-  );
+function lockText(discount: string, missing: number): string {
+  const falta = missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`;
+  return `${falta} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
 }
 
 /**
  * Kit de Sedas Premium em faixa amarela: bloqueado abaixo de 10 unidades, liberado com o
- * desconto publicado pelo admin, no máximo 3. Com desconto 0% nenhum texto promete desconto,
- * nem o selo: é o admin que decide o número, não a arte.
+ * desconto publicado pelo admin, no máximo 3.
+ *
+ * O bloco é uma coluna só, e não imagem ao lado de texto com quebra por viewport: ele mora
+ * tanto na folha larga do retrato quanto no painel de 440 px da paisagem, e é o container
+ * que aperta, não a tela. Com desconto 0% nenhum texto promete desconto, nem o selo: quem
+ * decide esse número é o admin, não a arte.
  */
 export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
   const locked = units < KIT_MIN_UNITS;
   const discount = kitDiscountLabel(kit.pctOff);
   const disabled = locked || kits >= KIT_MAX;
+  const progress = Math.min(1, units / KIT_MIN_UNITS) * 100;
 
   if (!kit.available) {
     return (
@@ -63,46 +58,51 @@ export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
   }
 
   return (
-    <section
-      aria-labelledby="expo-kit-title"
-      className="relative flex flex-wrap items-center gap-x-4 gap-y-3 bg-brand-yellow p-1.5 text-expo-ink sm:min-h-23 sm:flex-nowrap"
-    >
-      <div className="relative h-22 w-39 flex-none max-sm:h-28 max-sm:w-full">
-        <Image
-          src="/images/expocannabis/kit-sedas-premium.png"
-          alt="Kit de Sedas Premium: Insane, Insane Brown, Alfafa e Pink"
-          fill
-          sizes="320px"
-          className={`object-contain ${locked ? "opacity-35" : ""}`}
-        />
-        {locked ? (
-          <KitOverlay discount={discount} missing={KIT_MIN_UNITS - units} units={units} />
-        ) : (
-          <span className="expo-carimbo absolute left-1 top-1 bg-expo-noite px-2 py-1 text-xs font-extrabold uppercase tracking-[0.06em] text-brand-yellow">
-            {discount ? `${discount} liberado` : "Kit liberado"}
-          </span>
-        )}
+    <section aria-labelledby="expo-kit-title" className="flex flex-col gap-2.5 bg-brand-yellow p-3 text-expo-ink">
+      <div className="flex items-center gap-3">
+        <div className="relative h-20 w-28 flex-none">
+          <Image
+            src="/images/expocannabis/kit-sedas-premium.png"
+            alt="Kit de Sedas Premium: Insane, Insane Brown, Alfafa e Pink"
+            fill
+            sizes="160px"
+            className={`object-contain ${locked ? "opacity-35" : ""}`}
+          />
+          {locked ? null : (
+            <span className="expo-carimbo absolute left-0 top-0 bg-expo-noite px-1.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.06em] text-brand-yellow">
+              {discount ? `${discount} liberado` : "Kit liberado"}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 id="expo-kit-title" className="ultra text-[20px] leading-6">
+            Kit de Sedas Premium
+          </h3>
+          <p className="num mt-0.5 text-sm font-bold">{priceText(kit)}</p>
+          {locked ? (
+            <>
+              <p className="mt-1 text-[13px] font-extrabold">{discount ? "Desconto do kit ainda bloqueado" : "Kit ainda bloqueado"}</p>
+              <p className="num text-[13px] font-semibold">{lockText(discount, KIT_MIN_UNITS - units)}</p>
+              <div className="mt-1.5 h-1.5 w-full bg-expo-ink/25">
+                <div className="h-full bg-expo-ink transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${progress}%` }} />
+              </div>
+            </>
+          ) : (
+            kit.unitCents < kit.fullUnitCents && (
+              <p className="num mt-1 text-xs font-bold uppercase">{`Economize ${formatCents(kit.fullUnitCents - kit.unitCents)} por kit`}</p>
+            )
+          )}
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <h3 id="expo-kit-title" className="ultra text-[24px] leading-7">
-          Kit de Sedas Premium
-        </h3>
-        <p className="num text-[15px] font-bold">{priceText(kit)}</p>
-      </div>
-      <div className="flex w-full flex-col gap-1 px-2 pb-2 sm:w-59 sm:px-0 sm:pb-0 sm:pr-2.5">
-        {kit.unitCents < kit.fullUnitCents ? (
-          <p className="num text-xs font-bold uppercase">{`Economize ${formatCents(kit.fullUnitCents - kit.unitCents)} por kit`}</p>
-        ) : null}
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={disabled}
-          className="relative flex min-h-12.5 items-center justify-center px-3 text-center text-base font-bold leading-tight text-white"
-        >
-          <Image src="/images/expocannabis/figma/botao-recorte-preto.svg" alt="" fill aria-hidden className={disabled ? "opacity-45" : ""} />
-          <span className="relative">{kitButtonLabel(locked, kits)}</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={disabled}
+        className="relative flex min-h-12 w-full items-center justify-center px-3 text-center text-base font-bold leading-tight text-white"
+      >
+        <Image src="/images/expocannabis/figma/botao-recorte-preto.svg" alt="" fill aria-hidden className={disabled ? "opacity-45" : ""} />
+        <span className="relative">{kitButtonLabel(locked, kits)}</span>
+      </button>
     </section>
   );
 }
