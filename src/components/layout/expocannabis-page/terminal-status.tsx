@@ -28,6 +28,7 @@ function failureText(status: EventOrderStatus): string {
 const BUTTON = "min-h-15 rounded-lg px-4 text-lg font-extrabold transition-transform duration-120 enabled:active:scale-98 disabled:opacity-60 motion-reduce:transition-none";
 const SECONDARY = `${BUTTON} bg-[#F4F4F5]`;
 const PRIMARY = `${BUTTON} bg-[#231F20] text-brand-yellow`;
+const MANUAL_AFTER_FAILURE = new Set(["failed", "expired"]);
 const PANEL = "expo-panel-in grid gap-2 rounded-[10px] bg-[#F4F4F5] p-5";
 const DETAIL = "text-[15px] leading-[1.45] font-medium text-[#52525B]";
 
@@ -98,6 +99,8 @@ export function TerminalActions({ status, canSupervise, busy, onCancel, onRetry,
 
   if (status.state === "sending") return null;
 
+  const manual = canSupervise && MANUAL_AFTER_FAILURE.has(status.state);
+
   return (
     <div className="grid gap-3 min-[768px]:grid-cols-2">
       <button type="button" className={PRIMARY} disabled={busy} onClick={onRetry}>
@@ -106,6 +109,11 @@ export function TerminalActions({ status, canSupervise, busy, onCancel, onRetry,
       <button type="button" className={SECONDARY} disabled={busy} onClick={onAbandon}>
         Voltar ao pedido
       </button>
+      {manual ? (
+        <button type="button" className={`${SECONDARY} min-[768px]:col-span-2`} disabled={busy} onClick={onManual}>
+          A maquininha aprovou? Liberar manualmente
+        </button>
+      ) : null}
     </div>
   );
 }

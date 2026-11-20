@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useCallback, useEffect, useRef, useState, type Dispatch } from "react";
 
 import { expocannabisClient, type ClientResult } from "@/features/expocannabis/client/expocannabis-client";
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
@@ -26,6 +26,8 @@ type PaymentScreenProps = {
 
 const POLL_MS = 2000;
 const POLL_STATES = new Set(["sending", "at_terminal", "check_terminal"]);
+
+const CONFLICT = 409;
 
 function quoteItems(qty: Record<number, number>) {
   return Object.entries(qty).map(([productId, value]) => ({ productId: Number(productId), qty: value }));
@@ -137,6 +139,26 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
     if (orderState === "paid") dispatch({ type: "go", screen: 5 });
   }, [orderState, dispatch]);
 
+  const currentOrderId = useRef(orderId);
+  const restoredOrderId = useRef(orderId);
+
+  useEffect(() => {
+    currentOrderId.current = orderId;
+  }, [orderId]);
+
+  const refreshOrder = useCallback(
+    async (id: number) => {
+      if (!id) return;
+      const result = await expocannabisClient.orderStatus(id);
+      if (result.ok && currentOrderId.current === id) dispatch({ type: "set-order", order: result.data });
+    },
+    [dispatch],
+  );
+
+  useEffect(() => {
+    void refreshOrder(restoredOrderId.current);
+  }, [refreshOrder]);
+
   if (!quote || !buyer || !registered) return null;
 
   const run = async (action: () => Promise<ClientResult<EventOrderStatus>>) => {
@@ -147,8 +169,12 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
     const result = await action();
     charging.current = false;
     setBusy(false);
-    if (result.ok) dispatch({ type: "set-order", order: result.data });
-    else setNotice(failureNotice(result, dispatch));
+    if (result.ok) {
+      dispatch({ type: "set-order", order: result.data });
+      return;
+    }
+    setNotice(failureNotice(result, dispatch));
+    if (result.status === CONFLICT) void refreshOrder(orderId);
   };
 
   const charge = () =>
@@ -180,6 +206,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
     const result = await expocannabisClient.abandon(orderId);
     if (!result.ok) {
       setNotice(result.message);
+      if (result.status === CONFLICT) void refreshOrder(orderId);
       return;
     }
     dispatch({ type: "clear-charge" });
@@ -191,6 +218,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
     const result = await expocannabisClient.manualConfirm(orderId, input);
     if (!result.ok) {
       setManualError(result.message);
+      if (result.status === CONFLICT) void refreshOrder(orderId);
       return;
     }
     setManualOpen(false);

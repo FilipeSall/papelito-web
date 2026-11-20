@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useReducer } from "react";
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { attendanceReducer, initialAttendance } from "@/features/expocannabis/hooks/attendance-reducer";
 import { buildEventContext } from "@/features/expocannabis/test/fixtures";
+import type { EventOrderStatus } from "@/features/expocannabis/types/order";
 import type { EventQuote } from "@/features/expocannabis/types/quote";
 
 import { server } from "../../../../test/msw/server";
@@ -33,7 +34,7 @@ const BUYER = {
   companyId: 30,
 };
 
-function status(state: string, detail = "") {
+function status(state: EventOrderStatus["state"], detail = ""): EventOrderStatus {
   return { orderId: 501, orderNumber: "501", state, detail, totalCents: 151445, method: "card" };
 }
 
@@ -42,9 +43,13 @@ const TWO_TERMINALS = [
   { id: "NEWLAND_N950__N950NCD700342623", label: "Maquininha final 2623" },
 ];
 
-function Harness({ canSupervise = false, terminals }: Readonly<{ canSupervise?: boolean; terminals?: typeof TWO_TERMINALS }>) {
+type HarnessProps = { canSupervise?: boolean; terminals?: typeof TWO_TERMINALS; order?: EventOrderStatus };
+
+function Harness({ canSupervise = false, terminals, order }: Readonly<HarnessProps>) {
   const [state, dispatch] = useReducer(attendanceReducer, {
     ...initialAttendance(),
+    order: order ?? null,
+    checkoutAttemptId: order ? "chk-restaurado" : null,
     screen: 4,
     buyer: BUYER,
     qty: { 200: 14 },
@@ -157,7 +162,7 @@ describe("PaymentScreen", () => {
 
   it("acompanha até pago e vai para a confirmação", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    const states = ["at_terminal", "paid"];
+    const states: EventOrderStatus["state"][] = ["at_terminal", "paid"];
     server.use(
       http.post("*/api/expocannabis/orders", () => HttpResponse.json(status("sending"))),
       http.get("*/api/expocannabis/orders/501/status", () => HttpResponse.json(status(states.shift() ?? "paid"))),
@@ -262,6 +267,39 @@ describe("PaymentScreen", () => {
       await vi.advanceTimersByTimeAsync(200);
     });
     expect(screen.getByLabelText("pedido")).toHaveTextContent("");
+  });
+
+  it("atendimento restaurado como falha relê o pedido e segue para a confirmação se já foi pago", async () => {
+    server.use(http.get("*/api/expocannabis/orders/501/status", () => HttpResponse.json(status("paid", "manual_release"))));
+    render(<Harness order={status("failed")} />);
+
+    await waitFor(() => expect(screen.getByLabelText("tela")).toHaveTextContent("5"));
+  });
+
+  it("conflito ao tentar de novo relê o pedido em vez de travar a tela", async () => {
+    const states: EventOrderStatus["state"][] = ["failed", "paid"];
+    server.use(
+      http.get("*/api/expocannabis/orders/501/status", () => HttpResponse.json(status(states.shift() ?? "paid"))),
+      http.post("*/api/expocannabis/orders/501/retry", () =>
+        HttpResponse.json({ code: "papelito_event_order_closed", message: "Este pedido não aceita nova cobrança." }, { status: 409 }),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<Harness order={status("failed")} />);
+
+    await user.click(await screen.findByRole("button", { name: "Tentar de novo" }));
+    await waitFor(() => expect(screen.getByLabelText("tela")).toHaveTextContent("5"));
+  });
+
+  it("supervisor pode liberar manualmente depois de uma cobrança que falhou", async () => {
+    server.use(http.get("*/api/expocannabis/orders/501/status", () => HttpResponse.json(status("failed"))));
+    const { unmount } = render(<Harness order={status("failed")} />);
+    expect(await screen.findByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Liberar manualmente/ })).not.toBeInTheDocument();
+    unmount();
+
+    render(<Harness canSupervise order={status("expired")} />);
+    expect(await screen.findByRole("button", { name: "A maquininha aprovou? Liberar manualmente" })).toBeInTheDocument();
   });
 
   it("falta de estoque na cobrança volta para a loja com uma chave nova", async () => {
