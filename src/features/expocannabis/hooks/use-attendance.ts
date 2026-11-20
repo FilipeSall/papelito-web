@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useReducer, useState, type Dispatch } from "react";
 
 import type { EventContext } from "../types/context";
+import { normalizeStoredQuote } from "../utils/normalize-stored-quote";
 import {
   attendanceReducer,
   initialAttendance,
@@ -28,7 +29,9 @@ function readStored(): AttendanceState {
     const raw = window.localStorage.getItem(ATTENDANCE_STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     const screen = (parsed as { screen?: unknown } | null)?.screen;
-    return typeof screen === "number" ? { ...initialAttendance(), ...(parsed as Partial<AttendanceState>) } : initialAttendance();
+    if (typeof screen !== "number") return initialAttendance();
+    const stored = { ...initialAttendance(), ...(parsed as Partial<AttendanceState>) };
+    return { ...stored, quote: normalizeStoredQuote(stored.quote) };
   } catch {
     return initialAttendance();
   }

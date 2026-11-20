@@ -31,7 +31,7 @@ function kitLabel(kits: number, pctOff: number): string {
 }
 
 function boxesLabel(volumes: number): string {
-  if (volumes <= 0) return "";
+  if (!Number.isFinite(volumes) || volumes <= 0) return "";
   return ` · ${volumes} ${volumes === 1 ? "caixa" : "caixas"}`;
 }
 
@@ -40,7 +40,8 @@ export function shippingLabel(shipping: QuoteShipping | null | undefined): strin
   if (!shipping) return "calculado ao continuar";
   const boxes = boxesLabel(shipping.volumes);
   if (shipping.waived) return `Grátis · postar por PAC${boxes}`;
-  const charged = shipping.priceCents - shipping.discountCents;
+  const discount = Number.isFinite(shipping.discountCents) ? shipping.discountCents : 0;
+  const charged = shipping.priceCents - discount;
   const price = charged > 0 ? formatCents(charged) : "Grátis";
   return `${price} · ${shipping.name}${boxes}`;
 }
