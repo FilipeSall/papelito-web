@@ -35,6 +35,12 @@ describe("shippingLabel", () => {
     expect(shippingLabel({ ...PAC, volumes: 0 })).toBe(`${PAC_PRICE} · PAC`);
   });
 
+  it("nunca mostra campo ausente de cotação antiga como grátis nem como undefined", () => {
+    const legacy = { optionKey: "correios:pac", name: "PAC", priceCents: 2990, deliveryTime: 5 } as unknown as QuoteShipping;
+
+    expect(shippingLabel(legacy)).toBe(`${formatCents(2990)} · PAC`);
+  });
+
   it("antes da cotação pede para continuar", () => {
     expect(shippingLabel(null)).toBe("calculado ao continuar");
   });

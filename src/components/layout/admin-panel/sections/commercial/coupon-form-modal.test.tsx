@@ -191,8 +191,8 @@ describe("CouponFormModal - seletor de produtos permitidos", () => {
     );
 
     const chips = await screen.findByRole("list");
-    expect(within(chips).getByText("Seda Alfafa King Size")).toBeInTheDocument();
-    expect(within(chips).getByText("Seda Pink King Size")).toBeInTheDocument();
+    expect(await within(chips).findByText("Seda Alfafa King Size")).toBeInTheDocument();
+    expect(await within(chips).findByText("Seda Pink King Size")).toBeInTheDocument();
     expect(within(chips).queryByText(/produto #/i)).toBeNull();
 
     await waitFor(() =>
