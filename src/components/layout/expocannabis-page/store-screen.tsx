@@ -251,7 +251,7 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
         />
         {showMainUndo ? <div className="flex-none px-6 pb-2.5">{undoBar}</div> : null}
         <OrderBar levels={context.levels} units={preview.units} totalCents={preview.itemsCents} onOpen={() => setOrderOpen(true)} />
-        {showToast ? <LevelToast levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
+        {showToast ? <LevelToast levels={context.levels} levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
       </div>
       <OrderSheet
         open={orderOpen}
