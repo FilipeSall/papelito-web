@@ -1,5 +1,6 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
+import type { QuoteShipping } from "@/features/expocannabis/types/quote";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 import { previewPricing } from "@/features/expocannabis/utils/pricing-preview";
@@ -29,6 +30,21 @@ function kitLabel(kits: number, pctOff: number): string {
   return `Kit de Sedas Premium${kits > 1 ? ` ×${kits}` : ""}${discount ? ` (${discount})` : ""}`;
 }
 
+function boxesLabel(volumes: number): string {
+  if (volumes <= 0) return "";
+  return ` · ${volumes} ${volumes === 1 ? "caixa" : "caixas"}`;
+}
+
+/** Linha do frete: valor cobrado, grátis ou contingência, sempre com quantas caixas o pedido leva. */
+export function shippingLabel(shipping: QuoteShipping | null | undefined): string {
+  if (!shipping) return "calculado ao continuar";
+  const boxes = boxesLabel(shipping.volumes);
+  if (shipping.waived) return `Grátis · postar por PAC${boxes}`;
+  const charged = shipping.priceCents - shipping.discountCents;
+  const price = charged > 0 ? formatCents(charged) : "Grátis";
+  return `${price} · ${shipping.name}${boxes}`;
+}
+
 /** Resumo do pedido do checkout: da cotação do servidor quando há, da prévia antes dela. */
 export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const preview = previewPricing(context, state.qty, state.kits);
@@ -40,7 +56,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const kit = quote?.kit ?? preview.kit;
   const kitPctOff = quote?.kitPctOff ?? context.kit.pctOff;
   const pct = level.pctBp / 100;
-  const frete = quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar";
+  const frete = shippingLabel(quote?.shipping);
 
   return (
     <section aria-labelledby="expo-summary-title" className="rounded-[10px] border-[1.5px] border-[#E4E4E7] bg-white px-5 py-4.5">
