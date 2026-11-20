@@ -13,7 +13,7 @@ const HOJE: EventLevel[] = [
   { key: "lenda", name: "Lenda", minUnits: 40, pctBp: 1200 },
 ];
 
-/** Escada da proposta comercial de 19/11: a faixa do meio sai e o topo vira 10% em 15 un. */
+/** Escada pedida pelo CEO em 19/11: a faixa do meio sai e o topo vira 10% em 15 un. */
 const SEM_MEIO: EventLevel[] = [
   { key: "lojista", name: "Lojista", minUnits: 0, pctBp: 0 },
   { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
