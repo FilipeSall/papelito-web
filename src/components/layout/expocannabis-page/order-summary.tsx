@@ -1,6 +1,6 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
-import type { EventQuote } from "@/features/expocannabis/types/quote";
+import type { QuoteShipping } from "@/features/expocannabis/types/quote";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 import { firstDiscountCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
@@ -21,12 +21,6 @@ function Row({ label, value, muted = false }: Readonly<{ label: string; value: s
   );
 }
 
-/** O frete abatido aparece como "Grátis", não como R$ 0,00: o valor cheio já está no pedido. */
-function freteLabel(shipping: EventQuote["shipping"]): string {
-  const cobrado = shipping.priceCents - shipping.discountCents;
-  return `${cobrado <= 0 ? "Grátis" : formatCents(cobrado)} · ${shipping.name}`;
-}
-
 function unitsLabel(units: number): string {
   return `${units} ${units === 1 ? "unidade" : "unidades"}`;
 }
@@ -34,6 +28,21 @@ function unitsLabel(units: number): string {
 function kitLabel(kits: number, pctOff: number): string {
   const discount = kitDiscountLabel(pctOff);
   return `Kit de Sedas Premium${kits > 1 ? ` ×${kits}` : ""}${discount ? ` (${discount})` : ""}`;
+}
+
+function boxesLabel(volumes: number): string {
+  if (volumes <= 0) return "";
+  return ` · ${volumes} ${volumes === 1 ? "caixa" : "caixas"}`;
+}
+
+/** Linha do frete: valor cobrado, grátis ou contingência, sempre com quantas caixas o pedido leva. */
+export function shippingLabel(shipping: QuoteShipping | null | undefined): string {
+  if (!shipping) return "calculado ao continuar";
+  const boxes = boxesLabel(shipping.volumes);
+  if (shipping.waived) return `Grátis · postar por PAC${boxes}`;
+  const charged = shipping.priceCents - shipping.discountCents;
+  const price = charged > 0 ? formatCents(charged) : "Grátis";
+  return `${price} · ${shipping.name}${boxes}`;
 }
 
 /** Resumo do pedido do checkout: da cotação do servidor quando há, da prévia antes dela. */
@@ -47,7 +56,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const kit = quote?.kit ?? preview.kit;
   const kitPctOff = quote?.kitPctOff ?? context.kit.pctOff;
   const pct = level.pctBp / 100;
-  const frete = quote ? freteLabel(quote.shipping) : "calculado ao continuar";
+  const frete = shippingLabel(quote?.shipping);
 
   return (
     <section aria-labelledby="expo-summary-title" className="border border-expo-ink bg-white px-5 py-4.5">

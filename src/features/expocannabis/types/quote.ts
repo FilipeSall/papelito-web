@@ -10,6 +10,21 @@ export type QuoteLine = {
   totalCents: number;
 };
 
+/**
+ * Frete da cotação. `discountCents` é o frete grátis abatido do preço cheio; `waived` marca a
+ * contingência em que os Correios estavam fora do ar e a casa assumiu o envio; `volumes` é quantas
+ * caixas o pedido vai precisar.
+ */
+export type QuoteShipping = {
+  optionKey: string;
+  name: string;
+  priceCents: number;
+  discountCents: number;
+  deliveryTime: number | null;
+  waived: boolean;
+  volumes: number;
+};
+
 /** Cotação autoritativa do servidor; o total cobrado é sempre este. */
 export type EventQuote = {
   units: number;
@@ -21,8 +36,7 @@ export type EventQuote = {
   kitSavingsCents: number;
   /** Desconto do kit com que esta cotação foi calculada. */
   kitPctOff: number;
-  /** `priceCents` é o preço cheio da modalidade; `discountCents` é o que a casa abate. O cobrado é `totalCents`. */
-  shipping: { optionKey: string; name: string; priceCents: number; discountCents: number; deliveryTime: number | null };
+  shipping: QuoteShipping;
   totalCents: number;
   quoteFingerprint: string;
 };

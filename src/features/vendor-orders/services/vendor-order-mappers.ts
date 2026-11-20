@@ -38,6 +38,7 @@ export type WpVendorOrder = {
   };
   shipping_service?: string;
   shipping_provider?: string;
+  packing?: Array<{ length_cm?: number; width_cm?: number; height_cm?: number; weight_kg?: number }>;
   shipping_total?: number;
   subtotal?: number;
   total?: number;
@@ -405,6 +406,12 @@ export function mapVendorOrderDetail(order: WpVendorOrder): VendorOrderDetail {
       state: order.shipping_address?.state ?? "",
     },
     shippingService: order.shipping_service ?? "",
+    packing: (order.packing ?? []).map((box) => ({
+      lengthCm: Number(box.length_cm) || 0,
+      widthCm: Number(box.width_cm) || 0,
+      heightCm: Number(box.height_cm) || 0,
+      weightKg: Number(box.weight_kg) || 0,
+    })),
     shippingTotal: Number(order.shipping_total) || 0,
     subtotal: Number(order.subtotal) || 0,
     trackingCode: typeof order.tracking_code === "string" ? order.tracking_code : null,

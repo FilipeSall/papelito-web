@@ -33,8 +33,15 @@ function parseShipping(value: unknown): EventQuote["shipping"] | null {
   const name = str(value.name);
   const priceCents = int(value.priceCents);
   if (optionKey === null || name === null || priceCents === null) return null;
-  /* Sem abatimento publicado o frete é por conta do lojista, que é como era antes da regra. */
-  return { optionKey, name, priceCents, discountCents: int(value.discountCents) ?? 0, deliveryTime: int(value.deliveryTime) };
+  return {
+    optionKey,
+    name,
+    priceCents,
+    discountCents: int(value.discountCents) ?? 0,
+    deliveryTime: int(value.deliveryTime),
+    waived: value.waived === true,
+    volumes: int(value.volumes) ?? 0,
+  };
 }
 
 /** Cotação do WordPress, ou `null` se faltar valor ou fingerprint. */

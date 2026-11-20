@@ -34,7 +34,7 @@ describe("parseQuote com o desconto do kit", () => {
     itemsCents: 61736,
     discountCents: 0,
     kitSavingsCents: 15434,
-    shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, deliveryTime: 5 },
+    shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, discountCents: 0, deliveryTime: 5, waived: false, volumes: 1 },
     totalCents: 64726,
     quoteFingerprint: "fingerprint",
   };

@@ -17,6 +17,7 @@ import {
   VendorOrderStatusPanel,
   VendorPageHeader,
 } from "@/components/layout/vendor-panel";
+import { VendorOrderPacking } from "@/components/layout/vendor-panel/vendor-order-packing";
 import { VendorOrderRefundPanel } from "@/components/layout/vendor-panel/vendor-order-refund-panel";
 import { redirectIfVendorOnboardingPending } from "@/features/revendedor/server/vendor-onboarding";
 import { getVendorOrderDetail } from "@/features/vendor-orders/server";
@@ -346,6 +347,9 @@ export default async function VendorOrderDetailPage({ params }: { params: Promis
                 </>
               }
             />
+            {order.packing.length > 0 ? (
+              <DataRow label="Caixas para despachar" value={<VendorOrderPacking boxes={order.packing} />} />
+            ) : null}
           </dl>
 
           {order.logistics.packagesTotal > 0 ? (

@@ -292,6 +292,16 @@ export type VendorOrderDetail = VendorOrderSummary & {
   subtotal: number;
   trackingCode: string | null;
   logistics: VendorOrderLogistics;
+  /** Caixas a despachar, uma entrada por caixa; vazio em pedido antigo. */
+  packing: VendorOrderBox[];
+};
+
+/** Uma caixa do pedido, com as medidas usadas na cotação do frete. */
+export type VendorOrderBox = {
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+  weightKg: number;
 };
 
 export type VendorOrdersSnapshot = {

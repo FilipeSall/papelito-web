@@ -31,7 +31,7 @@ const PAID = {
     itemsCents: 148455,
     discountCents: 7813,
     kitSavingsCents: 0,
-    shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, deliveryTime: 5 },
+    shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, discountCents: 0, deliveryTime: 5, waived: false, volumes: 1 },
     totalCents: 151445,
     quoteFingerprint: "fp",
   },
