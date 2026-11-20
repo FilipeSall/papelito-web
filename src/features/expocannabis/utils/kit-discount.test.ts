@@ -28,7 +28,7 @@ describe("kitDiscountLabel", () => {
 describe("parseQuote com o desconto do kit", () => {
   const quote = {
     units: 14,
-    level: { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
+    level: { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
     lines: [],
     kit: { qty: 1, unit_cents: 61736, full_unit_cents: 77170, total_cents: 61736 },
     itemsCents: 61736,

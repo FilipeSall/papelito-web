@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react"
 
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext, EventProduct } from "@/features/expocannabis/types/context";
-import { applyCartRules, levelIndex, maxQty, normalizeSearch, type Cart } from "@/features/expocannabis/utils/cart";
-import { previewPricing, unitsOf } from "@/features/expocannabis/utils/pricing-preview";
+import { applyCartRules, formatWholeCents, levelIndex, maxQty, normalizeSearch, type Cart } from "@/features/expocannabis/utils/cart";
+import { baseCentsOf, kitMinCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 import {
   ALL,
   HOME,
@@ -43,9 +43,12 @@ type StoreScreenProps = {
 type Undo = { text: string; cart: Cart };
 
 const UNDO_MS = 5000;
-const KIT_REMOVED_TEXT = "O Kit Premium saiu: ele precisa de 10 unidades no pedido.";
-function removalText(name: string, kitRemoved: boolean): string {
-  return kitRemoved ? `${name} saiu do pedido (e o Kit Premium, que precisa de 10 un.).` : `${name} saiu do pedido.`;
+function kitRemovedText(minCents: number): string {
+  return `O Kit Premium saiu: ele precisa de ${formatWholeCents(minCents)} no pedido.`;
+}
+
+function removalText(name: string, kitRemoved: boolean, minCents: number): string {
+  return kitRemoved ? `${name} saiu do pedido (e o Kit Premium, que precisa de ${formatWholeCents(minCents)}).` : `${name} saiu do pedido.`;
 }
 
 function withQty(qty: Record<number, number>, productId: number, value: number): Record<number, number> {
@@ -108,7 +111,7 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
   return (
     <div className="relative flex min-h-0 flex-1 flex-col gap-6.5 overflow-y-auto px-6 pb-7 pt-1">
       <StockAlert state={state} byId={byId} />
-      {showHome ? <PromoBanner /> : null}
+      {showHome ? <PromoBanner maxPctBp={Math.max(...context.levels.map((level) => level.pctBp))} /> : null}
       <CategoryChips categories={categories} active={active} onSelect={onCategory} />
       {showHome
         ? shelves.map((shelf) => (
@@ -172,13 +175,14 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
 
   const changeCart = (next: Cart, removedName?: string) => {
     const previous = { qty: state.qty, kits: state.kits };
-    const { cart, kitRemoved } = applyCartRules(next);
+    const { cart, kitRemoved } = applyCartRules(context, next);
+    const minCents = kitMinCents(context.levels);
     dispatch({ type: "set-cart", qty: cart.qty, kits: cart.kits });
 
-    if (removedName) setUndo({ text: removalText(removedName, kitRemoved), cart: previous });
-    else if (kitRemoved) setUndo({ text: KIT_REMOVED_TEXT, cart: previous });
+    if (removedName) setUndo({ text: removalText(removedName, kitRemoved, minCents), cart: previous });
+    else if (kitRemoved) setUndo({ text: kitRemovedText(minCents), cart: previous });
 
-    const index = levelIndex(context.levels, unitsOf(cart.qty, cart.kits));
+    const index = levelIndex(context.levels, baseCentsOf(context, cart.qty, cart.kits));
     if (index > state.maxLevelIndex) {
       setToast(index);
       dispatch({ type: "level-reached", index });
@@ -203,7 +207,8 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
 
   const undoBar = undo ? <UndoBar text={undo.text} onUndo={restore} /> : null;
   const showMainUndo = !landscape && !orderOpen && undoBar !== null;
-  const showToast = toast > 0 && !orderOpen && !detail;
+  const toastLevel = context.levels[toast];
+  const showToast = toast > 0 && toastLevel !== undefined && !orderOpen && !detail;
 
   return (
     <div className="flex h-full">
@@ -225,8 +230,8 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
           onOpen={setDetail}
         />
         {showMainUndo ? <div className="flex-none px-6 pb-2.5">{undoBar}</div> : null}
-        <OrderBar levels={context.levels} units={preview.units} totalCents={preview.itemsCents} onOpen={() => setOrderOpen(true)} />
-        {showToast ? <LevelToast levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
+        <OrderBar levels={context.levels} units={preview.units} baseCents={preview.baseCents} totalCents={preview.itemsCents} onOpen={() => setOrderOpen(true)} />
+        {showToast ? <LevelToast level={toastLevel} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
       </div>
       <OrderSheet
         open={orderOpen}

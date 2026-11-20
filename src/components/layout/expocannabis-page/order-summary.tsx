@@ -1,9 +1,9 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import type { QuoteShipping } from "@/features/expocannabis/types/quote";
-import { formatCents } from "@/features/expocannabis/utils/cart";
+import { formatCents, giftLabel } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
-import { previewPricing } from "@/features/expocannabis/utils/pricing-preview";
+import { kitMinCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 
 import { SectionLabel } from "./section-label";
 
@@ -67,7 +67,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
         <Row label="Produtos" value={formatCents(items)} muted />
         {discount > 0 ? <Row label="Desconto do nível" value={`− ${formatCents(discount)}`} /> : null}
         {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty, kitPctOff)} value={formatCents(kit.totalCents)} muted /> : null}
-        <Row label="Brinde" value={level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un."} muted />
+        <Row label="Brinde" value={giftLabel(level, kitMinCents(context.levels))} muted />
         <Row label="Frete" value={frete} muted />
         <div className="mt-1 flex items-baseline justify-between border-t border-[#E4E4E7] pt-2.5">
           <dt className="text-[17px] font-extrabold">Total</dt>

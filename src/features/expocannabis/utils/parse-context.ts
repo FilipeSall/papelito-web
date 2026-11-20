@@ -9,10 +9,10 @@ export function parseLevel(value: unknown): EventLevel | null {
   if (!isRecord(value)) return null;
   const key = LEVEL_KEYS.find((item) => item === value.key);
   const name = str(value.name);
-  const minUnits = int(value.minUnits);
+  const minCents = int(value.minCents);
   const pctBp = int(value.pctBp);
-  if (!key || name === null || minUnits === null || pctBp === null) return null;
-  return { key, name, minUnits, pctBp };
+  if (!key || name === null || minCents === null || pctBp === null) return null;
+  return { key, name, minCents, pctBp };
 }
 
 function parseNamed(value: unknown): { slug: string; name: string } | null {

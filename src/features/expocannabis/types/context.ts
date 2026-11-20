@@ -1,11 +1,11 @@
 /** Chave de nível do evento, do menor para o maior. */
 export type EventLevelKey = "lojista" | "parceiro" | "pdv_perfeito" | "lenda";
 
-/** Nível do evento com o mínimo de unidades e a porcentagem em pontos-base. */
+/** Nível do evento com o valor mínimo do pedido, em centavos, e a porcentagem em pontos-base. */
 export type EventLevel = {
   key: EventLevelKey;
   name: string;
-  minUnits: number;
+  minCents: number;
   pctBp: number;
 };
 

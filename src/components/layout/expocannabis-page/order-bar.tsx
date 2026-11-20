@@ -10,6 +10,7 @@ import { LevelBar } from "./level-bar";
 type OrderBarProps = {
   levels: EventLevel[];
   units: number;
+  baseCents: number;
   totalCents: number;
   onOpen: () => void;
 };
@@ -31,13 +32,13 @@ function useBreathe(ref: RefObject<HTMLElement | null>, trigger: number) {
 }
 
 /** Barra preta fixa do retrato: nível, trechos e "Ver pedido". Dá um respiro a cada mudança de quantidade. */
-export function OrderBar({ levels, units, totalCents, onOpen }: Readonly<OrderBarProps>) {
+export function OrderBar({ levels, units, baseCents, totalCents, onOpen }: Readonly<OrderBarProps>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   useBreathe(buttonRef, units);
 
   return (
     <div className="flex flex-none flex-col gap-3 bg-[#231F20] px-6 pb-4.5 pt-3.5 min-[1024px]:hidden">
-      <LevelBar levels={levels} units={units} dark />
+      <LevelBar levels={levels} baseCents={baseCents} dark />
       <button
         ref={buttonRef}
         type="button"

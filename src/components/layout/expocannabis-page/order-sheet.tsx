@@ -6,8 +6,8 @@ import { BaseModal } from "@/components/ui/base-modal";
 import { EXPO_SCOPE_CLASS } from "@/features/expocannabis/fonts";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import type { Cart } from "@/features/expocannabis/utils/cart";
-import { formatCents, maxQty } from "@/features/expocannabis/utils/cart";
-import type { PricingPreview } from "@/features/expocannabis/utils/pricing-preview";
+import { formatCents, giftLabel, maxQty } from "@/features/expocannabis/utils/cart";
+import { kitMinCents, type PricingPreview } from "@/features/expocannabis/utils/pricing-preview";
 
 import { KitCard } from "./kit-card";
 import { LevelCard } from "./level-card";
@@ -86,8 +86,8 @@ function OrderLines({ context, preview, cart, onLineChange, onRemove, onKitsChan
   );
 }
 
-function OrderSummary({ preview, onCheckout }: Readonly<Pick<OrderContentProps, "preview" | "onCheckout">>) {
-  const gift = preview.level.minUnits >= 10 ? "Bandeja chaveiro + merch" : "a partir de 10 un.";
+function OrderSummary({ preview, minCents, onCheckout }: Readonly<Pick<OrderContentProps, "preview" | "onCheckout"> & { minCents: number }>) {
+  const gift = giftLabel(preview.level, minCents);
 
   return (
     <div className="flex flex-none flex-col gap-1.5 border-t border-[#E4E4E7] px-6 pb-5 pt-3">
@@ -125,15 +125,15 @@ function OrderContent(props: Readonly<OrderContentProps>) {
           </button>
         ) : null}
       </div>
-      <LevelCard levels={context.levels} units={preview.units} />
+      <LevelCard levels={context.levels} baseCents={preview.baseCents} />
       <div className="relative min-h-0 flex-1 overflow-y-auto px-6 pt-1">
         <OrderLines {...props} />
         <div className="mb-2.5 mt-4.5">
-          <KitCard kit={context.kit} units={preview.units} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
+          <KitCard kit={context.kit} baseCents={preview.baseCents} minCents={kitMinCents(context.levels)} kits={cart.kits} onAdd={() => onKitsChange(Math.min(KIT_MAX, cart.kits + 1))} />
         </div>
       </div>
       {undo ? <div className="flex-none px-6 pt-2">{undo}</div> : null}
-      <OrderSummary preview={preview} onCheckout={props.onCheckout} />
+      <OrderSummary preview={preview} minCents={kitMinCents(context.levels)} onCheckout={props.onCheckout} />
     </>
   );
 }

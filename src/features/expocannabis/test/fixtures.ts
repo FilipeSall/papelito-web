@@ -30,10 +30,9 @@ export function buildEventContext(overrides: Partial<EventContext> = {}): EventC
     operator: { name: "Operadora", canSupervise: false },
     terminals: [{ id: "NEWLAND_N950__N950NCD600451364", label: "Maquininha final 1364" }],
     levels: [
-      { key: "lojista", name: "Lojista", minUnits: 0, pctBp: 0 },
-      { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
-      { key: "pdv_perfeito", name: "PDV Perfeito", minUnits: 20, pctBp: 800 },
-      { key: "lenda", name: "Lenda", minUnits: 40, pctBp: 1200 },
+      { key: "lojista", name: "Lojista", minCents: 0, pctBp: 0 },
+      { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
+      { key: "lenda", name: "Lenda", minCents: 150000, pctBp: 1000 },
     ],
     kit: { productIds: KIT_PRODUCT_IDS, unitCents: 65595, fullUnitCents: 77170, available: true, pctOff: 15 },
     categories: [{ slug: "sedas", name: "Sedas" }],

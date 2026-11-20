@@ -20,7 +20,7 @@ const BUYER = {
 
 const QUOTE = {
   units: 14,
-  level: { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
+  level: { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
   lines: [{ product_id: 200, qty: 14, unit_cents: 11162, subtotal_cents: 156268, discount_cents: 7813, total_cents: 148455, source: "event_level" }],
   kit: { qty: 0, unit_cents: 0, full_unit_cents: 0, total_cents: 0 },
   kitComponents: [],

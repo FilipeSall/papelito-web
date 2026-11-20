@@ -6,8 +6,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { attendanceReducer, initialAttendance } from "@/features/expocannabis/hooks/attendance-reducer";
 import { buildEventContext } from "@/features/expocannabis/test/fixtures";
 import type { EventContext } from "@/features/expocannabis/types/context";
+import { formatCents, formatWholeCents } from "@/features/expocannabis/utils/cart";
 
 import { StoreScreen } from "./store-screen";
+
+const domText = (text: string) => text.replace(/\s/g, " ");
 
 const BUYER = {
   cnpj: "11222333000181",
@@ -17,7 +20,7 @@ const BUYER = {
   companyId: null,
 };
 
-const KIT_REMOVED = "O Kit Premium saiu: ele precisa de 10 unidades no pedido.";
+const KIT_REMOVED = domText(`O Kit Premium saiu: ele precisa de ${formatWholeCents(100000)} no pedido.`);
 
 function Harness({ context, onCheckout, stockIssues = [] }: Readonly<{ context: EventContext; onCheckout: () => void; stockIssues?: { productId: number; available: number }[] }>) {
   const [state, dispatch] = useReducer(attendanceReducer, { ...initialAttendance(), screen: 2, buyer: BUYER, qty: stockIssues.length ? { 200: 5 } : {}, stockIssues });
@@ -82,10 +85,10 @@ describe("StoreScreen", () => {
     expect(screen.queryByText("Você virou Parceiro!")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Colocar 20 de Avulso no pedido" }));
-    expect(screen.getByText("Você é PDV Perfeito!")).toBeInTheDocument();
+    expect(screen.getByText("Você é Lenda!")).toBeInTheDocument();
   });
 
-  it("kit fica bloqueado abaixo de 10 unidades", async () => {
+  it("kit fica bloqueado com o pedido abaixo de R$ 1.000", async () => {
     const user = userEvent.setup();
     renderStore();
     await openCategory(user, "Sedas");
@@ -93,11 +96,11 @@ describe("StoreScreen", () => {
     await user.click(screen.getByRole("button", { name: /Ver pedido/ }));
 
     const kit = screen.getByRole("region", { name: "Kit de Sedas Premium" });
-    expect(within(kit).getByText("Faltam 9 unidades no pedido pra liberar o −15%")).toBeInTheDocument();
+    expect(within(kit).getByText(domText(`Faltam ${formatCents(100000 - 11162)} no pedido pra liberar o −15%`))).toBeInTheDocument();
     expect(within(kit).getByRole("button", { name: "Bloqueado" })).toBeDisabled();
   });
 
-  it("kit sai sozinho abaixo de 10 e Desfazer restaura tudo", async () => {
+  it("kit sai sozinho com o pedido abaixo de R$ 1.000 e Desfazer restaura tudo", async () => {
     const user = userEvent.setup();
     renderStore();
     await openCategory(user, "Sedas");
@@ -106,11 +109,9 @@ describe("StoreScreen", () => {
     await user.click(screen.getByRole("button", { name: /Ver pedido/ }));
     await user.click(screen.getByRole("button", { name: "Adicionar kit" }));
 
-    await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
-    await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
-    await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
-    await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
-    await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
+    for (let removed = 0; removed < 8; removed += 1) {
+      await user.click(screen.getByRole("button", { name: "Tirar 1 de Avulso" }));
+    }
 
     expect(screen.getByText(KIT_REMOVED)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bloqueado" })).toBeInTheDocument();

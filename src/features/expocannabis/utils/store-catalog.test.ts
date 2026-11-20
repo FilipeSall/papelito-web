@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildEventContext } from "../test/fixtures";
+import { formatCents } from "./cart";
 import { levelProgress } from "./level-progress";
 import { ALL, buildProductTags, buildStoreCategories, gridProducts, gridTitle, productCountText } from "./store-catalog";
 
@@ -39,9 +40,9 @@ describe("store-catalog", () => {
   it("levelProgress diz quanto falta e menciona o brinde só saindo de Lojista", () => {
     const levels = buildEventContext().levels;
 
-    expect(levelProgress(levels, 7).short).toBe("Faltam 3 pra 5%");
-    expect(levelProgress(levels, 7).long).toBe("Faltam 3 unidades pra Parceiro (5% off + brinde).");
-    expect(levelProgress(levels, 12).long).toBe("Faltam 8 unidades pra PDV Perfeito (8% off).");
-    expect(levelProgress(levels, 40).long).toBe("Você chegou no topo: 12% off em tudo.");
+    expect(levelProgress(levels, 89296).short).toBe(`Faltam ${formatCents(10704)} pra 5%`);
+    expect(levelProgress(levels, 89296).long).toBe(`Faltam ${formatCents(10704)} pra Parceiro (5% off + brinde).`);
+    expect(levelProgress(levels, 120000).long).toBe(`Faltam ${formatCents(30000)} pra Lenda (10% off).`);
+    expect(levelProgress(levels, 150000).long).toBe("Você chegou no topo: 10% off em tudo.");
   });
 });

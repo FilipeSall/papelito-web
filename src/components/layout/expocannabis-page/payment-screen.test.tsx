@@ -13,7 +13,7 @@ import { PaymentScreen } from "./payment-screen";
 
 const QUOTE: EventQuote = {
   units: 14,
-  level: { key: "parceiro", name: "Parceiro", minUnits: 10, pctBp: 500 },
+  level: { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
   lines: [{ productId: 200, qty: 14, unitCents: 11162, subtotalCents: 156268, discountCents: 7813, totalCents: 148455 }],
   kit: { qty: 0, unitCents: 0, fullUnitCents: 0, totalCents: 0 },
   itemsCents: 148455,

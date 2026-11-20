@@ -1,29 +1,38 @@
-import type { EventLevel, EventProduct } from "../types/context";
-import { unitsOf } from "./pricing-preview";
+import type { EventContext, EventLevel, EventProduct } from "../types/context";
+import { baseCentsOf, kitMinCents } from "./pricing-preview";
 
 /** Carrinho do atendimento: quantidade por produto e kits. */
 export type Cart = { qty: Record<number, number>; kits: number };
-
-const KIT_MIN_UNITS = 10;
 
 /** Formata centavos como `R$ 1.234,56`. */
 export function formatCents(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
-/** Aplica a regra do kit: abaixo de 10 unidades o kit sai e o chamador avisa com Desfazer. */
-export function applyCartRules(next: Cart): { cart: Cart; kitRemoved: boolean } {
-  if (next.kits > 0 && unitsOf(next.qty, next.kits) < KIT_MIN_UNITS) {
+/** Valor redondo sem centavos (`R$ 1.000`), para os mínimos dos níveis; quebrado cai em `formatCents`. */
+export function formatWholeCents(cents: number): string {
+  if (cents % 100 !== 0) return formatCents(cents);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(cents / 100);
+}
+
+/** Brinde do resumo: liberado em nível com desconto; antes dele, o valor que o libera. */
+export function giftLabel(level: EventLevel, kitMinCents: number): string {
+  return level.pctBp > 0 ? "Bandeja chaveiro + merch" : `a partir de ${formatWholeCents(kitMinCents)}`;
+}
+
+/** Aplica a regra do kit: com a base abaixo do primeiro nível com desconto o kit sai e o chamador avisa com Desfazer. */
+export function applyCartRules(ctx: Pick<EventContext, "products" | "kit" | "levels">, next: Cart): { cart: Cart; kitRemoved: boolean } {
+  if (next.kits > 0 && baseCentsOf(ctx, next.qty, next.kits) < kitMinCents(ctx.levels)) {
     return { cart: { qty: next.qty, kits: 0 }, kitRemoved: true };
   }
   return { cart: next, kitRemoved: false };
 }
 
-/** Índice do nível nas unidades do carrinho. */
-export function levelIndex(levels: readonly EventLevel[], units: number): number {
+/** Índice do nível na base do carrinho, em centavos. */
+export function levelIndex(levels: readonly EventLevel[], baseCents: number): number {
   let index = 0;
   levels.forEach((level, position) => {
-    if (units >= level.minUnits) index = position;
+    if (baseCents >= level.minCents) index = position;
   });
   return index;
 }

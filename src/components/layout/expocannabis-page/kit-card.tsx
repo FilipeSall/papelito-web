@@ -2,17 +2,17 @@ import { Lock } from "lucide-react";
 import Image from "next/image";
 
 import type { EventKit } from "@/features/expocannabis/types/context";
-import { formatCents } from "@/features/expocannabis/utils/cart";
+import { formatCents, formatWholeCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 
 type KitCardProps = {
   kit: EventKit;
-  units: number;
+  baseCents: number;
+  minCents: number;
   kits: number;
   onAdd: () => void;
 };
 
-const KIT_MIN_UNITS = 10;
 const KIT_MAX = 3;
 
 function kitButtonLabel(locked: boolean, kits: number): string {
@@ -21,9 +21,9 @@ function kitButtonLabel(locked: boolean, kits: number): string {
   return kits > 0 ? "+1 kit" : "Adicionar kit";
 }
 
-function KitOverlay({ discount, missing, units }: Readonly<{ discount: string; missing: number; units: number }>) {
-  const progress = Math.min(1, units / KIT_MIN_UNITS) * 100;
-  const text = `${missing === 1 ? "Falta 1 unidade" : `Faltam ${missing} unidades`} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
+function KitOverlay({ discount, baseCents, minCents }: Readonly<{ discount: string; baseCents: number; minCents: number }>) {
+  const progress = Math.min(1, baseCents / minCents) * 100;
+  const text = `Faltam ${formatCents(minCents - baseCents)} no pedido pra liberar ${discount ? `o ${discount}` : "o kit"}`;
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-[#231F20]/78 p-3 text-center text-white">
@@ -42,7 +42,7 @@ function priceText(kit: EventKit): string {
   return `De ${formatCents(kit.fullUnitCents)} por ${formatCents(kit.unitCents)}`;
 }
 
-function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "kit" | "kits" | "onAdd"> & { locked: boolean }>) {
+function KitFooter({ kit, locked, minCents, kits, onAdd }: Readonly<Pick<KitCardProps, "kit" | "minCents" | "kits" | "onAdd"> & { locked: boolean }>) {
   const disabled = locked || kits >= KIT_MAX;
   const tone = disabled ? "bg-[#E4E4E7] text-[#52525b]" : "bg-brand-yellow text-[#231F20]";
 
@@ -53,7 +53,7 @@ function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "ki
           Kit de Sedas Premium
         </h3>
         <p className="mt-0.75 text-sm font-semibold text-[#52525B]">
-          {`${priceText(kit)}${locked ? " a partir de 10 unidades" : ""}`}
+          {`${priceText(kit)}${locked ? ` a partir de ${formatWholeCents(minCents)} no pedido` : ""}`}
         </p>
       </div>
       <button
@@ -69,11 +69,11 @@ function KitFooter({ kit, locked, kits, onAdd }: Readonly<Pick<KitCardProps, "ki
 }
 
 /**
- * Kit de Sedas Premium: bloqueado abaixo de 10 unidades (tracejado), liberado com o desconto
+ * Kit de Sedas Premium: bloqueado com a base abaixo do primeiro nível com desconto (tracejado), liberado com o desconto
  * publicado pelo admin (borda amarela), no máximo 3. Com desconto 0% os textos não prometem desconto.
  */
-export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
-  const locked = units < KIT_MIN_UNITS;
+export function KitCard({ kit, baseCents, minCents, kits, onAdd }: Readonly<KitCardProps>) {
+  const locked = baseCents < minCents;
   const discount = kitDiscountLabel(kit.pctOff);
 
   if (!kit.available) {
@@ -96,14 +96,14 @@ export function KitCard({ kit, units, kits, onAdd }: Readonly<KitCardProps>) {
           <Image src="/images/expocannabis/kit-sedas-premium.png" alt="Kit de Sedas Premium: Insane, Insane Brown, Alfafa e Pink" fill sizes="320px" className="object-contain" />
         </div>
         {locked ? (
-          <KitOverlay discount={discount} missing={KIT_MIN_UNITS - units} units={units} />
+          <KitOverlay discount={discount} baseCents={baseCents} minCents={minCents} />
         ) : (
           <span className="expo-popin absolute left-2.5 top-2.5 rounded-sm bg-brand-yellow px-2 py-1 text-xs font-extrabold uppercase tracking-[0.06em]">
             {discount ? `${discount} liberado` : "Kit liberado"}
           </span>
         )}
       </div>
-      <KitFooter kit={kit} locked={locked} kits={kits} onAdd={onAdd} />
+      <KitFooter kit={kit} locked={locked} minCents={minCents} kits={kits} onAdd={onAdd} />
     </section>
   );
 }
