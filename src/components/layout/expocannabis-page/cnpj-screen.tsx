@@ -174,14 +174,17 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
   };
 
   return (
-    <div className="flex min-h-full flex-col bg-expo-noite pz:flex-row pz:items-center">
-      <section aria-labelledby="expo-cnpj-title" className="relative flex-none px-6 pb-16 pt-8 sm:px-12 pz:flex-1 pz:pb-12">
+    /* Deitado as duas colunas andam juntas no meio da tela: sem o teto, num monitor de
+       2000 px a chamada fica encostada numa borda e a credencial na outra, com um vazio
+       no meio que ninguem desenhou. */
+    <div className="flex min-h-full flex-col bg-expo-noite pz:flex-row pz:items-center pz:justify-center pz:gap-12 pz:px-12">
+      <section aria-labelledby="expo-cnpj-title" className="relative flex-none px-6 pb-16 pt-8 sm:px-12 pz:max-w-[620px] pz:flex-1 pz:px-0 pz:pb-0 pz:pt-0">
         <p className="b-entra-esq text-[13px] font-bold uppercase text-brand-yellow">Bora fechar negócio?</p>
-        <h1 id="expo-cnpj-title" className="ultra expo-sobe mt-2 max-w-[500px] text-[40px] leading-[42px] text-white sm:text-[52px] sm:leading-[54px]">
+        <h1 id="expo-cnpj-title" className="ultra expo-sobe mt-2 max-w-[500px] text-[40px] leading-[42px] text-white sm:text-[52px] sm:leading-[54px] pz:max-w-[400px]">
           Qual o CNPJ <br />
           da loja?
         </h1>
-        <p className="max-w-[450px] pt-4 text-[18px] font-semibold leading-[25px] text-expo-cinza">
+        <p className="max-w-[450px] pt-4 text-[18px] font-semibold leading-[25px] text-expo-cinza pz:max-w-[390px]">
           É com ele que a gente puxa a nota fiscal e o endereço de entrega. Rapidinho.
         </p>
         <Image
@@ -190,10 +193,10 @@ export function CnpjScreen({ onConfirm }: Readonly<CnpjScreenProps>) {
           aria-hidden
           width={245}
           height={245}
-          className="expo-pula absolute left-[470px] top-0 w-[245px] max-w-none max-sm:hidden pz:left-auto pz:right-6"
+          className="expo-pula absolute left-[470px] top-0 w-[245px] max-w-none max-sm:hidden pz:left-auto pz:-right-2 pz:top-2 pz:w-[190px]"
         />
       </section>
-      <div className="relative -mt-10 flex flex-col px-4 pb-6 sm:px-12 pz:mt-0 pz:w-[560px] pz:flex-none pz:px-0 pz:pr-12">
+      <div className="relative -mt-10 flex flex-col px-4 pb-6 sm:px-12 pz:mt-0 pz:w-[520px] pz:flex-none pz:px-0 pz:pb-0">
         <CnpjPass
           digits={digits}
           message={message}

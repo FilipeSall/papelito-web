@@ -106,7 +106,11 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
   const active = normalizeSearch(search) === "" ? category : "";
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-7.5 overflow-y-auto px-6 pb-8 pt-1 [&>*]:shrink-0">
+    /* A vitrine tem medida: num monitor de 2000 px ela pararia de 1200 e deixaria uma
+       faixa preta só do lado direito. Com o teto no miolo, a sobra fica dos dois lados e
+       banner, abas e prateleiras alinham pela mesma régua. */
+    <div className="relative min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-7.5 px-6 pb-8 pt-1 [&>*]:shrink-0">
       <StockAlert state={state} byId={byId} />
       <CategoryChips categories={categories} active={active} onSelect={onCategory} />
       {showHome ? <PromoBanner levels={context.levels} kit={context.kit} /> : null}
@@ -122,6 +126,7 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
           {grid.map((product) => card(product, false))}
         </ProductGrid>
       )}
+      </div>
     </div>
   );
 }
@@ -129,7 +134,7 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
 function SearchField({ value, onChange }: Readonly<{ value: string; onChange: (value: string) => void }>) {
   return (
     <div className="flex-none px-6 pb-4 pt-4">
-      <div className="relative">
+      <div className="relative mx-auto w-full max-w-[1200px]">
         <Image
           src="/images/expocannabis/figma/icon-busca.svg"
           alt=""
