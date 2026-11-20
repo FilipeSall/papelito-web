@@ -19,7 +19,7 @@ type TextFieldProps = {
   className?: string;
 };
 
-/** Campo de 52 px do checkout: rótulo, erro vermelho abaixo e flash amarelo quando o CEP preenche. */
+/** Campo de 52 px do checkout: rótulo, borda preta, erro vermelho abaixo e flash amarelo quando o CEP preenche. */
 export function TextField({
   id,
   label,
@@ -38,10 +38,10 @@ export function TextField({
 }: Readonly<TextFieldProps>) {
   const errorId = `${id}-error`;
   const bad = Boolean(error) || invalid;
-  const surface = bad ? "border-[#B42318] bg-[#FFF1F0]" : "border-[#D4D4D8] bg-white focus:border-[#231F20]";
+  const surface = bad ? "border-2 border-expo-erro bg-white" : "border border-expo-ink bg-white";
   const flashing = flash > 0 && !bad ? "expo-flash" : "";
   return (
-    <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
       <label htmlFor={id} className="text-sm font-bold">
         {label}
       </label>
@@ -57,10 +57,10 @@ export function TextField({
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={bad ? true : undefined}
         aria-describedby={error ? errorId : describedBy}
-        className={`h-13 w-full rounded-lg border-[1.5px] px-3.5 text-[17px] font-semibold text-[#231F20] transition-colors duration-150 motion-reduce:transition-none ${surface} ${flashing}`}
+        className={`h-13 w-full px-3.5 text-[17px] font-semibold text-expo-ink outline-none transition-colors duration-150 motion-reduce:transition-none ${surface} ${flashing}`}
       />
       {error ? (
-        <p id={errorId} className="text-[13px] font-bold text-[#B42318]">
+        <p id={errorId} className="text-sm font-bold text-expo-erro">
           {error}
         </p>
       ) : null}

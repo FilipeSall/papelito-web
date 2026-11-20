@@ -25,17 +25,17 @@ function failureText(status: EventOrderStatus): string {
   return FAILURE_TEXT[status.detail] ?? "A cobrança não passou.";
 }
 
-const BUTTON = "min-h-15 rounded-lg px-4 text-lg font-extrabold transition-transform duration-120 enabled:active:scale-98 disabled:opacity-60 motion-reduce:transition-none";
-const SECONDARY = `${BUTTON} bg-[#F4F4F5]`;
-const PRIMARY = `${BUTTON} bg-[#231F20] text-brand-yellow`;
+const BUTTON = "min-h-15 px-4 text-[18px] font-extrabold disabled:opacity-60";
+const SECONDARY = `${BUTTON} border border-expo-ink bg-white text-expo-ink`;
+const PRIMARY = `${BUTTON} bg-expo-noite text-brand-yellow`;
 const MANUAL_AFTER_FAILURE = new Set(["failed", "expired"]);
-const PANEL = "expo-panel-in grid gap-2 rounded-[10px] bg-[#F4F4F5] p-5";
-const DETAIL = "text-[15px] leading-[1.45] font-medium text-[#52525B]";
+const PANEL = "expo-tela grid gap-2 bg-expo-kraft p-5";
+const DETAIL = "text-[15px] font-medium leading-[1.45] text-expo-mute";
 
 function Waiting({ children }: Readonly<{ children: string }>) {
   return (
     <p className="flex items-center gap-2 text-[15px] font-bold">
-      <i aria-hidden className="expo-blink size-2.5 rounded-xs bg-[#231F20]" />
+      <i aria-hidden className="expo-blink size-2.5 bg-expo-ink" />
       {children}
     </p>
   );
@@ -46,8 +46,8 @@ export function TerminalStatus({ status }: Readonly<TerminalStatusProps>) {
   if (status.state === "sending") {
     return (
       <div role="status" className={PANEL}>
-        <p className="text-xl font-extrabold">Mandando pra maquininha…</p>
-        <div aria-hidden className="expo-skeleton h-16 rounded-lg" />
+        <p className="ultra text-[22px] leading-7">Mandando pra maquininha…</p>
+        <div aria-hidden className="expo-skeleton h-16" />
       </div>
     );
   }
@@ -55,7 +55,7 @@ export function TerminalStatus({ status }: Readonly<TerminalStatusProps>) {
   if (status.state === "at_terminal") {
     return (
       <div role="status" className={PANEL}>
-        <p className="text-xl font-extrabold">Passe o cartão ou leia o Pix na maquininha</p>
+        <p className="ultra text-[22px] leading-7">Passe o cartão ou leia o Pix na maquininha</p>
         <p className={DETAIL}>A confirmação aparece aqui sozinha.</p>
         <Waiting>Aguardando a maquininha</Waiting>
       </div>
@@ -65,7 +65,7 @@ export function TerminalStatus({ status }: Readonly<TerminalStatusProps>) {
   if (status.state === "check_terminal") {
     return (
       <div role="status" className={PANEL}>
-        <p className="text-xl font-extrabold">Confira na maquininha</p>
+        <p className="ultra text-[22px] leading-7">Confira na maquininha</p>
         <p className={DETAIL}>Não recebemos a resposta da maquininha. Se ela aprovou, o supervisor libera o pedido.</p>
       </div>
     );
@@ -73,7 +73,7 @@ export function TerminalStatus({ status }: Readonly<TerminalStatusProps>) {
 
   return (
     <div role="alert" className={PANEL}>
-      <p className="text-xl font-extrabold text-[#B42318]">{failureText(status)}</p>
+      <p className="ultra text-[22px] leading-7 text-expo-erro">{failureText(status)}</p>
     </div>
   );
 }

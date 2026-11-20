@@ -792,9 +792,182 @@ a:hover .menu-underline path:nth-child(3),
         --color-brand-yellow: #ffea00;
         --radius-xl: 0.75rem;
     }
+}
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ExpoDay · visual novo (handoff do Figma, frames B · 01–05)
+   Fica tudo junto aqui embaixo e preso ao escopo .expo-root: a rota do estande
+   é escura e sem canto arredondado, o resto do site não é.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+    --color-expo-noite: #231f20; /* fundo do app */
+    --color-expo-ink: #0d0d0d;
+    --color-expo-carvao: #2a2a2a; /* trilho vazio da régua */
+    --color-expo-papel: #f6f4f4;
+    --color-expo-kraft: #f4f1ec;
+    --color-expo-mute: #5c5752;
+    --color-expo-zinc: #52525b;
+    --color-expo-linha: #ddd8d2;
+    --color-expo-borda: #b8b5b1;
+    --color-expo-chip: #c8c4be;
+    --color-expo-tecla: #d2ceca;
+    --color-expo-areia: #d5d0cc;
+    --color-expo-nevoa: #dbd7d3;
+    --color-expo-cinza: #e0ddd9;
+    --color-expo-erro: #b42318;
+
+    /* tablet deitado: vitrine à esquerda, pedido fixo à direita */
+    --breakpoint-pz: 1100px;
+}
+
+@layer base {
+    /* O escopo só carrega fonte e token: quem pinta fundo é cada superfície.
+       .expo-root também veste os contêineres de modal, que precisam ficar
+       transparentes para o fundo escurecido aparecer. */
     .expo-root :focus-visible {
-        outline: 3px solid #231f20;
+        outline: 3px solid var(--color-brand-yellow);
         outline-offset: 2px;
     }
+
+    .expo-root .em-claro :focus-visible {
+        outline-color: var(--color-expo-ink);
+    }
+
+    .expo-root input::placeholder {
+        color: #6b655f;
+        opacity: 1;
+    }
+}
+
+/* ───────── Utilidades do escopo ───────── */
+.expo-root .ultra {
+    font-family: var(--font-expo-display), Georgia, serif;
+    font-weight: 400;
+    text-transform: uppercase;
+}
+.expo-root .marker {
+    font-family: var(--font-expo-marker), cursive;
+    font-weight: 400;
+}
+.expo-root .num {
+    font-variant-numeric: tabular-nums;
+}
+.expo-root .sombra-dura {
+    box-shadow: 5px 5px 0 #000;
+}
+.expo-root .sem-barra {
+    scrollbar-width: none;
+}
+.expo-root .sem-barra::-webkit-scrollbar {
+    display: none;
+}
+
+/* ───────── Barra de rolagem fina, sem trilho ─────────
+   Cinza com alfa em vez de cor fixa: o mesmo valor serve sobre o fundo escuro
+   da vitrine e sobre o papel claro do painel do pedido. */
+.expo-root,
+.expo-root * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(140 134 132 / 0.5) transparent;
+}
+.expo-root ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.expo-root ::-webkit-scrollbar-track {
+    background: transparent;
+}
+.expo-root ::-webkit-scrollbar-thumb {
+    background: rgb(140 134 132 / 0.5);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.expo-root ::-webkit-scrollbar-thumb:hover {
+    background: rgb(140 134 132 / 0.8);
+    background-clip: padding-box;
+}
+.expo-root ::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ───────── Movimento: entrada de tela, produto, banners ───────── */
+@keyframes expo-sobe {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes expo-carimbo {
+    0% { opacity: 0; transform: scale(1.12) rotate(-1.5deg); }
+    55% { opacity: 1; transform: scale(0.98) rotate(0.4deg); }
+    100% { transform: none; }
+}
+@keyframes expo-pula {
+    0% { opacity: 0; transform: translateY(24px) rotate(-8deg) scale(0.85); }
+    60% { opacity: 1; transform: translateY(-6px) rotate(3deg) scale(1.04); }
+    100% { transform: none; }
+}
+@keyframes expo-entra-esq {
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes expo-recorte {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+}
+@keyframes expo-golpe {
+    0% { opacity: 0; transform: scale(1.7) rotate(-8deg); }
+    55% { opacity: 1; transform: scale(0.93) rotate(1deg); }
+    78% { transform: scale(1.04) rotate(-0.5deg); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes expo-sobe-produto {
+    from { opacity: 0; transform: translateY(46px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes expo-flutua {
+    0%, 100% { transform: none; }
+    50% { transform: translateY(-5px); }
+}
+@keyframes expo-brilha {
+    0%, 100% { transform: none; opacity: 1; }
+    50% { transform: scale(1.3) rotate(18deg); opacity: 0.55; }
+}
+@keyframes expo-desliza {
+    from { opacity: 0; transform: translateX(34px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes expo-carimbo-leve {
+    0% { opacity: 0; transform: scale(1.14) rotate(4deg); }
+    60% { opacity: 1; transform: scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+
+.expo-tela { animation: expo-reveal 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.expo-sobe { animation: expo-sobe 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.expo-carimbo { animation: expo-carimbo 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.expo-pula { animation: expo-pula 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.b-entra-esq { animation: expo-entra-esq 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.b-recorte { animation: expo-recorte 0.38s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.b-golpe { animation: expo-golpe 0.55s 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.b-produto {
+    animation:
+        expo-sobe-produto 0.5s var(--d, 0s) cubic-bezier(0.2, 0.8, 0.2, 1.15) both,
+        expo-flutua 2.2s calc(var(--d, 0s) + 0.5s) ease-in-out 2;
+}
+.b-brilho { animation: expo-brilha 1.1s var(--d, 0s) ease-in-out 3 both; }
+.k-desliza { animation: expo-desliza 0.7s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.k-carimbo { animation: expo-carimbo-leve 0.5s 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+/* Produto: a imagem levanta de leve no toque, o card fica parado. */
+.prod-img { transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (hover: hover) {
+    .group:hover .prod-img { transform: translateY(-4px) scale(1.03); }
+}
+.group:active .prod-img { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+    .expo-tela, .expo-sobe, .expo-carimbo, .expo-pula, .b-entra-esq, .b-recorte, .b-golpe,
+    .b-produto, .b-brilho, .k-desliza, .k-carimbo { animation: none; }
+    .prod-img { transition: none; }
 }

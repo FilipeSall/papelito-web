@@ -1,9 +1,9 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
 import type { QuoteShipping } from "@/features/expocannabis/types/quote";
-import { formatCents, giftLabel } from "@/features/expocannabis/utils/cart";
+import { formatCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
-import { kitMinCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
+import { firstDiscountCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 
 import { SectionLabel } from "./section-label";
 
@@ -15,8 +15,8 @@ type OrderSummaryProps = {
 function Row({ label, value, muted = false }: Readonly<{ label: string; value: string; muted?: boolean }>) {
   return (
     <div className="flex justify-between gap-3 text-[15px] font-semibold">
-      <dt className={muted ? "text-[#52525B]" : ""}>{label}</dt>
-      <dd>{value}</dd>
+      <dt className={muted ? "text-expo-mute" : ""}>{label}</dt>
+      <dd className="num text-right">{value}</dd>
     </div>
   );
 }
@@ -60,18 +60,18 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const frete = shippingLabel(quote?.shipping);
 
   return (
-    <section aria-labelledby="expo-summary-title" className="rounded-[10px] border-[1.5px] border-[#E4E4E7] bg-white px-5 py-4.5">
+    <section aria-labelledby="expo-summary-title" className="border border-expo-ink bg-white px-5 py-4.5">
       <SectionLabel id="expo-summary-title">Resumo</SectionLabel>
       <dl className="mt-2 grid gap-2">
         <Row label={`${unitsLabel(units)} · nível ${level.name}`} value={pct > 0 ? `${pct}% off em tudo` : "sem desconto de nível"} />
         <Row label="Produtos" value={formatCents(items)} muted />
         {discount > 0 ? <Row label="Desconto do nível" value={`− ${formatCents(discount)}`} /> : null}
         {kit.totalCents > 0 ? <Row label={kitLabel(kit.qty, kitPctOff)} value={formatCents(kit.totalCents)} muted /> : null}
-        <Row label="Brinde" value={giftLabel(level, kitMinCents(context.levels))} muted />
+        <Row label="Brinde" value={level.pctBp > 0 ? "Bandeja chaveiro + merch" : `a partir de ${formatCents(firstDiscountCents(context.levels))}`} muted />
         <Row label="Frete" value={frete} muted />
-        <div className="mt-1 flex items-baseline justify-between border-t border-[#E4E4E7] pt-2.5">
+        <div className="mt-1 flex items-baseline justify-between border-t border-expo-ink pt-2.5">
           <dt className="text-[17px] font-extrabold">Total</dt>
-          <dd className="text-[26px] font-extrabold">{formatCents(quote?.totalCents ?? items)}</dd>
+          <dd className="num text-[28px] font-bold">{formatCents(quote?.totalCents ?? items)}</dd>
         </div>
       </dl>
     </section>

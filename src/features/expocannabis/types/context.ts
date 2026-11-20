@@ -1,7 +1,12 @@
 /** Chave de nível do evento, do menor para o maior. */
 export type EventLevelKey = "lojista" | "parceiro" | "pdv_perfeito" | "lenda";
 
-/** Nível do evento com o valor mínimo do pedido, em centavos, e a porcentagem em pontos-base. */
+/**
+ * Nível do evento com o mínimo em centavos e a porcentagem em pontos-base.
+ *
+ * O mínimo é valor, não unidade: a faixa sai do valor do pedido antes do desconto e antes do
+ * frete. Unidade continua aparecendo em texto, mas não decide mais nada.
+ */
 export type EventLevel = {
   key: EventLevelKey;
   name: string;
@@ -37,11 +42,15 @@ export type EventKit = {
 /** Maquininha do evento; a primeira da lista é a padrão. */
 export type EventTerminal = { id: string; label: string };
 
+/** Regra de frete do evento. Ausente quando o WordPress ainda não publica o corte. */
+export type EventShipping = { freeFromCents: number } | null;
+
 /** Tudo que o tablet precisa para montar a loja, lido de `GET event/{id}/context`. */
 export type EventContext = {
   event: { id: string; name: string; startsAt: string; endsAt: string };
   operator: { name: string; canSupervise: boolean };
   terminals: EventTerminal[];
+  shipping: EventShipping;
   levels: EventLevel[];
   kit: EventKit;
   categories: { slug: string; name: string }[];

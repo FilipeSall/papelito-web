@@ -1,12 +1,13 @@
 "use client";
 
-import { Search } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react";
 
 import type { AttendanceAction, AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext, EventProduct } from "@/features/expocannabis/types/context";
-import { applyCartRules, formatWholeCents, levelIndex, maxQty, normalizeSearch, type Cart } from "@/features/expocannabis/utils/cart";
-import { baseCentsOf, kitMinCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
+import { applyCartRules, levelIndex, maxQty, normalizeSearch, type Cart } from "@/features/expocannabis/utils/cart";
+import { compactCents } from "@/features/expocannabis/utils/level-progress";
+import { baseCentsOf, firstDiscountCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
 import {
   ALL,
   HOME,
@@ -43,12 +44,14 @@ type StoreScreenProps = {
 type Undo = { text: string; cart: Cart };
 
 const UNDO_MS = 5000;
-function kitRemovedText(minCents: number): string {
-  return `O Kit Premium saiu: ele precisa de ${formatWholeCents(minCents)} no pedido.`;
+
+/* O valor que libera o kit vem da escada publicada, então os avisos também. */
+function kitRemovedText(minimo: string): string {
+  return `O Kit Premium saiu: ele precisa de ${minimo} no pedido.`;
 }
 
-function removalText(name: string, kitRemoved: boolean, minCents: number): string {
-  return kitRemoved ? `${name} saiu do pedido (e o Kit Premium, que precisa de ${formatWholeCents(minCents)}).` : `${name} saiu do pedido.`;
+function removalText(name: string, kitRemoved: boolean, minimo: string): string {
+  return kitRemoved ? `${name} saiu do pedido (e o Kit Premium, que precisa de ${minimo}).` : `${name} saiu do pedido.`;
 }
 
 function withQty(qty: Record<number, number>, productId: number, value: number): Record<number, number> {
@@ -79,7 +82,7 @@ function StockAlert({ state, byId }: Readonly<{ state: AttendanceState; byId: Ma
   const names = state.stockIssues.map((issue) => `${byId.get(issue.productId)?.name ?? "Produto"} (tem ${issue.available})`).join(", ");
 
   return (
-    <p role="alert" className="rounded-md border-2 border-[#B42318] bg-[#FFF1F0] p-3 text-base font-bold text-[#B42318]">
+    <p role="alert" className="border-2 border-expo-erro bg-white p-3 text-base font-bold text-expo-erro">
       {`Faltou estoque: ${names}. Ajuste o pedido e feche de novo.`}
     </p>
   );
@@ -101,21 +104,25 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
     />
   );
   const shelves = [
-    { title: "Mais vendidos", ids: context.shelves.maisVendidos, target: ALL },
-    { title: "Linha Premium", ids: context.kit.productIds, target: PREMIUM },
-    { title: "Lançamentos", ids: context.shelves.lancamentos, target: LAUNCHES },
+    { index: "01", title: "Mais vendidos", ids: context.shelves.maisVendidos, target: ALL },
+    { index: "02", title: "Linha Premium", ids: context.kit.productIds, target: PREMIUM },
+    { index: "03", title: "Lançamentos", ids: context.shelves.lancamentos, target: LAUNCHES },
   ];
   const grid = showHome ? [] : gridProducts(context, byId, category, search);
   const active = normalizeSearch(search) === "" ? category : "";
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-6.5 overflow-y-auto px-6 pb-7 pt-1">
+    /* A vitrine tem medida: num monitor de 2000 px ela pararia de 1200 e deixaria uma
+       faixa preta só do lado direito. Com o teto no miolo, a sobra fica dos dois lados e
+       banner, abas e prateleiras alinham pela mesma régua. */
+    <div className="relative min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-7.5 px-6 pb-8 pt-1 [&>*]:shrink-0">
       <StockAlert state={state} byId={byId} />
-      {showHome ? <PromoBanner maxPctBp={Math.max(...context.levels.map((level) => level.pctBp))} /> : null}
       <CategoryChips categories={categories} active={active} onSelect={onCategory} />
+      {showHome ? <PromoBanner levels={context.levels} kit={context.kit} /> : null}
       {showHome
         ? shelves.map((shelf) => (
-            <ShelfRow key={shelf.title} title={shelf.title} onSeeAll={() => onCategory(shelf.target)}>
+            <ShelfRow key={shelf.title} index={shelf.index} title={shelf.title} onSeeAll={() => onCategory(shelf.target)}>
               {pickProducts(byId, shelf.ids).map((product) => card(product, true))}
             </ShelfRow>
           ))
@@ -125,25 +132,46 @@ function Catalog({ context, byId, state, tags, category, search, pctBp, onCatego
           {grid.map((product) => card(product, false))}
         </ProductGrid>
       )}
+      </div>
     </div>
   );
 }
 
 function SearchField({ value, onChange }: Readonly<{ value: string; onChange: (value: string) => void }>) {
   return (
-    <div className="relative flex-none px-6 pb-3 pt-4">
-      <Search aria-hidden size={20} strokeWidth={2.2} className="absolute left-10.5 top-7.5 text-[#52525b]" />
-      <label htmlFor="expo-search" className="sr-only">
-        Buscar produtos
-      </label>
-      <input
-        id="expo-search"
-        type="search"
-        placeholder="Buscar sedas, piteiras, filtros…"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-12.5 w-full rounded-lg border-0 bg-[#F4F4F5] pl-11.5 pr-4 text-base font-medium"
-      />
+    <div className="flex-none px-6 pb-4 pt-4">
+      <div className="relative mx-auto w-full max-w-[1200px]">
+        <Image
+          src="/images/expocannabis/figma/icon-busca.svg"
+          alt=""
+          width={20}
+          height={20}
+          aria-hidden
+          className="pointer-events-none absolute left-4 top-4.5 size-5"
+        />
+        <label htmlFor="expo-search" className="sr-only">
+          Buscar produtos
+        </label>
+        <input
+          id="expo-search"
+          type="search"
+          placeholder="Buscar sedas, piteiras, filtros..."
+          autoComplete="off"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-14 w-full border border-expo-borda bg-white pl-12 pr-14 text-base font-medium text-expo-ink outline-none [&::-webkit-search-cancel-button]:appearance-none"
+        />
+        {value ? (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            aria-label="Limpar busca"
+            className="absolute right-1.5 top-1.5 flex size-11 items-center justify-center bg-expo-noite text-[20px] font-bold text-brand-yellow"
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -176,11 +204,11 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
   const changeCart = (next: Cart, removedName?: string) => {
     const previous = { qty: state.qty, kits: state.kits };
     const { cart, kitRemoved } = applyCartRules(context, next);
-    const minCents = kitMinCents(context.levels);
+    const minimo = compactCents(firstDiscountCents(context.levels));
     dispatch({ type: "set-cart", qty: cart.qty, kits: cart.kits });
 
-    if (removedName) setUndo({ text: removalText(removedName, kitRemoved, minCents), cart: previous });
-    else if (kitRemoved) setUndo({ text: kitRemovedText(minCents), cart: previous });
+    if (removedName) setUndo({ text: removalText(removedName, kitRemoved, minimo), cart: previous });
+    else if (kitRemoved) setUndo({ text: kitRemovedText(minimo), cart: previous });
 
     const index = levelIndex(context.levels, baseCentsOf(context, cart.qty, cart.kits));
     if (index > state.maxLevelIndex) {
@@ -207,8 +235,7 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
 
   const undoBar = undo ? <UndoBar text={undo.text} onUndo={restore} /> : null;
   const showMainUndo = !landscape && !orderOpen && undoBar !== null;
-  const toastLevel = context.levels[toast];
-  const showToast = toast > 0 && toastLevel !== undefined && !orderOpen && !detail;
+  const showToast = toast > 0 && !orderOpen && !detail;
 
   return (
     <div className="flex h-full">
@@ -231,7 +258,7 @@ export function StoreScreen({ context, state, dispatch, onCheckout }: Readonly<S
         />
         {showMainUndo ? <div className="flex-none px-6 pb-2.5">{undoBar}</div> : null}
         <OrderBar levels={context.levels} units={preview.units} baseCents={preview.baseCents} totalCents={preview.itemsCents} onOpen={() => setOrderOpen(true)} />
-        {showToast ? <LevelToast level={toastLevel} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
+        {showToast ? <LevelToast levels={context.levels} levelIndex={toast} lead={state.lead} onLead={() => dispatch({ type: "set-lead" })} onClose={closeToast} /> : null}
       </div>
       <OrderSheet
         open={orderOpen}

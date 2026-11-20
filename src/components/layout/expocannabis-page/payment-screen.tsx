@@ -66,8 +66,8 @@ function TerminalPicker({ terminals, value, onChange }: Readonly<{ terminals: Ev
 function TotalLine({ total }: Readonly<{ total: string }>) {
   return (
     <div className="mt-2 flex items-baseline gap-2.5">
-      <p className="text-base font-semibold text-[#52525B]">Total do pedido</p>
-      <p className="text-[26px] font-extrabold">{total}</p>
+      <p className="text-base font-semibold text-expo-mute">Total do pedido</p>
+      <p className="num text-[26px] font-extrabold">{total}</p>
     </div>
   );
 }
@@ -259,6 +259,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
         spacing="payment"
         back={back}
         title="Como o lojista vai pagar?"
+        paper="/images/expocannabis/figma/papel-pdv.svg"
         intro={<TotalLine total={total} />}
         aside={
           <StickyAside landscapeOnly>
@@ -269,7 +270,7 @@ export function PaymentScreen({ context, state, dispatch }: Readonly<PaymentScre
       >
         {choosing ? <PaymentMethods method={state.method} total={total} dispatch={dispatch} /> : null}
         {choosing && manyTerminals ? <TerminalPicker terminals={context.terminals} value={terminalId} onChange={chooseTerminal} /> : null}
-        {order && manyTerminals ? <p className="text-base font-bold">{`Cobrando na ${terminalLabel(context.terminals, terminalId)}`}</p> : null}
+        {order && manyTerminals ? <p className="text-base font-bold text-white">{`Cobrando na ${terminalLabel(context.terminals, terminalId)}`}</p> : null}
         {order ? <TerminalStatus status={order} /> : null}
       </CheckoutLayout>
       {manualOpen ? (

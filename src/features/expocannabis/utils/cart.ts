@@ -1,34 +1,32 @@
 import type { EventContext, EventLevel, EventProduct } from "../types/context";
-import { baseCentsOf, kitMinCents } from "./pricing-preview";
+import { baseCentsOf, firstDiscountCents } from "./pricing-preview";
 
 /** Carrinho do atendimento: quantidade por produto e kits. */
 export type Cart = { qty: Record<number, number>; kits: number };
 
-/** Formata centavos como `R$ 1.234,56`. */
+/**
+ * Formata centavos como `R$ 1.234,56`.
+ *
+ * O Intl separa o símbolo com espaço fino inquebrável, que é invisível no código e faz
+ * comparação de texto falhar com as duas strings parecendo iguais na tela. Aqui ele vira
+ * espaço comum.
+ */
 export function formatCents(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100).replace(/[  ]/g, " ");
 }
 
-/** Valor redondo sem centavos (`R$ 1.000`), para os mínimos dos níveis; quebrado cai em `formatCents`. */
-export function formatWholeCents(cents: number): string {
-  if (cents % 100 !== 0) return formatCents(cents);
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(cents / 100);
-}
-
-/** Brinde do resumo: liberado em nível com desconto; antes dele, o valor que o libera. */
-export function giftLabel(level: EventLevel, kitMinCents: number): string {
-  return level.pctBp > 0 ? "Bandeja chaveiro + merch" : `a partir de ${formatWholeCents(kitMinCents)}`;
-}
-
-/** Aplica a regra do kit: com a base abaixo do primeiro nível com desconto o kit sai e o chamador avisa com Desfazer. */
-export function applyCartRules(ctx: Pick<EventContext, "products" | "kit" | "levels">, next: Cart): { cart: Cart; kitRemoved: boolean } {
-  if (next.kits > 0 && baseCentsOf(ctx, next.qty, next.kits) < kitMinCents(ctx.levels)) {
+/**
+ * Aplica a regra do kit: abaixo do valor que o libera o kit sai e o chamador avisa com Desfazer.
+ * O próprio kit conta nessa base, como no plugin.
+ */
+export function applyCartRules(ctx: EventContext, next: Cart): { cart: Cart; kitRemoved: boolean } {
+  if (next.kits > 0 && baseCentsOf(ctx, next.qty, next.kits) < firstDiscountCents(ctx.levels)) {
     return { cart: { qty: next.qty, kits: 0 }, kitRemoved: true };
   }
   return { cart: next, kitRemoved: false };
 }
 
-/** Índice do nível na base do carrinho, em centavos. */
+/** Índice do nível no valor do carrinho. */
 export function levelIndex(levels: readonly EventLevel[], baseCents: number): number {
   let index = 0;
   levels.forEach((level, position) => {

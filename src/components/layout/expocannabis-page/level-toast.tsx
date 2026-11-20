@@ -5,61 +5,89 @@ import { useEffect } from "react";
 import type { EventLevel, EventLevelKey } from "@/features/expocannabis/types/context";
 
 type LevelToastProps = {
-  level: EventLevel;
+  levels: EventLevel[];
+  levelIndex: number;
   lead: boolean;
   onLead: () => void;
   onClose: () => void;
 };
 
-const TITLES: Record<EventLevelKey, string> = {
-  lojista: "",
+/**
+ * Nome da comemoração por chave do nível, não por posição na escada. A escada é publicada
+ * no WordPress: tirar ou acrescentar um degrau muda a posição de todos os outros, e com
+ * título fixo por posição a tela comemorava 8% enquanto a cotação cobrava 10%.
+ */
+const TITLE_BY_KEY: Partial<Record<EventLevelKey, string>> = {
   parceiro: "Você virou Parceiro!",
   pdv_perfeito: "Você é PDV Perfeito!",
   lenda: "Você é Lenda!",
 };
 
-function levelText(level: EventLevel): string {
-  const pct = `${level.pctBp / 100}% off em tudo`;
-  if (level.key === "parceiro") return `${pct} + bandeja chaveiro e merch liberados.`;
-  if (level.key === "pdv_perfeito") return `${pct}. Quer conhecer o programa PDV Perfeito?`;
-  return `${pct}, o maior desconto do ExpoDay.`;
-}
-
 const AUTO_CLOSE_MS = 4500;
 
 /**
- * Aviso de nível na primeira subida. Some em 4,5 s; o do PDV Perfeito fica até fechar.
- * Posiciona-se de forma absoluta na coluna da loja, então o pai precisa ser `relative`.
+ * Onde mora o convite do programa PDV Perfeito: no nível de mesmo nome, e no nível do topo
+ * quando a escada publicada não tem esse degrau. Sem essa volta, tirar a faixa do PDV do
+ * WordPress apagaria da loja o único lugar que capta esse interesse, sem ninguém notar.
  */
-export function LevelToast({ level, lead, onLead, onClose }: Readonly<LevelToastProps>) {
-  const isPdv = level.key === "pdv_perfeito";
+export function leadLevelIndex(levels: readonly EventLevel[]): number {
+  const own = levels.findIndex((level) => level.key === "pdv_perfeito");
+  return own >= 0 ? own : levels.length - 1;
+}
+
+function toastTitle(level: EventLevel): string {
+  return TITLE_BY_KEY[level.key] ?? `Você virou ${level.name}!`;
+}
+
+function toastText(level: EventLevel, isLead: boolean, isTop: boolean): string {
+  const pct = `${level.pctBp / 100}% off em tudo`;
+  if (isLead) return `${pct}. Quer conhecer o programa PDV Perfeito?`;
+  if (isTop) return `${pct}, o maior desconto do ExpoDay.`;
+  if (level.pctBp > 0) return `${pct} + bandeja chaveiro e merch liberados.`;
+  return `${pct}.`;
+}
+
+/**
+ * Carimbo de nível na primeira subida. Some em 4,5 s; o que leva a pergunta do PDV Perfeito
+ * fica até fechar, porque tem botão dentro. Posiciona-se absoluto na coluna da loja, então o
+ * pai precisa ser `relative`.
+ */
+export function LevelToast({ levels, levelIndex, lead, onLead, onClose }: Readonly<LevelToastProps>) {
+  const level = levels[levelIndex];
+  const isLead = levelIndex === leadLevelIndex(levels);
 
   useEffect(() => {
-    if (isPdv) return undefined;
+    if (isLead) return undefined;
     const timer = window.setTimeout(onClose, AUTO_CLOSE_MS);
     return () => window.clearTimeout(timer);
-  }, [isPdv, level.key, onClose]);
+  }, [isLead, levelIndex, onClose]);
+
+  if (!level) return null;
 
   return (
-    <div role="status" className="expo-drop absolute inset-x-6 top-3 z-20 flex items-center gap-3.5 rounded-[10px] bg-[#231F20] px-4.5 py-4 text-white">
-      <span className="flex-none rounded-md bg-brand-yellow px-2.5 py-2 font-[family-name:var(--font-expo-display)] text-[22px] uppercase leading-none text-[#231F20]">
+    <div
+      role="status"
+      className="expo-carimbo sombra-dura absolute inset-x-6 top-3 z-20 flex -rotate-1 items-center gap-3.5 border-2 border-expo-ink bg-brand-yellow px-4 py-3 text-expo-ink"
+    >
+      <span className="ultra num flex-none bg-expo-noite px-2.5 py-2 text-[26px] leading-none text-brand-yellow">
         {`${level.pctBp / 100}%`}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[17px] font-extrabold">{TITLES[level.key]}</p>
-        <p className="mt-0.5 text-sm font-medium text-[#e4e4e7]">{levelText(level)}</p>
+        <p className="marker text-[20px] leading-none">Destravou!</p>
+        <p className="mt-1 text-[17px] font-extrabold">{toastTitle(level)}</p>
+        <p className="text-sm font-medium text-expo-mute">{toastText(level, isLead, levelIndex === levels.length - 1)}</p>
       </div>
-      {isPdv ? (
+      {isLead ? (
         <button
           type="button"
           onClick={onLead}
           disabled={lead}
-          className="min-h-11 flex-none rounded-md bg-brand-yellow px-3.5 text-sm font-extrabold text-[#231F20] focus-visible:outline-brand-yellow"
+          className="min-h-11 flex-none bg-expo-noite px-3.5 text-sm font-extrabold text-brand-yellow disabled:opacity-60"
         >
           {lead ? "Anotado ✓" : "Quero saber"}
         </button>
       ) : null}
-      <button type="button" aria-label="Fechar aviso" onClick={onClose} className="size-11 flex-none text-[22px] text-white focus-visible:outline-brand-yellow">
+      <button type="button" aria-label="Fechar aviso" onClick={onClose} className="size-11 flex-none text-[22px]">
         ×
       </button>
     </div>

@@ -17,10 +17,10 @@ const VARIANT_CLASS = {
 };
 
 function CheckBox({ checked }: Readonly<{ checked: boolean }>) {
-  const state = checked ? "border-[#231F20] bg-[#231F20]" : "border-[#A1A1AA] bg-white";
+  const state = checked ? "border-expo-ink bg-expo-ink" : "border-expo-borda bg-white";
   const mark = checked ? "scale-100 opacity-100" : "scale-60 opacity-0";
   return (
-    <span aria-hidden className={`mt-px grid size-6 flex-none place-items-center rounded-md border-2 transition-colors duration-150 motion-reduce:transition-none ${state}`}>
+    <span aria-hidden className={`mt-px grid size-6 flex-none place-items-center border-2 transition-colors duration-150 motion-reduce:transition-none ${state}`}>
       <svg
         width="14"
         height="14"
@@ -41,21 +41,21 @@ function CheckBox({ checked }: Readonly<{ checked: boolean }>) {
 /** Opção em card inteiro clicável, com quadrado de check (nunca círculo). */
 export function RadioCard({ title, sub, tag, checked, variant = "compact", onSelect }: Readonly<RadioCardProps>) {
   const look = VARIANT_CLASS[variant];
-  const surface = checked ? "border-[#231F20] bg-[#FFFBD6]" : "border-[#E4E4E7] bg-white";
+  const surface = checked ? "border-expo-ink bg-brand-yellow/18" : "border-expo-linha bg-white";
   return (
     <button
       type="button"
       role="radio"
       aria-checked={checked}
       onClick={onSelect}
-      className={`flex w-full rounded-[10px] border-2 text-left transition-[border-color,background-color,transform] duration-150 active:scale-99 motion-reduce:transition-none ${look.box} ${surface}`}
+      className={`flex w-full border-2 text-left transition-[border-color,background-color] duration-150 motion-reduce:transition-none ${look.box} ${surface}`}
     >
       <CheckBox checked={checked} />
       <span className="min-w-0 flex-1">
         <span className={`block font-extrabold ${look.title}`}>{title}</span>
-        {sub ? <span className="mt-0.75 block text-[15px] leading-[1.4] font-medium text-[#52525B]">{sub}</span> : null}
+        {sub ? <span className="mt-0.75 block text-[15px] font-medium leading-[1.4] text-expo-mute">{sub}</span> : null}
       </span>
-      {tag ? <span className="flex-none rounded-sm bg-[#F4F4F5] px-2.25 py-1.25 text-[13px] font-extrabold">{tag}</span> : null}
+      {tag ? <span className="flex-none bg-expo-papel px-2.25 py-1.25 text-[13px] font-extrabold">{tag}</span> : null}
     </button>
   );
 }

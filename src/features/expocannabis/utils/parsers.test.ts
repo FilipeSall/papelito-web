@@ -15,7 +15,7 @@ function wpContext() {
 
 const wpQuote = {
   units: 22,
-  level: { key: "pdv_perfeito", name: "PDV Perfeito", minCents: 120000, pctBp: 800 },
+  level: { key: "lenda", name: "Lenda", minCents: 150000, pctBp: 1000 },
   lines: [{ product_id: 200, qty: 14, unit_cents: 11162, subtotal_cents: 156268, discount_cents: 12501, total_cents: 143767, source: "event_level" }],
   kit: { qty: 1, unit_cents: 65595, full_unit_cents: 77170, total_cents: 65595 },
   kitComponents: [],
@@ -26,6 +26,29 @@ const wpQuote = {
   totalCents: 212352,
   quoteFingerprint: "abc",
 };
+
+describe("frete do evento", () => {
+  it("cotação sem abatimento publicado mantém o frete com o lojista", () => {
+    expect(parseQuote(wpQuote)?.shipping).toMatchObject({ priceCents: 2990, discountCents: 0 });
+  });
+
+  it("lê o abatimento quando o WordPress manda", () => {
+    const comFrete = { ...wpQuote, shipping: { ...wpQuote.shipping, discountCents: 2990 } };
+
+    expect(parseQuote(comFrete)?.shipping.discountCents).toBe(2990);
+  });
+
+  it("contexto sem a regra de frete ainda monta a loja", () => {
+    const semFrete = { ...wpContext(), shipping: undefined };
+
+    expect(parseEventContext(semFrete)?.shipping).toBeNull();
+    expect(parseEventContext(semFrete)?.products.length).toBeGreaterThan(0);
+  });
+
+  it("lê o corte do frete grátis publicado", () => {
+    expect(parseEventContext({ ...wpContext(), shipping: { freeFromCents: 50000 } })?.shipping).toEqual({ freeFromCents: 50000 });
+  });
+});
 
 describe("parseEventContext", () => {
   it("lê o contexto do WordPress em camelCase", () => {

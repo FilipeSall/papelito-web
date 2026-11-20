@@ -29,6 +29,7 @@ export function buildEventContext(overrides: Partial<EventContext> = {}): EventC
     },
     operator: { name: "Operadora", canSupervise: false },
     terminals: [{ id: "NEWLAND_N950__N950NCD600451364", label: "Maquininha final 1364" }],
+    shipping: { freeFromCents: 50000 },
     levels: [
       { key: "lojista", name: "Lojista", minCents: 0, pctBp: 0 },
       { key: "parceiro", name: "Parceiro", minCents: 100000, pctBp: 500 },
