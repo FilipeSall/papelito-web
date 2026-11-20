@@ -518,7 +518,9 @@ describe("VendorBraspressSection", () => {
     fireEvent.click(screen.getByRole("button", { name: /^remover integração$/i }));
     confirmAccountPassword();
 
-    expect(await screen.findByRole("dialog")).toHaveTextContent(/deixa de ser oferecida no checkout/i);
+    await waitFor(() => expect(writeCalls(fetchMock)).toHaveLength(1));
+    expect(await screen.findByLabelText(/senha da sua conta papelito/i)).toHaveValue("");
+    expect(screen.getByRole("dialog")).toHaveTextContent(/deixa de ser oferecida no checkout/i);
 
     confirmAccountPassword();
 
