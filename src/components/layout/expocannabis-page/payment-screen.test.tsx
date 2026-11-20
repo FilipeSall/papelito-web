@@ -20,7 +20,7 @@ const QUOTE: EventQuote = {
   discountCents: 7813,
   kitSavingsCents: 0,
   kitPctOff: 15,
-  shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, deliveryTime: 5 },
+  shipping: { optionKey: "correios:pac", name: "PAC", priceCents: 2990, discountCents: 0, deliveryTime: 5 },
   totalCents: 151445,
   quoteFingerprint: "fingerprint",
 };

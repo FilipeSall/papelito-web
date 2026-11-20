@@ -94,6 +94,13 @@ function parseTerminals(value: unknown): EventTerminal[] {
  *
  * As maquininhas são opcionais: WordPress sem a lista devolve `[]`, e a cobrança vai para a padrão.
  */
+/** Corte do frete grátis; ausente quando o WordPress ainda não publica a regra. */
+function parseShipping(value: unknown): EventContext["shipping"] {
+  if (!isRecord(value)) return null;
+  const freeFromCents = int(value.freeFromCents);
+  return freeFromCents === null ? null : { freeFromCents };
+}
+
 export function parseEventContext(data: unknown): EventContext | null {
   if (!isRecord(data)) return null;
   const ctx = {
@@ -106,5 +113,8 @@ export function parseEventContext(data: unknown): EventContext | null {
     products: every(data.products, parseProduct),
     shelves: parseShelves(data.shelves),
   };
-  return hasNull(Object.values(ctx)) ? null : (ctx as EventContext);
+  if (hasNull(Object.values(ctx))) return null;
+  /* O frete fica fora da conferência de nulo de propósito: WordPress que ainda não publica o
+     corte devolve uma loja completa, só sem a frase do frete grátis. */
+  return { ...ctx, shipping: parseShipping(data.shipping) } as EventContext;
 }

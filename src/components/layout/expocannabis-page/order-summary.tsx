@@ -1,5 +1,6 @@
 import type { AttendanceState } from "@/features/expocannabis/hooks/attendance-reducer";
 import type { EventContext } from "@/features/expocannabis/types/context";
+import type { EventQuote } from "@/features/expocannabis/types/quote";
 import { formatCents } from "@/features/expocannabis/utils/cart";
 import { kitDiscountLabel } from "@/features/expocannabis/utils/kit-discount";
 import { firstDiscountCents, previewPricing } from "@/features/expocannabis/utils/pricing-preview";
@@ -18,6 +19,12 @@ function Row({ label, value, muted = false }: Readonly<{ label: string; value: s
       <dd className="num text-right">{value}</dd>
     </div>
   );
+}
+
+/** O frete abatido aparece como "Grátis", não como R$ 0,00: o valor cheio já está no pedido. */
+function freteLabel(shipping: EventQuote["shipping"]): string {
+  const cobrado = shipping.priceCents - shipping.discountCents;
+  return `${cobrado <= 0 ? "Grátis" : formatCents(cobrado)} · ${shipping.name}`;
 }
 
 function unitsLabel(units: number): string {
@@ -40,7 +47,7 @@ export function OrderSummary({ context, state }: Readonly<OrderSummaryProps>) {
   const kit = quote?.kit ?? preview.kit;
   const kitPctOff = quote?.kitPctOff ?? context.kit.pctOff;
   const pct = level.pctBp / 100;
-  const frete = quote ? `${formatCents(quote.shipping.priceCents)} · ${quote.shipping.name}` : "calculado ao continuar";
+  const frete = quote ? freteLabel(quote.shipping) : "calculado ao continuar";
 
   return (
     <section aria-labelledby="expo-summary-title" className="border border-expo-ink bg-white px-5 py-4.5">

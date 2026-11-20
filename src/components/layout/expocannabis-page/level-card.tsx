@@ -8,10 +8,12 @@ type LevelCardProps = {
   levels: EventLevel[];
   /** Base da faixa: é ela que anda na régua, não a quantidade. */
   baseCents: number;
+  /** Corte do frete grátis publicado pelo evento; `null` quando o WordPress ainda não manda. */
+  freeFromCents: number | null;
 };
 
 /** Caixa do nível no pedido: o desconto em número grande, a régua com as marcas e quanto falta. */
-export function LevelCard({ levels, baseCents }: Readonly<LevelCardProps>) {
+export function LevelCard({ levels, baseCents, freeFromCents }: Readonly<LevelCardProps>) {
   const progress = levelProgress(levels, baseCents);
   const pct = progress.current.pctBp / 100;
   const unlocked = pct > 0;
@@ -50,6 +52,11 @@ export function LevelCard({ levels, baseCents }: Readonly<LevelCardProps>) {
             ))}
           </div>
         </div>
+        {freeFromCents === null ? null : (
+          <p className={`num mt-2 text-[13px] font-bold ${baseCents >= freeFromCents ? "text-brand-yellow" : "text-expo-cinza"}`}>
+            {baseCents >= freeFromCents ? "✓ Frete grátis neste pedido" : `Frete grátis a partir de ${compactCents(freeFromCents)}`}
+          </p>
+        )}
       </div>
     </div>
   );
